@@ -8,7 +8,12 @@ import type { AgentModelMap, ModelAgent, ModelRef, ProjectModelSettings } from "
 import { ALG_MODEL_SETTINGS_VERSION, MODEL_AGENTS } from "./types.ts"
 import { atomicWriteFile, ensureDir, quarantineCorruptFile } from "./store.ts"
 import { canonicalDirectory, resolveContainedPath } from "./paths.ts"
-import { AgentModelMapSchema, ModelRefSchema, ProjectModelSettingsSchema } from "./schemas.ts"
+import {
+  AgentModelMapSchema,
+  ModelRefSchema,
+  ModelVariantSchema,
+  ProjectModelSettingsSchema,
+} from "./schemas.ts"
 import { acquireFilesystemMutex } from "./filesystem-mutex.ts"
 
 const MAX_MODEL_SETTINGS_BYTES = 64 * 1024
@@ -107,6 +112,26 @@ export function setAgentModel(
   return saveModelSettings(projectDirectory, models, previousRevision ?? current.revision)
 }
 
+/** Update only the variant on an existing project role selection. */
+export function setAgentModelVariant(
+  projectDirectory: string,
+  agent: ModelAgent,
+  variant: string | null,
+  previousRevision?: number,
+): ProjectModelSettings {
+  if (!(MODEL_AGENTS as readonly string[]).includes(agent)) throw new Error(`unknown model agent: ${agent}`)
+  const current = loadModelSettings(projectDirectory)
+  const selected = current.models[agent]
+  if (!selected) throw new Error(`no project model selection exists for ${agent}`)
+  const models = { ...current.models }
+  models[agent] = ModelRefSchema.parse({
+    providerID: selected.providerID,
+    modelID: selected.modelID,
+    ...(variant === null ? {} : { variant: ModelVariantSchema.parse(variant) }),
+  })
+  return saveModelSettings(projectDirectory, models, previousRevision ?? current.revision)
+}
+
 export function snapshotModels(
   projectDirectory: string,
   configured: AgentModelMap = {},
@@ -127,12 +152,18 @@ export function parseConfiguredModel(value: unknown): ModelRef | undefined {
 
 export function configuredAgentModels(config: unknown): AgentModelMap {
   if (!config || typeof config !== "object") return {}
-  const source = config as { model?: unknown; agent?: Record<string, { model?: unknown } | undefined> }
+  const source = config as {
+    model?: unknown
+    agent?: Record<string, { model?: unknown; variant?: unknown } | undefined>
+  }
   const fallback = parseConfiguredModel(source.model)
   const models: AgentModelMap = {}
   for (const role of MODEL_AGENTS) {
     const explicit = parseConfiguredModel(source.agent?.[role]?.model)
-    if (explicit) models[role] = explicit
+    if (explicit) {
+      const variant = ModelVariantSchema.safeParse(source.agent?.[role]?.variant)
+      models[role] = variant.success ? { ...explicit, variant: variant.data } : explicit
+    }
     else if (fallback) models[role] = fallback
   }
   return models

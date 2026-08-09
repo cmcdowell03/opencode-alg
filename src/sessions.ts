@@ -10,6 +10,14 @@ import {
 
 export type Client = PluginInput["client"]
 
+// OpenCode 1.18.3's server accepts top-level prompt `variant`, but the legacy
+// root SDK declaration used by PluginInput omits it. Keep the compatibility
+// surface limited to that one body property rather than widening the client.
+type LegacyPromptInput = Parameters<Client["session"]["prompt"]>[0]
+type PromptBodyWithVariant = NonNullable<LegacyPromptInput["body"]> & {
+  variant?: string
+}
+
 export interface NodePromptOpts {
   client: Client
   parentSessionId: string
@@ -102,14 +110,21 @@ ${jsonSchemaHint(opts.agent)}
     }
     await opts.onSessionCreated?.(sessionId)
 
+    const body: PromptBodyWithVariant = {
+      agent: opts.agent,
+      ...(opts.model ? {
+        model: {
+          providerID: opts.model.providerID,
+          modelID: opts.model.modelID,
+        },
+      } : {}),
+      ...(opts.model?.variant ? { variant: opts.model.variant } : {}),
+      parts: [{ type: "text", text: fullPrompt }],
+    }
     const prompted = await opts.client.session.prompt({
       path: { id: sessionId },
       query: { directory: opts.directory },
-      body: {
-        agent: opts.agent,
-        ...(opts.model ? { model: opts.model } : {}),
-        parts: [{ type: "text", text: fullPrompt }],
-      },
+      body,
       responseStyle: "fields",
       throwOnError: false,
       signal: opts.abort,

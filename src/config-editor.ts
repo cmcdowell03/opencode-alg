@@ -235,11 +235,41 @@ export function planPluginConfig(options: {
 }
 
 export function planDeleteJsoncPath(path: string, keys: Array<string | number>): TextFilePlan | undefined {
+  return planDeleteJsoncPaths(path, [keys])
+}
+
+/** Plan all structural deletions against one evolving text buffer for a file. */
+export function planDeleteJsoncPaths(
+  path: string,
+  paths: ReadonlyArray<ReadonlyArray<string | number>>,
+): TextFilePlan | undefined {
+  return planUpdateJsoncPaths(
+    path,
+    paths.map((keys) => ({ op: "delete" as const, path: keys })),
+  )
+}
+
+export type JsoncPathUpdate =
+  | { op: "set"; path: ReadonlyArray<string | number>; value: unknown }
+  | { op: "delete"; path: ReadonlyArray<string | number> }
+
+/** Plan ordered set/delete operations against one evolving text buffer. */
+export function planUpdateJsoncPaths(
+  path: string,
+  updates: readonly JsoncPathUpdate[],
+): TextFilePlan | undefined {
   if (!existsSync(path)) return
   const decoded = readConfigTextFile(path)
   const before = decoded.text
   parseJsoncObject(before, path)
-  const after = applyValue(before, keys, undefined)
+  let after = before
+  for (const update of updates) {
+    after = applyValue(
+      after,
+      [...update.path],
+      update.op === "set" ? update.value : undefined,
+    )
+  }
   parseJsoncObject(after, path)
   return { path, before, after, changed: after !== before, encoding: decoded.encoding }
 }

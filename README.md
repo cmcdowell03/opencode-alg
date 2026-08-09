@@ -7,7 +7,7 @@
 | Tool | Purpose |
 |---|---|
 | `alg_templates` | List built-in graph templates |
-| `alg_models` | View, set, or clear the strict project model snapshot source |
+| `alg_models` | View, set, or clear strict project model + effort snapshot sources |
 | `alg_criteria` | Update/lock criteria on an already planned run; normally pass criteria to `alg_plan` |
 | `alg_plan` | Validate and persist a DAG without executing it |
 | `alg_run` | Execute ready-set waves under an exclusive run lease |
@@ -70,19 +70,33 @@ On Windows use `file:///C:/...`, with forward slashes. The installer does **not*
 Open the command palette under **ALG → Choose agent models**, or enter `/alg-models`:
 
 1. Choose exactly `explorer`, `researcher`, `implementer`, or `checker`.
-2. Review the current global selection.
+2. Review the current global model and effort.
 3. Search models exposed by the connected/configured `api.state.provider` catalog. Deprecated models are omitted.
-4. Pick a model or **Inherit OpenCode default**.
+4. Pick a model or **Inherit OpenCode default**. Inherit removes both global role fields.
+5. If that runtime model has variants, search a second picker containing **Default model effort** plus only that model's sorted, non-disabled `variants` keys. Models without variants save default effort immediately.
 
-Selecting a model uses OpenCode 1.18.3's official global config PATCH API and writes only `agent.<role>.model`; manual `@role` and ALG runs without a project override therefore resolve the same global agent model. That API deep-merges but cannot delete an optional property: its schema rejects `null` and omission is a no-op. Consequently, **Inherit** uses a guarded local JSONC structural deletion with exact backups. On an attached/remote TUI where the server config is not locally accessible, Inherit fails with an error toast instead of touching the wrong path; remove `agent.<role>.model` on the server and restart.
+Effort is OpenCode's public `variant` field, not a provider-independent low/medium/high enum. Variant IDs are model-specific exact catalog keys. Selecting an explicit effort uses OpenCode 1.18.3's official global config PATCH API to write `agent.<role>.model` and `agent.<role>.variant` together; model-default effort also uses a model-only PATCH when no role variant currently exists. Because that API deep-merges and cannot delete an optional property, **Default model effort** with an existing variant instead sets the selected model and deletes `variant` in one local JSONC transaction; **Inherit** locally deletes both fields in one transaction. Local edits require the API read's actual response URL to be loopback and exactly one local config source whose role fields exactly match that read. Zero, ambiguous, split, mismatched, URL-less, or non-loopback sources fail closed with server-side editing instructions. Successful edits preserve comments, encoding/BOM, unrelated config, and exact adjacent backups.
 
-At startup the server captures the merged OpenCode config. Model precedence frozen into each new run is:
+Project-scoped selections can be managed directly (use the returned `revision` for optional compare-and-swap):
 
-1. project ALG model selected by `alg_models`;
-2. merged OpenCode `agent.<role>.model`;
-3. merged OpenCode top-level `model` as the role fallback.
+```text
+# complete selection; omit variant for model-default effort
+alg_models agent="implementer" provider_id="openai" model_id="gpt-5" variant="high"
+# update only effort on that existing project role model
+alg_models agent="implementer" variant="medium" revision=1
+# preserve the project model but return it to model-default effort
+alg_models agent="implementer" clear_variant=true revision=2
+# remove the complete project role selection and inherit merged global/default config
+alg_models agent="implementer" clear=true revision=3
+```
 
-Provider/model values split at the first slash, so model IDs may themselves contain slashes. These available selections are copied into the run's `model_snapshot`; changing project or global settings later cannot rewrite it. If a role has no project, role, or top-level model, ALG omits `body.model` and the provider/default remains SDK-resolved. Clear the project choice with `alg_models clear=true` before planning a run if merged-config/default inheritance is desired. Global API saves dispose active server instances; local Inherit saves require restart. In both cases, quit and restart before relying on the new selection.
+`variant` and `clear_variant` require an existing project role model when used without `provider_id`/`model_id`. A complete model set replaces the complete project role selection, so omitting `variant` intentionally removes any prior project variant. At startup the server captures merged OpenCode config. Model/effort precedence frozen into each new run is:
+
+1. complete project ALG role selection from `alg_models`;
+2. merged OpenCode `agent.<role>.model` plus that role's `agent.<role>.variant`;
+3. merged OpenCode top-level `model` as model-only fallback.
+
+The role variant is captured only when that same role has an explicit valid role model; it never attaches to a top-level fallback. Project selection overrides the role selection as a unit. Provider/model values split at the first slash, so model IDs may themselves contain slashes. Each new run copies model and optional variant into its immutable `model_snapshot`; later project/global changes cannot rewrite an existing run, and every role attempt/retry uses its snapshot. Prompts send only `{ providerID, modelID }` under `body.model`, with effort separately as top-level `body.variant`; absent values are omitted. Clear the project choice before planning when inheritance is desired. **Quit and restart OpenCode after every global model/effort change**, whether API- or local-edit-backed, before relying on it.
 
 ## Typical use
 

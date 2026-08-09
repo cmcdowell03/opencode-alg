@@ -9,10 +9,12 @@
 
 ## Models
 
-- `/alg-models` edits global `agent.<role>.model` for explorer/researcher/implementer/checker.
-- Snapshot precedence at plan creation: project `alg_models`, merged `agent.<role>.model`, then merged top-level `model`.
-- Model specs split at the first slash. When none is explicit, `body.model` is omitted and the provider/default remains SDK-resolved.
-- Inherit deletion is local JSONC-only on 1.18.3 because the global PATCH API deep-merges and cannot express deletion. For attached servers, edit the server's global config.
+- `/alg-models` edits global `agent.<role>.model` and optional `agent.<role>.variant` for explorer/researcher/implementer/checker. Choose a model, then choose **Default model effort** or one exact, non-disabled key dynamically read from that model's runtime `variants` catalog; there is no universal effort enum.
+- Project tool examples: full set `alg_models agent=checker provider_id=p model_id=m variant=exact-key`; variant-only update `agent=checker variant=other`; effort reset `agent=checker clear_variant=true`; full inheritance `agent=checker clear=true`. Add the current `revision` for CAS. Variant-only/reset requires an existing project role model; full set without `variant` selects model-default effort.
+- Snapshot precedence at plan creation: complete project `alg_models` selection, merged explicit `agent.<role>.model` plus its role `variant`, then merged top-level model-only `model`. A role variant never follows a top-level fallback.
+- Model specs split at the first slash. Runs freeze model + optional variant together, so later settings do not affect any role retry in an existing run. Prompts use model-only `{providerID, modelID}` in `body.model` and separate top-level `body.variant`; unset fields are omitted.
+- Explicit global effort PATCHes model and variant together; model-default effort uses a model-only PATCH when no variant exists. If a variant must be removed, Default effort locally sets the selected model and deletes variant in one JSONC transaction; Inherit locally deletes model and variant together. Local deletion requires a loopback API response URL and exactly one local role source matching that API read; unavailable/non-loopback URLs and zero, ambiguous, split, or mismatched sources fail closed. Successful edits preserve comments/encoding and create exact backups.
+- Quit and restart OpenCode after every global model/effort save before relying on the change.
 
 ## Runs
 

@@ -5,15 +5,36 @@ import serverModule from "../src/server.ts"
 import directPlugin from "../src/index.ts"
 import {
   acquireModelSettingsLock,
+  configuredAgentModels,
   loadModelSettings,
   modelSettingsLockPath,
   modelSettingsPath,
   saveModelSettings,
+  setAgentModelVariant,
   snapshotModels,
 } from "../src/models.ts"
 import { extractJson, runNodeSession } from "../src/sessions.ts"
-import { loadRun, persistRun, runContainedPath } from "../src/store.ts"
-import { removeProject, tempProject } from "./helpers.ts"
+import { createRun, loadRun, persistRun, runContainedPath } from "../src/store.ts"
+import { executeRun } from "../src/executor.ts"
+import { ModelRefSchema, ProjectModelSettingsSchema } from "../src/schemas.ts"
+import { executeContext, inertClient, removeProject, tempProject } from "./helpers.ts"
+
+function toolContext(project: string) {
+  return {
+    sessionID: "owner",
+    messageID: "message",
+    agent: "orchestrator",
+    directory: project,
+    worktree: project,
+    abort: new AbortController().signal,
+    ask: async () => {},
+    metadata: () => {},
+  } as any
+}
+
+function toolOutput(result: unknown): any {
+  return JSON.parse((result as { output: string }).output)
+}
 
 describe("models, SDK propagation, and registration", () => {
   test("JSON extraction accepts only a whole object or one anchored fence", () => {
@@ -45,7 +66,122 @@ describe("models, SDK propagation, and registration", () => {
     }
   })
 
-  test("session prompt passes exact structured model and handles field responses", async () => {
+  test("model-only settings stay valid while variants are trimmed, bounded, and strict", () => {
+    const legacy = {
+      schema_version: 1 as const,
+      revision: 4,
+      models: { explorer: { providerID: "provider", modelID: "model" } },
+      updated_at: "2026-08-09T00:00:00.000Z",
+    }
+    expect(ProjectModelSettingsSchema.parse(legacy)).toEqual(legacy)
+    expect(ModelRefSchema.parse({ providerID: "p", modelID: "m", variant: "  exact-key  " }))
+      .toEqual({ providerID: "p", modelID: "m", variant: "exact-key" })
+    for (const variant of ["", "   ", "x".repeat(129), 7, null]) {
+      expect(ModelRefSchema.safeParse({ providerID: "p", modelID: "m", variant }).success).toBe(false)
+    }
+    expect(ModelRefSchema.safeParse({ providerID: "p", modelID: "m", variant: "high", extra: true }).success)
+      .toBe(false)
+  })
+
+  test("alg_models supports full set, variant-only update, clear_variant, clear, CAS, and rejects incompatible args", async () => {
+    const project = tempProject()
+    try {
+      const tools = createAlgTools({
+        client: inertClient(),
+        project: { id: "project" },
+        directory: project,
+        worktree: project,
+      } as never)
+      const context = toolContext(project)
+
+      const setDefault = toolOutput(await tools.alg_models.execute({
+        agent: "explorer",
+        provider_id: "provider",
+        model_id: "model",
+      }, context))
+      expect(setDefault.models.explorer).toEqual({ providerID: "provider", modelID: "model" })
+
+      const setFull = toolOutput(await tools.alg_models.execute({
+        agent: "explorer",
+        provider_id: "provider-2",
+        model_id: "model-2",
+        variant: "  exact-effort  ",
+        revision: setDefault.revision,
+      }, context))
+      expect(setFull.models.explorer).toEqual({
+        providerID: "provider-2",
+        modelID: "model-2",
+        variant: "exact-effort",
+      })
+
+      const variantOnly = toolOutput(await tools.alg_models.execute({
+        agent: "explorer",
+        variant: "other-effort",
+        revision: setFull.revision,
+      }, context))
+      expect(variantOnly.models.explorer).toEqual({
+        providerID: "provider-2",
+        modelID: "model-2",
+        variant: "other-effort",
+      })
+
+      const stale = toolOutput(await tools.alg_models.execute({
+        agent: "explorer",
+        variant: "stale",
+        revision: setFull.revision,
+      }, context))
+      expect(stale.error).toContain("changed concurrently")
+
+      const clearedVariant = toolOutput(await tools.alg_models.execute({
+        agent: "explorer",
+        clear_variant: true,
+        revision: variantOnly.revision,
+      }, context))
+      expect(clearedVariant.models.explorer).toEqual({ providerID: "provider-2", modelID: "model-2" })
+
+      const resetWithoutVariant = toolOutput(await tools.alg_models.execute({
+        agent: "explorer",
+        provider_id: "provider-3",
+        model_id: "model-3",
+        revision: clearedVariant.revision,
+      }, context))
+      expect(resetWithoutVariant.models.explorer.variant).toBeUndefined()
+
+      const cleared = toolOutput(await tools.alg_models.execute({
+        agent: "explorer",
+        clear: true,
+        revision: resetWithoutVariant.revision,
+      }, context))
+      expect(cleared.models.explorer).toBeUndefined()
+      expect(toolOutput(await tools.alg_models.execute({ agent: "explorer", variant: "x" }, context)).error)
+        .toContain("no project model selection")
+      expect(() => setAgentModelVariant(project, "explorer", "x")).toThrow(/no project model selection/)
+
+      const incompatible = [
+        { variant: "x" },
+        { agent: "explorer" },
+        { agent: "explorer", provider_id: "p" },
+        { agent: "explorer", model_id: "m" },
+        { agent: "explorer", clear: true, variant: "x" },
+        { agent: "explorer", clear: true, clear_variant: true },
+        { agent: "explorer", clear_variant: true, provider_id: "p", model_id: "m" },
+        { agent: "explorer", provider_id: "p", variant: "x" },
+      ]
+      for (const args of incompatible) {
+        expect(typeof toolOutput(await tools.alg_models.execute(args as never, context)).error).toBe("string")
+      }
+      expect(typeof toolOutput(await tools.alg_models.execute({
+        agent: "explorer",
+        provider_id: "p",
+        model_id: "m",
+        variant: " ",
+      }, context)).error).toBe("string")
+    } finally {
+      removeProject(project)
+    }
+  })
+
+  test("session prompt splits exact structured model and top-level variant", async () => {
     const project = tempProject()
     let promptOptions: any
     try {
@@ -66,7 +202,7 @@ describe("models, SDK propagation, and registration", () => {
           },
         },
       } as never
-      const model = { providerID: "provider-id", modelID: "model-id" }
+      const model = { providerID: "provider-id", modelID: "model-id", variant: "catalog-effort" }
       const result = await runNodeSession({
         client,
         parentSessionId: "parent",
@@ -78,11 +214,113 @@ describe("models, SDK propagation, and registration", () => {
       })
       expect(result.session_id).toBe("child-session")
       expect(result.parsed).toEqual({ passed: true, failures: [], score: 10 })
-      expect(promptOptions.body.model).toEqual(model)
+      expect(promptOptions.body.model).toEqual({ providerID: "provider-id", modelID: "model-id" })
+      expect(promptOptions.body.variant).toBe("catalog-effort")
+      expect(Object.keys(promptOptions.body).sort()).toEqual(["agent", "model", "parts", "variant"])
       expect(promptOptions.responseStyle).toBe("fields")
     } finally {
       removeProject(project)
     }
+  })
+
+  test("session prompt omits both model and variant when unset and only variant when model has none", async () => {
+    const bodies: Array<Record<string, unknown>> = []
+    const client = {
+      session: {
+        create: async () => ({ data: { id: `child-${bodies.length}` }, error: undefined }),
+        prompt: async (options: { body: Record<string, unknown> }) => {
+          bodies.push(options.body)
+          return { data: { parts: [] }, error: undefined }
+        },
+      },
+    } as never
+    const base = {
+      client,
+      parentSessionId: "parent",
+      agent: "explorer" as const,
+      title: "test",
+      userPrompt: "map",
+      directory: tempProject(),
+    }
+    await runNodeSession(base)
+    await runNodeSession({ ...base, model: { providerID: "p", modelID: "m" } })
+    expect(Object.hasOwn(bodies[0]!, "model")).toBe(false)
+    expect(Object.hasOwn(bodies[0]!, "variant")).toBe(false)
+    expect(bodies[1]!.model).toEqual({ providerID: "p", modelID: "m" })
+    expect(Object.hasOwn(bodies[1]!, "variant")).toBe(false)
+  })
+
+  test("executor propagates each snapshotted role variant through retries", async () => {
+    const project = tempProject()
+    try {
+      const run = createRun({
+        goal: "variant propagation",
+        criteria: ["valid"],
+        graph: {
+          name: "variant-roles",
+          max_global_attempts: 5,
+          max_concurrency: 4,
+          nodes: [
+            { id: "explore", agent: "explorer", depends_on: [], loop: { max_attempts: 2, gate: "schema" } },
+            { id: "research", agent: "researcher", depends_on: [] },
+            { id: "implement", agent: "implementer", depends_on: [] },
+            { id: "check", agent: "checker", depends_on: [] },
+          ],
+        },
+        projectDirectory: project,
+        ownerSessionId: "session-owner",
+        modelSnapshot: {
+          explorer: { providerID: "p", modelID: "explore", variant: "explore-effort" },
+          researcher: { providerID: "p", modelID: "research", variant: "research-effort" },
+          implementer: { providerID: "p", modelID: "implement", variant: "implement-effort" },
+          checker: { providerID: "p", modelID: "check", variant: "check-effort" },
+        },
+      })
+      const seen: Record<string, string[]> = {}
+      let explorerAttempts = 0
+      const completed = await executeRun(run, {
+        ...executeContext(project),
+        sessionRunner: async (options) => {
+          ;(seen[options.agent] ??= []).push(options.model?.variant ?? "missing")
+          if (options.agent === "explorer" && explorerAttempts++ === 0) {
+            return { session_id: "explore-1", text: "", parsed: null, error: "retry" }
+          }
+          const parsed = options.agent === "explorer"
+            ? { query: "q", map: [{ path: "x", role: "r" }], key_hits: [], next: "none" }
+            : options.agent === "researcher"
+              ? { answer: "a", evidence: [], constraints: [], options: [], acceptance_criteria: ["valid"], risks: [] }
+              : options.agent === "implementer"
+                ? { summary: ["done"], files_touched: [], commands_run: [], risks: [], done: true }
+                : { passed: true, failures: [], score: 10 }
+          return { session_id: `${options.agent}-ok`, text: "", parsed }
+        },
+      })
+      expect(completed.status).toBe("done")
+      expect(seen).toEqual({
+        explorer: ["explore-effort", "explore-effort"],
+        researcher: ["research-effort"],
+        implementer: ["implement-effort"],
+        checker: ["check-effort"],
+      })
+    } finally {
+      removeProject(project)
+    }
+  })
+
+  test("configured role variants require an explicit valid role model and project selections replace them", () => {
+    expect(configuredAgentModels({
+      model: "fallback/base",
+      agent: {
+        explorer: { model: "role/explorer", variant: " role-effort " },
+        researcher: { variant: "must-not-follow-fallback" },
+        implementer: { model: "invalid", variant: "ignored" },
+      },
+    })).toEqual({
+      explorer: { providerID: "role", modelID: "explorer", variant: "role-effort" },
+      researcher: { providerID: "fallback", modelID: "base" },
+      implementer: { providerID: "fallback", modelID: "base" },
+      checker: { providerID: "fallback", modelID: "base" },
+    })
   })
 
   test("SDK field errors are returned instead of being mistaken for data", async () => {

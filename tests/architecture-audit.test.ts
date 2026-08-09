@@ -426,9 +426,13 @@ describe("architecture audit remediation", () => {
       })
       expect(configuredAgentModels({
         model: "global/base/model",
-        agent: { explorer: { model: "role/explorer/model" } },
+        agent: {
+          explorer: { model: "role/explorer/model", variant: "role-effort" },
+          researcher: { variant: "must-not-follow-fallback" },
+          checker: { model: "global/checker", variant: "global-checker-effort" },
+        },
       })).toMatchObject({
-        explorer: { providerID: "role", modelID: "explorer/model" },
+        explorer: { providerID: "role", modelID: "explorer/model", variant: "role-effort" },
         researcher: { providerID: "global", modelID: "base/model" },
       })
 
@@ -441,7 +445,11 @@ describe("architecture audit remediation", () => {
       const hooks = await serverModule.server(plugin)
       await hooks.config!({
         model: "global/base-model",
-        agent: { explorer: { model: "role/explorer-model" } },
+        agent: {
+          explorer: { model: "role/explorer-model", variant: "role-effort" },
+          researcher: { variant: "fallback-must-not-use-this" },
+          checker: { model: "global/checker-model", variant: "global-checker-effort" },
+        },
       } as never)
       const planned = await hooks.tool!.alg_plan!.execute({
         goal: "snapshot",
@@ -451,13 +459,18 @@ describe("architecture audit remediation", () => {
       const runId = toolOutput(planned).run_id
       const initial = loadRun(project, runId)!
       expect(initial.model_snapshot).toMatchObject({
-        explorer: { providerID: "role", modelID: "explorer-model" },
+        explorer: { providerID: "role", modelID: "explorer-model", variant: "role-effort" },
         researcher: { providerID: "global", modelID: "base-model" },
         implementer: { providerID: "global", modelID: "base-model" },
         checker: { providerID: "project", modelID: "checker-model" },
       })
+      expect(initial.model_snapshot.researcher?.variant).toBeUndefined()
+      expect(initial.model_snapshot.checker?.variant).toBeUndefined()
       await hooks.config!({ model: "later/changed" } as never)
       expect(loadRun(project, runId)!.model_snapshot).toEqual(initial.model_snapshot)
+      expect(() => {
+        initial.model_snapshot.explorer!.variant = "mutated"
+      }).toThrow()
       expect(configuredAgentModels({})).toEqual({})
     } finally {
       removeProject(project)

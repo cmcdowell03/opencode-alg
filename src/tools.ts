@@ -7,7 +7,12 @@ import { getTemplate, listTemplates } from "./templates.ts"
 import type { GraphDef, RunState } from "./types.ts"
 import type { AgentModelMap } from "./types.ts"
 import { mutateOwnedRun, resolveOwnedRun, transferRunOwnership } from "./ownership.ts"
-import { loadModelSettings, setAgentModel, snapshotModels } from "./models.ts"
+import {
+  loadModelSettings,
+  setAgentModel,
+  setAgentModelVariant,
+  snapshotModels,
+} from "./models.ts"
 import { canonicalContainedDirectory, canonicalDirectory, isContained } from "./paths.ts"
 
 function ok(title: string, data: unknown, meta?: Record<string, unknown>) {
@@ -111,32 +116,63 @@ export function createAlgTools(
     }),
 
     alg_models: tool({
-      description: "View, set, or clear strict project-scoped ALG per-agent model selections.",
+      description: "View, set, or clear strict project-scoped ALG per-agent model selections and model-specific effort variants.",
       args: {
         agent: tool.schema.enum(["explorer", "researcher", "implementer", "checker"]).optional(),
         provider_id: tool.schema.string().min(1).max(128).optional(),
         model_id: tool.schema.string().min(1).max(256).optional(),
+        variant: tool.schema.string().trim().min(1).max(128).describe("Model-specific effort as an exact variant key from that model's catalog.").optional(),
+        clear_variant: tool.schema.boolean().optional(),
         clear: tool.schema.boolean().optional(),
         revision: tool.schema.number().int().nonnegative().optional(),
       },
       async execute(args, context) {
         try {
           const { project } = roots(plugin, context)
+          const hasProvider = args.provider_id !== undefined
+          const hasModel = args.model_id !== undefined
+          const hasVariant = args.variant !== undefined
           if (!args.agent) {
-            if (args.provider_id || args.model_id || args.clear) throw new Error("agent is required to change a model")
+            if (hasProvider || hasModel || hasVariant || args.clear || args.clear_variant) {
+              throw new Error("agent is required to change a model or variant")
+            }
             return ok("alg models", loadModelSettings(project))
           }
           if (args.clear) {
-            if (args.provider_id || args.model_id) throw new Error("clear cannot be combined with provider_id/model_id")
+            if (hasProvider || hasModel || hasVariant || args.clear_variant) {
+              throw new Error("clear cannot be combined with provider_id, model_id, variant, or clear_variant")
+            }
             return ok("alg models", setAgentModel(project, args.agent, null, args.revision))
           }
-          if (!args.provider_id || !args.model_id) throw new Error("provider_id and model_id are both required")
+          if (args.clear_variant) {
+            if (hasProvider || hasModel || hasVariant) {
+              throw new Error("clear_variant cannot be combined with provider_id, model_id, or variant")
+            }
+            return ok(
+              "alg models",
+              setAgentModelVariant(project, args.agent, null, args.revision),
+            )
+          }
+          if (hasProvider !== hasModel) throw new Error("provider_id and model_id are both required")
+          if (!hasProvider && hasVariant) {
+            return ok(
+              "alg models",
+              setAgentModelVariant(project, args.agent, args.variant!, args.revision),
+            )
+          }
+          if (!hasProvider) {
+            throw new Error("provide provider_id and model_id, variant, clear_variant=true, or clear=true")
+          }
           return ok(
             "alg models",
             setAgentModel(
               project,
               args.agent,
-              { providerID: args.provider_id, modelID: args.model_id },
+              {
+                providerID: args.provider_id!,
+                modelID: args.model_id!,
+                ...(hasVariant ? { variant: args.variant } : {}),
+              },
               args.revision,
             ),
           )

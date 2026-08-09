@@ -32,6 +32,8 @@ export type GateKind = "schema" | "shell" | "all"
 export interface ModelRef {
   providerID: string
   modelID: string
+  /** OpenCode model-specific variant/catalog key (for example, reasoning effort). */
+  variant?: string
 }
 
 export type AgentModelMap = Partial<Record<ModelAgent, ModelRef>>

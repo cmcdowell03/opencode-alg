@@ -18,7 +18,12 @@ function sandbox(): string {
   return path
 }
 
-function provider(id: string, models: Array<{ id: string; name?: string; status?: string }>): any {
+function provider(id: string, models: Array<{
+  id: string
+  name?: string
+  status?: string
+  variants?: Record<string, { disabled?: boolean }>
+}>): any {
   return {
     id,
     name: id.toUpperCase(),
@@ -30,6 +35,7 @@ function provider(id: string, models: Array<{ id: string; name?: string; status?
       providerID: id,
       name: model.name ?? model.id,
       status: model.status ?? "active",
+      variants: model.variants,
     }])),
   }
 }
@@ -49,6 +55,8 @@ function mockApi(options: {
   providers?: any[]
   updateError?: unknown
   getError?: unknown
+  /** Null simulates a response whose URL is unavailable. */
+  responseUrl?: string | null
 } = {}) {
   const config = structuredClone(options.config ?? {})
   const dialogs: any[] = []
@@ -82,8 +90,16 @@ function mockApi(options: {
         config: {
           async get() {
             return options.getError
-              ? { data: undefined, error: options.getError }
-              : { data: structuredClone(config), error: undefined }
+              ? { data: undefined, error: options.getError, response: { url: "" } }
+              : {
+                  data: structuredClone(config),
+                  error: undefined,
+                  response: {
+                    url: options.responseUrl === undefined
+                      ? "http://127.0.0.1:4096/global/config"
+                      : options.responseUrl ?? "",
+                  },
+                }
           },
           async update(input: any) {
             updates.push(structuredClone(input))
@@ -174,7 +190,7 @@ describe("OpenCode 1.18.3 ALG TUI model picker", () => {
   test("all four roles open a searchable picker and display current global selection", async () => {
     const config = {
       agent: {
-        explorer: { model: "p/explore" },
+        explorer: { model: "p/explore", variant: "deep" },
         researcher: { model: "p/research" },
         implementer: { model: "p/implement" },
         checker: { model: "p/check" },
@@ -185,6 +201,9 @@ describe("OpenCode 1.18.3 ALG TUI model picker", () => {
       await openAlgModels(mock.api)
       const roleDialog = mock.dialogs.at(-1)
       expect(roleDialog.options.find((item: any) => item.value === role).description).toContain(config.agent[role as keyof typeof config.agent].model)
+      expect(roleDialog.options.find((item: any) => item.value === role).description).toContain(
+        role === "explorer" ? "deep" : "Default model effort",
+      )
       roleDialog.onSelect(roleDialog.options.find((item: any) => item.value === role))
       const modelDialog = mock.dialogs.at(-1)
       expect(modelDialog.title).toContain(config.agent[role as keyof typeof config.agent].model)
@@ -196,7 +215,11 @@ describe("OpenCode 1.18.3 ALG TUI model picker", () => {
   test("catalog uses connected providers, excludes deprecated models, and includes inherit", async () => {
     const providers = [
       provider("alpha", [
-        { id: "good", name: "Good" },
+        {
+          id: "good",
+          name: "Good",
+          variants: { zeta: {}, disabled: { disabled: true }, alpha: {} },
+        },
         { id: "old", name: "Old", status: "deprecated" },
       ]),
       provider("beta", [{ id: "beta-model" }]),
@@ -205,6 +228,7 @@ describe("OpenCode 1.18.3 ALG TUI model picker", () => {
       "alpha/good",
       "beta/beta-model",
     ])
+    expect(modelCatalog(providers as never)[0]!.variants).toEqual(["alpha", "zeta"])
     const mock = mockApi({ providers })
     await openAlgModels(mock.api)
     const roles = mock.dialogs.at(-1)
@@ -213,6 +237,38 @@ describe("OpenCode 1.18.3 ALG TUI model picker", () => {
     expect(choices[0].value).toBeNull()
     expect(choices[0].title).toBe("Inherit OpenCode default")
     expect(choices.map((item: any) => item.value)).not.toContain("alpha/old")
+  })
+
+  test("a catalog model with variants opens a searchable second picker and patches exact effort", async () => {
+    const mock = mockApi({
+      config: { agent: { explorer: { model: "p/m", variant: "zeta" } } },
+      responseUrl: "https://remote.example/global/config",
+      providers: [provider("p", [{
+        id: "m",
+        variants: { zeta: {}, disabled: { disabled: true }, alpha: {} },
+      }])],
+    })
+    await openAlgModels(mock.api)
+    const roles = mock.dialogs.at(-1)
+    roles.onSelect(roles.options.find((item: any) => item.value === "explorer"))
+    const models = mock.dialogs.at(-1)
+    models.onSelect(models.options.find((item: any) => item.value === "p/m"))
+
+    expect(mock.updates).toEqual([])
+    const efforts = mock.dialogs.at(-1)
+    expect(efforts.placeholder).toContain("Search")
+    expect(efforts.current).toBe("zeta")
+    expect(efforts.options.map((item: any) => item.value)).toEqual([null, "alpha", "zeta"])
+    expect(efforts.options[0].title).toBe("Default model effort")
+    efforts.onSelect(efforts.options.find((item: any) => item.value === "alpha"))
+    await settle()
+
+    expect(mock.updates).toEqual([{
+      config: { agent: { explorer: { model: "p/m", variant: "alpha" } } },
+    }])
+    expect(mock.toasts.at(-1)).toMatchObject({ variant: "success" })
+    expect(mock.toasts.at(-1).message).toContain("alpha")
+    expect(mock.toasts.at(-1).message).toContain("restart OpenCode")
   })
 
   test("saves one global role through the official API without changing other config", async () => {
@@ -226,6 +282,7 @@ describe("OpenCode 1.18.3 ALG TUI model picker", () => {
         },
       },
       providers: [provider("new", [{ id: "implementer-model" }])],
+      responseUrl: null,
     })
     await openAlgModels(mock.api)
     const roles = mock.dialogs.at(-1)
@@ -244,14 +301,14 @@ describe("OpenCode 1.18.3 ALG TUI model picker", () => {
     expect(mock.toasts.at(-1).message).toContain("restart OpenCode")
   })
 
-  test("inherit structurally clears only that role and creates an exact backup", async () => {
+  test("inherit structurally clears that role's model and variant in one plan and creates an exact backup", async () => {
     const configDir = sandbox()
     const file = join(configDir, "opencode.jsonc")
     const before = `{
   // preserve this comment
   "username": "keep",
   "agent": {
-    "explorer": { "model": "old/explorer", "description": "keep description" },
+    "explorer": { "model": "old/explorer", "variant": "deep", "description": "keep description" },
     "checker": { "model": "old/checker" },
   },
 }
@@ -259,7 +316,12 @@ describe("OpenCode 1.18.3 ALG TUI model picker", () => {
     writeFileSync(file, before)
     const mock = mockApi({
       configDir,
-      config: { agent: { explorer: { model: "old/explorer" }, checker: { model: "old/checker" } } },
+      config: {
+        agent: {
+          explorer: { model: "old/explorer", variant: "deep" },
+          checker: { model: "old/checker" },
+        },
+      },
     })
     await openAlgModels(mock.api)
     const roles = mock.dialogs.at(-1)
@@ -273,13 +335,135 @@ describe("OpenCode 1.18.3 ALG TUI model picker", () => {
     expect(after).toContain("// preserve this comment")
     expect(data.username).toBe("keep")
     expect(data.agent.explorer.model).toBeUndefined()
+    expect(data.agent.explorer.variant).toBeUndefined()
     expect(data.agent.explorer.description).toBe("keep description")
     expect(data.agent.checker.model).toBe("old/checker")
     const names = readdirSync(configDir).filter((name) => name.startsWith("opencode.jsonc.alg-backup-"))
     expect(names).toHaveLength(1)
     expect(readFileSync(join(configDir, names[0]!), "utf8")).toBe(before)
+    expect(mock.updates).toEqual([])
     expect(mock.toasts.at(-1).variant).toBe("success")
     expect(mock.toasts.at(-1).message).toContain("restart OpenCode")
+  })
+
+  test("default effort atomically sets a changed model and deletes variant with BOM/comment/exact-backup preservation", async () => {
+    const configDir = sandbox()
+    const file = join(configDir, "opencode.jsonc")
+    const text = `{
+  // keep this comment
+  "username": "keep",
+  "agent": {
+    "explorer": { "model": "p/old", "variant": "deep", "description": "keep" },
+    "checker": { "model": "p/check", "variant": "other" },
+  },
+}
+`
+    const before = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(text)])
+    writeFileSync(file, before)
+    const mock = mockApi({
+      configDir,
+      config: { agent: { explorer: { model: "p/old", variant: "deep" } } },
+      providers: [provider("p", [{ id: "new", variants: { deep: {}, light: {} } }])],
+    })
+    await openAlgModels(mock.api)
+    const roles = mock.dialogs.at(-1)
+    roles.onSelect(roles.options.find((item: any) => item.value === "explorer"))
+    const models = mock.dialogs.at(-1)
+    models.onSelect(models.options.find((item: any) => item.value === "p/new"))
+    const efforts = mock.dialogs.at(-1)
+    efforts.onSelect(efforts.options.find((item: any) => item.value === null))
+    await settle()
+
+    expect(mock.updates).toEqual([])
+    const bytes = readFileSync(file)
+    expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf])
+    const after = bytes.subarray(3).toString("utf8")
+    const data = parse(after) as any
+    expect(after).toContain("// keep this comment")
+    expect(data.username).toBe("keep")
+    expect(data.agent.explorer).toEqual({ model: "p/new", description: "keep" })
+    expect(data.agent.checker).toEqual({ model: "p/check", variant: "other" })
+    const backups = readdirSync(configDir).filter((name) => name.startsWith("opencode.jsonc.alg-backup-"))
+    expect(backups).toHaveLength(1)
+    expect(readFileSync(join(configDir, backups[0]!))).toEqual(before)
+    expect(mock.toasts.at(-1).message).toContain("Default model effort")
+  })
+
+  test("non-loopback response rejects a stale exact-match local file without API call or write", async () => {
+    const configDir = sandbox()
+    const file = join(configDir, "opencode.jsonc")
+    const before = `{"agent":{"explorer":{"model":"p/m","variant":"deep"}}}\n`
+    writeFileSync(file, before)
+    const defaultMock = mockApi({
+      configDir,
+      config: { agent: { explorer: { model: "p/m", variant: "deep" } } },
+      providers: [provider("p", [{ id: "m", variants: { deep: {} } }])],
+      responseUrl: "https://remote.example/global/config",
+    })
+    await openAlgModels(defaultMock.api)
+    let dialog = defaultMock.dialogs.at(-1)
+    dialog.onSelect(dialog.options.find((item: any) => item.value === "explorer"))
+    dialog = defaultMock.dialogs.at(-1)
+    dialog.onSelect(dialog.options.find((item: any) => item.value === "p/m"))
+    dialog = defaultMock.dialogs.at(-1)
+    dialog.onSelect(dialog.options.find((item: any) => item.value === null))
+    await settle()
+    expect(defaultMock.updates).toEqual([])
+    expect(defaultMock.toasts.at(-1)).toMatchObject({ variant: "error" })
+    expect(defaultMock.toasts.at(-1).message).toContain("attached/remote")
+    expect(readFileSync(file, "utf8")).toBe(before)
+    expect(readdirSync(configDir).filter((name) => name.includes("alg-backup"))).toEqual([])
+  })
+
+  test("unavailable URL, ambiguous sources, and mismatched local role values fail closed", async () => {
+    const cases: Array<{
+      name: string
+      responseUrl?: string | null
+      files: Record<string, string>
+      message: string
+    }> = [
+      {
+        name: "unavailable-url",
+        responseUrl: null,
+        files: { "opencode.jsonc": `{"agent":{"checker":{"model":"p/check","variant":"strict"}}}\n` },
+        message: "response URL unavailable",
+      },
+      {
+        name: "ambiguous",
+        files: {
+          "config.json": `{"agent":{"checker":{"model":"p/check","variant":"strict"}}}\n`,
+          "opencode.jsonc": `{"agent":{"checker":{"model":"p/check","variant":"strict"}}}\n`,
+        },
+        message: "ambiguous or split",
+      },
+      {
+        name: "mismatched",
+        files: { "opencode.jsonc": `{"agent":{"checker":{"model":"p/other","variant":"strict"}}}\n` },
+        message: "does not match",
+      },
+    ]
+    for (const item of cases) {
+      const configDir = sandbox()
+      for (const [name, text] of Object.entries(item.files)) writeFileSync(join(configDir, name), text)
+      const before = Object.fromEntries(Object.keys(item.files).map((name) => [name, readFileSync(join(configDir, name), "utf8")]))
+      const mock = mockApi({
+        configDir,
+        config: { agent: { checker: { model: "p/check", variant: "strict" } } },
+        responseUrl: item.responseUrl,
+      })
+      await openAlgModels(mock.api)
+      let dialog = mock.dialogs.at(-1)
+      dialog.onSelect(dialog.options.find((option: any) => option.value === "checker"))
+      dialog = mock.dialogs.at(-1)
+      dialog.onSelect(dialog.options.find((option: any) => option.value === null))
+      await settle()
+      expect(mock.updates, item.name).toEqual([])
+      expect(mock.toasts.at(-1).message, item.name).toContain(item.message)
+      expect(readdirSync(configDir).filter((name) => name.includes("alg-backup")), item.name).toEqual([])
+      for (const [name, text] of Object.entries(before)) {
+        expect(readFileSync(join(configDir, name), "utf8"), item.name).toBe(text)
+      }
+    }
   })
 
   test("save and global-read failures produce error toasts", async () => {
@@ -300,5 +484,32 @@ describe("OpenCode 1.18.3 ALG TUI model picker", () => {
     await openAlgModels(readMock.api)
     expect(readMock.toasts.at(-1)).toMatchObject({ variant: "error", title: "ALG models unavailable" })
     expect(readMock.toasts.at(-1).message).toContain("offline")
+  })
+
+  test("explicit-variant API failure leaves the local source untouched", async () => {
+    const configDir = sandbox()
+    const file = join(configDir, "opencode.jsonc")
+    const before = `{"agent":{"explorer":{"model":"p/m","variant":"deep"}}}\n`
+    writeFileSync(file, before)
+    const mock = mockApi({
+      configDir,
+      config: { agent: { explorer: { model: "p/m", variant: "deep" } } },
+      providers: [provider("p", [{ id: "m", variants: { deep: {}, light: {} } }])],
+      updateError: { message: "write denied" },
+    })
+    await openAlgModels(mock.api)
+    let dialog = mock.dialogs.at(-1)
+    dialog.onSelect(dialog.options.find((item: any) => item.value === "explorer"))
+    dialog = mock.dialogs.at(-1)
+    dialog.onSelect(dialog.options.find((item: any) => item.value === "p/m"))
+    dialog = mock.dialogs.at(-1)
+    dialog.onSelect(dialog.options.find((item: any) => item.value === "light"))
+    await settle()
+    expect(mock.updates).toEqual([{
+      config: { agent: { explorer: { model: "p/m", variant: "light" } } },
+    }])
+    expect(readFileSync(file, "utf8")).toBe(before)
+    expect(readdirSync(configDir).filter((name) => name.includes("alg-backup"))).toEqual([])
+    expect(mock.toasts.at(-1).message).toContain("write denied")
   })
 })

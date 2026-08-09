@@ -31,11 +31,13 @@ const boundedStrings = z.array(shortText).max(100)
 export const SafeIdSchema = safeId
 export const AlgAgentSchema = z.enum(ALG_AGENTS)
 export const ModelAgentSchema = z.enum(MODEL_AGENTS)
+export const ModelVariantSchema = z.string().trim().min(1).max(128)
 
 export const ModelRefSchema = z
   .object({
     providerID: z.string().trim().min(1).max(128),
     modelID: z.string().trim().min(1).max(256),
+    variant: ModelVariantSchema.optional(),
   })
   .strict()
 
