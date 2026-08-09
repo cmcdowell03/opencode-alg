@@ -1,0 +1,47 @@
+{
+  "name": "research-diamond",
+  "description": "Parallel explore lanes → synthesis research → fresh-child checker",
+  "max_global_attempts": 6,
+  "max_concurrency": 4,
+  "nodes": [
+    {
+      "id": "explore_a",
+      "agent": "explorer",
+      "depends_on": [],
+      "description": "Map surface A",
+      "inputs": { "goal": "$goal", "lane": "\"A\"" }
+    },
+    {
+      "id": "explore_b",
+      "agent": "explorer",
+      "depends_on": [],
+      "description": "Map surface B",
+      "inputs": { "goal": "$goal", "lane": "\"B\"" }
+    },
+    {
+      "id": "research",
+      "agent": "researcher",
+      "depends_on": ["explore_a", "explore_b"],
+      "description": "Synthesize findings + criteria",
+      "inputs": {
+        "goal": "$goal",
+        "explore_a": "explore_a",
+        "explore_b": "explore_b"
+      },
+      "loop": { "max_attempts": 2, "gate": "schema" }
+    },
+    {
+      "id": "check",
+      "agent": "checker",
+      "depends_on": ["research"],
+      "description": "Fresh-child quality gate — bounded criteria + claimed-output task payload",
+      "isolated_check": true,
+      "feedback_to": "research",
+      "inputs": {
+        "criteria": "$criteria",
+        "claimed": "research"
+      },
+      "loop": { "max_attempts": 2, "gate": "schema" }
+    }
+  ]
+}

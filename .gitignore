@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# OpenCode runtime state and durable local runs
+.opencode/
+**/.opencode/
+runs/
+**/runs/
+
+# Generated output and caches
+out/
+**/out/
+output/
+**/output/
+dist/
+**/dist/
+build/
+**/build/
+coverage/
+**/coverage/
+.cache/
+**/.cache/
+cache/
+**/cache/
+tmp/
+**/tmp/
+temp/
+**/temp/
+*.tsbuildinfo
+
+# Logs and local/live verification evidence
+*.log
+*.log.*
+live-verification*.json
+**/live-verification*.json
+live-verification*/
+**/live-verification*/
+verification-evidence*/
+**/verification-evidence*/
+
+# ALG installer backups, stale locks, and atomic-write leftovers
+*.alg-backup-*
+*.alg-tmp-*
+*.alg-stale-*
+*.stale-*
+*.bak
+*.backup
+*.tmp
+*.temp
+
+# OS noise
+.DS_Store
+Thumbs.db

@@ -1,0 +1,52 @@
+{
+  "name": "coding-diamond",
+  "description": "Explore → research → implement (with test loop) → fresh-child checker",
+  "max_global_attempts": 13,
+  "max_concurrency": 4,
+  "nodes": [
+    {
+      "id": "explore",
+      "agent": "explorer",
+      "depends_on": [],
+      "description": "Map relevant files and symbols",
+      "inputs": { "goal": "$goal" }
+    },
+    {
+      "id": "research",
+      "agent": "researcher",
+      "depends_on": ["explore"],
+      "description": "Constraints + hard acceptance criteria",
+      "inputs": {
+        "goal": "$goal",
+        "explore": "explore"
+      },
+      "loop": { "max_attempts": 2, "gate": "schema" }
+    },
+    {
+      "id": "implement",
+      "agent": "implementer",
+      "depends_on": ["research"],
+      "description": "Code + tests for the goal",
+      "inputs": {
+        "goal": "$goal",
+        "criteria": "$criteria",
+        "constraints": "research.constraints",
+        "acceptance_criteria": "research.acceptance_criteria"
+      },
+      "loop": { "max_attempts": 5, "gate": "schema" }
+    },
+    {
+      "id": "check",
+      "agent": "checker",
+      "depends_on": ["implement"],
+      "description": "Isolated quality gate",
+      "isolated_check": true,
+      "feedback_to": "implement",
+      "inputs": {
+        "criteria": "$criteria",
+        "claimed": "implement"
+      },
+      "loop": { "max_attempts": 5, "gate": "schema" }
+    }
+  ]
+}
