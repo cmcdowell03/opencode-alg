@@ -431,7 +431,7 @@ sequenceDiagram
     E->>P: Rename prepared temporary to current
     E->>B: Rotate staged prior current after commit
     E->>G: Prove current and backup reachability conservatively
-    G-->>E: Retain files; no physical deletion today
+    G-->>E: Retain files, no physical deletion today
     E->>L: Release
 ```
 
