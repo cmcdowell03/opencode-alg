@@ -10,6 +10,7 @@ import {
   type TextFilePlan,
 } from "./config-editor.ts"
 import { canonicalRootPath, resolveContainedPath } from "./paths.ts"
+import { formatSdkError } from "./diagnostics.ts"
 
 type GlobalConfig = TuiPluginApi["state"]["config"]
 type Client = TuiPluginApi["client"]
@@ -33,15 +34,7 @@ interface LocalRoleFields {
 }
 
 function errorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message
-  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
-    return error.message
-  }
-  try {
-    return JSON.stringify(error)
-  } catch {
-    return String(error)
-  }
+  return formatSdkError(error)
 }
 
 export function configuredGlobalModel(config: GlobalConfig, agent: ModelAgent): string | undefined {

@@ -1,7 +1,7 @@
 {
   "name": "research-diamond",
   "description": "Parallel explore lanes → synthesis research → fresh-child checker",
-  "max_global_attempts": 6,
+  "max_global_attempts": 8,
   "max_concurrency": 4,
   "nodes": [
     {
@@ -9,14 +9,16 @@
       "agent": "explorer",
       "depends_on": [],
       "description": "Map surface A",
-      "inputs": { "goal": "$goal", "lane": "\"A\"" }
+      "inputs": { "goal": "$goal", "lane": "\"A\"" },
+      "loop": { "max_attempts": 2, "gate": "schema" }
     },
     {
       "id": "explore_b",
       "agent": "explorer",
       "depends_on": [],
       "description": "Map surface B",
-      "inputs": { "goal": "$goal", "lane": "\"B\"" }
+      "inputs": { "goal": "$goal", "lane": "\"B\"" },
+      "loop": { "max_attempts": 2, "gate": "schema" }
     },
     {
       "id": "research",

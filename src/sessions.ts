@@ -7,6 +7,7 @@ import {
   MAX_WORKER_PROMPT_BYTES,
   assertTextBytes,
 } from "./limits.ts"
+import { formatSdkDiagnostic, formatSdkError } from "./diagnostics.ts"
 
 export type Client = PluginInput["client"]
 
@@ -65,15 +66,6 @@ function partsToText(parts: unknown): string {
   return text
 }
 
-function sdkError(error: unknown): string {
-  if (error instanceof Error) return error.message
-  try {
-    return JSON.stringify(error).slice(0, 1_000)
-  } catch {
-    return String(error).slice(0, 1_000)
-  }
-}
-
 /**
  * Uses a fresh SDK child session per attempt. This isolates message history from
  * sibling attempts; OpenCode project/system policy and filesystem access still apply.
@@ -102,7 +94,7 @@ ${jsonSchemaHint(opts.agent)}
       signal: opts.abort,
     })
     if (created.error) {
-      return { session_id: "", text: "", parsed: null, error: `session.create failed: ${sdkError(created.error)}` }
+      return { session_id: "", text: "", parsed: null, error: formatSdkDiagnostic("session.create failed: ", created.error) }
     }
     sessionId = created.data?.id ?? ""
     if (!sessionId) {
@@ -134,7 +126,7 @@ ${jsonSchemaHint(opts.agent)}
         session_id: sessionId,
         text: "",
         parsed: null,
-        error: `session.prompt failed: ${sdkError(prompted.error)}`,
+        error: formatSdkDiagnostic("session.prompt failed: ", prompted.error),
       }
     }
     const text = partsToText(prompted.data?.parts)
@@ -144,7 +136,7 @@ ${jsonSchemaHint(opts.agent)}
       session_id: sessionId,
       text: "",
       parsed: null,
-      error: error instanceof Error ? error.message : String(error),
+      error: formatSdkError(error),
     }
   }
 }

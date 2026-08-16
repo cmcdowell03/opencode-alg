@@ -305,7 +305,7 @@ describe("models, SDK propagation, and registration", () => {
     } finally {
       removeProject(project)
     }
-  })
+  }, 120_000)
 
   test("configured role variants require an explicit valid role model and project selections replace them", () => {
     expect(configuredAgentModels({

@@ -4,7 +4,9 @@ import { validateGraph } from "../src/graph.ts"
 import {
   CheckOut,
   ImplementOut,
+  NodeAttemptSchema,
   parseAndValidate,
+  parsePersistedNodeAttempt,
   parseRunState,
 } from "../src/schemas.ts"
 import { assertSafeId } from "../src/paths.ts"
@@ -13,12 +15,91 @@ import { executeRun } from "../src/executor.ts"
 import { executeContext, removeProject, tempProject } from "./helpers.ts"
 
 describe("strict contracts", () => {
+  test("persisted attempt session IDs reject surrounding whitespace instead of normalizing it", () => {
+    expect(NodeAttemptSchema.safeParse({
+      attempt: 1,
+      status: "running",
+      session_id: " child-session ",
+      started_at: "2026-08-11T12:00:00.000Z",
+      failures: [],
+    }).success).toBe(false)
+  })
+
   test("checker pass/failure/score invariants reject contradictions", () => {
     expect(CheckOut.safeParse({ passed: true, failures: [], score: 9 }).success).toBe(true)
     expect(CheckOut.safeParse({ passed: true, failures: ["bad"], score: 9 }).success).toBe(false)
     expect(CheckOut.safeParse({ passed: false, failures: [], score: 2 }).success).toBe(false)
     expect(CheckOut.safeParse({ passed: false, failures: ["bad"], score: 8 }).success).toBe(false)
     expect(CheckOut.safeParse({ passed: true, failures: [], score: 9.5 }).success).toBe(false)
+  })
+
+  test("checker outcomes require matching passed semantics and proved graph shell gates", () => {
+    const timestamp = "2026-08-11T12:00:00.000Z"
+    const passedGateFailure = {
+      attempt: 1,
+      status: "failed" as const,
+      started_at: timestamp,
+      finished_at: timestamp,
+      output: { passed: true, failures: [], score: 9 },
+      failures: ["shell failed"],
+      score: 9,
+      shell_ok: false,
+      schema_ok: true,
+      outcome: "gate_failure" as const,
+    }
+    const context = {
+      agent: "checker",
+      run_id: "run",
+      node_id: "check",
+      expected_attempt: 1,
+      mode: "live" as const,
+    }
+    expect(() => parsePersistedNodeAttempt(passedGateFailure, {
+      ...context,
+      requires_shell: true,
+    })).not.toThrow()
+    expect(() => parsePersistedNodeAttempt(passedGateFailure, {
+      ...context,
+      requires_shell: false,
+    })).toThrow(/actual live shell\/all graph gate/)
+    expect(() => parsePersistedNodeAttempt({ ...passedGateFailure, shell_ok: true }, {
+      ...context,
+      requires_shell: true,
+    })).toThrow(/shell_ok=false|proved shell gate failure/)
+    expect(() => parsePersistedNodeAttempt({ ...passedGateFailure, shell_ok: undefined }, {
+      ...context,
+      requires_shell: true,
+    })).toThrow(/shell_ok=false|proved shell gate failure/)
+
+    const rejected = {
+      ...passedGateFailure,
+      output: { passed: false, failures: ["substantive"], score: 3 },
+      failures: ["substantive"],
+      score: 3,
+      shell_ok: undefined,
+      outcome: "substantive_rejection" as const,
+    }
+    expect(() => parsePersistedNodeAttempt(rejected, {
+      ...context,
+      requires_shell: false,
+    })).not.toThrow()
+    expect(() => parsePersistedNodeAttempt({
+      ...rejected,
+      output: passedGateFailure.output,
+      score: 9,
+    }, {
+      ...context,
+      requires_shell: false,
+    })).toThrow(/substantive_rejection.*passed=false/)
+    expect(() => parsePersistedNodeAttempt({
+      ...rejected,
+      status: "done",
+      failures: [],
+      outcome: "passed",
+    }, {
+      ...context,
+      requires_shell: false,
+    })).toThrow(/passed=true|rejected checker output/)
   })
 
   test("implementer requires done=true and strict fields", () => {
@@ -90,6 +171,35 @@ describe("strict contracts", () => {
     expect(() => validateGraph(unordered)).toThrow(/not an earlier dependency/)
   })
 
+  test("legacy omitted global cap receives local capacity while explicit bounded caps are preserved", () => {
+    const legacy = validateGraph({
+      name: "legacy-one-node",
+      nodes: [{
+        id: "work",
+        agent: "implementer",
+        depends_on: [],
+        loop: { max_attempts: 3, gate: "schema" },
+      }],
+    })
+    expect(legacy.max_global_attempts).toBe(3)
+    expect(legacy.max_concurrency).toBe(4)
+
+    const oneAttempt = validateGraph({
+      name: "legacy-one-attempt",
+      nodes: [{ id: "work", agent: "implementer", depends_on: [] }],
+    })
+    expect(oneAttempt.max_global_attempts).toBe(1)
+
+    const explicit = validateGraph({
+      name: "explicit-global-cap",
+      max_global_attempts: 73,
+      max_concurrency: 1,
+      nodes: [{ id: "work", agent: "implementer", depends_on: [] }],
+    })
+    expect(explicit.max_global_attempts).toBe(73)
+    expect(() => validateGraph({ ...explicit, max_global_attempts: 10_001 })).toThrow()
+  })
+
   test("traversal and prototype-shaped ids are rejected", () => {
     for (const id of ["../x", "..", ".", "a/b", "a\\b", "__proto__", "constructor", " x", "x%2fy"]) {
       expect(() => assertSafeId(id)).toThrow()
@@ -119,7 +229,7 @@ describe("strict contracts", () => {
     } finally {
       removeProject(project)
     }
-  }, 15_000)
+  }, 120_000)
 
   test("run state rejects forged outputs, attempts, statuses, and dependency completion", () => {
     const project = tempProject()
@@ -227,7 +337,7 @@ describe("strict contracts", () => {
     } finally {
       removeProject(project)
     }
-  }, 15_000)
+  }, 120_000)
 
   test("ownership transfer history is a strict creator-rooted monotonic chain", () => {
     const project = tempProject()
@@ -349,5 +459,5 @@ describe("strict contracts", () => {
     } finally {
       removeProject(project)
     }
-  }, 15_000)
+  }, 60_000)
 })

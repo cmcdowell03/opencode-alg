@@ -11,6 +11,12 @@ import {
   saveGlobalAgentModel,
   type GlobalConfigRead,
 } from "./global-model-config.ts"
+import { openAlgRuns } from "./tui-runs.ts"
+import {
+  ALG_TUI_REGISTRATION_SERVICE,
+  ALG_TUI_REGISTRATION_TOKEN,
+} from "./tui-registration.ts"
+import { verifiedLiveSourceIdentity } from "./source-identity.ts"
 
 type GlobalConfig = TuiPluginApi["state"]["config"]
 type Provider = TuiPluginApi["state"]["provider"][number]
@@ -221,6 +227,7 @@ export async function openAlgModels(api: TuiPluginApi): Promise<void> {
 }
 
 export const tui: TuiPlugin = async (api) => {
+  const liveSource = verifiedLiveSourceIdentity("tui")
   api.keymap.registerLayer({
     commands: [
       {
@@ -233,13 +240,30 @@ export const tui: TuiPlugin = async (api) => {
           return openAlgModels(api)
         },
       },
+      {
+        name: "alg.runs",
+        title: "Browse child run sessions",
+        category: "ALG",
+        namespace: "palette",
+        slashName: "alg-runs",
+        run() {
+          return openAlgRuns(api)
+        },
+      },
     ],
   })
+  if (liveSource) {
+    await api.client.app.log({
+      service: ALG_TUI_REGISTRATION_SERVICE,
+      level: "info",
+      message: liveSource.message,
+    })
+  }
   try {
     await api.client.app.log({
-      service: "opencode-alg",
+      service: ALG_TUI_REGISTRATION_SERVICE,
       level: "info",
-      message: "ALG TUI command /alg-models registered",
+      message: ALG_TUI_REGISTRATION_TOKEN,
     })
   } catch {
     // Registration remains usable when optional startup evidence cannot be logged.

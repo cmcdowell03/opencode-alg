@@ -5,6 +5,7 @@ import { join } from "node:path"
 import { randomUUID } from "node:crypto"
 import {
   acquireFilesystemMutex,
+  FilesystemMutexContentionError,
   FilesystemMutexRecordSchema,
 } from "../src/filesystem-mutex.ts"
 import { removeProject, tempProject } from "./helpers.ts"
@@ -28,22 +29,56 @@ describe("restart-safe short filesystem mutexes", () => {
     const project = tempProject("alg-mutex-heartbeat-")
     try {
       const path = join(project, "heartbeat.lock")
+      // Keep this beyond-the-original-lease assertion stable under durable
+      // Windows/OneDrive writes while still exercising automatic renewal.
       const held = acquireFilesystemMutex(path, {
         owner: "long-critical-section",
-        leaseMs: 120,
-        heartbeatMs: 30,
+        leaseMs: 3_000,
+        heartbeatMs: 300,
       })
       const initialExpiry = JSON.parse(readFileSync(path, "utf8")).expires_at
-      await Bun.sleep(360)
+      await Bun.sleep(4_200)
       const renewedExpiry = JSON.parse(readFileSync(path, "utf8")).expires_at
       expect(Date.parse(renewedExpiry)).toBeGreaterThan(Date.parse(initialExpiry))
       expect(() => acquireFilesystemMutex(path, {
         owner: "stale-competitor",
-        leaseMs: 120,
+        leaseMs: 3_000,
         isPidAlive: () => false,
       })).toThrow(/held by a live, unexpired/)
       expect(readdirSync(project).some((name) => name.includes("stale-"))).toBe(false)
       held.release()
+      expect(existsSync(path)).toBe(false)
+    } finally {
+      removeProject(project)
+    }
+  }, 60_000)
+
+  test("a contended waiter does not starve the current holder's release claim", () => {
+    const project = tempProject("alg-mutex-release-fairness-")
+    try {
+      const path = join(project, "mutex.lock")
+      const held = acquireFilesystemMutex(path, {
+        owner: "current-holder",
+        leaseMs: 1_000,
+        heartbeatMs: 900,
+      })
+      let contentionObservations = 0
+      const next = acquireFilesystemMutex(path, {
+        owner: "next-holder",
+        leaseMs: 1_000,
+        heartbeatMs: 900,
+        waitMs: 1_000,
+        beforeContentionWait(observed) {
+          contentionObservations++
+          expect(observed.token).toBe(held.token)
+          expect(existsSync(`${path}.takeover`)).toBe(false)
+          held.release()
+        },
+      })
+      expect(contentionObservations).toBe(1)
+      expect(FilesystemMutexRecordSchema.parse(JSON.parse(readFileSync(path, "utf8"))).token)
+        .toBe(next.token)
+      next.release()
       expect(existsSync(path)).toBe(false)
     } finally {
       removeProject(project)
@@ -91,23 +126,37 @@ describe("restart-safe short filesystem mutexes", () => {
       const path = join(project, "mutex.lock")
       const live = FilesystemMutexRecordSchema.parse(record(path, process.pid, -1_000))
       writeFileSync(path, `${JSON.stringify(live)}\n`, "utf8")
-      expect(() => acquireFilesystemMutex(path, {
-        owner: "competitor",
-        isPidAlive: () => true,
-      })).toThrow(/live, unexpired, remote, or unverifiable/)
+      let liveError: unknown
+      try {
+        acquireFilesystemMutex(path, { owner: "competitor", isPidAlive: () => true })
+      } catch (error) {
+        liveError = error
+      }
+      expect(liveError).toBeInstanceOf(FilesystemMutexContentionError)
+      expect((liveError as Error).message).toMatch(/live, unexpired, remote, or unverifiable/)
       expect(JSON.parse(readFileSync(path, "utf8")).token).toBe(live.token)
 
       writeFileSync(path, "{malformed", "utf8")
-      expect(() => acquireFilesystemMutex(path, { owner: "competitor" }))
-        .toThrow(/malformed or unverifiable.*failing closed/)
+      let malformedError: unknown
+      try {
+        acquireFilesystemMutex(path, { owner: "competitor" })
+      } catch (error) {
+        malformedError = error
+      }
+      expect(malformedError).not.toBeInstanceOf(FilesystemMutexContentionError)
+      expect((malformedError as Error).message).toMatch(/malformed or unverifiable.*failing closed/)
       expect(readFileSync(path, "utf8")).toBe("{malformed")
 
       const remote = { ...record(path, 999_999_999, -1_000), host: "other-host.invalid" }
       writeFileSync(path, `${JSON.stringify(remote)}\n`, "utf8")
-      expect(() => acquireFilesystemMutex(path, {
-        owner: "competitor",
-        isPidAlive: () => false,
-      })).toThrow(/remote, or unverifiable/)
+      let remoteError: unknown
+      try {
+        acquireFilesystemMutex(path, { owner: "competitor", isPidAlive: () => false })
+      } catch (error) {
+        remoteError = error
+      }
+      expect(remoteError).not.toBeInstanceOf(FilesystemMutexContentionError)
+      expect((remoteError as Error).message).toMatch(/remote, or unverifiable/)
       expect(JSON.parse(readFileSync(path, "utf8")).token).toBe(remote.token)
     } finally {
       removeProject(project)

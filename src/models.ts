@@ -4,13 +4,23 @@ import {
   statSync,
 } from "node:fs"
 import { basename, dirname } from "node:path"
-import type { AgentModelMap, ModelAgent, ModelRef, ProjectModelSettings } from "./types.ts"
-import { ALG_MODEL_SETTINGS_VERSION, MODEL_AGENTS } from "./types.ts"
+import type {
+  AgentModelMap,
+  ModelAgent,
+  ModelRef,
+  ModelResolution,
+  ModelResolutionMap,
+  ModelRole,
+  ProjectModelSettings,
+  RunState,
+} from "./types.ts"
+import { ALG_MODEL_SETTINGS_VERSION, MODEL_AGENTS, MODEL_ROLES } from "./types.ts"
 import { atomicWriteFile, ensureDir, quarantineCorruptFile } from "./store.ts"
 import { canonicalDirectory, resolveContainedPath } from "./paths.ts"
 import {
   AgentModelMapSchema,
   ModelRefSchema,
+  ModelResolutionMapSchema,
   ModelVariantSchema,
   ProjectModelSettingsSchema,
 } from "./schemas.ts"
@@ -136,7 +146,11 @@ export function snapshotModels(
   projectDirectory: string,
   configured: AgentModelMap = {},
 ): AgentModelMap {
-  return snapshotEffectiveModels(projectDirectory, configured)
+  const snapshot = modelSnapshotFromResolution(
+    snapshotModelResolutions(projectDirectory, undefined, configured),
+  )
+  for (const model of Object.values(snapshot)) Object.freeze(model)
+  return Object.freeze(snapshot)
 }
 
 export function parseConfiguredModel(value: unknown): ModelRef | undefined {
@@ -151,32 +165,127 @@ export function parseConfiguredModel(value: unknown): ModelRef | undefined {
 }
 
 export function configuredAgentModels(config: unknown): AgentModelMap {
-  if (!config || typeof config !== "object") return {}
-  const source = config as {
+  return modelSnapshotFromResolution(configuredModelResolutions(config))
+}
+
+function resolved(model: ModelRef, source: ModelResolution["source"]): ModelResolution {
+  return {
+    source,
+    providerID: model.providerID,
+    modelID: model.modelID,
+    ...(model.variant ? { variant: model.variant } : {}),
+  }
+}
+
+function inherited(source: ModelResolution["source"] = "inherited-sdk-default"): ModelResolution {
+  return { source }
+}
+
+function roleModel(
+  source: { agent?: Record<string, { model?: unknown; variant?: unknown } | undefined> },
+  names: readonly string[],
+): ModelRef | undefined {
+  for (const name of names) {
+    const explicit = parseConfiguredModel(source.agent?.[name]?.model)
+    if (!explicit) continue
+    const variant = ModelVariantSchema.safeParse(source.agent?.[name]?.variant)
+    return variant.success ? { ...explicit, variant: variant.data } : explicit
+  }
+  return undefined
+}
+
+/** Capture effective model/default provenance from merged OpenCode config. */
+export function configuredModelResolutions(config: unknown): ModelResolutionMap {
+  const source = (config && typeof config === "object" ? config : {}) as {
     model?: unknown
     agent?: Record<string, { model?: unknown; variant?: unknown } | undefined>
   }
   const fallback = parseConfiguredModel(source.model)
+  const resolutions = {} as ModelResolutionMap
+  const roleNames: Record<Exclude<ModelRole, "default" | "repair">, readonly string[]> = {
+    planner: ["planner", "orchestrator"],
+    explorer: ["explorer"],
+    researcher: ["researcher"],
+    implementer: ["implementer"],
+    checker: ["checker"],
+  }
+  for (const [role, names] of Object.entries(roleNames) as Array<[keyof typeof roleNames, readonly string[]]>) {
+    const explicit = roleModel(source, names)
+    resolutions[role] = explicit
+      ? resolved(explicit, "opencode-role-config")
+      : fallback
+        ? resolved(fallback, "opencode-top-level-default")
+        : inherited()
+  }
+  // Repair attempts are retries of the implementer node and therefore use the
+  // exact same immutable selection rather than claiming a separate SDK agent.
+  resolutions.repair = { ...resolutions.implementer }
+  resolutions.default = fallback
+    ? resolved(fallback, "opencode-top-level-default")
+    : inherited()
+  return ModelResolutionMapSchema.parse(resolutions)
+}
+
+export function modelSnapshotFromResolution(resolutions: ModelResolutionMap): AgentModelMap {
   const models: AgentModelMap = {}
   for (const role of MODEL_AGENTS) {
-    const explicit = parseConfiguredModel(source.agent?.[role]?.model)
-    if (explicit) {
-      const variant = ModelVariantSchema.safeParse(source.agent?.[role]?.variant)
-      models[role] = variant.success ? { ...explicit, variant: variant.data } : explicit
+    const resolution = resolutions[role]
+    if (resolution.providerID && resolution.modelID) {
+      models[role] = {
+        providerID: resolution.providerID,
+        modelID: resolution.modelID,
+        ...(resolution.variant ? { variant: resolution.variant } : {}),
+      }
     }
-    else if (fallback) models[role] = fallback
   }
-  return models
+  return AgentModelMapSchema.parse(models)
 }
 
 export function snapshotEffectiveModels(
   projectDirectory: string,
   configured: AgentModelMap,
 ): AgentModelMap {
-  const merged = AgentModelMapSchema.parse({
-    ...configured,
-    ...loadModelSettings(projectDirectory).models,
-  })
+  const merged = modelSnapshotFromResolution(
+    snapshotModelResolutions(projectDirectory, undefined, configured),
+  )
   for (const model of Object.values(merged)) Object.freeze(model)
   return Object.freeze(merged)
+}
+
+export function snapshotModelResolutions(
+  projectDirectory: string,
+  configured?: ModelResolutionMap,
+  legacyConfigured: AgentModelMap = {},
+): ModelResolutionMap {
+  const base = configured
+    ? structuredClone(configured)
+    : Object.fromEntries(MODEL_ROLES.map((role) => [role, inherited()])) as ModelResolutionMap
+  if (!configured) {
+    for (const role of MODEL_AGENTS) {
+      const model = legacyConfigured[role]
+      if (model) base[role] = resolved(model, "legacy-unknown")
+    }
+    base.repair = { ...base.implementer }
+  }
+  const projectModels = loadModelSettings(projectDirectory).models
+  for (const role of MODEL_AGENTS) {
+    const model = projectModels[role]
+    if (model) base[role] = resolved(model, "alg-project-override")
+  }
+  base.repair = { ...base.implementer }
+  const parsed = ModelResolutionMapSchema.parse(base)
+  for (const resolution of Object.values(parsed)) Object.freeze(resolution)
+  return Object.freeze(parsed)
+}
+
+/** Old schema-v2 runs did not persist provenance; never invent missing defaults. */
+export function modelResolutionsForRun(run: RunState): ModelResolutionMap {
+  if (run.model_resolution) return run.model_resolution
+  const legacy = Object.fromEntries(MODEL_ROLES.map((role) => [role, inherited("legacy-unknown")])) as ModelResolutionMap
+  for (const role of MODEL_AGENTS) {
+    const model = run.model_snapshot[role]
+    if (model) legacy[role] = resolved(model, "legacy-unknown")
+  }
+  legacy.repair = { ...legacy.implementer }
+  return ModelResolutionMapSchema.parse(legacy)
 }

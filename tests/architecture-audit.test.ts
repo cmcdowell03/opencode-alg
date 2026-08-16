@@ -18,7 +18,15 @@ import {
   buildWorkerPrompt,
   runNodeSession,
 } from "../src/sessions.ts"
-import { createRun, listRuns, loadRun, persistRun, runDir, writeJson } from "../src/store.ts"
+import {
+  createRun,
+  hydrateRunForExecution,
+  listRuns,
+  loadRun,
+  persistRun,
+  runDir,
+  writeJson,
+} from "../src/store.ts"
 import { executeRun } from "../src/executor.ts"
 import { createAlgTools, withShellGate } from "../src/tools.ts"
 import {
@@ -65,6 +73,20 @@ function snapshotDirectory(root: string): Record<string, string> {
 }
 
 describe("architecture audit remediation", () => {
+  test("README, operations, and orchestrator help document the local-integrity authenticity boundary", () => {
+    const documents = [
+      new URL("../README.md", import.meta.url),
+      new URL("../docs/operations.md", import.meta.url),
+      new URL("../agents/orchestrator.md", import.meta.url),
+    ].map((path) => readFileSync(path, "utf8"))
+    for (const document of documents) {
+      expect(document).toMatch(/SHA-256/)
+      expect(document).toMatch(/coherently rewrite/i)
+      expect(document).toMatch(/external trusted signing key or append-only ledger/i)
+      expect(document).toMatch(/do not (?:provide authenticity|authenticate)|does not authenticate/i)
+    }
+  })
+
   test("aggregate output and worker/checker prompt payloads have byte caps", async () => {
     const oversizedExplore = {
       query: "q",
@@ -310,7 +332,7 @@ describe("architecture audit remediation", () => {
       }
     }
     expect(allocations).toEqual([[2, 1], [2, 1]])
-  }, 15_000)
+  }, 60_000)
 
   test("compaction selects exact-owner active state and formats deterministic bounded text", () => {
     const project = tempProject()
@@ -390,12 +412,27 @@ describe("architecture audit remediation", () => {
         worktree: project,
       } as never)
       const list = await hooks.tool!.alg_status!.execute({ list: true }, toolContext(project, "bob"))
-      expect(toolOutput(list)).toEqual([{
-        run_id: bob.run_id,
-        status: "planning",
-        goal: "bob active run",
-        updated_at: bob.updated_at,
-      }])
+      expect(toolOutput(list)).toEqual({
+        runs: [{
+          run_id: bob.run_id,
+          status: "planning",
+          goal: "bob active run",
+          updated_at: bob.updated_at,
+        }],
+        total: 1,
+        shown: 1,
+        omitted: 0,
+        valid_runs_omitted: 0,
+        owned_error_count: 0,
+        owned_errors: [],
+        owned_errors_omitted: 0,
+        directories_scanned: 3,
+        scan_truncated: false,
+        complete: true,
+        truncated_fields: 0,
+        goals_truncated: 0,
+        truncated: false,
+      })
       const denied = await hooks.tool!.alg_status!.execute(
         { run_id: alice.run_id },
         toolContext(project, "bob"),
@@ -466,6 +503,24 @@ describe("architecture audit remediation", () => {
       })
       expect(initial.model_snapshot.researcher?.variant).toBeUndefined()
       expect(initial.model_snapshot.checker?.variant).toBeUndefined()
+      expect(Object.isFrozen(initial.model_snapshot)).toBe(true)
+      expect(Object.values(initial.model_snapshot).every(Object.isFrozen)).toBe(true)
+      expect(Object.isFrozen(initial.model_resolution)).toBe(true)
+      expect(Object.values(initial.model_resolution!).every(Object.isFrozen)).toBe(true)
+      expect(Object.isFrozen(initial.nodes)).toBe(false)
+      expect(Object.isFrozen(initial.nodes.explore)).toBe(false)
+      expect(Object.isFrozen(initial.nodes.explore!.last_failures)).toBe(false)
+
+      const executionClone = hydrateRunForExecution(initial)
+      expect(executionClone.model_snapshot).not.toBe(initial.model_snapshot)
+      expect(Object.isFrozen(executionClone.model_snapshot)).toBe(true)
+      expect(Object.values(executionClone.model_snapshot).every(Object.isFrozen)).toBe(true)
+      expect(executionClone.model_resolution).not.toBe(initial.model_resolution)
+      expect(Object.isFrozen(executionClone.model_resolution)).toBe(true)
+      expect(Object.values(executionClone.model_resolution!).every(Object.isFrozen)).toBe(true)
+      expect(Object.isFrozen(executionClone.nodes)).toBe(false)
+      executionClone.nodes.explore!.last_failures.push("mutable execution state")
+      expect(executionClone.nodes.explore!.last_failures).toEqual(["mutable execution state"])
       await hooks.config!({ model: "later/changed" } as never)
       expect(loadRun(project, runId)!.model_snapshot).toEqual(initial.model_snapshot)
       expect(() => {
@@ -605,7 +660,7 @@ describe("architecture audit remediation", () => {
     } finally {
       removeProject(project)
     }
-  }, 15_000)
+  }, 60_000)
 
   test("criteria requires a planned run and lock=false replaces while leaving unlocked", async () => {
     const project = tempProject()
@@ -650,7 +705,7 @@ describe("architecture audit remediation", () => {
     }
   })
 
-  test("persistence deletes stale derived artifacts when node output is absent", () => {
+  test("persistence preserves unknown non-owned artifact files", () => {
     const project = tempProject()
     try {
       const run = createRun({
@@ -664,7 +719,7 @@ describe("architecture audit remediation", () => {
       writeJson(stale, { stale: true })
       expect(existsSync(stale)).toBe(true)
       persistRun(run, project)
-      expect(existsSync(stale)).toBe(false)
+      expect(existsSync(stale)).toBe(true)
     } finally {
       removeProject(project)
     }

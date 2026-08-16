@@ -22,7 +22,13 @@ import {
 import { getTemplate } from "../src/templates.ts"
 import { executeRun } from "../src/executor.ts"
 import { loadModelSettings, modelSettingsPath } from "../src/models.ts"
-import { isContained, canonicalDirectory, resolveContainedPath } from "../src/paths.ts"
+import {
+  isContained,
+  canonicalDirectory,
+  resolveContainedPath,
+  resolveContainedPathWithOperations,
+  type ContainmentFilesystemOperations,
+} from "../src/paths.ts"
 import { runInstaller } from "../scripts/installer-core.ts"
 import { executeContext, removeProject, tempProject } from "./helpers.ts"
 
@@ -62,6 +68,62 @@ function fileLink(target: string, path: string): boolean {
 }
 
 describe("existing-component realpath containment", () => {
+  test("injectable strict absence proof covers $Deleted, disappearance, denial, and symlink branches", () => {
+    const root = process.platform === "win32" ? "C:\\trusted" : "/trusted"
+    const component = resolve(root, "component")
+    const outside = process.platform === "win32"
+      ? "C:\\$Extend\\$Deleted\\escaped"
+      : "/outside/escaped"
+    const missing = (code: "ENOENT" | "ENOTDIR") => Object.assign(new Error(code), { code })
+    const denied = (code: "EPERM" | "EACCES") => Object.assign(new Error(code), { code })
+
+    const operations = (options: {
+      realpathResult?: string
+      realpathError?: unknown
+      secondLstatError?: unknown
+    }): ContainmentFilesystemOperations => {
+      let componentLstats = 0
+      return {
+        lstat(path) {
+          if (path !== component) return {}
+          componentLstats++
+          if (componentLstats >= 2 && options.secondLstatError) throw options.secondLstatError
+          return {}
+        },
+        realpath(path) {
+          if (path === root) return root
+          if (options.realpathError) throw options.realpathError
+          return options.realpathResult ?? path
+        },
+      }
+    }
+
+    expect(resolveContainedPathWithOperations(root, ["component", "future"], operations({
+      realpathResult: outside,
+      secondLstatError: missing("ENOENT"),
+    }))).toBe(resolve(root, "component", "future"))
+
+    expect(() => resolveContainedPathWithOperations(root, ["component"], operations({
+      realpathResult: outside,
+    }))).toThrow(/existing path component escapes/)
+
+    for (const code of ["EPERM", "EACCES"] as const) {
+      expect(() => resolveContainedPathWithOperations(root, ["component"], operations({
+        realpathResult: outside,
+        secondLstatError: denied(code),
+      }))).toThrow(code)
+    }
+
+    expect(resolveContainedPathWithOperations(root, ["component", "future"], operations({
+      realpathError: missing("ENOENT"),
+      secondLstatError: missing("ENOTDIR"),
+    }))).toBe(resolve(root, "component", "future"))
+
+    expect(() => resolveContainedPathWithOperations(root, ["component"], operations({
+      realpathResult: outside,
+    }))).toThrow(/existing path component escapes/)
+  })
+
   test("rejects .opencode, runs, and run-directory symlink/junction escapes", () => {
     const projects: string[] = []
     const outside = tempProject("alg-outside-")
@@ -238,7 +300,9 @@ describe("existing-component realpath containment", () => {
       for (const project of projects) removeProject(project)
       removeProject(outside)
     }
-  }, 15_000)
+  // Multiple junction containment cases cross fenced durable saves; retain
+  // every outside-sentinel assertion with Windows filesystem I/O headroom.
+  }, 120_000)
 
   test("executor, persistence, and load reject artifact metadata through a nested junction", async () => {
     const outside = tempProject("alg-artifact-metadata-outside-")
@@ -326,7 +390,7 @@ describe("existing-component realpath containment", () => {
       for (const project of projects) removeProject(project)
       removeProject(outside)
     }
-  }, 15_000)
+  }, 60_000)
 
   test("executor, persistence, and load reject files_touched through a project junction", async () => {
     const outside = tempProject("alg-files-metadata-outside-")
@@ -398,5 +462,5 @@ describe("existing-component realpath containment", () => {
       for (const project of projects) removeProject(project)
       removeProject(outside)
     }
-  }, 15_000)
+  }, 60_000)
 })

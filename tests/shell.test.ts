@@ -103,29 +103,47 @@ describe("permissioned bounded shell gate", () => {
     const project = tempProject("alg-delayed-watcher-")
     const script = join(project, "heartbeat.cjs")
     const startMarker = join(project, "command-started.txt")
-    const heartbeat = join(project, "command-heartbeat.txt")
+    const heartbeat = join(project, "command-heartbeat.log")
     try {
       writeFileSync(script, `
 const fs = require("node:fs")
 const start = Date.now()
 fs.writeFileSync(process.argv[2], String(start))
-fs.writeFileSync(process.argv[3], String(start))
-setInterval(() => fs.writeFileSync(process.argv[3], String(Date.now())), 10)
+fs.appendFileSync(process.argv[3], String(start) + "\\n")
+setInterval(() => fs.appendFileSync(process.argv[3], String(Date.now()) + "\\n"), 10)
 `, "utf8")
-      const setupStarted = Date.now()
+      const timeoutMs = 5_000
+      const setupStarted = performance.now()
+      let commandReadyObserved: number | undefined
       const result = await executeShellGate({
         cmd: [process.execPath, script, startMarker, heartbeat].map((part) => `"${part}"`).join(" "),
-        timeoutMs: 100,
+        timeoutMs,
         windowsJobWatcherReadyDelayMs: 800,
+        // executeShellGate evaluates this only after observing the native
+        // command-ready marker and immediately before arming the timeout.
+        timeoutReadiness: () => {
+          commandReadyObserved ??= performance.now()
+          return true
+        },
         context: shellContext(project),
       })
+      const completed = performance.now()
       expect(result.timed_out).toBe(true)
       expect(result.termination_failed).toBeUndefined()
+      expect(commandReadyObserved).toBeNumber()
+      expect(commandReadyObserved! - setupStarted).toBeGreaterThanOrEqual(650)
+      expect(completed - commandReadyObserved!).toBeGreaterThanOrEqual(timeoutMs)
       const commandStarted = Number(readFileSync(startMarker, "utf8"))
-      const lastHeartbeat = Number(readFileSync(heartbeat, "utf8"))
-      expect(commandStarted - setupStarted).toBeGreaterThanOrEqual(650)
+      // Parse the append-only observation log instead of racing a child killed
+      // during truncate-and-rewrite. Any interrupted trailing record is ignored.
+      const heartbeats = readFileSync(heartbeat, "utf8")
+        .split(/\r?\n/)
+        .filter((line) => /^\d+$/.test(line))
+        .map(Number)
+      const lastHeartbeat = Math.max(...heartbeats)
+      expect(heartbeats.length).toBeGreaterThan(1)
       expect(lastHeartbeat - commandStarted).toBeGreaterThanOrEqual(20)
-      expect(lastHeartbeat - commandStarted).toBeLessThan(350)
+      expect(lastHeartbeat - commandStarted).toBeLessThan(6_500)
     } finally {
       removeProject(project)
     }

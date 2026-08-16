@@ -1,7 +1,7 @@
 {
   "name": "coding-diamond",
   "description": "Explore → research → implement (with test loop) → fresh-child checker",
-  "max_global_attempts": 13,
+  "max_global_attempts": 14,
   "max_concurrency": 4,
   "nodes": [
     {
@@ -9,7 +9,8 @@
       "agent": "explorer",
       "depends_on": [],
       "description": "Map relevant files and symbols",
-      "inputs": { "goal": "$goal" }
+      "inputs": { "goal": "$goal" },
+      "loop": { "max_attempts": 2, "gate": "schema" }
     },
     {
       "id": "research",

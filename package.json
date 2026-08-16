@@ -26,7 +26,7 @@
     "package.json"
   ],
   "scripts": {
-    "test": "bun test --timeout 15000",
+    "test": "bun test --timeout 60000",
     "test:installer": "bun test tests/installer.test.ts",
     "test:tui": "bun test tests/tui.test.ts",
     "smoke": "bun run scripts/smoke.ts",

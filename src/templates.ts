@@ -6,7 +6,7 @@ export const CODING_DIAMOND: GraphDef = {
   name: "coding-diamond",
   description:
     "Explore → research → implement (with test loop) → fresh-child checker",
-  max_global_attempts: 13,
+  max_global_attempts: 14,
   max_concurrency: 4,
   nodes: [
     {
@@ -15,6 +15,7 @@ export const CODING_DIAMOND: GraphDef = {
       depends_on: [],
       description: "Map relevant files and symbols",
       inputs: { goal: "$goal" },
+      loop: { max_attempts: 2, gate: "schema" },
     },
     {
       id: "research",
@@ -60,7 +61,7 @@ export const CODING_DIAMOND: GraphDef = {
 export const RESEARCH_DIAMOND: GraphDef = {
   name: "research-diamond",
   description: "Parallel explore lanes → synthesis research → fresh-child checker",
-  max_global_attempts: 6,
+  max_global_attempts: 8,
   max_concurrency: 4,
   nodes: [
     {
@@ -69,6 +70,7 @@ export const RESEARCH_DIAMOND: GraphDef = {
       depends_on: [],
       description: "Map surface A",
       inputs: { goal: "$goal", lane: "\"A\"" },
+      loop: { max_attempts: 2, gate: "schema" },
     },
     {
       id: "explore_b",
@@ -76,6 +78,7 @@ export const RESEARCH_DIAMOND: GraphDef = {
       depends_on: [],
       description: "Map surface B",
       inputs: { goal: "$goal", lane: "\"B\"" },
+      loop: { max_attempts: 2, gate: "schema" },
     },
     {
       id: "research",

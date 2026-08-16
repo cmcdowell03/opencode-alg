@@ -43,6 +43,14 @@ export class FilesystemMutexError extends Error {
   }
 }
 
+/** A verified live/unexpired holder may become available within a bounded retry. */
+export class FilesystemMutexContentionError extends FilesystemMutexError {
+  constructor(message: string) {
+    super(message)
+    this.name = "FilesystemMutexContentionError"
+  }
+}
+
 export interface FilesystemMutex {
   path: string
   token: string
@@ -63,6 +71,8 @@ export interface FilesystemMutexOptions {
   beforeRenewCommit?: (observed: FilesystemMutexRecord) => void
   /** Deterministic test barrier after release observation and before the final CAS read. */
   beforeReleaseRemove?: (observed: FilesystemMutexRecord) => void
+  /** Deterministic test barrier after observing live contention and before waiting. */
+  beforeContentionWait?: (observed: FilesystemMutexRecord) => void
 }
 
 function sleep(milliseconds: number): void {
@@ -105,15 +115,35 @@ function writeExclusive(path: string, record: FilesystemMutexRecord, durable = t
   }
 }
 
+type MutexDisposition = "held" | "takeover" | "unverifiable"
+
+function mutexDisposition(
+  record: FilesystemMutexRecord,
+  now: number,
+  currentHost: string,
+  isPidAlive: (pid: number) => boolean | null,
+): MutexDisposition {
+  if (Date.parse(record.expires_at) > now) return "held"
+  if (record.host !== currentHost) return "unverifiable"
+  const alive = isPidAlive(record.pid)
+  if (alive === false) return "takeover"
+  return alive === true ? "held" : "unverifiable"
+}
+
 function canTakeOver(
   record: FilesystemMutexRecord,
   now: number,
   currentHost: string,
   isPidAlive: (pid: number) => boolean | null,
 ): boolean {
-  if (Date.parse(record.expires_at) > now) return false
-  if (record.host !== currentHost) return false
-  return isPidAlive(record.pid) === false
+  return mutexDisposition(record, now, currentHost, isPidAlive) === "takeover"
+}
+
+function heldOrUnverifiableError(disposition: Exclude<MutexDisposition, "takeover">): FilesystemMutexError {
+  const message = "mutex is held by a live, unexpired, remote, or unverifiable owner"
+  return disposition === "held"
+    ? new FilesystemMutexContentionError(message)
+    : new FilesystemMutexError(message)
 }
 
 function acquireTakeoverClaim(
@@ -143,8 +173,12 @@ function acquireTakeoverClaim(
     } catch (error) {
       if (!existsSync(path)) throw error
       const observed = readVerified(path)
-      if (!canTakeOver(observed, Date.now(), currentHost, isPidAlive)) {
-        throw new FilesystemMutexError("mutex stale-takeover claim is live or unverifiable")
+      const disposition = mutexDisposition(observed, Date.now(), currentHost, isPidAlive)
+      if (disposition !== "takeover") {
+        const message = "mutex stale-takeover claim is live or unverifiable"
+        throw disposition === "held"
+          ? new FilesystemMutexContentionError(message)
+          : new FilesystemMutexError(message)
       }
       const confirmed = readVerified(path)
       if (confirmed.token !== observed.token || !canTakeOver(confirmed, Date.now(), currentHost, isPidAlive)) {
@@ -170,11 +204,16 @@ function acquireMutationClaim(
   currentHost: string,
   isPidAlive: (pid: number) => boolean | null,
   deadline: number,
-): () => void {
+  yieldWhenContended?: () => boolean,
+): (() => void) | null {
   while (true) {
     try {
       return acquireTakeoverClaim(mutexPath, currentHost, isPidAlive)
     } catch (error) {
+      // An acquiring writer may have started waiting before another writer
+      // published the durable mutex. Once that happens it no longer needs to
+      // compete with the holder's renew/release operation for this claim.
+      if (yieldWhenContended?.()) return null
       if (Date.now() >= deadline) throw error
       sleep(5)
     }
@@ -206,19 +245,59 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
   const deadline = Date.now() + waitMs
 
   while (true) {
+    // A waiter only needs the mutation claim when the mutex is absent, stale,
+    // or not safely readable. Polling a verified live mutex while holding the
+    // claim can starve the holder's release until its bounded release attempt
+    // gives up, leaving an unexpired orphan behind for the rest of the waiters.
+    if (existsSync(path)) {
+      let observed: FilesystemMutexRecord | undefined
+      try {
+        observed = readVerified(path)
+      } catch {
+        // Re-check under the mutation claim below. This also handles observing
+        // an exclusive create before its record has been completely written.
+      }
+      if (observed) {
+        const disposition = mutexDisposition(observed, now(), host, isPidAlive)
+        if (disposition === "takeover") {
+          // Serialize the stale takeover under the mutation claim below.
+        } else if (disposition === "held" && Date.now() < deadline) {
+          options.beforeContentionWait?.(structuredClone(observed))
+          sleep(5)
+          continue
+        } else {
+          throw heldOrUnverifiableError(disposition)
+        }
+      }
+    }
+
     let releaseClaim: (() => void) | undefined
     try {
-      releaseClaim = acquireMutationClaim(path, host, isPidAlive, deadline)
+      releaseClaim = acquireMutationClaim(
+        path,
+        host,
+        isPidAlive,
+        deadline,
+        () => existsSync(path),
+      ) ?? undefined
+      if (!releaseClaim) {
+        if (Date.now() < deadline) {
+          sleep(5)
+          continue
+        }
+        throw new FilesystemMutexContentionError("mutex is held by a live, unexpired, remote, or unverifiable owner")
+      }
       if (existsSync(path)) {
         const observed = readVerified(path)
-        if (!canTakeOver(observed, now(), host, isPidAlive)) {
-          if (Date.now() < deadline) {
+        const disposition = mutexDisposition(observed, now(), host, isPidAlive)
+        if (disposition !== "takeover") {
+          if (disposition === "held" && Date.now() < deadline) {
             releaseClaim()
             releaseClaim = undefined
             sleep(5)
             continue
           }
-          throw new FilesystemMutexError("mutex is held by a live, unexpired, remote, or unverifiable owner")
+          throw heldOrUnverifiableError(disposition)
         }
         // All cooperative acquire/renew/release operations hold this same claim.
         // Re-read immediately before mutation to reject outside replacement too.
@@ -254,6 +333,7 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
   const renew = () => {
     if (released || lost) throw new FilesystemMutexError("mutex is no longer held")
     const releaseClaim = acquireMutationClaim(path, host, isPidAlive, Date.now() + 250)
+    if (!releaseClaim) throw new FilesystemMutexError("mutex mutation claim was unexpectedly yielded")
     const temporary = `${path}.${token}.${randomUUID()}.renew`
     try {
       const current = readVerified(path)
@@ -300,7 +380,7 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
       clearInterval(heartbeat)
       let releaseClaim: (() => void) | undefined
       try {
-        releaseClaim = acquireMutationClaim(path, host, isPidAlive, Date.now() + 250)
+        releaseClaim = acquireMutationClaim(path, host, isPidAlive, Date.now() + 250) ?? undefined
         const current = readVerified(path)
         if (current.token !== token) return
         options.beforeReleaseRemove?.(structuredClone(current))

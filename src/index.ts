@@ -10,13 +10,26 @@ import type { Plugin } from "@opencode-ai/plugin"
 import { ALG_PLUGIN_ID } from "./types.ts"
 import { createAlgTools } from "./tools.ts"
 import { findLatestIncompleteRunForSession } from "./store.ts"
-import { configuredAgentModels } from "./models.ts"
-import type { AgentModelMap } from "./types.ts"
+import { configuredAgentModels, configuredModelResolutions } from "./models.ts"
+import type { AgentModelMap, ModelResolutionMap } from "./types.ts"
 import { formatCompactionContext } from "./compaction.ts"
+import { verifiedLiveSourceIdentity } from "./source-identity.ts"
 
 const server: Plugin = async (ctx) => {
   const { client, directory } = ctx
   let configuredModels: AgentModelMap = {}
+  let modelResolutions: ModelResolutionMap = configuredModelResolutions({})
+
+  const liveSource = verifiedLiveSourceIdentity("server")
+  if (liveSource) {
+    await client.app.log({
+      body: {
+        service: ALG_PLUGIN_ID,
+        level: "info",
+        message: liveSource.message,
+      },
+    })
+  }
 
   try {
     await client.app.log({
@@ -31,13 +44,18 @@ const server: Plugin = async (ctx) => {
     /* log optional */
   }
 
-  const tools = createAlgTools(ctx, () => structuredClone(configuredModels))
+  const tools = createAlgTools(
+    ctx,
+    () => structuredClone(configuredModels),
+    () => structuredClone(modelResolutions),
+  )
 
   return {
     tool: tools,
 
     config: async (config) => {
       configuredModels = configuredAgentModels(config)
+      modelResolutions = configuredModelResolutions(config)
     },
 
     "experimental.session.compacting": async (input, output) => {
