@@ -2,6 +2,8 @@
 
 **Agents + Loops + Graphs** for OpenCode stable runtimes satisfying the declared `engines.opencode` range (`>=1.18.0`): a typed DAG executor with durable project state, bounded attempts and payloads, fresh-child checking, model snapshots, and audited run ownership.
 
+**Architecture:** [read the design and implementation guide](DESIGN.md).
+
 The SDK/plugin dependency used to compile this package is pinned at `1.18.3`; that dependency pin is not the runtime compatibility floor. Live verification accepts stable OpenCode versions satisfying the declared engine range and is currently exercised with `1.18.18`.
 
 ## Tools

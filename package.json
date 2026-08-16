@@ -21,6 +21,7 @@
     "agents",
     "templates",
     "docs",
+    "DESIGN.md",
     "scripts",
     "README.md",
     "package.json"
