@@ -1,14 +1,21 @@
 import { describe, expect, test } from "bun:test"
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
-import { join } from "node:path"
+import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { randomUUID } from "node:crypto"
 import { EventEmitter } from "node:events"
+import { spawn } from "node:child_process"
 import {
   executeShellGate,
   SHELL_TAIL_BYTES,
+  cleanupWindowsShellHelpers,
   windowsJobHelperBuildState,
   windowsJobHelperCachePath,
+  windowsShellHelperArtifactSnapshot,
 } from "../src/shell.ts"
 import { removeProject, tempProject } from "./helpers.ts"
+
+const windowsTest = process.platform === "win32" ? test : test.skip
+const posixTest = process.platform === "win32" ? test.skip : test
 
 function shellContext(project: string, options?: { ask?: () => Promise<void>; signal?: AbortSignal }) {
   return {
@@ -66,8 +73,7 @@ describe("permissioned bounded shell gate", () => {
     }
   }, 60_000)
 
-  test("private Windows Job helper ignores a poisoned legacy path and compiles once in-process", async () => {
-    if (process.platform !== "win32") return
+  windowsTest("private Windows Job helper ignores a poisoned legacy path and compiles once in-process", async () => {
     const project = tempProject("alg-private-job-")
     const legacy = windowsJobHelperCachePath()
     try {
@@ -92,14 +98,69 @@ describe("permissioned bounded shell gate", () => {
       const second = await executeShellGate({ cmd: "echo second-private-helper-run", context: shellContext(project) })
       expect(second.ok).toBe(true)
       expect(windowsJobHelperBuildState()).toEqual(firstBuild)
+
+      const concurrent = await Promise.all([
+        executeShellGate({ cmd: "echo concurrent-one", context: shellContext(project) }),
+        executeShellGate({ cmd: "echo concurrent-two", context: shellContext(project) }),
+      ])
+      expect(concurrent.every((value) => value.ok)).toBe(true)
+      expect(windowsJobHelperBuildState()).toEqual(firstBuild)
+      const ownedDirectory = dirname(firstBuild.helperPath!)
+      const markerPath = join(ownedDirectory, ".opencode-alg-owner.json")
+      const marker = JSON.parse(readFileSync(markerPath, "utf8"))
+      expect(marker).toMatchObject({
+        schema: "opencode-alg-windows-helper-owner", schema_version: 1, pid: process.pid,
+        helper_file: firstBuild.helperPath!.split(/[\\/]/).at(-1),
+      })
+      expect(marker.token).toMatch(/^[0-9a-f-]{36}$/i)
+      expect(marker.process_start_identity).toBe(marker.process_start_time)
+      expect(windowsShellHelperArtifactSnapshot()).toContain(ownedDirectory)
+
+      const root = dirname(ownedDirectory)
+      expect(existsSync(join(root, "opencode-alg-job-control-v2.dll"))).toBe(false)
+      const fixtures: string[] = []
+      const fixture = (kind: "dead" | "malformed" | "unmarked" | "race" | "mismatch" | "ambiguous") => {
+        const token = randomUUID(); const pid = kind === "mismatch" ? process.pid : 2147483640 - fixtures.length
+        const directory = join(root, `opencode-alg-job-helper-v13-${pid}-${token}`)
+        mkdirSync(directory, { mode: 0o700 }); fixtures.push(directory)
+        if (kind !== "unmarked") {
+          const identity = kind === "mismatch" ? "2000-01-01T00:00:00.0000000Z" : marker.process_start_identity
+          const value = { ...marker, token, pid, process_start_identity: identity, process_start_time: identity, helper_file: `helper-${token}.exe`, created_at: "2000-01-01T00:00:00.000Z" }
+          writeFileSync(join(directory, ".opencode-alg-owner.json"), kind === "malformed" ? "{}\n" : `${JSON.stringify(value)}\n`, { flag: "wx", mode: 0o600 })
+          try { chmodSync(join(directory, ".opencode-alg-owner.json"), 0o600) } catch {}
+          writeFileSync(join(directory, value.helper_file), "fixture", { flag: "wx", mode: 0o600 })
+        }
+        return directory
+      }
+      const dead = fixture("dead"); const malformed = fixture("malformed"); const unmarked = fixture("unmarked"); const raced = fixture("race"); const mismatch = fixture("mismatch"); const ambiguous = fixture("ambiguous")
+      try {
+        const cleaned = cleanupWindowsShellHelpers({ candidates: [dead, malformed, unmarked, raced], minimumAgeMs: 0, beforeDelete: (directory) => {
+          if (directory !== raced) return
+          const path = join(directory, ".opencode-alg-owner.json")
+          rmSync(path, { force: true }); writeFileSync(path, "{}\n", { flag: "wx", mode: 0o600 })
+        } })
+        expect(cleaned.removed).toEqual([dead])
+        expect(existsSync(dead)).toBe(false)
+        expect(existsSync(malformed)).toBe(true)
+        expect(existsSync(unmarked)).toBe(true)
+        expect(existsSync(raced)).toBe(true)
+        expect(cleanupWindowsShellHelpers({ candidates: [mismatch], minimumAgeMs: 0 }).removed).toEqual([mismatch])
+        expect(cleanupWindowsShellHelpers({ candidates: [ambiguous], minimumAgeMs: 0, ownerProcessState: () => ({ state: "ambiguous" }) }).preserved).toEqual([ambiguous])
+        expect(cleanupWindowsShellHelpers({ candidates: [ownedDirectory], minimumAgeMs: 0, includeCurrent: false }).preserved).toContain(ownedDirectory)
+      } finally {
+        for (const directory of fixtures) rmSync(directory, { recursive: true, force: true })
+      }
+
+      await Bun.sleep(3_500)
+      expect(existsSync(ownedDirectory)).toBe(false)
+      expect(windowsJobHelperBuildState().helperPath).toBeUndefined()
     } finally {
       rmSync(legacy, { force: true })
       removeProject(project)
     }
   }, 20_000)
 
-  test("Windows timeout starts at command-ready after delayed watcher setup", async () => {
-    if (process.platform !== "win32") return
+  windowsTest("Windows timeout starts at command-ready after delayed watcher setup", async () => {
     const project = tempProject("alg-delayed-watcher-")
     const script = join(project, "heartbeat.cjs")
     const startMarker = join(project, "command-started.txt")
@@ -346,11 +407,7 @@ setInterval(() => fs.appendFileSync(process.argv[3], String(Date.now()) + "\\n")
     }
   }, 15_000)
 
-  test("Windows fallback kills a real grandchild before its delayed marker write", async () => {
-    if (process.platform !== "win32") {
-      console.warn("Windows process-tree integration regression skipped off Windows")
-      return
-    }
+  windowsTest("Windows fallback kills a real grandchild before its delayed marker write", async () => {
     const project = tempProject("alg-win-tree-")
     const marker = join(project, "grandchild-survived.txt")
     const commandStartedMarker = join(project, "command-started.txt")
@@ -408,11 +465,44 @@ setInterval(() => {}, 1000)
     }
   }, 70_000)
 
-  test("POSIX timeout verifies a real child/grandchild process group is gone", async () => {
-    if (process.platform === "win32") {
-      console.warn("POSIX process-group integration regression skipped on Windows")
-      return
+  windowsTest("Windows helper lifecycle leaves zero net strictly owned TEMP additions", async () => {
+    const before = windowsShellHelperArtifactSnapshot()
+    const project = tempProject("alg-helper-net-")
+    try {
+      const result = await executeShellGate({ cmd: "echo lifecycle-snapshot", context: shellContext(project) })
+      expect(result).toMatchObject({ ok: true })
+      await Bun.sleep(3_500)
+      expect(windowsShellHelperArtifactSnapshot()).toEqual(before)
+    } finally {
+      removeProject(project)
     }
+  }, 20_000)
+
+  windowsTest("a next process janitor reclaims a marked helper after its owner is forcibly killed", async () => {
+    const project = tempProject("alg-helper-killed-owner-")
+    const script = `import { executeShellGate, windowsJobHelperBuildState } from './src/shell.ts'; const context={ask:async()=>{},abort:new AbortController().signal,worktree:${JSON.stringify(project)},directory:${JSON.stringify(project)}}; const result=await executeShellGate({cmd:'echo child-owner',context}); if(!result.ok) throw new Error(result.stderr_tail); console.log(JSON.stringify(windowsJobHelperBuildState())); setInterval(()=>{},1000)`
+    const child = spawn(process.execPath, ["-e", script], { cwd: join(import.meta.dir, ".."), windowsHide: true, stdio: ["ignore", "pipe", "pipe"] })
+    try {
+      const line = await new Promise<string>((resolveLine, rejectLine) => {
+        let output = ""; const timer = setTimeout(() => rejectLine(new Error("child helper path timed out")), 20_000)
+        child.stdout!.on("data", (chunk) => { output += chunk.toString(); const found = output.split(/\r?\n/).find((value) => value.startsWith("{")); if (found) { clearTimeout(timer); resolveLine(found) } })
+        child.once("error", rejectLine)
+      })
+      const directory = dirname(JSON.parse(line).helperPath)
+      expect(existsSync(directory)).toBe(true)
+      child.kill("SIGKILL")
+      await new Promise((resolveClose) => child.once("close", resolveClose))
+      await Bun.sleep(500)
+      const result = cleanupWindowsShellHelpers({ candidates: [directory], minimumAgeMs: 0 })
+      expect(result.removed).toEqual([directory])
+      expect(existsSync(directory)).toBe(false)
+    } finally {
+      try { child.kill("SIGKILL") } catch {}
+      removeProject(project)
+    }
+  }, 30_000)
+
+  posixTest("POSIX timeout verifies a real child/grandchild process group is gone", async () => {
     const project = tempProject("alg-posix-tree-")
     const marker = join(project, "grandchild-survived.txt")
     const rootScript = join(project, "root.cjs")
@@ -452,8 +542,7 @@ setInterval(() => {}, 1000)
     }
   }, 10_000)
 
-  test("POSIX normal shell exit terminates redirected-stdio background descendants", async () => {
-    if (process.platform === "win32") return
+  posixTest("POSIX normal shell exit terminates redirected-stdio background descendants", async () => {
     const project = tempProject("alg-posix-normal-exit-")
     const launcher = join(project, "launcher.cjs")
     const writer = join(project, "writer.cjs")

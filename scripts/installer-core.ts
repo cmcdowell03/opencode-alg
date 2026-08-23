@@ -2,15 +2,15 @@ import {
   existsSync,
   readFileSync,
   readdirSync,
-  rmSync,
 } from "node:fs"
 import { basename, dirname, join, resolve } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 import {
-  commitTextPlans,
-  atomicReplace,
-  exactBackup,
+  commitFileCasPlans,
+  encodeConfigText,
   planPluginConfig,
+  readStableRegularFile,
+  type FileCasPlan,
   type TextFilePlan,
 } from "../src/config-editor.ts"
 import {
@@ -20,8 +20,14 @@ import {
 } from "../src/paths.ts"
 
 export interface InstallerFaults {
+  afterPlanning?: () => void
   beforeConfigWrite?: (path: string, index: number) => void
   beforeAgentWrite?: (path: string, index: number) => void
+  afterFileClaim?: (path: string, kind: "config" | "agent", index: number) => void
+  afterFileUnlink?: (path: string, kind: "config" | "agent", index: number) => void
+  beforeFilePublish?: (path: string, kind: "config" | "agent", index: number) => void
+  afterFilePublish?: (path: string, kind: "config" | "agent", index: number) => void
+  beforeRollback?: () => void
 }
 
 export interface InstallerOptions {
@@ -92,6 +98,7 @@ interface AgentPlan {
   action: InstallerResult["agents"][number]["action"]
   before?: Buffer
   after?: Buffer
+  expectedIdentity: import("../src/config-editor.ts").FileIdentity | null
 }
 
 function planAgents(
@@ -105,67 +112,36 @@ function planAgents(
     const target = resolveContainedPath(options.configDir, "agents", agent.name)
     if (options.uninstall) {
       if (!options.removeAgents || !existsSync(target)) {
-        result.push({ path: target, action: "unchanged" })
+        result.push({ path: target, action: "unchanged", expectedIdentity: null })
         continue
       }
-      const current = readFileSync(target)
+      const stable = readStableRegularFile(target)
+      const current = stable.bytes
       if (!current.equals(agent.bytes)) {
-        result.push({ path: target, action: "skipped" })
+        result.push({ path: target, action: "skipped", before: current, after: current, expectedIdentity: stable.identity })
         continue
       }
-      result.push({ path: target, action: "removed", before: current })
+      result.push({ path: target, action: "removed", before: current, expectedIdentity: stable.identity })
       continue
     }
 
     if (!existsSync(target)) {
-      result.push({ path: target, action: "created", after: agent.bytes })
+      result.push({ path: target, action: "created", after: agent.bytes, expectedIdentity: null })
       continue
     }
-    const current = readFileSync(target)
+    const stable = readStableRegularFile(target)
+    const current = stable.bytes
     if (current.equals(agent.bytes)) {
-      result.push({ path: target, action: "unchanged" })
+      result.push({ path: target, action: "unchanged", before: current, after: current, expectedIdentity: stable.identity })
       continue
     }
     if (!options.forceAgents) {
-      result.push({ path: target, action: "skipped" })
+      result.push({ path: target, action: "skipped", before: current, after: current, expectedIdentity: stable.identity })
       continue
     }
-    result.push({ path: target, action: "updated", before: current, after: agent.bytes })
+    result.push({ path: target, action: "updated", before: current, after: agent.bytes, expectedIdentity: stable.identity })
   }
   return result
-}
-
-function commitAgents(
-  plans: AgentPlan[],
-  faults?: InstallerFaults,
-): InstallerResult["agents"] {
-  const result: InstallerResult["agents"] = []
-  let writeIndex = 0
-  for (const plan of plans) {
-    if (plan.action === "unchanged" || plan.action === "skipped") {
-      result.push({ path: plan.path, action: plan.action })
-      continue
-    }
-    const backup = plan.before ? exactBackup(plan.path) : undefined
-    faults?.beforeAgentWrite?.(plan.path, writeIndex++)
-    if (plan.action === "removed") rmSync(plan.path, { force: true })
-    else atomicReplace(plan.path, plan.after!)
-    result.push({ path: plan.path, action: plan.action, backup })
-  }
-  return result
-}
-
-function rollbackPaths(snapshots: Map<string, Buffer | undefined>): void {
-  const errors: unknown[] = []
-  for (const [path, original] of [...snapshots.entries()].reverse()) {
-    try {
-      if (original === undefined) rmSync(path, { force: true })
-      else atomicReplace(path, original)
-    } catch (error) {
-      errors.push(error)
-    }
-  }
-  if (errors.length) throw new AggregateError(errors, "installer rollback was incomplete")
 }
 
 export function runInstaller(input: InstallerOptions): InstallerResult {
@@ -182,48 +158,61 @@ export function runInstaller(input: InstallerOptions): InstallerResult {
   const plans = planConfigs(options, desired)
   const agentsToInstall = options.skipAgents ? [] : bundledAgents(options.root)
   const agentPlans = planAgents(options, agentsToInstall)
-  const configSnapshots = new Map(
-    plans.filter((plan) => plan.changed).map((plan) => [
-      plan.path,
-      existsSync(plan.path) ? readFileSync(plan.path) : undefined,
-    ]),
-  )
-  const agentSnapshots = new Map(
-    agentPlans
-      .filter((plan) => plan.action === "created" || plan.action === "updated" || plan.action === "removed")
-      .map((plan) => [plan.path, plan.before]),
-  )
-  const committed = commitTextPlans(plans, {
+  const changedConfigs = plans.filter((plan) => plan.changed)
+  const changedAgents = agentPlans.filter((plan) => plan.action === "created" || plan.action === "updated" || plan.action === "removed")
+  const filePlans: FileCasPlan[] = [
+    ...plans.map((plan) => ({
+      path: plan.path,
+      before: plan.before === undefined ? undefined : encodeConfigText(plan.before, plan.encoding),
+      after: plan.changed ? encodeConfigText(plan.after, plan.encoding) : plan.before === undefined ? undefined : encodeConfigText(plan.before, plan.encoding),
+      expectedIdentity: plan.expectedIdentity,
+    })),
+    ...agentPlans.map((plan) => ({ path: plan.path, before: plan.before, after: plan.after, expectedIdentity: plan.expectedIdentity })),
+  ]
+  options.faults?.afterPlanning?.()
+  const configIndexes = new Map(plans.map((plan, index) => [resolve(plan.path), index]))
+  const agentIndexes = new Map(agentPlans.map((plan, index) => [resolve(plan.path), index]))
+  const fileKind = (path: string): { kind: "config" | "agent"; index: number } => {
+    const canonical = resolve(path)
+    const configIndex = configIndexes.get(canonical)
+    return configIndex === undefined
+      ? { kind: "agent", index: agentIndexes.get(canonical)! }
+      : { kind: "config", index: configIndex }
+  }
+  const committed = commitFileCasPlans(filePlans, {
     backups: true,
-    beforeWrite(plan, index) {
-      options.faults?.beforeConfigWrite?.(plan.path, index)
+    hooks: {
+      afterClaim(plan) {
+        const item = fileKind(plan.path)
+        options.faults?.afterFileClaim?.(plan.path, item.kind, item.index)
+      },
+      beforeMutation(plan) {
+        const item = fileKind(plan.path)
+        if (item.kind === "config") options.faults?.beforeConfigWrite?.(plan.path, item.index)
+        else options.faults?.beforeAgentWrite?.(plan.path, item.index)
+      },
+      afterUnlink(plan) {
+        const item = fileKind(plan.path)
+        options.faults?.afterFileUnlink?.(plan.path, item.kind, item.index)
+      },
+      beforePublish(plan) {
+        const item = fileKind(plan.path)
+        options.faults?.beforeFilePublish?.(plan.path, item.kind, item.index)
+      },
+      afterPublish(plan) {
+        const item = fileKind(plan.path)
+        options.faults?.afterFilePublish?.(plan.path, item.kind, item.index)
+      },
+      beforeRollback() {
+        options.faults?.beforeRollback?.()
+      },
     },
   })
   const byPath = new Map(committed.map((item) => [item.path, item.backup]))
-  let agents: InstallerResult["agents"]
-  try {
-    agents = commitAgents(agentPlans, options.faults)
-  } catch (error) {
-    const rollbackErrors: unknown[] = []
-    try {
-      rollbackPaths(agentSnapshots)
-    } catch (rollbackError) {
-      rollbackErrors.push(rollbackError)
-    }
-    try {
-      rollbackPaths(configSnapshots)
-    } catch (rollbackError) {
-      rollbackErrors.push(rollbackError)
-    }
-    if (rollbackErrors.length) {
-      throw new AggregateError([error, ...rollbackErrors], "installer failed and rollback was incomplete")
-    }
-    throw error
-  }
   return {
     spec: desired,
     configs: plans.map((plan) => ({ path: plan.path, changed: plan.changed, backup: byPath.get(plan.path) })),
-    agents,
+    agents: agentPlans.map((plan) => ({ path: plan.path, action: plan.action, backup: byPath.get(plan.path) })),
   }
 }
 

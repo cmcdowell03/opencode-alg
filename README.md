@@ -55,6 +55,142 @@ Each live node attempt gets a fresh OpenCode child session. ALG does not explici
 
 ## Install
 
+### Versioned manager (v0.2.0)
+
+The opt-in manager resolves exact stable Git tags into immutable side-by-side
+generations, keeps its strict receipt outside every release, and transactionally
+switches both server and TUI registrations:
+
+```powershell
+.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.2.0
+.\scripts\alg.ps1 update --tag v0.2.1
+.\scripts\alg.ps1 doctor
+.\scripts\alg.ps1 rollback
+```
+
+```sh
+./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.2.0
+./scripts/alg.sh update --tag v0.2.1
+./scripts/alg.sh doctor
+./scripts/alg.sh rollback
+```
+
+The default roots are `<config>/.opencode-alg/` for receipt/lock/journals and
+`<config>/plugins/opencode-alg/releases/<version>-<commit12>/package` for packages.
+The generation directory and its `package` child are reserved by exclusive
+`mkdir`. A bounded snapshot of same-filesystem staging is materialized below
+`package` with exclusive directories, create-if-absent hard links for regular
+files, and only contained safe symlinks. Modes and every created identity are
+recorded. Validation runs with optional Git index locking disabled; staging is
+removed only after a complete identity-bound tree preflight. Failure removes
+only unchanged manager-created entries bottom-up. Foreign additions or
+replacements preserve the reservation and fail closed. An occupied reservation
+is validated for exact reuse or preserved and rejected, never rename-replaced.
+Configs point directly at a retained package root; there is no mutable current
+pointer and no automatic release deletion. Update never pulls, resets, or
+installs dependencies in the active package. Receipts bind a bounded same-install
+production `node_modules` byte/path/mode/link identity in addition to the lock
+digest; reuse, doctor, rollback, and activation reject drift or link escape. This
+is not a cross-machine digest or npm-registry authenticity claim. See [the upgrade and recovery
+guide](docs/upgrades.md) for all flags, agent policy, rollback compatibility,
+doctor, dry-run, and transaction boundaries.
+
+Transactions bind receipt publication to the exact raw receipt bytes (or
+absence) used during planning. Every changed config/agent is first prepared in
+its own directory; expected old bytes are exclusively hard-linked to an exact
+transaction claim, identity-checked, and only then unlinked before prepared bytes
+are hard-linked create-if-absent. Deletes retain the old claim through receipt
+finalization. Occupied public/claim paths and third states are never overwritten
+or manager-deleted, and recovery uses the same identity-bound protocol. Before
+live writes the manager probes the required same-directory hard-link primitive
+inside an exclusive private directory. Receipt publication journals a verified claim of the
+old receipt by exclusively hard-linking it to a transaction-exact claim path,
+records its file identity in a `receipt-linked` phase, rechecks bytes/identity,
+and only then removes the public old name. It links a prepared receipt only into
+an absent path; occupied, ambiguous, or third-party state is preserved for repair
+rather than overwritten or deleted. Backup/claim/prepared paths derive exactly
+from the journal transaction ID. Restart acknowledgement uses the same
+receipt-only journal. Receipt and journal agent keys/paths are limited to the five bundled direct
+filenames. An exact-looking `mcp.alg_excel` entry is not adopted unless the
+active receipt already owns that exact managed configuration.
+
+Manager journals are immutable create-only data/anchor hard-link pairs. Every
+phase or learned claim identity appends a numbered revision bound to the prior
+revision hash; updates never rename-overwrite the base. Reads and cleanup require
+exact paired bytes plus recorded device/inode identity. Primitive probes run only
+inside exclusive identity-recorded private directories. Receipt-after state also
+requires the prepared receipt identity, not merely equal bytes.
+
+No portable filesystem API atomically compares device/inode/hash and unlinks a
+name. The manager performs the strongest repeated checks available immediately
+before unlink, but cannot eliminate a final instruction-window race from an
+arbitrary non-cooperating writer. Create-if-absent publication itself never
+overwrites an occupied name; detected ambiguity preserves bytes and the journal.
+
+### Opt-in Excel capability pack
+
+Excel is **off by default**. The direct installer is Excel-neutral, and managed
+install/update creates no Excel process or `mcp.alg_excel` entry unless the user
+explicitly enables the pack (or an update preserves an already enabled receipt):
+
+```powershell
+.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.2.0 `
+  --enable-capability excel --excel-root C:\work\alg-excel-staged
+.\scripts\alg.ps1 update
+.\scripts\alg.ps1 update --disable-capability excel
+```
+
+```sh
+./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.2.0 \
+  --enable-capability excel --excel-root /work/alg-excel-staged
+./scripts/alg.sh update
+./scripts/alg.sh update --disable-capability excel
+```
+
+The pack pins `excel-mcp-server==0.1.8` (upstream release commit
+`f51340ecd5778952405044b203d3a2d4c8a46833`) in a complete `uv.lock`. Enable
+uses argument-vector `uv sync --frozen --no-dev` in a lock-digest-keyed
+environment below the managed install root, runs the wrapper's bounded
+`--check`, then transactionally owns only `mcp.alg_excel`. It never uses
+unpinned `uvx`; remote MCP transports are disabled and not exposed.
+
+The wrapper accepts only relative, in-root, case-insensitive `.xlsx` workbook
+arguments and rejects absolute/traversal/NUL/alternate-stream/non-workbook and
+symlink/junction/reparse escapes. This is **MCP workbook path-argument
+confinement, not an OS sandbox**: the subprocess retains the ambient permissions
+of the OpenCode process. Work on staged copies, never originals:
+
+```sh
+python capabilities/excel/workbook.py stage \
+  --root /work/alg-excel-staged --source /incoming/source.xlsx \
+  --destination jobs/source-copy.xlsx
+python capabilities/excel/workbook.py validate \
+  --root /work/alg-excel-staged --workbook jobs/source-copy.xlsx
+```
+
+`stage` never modifies/deletes its source and requires `--overwrite` before
+replacing an existing destination. `validate` is read-only and bounded; it
+checks ZIP/OpenXML structure, sheets/dimensions, formulas, obvious dangerous or
+external functions, and detectable external relationships. openpyxl stores but
+does not calculate formulas, so validation reports calculation freshness as
+unverified and never says formulas were recalculated. LibreOffice recalculation
+is out of scope for v0.2.
+
+Use the deterministic validator as the optional shell gate for the built-in
+spreadsheet workflow:
+
+```text
+alg_plan template="spreadsheet-diamond" goal="Update the staged workbook" \
+  shell_gate="python capabilities/excel/workbook.py validate --root /work/alg-excel-staged --workbook jobs/source-copy.xlsx"
+```
+
+The template uses only researcher/implementer/checker roles, directs agents to
+relative staged `.xlsx` copies through `alg_excel`, and finishes with a fresh
+checker. Quit and restart OpenCode after enable, preserved update, disable,
+rollback, or uninstall.
+
+### Compatible direct installer
+
 Put the whole package at any stable location (commonly `~/.config/opencode/plugins/alg`), then run one launcher from the package root:
 
 ```powershell
@@ -69,7 +205,7 @@ Put the whole package at any stable location (commonly `~/.config/opencode/plugi
 ./scripts/install.sh /tmp/opencode --update-agents
 ```
 
-The launchers only install this package's dependencies and invoke the same TypeScript installer core. The core registers the **package-root URL** in both `opencode.jsonc` and `tui.json`; OpenCode resolves `./server` and `./tui` from `package.json` separately. The TUI module defaults to `{ id, tui }` and the server module defaults to `{ id, server }`—they are never combined.
+The launchers install dependencies only from a present lock: Bun uses `install --frozen-lockfile --ignore-scripts`, while npm uses `ci --ignore-scripts --no-audit --no-fund`; lock mismatch fails and lifecycle scripts never run. They then invoke the same TypeScript installer core. The core registers the **package-root URL** in both `opencode.jsonc` and `tui.json`; OpenCode resolves `./server` and `./tui` from `package.json` separately. Config and agent changes share a full-preflight, prepared-file, hard-link-claim transaction. Planning captures stable bytes plus device/inode (or absence); same-byte replacement before commit is third state and causes zero writes. Existing public names are identity-checked immediately before unlink, publication is create-if-absent, and rollback first validates every public/claim/prepared state. A non-cooperating racer is preserved and causes failure rather than rename-overwrite or unchecked deletion. The direct path remains non-journaled and therefore crash-limited. The TUI module defaults to `{ id, tui }` and the server module defaults to `{ id, server }`—they are never combined.
 
 Manual registration uses the same package-root spec in each file:
 
@@ -157,6 +293,7 @@ Pass user criteria directly to `alg_plan`. `alg_criteria` never creates a stagin
 
 - `coding-diamond`: explore (up to 2) → research (up to 2) → implement (up to 5) → fresh-child checker (up to 5), with schema-valid substantive checker failures routed to its direct implementer dependency when both still have capacity; global cap 14.
 - `research-diamond`: two explorers in parallel (up to 2 each) → research (up to 2) → fresh-child checker (up to 2), with schema-valid substantive feedback to its direct research dependency; global cap 8.
+- `spreadsheet-diamond`: staged-copy research (up to 2) → `alg_excel` implementer plus caller-supplied deterministic validator shell gate (up to 4) → fresh-child checker (up to 4); formulas are explicitly not recalculated; global cap 10.
 
 `loop.max_attempts` includes the first attempt; it is not “retries after first.” Every reserved node attempt increments `global_attempts`, including schema failures, shell denials/failures, checker rejections, and interrupted attempts. The local and graph-global caps are both hard. Each node receives at most one attempt per graph-ordered wave, so parallel completion speed cannot choose who receives a scarce retry. `alg_resume` preserves counters and history; an attempt left `running` by interruption becomes failed and is retryable only when unused capacity remains. Dry attempts also consume attempt counters but make no model calls.
 
@@ -190,6 +327,10 @@ The runtime confines `cwd` to the project root, supplies only a small environmen
 
 ## Safe update, backups, and uninstall
 
+The versioned manager workflow is documented separately in
+[`docs/upgrades.md`](docs/upgrades.md). The commands below are the retained
+direct-installer interface and do not create or consume a managed receipt.
+
 The installer detects UTF-8 (with or without BOM) and BOM-marked UTF-16LE/UTF-16BE, parses both configs and preflights agent operations before any live write, and preserves the original encoding/BOM, comments, trailing commas, unrelated fields, and plugin tuples. Unsupported or invalid encodings fail closed rather than being guessed. It edits only exact ALG registrations, then validates again. Existing changed configs receive byte-exact timestamped adjacent backups (`*.alg-backup-<timestamp>`), followed by same-directory atomic replacement. Config and agent commits are transactional: a later write/copy/remove failure restores every earlier live file to exact original bytes and removes newly created files; audit backups may remain. Malformed input fails without config, backup, or agent writes. Repeated install is idempotent and creates no new backup.
 
 Customized agent files are never overwritten by default. Explicit update/force backs up every changed agent before replacement. Review backups before deleting them.
@@ -215,6 +356,28 @@ bun install
 bun run test:tui
 bun run test:installer
 bun run check
+# mandatory external destination; no release evidence is written in the repo
+bun run release:gate -- --evidence-dir D:\Docker\model-temp\opencode-alg-release-evidence
 ```
 
-`bun run check` performs strict TypeScript checking, all hardened tests, the no-model dry smoke run, and bounded live OpenCode version/server/raw tool-ID/TUI-registration verification. Smoke and live verification create separate `alg-smoke-*` and `alg-live-verify-*` temporary project trees and remove their exact created trees on both success and failure; these project trees are not release evidence and are never intentionally retained. Live verification disables parent project/default plugin discovery, uses isolated HOME/XDG state plus explicit temporary server and TUI configs that each register this checkout's canonical package-root `file://` spec, and requires server/TUI markers for a complete bounded runtime manifest (`package.json`, all `src/**/*.ts`, shipped templates, and bundled agents). Normal startup does not compute or log that marker. Server/TUI process cleanup and temporary-environment removal are mandatory pass criteria. Separately, `check:live` retains one bounded evidence JSON only under the dedicated external `opencode-alg-verification-evidence` root below the OS temporary directory (or an approved absolute `OPENCODE_ALG_LIVE_EVIDENCE` there) and prints its path, evidence digest, source manifest digest/count/bytes, exact entry points/registrations, and cleanup results. See [`docs/operations.md`](docs/operations.md) and [`docs/release-verification.md`](docs/release-verification.md).
+The aggregate release gate uses argument-vector subprocesses for typecheck, all
+Bun tests, smoke, isolated live verification, Excel manifest/Python/frozen-uv
+checks, wrapper EOF stdout proof, and npm pack dry-run against a complete
+reviewed path allowlist. Its mandatory absolute
+external evidence directory receives one strict bounded redacted JSON document
+that references the separately retained live evidence by immutable unique
+path/hash/size/device-inode identity. Strict live artifacts carry schema v2 and
+kind `opencode-alg-live-verification`; release evidence schema v4 requires that
+live identity and separately runs/binds the complete manager suite. It retains
+complete redacted stdout/stderr within strict per-command/aggregate limits and
+recomputes byte counts/SHA-256 over those exact strings. A separate semantic
+pass binds ordered command IDs and executable families, parsed test/manifest/
+wrapper/npm results, complete current package metadata, strict current-root
+live semantics, and a separate bounded full release-input identity. That second
+identity covers every reviewed packed file, all test sources, and lock/config
+controls with path/type/mode/size/content framing before and after all commands;
+the runtime-source digest remains the narrower live plugin proof. Release
+filenames use the release-input prefix. Local hashes provide integrity, not authenticity against
+coherent rewriting of all local files.
+
+`bun run check` performs strict TypeScript checking, all hardened tests, the no-model dry smoke run, and bounded live OpenCode version/server/raw tool-ID/TUI-registration verification. Smoke and live verification create separate `alg-smoke-*` and `alg-live-verify-*` temporary project trees and remove their exact created trees on both success and failure; these project trees are not release evidence and are never intentionally retained. Live verification disables parent project/default plugin discovery, uses isolated HOME/XDG state plus explicit temporary server and TUI configs that each register this checkout's canonical package-root `file://` spec, and requires server/TUI markers for a complete bounded runtime manifest (`package.json`, all `src/**/*.ts`, shipped templates/agents, and the strict Excel manifest/policy/project/lock/validator/wrapper assets). Normal startup does not compute or log that marker. Server/TUI process cleanup and temporary-environment removal are mandatory pass criteria. Separately, `check:live` retains one bounded evidence JSON only under the dedicated external `opencode-alg-verification-evidence` root below the OS temporary directory (or an approved absolute `OPENCODE_ALG_LIVE_EVIDENCE` there). Every run uses an immutable `live-verification-<source-prefix>-<random-uuid>.json` name and no-clobber publication. The exclusive temporary identity is recorded after write; final and temporary must remain the same hard-linked file through exact byte/hash checks, and temporary cleanup requires that identity again. `check:live` prints final device/inode identity with exact path/size/hash, source manifest identity, registrations, and cleanup results. Strict later verification rejects even a same-byte identity replacement. Later checks cannot replace earlier release-referenced artifacts. See [`docs/operations.md`](docs/operations.md) and [`docs/release-verification.md`](docs/release-verification.md).

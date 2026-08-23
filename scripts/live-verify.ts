@@ -1,18 +1,22 @@
 import { spawn, type ChildProcess } from "node:child_process"
+import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto"
 import {
   existsSync,
+  linkSync,
   lstatSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
   realpathSync,
   rmSync,
+  unlinkSync,
   writeFileSync,
 } from "node:fs"
 import { tmpdir } from "node:os"
 import { delimiter, dirname, isAbsolute, join, parse, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { createServer } from "node:net"
+import { z } from "zod"
 import { terminateProcessTree } from "../src/shell.ts"
 import {
   ALG_LIVE_SOURCE_DIGEST_ENV,
@@ -55,6 +59,178 @@ export const APPROVED_WINDOWS_LIVE_EVIDENCE_ROOT = "D:\\Docker\\model-temp\\open
 const ROOT = PLUGIN_ROOT
 const SEMVER_COMPONENT = "(0|[1-9]\\d{0,5})"
 const STABLE_SEMVER_PATTERN = new RegExp(`^${SEMVER_COMPONENT}\\.${SEMVER_COMPONENT}\\.${SEMVER_COMPONENT}$`)
+const GLOBAL_CONFIG_FILES = ["opencode.json", "opencode.jsonc", "tui.json"] as const
+const GLOBAL_CONFIG_FILE_LIMIT_BYTES = 1024 * 1024
+
+const LiveShaSchema = z.string().regex(/^[a-f0-9]{64}$/)
+const LivePathSchema = z.string().min(1).max(4_096)
+const LiveBoundedTextSchema = z.string().max(OUTPUT_LIMIT)
+const RuntimeManifestEntrySchema = z.object({ path: z.string().min(1).max(512), bytes: z.number().int().nonnegative() }).strict()
+const RuntimeManifestSchema = z.object({
+  digest: LiveShaSchema,
+  entries: z.array(RuntimeManifestEntrySchema).max(256),
+  file_count: z.number().int().nonnegative().max(256),
+  total_bytes: z.number().int().nonnegative().max(8 * 1024 * 1024),
+  bounds: z.object({ max_files: z.number().int().positive(), max_file_bytes: z.number().int().positive(), max_total_bytes: z.number().int().positive() }).strict(),
+}).strict()
+const SnapshotEntrySchema = z.object({
+  scope: z.string().min(1).max(128), relative_path: z.enum([".", ...GLOBAL_CONFIG_FILES]), state: z.enum(["absent", "directory", "file"]),
+  size: z.string().regex(/^\d+$/).nullable(), mtime_ns: z.string().regex(/^\d+$/).nullable(), ctime_ns: z.string().regex(/^\d+$/).nullable(),
+  mode: z.number().int().nonnegative().nullable(), content_hmac_sha256: LiveShaSchema.nullable(),
+}).strict()
+const SnapshotSchema = z.object({ entries: z.array(SnapshotEntrySchema).min(1).max(32), sha256: LiveShaSchema }).strict()
+const CleanupSchema = z.object({
+  root_pid: z.number().int().positive().nullable(), cleanup_scope: z.enum(["root-process", "posix-process-group"]), exit_observed: z.boolean(),
+  exit_code: z.number().int().nullable(), exit_signal: z.string().max(64).nullable(), termination_attempted: z.boolean(),
+  termination_result: z.enum(["already-exited", "succeeded", "failed", "timed-out"]), tree_termination_attempted: z.boolean(),
+  tree_termination_result: z.enum(["not-required", "succeeded", "failed", "timed-out"]), best_effort_kill_attempted: z.boolean(),
+  error: z.string().max(2_048).optional(), passed: z.boolean(),
+}).strict()
+const VersionEvidenceSchema = z.object({
+  executable_path: LivePathSchema, declared_engine_requirement: z.string().min(1).max(64), command: z.tuple([LivePathSchema, z.literal("--version")]),
+  root_pid: z.number().int().positive().nullable(), stdout: LiveBoundedTextSchema, stderr: LiveBoundedTextSchema, exit_observed: z.boolean(),
+  exit_code: z.number().int().nullable(), exit_signal: z.string().max(64).nullable(), timeout_ms: z.number().int().positive(), timed_out: z.boolean(),
+  wait_error: z.string().max(2_048).optional(), cleanup: CleanupSchema, passed: z.boolean(),
+  parsed: z.object({ text: z.string().max(64), major: z.number().int().nonnegative(), minor: z.number().int().nonnegative(), patch: z.number().int().nonnegative() }).strict().nullable(),
+  reason: z.string().max(2_048),
+}).strict()
+const ServerEvidenceSchema = z.object({
+  command: z.array(z.string().max(4_096)).min(1).max(16), root_pid: z.number().int().positive().nullable(), endpoint: z.string().max(4_096),
+  readiness_attempts: z.number().int().nonnegative(), raw_http_status: z.number().int().nullable(), raw_http_body: LiveBoundedTextSchema,
+  parsed_alg_ids: z.array(z.string().max(128)).max(64), source_identity_log: z.string().max(8_192).nullable(), last_request_error: z.string().max(2_048).optional(),
+  stdout_tail: LiveBoundedTextSchema.optional(), stderr_tail: LiveBoundedTextSchema.optional(), cleanup: CleanupSchema.optional(),
+}).strict()
+const TuiEvidenceSchema = z.object({
+  command: z.array(z.string().max(4_096)).min(1).max(16), root_pid: z.number().int().positive().nullable(), registration_log: z.string().max(8_192).optional(),
+  source_identity_log: z.string().max(8_192).nullable().optional(), stdout_tail: LiveBoundedTextSchema.optional(), stderr_tail: LiveBoundedTextSchema.optional(), cleanup: CleanupSchema.optional(),
+}).strict()
+
+export const LiveEvidenceSchema = z.object({
+  schema_version: z.literal(2), kind: z.literal("opencode-alg-live-verification"), generated_at: z.iso.datetime({ offset: true }), no_model_calls: z.literal(true),
+  plugin_source: z.object({
+    package_version: z.string().min(1).max(64), canonical_root: LivePathSchema, package_spec: z.string().min(1).max(8_192), sha256: LiveShaSchema,
+    runtime_manifest: RuntimeManifestSchema, entry_points: z.object({ server: LivePathSchema, tui: LivePathSchema }).strict(),
+    registrations: z.object({ server: z.array(z.string().max(8_192)).length(1), tui: z.array(z.string().max(8_192)).length(1) }).strict(),
+  }).strict(),
+  isolation: z.object({
+    project_config_disabled: z.literal(true), default_plugins_disabled: z.literal(true), external_skills_disabled: z.literal(true), isolated_xdg_config: z.literal(true),
+    explicit_server_config: LivePathSchema, isolated_tui_config: LivePathSchema, parent_global_plugin_state_used: z.literal(false), user_global_config_modified: z.boolean(),
+    global_config_snapshots: z.object({ algorithm: z.literal("ephemeral-key-hmac-sha256-plus-file-metadata"), allowlisted_relative_paths: z.tuple([z.literal("."), ...GLOBAL_CONFIG_FILES.map((item) => z.literal(item))]), before: SnapshotSchema, after: SnapshotSchema.nullable(), unchanged: z.boolean() }).strict(),
+  }).strict(),
+  declared_engine_requirement: z.string().min(1).max(64), required_alg_tool_ids: z.array(z.string().max(128)).length(ALG_TOOL_IDS.length), output_path: LivePathSchema,
+  temporary_environment_removed: z.boolean(), passed: z.boolean(), reason: z.string().max(2_048), failure: z.string().max(2_048).optional(),
+  cleanup_failures: z.array(z.string().max(2_048)).max(2).optional(), version: VersionEvidenceSchema, server: ServerEvidenceSchema.optional(), tui: TuiEvidenceSchema.optional(),
+}).strict()
+
+export interface GlobalConfigRoot {
+  scope: string
+  path: string
+}
+
+export interface GlobalConfigSnapshotEntry {
+  scope: string
+  relative_path: "." | typeof GLOBAL_CONFIG_FILES[number]
+  state: "absent" | "directory" | "file"
+  size: string | null
+  mtime_ns: string | null
+  ctime_ns: string | null
+  mode: number | null
+  content_hmac_sha256: string | null
+}
+
+export interface GlobalConfigSnapshot {
+  entries: GlobalConfigSnapshotEntry[]
+  sha256: string
+}
+
+function uniqueGlobalConfigRoots(roots: GlobalConfigRoot[]): GlobalConfigRoot[] {
+  const seen = new Set<string>()
+  return roots.filter((root) => {
+    const path = normalizedPath(root.path)
+    if (seen.has(path)) return false
+    seen.add(path)
+    return true
+  })
+}
+
+/** Resolve real-user config roots before the child HOME/XDG environment is isolated. */
+export function realUserGlobalConfigRoots(
+  environment: NodeJS.ProcessEnv = process.env,
+  platform = process.platform,
+): GlobalConfigRoot[] {
+  const roots: GlobalConfigRoot[] = []
+  const add = (scope: string, base: string | undefined, segments: string[]) => {
+    if (!base?.trim()) return
+    if (!isAbsolute(base)) throw new Error(`real-user ${scope} config base must be absolute`)
+    roots.push({ scope, path: resolve(base, ...segments) })
+  }
+  add("xdg", environment.XDG_CONFIG_HOME, ["opencode"])
+  add("home", environment.HOME ?? environment.USERPROFILE, [".config", "opencode"])
+  if (platform === "win32") add("appdata", environment.APPDATA, ["opencode"])
+  if (!roots.length) throw new Error("unable to resolve a real-user OpenCode config root")
+  return uniqueGlobalConfigRoots(roots)
+}
+
+function snapshotEntry(
+  root: GlobalConfigRoot,
+  relativePath: GlobalConfigSnapshotEntry["relative_path"],
+  hmacKey: Uint8Array,
+): GlobalConfigSnapshotEntry {
+  const path = relativePath === "." ? root.path : join(root.path, relativePath)
+  if (!existsSync(path)) {
+    return {
+      scope: root.scope, relative_path: relativePath, state: "absent",
+      size: null, mtime_ns: null, ctime_ns: null, mode: null, content_hmac_sha256: null,
+    }
+  }
+  const stat = lstatSync(path, { bigint: true })
+  if (stat.isSymbolicLink()) throw new Error(`real-user OpenCode config allowlist contains a symlink or junction (${root.scope}/${relativePath})`)
+  const canonical = realpathSync.native(path)
+  if (normalizedPath(canonical) !== normalizedPath(path)) {
+    throw new Error(`real-user OpenCode config allowlist is redirected (${root.scope}/${relativePath})`)
+  }
+  const expectedDirectory = relativePath === "."
+  if ((expectedDirectory && !stat.isDirectory()) || (!expectedDirectory && !stat.isFile())) {
+    throw new Error(`real-user OpenCode config allowlist has an unexpected file type (${root.scope}/${relativePath})`)
+  }
+  let contentHmac: string | null = null
+  if (!expectedDirectory) {
+    if (stat.size > BigInt(GLOBAL_CONFIG_FILE_LIMIT_BYTES)) {
+      throw new Error(`real-user OpenCode config file exceeds ${GLOBAL_CONFIG_FILE_LIMIT_BYTES} bytes (${root.scope}/${relativePath})`)
+    }
+    const bytes = readFileSync(path)
+    const after = lstatSync(path, { bigint: true })
+    if (after.size !== stat.size || after.mtimeNs !== stat.mtimeNs || after.ctimeNs !== stat.ctimeNs) {
+      throw new Error(`real-user OpenCode config changed while it was being snapshotted (${root.scope}/${relativePath})`)
+    }
+    contentHmac = createHmac("sha256", hmacKey)
+      .update(root.scope).update("\0").update(relativePath).update("\0").update(bytes).digest("hex")
+  }
+  return {
+    scope: root.scope,
+    relative_path: relativePath,
+    state: expectedDirectory ? "directory" : "file",
+    size: stat.size.toString(),
+    mtime_ns: stat.mtimeNs.toString(),
+    ctime_ns: stat.ctimeNs.toString(),
+    mode: Number(stat.mode),
+    content_hmac_sha256: contentHmac,
+  }
+}
+
+/** Snapshot only known config files; keyed fingerprints never expose config contents or reusable hashes. */
+export function snapshotGlobalOpenCodeConfig(
+  roots: GlobalConfigRoot[],
+  hmacKey: Uint8Array,
+): GlobalConfigSnapshot {
+  if (hmacKey.byteLength < 32) throw new Error("global config snapshot HMAC key must contain at least 32 bytes")
+  const entries = uniqueGlobalConfigRoots(roots).flatMap((root) => [
+    snapshotEntry(root, ".", hmacKey),
+    ...GLOBAL_CONFIG_FILES.map((path) => snapshotEntry(root, path, hmacKey)),
+  ])
+  const serialized = Buffer.from(JSON.stringify(entries), "utf8")
+  return { entries, sha256: createHash("sha256").update(serialized).digest("hex") }
+}
 
 export interface LiveEvidenceDestinationOptions {
   pluginRoot?: string
@@ -662,18 +838,219 @@ export function liveVerificationPassed(input: {
   serverCleanup?: ProcessCleanupEvidence
   tuiCleanup?: ProcessCleanupEvidence
   temporaryEnvironmentRemoved: boolean
+  userGlobalConfigUnchanged?: boolean
 }): boolean {
   return input.failure === undefined && input.verificationCompleted &&
     input.serverCleanup?.passed === true && input.tuiCleanup?.passed === true &&
-    input.temporaryEnvironmentRemoved
+    input.temporaryEnvironmentRemoved && input.userGlobalConfigUnchanged !== false
 }
 
-/** Independent retained-evidence gate used by check:live. */
-export function retainedLiveEvidencePassed(value: unknown): boolean {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false
-  const evidence = value as Record<string, any>
-  return evidence.passed === true && evidence.server?.cleanup?.passed === true &&
-    evidence.tui?.cleanup?.passed === true && evidence.temporary_environment_removed === true
+const LIVE_EVIDENCE_NAME = /^live-verification-([0-9a-f]{16})-([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\.json$/
+
+export function uniqueLiveEvidencePath(directory: string, sourceSha256: string, uuid = randomUUID()): string {
+  if (!/^[0-9a-f]{64}$/.test(sourceSha256) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(uuid)) {
+    throw new Error("live evidence source hash or UUID is invalid")
+  }
+  return join(resolve(directory), `live-verification-${sourceSha256.slice(0, 16)}-${uuid}.json`)
+}
+
+export interface EvidenceFileIdentity {
+  dev: string
+  ino: string
+}
+
+function evidenceFileIdentity(path: string): EvidenceFileIdentity {
+  const stat = lstatSync(path, { bigint: true })
+  if (!stat.isFile() || stat.isSymbolicLink() || normalizedPath(realpathSync.native(path)) !== normalizedPath(path)) {
+    throw new Error(`evidence path is redirected or not a direct regular file: ${path}`)
+  }
+  return { dev: stat.dev.toString(), ino: stat.ino.toString() }
+}
+
+function sameEvidenceIdentity(left: EvidenceFileIdentity, right: EvidenceFileIdentity): boolean {
+  return left.dev === right.dev && left.ino === right.ino
+}
+
+function evidencePathMissing(path: string): boolean {
+  try {
+    lstatSync(path)
+    return false
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code
+    if (code === "ENOENT" || code === "ENOTDIR") return true
+    throw error
+  }
+}
+
+function assertEvidenceFile(path: string, identity: EvidenceFileIdentity, bytes: Buffer, label: string): void {
+  if (!sameEvidenceIdentity(evidenceFileIdentity(path), identity) || !readFileSync(path).equals(bytes)) {
+    throw new Error(`${label} bytes or identity changed: ${path}`)
+  }
+}
+
+export function persistImmutableLiveEvidence(
+  path: string,
+  input: Uint8Array,
+  options: {
+    link?: typeof linkSync
+    unlink?: typeof unlinkSync
+    afterLink?: (temporary: string, final: string) => void
+    afterFinalVerified?: (temporary: string, final: string) => void
+  } = {},
+): { path: string; sha256: string; bytes: number; identity: EvidenceFileIdentity } {
+  const bytes = Buffer.from(input)
+  const temporary = `${path}.tmp-${randomUUID()}`
+  const link = options.link ?? linkSync
+  const unlink = options.unlink ?? unlinkSync
+  let temporaryIdentity: EvidenceFileIdentity | undefined
+  try {
+    writeFileSync(temporary, bytes, { flag: "wx", mode: 0o600 })
+    temporaryIdentity = evidenceFileIdentity(temporary)
+    assertEvidenceFile(temporary, temporaryIdentity, bytes, "live evidence temporary")
+    link(temporary, path)
+    options.afterLink?.(temporary, path)
+    const finalIdentity = evidenceFileIdentity(path)
+    if (!sameEvidenceIdentity(finalIdentity, temporaryIdentity)) throw new Error("live evidence final identity differs from its temporary hard link")
+    assertEvidenceFile(path, finalIdentity, bytes, "live evidence final")
+    options.afterFinalVerified?.(temporary, path)
+    assertEvidenceFile(temporary, temporaryIdentity, bytes, "live evidence temporary before cleanup")
+    unlink(temporary)
+    assertEvidenceFile(path, finalIdentity, bytes, "live evidence final after temporary cleanup")
+    return {
+      path,
+      sha256: createHash("sha256").update(bytes).digest("hex"),
+      bytes: bytes.byteLength,
+      identity: finalIdentity,
+    }
+  } catch (error) {
+    let cleanupFailure: unknown
+    if (temporaryIdentity && !evidencePathMissing(temporary)) {
+      try {
+        assertEvidenceFile(temporary, temporaryIdentity, bytes, "live evidence temporary cleanup")
+        unlink(temporary)
+      } catch (cleanupError) {
+        cleanupFailure = cleanupError
+      }
+    }
+    const detail = error instanceof Error ? error.message : String(error)
+    const cleanup = cleanupFailure === undefined ? "" : `; temporary preserved: ${cleanupFailure instanceof Error ? cleanupFailure.message : String(cleanupFailure)}`
+    throw new Error(`live evidence no-clobber publication failed: ${detail}${cleanup}`)
+  }
+}
+
+export function verifyRetainedLiveEvidenceArtifact(
+  path: string,
+  expected: { source_sha256: string; sha256?: string; bytes?: number; identity?: EvidenceFileIdentity },
+  root = PLUGIN_ROOT,
+): { path: string; sha256: string; bytes: number; identity: EvidenceFileIdentity; evidence: Record<string, any> } {
+  if (!isAbsolute(path) || !existsSync(path)) throw new Error("retained live evidence path must be absolute and exist")
+  const match = LIVE_EVIDENCE_NAME.exec(path.split(/[\\/]/).at(-1) ?? "")
+  if (!match || match[1] !== expected.source_sha256.slice(0, 16)) throw new Error("retained live evidence filename is not unique or source-prefixed")
+  const identity = evidenceFileIdentity(path)
+  if (expected.identity !== undefined && !sameEvidenceIdentity(identity, expected.identity)) throw new Error("retained live evidence identity differs from publication")
+  const bytes = readFileSync(path)
+  const hash = createHash("sha256").update(bytes).digest("hex")
+  if (bytes.byteLength > LIVE_EVIDENCE_LIMIT_BYTES || expected.bytes !== undefined && bytes.byteLength !== expected.bytes ||
+    expected.sha256 !== undefined && hash !== expected.sha256) throw new Error("retained live evidence size/hash is invalid")
+  const evidence = validateRetainedLiveEvidence(JSON.parse(bytes.toString("utf8")), root)
+  if (evidence.plugin_source?.sha256 !== expected.source_sha256) throw new Error("retained live evidence source differs from filename/expectation")
+  if (!sameEvidenceIdentity(evidenceFileIdentity(path), identity)) throw new Error("retained live evidence identity changed during verification")
+  return { path, sha256: hash, bytes: bytes.byteLength, identity, evidence }
+}
+
+function exactJson(left: unknown, right: unknown): boolean {
+  return JSON.stringify(left) === JSON.stringify(right)
+}
+
+/** Strict current-checkout semantic validation for retained live evidence. */
+export function validateRetainedLiveEvidence(value: unknown, root = PLUGIN_ROOT): Record<string, any> {
+  const evidence = LiveEvidenceSchema.parse(value) as Record<string, any>
+  const configuration = verificationPluginConfiguration(root)
+  const source = configuration.source
+  if (evidence.passed !== true || evidence.no_model_calls !== true || evidence.temporary_environment_removed !== true) {
+    throw new Error("live evidence does not prove passed/no-model/temporary cleanup semantics")
+  }
+  if (evidence.declared_engine_requirement !== OPENCODE_ENGINE_REQUIREMENT ||
+    !exactJson(evidence.required_alg_tool_ids, ALG_TOOL_IDS)) throw new Error("live evidence engine/tool requirements differ")
+  const plugin = evidence.plugin_source
+  if (plugin?.package_version !== configuration.package_version ||
+    normalizedPath(plugin?.canonical_root ?? "") !== normalizedPath(source.root) || plugin?.package_spec !== source.spec ||
+    plugin?.sha256 !== source.digest || !exactJson(plugin?.entry_points, configuration.entry_points) ||
+    !exactJson(plugin?.registrations?.server, configuration.server_config.plugin) ||
+    !exactJson(plugin?.registrations?.tui, configuration.tui_config.plugin)) throw new Error("live plugin identity/registration differs from current checkout")
+  const manifest = plugin?.runtime_manifest
+  if (manifest?.digest !== source.digest || !exactJson(manifest?.entries, source.manifest) ||
+    manifest?.file_count !== source.file_count || manifest?.total_bytes !== source.total_bytes ||
+    !exactJson(manifest?.bounds, source.bounds)) throw new Error("live runtime manifest differs from current checkout")
+  const isolation = evidence.isolation
+  for (const field of ["project_config_disabled", "default_plugins_disabled", "external_skills_disabled", "isolated_xdg_config"] as const) {
+    if (isolation?.[field] !== true) throw new Error(`live isolation ${field} is not true`)
+  }
+  if (isolation?.parent_global_plugin_state_used !== false || isolation?.user_global_config_modified !== false) {
+    throw new Error("live isolation/global-config claims are invalid")
+  }
+  const snapshots = isolation?.global_config_snapshots
+  if (snapshots?.algorithm !== "ephemeral-key-hmac-sha256-plus-file-metadata" ||
+    !exactJson(snapshots?.allowlisted_relative_paths, [".", ...GLOBAL_CONFIG_FILES]) || snapshots?.unchanged !== true) {
+    throw new Error("live global-config snapshot contract is invalid")
+  }
+  const before = snapshots?.before
+  const after = snapshots?.after
+  if (!Array.isArray(before?.entries) || before.entries.length === 0 || !Array.isArray(after?.entries) ||
+    !exactJson(before.entries, after.entries) || before.sha256 !== after.sha256 || !/^[a-f0-9]{64}$/.test(before.sha256 ?? "") ||
+    createHash("sha256").update(Buffer.from(JSON.stringify(before.entries), "utf8")).digest("hex") !== before.sha256) {
+    throw new Error("live global-config before/after snapshots are empty, malformed, or unequal")
+  }
+  const keys = new Set<string>()
+  const scopes = new Map<string, Set<string>>()
+  for (const entry of before.entries) {
+    if (!entry || typeof entry !== "object" || typeof entry.scope !== "string" || !entry.scope ||
+      !GLOBAL_CONFIG_FILES.includes(entry.relative_path) && entry.relative_path !== "." ||
+      !["absent", "directory", "file"].includes(entry.state)) throw new Error("live global-config snapshot entry is malformed")
+    const key = `${entry.scope}\0${entry.relative_path}`
+    if (keys.has(key)) throw new Error("live global-config snapshot contains duplicate scope/path")
+    keys.add(key)
+    const paths = scopes.get(entry.scope) ?? new Set<string>()
+    paths.add(entry.relative_path)
+    scopes.set(entry.scope, paths)
+    const absent = entry.state === "absent"
+    if (absent !== (entry.size === null && entry.mtime_ns === null && entry.ctime_ns === null && entry.mode === null && entry.content_hmac_sha256 === null)) {
+      throw new Error("live global-config snapshot absent metadata is inconsistent")
+    }
+    if (!absent && (!/^\d+$/.test(entry.size) || !/^\d+$/.test(entry.mtime_ns) || !/^\d+$/.test(entry.ctime_ns) ||
+      !Number.isInteger(entry.mode) || (entry.state === "file" ? !/^[a-f0-9]{64}$/.test(entry.content_hmac_sha256 ?? "") : entry.content_hmac_sha256 !== null))) {
+      throw new Error("live global-config snapshot present metadata is malformed")
+    }
+  }
+  const allowlist = [".", ...GLOBAL_CONFIG_FILES]
+  if (![...scopes.values()].every((paths) => exactJson([...paths], allowlist))) throw new Error("live global-config snapshot scope allowlist differs")
+  const version = evidence.version
+  const compatibility = validateOpenCodeVersion(version?.parsed?.text ?? "")
+  if (version?.passed !== true || version?.declared_engine_requirement !== OPENCODE_ENGINE_REQUIREMENT || !compatibility.compatible ||
+    version?.exit_code !== 0 || version?.cleanup?.passed !== true) throw new Error("live OpenCode version evidence is incompatible")
+  const server = evidence.server
+  let rawIds: string[]
+  try { JSON.parse(server?.raw_http_body ?? ""); rawIds = parseAlgToolIds(server.raw_http_body) } catch { throw new Error("live server raw tool body is not JSON") }
+  if (server?.raw_http_status !== 200 || !exactJson(rawIds, ALG_TOOL_IDS) || !exactJson(server?.parsed_alg_ids, ALG_TOOL_IDS) ||
+    findSourceIdentityLine(server?.source_identity_log ?? "", "server", source) !== server?.source_identity_log || server?.cleanup?.passed !== true) {
+    throw new Error("live server status/tools/source/cleanup semantics are invalid")
+  }
+  const tui = evidence.tui
+  if (findTuiRegistrationLine(tui?.registration_log ?? "") !== tui?.registration_log ||
+    findSourceIdentityLine(tui?.source_identity_log ?? "", "tui", source) !== tui?.source_identity_log || tui?.cleanup?.passed !== true) {
+    throw new Error("live TUI registration/source/cleanup semantics are invalid")
+  }
+  return evidence
+}
+
+/** Boolean compatibility wrapper; callers needing diagnostics use validateRetainedLiveEvidence. */
+export function retainedLiveEvidencePassed(value: unknown, root = PLUGIN_ROOT): boolean {
+  try {
+    validateRetainedLiveEvidence(value, root)
+    return true
+  } catch {
+    return false
+  }
 }
 
 function versionCommandEvidence(
@@ -1014,9 +1391,19 @@ function outputArgument(args: string[]): string {
   return resolve(value)
 }
 
-export async function runLiveVerification(outputPath: string): Promise<void> {
+export async function runLiveVerification(outputPath: string): Promise<{ path: string; sha256: string; bytes: number; identity: EvidenceFileIdentity }> {
+  const pluginConfiguration = verificationPluginConfiguration()
+  assertVerificationPluginConfiguration(pluginConfiguration)
   outputPath = prepareLiveEvidenceDestination(outputPath).path
+  const outputName = outputPath.split(/[\\/]/).at(-1) ?? ""
+  const outputMatch = LIVE_EVIDENCE_NAME.exec(outputName)
+  if (!outputMatch || outputMatch[1] !== pluginConfiguration.source.digest.slice(0, 16)) {
+    throw new Error("live verification output filename must contain the current source prefix and a random UUID")
+  }
   const requestedExecutable = process.env.OPENCODE_BIN?.trim() || "opencode"
+  const realUserConfigRoots = realUserGlobalConfigRoots({ ...process.env })
+  const globalConfigHmacKey = randomBytes(32)
+  const globalConfigBefore = snapshotGlobalOpenCodeConfig(realUserConfigRoots, globalConfigHmacKey)
   const temporaryRoot = mkdtempSync(join(tmpdir(), "alg-live-verify-"))
   const project = join(temporaryRoot, "project")
   const configHome = join(temporaryRoot, "xdg-config")
@@ -1024,8 +1411,6 @@ export async function runLiveVerification(outputPath: string): Promise<void> {
   const isolatedHome = join(temporaryRoot, "home")
   const serverConfigPath = join(temporaryRoot, "opencode.json")
   const tuiConfigPath = join(configDirectory, "tui.json")
-  const pluginConfiguration = verificationPluginConfiguration()
-  assertVerificationPluginConfiguration(pluginConfiguration)
   for (const directory of [
     project,
     configDirectory,
@@ -1050,7 +1435,10 @@ export async function runLiveVerification(outputPath: string): Promise<void> {
   let serverCleanup: ProcessCleanupEvidence | undefined
   let tuiCleanup: ProcessCleanupEvidence | undefined
   let verificationCompleted = false
+  let globalConfigUnchanged = false
   const evidence: Record<string, unknown> = {
+    schema_version: 2,
+    kind: "opencode-alg-live-verification",
     generated_at: new Date().toISOString(),
     no_model_calls: true,
     plugin_source: {
@@ -1079,7 +1467,14 @@ export async function runLiveVerification(outputPath: string): Promise<void> {
       explicit_server_config: serverConfigPath,
       isolated_tui_config: tuiConfigPath,
       parent_global_plugin_state_used: false,
-      user_global_config_modified: false,
+      user_global_config_modified: null,
+      global_config_snapshots: {
+        algorithm: "ephemeral-key-hmac-sha256-plus-file-metadata",
+        allowlisted_relative_paths: [".", ...GLOBAL_CONFIG_FILES],
+        before: globalConfigBefore,
+        after: null,
+        unchanged: false,
+      },
     },
     declared_engine_requirement: OPENCODE_ENGINE_REQUIREMENT,
     required_alg_tool_ids: ALG_TOOL_IDS,
@@ -1089,6 +1484,7 @@ export async function runLiveVerification(outputPath: string): Promise<void> {
     reason: "live verification did not complete",
   }
   let failure: unknown
+  let publication: { path: string; sha256: string; bytes: number; identity: EvidenceFileIdentity } | undefined
   try {
     try {
       executable = resolveOpenCodeExecutable(requestedExecutable)
@@ -1280,15 +1676,47 @@ export async function runLiveVerification(outputPath: string): Promise<void> {
       evidence.failure = reason
       evidence.reason = reason
     }
+    try {
+      const globalConfigAfter = snapshotGlobalOpenCodeConfig(realUserConfigRoots, globalConfigHmacKey)
+      globalConfigUnchanged = globalConfigBefore.sha256 === globalConfigAfter.sha256 &&
+        JSON.stringify(globalConfigBefore.entries) === JSON.stringify(globalConfigAfter.entries)
+      evidence.isolation = {
+        ...((evidence.isolation as object | undefined) ?? {}),
+        user_global_config_modified: !globalConfigUnchanged,
+        global_config_snapshots: {
+          algorithm: "ephemeral-key-hmac-sha256-plus-file-metadata",
+          allowlisted_relative_paths: [".", ...GLOBAL_CONFIG_FILES],
+          before: globalConfigBefore,
+          after: globalConfigAfter,
+          unchanged: globalConfigUnchanged,
+        },
+      }
+      if (!globalConfigUnchanged) {
+        const reason = "real-user OpenCode config metadata changed during live verification"
+        failure = new Error(reason)
+        evidence.failure = reason
+        evidence.reason = reason
+      }
+    } catch (error) {
+      const reason = `real-user OpenCode config post-cleanup snapshot failed: ${boundedError(error)}`
+      failure = new Error(reason)
+      evidence.failure = reason
+      evidence.reason = reason
+      evidence.isolation = {
+        ...((evidence.isolation as object | undefined) ?? {}),
+        user_global_config_modified: true,
+      }
+    }
     evidence.passed = liveVerificationPassed({
       verificationCompleted,
       failure,
       serverCleanup,
       tuiCleanup,
       temporaryEnvironmentRemoved: temporaryRemoval.removed,
+      userGlobalConfigUnchanged: globalConfigUnchanged,
     })
     if (evidence.passed) {
-      evidence.reason = `${evidence.reason}; temporary environment removal confirmed`
+      evidence.reason = `${evidence.reason}; temporary environment removal and real-user global-config preservation confirmed`
     }
     if (!evidence.passed && !failure) {
       failure = new Error("live verification did not produce complete cleanup proof")
@@ -1316,9 +1744,11 @@ export async function runLiveVerification(outputPath: string): Promise<void> {
     if (Buffer.byteLength(serializedEvidence, "utf8") > LIVE_EVIDENCE_LIMIT_BYTES) {
       throw new Error(`bounded live evidence could not fit within ${LIVE_EVIDENCE_LIMIT_BYTES} bytes`)
     }
-    writeFileSync(outputPath, serializedEvidence, "utf8")
+    publication = persistImmutableLiveEvidence(outputPath, Buffer.from(serializedEvidence, "utf8"))
   }
   if (failure) throw failure
+  if (!publication) throw new Error("live verification did not complete evidence publication")
+  return publication
 }
 
 if (import.meta.main) await runLiveVerification(outputArgument(process.argv.slice(2)))

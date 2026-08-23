@@ -133,7 +133,7 @@ These are packaged defaults, not a permission guarantee. The installer adds no t
 | `src/limits.ts` | Shared byte and projection bounds. |
 | `src/schemas.ts` | Strict Zod graph, output, persisted-state, attempt, reference, and cross-record validation. |
 | `src/graph.ts` | Node-state initialization, readiness/terminal logic, failed-descendant skips, input resolution. |
-| `src/templates.ts` | Executable built-in `coding-diamond` and `research-diamond` definitions. |
+| `src/templates.ts` | Executable built-in `coding-diamond`, `research-diamond`, and staged-copy `spreadsheet-diamond` definitions. |
 | `src/executor.ts` | Attempt reservation, graph-ordered waves, bounded concurrency, gates, outcomes, feedback routing, resume. |
 | `src/sessions.ts` | Prompt construction, fresh SDK child creation, model/variant prompt fields, response JSON extraction. |
 | `src/shell.ts` | Permission-mediated shell execution, controlled cwd/environment/output/time, process-tree termination checks. |
@@ -154,7 +154,41 @@ These are packaged defaults, not a permission guarantee. The installer adds no t
 | `src/tui.ts`, `src/tui-registration.ts` | TUI package wrapper and verification registration token. |
 | `src/source-identity.ts` | Verification-only, source-bound runtime manifest and digest. |
 
-`scripts/installer-core.ts` and the platform launchers handle registration/agent installation; they are deployment support rather than runtime orchestration. `docs/operations.md` and `docs/release-verification.md` are the maintained operational references.
+`scripts/installer-core.ts` and the compatible direct launchers handle legacy registration/agent installation. `scripts/manager-core.ts`, `manager-schema.ts`, and `manager-cli.ts` plus `alg.ps1`/`alg.sh` implement opt-in, side-by-side release management. These scripts are on-demand release support rather than server/TUI runtime orchestration. Git commit/tag verification and staged package/lock/runtime validation bind manager inputs; the server/TUI runtime-source digest intentionally excludes release-support scripts. `docs/operations.md`, `docs/upgrades.md`, and `docs/release-verification.md` are the maintained operational references.
+
+### Excel capability boundary
+
+`capabilities/excel/` is a separately pinned runtime pack whose strict manifest,
+Python policy/wrapper/validator, `pyproject.toml`, and complete `uv.lock` are all
+included in package and source identity. The manager alone activates it. A
+generation receipt stores enabled state, canonical workbook root, manifest,
+lock, wrapper, validator, config, and bounded environment identity, an
+activation-specific `<generation>/<lock>/<uuid>` environment path, and
+the exact managed local MCP object. Old receipts/generations without capability
+data remain deliberately valid and mean disabled.
+
+Enable validates every manifest hash and the exact upstream wheel/version/tool
+contract, synchronizes an environment below the managed install root with
+`uv sync --frozen --no-dev`, invokes the generation wrapper's bounded
+`--check`, then includes the targeted `opencode.jsonc` edit in the normal
+journal/CAS transaction before the receipt-last boundary. Environments or
+promoted releases may be safely orphaned by failed activation; they are never
+automatically deleted. No live config is published before preflight succeeds.
+
+Only an exact receipt-managed `mcp.alg_excel` may be updated or removed. A
+custom/malformed entry blocks enable/update; disable, rollback-to-disabled, and
+uninstall preserve custom drift and report it. Default update preserves the
+active generation's state/root. Rollback uses only the target generation's
+stored state and never invents enablement for a target without it.
+
+The wrapper patches `excel_mcp.server.get_excel_path` before stdio start and
+sets its canonical root global without changing the upstream 25-tool registry.
+Remote transports are disabled/not used. Its policy confines MCP workbook path
+arguments to relative `.xlsx` paths below one root, including realpath/reparse
+checks. It does not restrict ambient process permissions and is not an OS
+sandbox. The deterministic utility stages copies and performs bounded read-only
+OpenXML/formula/external-link inspection. openpyxl does not calculate formulas;
+no freshness/recalculation claim is made, and LibreOffice is absent in v0.2.
 
 ## Durable data model and invariants
 
@@ -522,15 +556,65 @@ SDK and executor errors are converted to bounded, cycle-safe diagnostics. Only a
 
 ### Configuration safety
 
-Installer/config code preflights JSONC and agent operations, preserves supported encodings/BOM/comments/unrelated fields, writes exact adjacent backups, uses same-directory replacement, and rolls earlier live writes back if a later config/agent write fails. It never grants top-level permissions or sets providers/default agents.
+Installer/config code preflights JSONC and agent operations, preserves supported encodings/BOM/comments/unrelated fields, and writes exact independent adjacent backups. Direct config and agent changes share prepared files and hard-link claims: all public states are preflighted before mutation, existing names are identity-checked before unlink, new bytes publish create-if-absent, and rollback starts only after a complete public/claim/prepared identity preflight. It remains non-journaled/crash-limited, but never rename-overwrites or unchecked-deletes a public path and preserves a detected non-cooperating racer. It never grants top-level permissions or sets providers/default agents.
 
 For `/alg-models`, API updates handle additions. A deletion that the merge-only API cannot express uses local JSONC only when the same API read came from loopback and exactly one local source matches merged role fields. Zero, split, ambiguous, mismatched, URL-less, or remote sources fail closed with server-side editing guidance.
 
+The v0.2 release manager clones exact stable tags into same-filesystem staging,
+installs frozen/no-script production dependencies only there, validates package,
+lock, runtime manifest, exports, and Git identity, then snapshots the bounded
+same-filesystem tree. The manager exclusively creates the
+`<version>-<commit12>/package` directory below an identity-recorded reservation,
+recursively creates directories, hard-links regular files create-if-absent,
+and recreates only contained safe symlinks while preserving modes. Unsupported
+types, reparse/junction/escape, count/depth/file/aggregate bounds, occupied
+destinations, and identity changes fail closed. Git validation disables optional
+index locking so it cannot replace a materialized hard-linked index. Staging is
+removed only after whole-tree and immediate per-entry identity checks. Failure
+cleanup removes unchanged manager-created entries bottom-up; foreign additions
+or replacements preserve the reservation. Neither final path is a rename
+destination. A strict external receipt selects a direct
+package-root URL; no symlink/current pointer is involved. Config and managed
+agent plans share a byte-CAS journal transaction and the receipt commits last.
+Each changed live config/agent has exact same-directory claim/prepared objects;
+hard-link claims plus device/inode/hash checks precede public unlink, and complete
+prepared bytes publish only by hard-link create-if-absent. Recovery uses the same
+state machine and does not rename-overwrite or unchecked-delete public live paths.
+Receipt claiming exclusively hard-links the old receipt into a transaction-exact
+absent claim path, journals file identity before unlinking the public name, and
+never rename-overwrites a claim. Auxiliary receipt paths and bundled journal-agent
+paths are exact transaction/schema derivations; ambiguous paths remain untouched.
+Journal phases are immutable create-only hard-link pairs in a prior-hash-bound
+revision chain; paired device/inode identity protects same-byte replacement and
+cleanup. Filesystem probes are confined to exclusive identity-recorded private
+directories. Receipt-after state requires prepared-receipt identity.
+Portable filesystems provide no atomic compare-and-unlink operation, so this is
+not isolation from an adversary racing after the final identity check.
+Ordinary failures roll back exact process-observed writes, but this is not a
+cross-file atomicity or power-loss claim. Old releases are retained without
+automatic cleanup. See `docs/upgrades.md` for recovery and rollback policy.
+
 ### Source-bound release identity
 
-Release verification hashes `package.json`, all regular non-symlink `src/**/*.ts`, packaged `templates/*.json`, and bundled `agents/*.md`, sorted and framed by normalized path and exact bytes. Collection is bounded to 256 files, 1 MiB each, and 8 MiB total. Under an explicit verification-only environment opt-in, loaded server and TUI entries independently recompute and compare that digest before emitting source markers.
+Release verification hashes `package.json`, all regular non-symlink `src/**/*.ts`, packaged `templates/*.json`, bundled `agents/*.md`, and the six strict Excel manifest/policy/project/lock/validator/wrapper assets, sorted and framed by normalized path and exact bytes. Collection is bounded to 256 files, 1 MiB each, and 8 MiB total. Generated Python caches are excluded. Under an explicit verification-only environment opt-in, loaded server and TUI entries independently recompute and compare that digest before emitting source markers.
 
 Normal startup performs no source scan and emits no source marker. Detailed procedure and retained-evidence rules belong in [the release verification procedure](docs/release-verification.md), not in runtime architecture.
+
+The aggregate release gate separately hashes the complete reviewed packed files,
+all test sources, and release-control/lock inputs with path/type/mode/size/content
+framing before and after its commands. This full release-input identity binds
+retained release evidence and its filename; it does not alter the narrower
+runtime-source digest used by live plugin proof.
+
+Live and release evidence use the same immutable identity protocol. An exclusive
+same-directory temporary is measured by device/inode after writing. The final
+UUID name must be a create-if-absent hard link with the same identity and exact
+bytes/hash. The temporary is unlinked only if that identity and content remain,
+and the final is rechecked afterward. CLI metadata records final identity;
+strict live schema v2 rejects unknown/malformed critical fields before semantic
+validation; release evidence schema v4 binds the referenced live identity and a
+separate exact manager-suite command/totals, and strict
+retained verification rejects same-byte replacement of either artifact.
 
 ## Worked coding-diamond trace
 

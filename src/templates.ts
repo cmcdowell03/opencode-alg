@@ -107,9 +107,54 @@ export const RESEARCH_DIAMOND: GraphDef = {
   ],
 }
 
+export const SPREADSHEET_DIAMOND: GraphDef = {
+  name: "spreadsheet-diamond",
+  description: "Plan a staged-copy spreadsheet change → implement through alg_excel → deterministic validation → fresh-child checker",
+  max_global_attempts: 10,
+  max_concurrency: 2,
+  nodes: [
+    {
+      id: "research",
+      agent: "researcher",
+      depends_on: [],
+      description: "Plan changes for a relative staged .xlsx copy; never operate on or overwrite the source workbook",
+      inputs: {
+        goal: "$goal",
+        spreadsheet_policy: "\"Use only relative staged .xlsx copies through alg_excel. Never overwrite the source. openpyxl stores formulas but does not recalculate them.\"",
+      },
+      loop: { max_attempts: 2, gate: "schema" },
+    },
+    {
+      id: "implement",
+      agent: "implementer",
+      depends_on: ["research"],
+      description: "Edit only the staged relative .xlsx through alg_excel, then run the user-supplied deterministic workbook validator shell gate",
+      inputs: {
+        goal: "$goal",
+        criteria: "$criteria",
+        plan: "research",
+        spreadsheet_policy: "\"Do not use absolute workbook arguments. Do not overwrite the source. Formulas are not recalculated; report that limitation.\"",
+      },
+      loop: { max_attempts: 4, gate: "schema" },
+      // Optional at load; alg_plan injects the caller's validator command.
+    },
+    {
+      id: "check",
+      agent: "checker",
+      depends_on: ["implement"],
+      description: "Fresh-child review of the staged-copy result and deterministic validator evidence",
+      isolated_check: true,
+      feedback_to: "implement",
+      inputs: { criteria: "$criteria", claimed: "implement" },
+      loop: { max_attempts: 4, gate: "schema" },
+    },
+  ],
+}
+
 export const TEMPLATES: Record<string, GraphDef> = {
   "coding-diamond": CODING_DIAMOND,
   "research-diamond": RESEARCH_DIAMOND,
+  "spreadsheet-diamond": SPREADSHEET_DIAMOND,
 }
 
 export function listTemplates(): Array<{ name: string; description?: string; nodes: number }> {

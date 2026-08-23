@@ -24,13 +24,15 @@ if ($RemoveAgents) { $coreArgs += "--remove-agents" }
 Push-Location $root
 try {
   if (Get-Command bun -ErrorAction SilentlyContinue) {
-    & bun install
-    if ($LASTEXITCODE -ne 0) { throw "bun install failed ($LASTEXITCODE)" }
+    if (-not (Test-Path -LiteralPath (Join-Path $root "bun.lock"))) { throw "bun.lock is required for frozen dependency installation" }
+    & bun install --frozen-lockfile --ignore-scripts
+    if ($LASTEXITCODE -ne 0) { throw "frozen Bun install failed ($LASTEXITCODE)" }
     & bun run "scripts/installer-core.ts" @coreArgs
     if ($LASTEXITCODE -ne 0) { throw "ALG installer failed ($LASTEXITCODE)" }
   } elseif (Get-Command npm -ErrorAction SilentlyContinue) {
-    & npm install
-    if ($LASTEXITCODE -ne 0) { throw "npm install failed ($LASTEXITCODE)" }
+    if (-not (Test-Path -LiteralPath (Join-Path $root "package-lock.json"))) { throw "package-lock.json is required for npm ci" }
+    & npm ci --ignore-scripts --no-audit --no-fund
+    if ($LASTEXITCODE -ne 0) { throw "npm ci failed ($LASTEXITCODE)" }
     & npx --no-install tsx "scripts/installer-core.ts" @coreArgs
     if ($LASTEXITCODE -ne 0) { throw "ALG installer failed ($LASTEXITCODE)" }
   } else {

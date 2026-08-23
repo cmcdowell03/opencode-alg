@@ -2,6 +2,7 @@ import { createHash } from "node:crypto"
 import {
   closeSync,
   constants,
+  existsSync,
   fstatSync,
   lstatSync,
   openSync,
@@ -197,6 +198,20 @@ function collectFlatAssets(
   }
 }
 
+function collectExcelCapabilityAssets(
+  root: string,
+  collected: CollectedSource[],
+  bounds: AlgSourceManifestBounds,
+): void {
+  const capabilities = join(root, "capabilities")
+  const excel = join(capabilities, "excel")
+  assertUnlinkedPath(root, capabilities, "directory")
+  assertUnlinkedPath(root, excel, "directory")
+  for (const name of ["manifest.json", "policy.py", "pyproject.toml", "uv.lock", "workbook.py", "wrapper.py"]) {
+    addSourceFile(root, `capabilities/excel/${name}`, collected, bounds)
+  }
+}
+
 export function canonicalPluginRoot(root: string): string {
   return realpathSync.native(resolve(root))
 }
@@ -204,8 +219,10 @@ export function canonicalPluginRoot(root: string): string {
 /**
  * Hash every shipped input that can affect the server/TUI package: package
  * metadata, all TypeScript runtime modules (including untracked modules), and
- * the bundled template/agent assets. Tests, docs, evidence, and scripts are not
- * loaded by those entry points and are intentionally outside this manifest.
+ * the bundled template/agent assets. Tests, docs, and evidence are not loaded
+ * by those entry points. Installer/manager scripts are on-demand release
+ * support (bound separately by Git/tag/package/lock staging validation), not
+ * server/TUI runtime inputs, and are intentionally outside this manifest.
  */
 export function computeAlgSourceIdentity(
   root: string,
@@ -218,6 +235,10 @@ export function computeAlgSourceIdentity(
   collectSourceTypeScript(canonicalRoot, join(canonicalRoot, "src"), "src", collected, bounds)
   collectFlatAssets(canonicalRoot, "templates", ".json", collected, bounds)
   collectFlatAssets(canonicalRoot, "agents", ".md", collected, bounds)
+  const capabilities = join(canonicalRoot, "capabilities")
+  if (existsSync(capabilities)) {
+    collectExcelCapabilityAssets(canonicalRoot, collected, bounds)
+  }
   collected.sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0)
 
   const hash = createHash("sha256")

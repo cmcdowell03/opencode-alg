@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -7,6 +8,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs"
+import { createHash } from "node:crypto"
 import { EventEmitter } from "node:events"
 import { dirname, join, resolve } from "node:path"
 import { tmpdir } from "node:os"
@@ -20,16 +22,21 @@ import {
   fetchToolIds,
   OPENCODE_ENGINE_REQUIREMENT,
   parseStableVersion,
+  persistImmutableLiveEvidence,
   prepareLiveEvidenceDestination,
   removeTemporaryEnvironment,
+  realUserGlobalConfigRoots,
   retainedLiveEvidencePassed,
   runVersionCommand,
+  snapshotGlobalOpenCodeConfig,
   liveVerificationPassed,
   stopCapturedProcess,
   ToolReadinessError,
+  uniqueLiveEvidencePath,
   type CapturedProcess,
   validateOpenCodeVersion,
   verificationPluginConfiguration,
+  verifyRetainedLiveEvidenceArtifact,
   VersionCommandError,
 } from "../scripts/live-verify.ts"
 import {
@@ -195,6 +202,73 @@ describe("live verifier OpenCode compatibility", () => {
       parsed: null,
       reason: "runtime output is not a stable MAJOR.MINOR.PATCH version",
     })
+  })
+})
+
+describe("real-user global OpenCode config preservation snapshots", () => {
+  const key = Buffer.alloc(32, 7)
+
+  test("resolves roots only from the pre-isolation environment and deduplicates HOME/XDG", () => {
+    const home = resolve(tmpdir(), "alg-global-root-home")
+    expect(realUserGlobalConfigRoots({ HOME: home, XDG_CONFIG_HOME: join(home, ".config") }, "linux")).toEqual([
+      { scope: "xdg", path: join(home, ".config", "opencode") },
+    ])
+    expect(() => realUserGlobalConfigRoots({ HOME: "relative-home" }, "linux")).toThrow("must be absolute")
+  })
+
+  test("unchanged metadata and keyed fingerprints compare exactly without retaining contents or absolute paths", () => {
+    const base = mkdtempSync(join(tmpdir(), "alg-global-config-unchanged-"))
+    const root = join(base, "opencode")
+    try {
+      mkdirSync(root)
+      writeFileSync(join(root, "opencode.json"), '{"token":"must-not-appear"}\n')
+      const before = snapshotGlobalOpenCodeConfig([{ scope: "fixture", path: root }], key)
+      const after = snapshotGlobalOpenCodeConfig([{ scope: "fixture", path: root }], key)
+      expect(after).toEqual(before)
+      expect(JSON.stringify(before)).not.toContain("must-not-appear")
+      expect(JSON.stringify(before)).not.toContain(base)
+      expect(before.entries.find((entry) => entry.relative_path === "opencode.json")?.content_hmac_sha256).toMatch(/^[a-f0-9]{64}$/)
+    } finally {
+      rmSync(base, { recursive: true, force: true })
+    }
+  })
+
+  test.each(["create", "mutate", "delete"] as const)("detects %s of an allowlisted config", (action) => {
+    const base = mkdtempSync(join(tmpdir(), `alg-global-config-${action}-`))
+    const root = join(base, "opencode")
+    try {
+      if (action !== "create") {
+        mkdirSync(root)
+        writeFileSync(join(root, "opencode.jsonc"), '{"value":"before"}\n')
+      }
+      const before = snapshotGlobalOpenCodeConfig([{ scope: "fixture", path: root }], key)
+      if (action === "create") {
+        mkdirSync(root)
+        writeFileSync(join(root, "opencode.jsonc"), '{"value":"created"}\n')
+      } else if (action === "mutate") {
+        writeFileSync(join(root, "opencode.jsonc"), '{"value":"mutate"}\n')
+      } else {
+        rmSync(join(root, "opencode.jsonc"))
+      }
+      const after = snapshotGlobalOpenCodeConfig([{ scope: "fixture", path: root }], key)
+      expect(after).not.toEqual(before)
+      expect(after.sha256).not.toBe(before.sha256)
+    } finally {
+      rmSync(base, { recursive: true, force: true })
+    }
+  })
+
+  test("rejects a symlink or junction in an allowlisted config path", () => {
+    const base = mkdtempSync(join(tmpdir(), "alg-global-config-link-"))
+    const root = join(base, "opencode")
+    try {
+      const target = join(base, "target")
+      mkdirSync(target)
+      symlinkSync(target, root, process.platform === "win32" ? "junction" : "dir")
+      expect(() => snapshotGlobalOpenCodeConfig([{ scope: "fixture", path: root }], key)).toThrow(/symlink or junction/)
+    } finally {
+      rmSync(base, { recursive: true, force: true })
+    }
   })
 })
 
@@ -390,6 +464,94 @@ describe("retained live evidence destination confinement", () => {
       expect(prepared.path).toBe(resolve(destination))
       expect(prepared.repository_root).toBe(resolve(fixture.repository))
       expect(prepared.evidence_root).toBe(resolve(fixture.evidenceRoot))
+    } finally {
+      rmSync(fixture.base, { recursive: true, force: true })
+    }
+  })
+
+  test("unique no-clobber live artifacts preserve the first run and reject deterministic/colliding paths", () => {
+    const fixture = destinationFixture()
+    try {
+      const source = verificationPluginConfiguration(ROOT).source.digest
+      const firstPath = uniqueLiveEvidencePath(fixture.evidenceRoot, source, "11111111-1111-4111-8111-111111111111")
+      const secondPath = uniqueLiveEvidencePath(fixture.evidenceRoot, source, "22222222-2222-4222-8222-222222222222")
+      const firstBytes = Buffer.from("first immutable live run\n")
+      const secondBytes = Buffer.from("second immutable live run\n")
+      const first = persistImmutableLiveEvidence(firstPath, firstBytes)
+      const before = readFileSync(firstPath)
+      const second = persistImmutableLiveEvidence(secondPath, secondBytes)
+      expect(first.path).not.toBe(second.path)
+      expect(existsSync(first.path)).toBe(true)
+      expect(existsSync(second.path)).toBe(true)
+      expect(readFileSync(first.path)).toEqual(before)
+      expect(first.sha256).toBe(createHash("sha256").update(before).digest("hex"))
+      expect(() => persistImmutableLiveEvidence(firstPath, Buffer.from("collision\n"))).toThrow("no-clobber")
+      expect(readFileSync(firstPath)).toEqual(firstBytes)
+      const stale = join(fixture.evidenceRoot, `live-verification-${source.slice(0, 16)}.json`)
+      writeFileSync(stale, "{}\n")
+      expect(() => verifyRetainedLiveEvidenceArtifact(stale, { source_sha256: source })).toThrow("filename is not unique")
+    } finally {
+      rmSync(fixture.base, { recursive: true, force: true })
+    }
+  })
+
+  test.each(["before-final-check", "after-final-check"] as const)("same-byte final replacement %s is preserved and rejected by identity", (seam) => {
+    const fixture = destinationFixture()
+    try {
+      const source = verificationPluginConfiguration(ROOT).source.digest
+      const path = uniqueLiveEvidencePath(fixture.evidenceRoot, source, "33333333-3333-4333-8333-333333333333")
+      const bytes = Buffer.from("same bytes, foreign final identity\n")
+      const replace = (_temporary: string, final: string) => {
+        rmSync(final)
+        writeFileSync(final, bytes, { flag: "wx" })
+      }
+      expect(() => persistImmutableLiveEvidence(path, bytes, seam === "before-final-check"
+        ? { afterLink: replace }
+        : { afterFinalVerified: replace })).toThrow(/identity|no-clobber/)
+      expect(readFileSync(path)).toEqual(bytes)
+    } finally {
+      rmSync(fixture.base, { recursive: true, force: true })
+    }
+  })
+
+  test("same-name temporary replacement is preserved and causes publication failure", () => {
+    const fixture = destinationFixture()
+    try {
+      const source = verificationPluginConfiguration(ROOT).source.digest
+      const path = uniqueLiveEvidencePath(fixture.evidenceRoot, source, "44444444-4444-4444-8444-444444444444")
+      const bytes = Buffer.from("immutable final bytes\n")
+      const foreign = Buffer.from("foreign temporary bytes\n")
+      let temporary = ""
+      expect(() => persistImmutableLiveEvidence(path, bytes, {
+        afterFinalVerified(temp) {
+          temporary = temp
+          rmSync(temp)
+          writeFileSync(temp, foreign, { flag: "wx" })
+        },
+      })).toThrow(/temporary preserved|identity/)
+      expect(readFileSync(path)).toEqual(bytes)
+      expect(readFileSync(temporary)).toEqual(foreign)
+    } finally {
+      rmSync(fixture.base, { recursive: true, force: true })
+    }
+  })
+
+  test("retained verification requires the publication identity and rejects a same-byte replacement", () => {
+    const fixture = destinationFixture()
+    try {
+      const source = verificationPluginConfiguration(ROOT).source.digest
+      const path = uniqueLiveEvidencePath(fixture.evidenceRoot, source, "55555555-5555-4555-8555-555555555555")
+      const bytes = Buffer.from("not semantic live evidence\n")
+      const published = persistImmutableLiveEvidence(path, bytes)
+      rmSync(path)
+      writeFileSync(path, bytes, { flag: "wx" })
+      expect(() => verifyRetainedLiveEvidenceArtifact(path, {
+        source_sha256: source,
+        sha256: published.sha256,
+        bytes: published.bytes,
+        identity: published.identity,
+      })).toThrow("identity differs")
+      expect(readFileSync(path)).toEqual(bytes)
     } finally {
       rmSync(fixture.base, { recursive: true, force: true })
     }

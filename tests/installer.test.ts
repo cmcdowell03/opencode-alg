@@ -4,6 +4,7 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
+  rmSync,
   writeFileSync,
 } from "node:fs"
 import { dirname, join, resolve } from "node:path"
@@ -278,5 +279,91 @@ describe("shared installer core", () => {
     expect(readFileSync(tuiPath)).toEqual(tuiBefore)
     const agentsDir = join(configDir, "agents")
     expect(existsSync(agentsDir) ? readdirSync(agentsDir).filter((name) => name.endsWith(".md")) : []).toEqual([])
+  })
+
+  test.each(["config", "agent"] as const)("%s publish race preserves third-party bytes and fails closed", (variant) => {
+    const configDir = sandbox()
+    const configTarget = join(configDir, "opencode.jsonc")
+    const agentTarget = join(configDir, "agents", "explorer.md")
+    mkdirSync(dirname(agentTarget), { recursive: true })
+    writeFileSync(configTarget, '{ "plugin": ["before"] }\n')
+    writeFileSync(agentTarget, "custom explorer before\n")
+    const target = variant === "config" ? configTarget : agentTarget
+    const foreign = Buffer.from(`foreign ${variant} publish race\n`)
+    expect(() => runInstaller({
+      root: ROOT,
+      configDir,
+      forceAgents: true,
+      faults: {
+        beforeFilePublish(path, kind) {
+          if (path !== target || kind !== variant) return
+          writeFileSync(path, foreign, { flag: "wx" })
+        },
+      },
+    })).toThrow(/occupied|rollback was incomplete/)
+    expect(readFileSync(target)).toEqual(foreign)
+  })
+
+  test.each(["config", "agent"] as const)("%s delete/unlink race preserves third-party bytes", (variant) => {
+    const configDir = sandbox()
+    runInstaller({ root: ROOT, configDir })
+    const target = variant === "config"
+      ? join(configDir, "opencode.jsonc")
+      : join(configDir, "agents", "explorer.md")
+    const foreign = Buffer.from(`foreign ${variant} delete race\n`)
+    expect(() => runInstaller({
+      root: ROOT,
+      configDir,
+      uninstall: true,
+      removeAgents: true,
+      faults: {
+        afterFileUnlink(path, kind) {
+          if (path !== target || kind !== variant) return
+          writeFileSync(path, foreign, { flag: "wx" })
+        },
+      },
+    })).toThrow(/Third-party|rollback was incomplete|identity/)
+    expect(readFileSync(target)).toEqual(foreign)
+  })
+
+  test.each(["config", "agent"] as const)("%s same-byte replacement before rollback is preserved by identity", (variant) => {
+    const configDir = sandbox()
+    const target = variant === "config"
+      ? join(configDir, "opencode.jsonc")
+      : join(configDir, "agents", "checker.md")
+    let replacement = Buffer.alloc(0)
+    expect(() => runInstaller({
+      root: ROOT,
+      configDir,
+      faults: {
+        beforeAgentWrite(_path, index) {
+          if (index === 1) throw new Error("injected installer rollback")
+        },
+        beforeRollback() {
+          replacement = readFileSync(target)
+          rmSync(target)
+          writeFileSync(target, replacement, { flag: "wx" })
+        },
+      },
+    })).toThrow("rollback was incomplete")
+    expect(readFileSync(target)).toEqual(replacement)
+  })
+
+  test.each(["config", "agent"] as const)("%s same-byte replacement after planning fails before every public write", (variant) => {
+    const configDir = sandbox()
+    const configTarget = join(configDir, "opencode.jsonc")
+    const agentTarget = join(configDir, "agents", "explorer.md")
+    mkdirSync(dirname(agentTarget), { recursive: true })
+    writeFileSync(configTarget, '{ "plugin": ["before"] }\n')
+    writeFileSync(agentTarget, "custom explorer before\n")
+    const target = variant === "config" ? configTarget : agentTarget
+    const bytes = readFileSync(target)
+    expect(() => runInstaller({
+      root: ROOT, configDir, forceAgents: true,
+      faults: { afterPlanning() { rmSync(target); writeFileSync(target, bytes, { flag: "wx" }) } },
+    })).toThrow(/identity|Concurrent/)
+    expect(readFileSync(target)).toEqual(bytes)
+    expect(existsSync(join(configDir, "tui.json"))).toBe(false)
+    expect(readdirSync(configDir).some((name) => name.includes("alg-claim") || name.includes("alg-prepared"))).toBe(false)
   })
 })

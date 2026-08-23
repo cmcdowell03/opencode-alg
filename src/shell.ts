@@ -1,8 +1,8 @@
-import { spawn } from "node:child_process"
-import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { spawn, spawnSync, type ChildProcess } from "node:child_process"
+import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs"
 import { randomUUID } from "node:crypto"
 import { tmpdir } from "node:os"
-import { delimiter, dirname, join, resolve } from "node:path"
+import { basename, delimiter, dirname, join, resolve } from "node:path"
 import type { ToolContext } from "@opencode-ai/plugin"
 import { canonicalContainedDirectory } from "./paths.ts"
 
@@ -159,50 +159,283 @@ export function windowsJobHelperCachePath(environment: NodeJS.ProcessEnv = contr
 }
 
 let windowsJobHelperPromise: Promise<string> | undefined
-let windowsJobHelperDirectory: string | undefined
-let windowsJobHelperPath: string | undefined
 let windowsJobHelperCompileCount = 0
+const WINDOWS_HELPER_DIRECTORY = /^opencode-alg-job-helper-v13-(\d{1,10})-([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i
+const WINDOWS_HELPER_MARKER = ".opencode-alg-owner.json"
+const WINDOWS_HELPER_MARKER_LIMIT = 2_048
+const WINDOWS_HELPER_IDLE_MS = 1_500
+const WINDOWS_HELPER_JANITOR_AGE_MS = 60_000
+const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3,7}Z$/
 
-function cleanupWindowsJobHelper(): void {
-  if (!windowsJobHelperDirectory) return
-  const directory = windowsJobHelperDirectory
-  const deadline = Date.now() + 1_000
-  while (true) {
-    try {
-      rmSync(directory, { recursive: true, force: true })
-      windowsJobHelperDirectory = undefined
-      windowsJobHelperPath = undefined
-      return
-    } catch {
-      if (Date.now() >= deadline) return
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25)
+interface FileIdentity { dev: string; ino: string }
+interface WindowsHelperOwnerMarker {
+  schema: "opencode-alg-windows-helper-owner"
+  schema_version: 1
+  token: string
+  pid: number
+  process_start_identity: string
+  process_start_time: string
+  created_at: string
+  helper_file: string
+}
+interface WindowsHelperLifecycle {
+  directory: string
+  directoryIdentity: FileIdentity
+  markerPath: string
+  markerIdentity: FileIdentity
+  markerBytes: Buffer
+  marker: WindowsHelperOwnerMarker
+  helperPath: string
+}
+
+let windowsHelperLifecycle: WindowsHelperLifecycle | undefined
+let windowsHelperUsers = 0
+let windowsHelperChildren = 0
+let windowsHelperIdleTimer: ReturnType<typeof setTimeout> | undefined
+let windowsHelperJanitorRan = false
+let windowsOwnerStartIdentity: string | undefined
+
+function fileIdentity(path: string): FileIdentity {
+  const stat = lstatSync(path, { bigint: true })
+  return { dev: String(stat.dev), ino: String(stat.ino) }
+}
+
+function sameFileIdentity(left: FileIdentity, right: FileIdentity): boolean {
+  return left.dev === right.dev && left.ino === right.ino
+}
+
+function exactKeys(value: Record<string, unknown>, expected: string[]): boolean {
+  return JSON.stringify(Object.keys(value).sort()) === JSON.stringify([...expected].sort())
+}
+
+function processStartIdentity(pid: number, environment: NodeJS.ProcessEnv): { state: "alive" | "dead" | "ambiguous"; identity?: string } {
+  if (pid === process.pid && windowsOwnerStartIdentity) return { state: "alive", identity: windowsOwnerStartIdentity }
+  try {
+    process.kill(pid, 0)
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ESRCH") return { state: "dead" }
+    return { state: "ambiguous" }
+  }
+  const systemRoot = environment.SystemRoot || environment.WINDIR || "C:\\Windows"
+  const powershell = join(systemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+  if (!existsSync(powershell)) return { state: "ambiguous" }
+  const script = `$p=Get-Process -Id ${pid} -ErrorAction SilentlyContinue; if($null -eq $p){exit 3}; [Console]::Out.Write($p.StartTime.ToUniversalTime().ToString('o'))`
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const result = spawnSync(powershell, ["-NoProfile", "-NonInteractive", "-Command", script], {
+      windowsHide: true, encoding: "utf8", timeout: 5_000, maxBuffer: 4_096, env: environment,
+    })
+    if (result.status === 3) return { state: "dead" }
+    const identity = result.status === 0 ? result.stdout.trim() : ""
+    if (identity && ISO_UTC.test(identity)) {
+      if (pid === process.pid) windowsOwnerStartIdentity = identity
+      return { state: "alive", identity }
     }
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50 * (attempt + 1))
+  }
+  return { state: "ambiguous" }
+}
+
+function parseOwnedHelper(directory: string): WindowsHelperLifecycle | undefined {
+  const match = WINDOWS_HELPER_DIRECTORY.exec(basename(directory))
+  if (!match) return undefined
+  try {
+    const directoryStat = lstatSync(directory)
+    if (!directoryStat.isDirectory() || directoryStat.isSymbolicLink()) return undefined
+    const markerPath = join(directory, WINDOWS_HELPER_MARKER)
+    const markerStat = lstatSync(markerPath)
+    if (!markerStat.isFile() || markerStat.isSymbolicLink() || markerStat.size <= 0 || markerStat.size > WINDOWS_HELPER_MARKER_LIMIT) return undefined
+    const markerBytes = readFileSync(markerPath)
+    const value: unknown = JSON.parse(markerBytes.toString("utf8"))
+    if (!value || typeof value !== "object" || Array.isArray(value)) return undefined
+    const marker = value as Record<string, unknown>
+    if (!exactKeys(marker, ["schema", "schema_version", "token", "pid", "process_start_identity", "process_start_time", "created_at", "helper_file"]) ||
+      marker.schema !== "opencode-alg-windows-helper-owner" || marker.schema_version !== 1 ||
+      typeof marker.token !== "string" || marker.token.toLowerCase() !== match[2]!.toLowerCase() ||
+      !Number.isSafeInteger(marker.pid) || marker.pid !== Number(match[1]) ||
+      typeof marker.process_start_identity !== "string" || !ISO_UTC.test(marker.process_start_identity) ||
+      typeof marker.process_start_time !== "string" || marker.process_start_time !== marker.process_start_identity ||
+      typeof marker.created_at !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(marker.created_at) ||
+      typeof marker.helper_file !== "string" || marker.helper_file !== `helper-${marker.token}.exe`) return undefined
+    const typed = marker as unknown as WindowsHelperOwnerMarker
+    return {
+      directory, directoryIdentity: fileIdentity(directory), markerPath, markerIdentity: fileIdentity(markerPath), markerBytes,
+      marker: typed, helperPath: join(directory, typed.helper_file),
+    }
+  } catch {
+    return undefined
   }
 }
 
-process.once("exit", cleanupWindowsJobHelper)
+function ownedHelperSnapshot(environment: NodeJS.ProcessEnv = controlledShellEnvironment()): WindowsHelperLifecycle[] {
+  const root = environment.TEMP || environment.TMP || tmpdir()
+  try {
+    return readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && WINDOWS_HELPER_DIRECTORY.test(entry.name))
+      .map((entry) => parseOwnedHelper(join(root, entry.name)))
+      .filter((value): value is WindowsHelperLifecycle => value !== undefined)
+      .slice(0, 256)
+  } catch {
+    return []
+  }
+}
+
+export function windowsShellHelperArtifactSnapshot(environment: NodeJS.ProcessEnv = controlledShellEnvironment()): string[] {
+  return ownedHelperSnapshot(environment).map((value) => value.directory).sort()
+}
+
+export interface WindowsShellHelperCleanupOptions {
+  environment?: NodeJS.ProcessEnv
+  candidates?: string[]
+  minimumAgeMs?: number
+  includeCurrent?: boolean
+  beforeDelete?: (directory: string) => void
+  ownerProcessState?: (pid: number, environment: NodeJS.ProcessEnv) => { state: "alive" | "dead" | "ambiguous"; identity?: string }
+}
+
+function exactOwnedLifecycle(value: WindowsHelperLifecycle): boolean {
+  try {
+    if (!sameFileIdentity(fileIdentity(value.directory), value.directoryIdentity) ||
+      !sameFileIdentity(fileIdentity(value.markerPath), value.markerIdentity) ||
+      !readFileSync(value.markerPath).equals(value.markerBytes)) return false
+    const names = readdirSync(value.directory).sort()
+    return names.every((name) => name === WINDOWS_HELPER_MARKER || name === value.marker.helper_file || name === `source-${value.marker.token}.cs`)
+  } catch {
+    return false
+  }
+}
+
+function deleteOwnedLifecycle(value: WindowsHelperLifecycle, beforeDelete?: (directory: string) => void): boolean {
+  if (!exactOwnedLifecycle(value)) return false
+  beforeDelete?.(value.directory)
+  if (!exactOwnedLifecycle(value)) return false
+  const deadline = Date.now() + 3_000
+  let pause = 20
+  while (Date.now() <= deadline) {
+    try {
+      for (const name of readdirSync(value.directory)) {
+        if (name === WINDOWS_HELPER_MARKER) continue
+        const path = join(value.directory, name)
+        const identity = fileIdentity(path)
+        const stat = lstatSync(path)
+        if (!stat.isFile() || stat.isSymbolicLink() || !sameFileIdentity(fileIdentity(path), identity)) return false
+        unlinkSync(path)
+      }
+      if (!exactOwnedLifecycle(value) || readdirSync(value.directory).some((name) => name !== WINDOWS_HELPER_MARKER)) return false
+      unlinkSync(value.markerPath)
+      if (!sameFileIdentity(fileIdentity(value.directory), value.directoryIdentity) || readdirSync(value.directory).length !== 0) return false
+      rmdirSync(value.directory)
+      return !existsSync(value.directory)
+    } catch {
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, pause)
+      pause = Math.min(320, pause * 2)
+    }
+  }
+  return false
+}
+
+/** Bounded, identity-checked cleanup used by idle handling and release verification. */
+export function cleanupWindowsShellHelpers(options: WindowsShellHelperCleanupOptions = {}): { removed: string[]; preserved: string[] } {
+  if (process.platform !== "win32") return { removed: [], preserved: [] }
+  const environment = options.environment ?? controlledShellEnvironment()
+  const candidates = options.candidates ? new Set(options.candidates.map((path) => resolve(path))) : undefined
+  const minimumAgeMs = options.minimumAgeMs ?? WINDOWS_HELPER_JANITOR_AGE_MS
+  const removed: string[] = []; const preserved: string[] = []
+  for (const value of ownedHelperSnapshot(environment)) {
+    if (candidates && !candidates.has(resolve(value.directory))) continue
+    const current = windowsHelperLifecycle?.directory === value.directory
+    if (current && (!options.includeCurrent || windowsHelperUsers !== 0 || windowsHelperChildren !== 0)) { preserved.push(value.directory); continue }
+    const created = Date.parse(value.marker.created_at)
+    if (!Number.isFinite(created) || Date.now() - created < minimumAgeMs) { preserved.push(value.directory); continue }
+    if (!current) {
+      const owner = (options.ownerProcessState ?? processStartIdentity)(value.marker.pid, environment)
+      if (owner.state === "ambiguous" || owner.state === "alive" && owner.identity === value.marker.process_start_identity) { preserved.push(value.directory); continue }
+    }
+    if (deleteOwnedLifecycle(value, options.beforeDelete)) {
+      removed.push(value.directory)
+      if (current && windowsHelperLifecycle === value || current && windowsHelperLifecycle?.directory === value.directory) {
+        windowsHelperLifecycle = undefined
+        windowsJobHelperPromise = undefined
+      }
+    } else preserved.push(value.directory)
+  }
+  return { removed, preserved }
+}
+
+function scheduleWindowsHelperIdleCleanup(): void {
+  if (windowsHelperIdleTimer) clearTimeout(windowsHelperIdleTimer)
+  if (!windowsHelperLifecycle || windowsHelperUsers !== 0 || windowsHelperChildren !== 0) return
+  windowsHelperIdleTimer = setTimeout(() => {
+    windowsHelperIdleTimer = undefined
+    if (!windowsHelperLifecycle || windowsHelperUsers !== 0 || windowsHelperChildren !== 0) return
+    cleanupWindowsShellHelpers({ candidates: [windowsHelperLifecycle.directory], minimumAgeMs: 0, includeCurrent: true })
+  }, WINDOWS_HELPER_IDLE_MS)
+  windowsHelperIdleTimer.unref?.()
+}
+
+function acquireWindowsHelper(): () => void {
+  if (windowsHelperIdleTimer) { clearTimeout(windowsHelperIdleTimer); windowsHelperIdleTimer = undefined }
+  windowsHelperUsers += 1
+  let released = false
+  return () => { if (released) return; released = true; windowsHelperUsers -= 1; scheduleWindowsHelperIdleCleanup() }
+}
+
+function trackWindowsHelperChild(child: ChildProcess): void {
+  windowsHelperChildren += 1
+  let done = false
+  const finish = () => { if (done) return; done = true; windowsHelperChildren -= 1; scheduleWindowsHelperIdleCleanup() }
+  child.once("error", finish)
+  child.once("close", finish)
+}
+
+function bestEffortWindowsHelperCleanup(): void {
+  if (windowsHelperUsers === 0 && windowsHelperChildren === 0 && windowsHelperLifecycle) {
+    cleanupWindowsShellHelpers({ candidates: [windowsHelperLifecycle.directory], minimumAgeMs: 0, includeCurrent: true })
+  }
+}
+
+process.once("beforeExit", bestEffortWindowsHelperCleanup)
+process.once("exit", bestEffortWindowsHelperCleanup)
 
 /** Test evidence for same-process compile-once behavior; no stable executable path is accepted as input. */
 export function windowsJobHelperBuildState(): { compileCount: number; helperPath?: string } {
   return {
     compileCount: windowsJobHelperCompileCount,
-    ...(windowsJobHelperPath ? { helperPath: windowsJobHelperPath } : {}),
+    ...(windowsHelperLifecycle?.helperPath ? { helperPath: windowsHelperLifecycle.helperPath } : {}),
   }
 }
 
 async function ensureWindowsJobHelper(environment: NodeJS.ProcessEnv): Promise<string> {
+  if (!windowsHelperJanitorRan) {
+    windowsHelperJanitorRan = true
+    cleanupWindowsShellHelpers({ environment })
+  }
+  if (windowsHelperLifecycle && parseOwnedHelper(windowsHelperLifecycle.directory) && existsSync(windowsHelperLifecycle.helperPath)) return windowsHelperLifecycle.helperPath
   if (windowsJobHelperPromise) return windowsJobHelperPromise
   windowsJobHelperPromise = buildWindowsJobHelper(environment)
-  return windowsJobHelperPromise
+  try { return await windowsJobHelperPromise } catch (error) { windowsJobHelperPromise = undefined; throw error }
 }
 
 async function buildWindowsJobHelper(environment: NodeJS.ProcessEnv): Promise<string> {
   const root = environment.TEMP || environment.TMP || tmpdir()
-  const directory = mkdtempSync(join(root, `opencode-alg-job-helper-${process.pid}-`))
-  windowsJobHelperDirectory = directory
+  const owner = processStartIdentity(process.pid, environment)
+  if (owner.state !== "alive" || !owner.identity) throw new Error("Windows Job helper owner process-start identity is unavailable")
+  const token = randomUUID()
+  const directory = join(root, `opencode-alg-job-helper-v13-${process.pid}-${token}`)
+  mkdirSync(directory, { mode: 0o700 })
   try { chmodSync(directory, 0o700) } catch { /* Windows relies on the private TEMP ACL. */ }
-  const target = join(directory, `helper-${randomUUID()}.exe`)
-  const sourcePath = join(directory, `source-${randomUUID()}.cs`)
+  const target = join(directory, `helper-${token}.exe`)
+  const sourcePath = join(directory, `source-${token}.cs`)
+  const markerPath = join(directory, WINDOWS_HELPER_MARKER)
+  const marker: WindowsHelperOwnerMarker = {
+    schema: "opencode-alg-windows-helper-owner", schema_version: 1, token, pid: process.pid,
+    process_start_identity: owner.identity, process_start_time: owner.identity, created_at: new Date().toISOString(), helper_file: basename(target),
+  }
+  const markerBytes = Buffer.from(`${JSON.stringify(marker)}\n`)
+  writeFileSync(markerPath, markerBytes, { flag: "wx", mode: 0o600 })
+  try { chmodSync(markerPath, 0o600) } catch { /* Windows relies on the private TEMP ACL. */ }
+  windowsHelperLifecycle = {
+    directory, directoryIdentity: fileIdentity(directory), markerPath, markerIdentity: fileIdentity(markerPath), markerBytes, marker, helperPath: target,
+  }
   const systemRoot = environment.SystemRoot || environment.WINDIR || "C:\\Windows"
   const powershell = join(systemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
   try {
@@ -225,6 +458,7 @@ async function buildWindowsJobHelper(environment: NodeJS.ProcessEnv): Promise<st
         stdio: ["ignore", "ignore", "pipe"],
         env: { ...environment, ALG_JOB_HELPER_SOURCE_PATH: sourcePath, ALG_JOB_HELPER_OUTPUT: target },
       })
+      trackWindowsHelperChild(compiler)
       let error = ""
       compiler.stderr?.on("data", (chunk: Buffer) => { error = `${error}${chunk.toString("utf8")}`.slice(-2_000) })
       const finish = (failure?: Error) => {
@@ -244,10 +478,9 @@ async function buildWindowsJobHelper(environment: NodeJS.ProcessEnv): Promise<st
         : new Error(error || `Windows Job helper compiler exited ${code}`)))
     })
     try { chmodSync(target, 0o700) } catch { /* Windows relies on the private TEMP ACL. */ }
-    windowsJobHelperPath = target
     return target
   } catch (error) {
-    cleanupWindowsJobHelper()
+    cleanupWindowsShellHelpers({ candidates: [directory], minimumAgeMs: 0, includeCurrent: true })
     throw error
   } finally {
     rmSync(sourcePath, { force: true })
@@ -392,6 +625,7 @@ async function defaultWindowsJobObjectTerminate(
     return new Promise((resolveResult) => {
       let detail = ""; let settled = false
       const helper = spawn(helperPath, ["terminate", name, String(Math.max(250, helperTimeoutMs - 250))], { windowsHide: true, stdio: ["ignore", "ignore", "pipe"], env: environment })
+      trackWindowsHelperChild(helper)
       const finish = (result: WindowsTreeTerminationResult) => { if (settled) return; settled = true; clearTimeout(timer); resolveResult(result) }
       helper.stderr?.on("data", (chunk: Buffer) => { detail = `${detail}${chunk.toString("utf8")}`.slice(-2_000) })
       const timer = setTimeout(() => { try { helper.kill("SIGKILL") } catch {} finish({ confirmed: false, detail: "native Windows Job helper timed out" }) }, helperTimeoutMs)
@@ -399,92 +633,15 @@ async function defaultWindowsJobObjectTerminate(
       helper.once("close", (code) => finish(code === 0 ? { confirmed: true } : { confirmed: false, detail: detail.trim() || `native Job helper exited ${code}` }))
     })
   }
-  const systemRoot = environment.SystemRoot || environment.WINDIR || "C:\\Windows"
-  const powershell = join(systemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
-  if (!existsSync(powershell)) return { confirmed: false, detail: "Windows Job Object termination helper is unavailable" }
-  const assemblyPath = join(environment.TEMP || environment.TMP || tmpdir(), "opencode-alg-job-control-v2.dll")
-  const source = String.raw`
-using System;
-using System.ComponentModel;
-using System.Runtime.InteropServices;
-using System.Threading;
-public static class AlgJobControl {
-  [StructLayout(LayoutKind.Sequential)] struct Accounting {
-    public long TotalUserTime; public long TotalKernelTime; public long ThisPeriodTotalUserTime; public long ThisPeriodTotalKernelTime;
-    public uint TotalPageFaultCount; public uint TotalProcesses; public uint ActiveProcesses; public uint TotalTerminatedProcesses;
+  const release = acquireWindowsHelper()
+  try {
+    const ownedHelper = await ensureWindowsJobHelper(environment)
+    return await defaultWindowsJobObjectTerminate(name, environment, helperTimeoutMs, ownedHelper)
+  } catch (error) {
+    return { confirmed: false, detail: `Windows Job Object termination helper is unavailable: ${error instanceof Error ? error.message : String(error)}` }
+  } finally {
+    release()
   }
-  [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)] static extern IntPtr OpenJobObject(uint a, bool i, string n);
-  [DllImport("kernel32.dll", SetLastError=true)] static extern bool TerminateJobObject(IntPtr h, uint c);
-  [DllImport("kernel32.dll", SetLastError=true)] static extern bool QueryInformationJobObject(IntPtr h, int c, IntPtr p, uint l, IntPtr r);
-  [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
-  public static void TerminateAndWait(string name, int timeoutMs) {
-    IntPtr h = OpenJobObject(0x000C, false, name);
-    if (h == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error());
-    try {
-      if (!TerminateJobObject(h, 1)) throw new Win32Exception(Marshal.GetLastWin32Error());
-      int size = Marshal.SizeOf(typeof(Accounting)); IntPtr ptr = Marshal.AllocHGlobal(size);
-      try {
-        DateTime deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
-        while (true) {
-          if (!QueryInformationJobObject(h, 1, ptr, (uint)size, IntPtr.Zero)) throw new Win32Exception(Marshal.GetLastWin32Error());
-          Accounting info = (Accounting)Marshal.PtrToStructure(ptr, typeof(Accounting));
-          if (info.ActiveProcesses == 0) return;
-          if (DateTime.UtcNow >= deadline) throw new TimeoutException("Job Object still has active processes");
-          Thread.Sleep(25);
-        }
-      } finally { Marshal.FreeHGlobal(ptr); }
-    } finally { CloseHandle(h); }
-  }
-}
-`
-  const script = String.raw`
-$ErrorActionPreference = 'Stop'
-if (Test-Path -LiteralPath $env:ALG_JOB_CONTROL_ASSEMBLY) {
-  Add-Type -Path $env:ALG_JOB_CONTROL_ASSEMBLY
-} else {
-  Add-Type -TypeDefinition $env:ALG_JOB_CONTROL_SOURCE -Language CSharp -OutputAssembly $env:ALG_JOB_CONTROL_ASSEMBLY -OutputType Library
-  Add-Type -Path $env:ALG_JOB_CONTROL_ASSEMBLY
-}
-[AlgJobControl]::TerminateAndWait($env:ALG_JOB_CONTROL_NAME, [int]$env:ALG_JOB_CONTROL_TIMEOUT)
-exit 0
-`
-  const encoded = Buffer.from(script, "utf16le").toString("base64")
-  return new Promise((resolveResult) => {
-    let helper: ReturnType<typeof spawn>
-    let detail = ""
-    let settled = false
-    const finish = (result: WindowsTreeTerminationResult) => {
-      if (settled) return
-      settled = true
-      clearTimeout(timer)
-      resolveResult(result)
-    }
-    try {
-      helper = spawn(powershell, ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded], {
-        windowsHide: true,
-        stdio: ["ignore", "ignore", "pipe"],
-        env: {
-          ...environment,
-          ALG_JOB_CONTROL_SOURCE: source,
-          ALG_JOB_CONTROL_NAME: name,
-          ALG_JOB_CONTROL_TIMEOUT: String(Math.max(250, helperTimeoutMs - 250)),
-          ALG_JOB_CONTROL_ASSEMBLY: assemblyPath,
-        },
-      })
-    } catch (error) {
-      resolveResult({ confirmed: false, detail: error instanceof Error ? error.message : String(error) })
-      return
-    }
-    helper.stderr?.on("data", (chunk: Buffer) => { detail = `${detail}${chunk.toString("utf8")}`.slice(-2_000) })
-    const timer = setTimeout(() => {
-      try { helper.kill("SIGKILL") } catch { /* best effort */ }
-      finish({ confirmed: false, detail: "Windows Job Object termination helper timed out" })
-    }, helperTimeoutMs)
-    helper.once("error", (error) => finish({ confirmed: false, detail: error.message }))
-    helper.once("close", (code) => finish(code === 0
-      ? { confirmed: true }
-      : { confirmed: false, detail: detail.trim() || `Job Object helper exited ${code ?? "unknown"}` }))
-  })
 }
 
 async function defaultWindowsProcessTreeSnapshot(
@@ -916,10 +1073,13 @@ export async function executeShellGate(options: {
   const windows = process.platform === "win32"
   const environment = controlledShellEnvironment()
   let windowsJobHelper: string | undefined
+  let releaseWindowsHelper: (() => void) | undefined
   if (windows && !options.spawnProcess) {
+    releaseWindowsHelper = acquireWindowsHelper()
     try {
       windowsJobHelper = await ensureWindowsJobHelper(environment)
     } catch (error) {
+      releaseWindowsHelper()
       return {
         ok: false,
         exit_code: 125,
@@ -970,6 +1130,8 @@ export async function executeShellGate(options: {
           stdio: "ignore",
         })
       : undefined
+    if (job) trackWindowsHelperChild(child)
+    if (jobController) trackWindowsHelperChild(jobController)
     const stdout = new ByteTail()
     const stderr = new ByteTail()
     let settled = false
@@ -1006,6 +1168,7 @@ export async function executeShellGate(options: {
         rmSync(job.controlReadyPath, { force: true })
         rmSync(job.controlResultPath, { force: true })
       }
+      releaseWindowsHelper?.()
       resolveResult({
         ok: exitCode === 0 && !timedOut && !cancelled && !terminationFailed,
         exit_code: timedOut ? 124 : cancelled ? 130 : exitCode,

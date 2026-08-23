@@ -1,0 +1,10 @@
+[project]
+name = "opencode-alg-excel-capability"
+version = "0.2.0"
+requires-python = ">=3.10,<4"
+dependencies = [
+  "excel-mcp-server==0.1.8",
+]
+
+[tool.uv]
+package = false

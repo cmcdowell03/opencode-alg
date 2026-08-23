@@ -1,28 +1,29 @@
 import { createHash } from "node:crypto"
 import { existsSync, readFileSync } from "node:fs"
-import { isAbsolute, join, resolve } from "node:path"
+import { dirname, extname, isAbsolute, resolve } from "node:path"
 import {
   DEFAULT_LIVE_EVIDENCE_ROOT,
   LIVE_EVIDENCE_LIMIT_BYTES,
-  prepareLiveEvidenceDestination,
   retainedLiveEvidencePassed,
   runLiveVerification,
+  uniqueLiveEvidencePath,
+  verifyRetainedLiveEvidenceArtifact,
   verificationPluginConfiguration,
 } from "./live-verify.ts"
 
 const configuration = verificationPluginConfiguration()
 const requested = process.env.OPENCODE_ALG_LIVE_EVIDENCE?.trim()
-const candidate = requested
-  ? resolve(requested)
-  : join(DEFAULT_LIVE_EVIDENCE_ROOT, `live-verification-${configuration.source.digest.slice(0, 16)}.json`)
+const requestedRoot = requested ? (extname(requested).toLowerCase() === ".json" ? dirname(resolve(requested)) : resolve(requested)) : DEFAULT_LIVE_EVIDENCE_ROOT
+const candidate = uniqueLiveEvidencePath(requestedRoot, configuration.source.digest)
 if (requested && !isAbsolute(requested)) {
   throw new Error("OPENCODE_ALG_LIVE_EVIDENCE must be an absolute path in a dedicated external evidence root")
 }
-const evidence = prepareLiveEvidenceDestination(candidate).path
+const evidence = candidate
 
 let failure: unknown
+let publication: Awaited<ReturnType<typeof runLiveVerification>> | undefined
 try {
-  await runLiveVerification(evidence)
+  publication = await runLiveVerification(evidence)
 } catch (error) {
   failure = error
 }
@@ -33,12 +34,20 @@ if (bytes.byteLength > LIVE_EVIDENCE_LIMIT_BYTES) {
   throw new Error(`retained live evidence exceeds ${LIVE_EVIDENCE_LIMIT_BYTES} bytes`)
 }
 const parsed = JSON.parse(bytes.toString("utf8"))
+const persistedHash = createHash("sha256").update(bytes).digest("hex")
+const verified = verifyRetainedLiveEvidenceArtifact(evidence, {
+  source_sha256: configuration.source.digest,
+  sha256: persistedHash,
+  bytes: bytes.byteLength,
+  ...(publication ? { identity: publication.identity } : {}),
+})
 const summary = {
   check: "opencode-alg-live",
   passed: retainedLiveEvidencePassed(parsed),
   evidence_path: evidence,
-  evidence_sha256: createHash("sha256").update(bytes).digest("hex"),
+  evidence_sha256: persistedHash,
   evidence_bytes: bytes.byteLength,
+  evidence_identity: verified.identity,
   opencode_version: parsed.version?.parsed?.text ?? null,
   plugin_version: parsed.plugin_source?.package_version ?? null,
   canonical_plugin_root: parsed.plugin_source?.canonical_root ?? null,
@@ -59,6 +68,8 @@ const summary = {
   tui_cleanup_passed: parsed.tui?.cleanup?.passed === true,
   temporary_environment_removed: parsed.temporary_environment_removed === true,
   user_global_config_modified: parsed.isolation?.user_global_config_modified ?? null,
+  global_config_snapshot_sha256: parsed.isolation?.global_config_snapshots?.before?.sha256 ?? null,
+  global_config_snapshot_unchanged: parsed.isolation?.global_config_snapshots?.unchanged === true,
   reason: parsed.reason ?? null,
 }
 console.log(JSON.stringify(summary))

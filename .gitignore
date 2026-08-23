@@ -28,6 +28,9 @@ tmp/
 temp/
 **/temp/
 *.tsbuildinfo
+__pycache__/
+**/__pycache__/
+*.py[cod]
 
 # Logs and local/live verification evidence
 *.log

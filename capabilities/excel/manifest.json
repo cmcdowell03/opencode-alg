@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "id": "alg-excel",
+  "pack_version": "0.2.0",
+  "upstream": {
+    "distribution": "excel-mcp-server",
+    "version": "0.1.8",
+    "import": "excel_mcp.server",
+    "release_commit": "f51340ecd5778952405044b203d3a2d4c8a46833",
+    "wheel_sha256": "c75668094697152b9d749939c071ea02ac418635c8a11636396bd9797609f5a5"
+  },
+  "python": {
+    "requires": ">=3.10,<4"
+  },
+  "tools": [
+    "apply_formula",
+    "copy_range",
+    "copy_worksheet",
+    "create_chart",
+    "create_pivot_table",
+    "create_table",
+    "create_workbook",
+    "create_worksheet",
+    "delete_range",
+    "delete_sheet_columns",
+    "delete_sheet_rows",
+    "delete_worksheet",
+    "format_range",
+    "get_data_validation_info",
+    "get_merged_cells",
+    "get_workbook_metadata",
+    "insert_columns",
+    "insert_rows",
+    "merge_cells",
+    "read_data_from_excel",
+    "rename_worksheet",
+    "unmerge_cells",
+    "validate_excel_range",
+    "validate_formula_syntax",
+    "write_data_to_excel"
+  ],
+  "files": {
+    "pyproject": "pyproject.toml",
+    "lock": "uv.lock",
+    "policy": "policy.py",
+    "wrapper": "wrapper.py",
+    "validator": "workbook.py",
+    "sha256": {
+      "pyproject": "5d656c3e1ecefb77f7b90c1cf9da79b0c891f806a6187c27c53bdc73c8a7e1c6",
+      "lock": "47ece2b5a5ce4593259f238deab630aba8cfada1795553154f7f37947e099acf",
+      "policy": "14446e01d403f5d67378ed72361dbd41fdabb964d552eb738a1974610133cd2d",
+      "wrapper": "b830e439792dfca36fbd2f9f3f2047bb17ddc40707c9befa9d25ac29a3cce470",
+      "validator": "4f480a4b76558b9aaa354fb0e792f2c349cefed9d598f3d1e6ded53f133c69c4"
+    }
+  },
+  "security": {
+    "root_environment": "ALG_EXCEL_ROOT",
+    "workbook_extension": ".xlsx",
+    "relative_workbook_arguments_only": true,
+    "path_argument_confinement": true,
+    "os_sandbox": false,
+    "ambient_process_permissions": true,
+    "remote_transports": false,
+    "staged_copies": true,
+    "formula_calculation": false,
+    "libreoffice_recalculation": false
+  },
+  "runtime": {
+    "transport": "stdio",
+    "sync": ["uv", "sync", "--frozen", "--no-dev"]
+  }
+}

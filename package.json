@@ -1,6 +1,6 @@
 {
   "name": "opencode-alg",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Agents + Loops + Graphs runtime for OpenCode — typed DAG, fresh-child checker, durable runs, session-tree execution",
   "type": "module",
   "license": "MIT",
@@ -16,23 +16,42 @@
     "server": "./src/server.ts",
     "tui": "./src/tui.ts"
   },
+  "opencodeAlg": {
+    "durableState": {
+      "format": "alg-run-state",
+      "currentSchema": 2,
+      "compatibleSchemas": [1, 2],
+      "compatiblePackageVersions": ["0.1.0", "0.2.0"]
+    }
+  },
   "files": [
     "src",
     "agents",
     "templates",
+    "capabilities/excel/manifest.json",
+    "capabilities/excel/policy.py",
+    "capabilities/excel/pyproject.toml",
+    "capabilities/excel/uv.lock",
+    "capabilities/excel/workbook.py",
+    "capabilities/excel/wrapper.py",
     "docs",
     "DESIGN.md",
+    "CHANGELOG.md",
     "scripts",
     "README.md",
     "package.json"
   ],
   "scripts": {
+    "alg": "bun run scripts/manager-cli.ts",
     "test": "bun test --timeout 60000",
-    "test:installer": "bun test tests/installer.test.ts",
+    "test:installer": "bun test tests/installer.test.ts tests/manager.test.ts tests/manager-launchers.test.ts",
+    "test:manager": "bun test tests/manager.test.ts tests/manager-launchers.test.ts",
     "test:tui": "bun test tests/tui.test.ts",
     "smoke": "bun run scripts/smoke.ts",
     "live:verify": "bun run scripts/live-verify.ts",
     "check:live": "bun run scripts/check-live.ts",
+    "check:excel-manifest": "bun run scripts/verify-excel-manifest.ts",
+    "release:gate": "bun run scripts/release-gate.ts",
     "typecheck": "bun ./node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
     "check": "bun run typecheck && bun run test && bun run smoke && bun run check:live"
   },

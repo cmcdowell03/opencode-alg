@@ -1,0 +1,4 @@
+capabilities/excel/*.py text eol=lf
+capabilities/excel/*.toml text eol=lf
+capabilities/excel/*.json text eol=lf
+capabilities/excel/uv.lock text eol=lf
