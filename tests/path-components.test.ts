@@ -67,6 +67,25 @@ function fileLink(target: string, path: string): boolean {
   }
 }
 
+function linkAvailable(kind: "directory" | "file"): boolean {
+  const root = tempProject(`alg-${kind}-link-probe-`)
+  const target = tempProject(`alg-${kind}-link-target-`)
+  try {
+    if (kind === "file") {
+      const targetFile = join(target, "target.txt")
+      writeFileSync(targetFile, "probe", "utf8")
+      return fileLink(targetFile, join(root, "link.txt"))
+    }
+    return directoryLink(target, join(root, "link"))
+  } finally {
+    removeProject(root)
+    removeProject(target)
+  }
+}
+
+const directoryLinkTest = linkAvailable("directory") ? test : test.skip
+const fileLinkTest = linkAvailable("file") ? test : test.skip
+
 describe("existing-component realpath containment", () => {
   test("injectable strict absence proof covers $Deleted, disappearance, denial, and symlink branches", () => {
     const root = process.platform === "win32" ? "C:\\trusted" : "/trusted"
@@ -124,16 +143,13 @@ describe("existing-component realpath containment", () => {
     }))).toThrow(/existing path component escapes/)
   })
 
-  test("rejects .opencode, runs, and run-directory symlink/junction escapes", () => {
+  directoryLinkTest("rejects .opencode, runs, and run-directory symlink/junction escapes", () => {
     const projects: string[] = []
     const outside = tempProject("alg-outside-")
     try {
       const opencodeProject = tempProject()
       projects.push(opencodeProject)
-      if (!directoryLink(outside, join(opencodeProject, ".opencode"))) {
-        console.warn("symlink/junction creation unavailable; containment case skipped")
-        return
-      }
+      directoryLink(outside, join(opencodeProject, ".opencode"))
       expect(() => createRun({
         goal: "escape",
         criteria: [],
@@ -160,49 +176,50 @@ describe("existing-component realpath containment", () => {
     }
   }, 15_000)
 
-  test("rejects model/config file symlink escapes where file links are permitted", () => {
+  fileLinkTest("rejects a model file symlink escape", () => {
     const project = tempProject()
     const outside = tempProject("alg-outside-file-")
     try {
       mkdirSync(join(project, ".opencode"))
       const externalModel = join(outside, "model.json")
       writeFileSync(externalModel, '{"outside":true}', "utf8")
-      if (fileLink(externalModel, join(project, ".opencode", "alg-models.json"))) {
-        expect(() => loadModelSettings(project)).toThrow(/existing path component escapes/)
-      } else {
-        console.warn("file symlink creation unavailable; model-file case skipped")
-      }
-
-      const configRoot = tempProject("alg-config-link-")
-      try {
-        const externalConfig = join(outside, "opencode.jsonc")
-        const original = '{ "plugin": ["outside"] }\n'
-        writeFileSync(externalConfig, original, "utf8")
-        if (fileLink(externalConfig, join(configRoot, "opencode.jsonc"))) {
-          expect(() => runInstaller({ root: ROOT, configDir: configRoot, skipAgents: true }))
-            .toThrow(/existing path component escapes/)
-          expect(readFileSync(externalConfig, "utf8")).toBe(original)
-        } else {
-          console.warn("file symlink creation unavailable; config-file case skipped")
-        }
-      } finally {
-        removeProject(configRoot)
-      }
-
-      const junctionConfigRoot = tempProject("alg-config-junction-")
-      try {
-        if (directoryLink(outside, join(junctionConfigRoot, "agents"))) {
-          expect(() => runInstaller({ root: ROOT, configDir: junctionConfigRoot }))
-            .toThrow(/existing path component escapes/)
-          expect(readFileSync(externalModel, "utf8")).toBe('{"outside":true}')
-        } else {
-          console.warn("directory symlink/junction creation unavailable; config-agent case skipped")
-        }
-      } finally {
-        removeProject(junctionConfigRoot)
-      }
+      fileLink(externalModel, join(project, ".opencode", "alg-models.json"))
+      expect(() => loadModelSettings(project)).toThrow(/existing path component escapes/)
     } finally {
       removeProject(project)
+      removeProject(outside)
+    }
+  }, 15_000)
+
+  fileLinkTest("rejects a config file symlink escape without touching its target", () => {
+    const outside = tempProject("alg-outside-config-file-")
+    const configRoot = tempProject("alg-config-link-")
+    try {
+      const externalConfig = join(outside, "opencode.jsonc")
+      const original = '{ "plugin": ["outside"] }\n'
+      writeFileSync(externalConfig, original, "utf8")
+      fileLink(externalConfig, join(configRoot, "opencode.jsonc"))
+      expect(() => runInstaller({ root: ROOT, configDir: configRoot, skipAgents: true }))
+        .toThrow(/existing path component escapes/)
+      expect(readFileSync(externalConfig, "utf8")).toBe(original)
+    } finally {
+      removeProject(configRoot)
+      removeProject(outside)
+    }
+  }, 15_000)
+
+  directoryLinkTest("rejects a config agent-directory junction escape", () => {
+    const outside = tempProject("alg-outside-config-agents-")
+    const configRoot = tempProject("alg-config-junction-")
+    const sentinel = join(outside, "sentinel.txt")
+    try {
+      writeFileSync(sentinel, "keep", "utf8")
+      directoryLink(outside, join(configRoot, "agents"))
+      expect(() => runInstaller({ root: ROOT, configDir: configRoot }))
+        .toThrow(/existing path component escapes/)
+      expect(readFileSync(sentinel, "utf8")).toBe("keep")
+    } finally {
+      removeProject(configRoot)
       removeProject(outside)
     }
   }, 15_000)
@@ -217,7 +234,7 @@ describe("existing-component realpath containment", () => {
     }
   })
 
-  test("rejects escaping artifacts/checks/sessions and nested junctions without touching outside", async () => {
+  directoryLinkTest("rejects escaping artifacts/checks/sessions and nested junctions without touching outside", async () => {
     const outside = tempProject("alg-nested-outside-")
     const projects: string[] = []
     const sentinel = join(outside, "sentinel.txt")
@@ -241,10 +258,7 @@ describe("existing-component realpath containment", () => {
       await executeRun(artifactRun, { ...executeContext(artifactProject), dry: true })
       const artifactDirectory = join(runDir(artifactProject, artifactRun.run_id), "artifacts")
       rmSync(artifactDirectory, { recursive: true, force: true })
-      if (!directoryLink(outside, artifactDirectory)) {
-        console.warn("nested junction creation unavailable; nested containment test skipped")
-        return
-      }
+      directoryLink(outside, artifactDirectory)
       artifactRun.criteria = ["candidate"]
       expect(() => persistRun(artifactRun, artifactProject)).toThrow(/existing path component escapes/)
       expect(() => loadRun(artifactProject, artifactRun.run_id)).toThrow(/derived-file reconciliation failed/)
@@ -304,7 +318,7 @@ describe("existing-component realpath containment", () => {
   // every outside-sentinel assertion with Windows filesystem I/O headroom.
   }, 120_000)
 
-  test("executor, persistence, and load reject artifact metadata through a nested junction", async () => {
+  directoryLinkTest("executor, persistence, and load reject artifact metadata through a nested junction", async () => {
     const outside = tempProject("alg-artifact-metadata-outside-")
     const projects: string[] = []
     const sentinel = join(outside, "sentinel.txt")
@@ -327,10 +341,7 @@ describe("existing-component realpath containment", () => {
       })
       const completed = await executeRun(persisted, { ...executeContext(persistProject), dry: true })
       const nested = join(runDir(persistProject, completed.run_id), "artifacts", "escape")
-      if (!directoryLink(outside, nested)) {
-        console.warn("nested junction creation unavailable; artifact metadata test skipped")
-        return
-      }
+      directoryLink(outside, nested)
       const artifactPath = `.opencode/runs/${completed.run_id}/artifacts/escape/evidence.md`
       ;(completed.nodes.work!.output as any).artifact_path = artifactPath
       ;(completed.nodes.work!.attempts.at(-1)!.output as any).artifact_path = artifactPath
@@ -392,7 +403,7 @@ describe("existing-component realpath containment", () => {
     }
   }, 60_000)
 
-  test("executor, persistence, and load reject files_touched through a project junction", async () => {
+  directoryLinkTest("executor, persistence, and load reject files_touched through a project junction", async () => {
     const outside = tempProject("alg-files-metadata-outside-")
     const projects: string[] = []
     try {
@@ -412,10 +423,7 @@ describe("existing-component realpath containment", () => {
         mode: "dry",
       })
       const completed = await executeRun(run, { ...executeContext(persistProject), dry: true })
-      if (!directoryLink(outside, join(persistProject, "escape"))) {
-        console.warn("project junction creation unavailable; files_touched metadata test skipped")
-        return
-      }
+      directoryLink(outside, join(persistProject, "escape"))
       ;(completed.nodes.work!.output as any).files_touched = ["escape/outside.txt"]
       ;(completed.nodes.work!.attempts.at(-1)!.output as any).files_touched = ["escape/outside.txt"]
       expect(() => persistRun(completed, persistProject)).toThrow(/files_touched path must resolve within/)

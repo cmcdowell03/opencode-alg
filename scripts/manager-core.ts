@@ -28,6 +28,7 @@ import { z } from "zod"
 import {
   encodeConfigText,
   exactBackup,
+  captureStableRegularFile,
   parseJsoncObject,
   planManagedMcpConfig,
   planPluginConfig,
@@ -723,7 +724,8 @@ const receiptBaselineHashes = new WeakMap<ManagerReceipt, string>()
 const receiptBaselineIdentities = new WeakMap<ManagerReceipt, FileIdentity>()
 
 function readReceipt(paths: ManagerPaths, required = false): ManagerReceipt | undefined {
-  if (!existsSync(paths.receiptPath)) {
+  const capture = captureStableRegularFile(paths.receiptPath)
+  if (!capture.exists) {
     if (required) throw new Error(`No managed ALG receipt at ${paths.receiptPath}`)
     return
   }
@@ -731,9 +733,8 @@ function readReceipt(paths: ManagerPaths, required = false): ManagerReceipt | un
   let receiptBytes: Buffer
   let receiptIdentity: FileIdentity
   try {
-    const stable = readStableRegularFile(paths.receiptPath)
-    receiptBytes = stable.bytes
-    receiptIdentity = stable.identity
+    receiptBytes = capture.bytes
+    receiptIdentity = capture.identity
     if (receiptBytes.byteLength > MAX_METADATA_BYTES) throw new Error(`Metadata file exceeds ${MAX_METADATA_BYTES} bytes: ${paths.receiptPath}`)
     parsed = JSON.parse(receiptBytes.toString("utf8"))
   } catch (error) {
@@ -1463,9 +1464,9 @@ function stageRelease(
   const stagingPath = resolveContainedPath(paths.stagingRoot, transaction)
   if (existsSync(stagingPath)) throw new Error("Staging transaction collision")
   const cloneRemote = source ?? trustedRemote
-  command(runner, "git", ["clone", "--no-checkout", "--", cloneRemote, stagingPath])
-  const stagingIdentity = regularDirectoryIdentity(stagingPath)
   try {
+    command(runner, "git", ["clone", "--no-checkout", "--", cloneRemote, stagingPath])
+    const stagingIdentity = regularDirectoryIdentity(stagingPath)
     git(runner, stagingPath, ["remote", "set-url", "origin", trustedRemote])
     const tag = selectTag(runner, stagingPath, options, source)
     const commit = git(runner, stagingPath, ["rev-parse", `${tag}^{commit}`]).toLowerCase()
@@ -1700,17 +1701,17 @@ function textToBinary(plan: TextFilePlan): BinaryPlan {
 function currentAgentReceipt(
   path: string,
   sourceHash: string,
+  currentHash: string | null,
   disposition: ManagedAgentReceipt["disposition"],
   managedHash: string | null,
   timestamp: string,
 ): ManagedAgentReceipt {
-  const current = fileHash(path)
   return {
     path,
-    disposition: current === null ? "missing" : disposition,
+    disposition: currentHash === null ? "missing" : disposition,
     source_hash: sourceHash,
-    current_hash: current,
-    managed_hash: current === null || disposition !== "managed" ? null : managedHash,
+    current_hash: currentHash,
+    managed_hash: currentHash === null || disposition !== "managed" ? null : managedHash,
     updated_at: timestamp,
   }
 }
@@ -1741,15 +1742,15 @@ function planAgents(options: {
     const source = sources.find((item) => item.name === name)
     const sourceHash = source?.source_hash ?? options.receipt?.agents[name]?.source_hash
     if (!sourceHash) continue
-    const stableBefore = existsSync(target) ? readStableRegularFile(target) : undefined
-    const before = stableBefore?.bytes
+    const stableBefore = captureStableRegularFile(target)
+    const before = stableBefore.exists ? stableBefore.bytes : undefined
     const beforeHash = before ? sha256(before) : null
     const prior = options.receipt?.agents[name]
 
     if (options.command === "uninstall") {
       const removable = options.removeAgents && prior?.disposition === "managed" && beforeHash === prior.managed_hash
       if (removable) {
-        plans.push({ path: target, kind: "agent", before, beforeIdentity: stableBefore?.identity ?? null, after: undefined, action: "removed" })
+        plans.push({ path: target, kind: "agent", before, beforeIdentity: stableBefore.identity, after: undefined, action: "removed" })
         results.push({ path: target, action: "removed" })
         receipts[name] = {
           path: target,
@@ -1761,7 +1762,8 @@ function planAgents(options: {
         }
       } else {
         const disposition = beforeHash === null ? "missing" : prior?.disposition === "managed" && beforeHash === prior.managed_hash ? "managed" : "custom"
-        receipts[name] = currentAgentReceipt(target, sourceHash, disposition, disposition === "managed" ? beforeHash : null, options.timestamp)
+        plans.push({ path: target, kind: "agent", before, beforeIdentity: stableBefore.identity, after: before, action: "unchanged" })
+        receipts[name] = currentAgentReceipt(target, sourceHash, beforeHash, disposition, disposition === "managed" ? beforeHash : null, options.timestamp)
         results.push({ path: target, action: beforeHash === null ? "missing" : "unchanged" })
       }
       continue
@@ -1769,7 +1771,7 @@ function planAgents(options: {
 
     if (!source || !options.targetRoot) throw new Error(`Target release does not contain receipt agent ${name}`)
     const sourcePath = resolveContainedPath(options.targetRoot, "agents", name)
-    const after = readFileSync(sourcePath)
+    const after = readStableRegularFile(sourcePath).bytes
     if (sha256(after) !== source.source_hash) throw new Error(`Target agent hash changed during preflight: ${name}`)
     const exactTarget = beforeHash === source.source_hash
     let mayUpdate = false
@@ -1782,7 +1784,8 @@ function planAgents(options: {
       mayUpdate = beforeHash === null || Boolean(prior?.disposition === "managed" && beforeHash === prior.managed_hash)
       if (!mayUpdate && options.adoptionRoot && beforeHash) {
         const priorPath = resolveContainedPath(options.adoptionRoot, "agents", name)
-        adoptedPriorBundle = existsSync(priorPath) && sha256(readFileSync(priorPath)) === beforeHash
+        const priorCapture = captureStableRegularFile(priorPath)
+        adoptedPriorBundle = priorCapture.exists && priorCapture.hash === beforeHash
         mayUpdate = adoptedPriorBundle
       }
     }
@@ -1795,6 +1798,7 @@ function planAgents(options: {
       receipts[name] = currentAgentReceipt(
         target,
         source.source_hash,
+        beforeHash,
         mayOwn ? "managed" : "custom",
         mayOwn ? source.source_hash : null,
         options.timestamp,
@@ -1807,9 +1811,10 @@ function planAgents(options: {
             ? "ownership-released"
             : mayOwn ? "unchanged" : "skipped",
       })
+      plans.push({ path: target, kind: "agent", before, beforeIdentity: stableBefore.identity, after: before, action: "unchanged" })
     } else if (options.policy !== "skip" && mayUpdate) {
       const action = before ? "updated" : "created"
-      plans.push({ path: target, kind: "agent", before, beforeIdentity: stableBefore?.identity ?? null, after, action })
+      plans.push({ path: target, kind: "agent", before, beforeIdentity: stableBefore.identity, after, action })
       receipts[name] = {
         path: target,
         disposition: "managed",
@@ -1821,7 +1826,8 @@ function planAgents(options: {
       results.push({ path: target, action })
     } else {
       const disposition = beforeHash === null ? "missing" : "custom"
-      receipts[name] = currentAgentReceipt(target, source.source_hash, disposition, null, options.timestamp)
+      plans.push({ path: target, kind: "agent", before, beforeIdentity: stableBefore.identity, after: before, action: "unchanged" })
+      receipts[name] = currentAgentReceipt(target, source.source_hash, beforeHash, disposition, null, options.timestamp)
       results.push({ path: target, action: disposition === "missing" ? "missing" : "skipped" })
     }
   }
@@ -1829,13 +1835,18 @@ function planAgents(options: {
 }
 
 function assertBinaryUnchanged(plan: BinaryPlan): void {
-  const current = existsSync(plan.path) ? readStableRegularFile(plan.path) : undefined
+  const current = captureStableRegularFile(plan.path)
   if (plan.before === undefined) {
     if (plan.beforeIdentity !== null) throw new Error(`Expected-absent plan has an identity at ${plan.path}`)
-    if (current !== undefined) throw new Error(`Concurrent creation detected at ${plan.path}`)
-  } else if (plan.beforeIdentity === null || !current?.bytes.equals(plan.before) || !sameFileIdentity(current.identity, plan.beforeIdentity)) {
+    if (current.exists) throw new Error(`Concurrent creation detected at ${plan.path}`)
+  } else if (plan.beforeIdentity === null || !current.exists || !current.bytes.equals(plan.before) || !sameFileIdentity(current.identity, plan.beforeIdentity)) {
     throw new Error(`Concurrent byte change detected at ${plan.path}`)
   }
+}
+
+function binaryPlanChanges(plan: BinaryPlan): boolean {
+  if (plan.before === undefined && plan.after === undefined) return false
+  return plan.before === undefined || plan.after === undefined || !plan.before.equals(plan.after)
 }
 
 const journalRevisionBytes = new WeakMap<ManagerJournal, Buffer>()
@@ -2087,15 +2098,13 @@ function commitTransaction(options: {
       throw new Error(`Receipt changed from the transaction derivation baseline ${stage}`)
     }
   }
-  const changed = options.plans.filter((plan) => {
-    if (plan.before === undefined && plan.after === undefined) return false
-    return plan.before === undefined || plan.after === undefined || !plan.before.equals(plan.after)
-  })
-  if (new Set(changed.map((item) => item.path)).size !== changed.length) throw new Error("Transaction contains duplicate file paths")
+  const readSet = options.plans
+  const changed = readSet.filter(binaryPlanChanges)
+  if (new Set(readSet.map((item) => normalizedPath(item.path))).size !== readSet.length) throw new Error("Transaction contains duplicate file paths")
   options.dependencies.faults?.afterPlanning?.("receipt", options.paths.receiptPath)
-  for (const plan of changed) options.dependencies.faults?.afterPlanning?.(plan.kind, plan.path)
+  for (const plan of readSet) options.dependencies.faults?.afterPlanning?.(plan.kind, plan.path)
   assertReceiptBaseline("before transaction preflight")
-  for (const plan of changed) assertBinaryUnchanged(plan)
+  for (const plan of readSet) assertBinaryUnchanged(plan)
 
   const configBackups = new Map<string, string>()
   const agentBackups = new Map<string, string>()
@@ -2202,15 +2211,40 @@ function commitTransaction(options: {
   let transactionFinalized = false
   let receiptClaimTaken = false
   let receiptClaimVerified = false
+  const publishedPaths = new Set<string>()
+  const changedByPath = new Map(changed.map((plan, index) => [normalizedPath(plan.path), journal.files[index]!]))
+  const assertCompleteReadSet = (stage: string, transientPath?: string): void => {
+    const transient = transientPath === undefined ? undefined : normalizedPath(transientPath)
+    for (const plan of readSet) {
+      const key = normalizedPath(plan.path)
+      if (key === transient) {
+        if (!strictlyMissing(plan.path)) throw new Error(`Read-set path became occupied ${stage}: ${plan.path}`)
+        continue
+      }
+      if (!publishedPaths.has(key)) {
+        assertBinaryUnchanged(plan)
+        continue
+      }
+      const file = changedByPath.get(key)
+      if (!file) throw new Error(`Published read-set path has no journal state: ${plan.path}`)
+      if (file.after_hash === null) {
+        if (!strictlyMissing(file.path)) throw new Error(`Deleted read-set path reappeared ${stage}: ${file.path}`)
+      } else if (!file.prepared_identity || strictlyMissing(file.path) || fileHash(file.path) !== file.after_hash ||
+        !sameFileIdentity(regularFileIdentity(file.path), file.prepared_identity)) {
+        throw new Error(`Published read-set path changed ${stage}: ${file.path}`)
+      }
+    }
+  }
   try {
     assertReceiptBaseline("before live writes")
+    assertCompleteReadSet("before live writes")
     setJournalPhase(journalPath, journal, "writing", options.dependencies)
     assertReceiptBaseline("after writing journal phase")
     changed.forEach((plan, index) => {
       const file = journal.files[index]!
       options.dependencies.faults?.beforeLiveWrite?.(plan.path, index)
       assertReceiptBaseline(`before live claim ${index}`)
-      assertBinaryUnchanged(plan)
+      assertCompleteReadSet(`before live claim ${index}`)
       if (file.before_hash !== null) {
         link(file.path, file.claim!)
         const publicIdentity = regularFileIdentity(file.path)
@@ -2227,8 +2261,12 @@ function commitTransaction(options: {
     })
     setJournalPhase(journalPath, journal, "files-claimed", options.dependencies)
     journal.files.forEach((file, index) => {
+      assertReceiptBaseline(`before live mutation ${index}`)
+      assertCompleteReadSet(`before live mutation ${index}`)
       if (file.before_hash !== null) {
         options.dependencies.faults?.beforeLiveUnlink?.(file.path, index)
+        assertReceiptBaseline(`immediately before live unlink ${index}`)
+        assertCompleteReadSet(`immediately before live unlink ${index}`)
         const publicIdentity = regularFileIdentity(file.path)
         const claimIdentity = regularFileIdentity(file.claim!)
         if (!file.claim_identity || fileHash(file.path) !== file.before_hash || fileHash(file.claim!) !== file.before_hash ||
@@ -2239,21 +2277,28 @@ function commitTransaction(options: {
         options.dependencies.faults?.afterLiveUnlink?.(file.path, index)
       } else if (existsSync(file.path)) throw new Error(`Expected-absent live path appeared before publication: ${file.path}`)
       if (file.after_hash !== null) {
+        assertCompleteReadSet(`before live publish ${index}`, file.path)
         options.dependencies.faults?.beforeLivePublish?.(file.path, index)
+        assertReceiptBaseline(`immediately before live publish ${index}`)
+        assertCompleteReadSet(`immediately before live publish ${index}`, file.path)
         link(file.prepared!, file.path)
         options.dependencies.faults?.afterLivePublish?.(file.path, index)
         if (!file.prepared_identity || fileHash(file.path) !== file.after_hash ||
           !sameFileIdentity(regularFileIdentity(file.path), file.prepared_identity)) throw new Error(`Published live file differs from prepared identity: ${file.path}`)
       }
+      publishedPaths.add(normalizedPath(file.path))
+      assertCompleteReadSet(`after live mutation ${index}`)
       options.dependencies.faults?.afterLiveWrite?.(file.path, index)
     })
     assertJournalFilesAfter(journal)
+    assertCompleteReadSet("after live file writes")
     assertReceiptBaseline("after live file writes")
     setJournalPhase(journalPath, journal, "live-written", options.dependencies)
     assertJournalFilesAfter(journal)
     assertReceiptBaseline("after live-written journal phase")
     options.dependencies.faults?.beforeReceiptCommit?.(options.paths.receiptPath)
     assertJournalFilesAfter(journal)
+    assertCompleteReadSet("immediately before receipt commit")
     assertReceiptBaseline("immediately before receipt claim")
     if (expectedReceiptBeforeHash) {
       link(options.paths.receiptPath, receiptClaim!)
@@ -2272,6 +2317,7 @@ function commitTransaction(options: {
         !sameFileIdentity(receiptIdentityBeforeUnlink, claimIdentityBeforeUnlink) || !sameFileIdentity(claimIdentity, claimIdentityBeforeUnlink)) {
         throw new Error("Receipt identity changed before no-clobber claim unlink")
       }
+      assertCompleteReadSet("immediately before receipt unlink")
       unlink(options.paths.receiptPath)
       receiptClaimVerified = true
     } else if (existsSync(options.paths.receiptPath)) {
@@ -2280,6 +2326,7 @@ function commitTransaction(options: {
     setJournalPhase(journalPath, journal, "receipt-claimed", options.dependencies)
     options.dependencies.faults?.afterReceiptClaim?.(options.paths.receiptPath)
     if (existsSync(options.paths.receiptPath)) throw new Error("Receipt path was concurrently created after claim")
+    assertCompleteReadSet("immediately before receipt publish")
     link(receiptPrepared, options.paths.receiptPath)
     receiptCommitted = true
     if (fileHash(options.paths.receiptPath) !== receiptAfterHash || !sameFileIdentity(regularFileIdentity(options.paths.receiptPath), receiptPreparedIdentity)) {
@@ -2735,7 +2782,7 @@ function installOrUpdate(
       timestamp,
     })
     if (receipt?.installed && receipt.active_generation === generation.id &&
-      configPlan.plans.every((plan) => !plan.changed) && agentPlan.plans.length === 0 &&
+      configPlan.plans.every((plan) => !plan.changed) && agentPlan.plans.every((plan) => !binaryPlanChanges(plan)) &&
       sameAgentOwnership(receipt.agents, agentPlan.receipts) &&
       JSON.stringify(activeGeneration(receipt).capabilities) === JSON.stringify(generation.capabilities)) {
       removeStagingIfPresent(staged, dependencies)

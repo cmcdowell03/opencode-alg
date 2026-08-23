@@ -1,6 +1,6 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process"
 import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs"
-import { randomUUID } from "node:crypto"
+import { createHash, randomUUID } from "node:crypto"
 import { tmpdir } from "node:os"
 import { basename, delimiter, dirname, join, resolve } from "node:path"
 import type { ToolContext } from "@opencode-ai/plugin"
@@ -168,6 +168,11 @@ const WINDOWS_HELPER_JANITOR_AGE_MS = 60_000
 const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3,7}Z$/
 
 interface FileIdentity { dev: string; ino: string }
+interface WindowsHelperOwnedFile extends FileIdentity {
+  file: string
+  sha256: string
+  size: number
+}
 interface WindowsHelperOwnerMarker {
   schema: "opencode-alg-windows-helper-owner"
   schema_version: 1
@@ -176,7 +181,8 @@ interface WindowsHelperOwnerMarker {
   process_start_identity: string
   process_start_time: string
   created_at: string
-  helper_file: string
+  helper: WindowsHelperOwnedFile
+  source: WindowsHelperOwnedFile
 }
 interface WindowsHelperLifecycle {
   directory: string
@@ -186,7 +192,17 @@ interface WindowsHelperLifecycle {
   markerBytes: Buffer
   marker: WindowsHelperOwnerMarker
   helperPath: string
+  sourcePath: string
 }
+
+type WindowsHelperBuildStage = "source-recorded" | "helper-recorded" | "marker-recorded"
+interface WindowsHelperBuildFaultContext {
+  directory: string
+  helperPath: string
+  sourcePath: string
+  markerPath: string
+}
+type WindowsHelperBuildFault = (stage: WindowsHelperBuildStage, context: WindowsHelperBuildFaultContext) => void
 
 let windowsHelperLifecycle: WindowsHelperLifecycle | undefined
 let windowsHelperUsers = 0
@@ -202,6 +218,49 @@ function fileIdentity(path: string): FileIdentity {
 
 function sameFileIdentity(left: FileIdentity, right: FileIdentity): boolean {
   return left.dev === right.dev && left.ino === right.ino
+}
+
+function helperFileHash(bytes: Uint8Array): string {
+  return createHash("sha256").update(bytes).digest("hex")
+}
+
+function captureWindowsHelperFile(path: string, file = basename(path)): WindowsHelperOwnedFile {
+  const before = lstatSync(path, { bigint: true })
+  if (!before.isFile() || before.isSymbolicLink()) throw new Error(`Windows helper artifact is redirected or not regular: ${path}`)
+  const bytes = readFileSync(path)
+  const after = lstatSync(path, { bigint: true })
+  if (!after.isFile() || after.isSymbolicLink() || before.dev !== after.dev || before.ino !== after.ino ||
+    before.size !== after.size || before.mode !== after.mode || before.mtimeNs !== after.mtimeNs ||
+    before.ctimeNs !== after.ctimeNs || BigInt(bytes.byteLength) !== before.size) {
+    throw new Error(`Windows helper artifact changed during identity capture: ${path}`)
+  }
+  return {
+    file,
+    sha256: helperFileHash(bytes),
+    size: bytes.byteLength,
+    dev: before.dev.toString(),
+    ino: before.ino.toString(),
+  }
+}
+
+function validWindowsHelperOwnedFile(value: unknown): value is WindowsHelperOwnedFile {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  const record = value as Record<string, unknown>
+  return exactKeys(record, ["file", "sha256", "size", "dev", "ino"]) &&
+    typeof record.file === "string" && record.file === basename(record.file) && record.file.length <= 128 &&
+    typeof record.sha256 === "string" && /^[a-f0-9]{64}$/.test(record.sha256) &&
+    Number.isSafeInteger(record.size) && Number(record.size) >= 0 && Number(record.size) <= 16 * 1024 * 1024 &&
+    typeof record.dev === "string" && /^\d+$/.test(record.dev) &&
+    typeof record.ino === "string" && /^\d+$/.test(record.ino)
+}
+
+function exactWindowsHelperFile(directory: string, expected: WindowsHelperOwnedFile): boolean {
+  try {
+    const observed = captureWindowsHelperFile(join(directory, expected.file), expected.file)
+    return JSON.stringify(observed) === JSON.stringify(expected)
+  } catch {
+    return false
+  }
 }
 
 function exactKeys(value: Record<string, unknown>, expected: string[]): boolean {
@@ -242,24 +301,32 @@ function parseOwnedHelper(directory: string): WindowsHelperLifecycle | undefined
     const directoryStat = lstatSync(directory)
     if (!directoryStat.isDirectory() || directoryStat.isSymbolicLink()) return undefined
     const markerPath = join(directory, WINDOWS_HELPER_MARKER)
-    const markerStat = lstatSync(markerPath)
-    if (!markerStat.isFile() || markerStat.isSymbolicLink() || markerStat.size <= 0 || markerStat.size > WINDOWS_HELPER_MARKER_LIMIT) return undefined
+    const markerStat = lstatSync(markerPath, { bigint: true })
+    if (!markerStat.isFile() || markerStat.isSymbolicLink() || markerStat.size <= 0n || markerStat.size > BigInt(WINDOWS_HELPER_MARKER_LIMIT)) return undefined
     const markerBytes = readFileSync(markerPath)
+    const markerAfter = lstatSync(markerPath, { bigint: true })
+    if (markerStat.dev !== markerAfter.dev || markerStat.ino !== markerAfter.ino || markerStat.size !== markerAfter.size ||
+      markerStat.mode !== markerAfter.mode || markerStat.mtimeNs !== markerAfter.mtimeNs || markerStat.ctimeNs !== markerAfter.ctimeNs ||
+      BigInt(markerBytes.byteLength) !== markerStat.size) return undefined
     const value: unknown = JSON.parse(markerBytes.toString("utf8"))
     if (!value || typeof value !== "object" || Array.isArray(value)) return undefined
     const marker = value as Record<string, unknown>
-    if (!exactKeys(marker, ["schema", "schema_version", "token", "pid", "process_start_identity", "process_start_time", "created_at", "helper_file"]) ||
+    if (!exactKeys(marker, ["schema", "schema_version", "token", "pid", "process_start_identity", "process_start_time", "created_at", "helper", "source"]) ||
       marker.schema !== "opencode-alg-windows-helper-owner" || marker.schema_version !== 1 ||
       typeof marker.token !== "string" || marker.token.toLowerCase() !== match[2]!.toLowerCase() ||
       !Number.isSafeInteger(marker.pid) || marker.pid !== Number(match[1]) ||
       typeof marker.process_start_identity !== "string" || !ISO_UTC.test(marker.process_start_identity) ||
       typeof marker.process_start_time !== "string" || marker.process_start_time !== marker.process_start_identity ||
       typeof marker.created_at !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(marker.created_at) ||
-      typeof marker.helper_file !== "string" || marker.helper_file !== `helper-${marker.token}.exe`) return undefined
+      !validWindowsHelperOwnedFile(marker.helper) || marker.helper.file !== `helper-${marker.token}.exe` ||
+      !validWindowsHelperOwnedFile(marker.source) || marker.source.file !== `source-${marker.token}.cs`) return undefined
     const typed = marker as unknown as WindowsHelperOwnerMarker
+    if (!exactWindowsHelperFile(directory, typed.helper) || !exactWindowsHelperFile(directory, typed.source)) return undefined
+    const names = readdirSync(directory).sort()
+    if (JSON.stringify(names) !== JSON.stringify([WINDOWS_HELPER_MARKER, typed.helper.file, typed.source.file].sort())) return undefined
     return {
       directory, directoryIdentity: fileIdentity(directory), markerPath, markerIdentity: fileIdentity(markerPath), markerBytes,
-      marker: typed, helperPath: join(directory, typed.helper_file),
+      marker: typed, helperPath: join(directory, typed.helper.file), sourcePath: join(directory, typed.source.file),
     }
   } catch {
     return undefined
@@ -289,6 +356,7 @@ export interface WindowsShellHelperCleanupOptions {
   minimumAgeMs?: number
   includeCurrent?: boolean
   beforeDelete?: (directory: string) => void
+  beforeFileDelete?: (path: string) => void
   ownerProcessState?: (pid: number, environment: NodeJS.ProcessEnv) => { state: "alive" | "dead" | "ambiguous"; identity?: string }
 }
 
@@ -296,32 +364,57 @@ function exactOwnedLifecycle(value: WindowsHelperLifecycle): boolean {
   try {
     if (!sameFileIdentity(fileIdentity(value.directory), value.directoryIdentity) ||
       !sameFileIdentity(fileIdentity(value.markerPath), value.markerIdentity) ||
-      !readFileSync(value.markerPath).equals(value.markerBytes)) return false
+      !readFileSync(value.markerPath).equals(value.markerBytes) ||
+      !exactWindowsHelperFile(value.directory, value.marker.helper) ||
+      !exactWindowsHelperFile(value.directory, value.marker.source)) return false
     const names = readdirSync(value.directory).sort()
-    return names.every((name) => name === WINDOWS_HELPER_MARKER || name === value.marker.helper_file || name === `source-${value.marker.token}.cs`)
+    return JSON.stringify(names) === JSON.stringify([WINDOWS_HELPER_MARKER, value.marker.helper.file, value.marker.source.file].sort())
   } catch {
     return false
   }
 }
 
-function deleteOwnedLifecycle(value: WindowsHelperLifecycle, beforeDelete?: (directory: string) => void): boolean {
+function deleteOwnedLifecycle(
+  value: WindowsHelperLifecycle,
+  beforeDelete?: (directory: string) => void,
+  beforeFileDelete?: (path: string) => void,
+): boolean {
   if (!exactOwnedLifecycle(value)) return false
   beforeDelete?.(value.directory)
   if (!exactOwnedLifecycle(value)) return false
   const deadline = Date.now() + 3_000
   let pause = 20
+  const remaining = [value.marker.source, value.marker.helper]
+  const hooked = new Set<string>()
+  let markerRemaining = true
   while (Date.now() <= deadline) {
     try {
-      for (const name of readdirSync(value.directory)) {
-        if (name === WINDOWS_HELPER_MARKER) continue
-        const path = join(value.directory, name)
-        const identity = fileIdentity(path)
-        const stat = lstatSync(path)
-        if (!stat.isFile() || stat.isSymbolicLink() || !sameFileIdentity(fileIdentity(path), identity)) return false
+      if (!sameFileIdentity(fileIdentity(value.directory), value.directoryIdentity)) return false
+      const expectedNames = [
+        ...(markerRemaining ? [WINDOWS_HELPER_MARKER] : []),
+        ...remaining.map((record) => record.file),
+      ].sort()
+      if (JSON.stringify(readdirSync(value.directory).sort()) !== JSON.stringify(expectedNames)) return false
+      if (markerRemaining && (!sameFileIdentity(fileIdentity(value.markerPath), value.markerIdentity) || !readFileSync(value.markerPath).equals(value.markerBytes))) return false
+      if (remaining.some((record) => !exactWindowsHelperFile(value.directory, record))) return false
+      const next = remaining[0]
+      if (next) {
+        const path = join(value.directory, next.file)
+        if (!hooked.has(path)) {
+          hooked.add(path)
+          beforeFileDelete?.(path)
+        }
+        if (!exactWindowsHelperFile(value.directory, next)) return false
         unlinkSync(path)
+        remaining.shift()
+        continue
       }
-      if (!exactOwnedLifecycle(value) || readdirSync(value.directory).some((name) => name !== WINDOWS_HELPER_MARKER)) return false
-      unlinkSync(value.markerPath)
+      if (markerRemaining) {
+        if (!sameFileIdentity(fileIdentity(value.markerPath), value.markerIdentity) || !readFileSync(value.markerPath).equals(value.markerBytes)) return false
+        unlinkSync(value.markerPath)
+        markerRemaining = false
+        continue
+      }
       if (!sameFileIdentity(fileIdentity(value.directory), value.directoryIdentity) || readdirSync(value.directory).length !== 0) return false
       rmdirSync(value.directory)
       return !existsSync(value.directory)
@@ -350,7 +443,7 @@ export function cleanupWindowsShellHelpers(options: WindowsShellHelperCleanupOpt
       const owner = (options.ownerProcessState ?? processStartIdentity)(value.marker.pid, environment)
       if (owner.state === "ambiguous" || owner.state === "alive" && owner.identity === value.marker.process_start_identity) { preserved.push(value.directory); continue }
     }
-    if (deleteOwnedLifecycle(value, options.beforeDelete)) {
+    if (deleteOwnedLifecycle(value, options.beforeDelete, options.beforeFileDelete)) {
       removed.push(value.directory)
       if (current && windowsHelperLifecycle === value || current && windowsHelperLifecycle?.directory === value.directory) {
         windowsHelperLifecycle = undefined
@@ -404,18 +497,65 @@ export function windowsJobHelperBuildState(): { compileCount: number; helperPath
   }
 }
 
-async function ensureWindowsJobHelper(environment: NodeJS.ProcessEnv): Promise<string> {
+function assertCurrentWindowsHelper(path: string): WindowsHelperLifecycle {
+  const current = windowsHelperLifecycle
+  if (!current || resolve(current.helperPath) !== resolve(path)) throw new Error("Windows Job helper lifecycle is unavailable")
+  const observed = parseOwnedHelper(current.directory)
+  if (!observed || !sameFileIdentity(observed.directoryIdentity, current.directoryIdentity) ||
+    !sameFileIdentity(observed.markerIdentity, current.markerIdentity) || !observed.markerBytes.equals(current.markerBytes) ||
+    resolve(observed.helperPath) !== resolve(current.helperPath) || resolve(observed.sourcePath) !== resolve(current.sourcePath)) {
+    throw new Error("Windows Job helper manifest, executable, or source identity changed")
+  }
+  return observed
+}
+
+async function ensureWindowsJobHelper(environment: NodeJS.ProcessEnv, buildFault?: WindowsHelperBuildFault): Promise<string> {
   if (!windowsHelperJanitorRan) {
     windowsHelperJanitorRan = true
     cleanupWindowsShellHelpers({ environment })
   }
-  if (windowsHelperLifecycle && parseOwnedHelper(windowsHelperLifecycle.directory) && existsSync(windowsHelperLifecycle.helperPath)) return windowsHelperLifecycle.helperPath
-  if (windowsJobHelperPromise) return windowsJobHelperPromise
-  windowsJobHelperPromise = buildWindowsJobHelper(environment)
-  try { return await windowsJobHelperPromise } catch (error) { windowsJobHelperPromise = undefined; throw error }
+  if (windowsHelperLifecycle) return assertCurrentWindowsHelper(windowsHelperLifecycle.helperPath).helperPath
+  if (windowsJobHelperPromise) {
+    const path = await windowsJobHelperPromise
+    return assertCurrentWindowsHelper(path).helperPath
+  }
+  windowsJobHelperPromise = buildWindowsJobHelper(environment, buildFault)
+  try {
+    const path = await windowsJobHelperPromise
+    return assertCurrentWindowsHelper(path).helperPath
+  } catch (error) {
+    windowsJobHelperPromise = undefined
+    throw error
+  }
 }
 
-async function buildWindowsJobHelper(environment: NodeJS.ProcessEnv): Promise<string> {
+function cleanupFailedWindowsHelperBuild(options: {
+  directory: string
+  directoryIdentity: FileIdentity
+  files: WindowsHelperOwnedFile[]
+  markerPath: string
+  markerIdentity?: FileIdentity
+  markerBytes?: Buffer
+}): void {
+  try {
+    if (!sameFileIdentity(fileIdentity(options.directory), options.directoryIdentity)) return
+    for (const file of options.files) {
+      const path = join(options.directory, file.file)
+      if (existsSync(path) && exactWindowsHelperFile(options.directory, file)) unlinkSync(path)
+    }
+    if (options.markerIdentity && options.markerBytes && existsSync(options.markerPath) &&
+      sameFileIdentity(fileIdentity(options.markerPath), options.markerIdentity) &&
+      readFileSync(options.markerPath).equals(options.markerBytes)) unlinkSync(options.markerPath)
+    if (sameFileIdentity(fileIdentity(options.directory), options.directoryIdentity) && readdirSync(options.directory).length === 0) {
+      rmdirSync(options.directory)
+    }
+  } catch {
+    // Any lock, replacement, unexpected entry, or identity ambiguity preserves
+    // the remainder for manual inspection; no recursive/force cleanup is used.
+  }
+}
+
+async function buildWindowsJobHelper(environment: NodeJS.ProcessEnv, buildFault?: WindowsHelperBuildFault): Promise<string> {
   const root = environment.TEMP || environment.TMP || tmpdir()
   const owner = processStartIdentity(process.pid, environment)
   if (owner.state !== "alive" || !owner.identity) throw new Error("Windows Job helper owner process-start identity is unavailable")
@@ -423,23 +563,21 @@ async function buildWindowsJobHelper(environment: NodeJS.ProcessEnv): Promise<st
   const directory = join(root, `opencode-alg-job-helper-v13-${process.pid}-${token}`)
   mkdirSync(directory, { mode: 0o700 })
   try { chmodSync(directory, 0o700) } catch { /* Windows relies on the private TEMP ACL. */ }
+  const directoryIdentity = fileIdentity(directory)
   const target = join(directory, `helper-${token}.exe`)
   const sourcePath = join(directory, `source-${token}.cs`)
   const markerPath = join(directory, WINDOWS_HELPER_MARKER)
-  const marker: WindowsHelperOwnerMarker = {
-    schema: "opencode-alg-windows-helper-owner", schema_version: 1, token, pid: process.pid,
-    process_start_identity: owner.identity, process_start_time: owner.identity, created_at: new Date().toISOString(), helper_file: basename(target),
-  }
-  const markerBytes = Buffer.from(`${JSON.stringify(marker)}\n`)
-  writeFileSync(markerPath, markerBytes, { flag: "wx", mode: 0o600 })
-  try { chmodSync(markerPath, 0o600) } catch { /* Windows relies on the private TEMP ACL. */ }
-  windowsHelperLifecycle = {
-    directory, directoryIdentity: fileIdentity(directory), markerPath, markerIdentity: fileIdentity(markerPath), markerBytes, marker, helperPath: target,
-  }
   const systemRoot = environment.SystemRoot || environment.WINDIR || "C:\\Windows"
   const powershell = join(systemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+  const recordedFiles: WindowsHelperOwnedFile[] = []
+  let markerBytes: Buffer | undefined
+  let markerIdentity: FileIdentity | undefined
+  const faultContext = { directory, helperPath: target, sourcePath, markerPath }
   try {
     writeFileSync(sourcePath, WINDOWS_JOB_HELPER_SOURCE, { encoding: "utf8", flag: "wx", mode: 0o600 })
+    const source = captureWindowsHelperFile(sourcePath)
+    recordedFiles.push(source)
+    buildFault?.("source-recorded", faultContext)
     const cscCandidates = [
       join(systemRoot, "Microsoft.NET", "Framework64", "v4.0.30319", "csc.exe"),
       join(systemRoot, "Microsoft.NET", "Framework", "v4.0.30319", "csc.exe"),
@@ -478,12 +616,36 @@ async function buildWindowsJobHelper(environment: NodeJS.ProcessEnv): Promise<st
         : new Error(error || `Windows Job helper compiler exited ${code}`)))
     })
     try { chmodSync(target, 0o700) } catch { /* Windows relies on the private TEMP ACL. */ }
+    const helper = captureWindowsHelperFile(target)
+    recordedFiles.push(helper)
+    buildFault?.("helper-recorded", faultContext)
+    const marker: WindowsHelperOwnerMarker = {
+      schema: "opencode-alg-windows-helper-owner", schema_version: 1, token, pid: process.pid,
+      process_start_identity: owner.identity, process_start_time: owner.identity, created_at: new Date().toISOString(),
+      helper,
+      source,
+    }
+    markerBytes = Buffer.from(`${JSON.stringify(marker)}\n`)
+    writeFileSync(markerPath, markerBytes, { flag: "wx", mode: 0o600 })
+    try { chmodSync(markerPath, 0o600) } catch { /* Windows relies on the private TEMP ACL. */ }
+    markerIdentity = fileIdentity(markerPath)
+    buildFault?.("marker-recorded", faultContext)
+    windowsHelperLifecycle = {
+      directory,
+      directoryIdentity,
+      markerPath,
+      markerIdentity,
+      markerBytes,
+      marker,
+      helperPath: target,
+      sourcePath,
+    }
+    assertCurrentWindowsHelper(target)
     return target
   } catch (error) {
-    cleanupWindowsShellHelpers({ candidates: [directory], minimumAgeMs: 0, includeCurrent: true })
+    if (windowsHelperLifecycle?.directory === directory) windowsHelperLifecycle = undefined
+    cleanupFailedWindowsHelperBuild({ directory, directoryIdentity, files: recordedFiles, markerPath, markerIdentity, markerBytes })
     throw error
-  } finally {
-    rmSync(sourcePath, { force: true })
   }
 }
 
@@ -493,6 +655,7 @@ function windowsJobLauncher(
   helperPath: string,
   cwd: string,
 ): { executable: string; args: string[]; environment: NodeJS.ProcessEnv; readyPath: string; jobName: string; scriptPath: string; controlRequestPath: string; controlReadyPath: string; controlResultPath: string } {
+  assertCurrentWindowsHelper(helperPath)
   const readyPath = join(environment.TEMP || environment.TMP || tmpdir(), `alg-job-${process.pid}-${randomUUID()}.ready`)
   const scriptPath = join(environment.TEMP || environment.TMP || tmpdir(), `alg-command-${process.pid}-${randomUUID()}.cmd`)
   const jobName = `Local\\OpenCodeALG-${randomUUID()}`
@@ -624,7 +787,14 @@ async function defaultWindowsJobObjectTerminate(
   if (helperPath) {
     return new Promise((resolveResult) => {
       let detail = ""; let settled = false
-      const helper = spawn(helperPath, ["terminate", name, String(Math.max(250, helperTimeoutMs - 250))], { windowsHide: true, stdio: ["ignore", "ignore", "pipe"], env: environment })
+      let helper: ReturnType<typeof spawn>
+      try {
+        assertCurrentWindowsHelper(helperPath)
+        helper = spawn(helperPath, ["terminate", name, String(Math.max(250, helperTimeoutMs - 250))], { windowsHide: true, stdio: ["ignore", "ignore", "pipe"], env: environment })
+      } catch (error) {
+        resolveResult({ confirmed: false, detail: error instanceof Error ? error.message : String(error) })
+        return
+      }
       trackWindowsHelperChild(helper)
       const finish = (result: WindowsTreeTerminationResult) => { if (settled) return; settled = true; clearTimeout(timer); resolveResult(result) }
       helper.stderr?.on("data", (chunk: Buffer) => { detail = `${detail}${chunk.toString("utf8")}`.slice(-2_000) })
@@ -1025,6 +1195,8 @@ export async function executeShellGate(options: {
   timeoutReadiness?: () => boolean
   /** Test-only native handshake delay; production watcher readiness is immediate. */
   windowsJobWatcherReadyDelayMs?: number
+  /** Test seam for proving identity-checked cleanup at Windows helper build stages. */
+  windowsJobHelperBuildFault?: WindowsHelperBuildFault
 }): Promise<ShellExecutionResult> {
   const cmd = options.cmd.trim()
   if (!cmd || cmd.length > 8_192) throw new Error("shell command must be 1..8192 characters")
@@ -1077,7 +1249,7 @@ export async function executeShellGate(options: {
   if (windows && !options.spawnProcess) {
     releaseWindowsHelper = acquireWindowsHelper()
     try {
-      windowsJobHelper = await ensureWindowsJobHelper(environment)
+      windowsJobHelper = await ensureWindowsJobHelper(environment, options.windowsJobHelperBuildFault)
     } catch (error) {
       releaseWindowsHelper()
       return {

@@ -100,6 +100,10 @@
   may be reused.
 - Dependency installation is staged-only npm frozen/no-script mode. Never run
   pull/reset/dependency installation in a registered or active package root.
+  Failed clone, Git, or npm staging preserves the exclusive orphan staging tree
+  and reports its exact path: external commands can add unrecorded files, so the
+  manager neither adopts nor recursively deletes it. Inspect and manually remove
+  only that reported inactive transaction after confirming no receipt references it.
 - Each new generation receipt separately binds the package-lock digest and a
   bounded same-install identity for every production `node_modules` directory,
   file byte/mode, and contained link target. This detects added/removed/changed
@@ -209,7 +213,7 @@
   sync, wrapper check/EOF probe, and npm pack dry-run.
 - Its strict JSON is capped at 512 KiB. It records complete redacted stdout and
   stderr under per-command and aggregate retention limits; byte counts and
-  SHA-256 cover those exact retained UTF-8 strings. Ten unique command IDs are
+  SHA-256 cover those exact retained UTF-8 strings. Eleven unique command IDs are
   required in exact order, with argv/cwd/exit status and executable-family/
   relationship checks. It records parsed totals, source/manifest/lock/live-
   evidence hashes, and the complete sorted npm `{path,size,mode}` inventory,

@@ -1,6 +1,8 @@
 import {
   closeSync,
+  constants,
   existsSync,
+  fstatSync,
   fsyncSync,
   lstatSync,
   linkSync,
@@ -44,6 +46,10 @@ export interface DecodedTextFile {
   bytes: Buffer
   encoding: TextEncoding
 }
+
+export type StableFileCapture =
+  | { exists: false; bytes?: undefined; hash?: undefined; identity: null }
+  | { exists: true; bytes: Buffer; hash: string; identity: FileIdentity }
 
 export interface ManagedMcpPlanResult {
   plan: TextFilePlan
@@ -111,17 +117,65 @@ export function decodeConfigBytes(bytes: Buffer, path: string): DecodedTextFile 
   }
 }
 
-export function readStableRegularFile(path: string): { bytes: Buffer; identity: FileIdentity } {
-  const before = lstatSync(path, { bigint: true })
-  if (!before.isFile() || before.isSymbolicLink() || normalizedPath(realpathSync.native(path)) !== normalizedPath(path)) {
+function absentAtLstat(path: string): boolean {
+  try {
+    lstatSync(path)
+    return false
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code
+    if (code === "ENOENT" || code === "ENOTDIR") return true
+    throw error
+  }
+}
+
+/** Stable path capture for transaction read sets, including strict absence. */
+export function captureStableRegularFile(path: string): StableFileCapture {
+  let pathBefore: ReturnType<typeof lstatSync>
+  try {
+    pathBefore = lstatSync(path, { bigint: true })
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code
+    if (code !== "ENOENT" && code !== "ENOTDIR") throw error
+    if (!absentAtLstat(path)) throw new Error(`Path changed during stable absence capture: ${path}`)
+    return { exists: false, identity: null }
+  }
+  if (!pathBefore.isFile() || pathBefore.isSymbolicLink() || normalizedPath(realpathSync.native(path)) !== normalizedPath(path)) {
     throw new Error(`Path is redirected or not a direct regular file: ${path}`)
   }
-  const bytes = readFileSync(path)
-  const after = lstatSync(path, { bigint: true })
-  const stable = before.dev === after.dev && before.ino === after.ino && before.size === after.size &&
-    before.mode === after.mode && before.mtimeNs === after.mtimeNs && before.ctimeNs === after.ctimeNs
-  if (!stable || BigInt(bytes.byteLength) !== before.size) throw new Error(`File changed during stable read: ${path}`)
-  return { bytes, identity: { dev: before.dev.toString(), ino: before.ino.toString() } }
+  const noFollow = typeof constants.O_NOFOLLOW === "number" ? constants.O_NOFOLLOW : 0
+  const descriptor = openSync(path, constants.O_RDONLY | noFollow)
+  try {
+    const openedBefore = fstatSync(descriptor, { bigint: true })
+    const bytes = readFileSync(descriptor)
+    const openedAfter = fstatSync(descriptor, { bigint: true })
+    const pathAfter = lstatSync(path, { bigint: true })
+    const metadataStable = (left: typeof openedBefore, right: typeof openedBefore) =>
+      left.dev === right.dev && left.ino === right.ino && left.size === right.size &&
+      left.mode === right.mode && left.mtimeNs === right.mtimeNs && left.ctimeNs === right.ctimeNs
+    const sameOpenedPath = (opened: typeof openedBefore, pathStat: typeof pathBefore) =>
+      opened.dev === pathStat.dev && opened.ino === pathStat.ino && opened.size === pathStat.size
+    if (!openedBefore.isFile() || pathAfter.isSymbolicLink() || !pathAfter.isFile() ||
+      !metadataStable(openedBefore, openedAfter) || !metadataStable(pathBefore, pathAfter) ||
+      !sameOpenedPath(openedBefore, pathBefore) || !sameOpenedPath(openedAfter, pathAfter) ||
+      BigInt(bytes.byteLength) !== openedBefore.size ||
+      normalizedPath(realpathSync.native(path)) !== normalizedPath(path)) {
+      throw new Error(`File changed during stable read: ${path}`)
+    }
+    return {
+      exists: true,
+      bytes,
+      hash: digest(bytes),
+      identity: { dev: openedBefore.dev.toString(), ino: openedBefore.ino.toString() },
+    }
+  } finally {
+    closeSync(descriptor)
+  }
+}
+
+export function readStableRegularFile(path: string): { bytes: Buffer; hash: string; identity: FileIdentity } {
+  const capture = captureStableRegularFile(path)
+  if (!capture.exists) throw Object.assign(new Error(`Path is absent: ${path}`), { code: "ENOENT" })
+  return capture
 }
 
 export function readConfigTextFile(path: string): DecodedTextFile & { identity: FileIdentity } {
@@ -212,7 +266,10 @@ export function planPluginConfig(options: {
   schema: string
   uninstall?: boolean
 }): TextFilePlan {
-  const existing = existsSync(options.path) ? readConfigTextFile(options.path) : undefined
+  const captured = captureStableRegularFile(options.path)
+  const existing = captured.exists
+    ? { ...decodeConfigBytes(captured.bytes, options.path), identity: captured.identity }
+    : undefined
   const before = existing?.text
   const encoding = existing?.encoding ?? { name: "utf8", bom: false }
   if (before === undefined && options.uninstall) {
@@ -340,8 +397,9 @@ export function planUpdateJsoncPaths(
   path: string,
   updates: readonly JsoncPathUpdate[],
 ): TextFilePlan | undefined {
-  if (!existsSync(path)) return
-  const decoded = readConfigTextFile(path)
+  const captured = captureStableRegularFile(path)
+  if (!captured.exists) return
+  const decoded = { ...decodeConfigBytes(captured.bytes, path), identity: captured.identity }
   const before = decoded.text
   parseJsoncObject(before, path)
   let after = before
@@ -485,7 +543,29 @@ function assertPublicBefore(record: CasRecord): void {
   assertOwnedFile(record.plan.path, record.beforeIdentity, record.before, "Preflighted public file")
 }
 
+function assertPublicAfter(record: CasRecord): void {
+  assertParent(record)
+  if (record.after === undefined) {
+    if (!missing(record.plan.path)) throw new Error(`Third-party file appeared at transaction-deleted path: ${record.plan.path}`)
+    return
+  }
+  if (!record.preparedIdentity) throw new Error(`Prepared identity is unavailable for published file: ${record.plan.path}`)
+  if (missing(record.plan.path)) throw new Error(`Published file disappeared during transaction: ${record.plan.path}`)
+  assertOwnedFile(record.plan.path, record.preparedIdentity, record.after, "Published file")
+}
+
+function assertPublicReadSet(records: readonly CasRecord[], transient?: CasRecord): void {
+  for (const record of records) {
+    if (record === transient) {
+      assertParent(record)
+      if (!missing(record.plan.path)) throw new Error(`Public destination is occupied before no-clobber publish: ${record.plan.path}`)
+    } else if (record.mutated) assertPublicAfter(record)
+    else assertPublicBefore(record)
+  }
+}
+
 function assertPreparedAndClaim(record: CasRecord): void {
+  if (!record.mutates) return
   if (record.after !== undefined) {
     if (!record.prepared || !record.preparedIdentity) throw new Error(`Prepared state is missing: ${record.plan.path}`)
     assertOwnedFile(record.prepared, record.preparedIdentity, record.after, "Prepared file")
@@ -618,18 +698,16 @@ export function commitFileCasPlans(
     }
 
     // Complete read-set preflight before the first public unlink/create.
-    for (const record of records) {
-      assertPublicBefore(record)
-      assertPreparedAndClaim(record)
-    }
+    assertPublicReadSet(records)
+    for (const record of records) assertPreparedAndClaim(record)
 
     for (const record of records) {
       if (!record.mutates) continue
       // Every public read remains a transaction precondition at each commit
       // fence, including unchanged/custom-skipped/no-action paths.
-      for (const candidate of records) assertPublicBefore(candidate)
+      assertPublicReadSet(records)
       options.hooks?.beforeMutation?.(record.plan, record.index)
-      assertPublicBefore(record)
+      assertPublicReadSet(records)
       assertPreparedAndClaim(record)
       record.mutated = true
       if (record.before !== undefined) {
@@ -637,8 +715,9 @@ export function commitFileCasPlans(
         options.hooks?.afterUnlink?.(record.plan, record.index)
       }
       if (record.after !== undefined) {
+        assertPublicReadSet(records, record)
         options.hooks?.beforePublish?.(record.plan, record.index)
-        if (!missing(record.plan.path)) throw new Error(`Public destination is occupied before no-clobber publish: ${record.plan.path}`)
+        assertPublicReadSet(records, record)
         linkSync(record.prepared!, record.plan.path)
         options.hooks?.afterPublish?.(record.plan, record.index)
         assertOwnedFile(record.plan.path, record.preparedIdentity!, record.after, "Published file")
@@ -646,6 +725,7 @@ export function commitFileCasPlans(
         throw new Error(`Third-party file appeared after managed delete: ${record.plan.path}`)
       }
     }
+    assertPublicReadSet(records)
 
     for (const record of records) {
       if (record.claim && record.claimIdentity && record.before) unlinkOwnedFile(record.claim, record.claimIdentity, record.before)

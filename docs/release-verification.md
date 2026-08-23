@@ -116,7 +116,7 @@ complete sorted npm `{path,size,mode}` inventory/digest, source and
 release-input identities, Excel hashes, cleanup, and global-config proof.
 Release evidence schema v4 runs `bun test tests/manager.test.ts --timeout 60000`
 as exact `manager_tests` evidence in addition to the full suite, parses and binds
-its pass/fail/assertion/file totals, and verifies then references the separately retained live
+its pass/skip/fail/test/assertion/file totals, and verifies then references the separately retained live
 evidence by path/hash/size/device-inode identity instead of duplicating it.
 Each live artifact uses `live-verification-<source-prefix>-<random-uuid>.json`
 and the same identity-bound temporary plus no-clobber hard-link publication. The

@@ -1068,6 +1068,30 @@ describe("v0.2 side-by-side release manager", () => {
     expect(existsSync(join(racedConfig, ".opencode-alg", "receipt.json"))).toBe(false)
   }, 90_000)
 
+  test.each(["git", "npm"] as const)("failed %s staging that adds a foreign file is preserved for inspection", (variant) => {
+    const source = sourceFixture()
+    const config = tempProject(`alg-foreign-failed-${variant}-staging-`)
+    sandboxes.push(config)
+    const runner = new LocalGitRunner()
+    runner.failDependencies = variant === "npm"
+    let foreign = ""
+    runner.onRequest = (request) => {
+      const clone = request.command === "git" && request.args[0] === "clone"
+      const npm = isNpmRequest(request)
+      if (foreign || variant === "git" && !clone || variant === "npm" && !npm) return
+      const stagingPath = clone ? request.args.at(-1)! : request.cwd!
+      mkdirSync(stagingPath, { recursive: true })
+      foreign = join(stagingPath, `foreign-from-failed-${variant}.txt`)
+      writeFileSync(foreign, `foreign ${variant} staging bytes\n`, { flag: "wx" })
+    }
+
+    expect(() => runManager({ command: "install", configDir: config, source }, { runner }))
+      .toThrow(/staging tree preserved for inspection/)
+    expect(foreign).not.toBe("")
+    expect(readFileSync(foreign, "utf8")).toBe(`foreign ${variant} staging bytes\n`)
+    expect(existsSync(join(config, ".opencode-alg", "receipt.json"))).toBe(false)
+  }, 60_000)
+
   test.each(["occupied", "same-byte-replacement"] as const)("private primitive probe preserves %s foreign state", (variant) => {
     const source = sourceFixture()
     const config = tempProject(`alg-private-probe-${variant}-`)
@@ -1756,31 +1780,46 @@ describe("v0.2 side-by-side release manager", () => {
     expect(readdirSync(join(config, ".opencode-alg", "transactions"))).toHaveLength(1)
   }, 60_000)
 
-  test.each(["receipt", "config", "agent"] as const)("%s same-byte identity replacement after derivation fails with zero live writes", (variant) => {
+  test.each(["receipt", "unchanged-config", "exact-target-agent", "skipped-custom-agent"] as const)("%s same-byte identity replacement after derivation fails with zero live writes", (variant) => {
     const source = sourceFixture()
     const config = tempProject(`alg-derivation-identity-${variant}-`)
     sandboxes.push(config)
     const runner = new LocalGitRunner()
+    mkdirSync(join(config, "agents"))
+    writeFileSync(join(config, "agents", "checker.md"), "custom checker before install\n")
     runManager({ command: "install", configDir: config, source }, { runner })
-    advanceToV02(source)
     const receiptPath = join(config, ".opencode-alg", "receipt.json")
     const serverPath = join(config, "opencode.jsonc")
     const tuiPath = join(config, "tui.json")
-    const agentPath = join(config, "agents", "explorer.md")
-    const target = variant === "receipt" ? receiptPath : variant === "config" ? serverPath : agentPath
-    const snapshots = new Map([receiptPath, serverPath, tuiPath, agentPath].map((path) => [path, readFileSync(path)]))
+    const agents = ["checker.md", "explorer.md", "implementer.md", "orchestrator.md", "researcher.md"]
+      .map((name) => join(config, "agents", name))
+    // Skip releases ownership of the exact managed agents and therefore forces
+    // a receipt transaction for the otherwise-active generation. Configs, exact
+    // agents, and the already-custom checker remain unchanged read-set plans.
+    const target = variant === "receipt"
+      ? receiptPath
+      : variant === "unchanged-config"
+        ? tuiPath
+        : join(config, "agents", variant === "exact-target-agent" ? "explorer.md" : "checker.md")
+    const expectedKind = variant === "receipt" ? "receipt" : variant === "unchanged-config" ? "config" : "agent"
+    const snapshots = new Map([receiptPath, serverPath, tuiPath, ...agents].map((path) => [path, readFileSync(path)]))
     let replaced = false
-    expect(() => runManager({ command: "update", configDir: config, source }, {
+    let writes = 0
+    expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
       runner,
-      faults: { afterPlanning(kind, path) {
-        if (replaced || kind !== variant || path !== target) return
-        const bytes = readFileSync(path)
-        rmSync(path)
-        writeFileSync(path, bytes, { flag: "wx" })
-        replaced = true
-      } },
+      faults: {
+        afterPlanning(kind, path) {
+          if (replaced || kind !== expectedKind || path !== target) return
+          const bytes = readFileSync(path)
+          rmSync(path)
+          writeFileSync(path, bytes, { flag: "wx" })
+          replaced = true
+        },
+        beforeLiveWrite() { writes++ },
+      },
     })).toThrow(/derivation baseline|identity|Concurrent/)
     expect(replaced).toBe(true)
+    expect(writes).toBe(0)
     for (const [path, bytes] of snapshots) expect(readFileSync(path), path).toEqual(bytes)
     expect(readdirSync(join(config, ".opencode-alg", "transactions"))).toEqual([])
   }, 90_000)

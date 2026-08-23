@@ -41,7 +41,7 @@ function evidence() {
     schema_version: 4 as const, kind: "opencode-alg-release-gate" as const,
     generated_at: "2026-08-20T00:00:00.000Z", package_version: "0.2.0" as const,
     source: { sha256: digest, files: 1, bytes: 1 }, release_inputs: { sha256: digest, files: 1, bytes: 1 }, commands: RELEASE_COMMAND_IDS.map((id) => command(id)),
-    totals: { bun_pass: 1, bun_fail: 0, bun_assertions: 1, bun_files: 1, manager_pass: 1, manager_fail: 0, manager_assertions: 1, manager_files: 1, python_run: 1, python_skipped: 0, python_ok: true as const },
+    totals: { bun_pass: 1, bun_skip: 0, bun_fail: 0, bun_total: 1, bun_assertions: 1, bun_files: 1, manager_pass: 1, manager_skip: 0, manager_fail: 0, manager_total: 1, manager_assertions: 1, manager_files: 1, python_run: 1, python_skipped: 0, python_ok: true as const },
     excel: { manifest_sha256: digest, lock_sha256: digest, version: "0.1.8" as const, tool_count: 25 as const, eof_stdout_bytes: 0 as const },
     package: {
       entries: 6, packed_bytes: 1, unpacked_bytes: 1,
@@ -103,8 +103,8 @@ function semanticEvidence(livePath: string) {
   const python = findExecutable(process.platform === "win32" ? ["python.exe"] : ["python3", "python"])
   const uv = findExecutable(process.platform === "win32" ? ["uv.exe"] : ["uv"])
   const interpreter = join(resolve("C:/tmp/opencode-alg-excel-release-gate-fixture"), "env", process.platform === "win32" ? "Scripts/python.exe" : "bin/python")
-  const bunOutput = " 12 pass\n 0 fail\n 34 expect() calls\nRan 12 tests across 3 files. [1.00s]\n"
-  const managerOutput = " 12 pass\n 0 fail\n 34 expect() calls\nRan 12 tests across 1 file. [1.00s]\n"
+  const bunOutput = " 12 pass\n 2 skip\n 0 fail\n 34 expect() calls\nRan 14 tests across 3 files. [1.00s]\n"
+  const managerOutput = " 12 pass\n 1 skip\n 0 fail\n 34 expect() calls\nRan 13 tests across 1 file. [1.00s]\n"
   const pythonOutput = "Ran 7 tests in 0.1s\n\nOK (skipped=1)\n"
   const manifestOutput = `${JSON.stringify({ ok: true, ...excel })}\n`
   const wrapperJson = { ok: true, version: "0.1.8", tool_count: 25, tools: ["apply_formula", "copy_range", "copy_worksheet", "create_chart", "create_pivot_table", "create_table", "create_workbook", "create_worksheet", "delete_range", "delete_sheet_columns", "delete_sheet_rows", "delete_worksheet", "format_range", "get_data_validation_info", "get_merged_cells", "get_workbook_metadata", "insert_columns", "insert_rows", "merge_cells", "read_data_from_excel", "rename_worksheet", "unmerge_cells", "validate_excel_range", "validate_formula_syntax", "write_data_to_excel"], remote_transports: false, path_policy: { ok: true, path_argument_confinement: true } }
@@ -127,7 +127,7 @@ function semanticEvidence(livePath: string) {
     source: { sha256: source.digest, files: source.file_count, bytes: source.total_bytes },
     release_inputs: computeReleaseInputIdentity(ROOT),
     commands,
-    totals: { bun_pass: 12, bun_fail: 0, bun_assertions: 34, bun_files: 3, manager_pass: 12, manager_fail: 0, manager_assertions: 34, manager_files: 1, python_run: 7, python_skipped: 1, python_ok: true },
+    totals: { bun_pass: 12, bun_skip: 2, bun_fail: 0, bun_total: 14, bun_assertions: 34, bun_files: 3, manager_pass: 12, manager_skip: 1, manager_fail: 0, manager_total: 13, manager_assertions: 34, manager_files: 1, python_run: 7, python_skipped: 1, python_ok: true },
     excel: { ...evidence().excel, manifest_sha256: excel.manifest_sha256, lock_sha256: excel.files.lock },
     package: {
       ...evidence().package,
@@ -173,6 +173,9 @@ describe("bounded release-gate evidence", () => {
     expect(ReleaseEvidenceSchema.parse(evidence()).passed).toBe(true)
     expect(ReleaseEvidenceSchema.safeParse({ ...evidence(), secret: "no" }).success).toBe(false)
     expect(ReleaseEvidenceSchema.safeParse({ ...evidence(), passed: false }).success).toBe(false)
+    const missingSkip = structuredClone(evidence())
+    delete (missingSkip.totals as Partial<typeof missingSkip.totals>).bun_skip
+    expect(ReleaseEvidenceSchema.safeParse(missingSkip).success).toBe(false)
   })
 
   test("release-input identity binds same-length manager script, documentation, and test changes", () => {
@@ -296,12 +299,28 @@ describe("bounded release-gate evidence", () => {
     expect(retained.bytes).toBe(written.bytes)
     expect(retained.evidence.source).toEqual(current.source)
     expect(() => verifyRetainedReleaseEvidence(written.path, { sha256: "0".repeat(64) }, ROOT)).toThrow("hash differs")
+
+    const managerWithoutSkipOutput = current.commands[2]!.stdout.replace(" 1 skip\n", "").replace("Ran 13 tests", "Ran 12 tests")
+    const managerWithoutSkip = ReleaseEvidenceSchema.parse({
+      ...current,
+      commands: current.commands.map((item, index) => index === 2
+        ? commandWith(item.id, item.argv, item.cwd, managerWithoutSkipOutput, item.stderr)
+        : item),
+      totals: { ...current.totals, manager_skip: 0, manager_total: 12 },
+    })
+    expect(validateReleaseEvidenceSemantics(managerWithoutSkip, ROOT)).toEqual(managerWithoutSkip)
   })
 
   test("semantic verification rejects coherent-looking contradictory or stale evidence", () => {
     const directory = tempProject("alg-adversarial-release-evidence-")
     temporary.push(directory)
     const current = semanticEvidence(uniqueLiveEvidencePath(directory, verificationPluginConfiguration(ROOT).source.digest, "22222222-2222-4222-8222-222222222222"))
+    const alterOutput = (index: number, transform: (output: string) => string) => ({
+      ...current,
+      commands: current.commands.map((item, itemIndex) => itemIndex === index
+        ? commandWith(item.id, item.argv, item.cwd, transform(item.stdout), item.stderr)
+        : item),
+    })
     const cases: Array<[string, unknown]> = [
       ["source", { ...current, source: { ...current.source, sha256: "0".repeat(64) } }],
       ["duplicate command id", { ...current, commands: current.commands.map((item, index) => index === 1 ? { ...item, id: "typecheck" } : item) }],
@@ -309,6 +328,17 @@ describe("bounded release-gate evidence", () => {
       ["command", { ...current, commands: current.commands.map((item, index) => index === 0 ? { ...item, argv: [item.argv[0]!, "run", "not-typecheck"] } : item) }],
       ["retained output", { ...current, commands: current.commands.map((item, index) => index === 1 ? { ...item, stderr: `${item.stderr}altered` } : item) }],
       ["totals", { ...current, totals: { ...current.totals, bun_fail: 1 } }],
+      ["Bun skip evidence total", { ...current, totals: { ...current.totals, bun_skip: current.totals.bun_skip + 1 } }],
+      ["Bun test evidence total", { ...current, totals: { ...current.totals, bun_total: current.totals.bun_total + 1 } }],
+      ["manager skip evidence total", { ...current, totals: { ...current.totals, manager_skip: current.totals.manager_skip + 1 } }],
+      ["manager test evidence total", { ...current, totals: { ...current.totals, manager_total: current.totals.manager_total + 1 } }],
+      ["missing Bun skip output", alterOutput(1, (output) => output.replace(" 2 skip\n", "").replace("Ran 14 tests", "Ran 12 tests"))],
+      ["altered Bun skip/total output", alterOutput(1, (output) => output.replace(" 2 skip", " 3 skip").replace("Ran 14 tests", "Ran 15 tests"))],
+      ["missing Bun total output", alterOutput(1, (output) => output.replace(/Ran 14 tests across 3 files\.[^\n]*\n/, ""))],
+      ["inconsistent Bun total output", alterOutput(1, (output) => output.replace("Ran 14 tests", "Ran 15 tests"))],
+      ["missing manager skip output", alterOutput(2, (output) => output.replace(" 1 skip\n", "").replace("Ran 13 tests", "Ran 12 tests"))],
+      ["altered manager skip/total output", alterOutput(2, (output) => output.replace(" 1 skip", " 2 skip").replace("Ran 13 tests", "Ran 14 tests"))],
+      ["inconsistent manager total output", alterOutput(2, (output) => output.replace("Ran 13 tests", "Ran 14 tests"))],
       ["packed bytes", { ...current, package: { ...current.package, packed_bytes: current.package.packed_bytes + 1 } }],
       ["unpacked bytes", { ...current, package: { ...current.package, unpacked_bytes: current.package.unpacked_bytes + 1 } }],
       ["package mode", { ...current, package: { ...current.package, files: current.package.files.map((file, index) => index === 0 ? { ...file, mode: 493 } : file) } }],

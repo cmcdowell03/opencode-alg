@@ -366,4 +366,53 @@ describe("shared installer core", () => {
     expect(existsSync(join(configDir, "tui.json"))).toBe(false)
     expect(readdirSync(configDir).some((name) => name.includes("alg-claim") || name.includes("alg-prepared"))).toBe(false)
   })
+
+  test.each(["unchanged-config", "exact-target-agent", "skipped-custom-agent"] as const)(
+    "%s same-byte replacement after planning fails with zero direct-installer writes",
+    (variant) => {
+      const configDir = sandbox()
+      if (variant === "skipped-custom-agent") {
+        runInstaller({ root: ROOT, configDir, skipAgents: true })
+        mkdirSync(join(configDir, "agents"))
+        writeFileSync(join(configDir, "agents", "checker.md"), "custom checker\n")
+      } else {
+        runInstaller({ root: ROOT, configDir })
+      }
+
+      const target = variant === "unchanged-config"
+        ? join(configDir, "opencode.jsonc")
+        : join(configDir, "agents", variant === "exact-target-agent" ? "explorer.md" : "checker.md")
+      const publicPaths = [
+        join(configDir, "opencode.jsonc"),
+        join(configDir, "tui.json"),
+        ...["checker.md", "explorer.md", "implementer.md", "orchestrator.md", "researcher.md"]
+          .map((name) => join(configDir, "agents", name)),
+      ]
+      const snapshots = new Map(publicPaths.filter(existsSync).map((path) => [path, readFileSync(path)]))
+      const missing = publicPaths.filter((path) => !existsSync(path))
+      let writes = 0
+      let replaced = false
+
+      expect(() => runInstaller({
+        root: ROOT,
+        configDir,
+        faults: {
+          afterPlanning() {
+            const bytes = readFileSync(target)
+            rmSync(target)
+            writeFileSync(target, bytes, { flag: "wx" })
+            replaced = true
+          },
+          beforeConfigWrite() { writes++ },
+          beforeAgentWrite() { writes++ },
+        },
+      })).toThrow(/identity|Concurrent/)
+
+      expect(replaced).toBe(true)
+      expect(writes).toBe(0)
+      for (const [path, bytes] of snapshots) expect(readFileSync(path), path).toEqual(bytes)
+      for (const path of missing) expect(existsSync(path), path).toBe(false)
+      expect(readdirSync(configDir).some((name) => name.includes("alg-claim") || name.includes("alg-prepared"))).toBe(false)
+    },
+  )
 })

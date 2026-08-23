@@ -143,6 +143,13 @@ runs in the registered or active package root. Package version, tag, and both
 package-lock root versions must agree. Stable update requires the target commit
 to descend from the active commit and its version to increase.
 
+If clone, Git validation, or npm staging fails, the manager preserves that
+exclusive `.staging/<transaction>` tree and reports its exact path for manual
+inspection. An external command may have added files the manager never
+identity-recorded, so it does not adopt or recursively delete that orphan.
+Review and remove a failed staging tree manually only after confirming it is the
+reported inactive transaction; no receipt or live registration points to it.
+
 The manager runs child processes with an executable plus argument vector, not a
 shell command string. It uses:
 

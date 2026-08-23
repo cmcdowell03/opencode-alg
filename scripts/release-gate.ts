@@ -50,7 +50,7 @@ export const ReleaseEvidenceSchema = z.object({
   source: z.object({ sha256: Sha, files: z.number().int().positive(), bytes: z.number().int().positive() }).strict(),
   release_inputs: z.object({ sha256: Sha, files: z.number().int().positive(), bytes: z.number().int().positive() }).strict(),
   commands: z.array(CommandEvidenceSchema).length(RELEASE_COMMAND_IDS.length),
-  totals: z.object({ bun_pass: z.number().int().nonnegative(), bun_fail: z.number().int().nonnegative(), bun_assertions: z.number().int().nonnegative(), bun_files: z.number().int().positive(), manager_pass: z.number().int().nonnegative(), manager_fail: z.number().int().nonnegative(), manager_assertions: z.number().int().nonnegative(), manager_files: z.number().int().positive(), python_run: z.number().int().nonnegative(), python_skipped: z.number().int().nonnegative(), python_ok: z.literal(true) }).strict(),
+  totals: z.object({ bun_pass: z.number().int().nonnegative(), bun_skip: z.number().int().nonnegative(), bun_fail: z.number().int().nonnegative(), bun_total: z.number().int().nonnegative(), bun_assertions: z.number().int().nonnegative(), bun_files: z.number().int().positive(), manager_pass: z.number().int().nonnegative(), manager_skip: z.number().int().nonnegative(), manager_fail: z.number().int().nonnegative(), manager_total: z.number().int().nonnegative(), manager_assertions: z.number().int().nonnegative(), manager_files: z.number().int().positive(), python_run: z.number().int().nonnegative(), python_skipped: z.number().int().nonnegative(), python_ok: z.literal(true) }).strict(),
   excel: z.object({ manifest_sha256: Sha, lock_sha256: Sha, version: z.literal("0.1.8"), tool_count: z.literal(25), eof_stdout_bytes: z.literal(0) }).strict(),
   package: z.object({
     entries: z.number().int().positive(), packed_bytes: z.number().int().positive(), unpacked_bytes: z.number().int().positive(),
@@ -257,12 +257,27 @@ function combinedOutput(command: z.infer<typeof CommandEvidenceSchema>): string 
 
 function parsedBunTotals(command: z.infer<typeof CommandEvidenceSchema>) {
   const output = combinedOutput(command)
-  const pass = output.match(/(?:^|\s)(\d+) pass(?:\s|$)/)
-  const fail = output.match(/(?:^|\s)(\d+) fail(?:\s|$)/)
-  const assertions = output.match(/(?:^|\s)(\d+) expect\(\) calls/)
-  const files = output.match(/Ran \d+ tests across (\d+) files?\b/)
-  if (!pass || !fail || !assertions || !files) throw new Error("Retained Bun output lacks complete totals")
-  return { bun_pass: Number(pass[1]), bun_fail: Number(fail[1]), bun_assertions: Number(assertions[1]), bun_files: Number(files[1]) }
+  const value = (label: string, pattern: RegExp, optional = false): number => {
+    const matches = [...output.matchAll(pattern)]
+    if (optional && matches.length === 0) return 0
+    if (matches.length !== 1) throw new Error(`Retained Bun output lacks one exact ${label} total`)
+    const parsed = Number(matches[0]![1])
+    if (!Number.isSafeInteger(parsed) || parsed < 0) throw new Error(`Retained Bun output has an invalid ${label} total`)
+    return parsed
+  }
+  const bunPass = value("pass", /^[ \t]*(\d+)[ \t]+pass[ \t]*\r?$/gm)
+  const bunSkip = value("skip", /^[ \t]*(\d+)[ \t]+skip[ \t]*\r?$/gm, true)
+  const bunFail = value("fail", /^[ \t]*(\d+)[ \t]+fail[ \t]*\r?$/gm)
+  const bunAssertions = value("assertion", /^[ \t]*(\d+)[ \t]+expect\(\)[ \t]+calls[ \t]*\r?$/gm)
+  const ran = [...output.matchAll(/^[ \t]*Ran[ \t]+(\d+)[ \t]+tests?[ \t]+across[ \t]+(\d+)[ \t]+files?\b[^\r\n]*\r?$/gm)]
+  if (ran.length !== 1) throw new Error("Retained Bun output lacks one exact Ran tests/files total")
+  const bunTotal = Number(ran[0]![1])
+  const bunFiles = Number(ran[0]![2])
+  if (!Number.isSafeInteger(bunTotal) || bunTotal < 0 || !Number.isSafeInteger(bunFiles) || bunFiles < 1) {
+    throw new Error("Retained Bun output has invalid Ran tests/files totals")
+  }
+  if (bunTotal !== bunPass + bunSkip + bunFail) throw new Error("Retained Bun output total does not equal pass + skip + fail")
+  return { bun_pass: bunPass, bun_skip: bunSkip, bun_fail: bunFail, bun_total: bunTotal, bun_assertions: bunAssertions, bun_files: bunFiles }
 }
 
 function parsedPythonTotals(command: z.infer<typeof CommandEvidenceSchema>) {
@@ -339,7 +354,7 @@ export function validateReleaseEvidenceSemantics(value: unknown, root = ROOT): R
   }
   const bunTotals = parsedBunTotals(evidence.commands[1]!)
   const manager = parsedBunTotals(evidence.commands[2]!)
-  const managerTotals = { manager_pass: manager.bun_pass, manager_fail: manager.bun_fail, manager_assertions: manager.bun_assertions, manager_files: manager.bun_files }
+  const managerTotals = { manager_pass: manager.bun_pass, manager_skip: manager.bun_skip, manager_fail: manager.bun_fail, manager_total: manager.bun_total, manager_assertions: manager.bun_assertions, manager_files: manager.bun_files }
   const pythonTotals = parsedPythonTotals(evidence.commands[6]!)
   if (!exactJson(evidence.totals, { ...bunTotals, ...managerTotals, ...pythonTotals }) || evidence.totals.bun_fail !== 0 || evidence.totals.manager_fail !== 0 || evidence.totals.bun_pass < 1 || evidence.totals.manager_pass < 1 || evidence.totals.python_run < 1) {
     throw new Error("Release evidence test totals do not prove successful Bun and Python suites")
@@ -618,7 +633,7 @@ export function runReleaseGate(args = process.argv.slice(2)): { evidence: Releas
   if (!exactJson(releaseInputsBefore, releaseInputsAfter)) throw new Error("Release inputs changed during aggregate command/package verification")
   const bunTotals = parsedBunTotals(tests.evidence)
   const manager = parsedBunTotals(managerTests.evidence)
-  const managerTotals = { manager_pass: manager.bun_pass, manager_fail: manager.bun_fail, manager_assertions: manager.bun_assertions, manager_files: manager.bun_files }
+  const managerTotals = { manager_pass: manager.bun_pass, manager_skip: manager.bun_skip, manager_fail: manager.bun_fail, manager_total: manager.bun_total, manager_assertions: manager.bun_assertions, manager_files: manager.bun_files }
   const pythonTotals = parsedPythonTotals(pythonTests.evidence)
   if (live.passed !== true || live.user_global_config_modified !== false || live.global_config_snapshot_unchanged !== true ||
     !/^[a-f0-9]{64}$/.test(live.global_config_snapshot_sha256 ?? "") || live.temporary_environment_removed !== true) {

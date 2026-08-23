@@ -1,12 +1,12 @@
 import {
   existsSync,
-  readFileSync,
   readdirSync,
 } from "node:fs"
 import { basename, dirname, join, resolve } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 import {
   commitFileCasPlans,
+  captureStableRegularFile,
   encodeConfigText,
   planPluginConfig,
   readStableRegularFile,
@@ -89,7 +89,7 @@ function bundledAgents(root: string): Array<{ source: string; name: string; byte
     .sort()
     .map((name) => {
       const source = resolveContainedPath(dir, name)
-      return { source, name, bytes: readFileSync(source) }
+      return { source, name, bytes: readStableRegularFile(source).bytes }
     })
 }
 
@@ -110,36 +110,35 @@ function planAgents(
 
   for (const agent of bundled) {
     const target = resolveContainedPath(options.configDir, "agents", agent.name)
+    const captured = captureStableRegularFile(target)
+    const before = captured.exists ? captured.bytes : undefined
+    const expectedIdentity = captured.identity
     if (options.uninstall) {
-      if (!options.removeAgents || !existsSync(target)) {
-        result.push({ path: target, action: "unchanged", expectedIdentity: null })
+      if (!options.removeAgents || !captured.exists) {
+        result.push({ path: target, action: "unchanged", before, after: before, expectedIdentity })
         continue
       }
-      const stable = readStableRegularFile(target)
-      const current = stable.bytes
-      if (!current.equals(agent.bytes)) {
-        result.push({ path: target, action: "skipped", before: current, after: current, expectedIdentity: stable.identity })
+      if (!before!.equals(agent.bytes)) {
+        result.push({ path: target, action: "skipped", before, after: before, expectedIdentity })
         continue
       }
-      result.push({ path: target, action: "removed", before: current, expectedIdentity: stable.identity })
+      result.push({ path: target, action: "removed", before, expectedIdentity })
       continue
     }
 
-    if (!existsSync(target)) {
+    if (!captured.exists) {
       result.push({ path: target, action: "created", after: agent.bytes, expectedIdentity: null })
       continue
     }
-    const stable = readStableRegularFile(target)
-    const current = stable.bytes
-    if (current.equals(agent.bytes)) {
-      result.push({ path: target, action: "unchanged", before: current, after: current, expectedIdentity: stable.identity })
+    if (before!.equals(agent.bytes)) {
+      result.push({ path: target, action: "unchanged", before, after: before, expectedIdentity })
       continue
     }
     if (!options.forceAgents) {
-      result.push({ path: target, action: "skipped", before: current, after: current, expectedIdentity: stable.identity })
+      result.push({ path: target, action: "skipped", before, after: before, expectedIdentity })
       continue
     }
-    result.push({ path: target, action: "updated", before: current, after: agent.bytes, expectedIdentity: stable.identity })
+    result.push({ path: target, action: "updated", before, after: agent.bytes, expectedIdentity })
   }
   return result
 }
