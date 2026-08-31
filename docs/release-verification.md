@@ -22,6 +22,13 @@ bind what they activate, while they are not loaded by either plugin entry point.
 Generated Python caches are excluded. `.gitattributes` fixes the strict Excel
 text assets to LF so manifest hashes are reproducible in Windows local clones;
 verification requires a clean clone and exact manifest hashes.
+
+For package v0.3.0, the `src/**/*.ts` rule necessarily includes all five
+skill-evolution runtime modules: `skill-evolution-evidence.ts`,
+`skill-evolution-runtime.ts`, `skill-evolution-schemas.ts`,
+`skill-evolution-store.ts`, and `skill-evolution-tools.ts`. They are not a
+parallel hand-maintained exception list; omitting any matching regular source
+file changes/fails source identity and the reviewed npm allowlist.
 Entries are sorted by normalized
 forward-slash path. SHA-256 framing includes each UTF-8 path, its byte length,
 and its exact file bytes. Collection fails closed on symlinks/junctions,
@@ -107,15 +114,17 @@ The reproducible aggregate command is:
 bun run release:gate -- --evidence-dir <absolute-external-directory>
 ```
 
-The mandatory destination must be outside the repository. One strict release
-JSON (maximum 512 KiB) records eleven unique command IDs in required order,
+The mandatory destination must be outside the repository. One strict package-
+v0.3.0 release JSON (maximum 512 KiB) uses schema 5 and records eleven unique
+command IDs in required order,
 argument vectors, executable identities/relationships, exit status, and complete
 redacted stdout/stderr under per-command and aggregate byte limits. Sizes and
 digests cover those exact retained UTF-8 strings. It records parsed totals, the
 complete sorted npm `{path,size,mode}` inventory/digest, source and
 release-input identities, Excel hashes, cleanup, and global-config proof.
-Release evidence schema v4 runs `bun test tests/manager.test.ts --timeout 60000`
-as exact `manager_tests` evidence in addition to the full suite, parses and binds
+Release evidence schema v5 requires `package_version:"0.3.0"` and runs
+`bun test tests/manager.test.ts --timeout 60000` as exact `manager_tests`
+evidence in addition to the full suite, parses and binds
 its pass/skip/fail/test/assertion/file totals, and verifies then references the separately retained live
 evidence by path/hash/size/device-inode identity instead of duplicating it.
 Each live artifact uses `live-verification-<source-prefix>-<random-uuid>.json`
@@ -123,10 +132,12 @@ and the same identity-bound temporary plus no-clobber hard-link publication. The
 live CLI records final device/inode identity; aggregate and later strict semantic
 verification require it, so even a same-byte replacement fails. A later live
 check creates a different file and cannot replace release-referenced evidence.
-The live JSON itself is strict schema v2 with kind
+The referenced live JSON remains strict schema v2 with kind
 `opencode-alg-live-verification`; unknown or malformed critical fields fail shape
-validation before semantic checks.
-Schema v4 also records strictly marked Windows helper counts before and after
+validation before semantic checks. Release schema 5 does not renumber the live
+contract. The manager/receipt protocol likewise remains `0.2.0` and is checked
+separately from the package version.
+Schema v5 also records strictly marked Windows helper counts before and after
 the commands and requires zero net additions. Cleanup is limited to additions
 to that TEMP snapshot whose strict owner is proven dead or PID-reused;
 preexisting, malformed, unmarked, live, or ambiguous directories are preserved.
@@ -148,7 +159,10 @@ npm packed-byte totals are cross-bound to retained npm output (while unpacked
 bytes also equal summed file sizes); this is still a local command record, not
 a cryptographic signature.
 
-1. Run focused runtime-source/live and destination-confinement tests.
+1. Run focused runtime-source/live and destination-confinement tests, including
+   exact 14-tool startup registration with skill evolution disabled in the
+   isolated live configuration and automatic inclusion of all five new runtime
+   modules.
 2. Run strict typecheck.
 3. Run Python capability policy/utility tests with available Python `>=3.10`.
 4. In a temporary lock environment only, run `uv sync --frozen --no-dev` and
@@ -190,8 +204,16 @@ Retained evidence and the printed summary identify:
   bytes, and enforced bounds;
 - exact server and TUI source-identity markers;
 - raw tool endpoint status/body, parsed ALG tool IDs, and exact TUI registration;
+- the exact ordered server IDs `alg_templates`, `alg_models`, `alg_criteria`,
+  `alg_plan`, `alg_run`, `alg_status`, `alg_resume`, `alg_artifact`,
+  `alg_transfer`, `alg_skill_evolution_status`,
+  `alg_skill_evolution_audit`, `alg_skill_evolution_review`,
+  `alg_skill_evolution_promote`, and `alg_skill_evolution_rollback`, plus the
+  exact startup marker proving `skill_evolution=disabled` for the no-model live
+  run;
 - server readiness attempt count; transient empty/partial responses are polled
-  until both the exact ALG tool set and expected source marker are present, while
+  until the exact ALG tool set, expected source marker, and exact disabled-
+  feature startup marker are present, while
   process exit or the hard overall timeout fails with the last response and logs;
 - isolated config/project paths plus the allowlist, before/after metadata and
   ephemeral-key HMAC snapshots, and their equality result (not config contents

@@ -19,6 +19,7 @@ import {
   assertVerificationPluginConfiguration,
   findTuiRegistrationLine,
   findSourceIdentityLine,
+  findServerStartupLine,
   fetchToolIds,
   OPENCODE_ENGINE_REQUIREMENT,
   parseStableVersion,
@@ -44,8 +45,16 @@ import {
   ALG_TUI_REGISTRATION_TOKEN,
 } from "../src/tui-registration.ts"
 import { computeAlgSourceIdentity, sourceIdentityMessage } from "../src/source-identity.ts"
+import { ALG_PLUGIN_ID, algServerStartupMessage } from "../src/types.ts"
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+
+function structuredServerStartup(skillEvolutionEnabled = false): string {
+  return `timestamp=2026-08-30T08:46:45.371Z level=INFO run=c0d53d8d ` +
+    `message=${JSON.stringify(algServerStartupMessage(skillEvolutionEnabled))} ` +
+    `directory="D:\\\\Docker\\\\model-temp\\\\alg-live-verify-fixture\\\\project" ` +
+    `skill_evolution_enabled=${skillEvolutionEnabled}`
+}
 
 function runtimeSourceFixture(): string {
   const root = mkdtempSync(join(tmpdir(), "alg-source-identity-test-"))
@@ -331,6 +340,47 @@ describe("live verifier reviewed-checkout binding", () => {
     const staleServer = `INFO service=${ALG_TUI_REGISTRATION_SERVICE} ${sourceIdentityMessage("server", wrong)}`
     expect(() => assertLoadedCheckoutEvidence(staleServer, tui, source)).toThrow()
   })
+
+  test("recognizes only the real OpenCode 1.18.x structured disabled startup record", () => {
+    const structured = structuredServerStartup()
+    expect(findServerStartupLine(structured, false)).toBe(structured)
+    expect(findServerStartupLine(`INFO service=${ALG_PLUGIN_ID} ${algServerStartupMessage(false)}`, false)).toBeUndefined()
+    expect(findServerStartupLine(`service=${ALG_PLUGIN_ID} ${algServerStartupMessage(false)}`, false)).toBeUndefined()
+    expect(findServerStartupLine(JSON.stringify({ service: ALG_PLUGIN_ID, message: algServerStartupMessage(false) }), false)).toBeUndefined()
+    expect(findServerStartupLine(structured, true)).toBeUndefined()
+    expect(findServerStartupLine(JSON.stringify({ service: "wrong", message: algServerStartupMessage(false) }), false)).toBeUndefined()
+    expect(findServerStartupLine(JSON.stringify({ service: ALG_PLUGIN_ID, message: algServerStartupMessage(true) }), false)).toBeUndefined()
+  })
+
+  test("structured startup grammar requires the canonical ordered fourteen IDs and disabled state", () => {
+    const exact = structuredServerStartup()
+    const [first, second] = ALG_TOOL_IDS
+    const mutations = [
+      exact.replace("tools=14", "tools=13"),
+      exact.replace(`${first},`, ""),
+      exact.replace(first, "alg_replacement"),
+      exact.replace(`${first},${second}`, `${second},${first}`),
+      exact.replace("skill_evolution_enabled=false", ""),
+      exact.replace("skill_evolution_enabled=false", "skill_evolution_enabled=true"),
+      exact.replace("skill_evolution_enabled=false", "skill_evolution_enabled=false skill_evolution_enabled=true"),
+      exact.replace("skill_evolution_enabled=false", "skill_evolution_enabled=false skill_evolution_enabled=false"),
+      exact.replace("message=\"alg plugin loaded", "message=alg plugin loaded"),
+      exact.replace('directory="D:', 'directory="" directory="D:'),
+      exact.replace('directory="D:\\\\Docker', 'directory="D:\\qDocker'),
+      exact.replace("timestamp=2026", "timestamp=not-2026"),
+      exact.replace("level=INFO", "level=info"),
+      exact.replace("run=c0d53d8d", "run="),
+      exact.replace(" level=INFO", " service=opencode-alg level=INFO"),
+      exact.replace(" level=INFO", " timestamp=2026-08-30T08:46:45.371Z level=INFO"),
+      `${exact} unexpected=true`,
+      `unexpected prose ${exact}`,
+      exact.replace(" directory=", " unapproved=field directory="),
+      exact.replace('directory="D:\\\\Docker\\\\model-temp\\\\alg-live-verify-fixture\\\\project"', 'directory=""'),
+      structuredServerStartup(true),
+      `${exact}${"x".repeat(4_097)}`,
+    ]
+    for (const mutation of mutations) expect(findServerStartupLine(mutation, false), mutation).toBeUndefined()
+  })
 })
 
 describe("server tool registration readiness", () => {
@@ -348,12 +398,47 @@ describe("server tool registration readiness", () => {
         requests++
         if (requests === 1) return { status: 200, text: async () => "" }
         output += `INFO service=${ALG_TUI_REGISTRATION_SERVICE} ${sourceIdentityMessage("server", identity)}\n`
+        output += `${structuredServerStartup()}\n`
         return { status: 200, text: async () => JSON.stringify(ALG_TOOL_IDS) }
       },
     })
     expect(result).toMatchObject({ status: 200, ids: [...ALG_TOOL_IDS], attempts: 2 })
     expect(result.sourceIdentityLog).toContain("entry=server")
     expect(requests).toBe(2)
+  })
+
+  test("exact tools and source identity cannot reach readiness without exact disabled startup evidence", async () => {
+    const identity = computeAlgSourceIdentity(ROOT)
+    const source = `INFO service=${ALG_TUI_REGISTRATION_SERVICE} ${sourceIdentityMessage("server", identity)}\n`
+    const outputs = [
+      source,
+      `${source}${structuredServerStartup().replace("skill_evolution_enabled=false", "skill_evolution_enabled=true")}\n`,
+    ]
+    for (const output of outputs) {
+      let failure: unknown
+      try {
+        await fetchToolIds(
+          "http://unit.test/experimental/tool/ids",
+          captured({ pid: 303, exitCode: null }, output),
+          identity,
+          {
+            timeoutMs: 12,
+            pollIntervalMs: 1,
+            requestTimeoutMs: 5,
+            request: async () => ({ status: 200, text: async () => JSON.stringify(ALG_TOOL_IDS) }),
+          },
+        )
+      } catch (error) {
+        failure = error
+      }
+      expect(failure).toBeInstanceOf(ToolReadinessError)
+      expect((failure as ToolReadinessError).evidence).toMatchObject({
+        last_http_status: 200,
+        parsed_alg_ids: [...ALG_TOOL_IDS],
+        source_identity_log: expect.stringContaining("entry=server"),
+      })
+      expect((failure as ToolReadinessError).message.length).toBeLessThan(6_000)
+    }
   })
 
   test("a permanent empty 200 remains a bounded readiness failure with diagnostics", async () => {

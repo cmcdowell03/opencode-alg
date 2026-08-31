@@ -28,18 +28,8 @@ import {
   ALG_TUI_REGISTRATION_SERVICE,
   ALG_TUI_REGISTRATION_TOKEN,
 } from "../src/tui-registration.ts"
-
-export const ALG_TOOL_IDS = [
-  "alg_templates",
-  "alg_models",
-  "alg_criteria",
-  "alg_plan",
-  "alg_run",
-  "alg_status",
-  "alg_resume",
-  "alg_artifact",
-  "alg_transfer",
-] as const
+import { ALG_PLUGIN_ID, ALG_TOOL_IDS, algServerStartupMessage } from "../src/types.ts"
+export { ALG_TOOL_IDS } from "../src/types.ts"
 // `opencode --version` is the only bounded one-shot command. On Windows the
 // packaged executable has repeatedly taken 10-15 seconds to exit after a
 // saturated suite/OneDrive workload despite printing the correct version and
@@ -1031,8 +1021,10 @@ export function validateRetainedLiveEvidence(value: unknown, root = PLUGIN_ROOT)
   const server = evidence.server
   let rawIds: string[]
   try { JSON.parse(server?.raw_http_body ?? ""); rawIds = parseAlgToolIds(server.raw_http_body) } catch { throw new Error("live server raw tool body is not JSON") }
+  const serverOutput = `${server?.stdout_tail ?? ""}\n${server?.stderr_tail ?? ""}`
   if (server?.raw_http_status !== 200 || !exactJson(rawIds, ALG_TOOL_IDS) || !exactJson(server?.parsed_alg_ids, ALG_TOOL_IDS) ||
-    findSourceIdentityLine(server?.source_identity_log ?? "", "server", source) !== server?.source_identity_log || server?.cleanup?.passed !== true) {
+    findSourceIdentityLine(server?.source_identity_log ?? "", "server", source) !== server?.source_identity_log ||
+    !findServerStartupLine(serverOutput, false) || server?.cleanup?.passed !== true) {
     throw new Error("live server status/tools/source/cleanup semantics are invalid")
   }
   const tui = evidence.tui
@@ -1212,7 +1204,8 @@ export async function fetchToolIds(
     }
     const combined = `${capturedProcess.stdout()}\n${capturedProcess.stderr()}`
     evidence.source_identity_log = findSourceIdentityLine(combined, "server", identity) ?? null
-    if (evidence.last_http_status === 200 && exactAlgToolSet(evidence.parsed_alg_ids) && evidence.source_identity_log) {
+    if (evidence.last_http_status === 200 && exactAlgToolSet(evidence.parsed_alg_ids) && evidence.source_identity_log &&
+      findServerStartupLine(combined, false)) {
       return {
         status: evidence.last_http_status,
         body: evidence.last_http_body,
@@ -1337,6 +1330,33 @@ export function findSourceIdentityLine(
       return false
     }
     return service === undefined || service === ALG_TUI_REGISTRATION_SERVICE
+  })
+}
+
+/** Exact startup proof used to bind live verification to disabled skill evolution and all public IDs. */
+export function findServerStartupLine(output: string, skillEvolutionEnabled: boolean): string | undefined {
+  // Startup proof is intentionally restricted to the real disabled-by-default
+  // OpenCode 1.18.x logfmt record. An enabled expectation must never turn an
+  // enabled feature record into acceptable release evidence.
+  if (skillEvolutionEnabled) return undefined
+  const expected = algServerStartupMessage(false)
+  const quotedMessage = JSON.stringify(expected).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const quotedJsonString = '"(?:[^"\\\\\u0000-\u001f]|\\\\(?:["\\\\/bfnrt]|u[0-9a-fA-F]{4}))+"'
+  const structured = new RegExp(
+    `^timestamp=\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z level=INFO ` +
+    `run=[A-Za-z0-9._:-]+ message=${quotedMessage} directory=(${quotedJsonString}) ` +
+    `skill_evolution_enabled=false$`,
+  )
+  return output.split(/\r?\n/).find((line) => {
+    if (!line || line.length > TUI_REGISTRATION_LINE_LIMIT) return false
+    const match = structured.exec(line)
+    if (!match) return false
+    try {
+      const directory = JSON.parse(match[1]!)
+      return typeof directory === "string" && directory.length > 0 && directory === directory.trim()
+    } catch {
+      return false
+    }
   })
 }
 
@@ -1634,7 +1654,7 @@ export async function runLiveVerification(outputPath: string): Promise<{ path: s
     evidence.reason = `${compatibility.reason}; ALG tools and exact TUI registration verified; server and TUI root cleanup confirmed`
   } catch (error) {
     failure = error
-    const reason = error instanceof Error ? error.message : String(error)
+    const reason = boundedError(error)
     evidence.reason = reason
     evidence.failure = reason
   } finally {

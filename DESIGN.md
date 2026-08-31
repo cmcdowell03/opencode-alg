@@ -13,6 +13,7 @@ This document is for users and maintainers who need both the reason ALG exists a
 - [Why a control plane](#why-a-control-plane)
 - [Core vocabulary and execution model](#core-vocabulary-and-execution-model)
 - [Package and OpenCode surface](#package-and-opencode-surface)
+- [Opt-in skill-evolution pipeline and trust boundaries](#opt-in-skill-evolution-pipeline-and-trust-boundaries)
 - [Module responsibility map](#module-responsibility-map)
 - [Durable data model and invariants](#durable-data-model-and-invariants)
 - [Plan, execute, and resume lifecycle](#plan-execute-and-resume-lifecycle)
@@ -80,13 +81,14 @@ Graph array order is semantically important. Validation requires each dependency
 
 The server plugin installs:
 
-- a `tool` map containing all nine `alg_*` tools;
-- a `config` hook that captures merged OpenCode model configuration for future plans; and
+- a `tool` map containing the exact 14 ordered `alg_*` IDs below;
+- a `config` hook that captures merged OpenCode model configuration for future plans;
+- an event hook and disposable project runtime for disabled-by-default skill evolution; and
 - `experimental.session.compacting`, which injects a deterministic-by-state, bounded summary of the latest incomplete run owned by that parent session. This summary does not copy child reasoning.
 
 The TUI plugin registers two palette/slash commands and emits a bounded registration marker. Verification-only source identity is described under [Safety boundaries](#source-bound-release-identity).
 
-### Nine server tools
+### Fourteen server tools
 
 | Tool | Contract |
 |---|---|
@@ -99,6 +101,11 @@ The TUI plugin registers two palette/slash commands and emits a bounded registra
 | `alg_resume` | Reconcile interrupted state and execute more bounded waves without resetting counters. |
 | `alg_artifact` | Read a node’s current typed output as compact metadata/preview or full content. |
 | `alg_transfer` | Validate a target OpenCode session and append an audited ownership transfer. |
+| `alg_skill_evolution_status` | Inspect strict options, queue/ledger totals, transaction recovery, and bounded candidate details. |
+| `alg_skill_evolution_audit` | Idempotently enqueue a manual audit for an eligible completed assistant message in this project. |
+| `alg_skill_evolution_review` | Reject or restore a candidate while preserving its immutable checker disposition. |
+| `alg_skill_evolution_promote` | Explicitly publish one validated skill candidate after confirmation and drift checks. |
+| `alg_skill_evolution_rollback` | Explicitly restore a promoted replacement from its immutable backup while preserving custom drift. |
 
 `alg_plan` does **not** launch a planner model. It clones a built-in graph from `src/templates.ts` or parses `graph_json`, validates that `GraphDef`, and creates state. `model_resolution.planner` is still recorded as provenance so the run can describe the merged role/default configuration consistently; that record is not evidence of a planner call.
 
@@ -118,6 +125,172 @@ The bundled frontmatter intends these boundaries:
 - researcher denies bash/task, allows research tools, and permits edits only under run directories.
 
 These are packaged defaults, not a permission guarantee. The installer adds no top-level permission grants; existing customized agent files may be skipped, explicit updates can replace them, and merged OpenCode configuration/runtime policy is authoritative.
+
+## Opt-in skill-evolution pipeline and trust boundaries
+
+> **Conceptual theory.** Learning from a completed turn should produce reviewable, provenance-bearing candidates, not let model output silently rewrite the instructions that govern later model output.
+>
+> **Implementation.** Package v0.3.0 registers five skill-evolution tools and a project runtime. A strict server plugin-tuple option enables event intake; bounded evidence, a fresh auditor, a separate fresh checker for skill proposals, immutable candidate revisions, explicit confirmation, and journaled no-clobber publication form the pipeline.
+>
+> **Caveat.** This is an opt-in model-calling and project-file mutation feature, not a sandbox, identity provider, secret scrubber, authenticity system, or autonomous improvement proof. Model judgments remain nondeterministic, and an explicit tool confirmation is an intent check rather than OS- or user-level authorization.
+
+### Configuration and event intake
+
+`parseSkillEvolutionOptions` accepts only `{ skillEvolution: { ... } }`; both
+levels reject unknown keys. The resolved defaults are disabled, `triggered`
+mode, `.opencode/skills`, one queue worker, 16 KiB evidence, 64 KiB candidate
+content, 100 candidates, 1,024 ledger records, backlog 32, trigger threshold 3,
+and two total attempts. The selectable agents and concurrency are deliberately
+fixed to `researcher`, `checker`, and `1`; all numeric settings have finite
+schema bounds. Plugin options load at startup, so changing the tuple requires an
+OpenCode restart. A string registration remains disabled, and installers never
+opt a user in.
+
+The event callback is fire-and-forget and deliberately performs only synchronous
+filtering plus a durable enqueue. It ignores `session.idle`, step/part events,
+user messages, summaries, errored assistants, incomplete messages, invalid
+completion times, deleted sessions, and registered/private audit children. A
+successful non-summary completed assistant `message.updated` is keyed as
+`SHA-256(session_id NUL assistant_message_id)`. The ledger records that key
+before asynchronous model work. Duplicate terminal or post-processing events
+therefore retain one durable record across restart.
+
+This is **deduplicated intake, not exactly-once model execution**. A process can
+stop after creating/prompting a child but before recording its result. Startup
+changes an interrupted `running` record back to `pending` only while
+`maxAttempts` remains, so a bounded duplicate external model effect is possible.
+The ledger never evicts an identity to make room: `maxLedgerRecords` exhaustion
+fails closed, and backlog overflow is retained as a failed record. An in-process
+project single-flight serializes its queue, and the filesystem mutation mutex
+serializes each durable transition across processes; the pending/running CAS
+prevents two runtime instances from beginning the same durable item. Distinct
+records can still be processed concurrently by separate OpenCode server
+processes, so `queueConcurrency:1` is not a distributed project-wide lease.
+
+### Evidence and auditor boundary
+
+Processing re-fetches the target session in the plugin directory, requires the
+SDK project identity when available, and realpath-confines its directory to the
+current project. It reads at most 100 message envelopes, selects the final
+envelope for the exact completed assistant ID, and requires its exact direct
+parent user message. It does not summarize an arbitrary conversation window.
+Evidence includes provenance timestamps/IDs, source agent/model labels, bounded
+user/assistant excerpts, and at most 24 bounded tool summaries. Credential-like
+keys, obvious token/private-key forms, control data, and common absolute local
+paths are redacted; UTF-8 truncation and omission counts are explicit, and the
+whole evidence object must fit the configured 2–32 KiB bound.
+
+Redaction is a reduction in accidental exposure, not a DLP guarantee. The source
+conversation and SDK responses are untrusted input, and regex/key-based
+redaction cannot prove that all secrets or identifying data were removed. The
+auditor prompt labels the evidence untrusted and instructs the model not to
+obey it, but prompt-injection resistance is not assumed.
+
+In `triggered` mode, deterministic labels/scores are computed before model work;
+an automatic item below `minimumTriggerScore` becomes `no-change` without a
+child. `every-turn` and manual audit proceed regardless of that threshold. An
+audit creates a fresh child of the source session with a private random title,
+uses the configured `researcher` role/model resolution at processing time, and
+sets the known shell/edit/read/search/task/skill/web/question tools to false.
+Prompt and response text are separately bounded. The returned object must match
+the strict auditor union, copy exact provenance, use only observed trigger
+labels, and pass candidate target/content/frontmatter/basis checks. The auditor
+can emit `no_change`, a non-promotable `memory_candidate`, a skill create, or a
+skill replacement proposal; it never writes a skill.
+
+Fresh history and a false tool map reduce authority but do not isolate the model
+from OpenCode's configured system/project context or make inference trustworthy.
+The SDK/model provider remains an external effect and cost boundary.
+
+### Checker and review boundary
+
+Only a skill create/replacement proposal creates a second fresh child, also a
+direct child of the original source session. The checker receives only bounded
+acceptance criteria plus the claimed candidate/provenance, not the auditor
+transcript, and has the same no-tools posture. Its strict result passes exactly
+when `passed:true` and `findings:[]`. A passing checker creates a `validated`
+record; rejection creates `proposed` with exact findings. Memory candidates do
+not receive a checker and remain proposed.
+
+The candidate index records auditor/checker child IDs. The initial immutable
+revision binds auditor output and checker output when any; for an approved skill,
+promotion also requires its immutable actor to equal the indexed checker child.
+`alg_skill_evolution_review` appends an actor/reason revision. Reject is available only from proposed/validated; restore returns to
+validated only when the original immutable skill revision still proves the
+exact passing checker. It cannot manufacture or override approval. Checker pass
+is still a model judgment over bounded claims, not proof that a procedure is
+safe or correct.
+
+### Store and candidate boundary
+
+Skill-evolution state is separate from DAG run state:
+
+```text
+.opencode/skill-evolution/
+  ledger.json                  bounded mutable event/dedupe and child registry
+  candidates.json              bounded mutable candidate/reference index
+  mutation.lock                cross-process mutation mutex
+  evidence/<sha256>.json       canonical immutable bounded evidence
+  revisions/<candidate>-r<n>-<sha256>.json
+  backups/<candidate>-<sha256>-<transaction>.bin
+  transactions/<transaction>.json
+```
+
+Ledger/index loads are strict, bounded, direct-regular-file reads; mutations use
+revision compare-and-swap under the project mutex and atomic replacement.
+Evidence, revisions, backups, and journals publish create-only and are checked
+by size/hash/path/semantic identity before use. Candidate indexes retain at most
+32 immutable revisions and four evidence references per candidate; configured
+candidate/ledger/backlog caps are never silently expanded or pruned.
+
+Every existing component below the project/store/configured skill roots must be
+direct and canonical; symlink, junction, reparse, traversal, device-name, ADS,
+absolute-path, and redirection cases fail closed. Store hashes and file
+identities detect accidental corruption, stale state, and uncoordinated drift.
+They provide no authenticity against a principal able to coherently rewrite the
+project files and references, and project ownership is not an OS ACL.
+
+### Promotion, rollback, and recovery boundary
+
+There is no automatic promotion path. `alg_skill_evolution_promote` requires an
+explicit `true` or exact `PROMOTE:<candidate>` token, a current `validated`
+skill, and immutable original checker approval. The token guards accidental
+invocation but does not authenticate a human; OpenCode's tool/agent/permission
+policy determines who can call it. Before mutation, promotion revalidates
+content/frontmatter/secret and absolute-resource checks. A create target must be
+absent from every configured root and is placed in the first root. A replacement
+basis hash must identify exactly one configured root and still equal the public
+file. Target/root/parent paths and identities are rechecked throughout.
+
+Publication writes an immutable transaction journal first. Replacements then
+create an independent exact backup; both operations create a prepared file. For
+an existing target, a same-directory create-if-absent hard link claims the exact
+old file, repeated byte/hash/device/inode checks precede unlink, and the prepared
+file is hard-linked only to an absent public name. Candidate state advances only
+after the public bytes/hash/identity verify. No rename overwrites an occupied
+public or auxiliary path. As elsewhere, portable filesystems do not expose one
+atomic compare-identity/hash-and-unlink primitive, so a final instruction-window
+race from a non-cooperating writer cannot be eliminated; detected third states
+are preserved.
+
+Startup and `alg_skill_evolution_status` run bounded transaction recovery when
+the feature is enabled. An exact before-state transaction is cleaned without
+applying the proposal. If a crash left the public target absent with an exact old
+claim, recovery restores the old hard link create-if-absent rather than guessing
+forward. If exact proposed/backup bytes are already public but candidate state
+is one revision behind, recovery verifies all journal/candidate/root/path/hash/
+identity relationships and commits that state. Malformed paths, altered
+auxiliaries, stale revisions, changed parent identities, or custom/third-state
+bytes remain unresolved with the journal intact.
+
+Rollback is separately confirmed by `true` or `ROLLBACK:<candidate>`. It exists
+only for promoted replacements with an independent backup, requires the current
+public file to retain the promoted hash, and uses the same journal/claim/
+create-if-absent protocol to restore exact backup bytes. Created skills are not
+deleted, memory candidates are not published, and custom drift is preserved.
+Promotion, rollback, and recovery that mutates a public skill set
+`restart_required`; the running OpenCode process may still hold the old loaded
+skill until restart.
 
 ## Module responsibility map
 
@@ -148,7 +321,12 @@ These are packaged defaults, not a permission guarantee. The installer adds no t
 | `src/config-editor.ts` | Encoding-aware, comment-preserving JSONC plans, backups, atomic replacement, transactional rollback. |
 | `src/diagnostics.ts` | Bounded SDK diagnostics and credential/content/header redaction. |
 | `src/compaction.ts` | Bounded active-run context for the server compaction hook. |
-| `src/tools.ts` | Nine public tool schemas, ownership/root checks, compact/full response projection. |
+| `src/tools.ts` | Core DAG/run/model public tool schemas, ownership/root checks, compact/full response projection. |
+| `src/skill-evolution-schemas.ts` | Strict plugin options plus evidence, auditor/checker, ledger, candidate, revision, and transaction contracts. |
+| `src/skill-evolution-evidence.ts` | Exact-turn selection, trigger scoring, redaction, UTF-8 bounds, and canonical evidence identity. |
+| `src/skill-evolution-runtime.ts` | Event filtering, durable enqueue, serialized audit queue, fresh no-tools children, and recursion exclusion. |
+| `src/skill-evolution-store.ts` | Project store, immutable references, candidate CAS, contained promotion/rollback, and transaction recovery. |
+| `src/skill-evolution-tools.ts` | Five explicit status/audit/review/promotion/rollback public tools and confirmation policy. |
 | `src/index.ts`, `src/server.ts` | Server hooks and package wrappers. |
 | `src/tui-models.ts`, `src/tui-runs.ts` | TUI command registration, model workflow, lazy run/session navigation. |
 | `src/tui.ts`, `src/tui-registration.ts` | TUI package wrapper and verification registration token. |
@@ -188,7 +366,8 @@ arguments to relative `.xlsx` paths below one root, including realpath/reparse
 checks. It does not restrict ambient process permissions and is not an OS
 sandbox. The deterministic utility stages copies and performs bounded read-only
 OpenXML/formula/external-link inspection. openpyxl does not calculate formulas;
-no freshness/recalculation claim is made, and LibreOffice is absent in v0.2.
+no freshness/recalculation claim is made, and LibreOffice is absent from Excel
+capability pack v0.2.
 
 ## Durable data model and invariants
 
@@ -612,8 +791,9 @@ UUID name must be a create-if-absent hard link with the same identity and exact
 bytes/hash. The temporary is unlinked only if that identity and content remain,
 and the final is rechecked afterward. CLI metadata records final identity;
 strict live schema v2 rejects unknown/malformed critical fields before semantic
-validation; release evidence schema v4 binds the referenced live identity and a
-separate exact manager-suite command/totals, and strict
+validation; package v0.3.0 release evidence schema v5 binds the referenced live
+identity and a separate exact manager-suite command/totals while manager protocol
+remains v0.2.0, and strict
 retained verification rejects same-byte replacement of either artifact.
 
 ## Worked coding-diamond trace
@@ -659,6 +839,9 @@ The run finishes `done` with six attempts used: explore 1, research 1, implement
 - **No universal effort scale.** `variant` is an exact model-specific catalog key.
 - **No guaranteed inherited model identity.** If no explicit provider/model is known, the SDK default remains unknown and can be selected by OpenCode.
 - **No installed-agent permission guarantee.** Bundled frontmatter can be customized/overridden and the installer grants no global policy.
+- **No automatic skill evolution or memory promotion.** Skill evolution is disabled unless a strict server tuple opts in; accepted skill candidates still require an explicit promotion call, and v0.3.0 memory candidates remain review-only.
+- **No exactly-once audit model effect.** Durable session/message dedupe suppresses duplicate events, but interruption before outcome persistence may cause a bounded startup retry.
+- **No created-skill deletion rollback.** Rollback restores only an exact pre-promotion replacement backup while the public target still has the promoted hash.
 - **No generic top-level migration.** The store accepts schema-v2 progress plus explicit legacy fields/sidecars and migrates those on save; arbitrary older/future top-level formats fail closed.
 - **Coding-diamond is serial.** Its current edge shape exposes no parallel nodes despite `max_concurrency: 4`.
 - **`isolated_check` is metadata-only today.** All model attempts already use fresh child sessions; the flag does not create environmental isolation.

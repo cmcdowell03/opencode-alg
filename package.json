@@ -1,6 +1,6 @@
 {
   "name": "opencode-alg",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Agents + Loops + Graphs runtime for OpenCode — typed DAG, fresh-child checker, durable runs, session-tree execution",
   "type": "module",
   "license": "MIT",
@@ -21,7 +21,7 @@
       "format": "alg-run-state",
       "currentSchema": 2,
       "compatibleSchemas": [1, 2],
-      "compatiblePackageVersions": ["0.1.0", "0.2.0"]
+      "compatiblePackageVersions": ["0.1.0", "0.2.0", "0.3.0"]
     }
   },
   "files": [
