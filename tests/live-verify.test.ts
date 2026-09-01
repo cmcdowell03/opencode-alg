@@ -352,11 +352,11 @@ describe("live verifier reviewed-checkout binding", () => {
     expect(findServerStartupLine(JSON.stringify({ service: ALG_PLUGIN_ID, message: algServerStartupMessage(true) }), false)).toBeUndefined()
   })
 
-  test("structured startup grammar requires the canonical ordered fourteen IDs and disabled state", () => {
+  test("structured startup grammar requires the canonical ordered fifteen IDs and disabled state", () => {
     const exact = structuredServerStartup()
     const [first, second] = ALG_TOOL_IDS
     const mutations = [
-      exact.replace("tools=14", "tools=13"),
+      exact.replace("tools=15", "tools=14"),
       exact.replace(`${first},`, ""),
       exact.replace(first, "alg_replacement"),
       exact.replace(`${first},${second}`, `${second},${first}`),

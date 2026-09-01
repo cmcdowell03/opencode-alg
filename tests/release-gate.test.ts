@@ -196,6 +196,7 @@ describe("bounded release-gate evidence", () => {
     const packedPaths = expectedPackedPaths(ROOT)
     for (const path of [
       "src/skill-evolution-evidence.ts",
+      "src/skill-evolution-historical.ts",
       "src/skill-evolution-runtime.ts",
       "src/skill-evolution-schemas.ts",
       "src/skill-evolution-store.ts",

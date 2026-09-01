@@ -81,14 +81,14 @@ Graph array order is semantically important. Validation requires each dependency
 
 The server plugin installs:
 
-- a `tool` map containing the exact 14 ordered `alg_*` IDs below;
+- a `tool` map containing the exact 15 ordered `alg_*` IDs below;
 - a `config` hook that captures merged OpenCode model configuration for future plans;
 - an event hook and disposable project runtime for disabled-by-default skill evolution; and
 - `experimental.session.compacting`, which injects a deterministic-by-state, bounded summary of the latest incomplete run owned by that parent session. This summary does not copy child reasoning.
 
 The TUI plugin registers two palette/slash commands and emits a bounded registration marker. Verification-only source identity is described under [Safety boundaries](#source-bound-release-identity).
 
-### Fourteen server tools
+### Fifteen server tools
 
 | Tool | Contract |
 |---|---|
@@ -103,6 +103,7 @@ The TUI plugin registers two palette/slash commands and emits a bounded registra
 | `alg_transfer` | Validate a target OpenCode session and append an audited ownership transfer. |
 | `alg_skill_evolution_status` | Inspect strict options, queue/ledger totals, transaction recovery, and bounded candidate details. |
 | `alg_skill_evolution_audit` | Idempotently enqueue a manual audit for an eligible completed assistant message in this project. |
+| `alg_skill_evolution_historical` | Discover, seal, confirm, process, resume, inspect, or cancel V1 bounded historical snapshots. |
 | `alg_skill_evolution_review` | Reject or restore a candidate while preserving its immutable checker disposition. |
 | `alg_skill_evolution_promote` | Explicitly publish one validated skill candidate after confirmation and drift checks. |
 | `alg_skill_evolution_rollback` | Explicitly restore a promoted replacement from its immutable backup while preserving custom drift. |
@@ -130,7 +131,7 @@ These are packaged defaults, not a permission guarantee. The installer adds no t
 
 > **Conceptual theory.** Learning from a completed turn should produce reviewable, provenance-bearing candidates, not let model output silently rewrite the instructions that govern later model output.
 >
-> **Implementation.** Package v0.3.0 registers five skill-evolution tools and a project runtime. A strict server plugin-tuple option enables event intake; bounded evidence, a fresh auditor, a separate fresh checker for skill proposals, immutable candidate revisions, explicit confirmation, and journaled no-clobber publication form the pipeline.
+> **Implementation.** The package registers six skill-evolution tools and a project runtime. A strict server plugin-tuple option enables event intake; bounded evidence, a fresh auditor, a separate fresh checker for skill proposals, immutable candidate revisions, explicit confirmation, and journaled no-clobber publication form the pipeline.
 >
 > **Caveat.** This is an opt-in model-calling and project-file mutation feature, not a sandbox, identity provider, secret scrubber, authenticity system, or autonomous improvement proof. Model judgments remain nondeterministic, and an explicit tool confirmation is an intent check rather than OS- or user-level authorization.
 
@@ -145,6 +146,23 @@ fixed to `researcher`, `checker`, and `1`; all numeric settings have finite
 schema bounds. Plugin options load at startup, so changing the tuple requires an
 OpenCode restart. A string registration remains disabled, and installers never
 opt a user in.
+
+Historical initialization is independently disabled unless
+`skillEvolution.historical.enabled` is true. Its V1-only guarantee is
+`v1_bounded_snapshot`: exact selected identities and containment, an explicit
+`maxMessagesPerSession + 1` read with overflow rejection, exhaustive JSON
+normalization, redaction before lossless UTF-8 fragmentation, and two
+consecutive identical metadata/transcript commitments within finite rounds.
+V1 list transport itself cannot be bounded. Concurrent mutations can therefore
+produce `unstable`; an idle/status observation is never called permanent
+completion or process-global inactivity. Plans, chunks, checkpoints, coverage,
+and provenance remain project-local and immutable/CAS protected. Confirmed
+execution gives every fragment to a fresh no-tools auditor, performs ordered
+bounded reduction, and routes only a reduced skill proposal through a fresh
+checker and the existing candidate validator. Stage outputs are immutable
+checkpoints, so interruption resumes without repeating committed calls; an
+issued but uncommitted call is recorded as potentially replayed. V2 support and
+effectiveness benchmarking are deferred.
 
 The event callback is fire-and-forget and deliberately performs only synchronous
 filtering plus a durable enqueue. It ignores `session.idle`, step/part events,
@@ -325,8 +343,9 @@ skill until restart.
 | `src/skill-evolution-schemas.ts` | Strict plugin options plus evidence, auditor/checker, ledger, candidate, revision, and transaction contracts. |
 | `src/skill-evolution-evidence.ts` | Exact-turn selection, trigger scoring, redaction, UTF-8 bounds, and canonical evidence identity. |
 | `src/skill-evolution-runtime.ts` | Event filtering, durable enqueue, serialized audit queue, fresh no-tools children, and recursion exclusion. |
+| `src/skill-evolution-historical.ts` | V1 historical discovery, stable snapshot sealing, confirmed bounded execution, checkpoints, and coverage publication. |
 | `src/skill-evolution-store.ts` | Project store, immutable references, candidate CAS, contained promotion/rollback, and transaction recovery. |
-| `src/skill-evolution-tools.ts` | Five explicit status/audit/review/promotion/rollback public tools and confirmation policy. |
+| `src/skill-evolution-tools.ts` | Six explicit status/audit/historical/review/promotion/rollback public tools and confirmation policy. |
 | `src/index.ts`, `src/server.ts` | Server hooks and package wrappers. |
 | `src/tui-models.ts`, `src/tui-runs.ts` | TUI command registration, model workflow, lazy run/session navigation. |
 | `src/tui.ts`, `src/tui-registration.ts` | TUI package wrapper and verification registration token. |

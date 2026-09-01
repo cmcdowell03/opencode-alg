@@ -1,6 +1,7 @@
 import { tool } from "@opencode-ai/plugin"
 import type { ToolContext } from "@opencode-ai/plugin"
 import type { SkillEvolutionRuntime } from "./skill-evolution-runtime.ts"
+import { HistoricalToolInputSchema } from "./skill-evolution-historical.ts"
 import {
   appendSkillCandidateRevision,
   findSkillCandidate,
@@ -158,6 +159,21 @@ export function createSkillEvolutionTools(runtime: SkillEvolutionRuntime) {
           })
         } catch (error) {
           return err(error)
+        }
+      },
+    }),
+
+    alg_skill_evolution_historical: tool({
+      description: "Opt-in V1-only historical discovery, immutable snapshot preview, confirmed run/resume, bounded status, and durable cancellation.",
+      args: {
+        request: HistoricalToolInputSchema,
+      },
+      async execute(args) {
+        const result = await runtime.historicalInitialize(args.request)
+        return {
+          title: "alg skill evolution historical",
+          output: JSON.stringify(result, null, 2),
+          metadata: { alg: true, skill_evolution: true, historical: true, error: !result.ok },
         }
       },
     }),

@@ -82,14 +82,42 @@
   `skillRoots:[".opencode/skills"]`, the fixed auditor/checker/concurrency values
   above, 16 KiB evidence, 64 KiB candidate content, 100 candidates, 1,024 ledger
   records, backlog 32, trigger threshold 3, and two attempts.
-- All five tools remain registered while disabled so status/configuration can be
+- All six tools remain registered while disabled so status/configuration can be
   inspected. Audit/review/promotion/rollback operations require enablement. The
   exact public server tool contract is:
   `alg_templates`, `alg_models`, `alg_criteria`, `alg_plan`, `alg_run`,
   `alg_status`, `alg_resume`, `alg_artifact`, `alg_transfer`,
   `alg_skill_evolution_status`, `alg_skill_evolution_audit`,
+  `alg_skill_evolution_historical`,
   `alg_skill_evolution_review`, `alg_skill_evolution_promote`, and
   `alg_skill_evolution_rollback`.
+- Historical review additionally requires `historical.enabled:true`. Use
+  `alg_models` (or explicit merged `agent` configuration) to resolve both
+  `researcher` and `checker` to concrete provider/model IDs first; inherited SDK
+  defaults are not auditable and make preview fail before transcript reads.
+  Use
+  `discover`, then `preview` with explicit IDs, inspect the returned estimated
+  and hard call/input/time budgets, and pass the exact immutable-plan
+  confirmation to `run` or `resume`. `cancel` is durable before the next child
+  call. The V1-only `v1_bounded_snapshot` seal requires two consecutive
+  identical full reads, rejects `maxMessagesPerSession + 1` overflow without
+  truncation, and reports concurrent mutation as `unstable`. V1 cannot limit
+  `session.list` transport. Status/idle is advisory only. Confirmed processing
+  uses a fresh auditor per fragment, immutable ordered reduction, and a fresh
+  checker plus the existing candidate validator for a skill proposal.
+  Status and completion fail closed unless the immutable plan, exact ordered
+  chunk/reduction/checker outputs, and final checkpoint all verify. Interrupted
+  stages resume from those checkpoints; issued uncommitted calls are marked
+  potentially replayed. A create-only execution epoch fixes the original
+  absolute deadline before the first call and cannot be replaced to renew the
+  budget. Auditor/checker prompts retain the model captured in the plan across
+  configuration races. Candidate identity and its initial durable revision bind
+  the exact sealed transcript/snapshot and all review outputs, so a changed
+  transcript with reused session/message IDs is a distinct candidate.
+  Historical processing
+  writes only `.opencode/skill-evolution/` plus private child-session effects;
+  it never promotes/deletes skills or changes global configuration. V2 and
+  effectiveness benchmarking remain deferred.
 - Automatic intake accepts only successful, non-summary completed assistant
   `message.updated` events. It durably keys exact session/assistant-message IDs;
   duplicate post-processing events retain one record. It ignores idle/part/user/
@@ -361,7 +389,7 @@
   against a party that can coherently rewrite the checkout and all evidence.
 - Strict live semantics reject a minimal object carrying only pass and cleanup
   booleans. Exact package root/spec, runtime manifest and bounds, entrypoints,
-  registrations, the exact ordered 14 ALG IDs, compatible engine/runtime evidence, server/TUI
+  registrations, the exact ordered 15 ALG IDs, compatible engine/runtime evidence, server/TUI
   markers and cleanup, isolation booleans, and nonempty equal/digested global
   snapshots are all required against the current checkout.
 - The complete allowlist combines runtime source identity with an explicit

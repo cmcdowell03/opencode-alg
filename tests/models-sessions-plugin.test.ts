@@ -355,7 +355,7 @@ describe("models, SDK propagation, and registration", () => {
       } as never
       const hooks = await serverModule.server(context)
       expect(Object.keys(hooks.tool ?? {})).toEqual([...ALG_TOOL_IDS])
-      expect(ALG_TOOL_IDS).toHaveLength(14)
+      expect(ALG_TOOL_IDS).toHaveLength(15)
       expect(logs.map((entry) => entry.body.message)).toContain(algServerStartupMessage(false))
       expect(Object.keys(createAlgTools(context)).sort()).toEqual([
         "alg_artifact",

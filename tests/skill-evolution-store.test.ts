@@ -91,6 +91,12 @@ describe("skill-evolution durable store", () => {
       registerSkillAuditChild(project, child)
       registerSkillAuditChild(project, child)
       expect(loadSkillLedger(project).audit_children).toEqual([expect.objectContaining(child)])
+      expect(() => registerSkillAuditChild(project, {
+        ...child,
+        title: "alg-private-skill-evolution-check:one",
+        role: "checker",
+      })).toThrow(/different registered binding/)
+      expect(loadSkillLedger(project).audit_children).toHaveLength(1)
     } finally {
       removeProject(project)
     }

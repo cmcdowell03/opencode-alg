@@ -24,8 +24,9 @@
   and candidate revisions, independent replacement backups, content hashes, and
   direct-path/identity containment checks.
 - Adds `alg_skill_evolution_status`, `alg_skill_evolution_audit`,
-  `alg_skill_evolution_review`, `alg_skill_evolution_promote`, and
-  `alg_skill_evolution_rollback`, bringing the exact public server contract to 14
+  `alg_skill_evolution_historical`, `alg_skill_evolution_review`,
+  `alg_skill_evolution_promote`, and `alg_skill_evolution_rollback`, bringing the
+  exact public server contract to 15
   ordered tool IDs. Disabled status remains inspectable; audit and mutation fail
   closed until explicit opt-in.
 - Adds explicit confirmed promotion for immutable-checker-approved skills only.
@@ -42,9 +43,10 @@
   with package generations 0.1.0–0.3.0, advances strict release evidence to
   schema 5, retains strict live evidence schema 2, and keeps the versioned
   manager/receipt protocol at `0.2.0`.
-- Extends source-bound live/release proof to the new runtime modules and exact
-  14-tool startup marker while isolated live verification keeps skill evolution
-  disabled and makes no model calls.
+- Extends source-bound live/release proof to the six skill-evolution runtime
+  modules, including `skill-evolution-historical.ts`, and the exact 15-tool
+  startup marker while isolated live verification keeps skill evolution disabled
+  and makes no model calls.
 
 ## 0.2.0
 

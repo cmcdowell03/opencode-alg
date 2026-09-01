@@ -39,6 +39,7 @@ export const ALG_TOOL_IDS = [
   "alg_transfer",
   "alg_skill_evolution_status",
   "alg_skill_evolution_audit",
+  "alg_skill_evolution_historical",
   "alg_skill_evolution_review",
   "alg_skill_evolution_promote",
   "alg_skill_evolution_rollback",

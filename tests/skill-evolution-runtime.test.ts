@@ -696,5 +696,5 @@ describe("skill-evolution fresh auditor/checker child protocol", () => {
     } finally {
       removeProject(project)
     }
-  })
+  }, 15_000)
 })

@@ -23,9 +23,9 @@ Generated Python caches are excluded. `.gitattributes` fixes the strict Excel
 text assets to LF so manifest hashes are reproducible in Windows local clones;
 verification requires a clean clone and exact manifest hashes.
 
-For package v0.3.0, the `src/**/*.ts` rule necessarily includes all five
+For package v0.3.0, the `src/**/*.ts` rule necessarily includes all six
 skill-evolution runtime modules: `skill-evolution-evidence.ts`,
-`skill-evolution-runtime.ts`, `skill-evolution-schemas.ts`,
+`skill-evolution-historical.ts`, `skill-evolution-runtime.ts`, `skill-evolution-schemas.ts`,
 `skill-evolution-store.ts`, and `skill-evolution-tools.ts`. They are not a
 parallel hand-maintained exception list; omitting any matching regular source
 file changes/fails source identity and the reviewed npm allowlist.
@@ -160,8 +160,8 @@ bytes also equal summed file sizes); this is still a local command record, not
 a cryptographic signature.
 
 1. Run focused runtime-source/live and destination-confinement tests, including
-   exact 14-tool startup registration with skill evolution disabled in the
-   isolated live configuration and automatic inclusion of all five new runtime
+   exact 15-tool startup registration with skill evolution disabled in the
+   isolated live configuration and automatic inclusion of all six new runtime
    modules.
 2. Run strict typecheck.
 3. Run Python capability policy/utility tests with available Python `>=3.10`.
@@ -207,7 +207,7 @@ Retained evidence and the printed summary identify:
 - the exact ordered server IDs `alg_templates`, `alg_models`, `alg_criteria`,
   `alg_plan`, `alg_run`, `alg_status`, `alg_resume`, `alg_artifact`,
   `alg_transfer`, `alg_skill_evolution_status`,
-  `alg_skill_evolution_audit`, `alg_skill_evolution_review`,
+  `alg_skill_evolution_audit`, `alg_skill_evolution_historical`, `alg_skill_evolution_review`,
   `alg_skill_evolution_promote`, and `alg_skill_evolution_rollback`, plus the
   exact startup marker proving `skill_evolution=disabled` for the no-model live
   run;

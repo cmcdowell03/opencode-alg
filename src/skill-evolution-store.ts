@@ -19,7 +19,8 @@ import {
   writeFileSync,
 } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"
-import { acquireFilesystemMutex } from "./filesystem-mutex.ts"
+import { z } from "zod"
+import { acquireFilesystemMutex, type FilesystemMutex } from "./filesystem-mutex.ts"
 import { atomicWriteFile } from "./store.ts"
 import { canonicalJson, sha256Json } from "./persistence.ts"
 import { safeDiagnosticText } from "./diagnostics.ts"
@@ -29,8 +30,12 @@ import {
   SKILL_EVOLUTION_MAX_CONTENT_BYTES,
   SKILL_EVOLUTION_MAX_JSON_BYTES,
   SKILL_EVOLUTION_MAX_REVISIONS,
+  HISTORICAL_MAX_CHUNKS_PER_SESSION,
   SkillCandidateIndexSchema,
   SkillCandidateRevisionSchema,
+  HistoricalCandidateBindingSchema,
+  HistoricalSnapshotReferenceSchema,
+  HISTORICAL_SNAPSHOT_REFERENCE_MAX_BYTES,
   SkillEvolutionLedgerSchema,
   SkillEvidenceSchema,
   SkillTransactionJournalSchema,
@@ -43,6 +48,7 @@ import {
   type SkillEvidence,
   type SkillEvolutionLedger,
   type SkillEvolutionOptions,
+  type HistoricalCandidateBinding,
   type SkillLedgerRecord,
   type SkillTransactionJournal,
 } from "./skill-evolution-schemas.ts"
@@ -52,6 +58,161 @@ const LEDGER_FILE = "ledger.json"
 const CANDIDATE_FILE = "candidates.json"
 const MAX_CHILDREN = 1_000
 const MAX_EVIDENCE_FILE_BYTES = 32_768
+const REVIEW_CLAIMS_FILE = "review-claims.json"
+// One confirmed plan can name 32 sessions with 2,000 assistant identities
+// each. Keep coordination finite while allowing every accepted plan identity
+// to be fenced before any historical model call.
+const MAX_REVIEW_CLAIMS = 64_000
+const MAX_REVIEW_CLAIMS_BYTES = 128 * 1024 * 1024
+const REVIEW_CLAIM_LEASE_MS = 120_000
+const REVIEW_CLAIM_RENEW_SAFETY_MS = 5_000
+const ACTIVE_HISTORICAL_REVIEW_BLOCK = "temporarily blocked by an active historical review reservation"
+const LOST_LIVE_REVIEW_BLOCK = "live review blocked by historical ownership or completed review"
+const ReviewClaimSchema = z.object({
+  session_id: z.string().min(1).max(256), message_id: z.string().min(1).max(256),
+  owner_kind: z.enum(["live", "historical"]), owner_work_id: z.string().min(1).max(256),
+  state: z.enum(["active", "completed", "failed"]), fencing_token: z.string().regex(/^[a-f0-9]{64}$/),
+  acquired_at: z.iso.datetime({ offset: true }), updated_at: z.iso.datetime({ offset: true }), expires_at: z.iso.datetime({ offset: true }),
+}).strict()
+type ReviewClaim = z.infer<typeof ReviewClaimSchema>
+const ReviewClaimsSchema = z.object({ schema_version: z.literal(1), kind: z.literal("skill_evolution_review_claims"), revision: z.number().int().nonnegative(), claims: z.array(ReviewClaimSchema).max(MAX_REVIEW_CLAIMS), updated_at: z.iso.datetime({ offset: true }) }).strict()
+
+function loadReviewClaims(project: string): z.infer<typeof ReviewClaimsSchema> {
+  const path = storePath(project, REVIEW_CLAIMS_FILE)
+  if (!existsSync(path)) return { schema_version: 1, kind: "skill_evolution_review_claims", revision: 0, claims: [], updated_at: new Date(0).toISOString() }
+  return ReviewClaimsSchema.parse(readBoundedJson(path, MAX_REVIEW_CLAIMS_BYTES))
+}
+
+/** Caller holds the project mutation lock. */
+function saveReviewClaimsLocked(project: string, value: z.infer<typeof ReviewClaimsSchema>): void {
+  const next = ReviewClaimsSchema.parse({ ...value, revision: value.revision + 1, updated_at: nowIso() })
+  if (serializedBytes(next) > MAX_REVIEW_CLAIMS_BYTES) throw new Error("review claim coordination exceeds aggregate bound")
+  atomicWriteFile(storePath(project, REVIEW_CLAIMS_FILE), `${JSON.stringify(next, null, 2)}\n`, true)
+}
+
+function claimActive(claim: ReviewClaim, now = Date.now()): boolean {
+  return claim.state === "active" && Date.parse(claim.expires_at) > now
+}
+
+function recoverableHistoricalBlock(record: SkillLedgerRecord): boolean {
+  return record.status === "failed" &&
+    (record.error === ACTIVE_HISTORICAL_REVIEW_BLOCK || record.error === LOST_LIVE_REVIEW_BLOCK)
+}
+
+export function liveReviewFencingToken(workId: string): string {
+  return createHash("sha256").update(`live\0${workId}`).digest("hex")
+}
+
+function upsertLiveClaimLocked(project: string, sessionId: string, messageId: string, workId: string): ReviewClaim | null {
+  const claims = loadReviewClaims(project); const now = Date.now()
+  const found = claims.claims.find((item) => item.session_id === sessionId && item.message_id === messageId)
+  if (found && found.owner_kind === "historical" && claimActive(found, now)) return null
+  // An explicit retry of the same live work item may reactivate its completed
+  // claim. Completed historical ownership (and ownership by another work
+  // identity) remains terminal and cannot be overwritten.
+  if (found?.state === "completed" &&
+    (found.owner_kind !== "live" || found.owner_work_id !== workId)) return null
+  const at = new Date(now).toISOString(); const token = liveReviewFencingToken(workId)
+  const next = { session_id: sessionId, message_id: messageId, owner_kind: "live" as const, owner_work_id: workId, state: "active" as const,
+    fencing_token: token, acquired_at: found?.acquired_at ?? at, updated_at: at, expires_at: new Date(now + REVIEW_CLAIM_LEASE_MS).toISOString() }
+  if (found) Object.assign(found, next); else claims.claims.push(next)
+  saveReviewClaimsLocked(project, claims)
+  return next
+}
+
+export function reserveHistoricalReviewClaims(project: string, planId: string, fencingToken: string, identities: Array<{ session_id: string; message_id: string }>): { reserved: boolean; blocked_by?: string } {
+  return withSkillEvolutionLock(project, "historical-review-reserve", () => {
+    const claims = loadReviewClaims(project); const ledger = loadSkillLedger(project); const candidates = loadSkillCandidates(project); const now = Date.now()
+    const unique = [...new Map(identities.map((item) => [`${item.session_id}\0${item.message_id}`, item])).values()]
+    if (unique.length > MAX_REVIEW_CLAIMS) throw new Error("historical review identity coordination exceeds its finite bound")
+    const reviewed = new Map<string, ReviewedLiveCandidate>()
+    for (const identity of unique) {
+      const key = skillLedgerKey(identity.session_id, identity.message_id)
+      const ledgerRecord = ledger.records.find((item) => item.key === key && item.session_id === identity.session_id && item.message_id === identity.message_id)
+      const candidate = ledgerRecord ? reviewedLiveCandidate(project, candidates, identity.session_id, identity.message_id, ledger) : null
+      if (candidate) reviewed.set(key, candidate)
+    }
+    for (const identity of unique) {
+      const claim = claims.claims.find((item) => item.session_id === identity.session_id && item.message_id === identity.message_id)
+      const live = ledger.records.find((item) => item.session_id === identity.session_id && item.message_id === identity.message_id)
+      // A ledger cursor is not ownership authority by itself. A process may
+      // die after persisting pending/running, and an expired fencing claim must
+      // be recoverable by one of the intake paths rather than blocking the
+      // identity forever.
+      if (!reviewed.has(skillLedgerKey(identity.session_id, identity.message_id)) &&
+        claim && claim.owner_kind === "live" && claimActive(claim, now) &&
+        live && (live.status === "pending" || live.status === "running")) {
+        return { reserved: false, blocked_by: skillLedgerKey(identity.session_id, identity.message_id) }
+      }
+      if (claim && claim.owner_kind === "historical" && claimActive(claim, now) && (claim.owner_work_id !== planId || claim.fencing_token !== fencingToken)) {
+        return { reserved: false, blocked_by: claim.owner_work_id }
+      }
+    }
+    const at = new Date(now).toISOString()
+    let ledgerChanged = false
+    for (const identity of unique) {
+      const key = skillLedgerKey(identity.session_id, identity.message_id)
+      const found = claims.claims.find((item) => item.session_id === identity.session_id && item.message_id === identity.message_id)
+      const staleLive = ledger.records.find((item) => item.session_id === identity.session_id && item.message_id === identity.message_id &&
+        (item.status === "pending" || item.status === "running"))
+      const reviewedCandidate = reviewed.get(key)
+      if (reviewedCandidate) {
+        ledgerChanged ||= finalizeReviewedLiveCandidateLocked(ledger, claims, key, reviewedCandidate).ledgerChanged
+      } else if (staleLive) {
+        staleLive.status = "failed"
+        staleLive.error = "expired live review ownership was fenced by historical recovery"
+        staleLive.updated_at = at
+        ledgerChanged = true
+      }
+      const next = { ...identity, owner_kind: "historical" as const, owner_work_id: planId, state: "active" as const, fencing_token: fencingToken,
+        acquired_at: at, updated_at: at, expires_at: new Date(now + REVIEW_CLAIM_LEASE_MS).toISOString() }
+      if (found) Object.assign(found, next); else claims.claims.push(next)
+    }
+    // Claim publication and stale-live fencing are one lock-protected
+    // mutation decision. A live worker that eventually returns is unable to
+    // publish because its fencing token no longer matches.
+    saveReviewClaimsLocked(project, claims)
+    if (ledgerChanged) saveLedger(project, ledger, ledger.revision)
+    return { reserved: true }
+  })
+}
+
+export function validateHistoricalReviewClaims(project: string, planId: string, fencingToken: string, identities: Array<{ session_id: string; message_id: string }>, complete = false, renew = false, minimumValidityMs = 0): void {
+  if (!Number.isSafeInteger(minimumValidityMs) || minimumValidityMs < 0) throw new Error("historical review claim renewal bound is invalid")
+  if (!complete && !renew) {
+    const claims = loadReviewClaims(project); const now = Date.now()
+    const unique = [...new Map(identities.map((item) => [`${item.session_id}\0${item.message_id}`, item])).values()]
+    for (const identity of unique) {
+      const claim = claims.claims.find((item) => item.session_id === identity.session_id && item.message_id === identity.message_id)
+      if (!claim || claim.owner_kind !== "historical" || claim.owner_work_id !== planId || claim.fencing_token !== fencingToken || !claimActive(claim, now)) throw new Error("historical review claim ownership was lost")
+    }
+    return
+  }
+  withSkillEvolutionLock(project, "historical-review-validate", () => {
+    const claims = loadReviewClaims(project); const now = Date.now(); const at = new Date(now).toISOString()
+    const unique = [...new Map(identities.map((item) => [`${item.session_id}\0${item.message_id}`, item])).values()]
+    const renewalDeadline = now + minimumValidityMs + REVIEW_CLAIM_RENEW_SAFETY_MS
+    let changed = complete
+    for (const identity of unique) {
+      const claim = claims.claims.find((item) => item.session_id === identity.session_id && item.message_id === identity.message_id)
+      if (!claim || claim.owner_kind !== "historical" || claim.owner_work_id !== planId || claim.fencing_token !== fencingToken || !claimActive(claim, now)) throw new Error("historical review claim ownership was lost")
+      if (complete || Date.parse(claim.expires_at) <= renewalDeadline) {
+        claim.state = complete ? "completed" : "active"
+        claim.updated_at = at
+        claim.expires_at = new Date(now + Math.max(REVIEW_CLAIM_LEASE_MS, minimumValidityMs + REVIEW_CLAIM_RENEW_SAFETY_MS)).toISOString()
+        changed = true
+      }
+    }
+    if (changed) saveReviewClaimsLocked(project, claims)
+  })
+}
+
+export function failHistoricalReviewClaims(project: string, planId: string, fencingToken: string): void {
+  withSkillEvolutionLock(project, "historical-review-fail", () => { const claims = loadReviewClaims(project); let changed = false
+    for (const claim of claims.claims) if (claim.owner_kind === "historical" && claim.owner_work_id === planId && claim.fencing_token === fencingToken && claim.state === "active") { claim.state = "failed"; claim.updated_at = nowIso(); changed = true }
+    if (changed) saveReviewClaimsLocked(project, claims)
+  })
+}
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -158,7 +319,7 @@ function sameDirectReadIdentity(left: DirectReadIdentity, right: DirectReadIdent
 }
 
 /** Bounded descriptor read with direct-component and replacement-race checks. */
-function readDirectBounded(project: string, path: string, maximum: number, label: string): Buffer {
+export function readSkillEvolutionDirectBounded(project: string, path: string, maximum: number, label: string): Buffer {
   if (!isContained(project, path)) throw new Error(`${label} path escaped project`)
   assertExistingDirectComponents(project, path, "file")
   const before = lstatSync(path, { bigint: true })
@@ -201,6 +362,8 @@ function readDirectBounded(project: string, path: string, maximum: number, label
     closeSync(descriptor)
   }
 }
+
+const readDirectBounded = readSkillEvolutionDirectBounded
 
 function readBoundedJson(path: string, maximum = SKILL_EVOLUTION_MAX_JSON_BYTES): unknown {
   const project = canonicalDirectory(resolve(path, "..", "..", ".."))
@@ -257,6 +420,17 @@ export function withSkillEvolutionLock<T>(projectDirectory: string, operation: s
   }
 }
 
+/** One project-wide historical executor, shared by every plan and runtime/process. */
+export function acquireHistoricalExecutionLease(projectDirectory: string, owner: string): FilesystemMutex {
+  const root = ensureStore(projectDirectory)
+  return acquireFilesystemMutex(resolveContainedPath(root, "historical-execution.lock"), {
+    owner,
+    leaseMs: 30_000,
+    heartbeatMs: 10_000,
+    waitMs: 100,
+  })
+}
+
 export function skillLedgerKey(sessionId: string, messageId: string): string {
   return createHash("sha256").update(sessionId, "utf8").update("\0").update(messageId, "utf8").digest("hex")
 }
@@ -264,7 +438,7 @@ export function skillLedgerKey(sessionId: string, messageId: string): string {
 export interface EnqueueLedgerResult {
   record: SkillLedgerRecord
   enqueued: boolean
-  reason: "new" | "retry" | "duplicate" | "overflow"
+  reason: "new" | "retry" | "duplicate" | "overflow" | "historical"
 }
 
 export function enqueueSkillAudit(
@@ -278,7 +452,48 @@ export function enqueueSkillAudit(
     const ledger = loadSkillLedger(projectDirectory)
     const key = skillLedgerKey(sessionId, messageId)
     const existing = ledger.records.find((record) => record.key === key)
+    const claims = loadReviewClaims(projectDirectory)
+    const historicalOwner = claims.claims.find((claim) => claim.session_id === sessionId && claim.message_id === messageId &&
+      claim.owner_kind === "historical" && claimActive(claim))
+    if (historicalOwner) {
+      if (existing) return { record: existing, enqueued: false, reason: "historical" }
+      if (ledger.records.length >= options.maxLedgerRecords) throw new Error("skill-evolution ledger capacity reached; refusing to discard exactly-once records")
+      const created = nowIso()
+      const record = SkillLedgerRecordSchemaCompat({ key, session_id: sessionId, message_id: messageId, status: "failed", attempts: 0,
+        forced_retries: 0, created_at: created, updated_at: created, error: ACTIVE_HISTORICAL_REVIEW_BLOCK })
+      ledger.records.push(record); const saved = saveLedger(projectDirectory, ledger, ledger.revision)
+      return { record: saved.records.find((entry) => entry.key === key)!, enqueued: false, reason: "historical" }
+    }
+    const historicalCovered = isHistoricalAssistantCovered(projectDirectory, sessionId, messageId)
+    if (historicalCovered) {
+      if (existing) {
+        if (existing.status !== "candidate" && existing.status !== "no-change") {
+          existing.status = "no-change"
+          existing.updated_at = nowIso()
+          existing.error = HISTORICAL_COVERAGE_LEDGER_NOTE
+          const saved = saveLedger(projectDirectory, ledger, ledger.revision)
+          return { record: saved.records.find((entry) => entry.key === key)!, enqueued: false, reason: "historical" }
+        }
+        return { record: existing, enqueued: false, reason: "historical" }
+      }
+      if (ledger.records.length >= options.maxLedgerRecords) throw new Error("skill-evolution ledger capacity reached; refusing to discard exactly-once records")
+      const created = nowIso()
+      const record = SkillLedgerRecordSchemaCompat({ key, session_id: sessionId, message_id: messageId, status: "no-change", attempts: 0,
+        forced_retries: 0, created_at: created, updated_at: created, error: HISTORICAL_COVERAGE_LEDGER_NOTE })
+      ledger.records.push(record)
+      const saved = saveLedger(projectDirectory, ledger, ledger.revision)
+      return { record: saved.records.find((entry) => entry.key === key)!, enqueued: false, reason: "historical" }
+    }
     if (existing) {
+      if (!force && recoverableHistoricalBlock(existing)) {
+        const claim = upsertLiveClaimLocked(projectDirectory, sessionId, messageId, key)
+        if (!claim) return { record: existing, enqueued: false, reason: "historical" }
+        existing.status = "pending"
+        existing.updated_at = nowIso()
+        delete existing.error
+        const saved = saveLedger(projectDirectory, ledger, ledger.revision)
+        return { record: saved.records.find((record) => record.key === key)!, enqueued: true, reason: "retry" }
+      }
       if (!force) {
         return { record: existing, enqueued: false, reason: "duplicate" }
       }
@@ -293,6 +508,12 @@ export function enqueueSkillAudit(
       existing.updated_at = nowIso()
       delete existing.error
       delete existing.candidate_id
+      if (!upsertLiveClaimLocked(projectDirectory, sessionId, messageId, key)) {
+        existing.status = "failed"
+        existing.error = LOST_LIVE_REVIEW_BLOCK
+        const saved = saveLedger(projectDirectory, ledger, ledger.revision)
+        return { record: saved.records.find((record) => record.key === key)!, enqueued: false, reason: "historical" }
+      }
       const saved = saveLedger(projectDirectory, ledger, ledger.revision)
       return { record: saved.records.find((record) => record.key === key)!, enqueued: true, reason: "retry" }
     }
@@ -311,6 +532,7 @@ export function enqueueSkillAudit(
     ledger.records.push(record)
     const saved = saveLedger(projectDirectory, ledger, ledger.revision)
     const persisted = saved.records.find((candidate) => candidate.key === key)!
+    if (persisted.status === "pending") upsertLiveClaimLocked(projectDirectory, sessionId, messageId, key)
     return { record: persisted, enqueued: pending < options.maxBacklog, reason: pending < options.maxBacklog ? "new" : "overflow" }
   })
 }
@@ -348,13 +570,33 @@ export function beginSkillAudit(projectDirectory: string, key: string, options: 
     // Multiple runtime instances can discover the same durable pending record
     // during startup. Only its first pending->running CAS may execute it.
     if (record.status !== "pending") return record
+    const reviewed = reviewedLiveCandidate(projectDirectory, loadSkillCandidates(projectDirectory), record.session_id, record.message_id, ledger)
+    if (reviewed) {
+      const claims = loadReviewClaims(projectDirectory)
+      const finalized = finalizeReviewedLiveCandidateLocked(ledger, claims, key, reviewed)
+      if (finalized.claimsChanged) saveReviewClaimsLocked(projectDirectory, claims)
+      return saveLedger(projectDirectory, ledger, ledger.revision).records.find((candidate) => candidate.key === key)!
+    }
+    if (isHistoricalAssistantCovered(projectDirectory, record.session_id, record.message_id)) {
+      record.status = "no-change"; record.error = HISTORICAL_COVERAGE_LEDGER_NOTE; record.updated_at = nowIso()
+      return saveLedger(projectDirectory, ledger, ledger.revision).records.find((candidate) => candidate.key === key)!
+    }
     if (record.attempts >= options.maxAttempts) {
       record.status = "failed"
       record.error = "skill-evolution attempt limit reached"
-    } else {
-      record.status = "running"
-      record.attempts++
+      const claims = loadReviewClaims(projectDirectory)
+      const claim = claims.claims.find((item) => item.owner_kind === "live" && item.owner_work_id === key && item.state === "active")
+      if (claim) { claim.state = "failed"; claim.updated_at = nowIso(); saveReviewClaimsLocked(projectDirectory, claims) }
+      record.updated_at = nowIso()
+      return saveLedger(projectDirectory, ledger, ledger.revision).records.find((candidate) => candidate.key === key)!
     }
+    if (!upsertLiveClaimLocked(projectDirectory, record.session_id, record.message_id, key)) {
+      record.status = "failed"; record.error = LOST_LIVE_REVIEW_BLOCK
+      record.updated_at = nowIso(); const saved = saveLedger(projectDirectory, ledger, ledger.revision)
+      return saved.records.find((candidate) => candidate.key === key)!
+    }
+    record.status = "running"
+    record.attempts++
     record.updated_at = nowIso()
     const saved = saveLedger(projectDirectory, ledger, ledger.revision)
     return saved.records.find((candidate) => candidate.key === key)!
@@ -363,16 +605,77 @@ export function beginSkillAudit(projectDirectory: string, key: string, options: 
 
 export function failSkillAudit(projectDirectory: string, key: string, error: unknown): SkillLedgerRecord {
   const diagnostic = safeDiagnosticText(error instanceof Error ? error.message : String(error))
-  return updateSkillLedgerRecord(projectDirectory, key, (record) => {
-    record.status = "failed"
-    record.error = diagnostic
+  return withSkillEvolutionLock(projectDirectory, "audit-fail", () => {
+    const ledger = loadSkillLedger(projectDirectory); const record = ledger.records.find((candidate) => candidate.key === key)
+    if (!record) throw new Error("skill-evolution ledger record not found")
+    if (record.status === "candidate" || record.status === "no-change") return record
+    const reviewed = reviewedLiveCandidate(projectDirectory, loadSkillCandidates(projectDirectory), record.session_id, record.message_id, ledger)
+    if (reviewed) {
+      const claims = loadReviewClaims(projectDirectory)
+      const finalized = finalizeReviewedLiveCandidateLocked(ledger, claims, key, reviewed)
+      if (finalized.claimsChanged) saveReviewClaimsLocked(projectDirectory, claims)
+      return saveLedger(projectDirectory, ledger, ledger.revision).records.find((candidate) => candidate.key === key)!
+    }
+    if (isHistoricalAssistantCovered(projectDirectory, record.session_id, record.message_id)) {
+      record.status = "no-change"; record.error = HISTORICAL_COVERAGE_LEDGER_NOTE; record.updated_at = nowIso()
+      return saveLedger(projectDirectory, ledger, ledger.revision).records.find((candidate) => candidate.key === key)!
+    }
+    record.status = "failed"; record.error = diagnostic; record.updated_at = nowIso()
+    const claims = loadReviewClaims(projectDirectory); const claim = claims.claims.find((item) => item.owner_kind === "live" && item.owner_work_id === key && item.state === "active")
+    if (claim) { claim.state = "failed"; claim.updated_at = nowIso(); saveReviewClaimsLocked(projectDirectory, claims) }
+    return saveLedger(projectDirectory, ledger, ledger.revision).records.find((candidate) => candidate.key === key)!
+  })
+}
+
+export function liveReviewStillOwned(project: string, sessionId: string, messageId: string, workId: string, fencingToken = liveReviewFencingToken(workId)): boolean {
+  return withSkillEvolutionLock(project, "live-review-check", () => {
+    if (isHistoricalAssistantCovered(project, sessionId, messageId)) return false
+    const claims = loadReviewClaims(project); const claim = claims.claims.find((item) => item.session_id === sessionId && item.message_id === messageId)
+    // An elapsed lease is recoverable by the same still-running worker when no
+    // competing owner replaced it. A historical takeover changes owner/token
+    // under the same project lock and therefore remains fenced.
+    if (!claim || claim.owner_kind !== "live" || claim.owner_work_id !== workId || claim.fencing_token !== fencingToken || claim.state !== "active") return false
+    // Avoid rewriting coordination state at every between-call cancellation
+    // check. Renew only in the latter half of the lease; a newly acquired claim
+    // therefore covers the bounded get/messages/create/prompt sequence without
+    // turning each check into another durable write.
+    if (Date.parse(claim.expires_at) <= Date.now() + REVIEW_CLAIM_LEASE_MS / 2) {
+      claim.updated_at = nowIso(); claim.expires_at = new Date(Date.now() + REVIEW_CLAIM_LEASE_MS).toISOString(); saveReviewClaimsLocked(project, claims)
+    }
+    return true
+  })
+}
+
+export function markLiveSkillLedgerOutcome(project: string, key: string, outcome: Parameters<typeof markSkillLedgerOutcome>[2]): SkillLedgerRecord | null {
+  return withSkillEvolutionLock(project, "live-terminal", () => {
+    const ledger = loadSkillLedger(project); const record = ledger.records.find((item) => item.key === key)
+    if (!record) throw new Error("skill-evolution ledger record not found")
+    const claims = loadReviewClaims(project); const claim = claims.claims.find((item) => item.session_id === record.session_id && item.message_id === record.message_id)
+    if (isHistoricalAssistantCovered(project, record.session_id, record.message_id) || !claim || claim.owner_kind !== "live" ||
+      claim.owner_work_id !== key || claim.fencing_token !== liveReviewFencingToken(key) || claim.state !== "active") return null
+    Object.assign(record, outcome); record.updated_at = nowIso(); delete record.error; claim.state = "completed"; claim.updated_at = nowIso()
+    saveReviewClaimsLocked(project, claims); return saveLedger(project, ledger, ledger.revision).records.find((item) => item.key === key)!
   })
 }
 
 export function recoverPendingSkillAudits(projectDirectory: string, options: SkillEvolutionOptions): SkillLedgerRecord[] {
   return withSkillEvolutionLock(projectDirectory, "startup-recovery", () => {
     const ledger = loadSkillLedger(projectDirectory)
+    const candidates = loadSkillCandidates(projectDirectory)
+    const claims = loadReviewClaims(projectDirectory)
     let changed = false
+    let claimsChanged = false
+    // A process can stop after candidates.json is durable but before the live
+    // ledger/claim terminal writes. Prove that exact immutable review first,
+    // then finish the already-published outcome rather than replaying a model.
+    for (const record of ledger.records) {
+      if (record.status === "candidate" || record.status === "no-change") continue
+      const reviewed = reviewedLiveCandidate(projectDirectory, candidates, record.session_id, record.message_id, ledger)
+      if (!reviewed) continue
+      const finalized = finalizeReviewedLiveCandidateLocked(ledger, claims, record.key, reviewed)
+      changed ||= finalized.ledgerChanged
+      claimsChanged ||= finalized.claimsChanged
+    }
     for (const record of ledger.records) {
       if (record.status !== "running") continue
       changed = true
@@ -384,6 +687,22 @@ export function recoverPendingSkillAudits(projectDirectory: string, options: Ski
         record.error = "previous audit process stopped after attempt limit"
       }
       record.updated_at = nowIso()
+    }
+    for (const record of ledger.records) {
+      if (!recoverableHistoricalBlock(record)) continue
+      if (isHistoricalAssistantCovered(projectDirectory, record.session_id, record.message_id)) {
+        record.status = "no-change"
+        record.error = HISTORICAL_COVERAGE_LEDGER_NOTE
+        record.updated_at = nowIso()
+        changed = true
+        continue
+      }
+      if (upsertLiveClaimLocked(projectDirectory, record.session_id, record.message_id, record.key)) {
+        record.status = "pending"
+        delete record.error
+        record.updated_at = nowIso()
+        changed = true
+      }
     }
     let retained = 0
     for (const record of ledger.records) {
@@ -397,6 +716,7 @@ export function recoverPendingSkillAudits(projectDirectory: string, options: Ski
       record.error = "skill-evolution queue backlog limit reached during startup recovery"
       record.updated_at = nowIso()
     }
+    if (claimsChanged) saveReviewClaimsLocked(projectDirectory, claims)
     const saved = changed ? saveLedger(projectDirectory, ledger, ledger.revision) : ledger
     return saved.records.filter((record) => record.status === "pending")
   })
@@ -409,7 +729,12 @@ export function registerSkillAuditChild(
   withSkillEvolutionLock(projectDirectory, "child-register", () => {
     const ledger = loadSkillLedger(projectDirectory)
     const found = ledger.audit_children.find((entry) => entry.session_id === child.session_id)
-    if (found) return
+    if (found) {
+      if (found.parent_id !== child.parent_id || found.title !== child.title || found.role !== child.role) {
+        throw new Error("skill-evolution audit child identity has a different registered binding")
+      }
+      return
+    }
     if (ledger.audit_children.length >= MAX_CHILDREN) throw new Error("skill-evolution audit child registry capacity reached")
     ledger.audit_children.push({ ...child, registered_at: nowIso() })
     saveLedger(projectDirectory, ledger, ledger.revision)
@@ -420,22 +745,27 @@ export function isRegisteredSkillAuditChild(projectDirectory: string, sessionId:
   return loadSkillLedger(projectDirectory).audit_children.some((child) => child.session_id === sessionId)
 }
 
-function immutablePathFor(project: string, directory: "evidence" | "revisions" | "backups" | "transactions", filename: string): string {
+function immutablePathFor(project: string, directory: "evidence" | "revisions" | "backups" | "transactions" | "historical-snapshots" | "historical-chunks" | "historical-plans" | "historical-checkpoints", filename: string): string {
   const root = ensureStore(project)
   const dir = resolveContainedPath(root, directory)
   ensureVerifiedDirectory(canonicalDirectory(project), dir)
   return resolveContainedPath(dir, filename)
 }
 
-function writeImmutable(path: string, value: unknown, maximum = SKILL_EVOLUTION_MAX_JSON_BYTES): { sha256: string; byte_size: number } {
+function writeImmutable(project: string, path: string, value: unknown, maximum = SKILL_EVOLUTION_MAX_JSON_BYTES): { sha256: string; byte_size: number } {
   const serialized = canonicalJson(value)
   const bytes = Buffer.from(serialized, "utf8")
   if (bytes.byteLength > maximum) throw new Error(`immutable skill-evolution object exceeds ${maximum} bytes`)
+  const expectedHash = createHash("sha256").update(bytes).digest("hex")
+  const verifyOccupied = () => {
+    const existing = readSkillEvolutionDirectBounded(project, path, bytes.byteLength, "immutable skill-evolution object")
+    if (existing.byteLength !== bytes.byteLength || createHash("sha256").update(existing).digest("hex") !== expectedHash || !existing.equals(bytes)) {
+      throw new Error("immutable skill-evolution object path is occupied by different bytes")
+    }
+  }
   if (existsSync(path)) {
-    assertDirectRegularFile(path)
-    const existing = readFileSync(path)
-    if (!existing.equals(bytes)) throw new Error("immutable skill-evolution object path is occupied by different bytes")
-    return { sha256: createHash("sha256").update(bytes).digest("hex"), byte_size: bytes.byteLength }
+    verifyOccupied()
+    return { sha256: expectedHash, byte_size: bytes.byteLength }
   }
   let descriptor: number | undefined
   try {
@@ -446,11 +776,303 @@ function writeImmutable(path: string, value: unknown, maximum = SKILL_EVOLUTION_
     descriptor = undefined
   } catch (error) {
     if (descriptor !== undefined) closeSync(descriptor)
+    if ((error as NodeJS.ErrnoException).code === "EEXIST") {
+      verifyOccupied()
+      return { sha256: expectedHash, byte_size: bytes.byteLength }
+    }
     throw error
   }
-  assertDirectRegularFile(path)
-  if (!readFileSync(path).equals(bytes)) throw new Error("immutable skill-evolution publication verification failed")
-  return { sha256: createHash("sha256").update(bytes).digest("hex"), byte_size: bytes.byteLength }
+  verifyOccupied()
+  return { sha256: expectedHash, byte_size: bytes.byteLength }
+}
+
+export interface HistoricalImmutableReference { path: string; sha256: string; byte_size: number }
+
+/** Content-addressed, create-only historical object publication. */
+export function persistHistoricalImmutable(
+  projectDirectory: string,
+  kind: "snapshot" | "chunk" | "plan" | "checkpoint",
+  value: unknown,
+  maximum: number,
+): HistoricalImmutableReference {
+  if (kind === "snapshot" && maximum > HISTORICAL_SNAPSHOT_REFERENCE_MAX_BYTES) {
+    throw new Error("historical snapshot persistence bound exceeds the dedicated finite cap")
+  }
+  const project = canonicalDirectory(projectDirectory)
+  const serialized = canonicalJson(value)
+  const hash = createHash("sha256").update(serialized, "utf8").digest("hex")
+  const directory = kind === "snapshot" ? "historical-snapshots" : kind === "chunk" ? "historical-chunks" : kind === "plan" ? "historical-plans" : "historical-checkpoints"
+  const path = immutablePathFor(project, directory, `${hash}.json`)
+  const integrity = writeImmutable(project, path, value, maximum)
+  if (integrity.sha256 !== hash) throw new Error("historical immutable hash mismatch")
+  return { path: projectRelative(project, path), ...integrity }
+}
+
+/**
+ * Create the one execution epoch authority for a confirmed historical plan.
+ * Unlike ordinary content-addressed checkpoints, the plan-derived filename
+ * makes a second epoch collide with (and be rejected by) the create-only
+ * immutable writer instead of giving mutable state a new lifetime to point at.
+ */
+export function persistHistoricalExecutionEpoch(
+  projectDirectory: string,
+  planConfirmation: string,
+  value: unknown,
+): HistoricalImmutableReference {
+  if (!/^[a-f0-9]{64}$/.test(planConfirmation)) throw new Error("invalid historical plan confirmation for execution epoch")
+  const project = canonicalDirectory(projectDirectory)
+  const path = immutablePathFor(project, "historical-checkpoints", `${planConfirmation}-execution-epoch.json`)
+  const integrity = writeImmutable(project, path, value, 4_096)
+  return { path: projectRelative(project, path), ...integrity }
+}
+
+export function loadHistoricalImmutable(
+  projectDirectory: string,
+  reference: HistoricalImmutableReference,
+  kind: "snapshot" | "chunk" | "plan" | "checkpoint",
+  maximum: number,
+): unknown {
+  if (kind === "snapshot") {
+    HistoricalSnapshotReferenceSchema.parse(reference)
+    maximum = Math.min(maximum, HISTORICAL_SNAPSHOT_REFERENCE_MAX_BYTES)
+  }
+  const prefix = `${STORE_RELATIVE}/historical-${kind === "snapshot" ? "snapshots" : kind === "chunk" ? "chunks" : kind === "plan" ? "plans" : "checkpoints"}/`
+  if (!reference.path.startsWith(prefix) || !isSafeProjectRelativePath(reference.path) ||
+    !/^[a-f0-9]{64}$/.test(reference.sha256) || !Number.isSafeInteger(reference.byte_size) ||
+    reference.byte_size <= 0 || reference.byte_size > maximum) throw new Error("invalid historical immutable reference")
+  const project = canonicalDirectory(projectDirectory)
+  const path = resolveContainedPath(project, ...reference.path.split("/"))
+  const bytes = readDirectBounded(project, path, maximum, "historical immutable object")
+  if (bytes.byteLength !== reference.byte_size || createHash("sha256").update(bytes).digest("hex") !== reference.sha256) {
+    throw new Error("historical immutable reference integrity mismatch")
+  }
+  return JSON.parse(bytes.toString("utf8"))
+}
+
+export interface HistoricalMutableIndex {
+  schema_version: 1
+  kind: "skill_evolution_historical_index"
+  revision: number
+  plans: unknown[]
+  snapshots: HistoricalSnapshotIndexEntry[]
+  coverage: HistoricalCoverageEntry[]
+  updated_at: string
+}
+
+const HISTORICAL_INDEX_FILE = "historical-index.json"
+const MAX_HISTORICAL_INDEX_BYTES = 2 * 1024 * 1024
+export const MAX_HISTORICAL_SNAPSHOT_STATE_HISTORY = 4_096
+export const HISTORICAL_COVERAGE_LEDGER_NOTE = "authoritative assistant identity already covered by completed historical review"
+const historicalId = z.string().min(1).max(256).refine((value) => value === value.trim())
+const historicalSha = z.string().regex(/^[a-f0-9]{64}$/)
+const historicalWorkId = z.string().regex(/^(?:hist-[a-f0-9]{32}|preview-[a-f0-9]{32})$/)
+const HistoricalReferenceSchema = z.object({
+  path: z.string().min(1).max(1_024), sha256: historicalSha,
+  byte_size: z.number().int().positive().max(128 * 1024 * 1024),
+}).strict()
+export const HistoricalSnapshotDispositionSchema = z.enum([
+  "previewed", "queued", "running", "resumable", "cancelled", "failed", "completed",
+])
+const HistoricalSnapshotIndexEntrySchema = z.object({
+  session_id: historicalId,
+  commitment: historicalSha,
+  snapshot_ref: HistoricalSnapshotReferenceSchema,
+  first_known_order: z.number().int().nonnegative().max(16_383),
+  predecessor_commitment: historicalSha.optional(),
+  assistant_message_ids: z.array(historicalId).max(2_000),
+  plan_ids: z.array(historicalWorkId).max(512),
+  current_disposition: HistoricalSnapshotDispositionSchema,
+  state_history: z.array(z.object({
+    disposition: HistoricalSnapshotDispositionSchema,
+    plan_id: historicalWorkId,
+    at: z.iso.datetime({ offset: true }),
+  }).strict()).min(1).max(MAX_HISTORICAL_SNAPSHOT_STATE_HISTORY),
+}).strict().superRefine((entry, ctx) => {
+  if (new Set(entry.assistant_message_ids).size !== entry.assistant_message_ids.length) {
+    ctx.addIssue({ code: "custom", path: ["assistant_message_ids"], message: "assistant message identities must be unique" })
+  }
+  if (new Set(entry.plan_ids).size !== entry.plan_ids.length) {
+    ctx.addIssue({ code: "custom", path: ["plan_ids"], message: "historical plan references must be unique" })
+  }
+  if (entry.state_history.some((state) => !entry.plan_ids.includes(state.plan_id))) {
+    ctx.addIssue({ code: "custom", path: ["state_history"], message: "historical disposition states must reference an indexed plan" })
+  }
+  if (entry.state_history.at(-1)?.disposition !== entry.current_disposition) {
+    ctx.addIssue({ code: "custom", path: ["current_disposition"], message: "current disposition must equal the latest state history" })
+  }
+})
+export type HistoricalSnapshotIndexEntry = z.infer<typeof HistoricalSnapshotIndexEntrySchema>
+const HistoricalSnapshotsSchema = z.array(HistoricalSnapshotIndexEntrySchema).max(16_384).superRefine((entries, ctx) => {
+  const pairs = new Set<string>()
+  entries.forEach((entry, index) => {
+    const pair = `${entry.session_id}\0${entry.commitment}`
+    if (pairs.has(pair)) ctx.addIssue({ code: "custom", path: [index], message: "historical session commitment entries must be unique" })
+    pairs.add(pair)
+    if (entry.first_known_order !== index) {
+      ctx.addIssue({ code: "custom", path: [index, "first_known_order"], message: "historical snapshot order must be contiguous and immutable" })
+    }
+    if (entry.predecessor_commitment) {
+      const predecessor = [...entries.slice(0, index)].reverse().find((candidate) => candidate.session_id === entry.session_id)
+      if (!predecessor || predecessor.commitment !== entry.predecessor_commitment) {
+        ctx.addIssue({ code: "custom", path: [index, "predecessor_commitment"], message: "historical predecessor must be the immediately preceding known session commitment" })
+      }
+    } else if (entries.slice(0, index).some((candidate) => candidate.session_id === entry.session_id)) {
+      ctx.addIssue({ code: "custom", path: [index, "predecessor_commitment"], message: "a changed session commitment requires its immediate predecessor" })
+    }
+  })
+})
+
+const HistoricalPlanSessionSchema = z.object({
+  session_id: historicalId,
+  commitment: historicalSha,
+  snapshot_ref: HistoricalSnapshotReferenceSchema,
+  chunk_refs: z.array(HistoricalReferenceSchema).max(HISTORICAL_MAX_CHUNKS_PER_SESSION),
+  message_count: z.number().int().nonnegative().max(1_000_000),
+  part_count: z.number().int().nonnegative().max(10_000_000),
+  fragment_count: z.number().int().nonnegative().max(2_048),
+  byte_count: z.number().int().nonnegative().max(128 * 1024 * 1024),
+  predecessor_commitment: historicalSha.optional(),
+  assistant_message_ids: z.array(historicalId).max(2_000),
+}).strict().superRefine((entry, ctx) => {
+  if (entry.fragment_count !== entry.chunk_refs.length) ctx.addIssue({ code: "custom", path: ["fragment_count"], message: "fragment count must match chunk references" })
+  if (new Set(entry.assistant_message_ids).size !== entry.assistant_message_ids.length) ctx.addIssue({ code: "custom", path: ["assistant_message_ids"], message: "assistant message identities must be unique" })
+})
+const HistoricalCheckpointSchema = z.object({
+  stage: z.enum(["chunk", "reduction", "checker", "final"]).optional(),
+  key: z.string().max(256).optional(),
+  chunk_sha256: historicalSha,
+  child_session_id: z.string().max(256),
+  issued_at: z.iso.datetime({ offset: true }),
+  committed_at: z.iso.datetime({ offset: true }).optional(),
+  potentially_replayed: z.boolean().optional(),
+  attempts: z.number().int().nonnegative().max(100),
+  model_calls: z.number().int().nonnegative().max(1),
+  input_bytes: z.number().int().nonnegative().max(128 * 1024 * 1024),
+  output_ref: HistoricalReferenceSchema.optional(),
+}).strict().superRefine((entry, ctx) => {
+  if ((entry.model_calls === 0) !== (entry.input_bytes === 0)) ctx.addIssue({ code: "custom", path: ["input_bytes"], message: "historical child calls and input bytes must advance together" })
+})
+const HistoricalPlanRecordSchema = z.object({
+  plan_id: z.string().regex(/^hist-[a-f0-9]{32}$/),
+  plan_ref: HistoricalReferenceSchema,
+  confirmation: historicalSha,
+  state: z.enum(["previewed", "running", "resumable", "completed", "cancelled"]),
+  selected_session_ids: z.array(historicalId).min(1).max(32),
+  sessions: z.array(HistoricalPlanSessionSchema).min(1).max(32),
+  next_chunk: z.number().int().nonnegative().max(65_536),
+  model_calls: z.number().int().nonnegative().max(10_000),
+  input_bytes: z.number().int().nonnegative().max(128 * 1024 * 1024),
+  execution_epoch_ref: HistoricalReferenceSchema.optional(),
+  cancelled: z.boolean(),
+  disposition: z.enum(["disabled", "unsupported", "oversized", "unavailable", "unstable", "cross_project", "private_child", "overflow", "confirmation_mismatch", "cancelled", "completed", "discovered", "previewed", "running", "resumable"]),
+  checkpoints: z.array(HistoricalCheckpointSchema).max(4_096),
+  reduction_ref: HistoricalReferenceSchema.optional(),
+  checker_ref: HistoricalReferenceSchema.optional(),
+  final_ref: HistoricalReferenceSchema.optional(),
+  candidate_id: historicalId.optional(),
+  created_at: z.iso.datetime({ offset: true }),
+  updated_at: z.iso.datetime({ offset: true }),
+}).strict().superRefine((plan, ctx) => {
+  if (new Set(plan.selected_session_ids).size !== plan.selected_session_ids.length) ctx.addIssue({ code: "custom", path: ["selected_session_ids"], message: "selected session identities must be unique" })
+  if (plan.sessions.length !== plan.selected_session_ids.length || plan.sessions.some((session, index) => session.session_id !== plan.selected_session_ids[index])) {
+    ctx.addIssue({ code: "custom", path: ["sessions"], message: "sealed sessions must exactly match selected session order" })
+  }
+  const total = plan.sessions.reduce((sum, session) => sum + session.chunk_refs.length, 0)
+  if (plan.next_chunk > total) ctx.addIssue({ code: "custom", path: ["next_chunk"], message: "next chunk exceeds the sealed plan" })
+  if (plan.cancelled !== (plan.state === "cancelled")) ctx.addIssue({ code: "custom", path: ["cancelled"], message: "cancelled flag and state must agree" })
+})
+const HistoricalPlansSchema = z.array(HistoricalPlanRecordSchema).max(512).superRefine((plans, ctx) => {
+  const ids = new Set<string>()
+  for (const [index, plan] of plans.entries()) {
+    if (ids.has(plan.plan_id)) ctx.addIssue({ code: "custom", path: [index, "plan_id"], message: "historical plan identities must be unique" })
+    ids.add(plan.plan_id)
+  }
+})
+const HistoricalCoverageEntrySchema = z.object({
+  session_id: historicalId,
+  commitment: historicalSha,
+  plan_id: z.string().regex(/^hist-[a-f0-9]{32}$/),
+  completeness: z.literal("v1_bounded_snapshot"),
+  assistant_message_ids: z.array(historicalId).max(2_000),
+  completed_at: z.iso.datetime({ offset: true }),
+}).strict().superRefine((entry, ctx) => {
+  if (new Set(entry.assistant_message_ids).size !== entry.assistant_message_ids.length) {
+    ctx.addIssue({ code: "custom", path: ["assistant_message_ids"], message: "covered assistant identities must be unique" })
+  }
+})
+export type HistoricalCoverageEntry = z.infer<typeof HistoricalCoverageEntrySchema>
+
+export function loadHistoricalIndex(projectDirectory: string): HistoricalMutableIndex {
+  const path = storePath(projectDirectory, HISTORICAL_INDEX_FILE)
+  if (!existsSync(path)) return { schema_version: 1, kind: "skill_evolution_historical_index", revision: 0, plans: [], snapshots: [], coverage: [], updated_at: new Date(0).toISOString() }
+  const value = readBoundedJson(path, MAX_HISTORICAL_INDEX_BYTES) as HistoricalMutableIndex
+  if (!value || value.schema_version !== 1 || value.kind !== "skill_evolution_historical_index" ||
+    !Number.isSafeInteger(value.revision) || value.revision < 0 || !Array.isArray(value.plans) || value.plans.length > 512 ||
+    !Array.isArray(value.snapshots) || value.snapshots.length > 16_384 || !Array.isArray(value.coverage) || value.coverage.length > 16_384 || typeof value.updated_at !== "string") {
+    throw new Error("historical index is malformed or exceeds bounds")
+  }
+  const plans = HistoricalPlansSchema.parse(value.plans)
+  const snapshots = HistoricalSnapshotsSchema.parse(value.snapshots)
+  const coverage = z.array(HistoricalCoverageEntrySchema).max(16_384).parse(value.coverage)
+  return { ...value, plans, snapshots, coverage }
+}
+
+export function updateHistoricalIndex(
+  projectDirectory: string,
+  operation: string,
+  mutate: (index: HistoricalMutableIndex) => void,
+): HistoricalMutableIndex {
+  return withSkillEvolutionLock(projectDirectory, `historical-${operation}`, () => {
+    const index = loadHistoricalIndex(projectDirectory)
+    const expected = index.revision
+    mutate(index)
+    if (index.revision !== expected) throw new Error("historical index revision must be changed only by CAS")
+    const current = loadHistoricalIndex(projectDirectory)
+    if (current.revision !== expected) throw new Error("historical index changed concurrently")
+    const next = { ...index, revision: expected + 1, updated_at: nowIso() }
+    HistoricalPlansSchema.parse(next.plans)
+    HistoricalSnapshotsSchema.parse(next.snapshots)
+    z.array(HistoricalCoverageEntrySchema).max(16_384).parse(next.coverage)
+    if (serializedBytes(next) > MAX_HISTORICAL_INDEX_BYTES) throw new Error("historical index exceeds aggregate bound")
+    atomicWriteFile(storePath(projectDirectory, HISTORICAL_INDEX_FILE), `${JSON.stringify(next, null, 2)}\n`, true)
+    return next
+  })
+}
+
+export function isHistoricalAssistantCovered(projectDirectory: string, sessionId: string, messageId: string): boolean {
+  return loadHistoricalIndex(projectDirectory).coverage.some((entry) =>
+    entry.session_id === sessionId && entry.assistant_message_ids.includes(messageId))
+}
+
+/** Reconciles only retryable work; terminal candidate/no-change outcomes and candidate objects are retained. */
+export function reconcileHistoricalCoverage(projectDirectory: string, sessionId: string, assistantMessageIds: string[]): void {
+  if (!assistantMessageIds.length) return
+  const covered = new Set(assistantMessageIds)
+  withSkillEvolutionLock(projectDirectory, "historical-ledger-reconcile", () => {
+    const ledger = loadSkillLedger(projectDirectory)
+    let changed = false
+    for (const record of ledger.records) {
+      if (record.session_id !== sessionId || !covered.has(record.message_id) || record.status === "candidate" || record.status === "no-change") continue
+      record.status = "no-change"
+      record.updated_at = nowIso()
+      record.error = HISTORICAL_COVERAGE_LEDGER_NOTE
+      changed = true
+    }
+    if (changed) saveLedger(projectDirectory, ledger, ledger.revision)
+  })
+}
+
+export function publishHistoricalCoverage(
+  projectDirectory: string,
+  entry: Omit<HistoricalCoverageEntry, "completed_at"> & { completed_at?: string },
+): void {
+  const completed = HistoricalCoverageEntrySchema.parse({ ...entry, completed_at: entry.completed_at ?? nowIso() })
+  updateHistoricalIndex(projectDirectory, "coverage", (index) => {
+    if (!index.coverage.some((value) => value.session_id === completed.session_id && value.commitment === completed.commitment)) {
+      index.coverage.push(completed)
+    }
+  })
+  reconcileHistoricalCoverage(projectDirectory, completed.session_id, completed.assistant_message_ids)
 }
 
 export function persistSkillEvidence(projectDirectory: string, evidence: SkillEvidence) {
@@ -460,7 +1082,7 @@ export function persistSkillEvidence(projectDirectory: string, evidence: SkillEv
   const expectedId = createHash("sha256").update(canonicalJson(withoutId), "utf8").digest("hex")
   if (evidenceId !== expectedId) throw new Error("evidence id does not match canonical evidence bytes")
   const path = immutablePathFor(project, "evidence", `${parsed.evidence_id}.json`)
-  const integrity = writeImmutable(path, parsed, parsed.truncation.aggregate_byte_limit)
+  const integrity = writeImmutable(project, path, parsed, parsed.truncation.aggregate_byte_limit)
   if (integrity.sha256 !== createHash("sha256").update(canonicalJson(parsed), "utf8").digest("hex")) {
     throw new Error("evidence immutable hash mismatch")
   }
@@ -484,7 +1106,7 @@ export function loadEvidenceReference(projectDirectory: string, reference: { pat
 function revisionReference(project: string, revision: SkillCandidateRevision) {
   const hash = sha256Json(revision)
   const path = immutablePathFor(project, "revisions", `${revision.candidate_id}-r${revision.revision}-${hash}.json`)
-  const integrity = writeImmutable(path, revision)
+  const integrity = writeImmutable(project, path, revision)
   if (integrity.sha256 !== hash) throw new Error("candidate revision hash mismatch")
   return { path: projectRelative(project, path), ...integrity }
 }
@@ -504,7 +1126,117 @@ export function loadCandidateRevision(projectDirectory: string, record: SkillCan
   }
   const loaded = SkillCandidateRevisionSchema.parse(JSON.parse(bytes.toString("utf8")))
   if (loaded.candidate_id !== record.candidate_id || loaded.revision !== revision) throw new Error("candidate revision identity mismatch")
+  if (canonicalJson(loaded.historical_binding ?? null) !== canonicalJson(record.historical_binding ?? null)) {
+    throw new Error("candidate revision historical provenance binding mismatch")
+  }
   return loaded
+}
+
+interface ReviewedLiveCandidate {
+  candidate: SkillCandidateRecord
+  evidence: SkillEvidence
+}
+
+/**
+ * Recognize only the deterministic live candidate for this exact assistant
+ * identity after proving its immutable evidence, auditor output, and (for a
+ * skill) checker verdict/child binding. A merely schema-valid or manually
+ * indexed candidate is not authoritative review coverage.
+ */
+function reviewedLiveCandidate(
+  projectDirectory: string,
+  index: SkillCandidateIndex,
+  sessionId: string,
+  messageId: string,
+  ledger = loadSkillLedger(projectDirectory),
+): ReviewedLiveCandidate | null {
+  const key = skillLedgerKey(sessionId, messageId)
+  const candidateId = `se-${key.slice(0, 24)}`
+  const matchingCandidates = index.candidates.filter((entry) => entry.candidate_id === candidateId)
+  if (matchingCandidates.length !== 1) return null
+  const candidate = matchingCandidates[0]!
+  if (candidate.historical_binding || candidate.provenance.session_id !== sessionId ||
+    candidate.provenance.assistant_message_id !== messageId || candidate.evidence_refs.length !== 1) return null
+  try {
+    const initial = loadCandidateRevision(projectDirectory, candidate, 1)
+    const current = loadCandidateRevision(projectDirectory, candidate)
+    const evidence = loadEvidenceReference(projectDirectory, candidate.evidence_refs[0]!)
+    const output = initial.auditor_output
+    const auditorChildren = ledger.audit_children.filter((entry) => entry.session_id === candidate.auditor_child_id &&
+      entry.parent_id === sessionId && entry.role === "auditor")
+    if (!output || initial.historical_binding || current.state !== candidate.state ||
+      auditorChildren.length !== 1 ||
+      canonicalJson(output.provenance) !== canonicalJson(candidate.provenance) ||
+      canonicalJson(evidence.provenance) !== canonicalJson(candidate.provenance) ||
+      output.triggers.some((label) => !evidence.trigger_labels.includes(label)) ||
+      initial.created_at !== candidate.created_at || output.decision !== candidate.decision) return null
+
+    const skill = output.decision === "skill_candidate" || output.decision === "skill_revision"
+    if (skill) {
+      const checker = initial.checker_output
+      const passed = checker?.passed === true
+      const checkerChildren = ledger.audit_children.filter((entry) => entry.session_id === candidate.checker_child_id &&
+        entry.parent_id === sessionId && entry.role === "checker")
+      if (candidate.type !== "skill" || candidate.target !== output.skill.target || !candidate.checker_child_id || !checker ||
+        checkerChildren.length !== 1 ||
+        initial.actor_session_id !== candidate.checker_child_id || initial.state !== (passed ? "validated" : "proposed") ||
+        initial.event !== (passed ? "checker_passed" : "checker_failed") ||
+        canonicalJson(candidate.checker_findings) !== canonicalJson(checker.findings)) return null
+    } else if (output.decision === "memory_candidate") {
+      if (candidate.type !== "memory" || candidate.target !== null || candidate.checker_child_id !== null ||
+        initial.checker_output || initial.actor_session_id !== sessionId || initial.state !== "proposed" ||
+        initial.event !== "proposed" || candidate.checker_findings.length !== 0) return null
+    } else return null
+    return { candidate, evidence }
+  } catch {
+    return null
+  }
+}
+
+export function findReviewedLiveSkillCandidate(projectDirectory: string, sessionId: string, messageId: string): SkillCandidateRecord | null {
+  const project = canonicalDirectory(projectDirectory)
+  const key = skillLedgerKey(sessionId, messageId)
+  const ledger = loadSkillLedger(project)
+  if (ledger.records.filter((entry) => entry.key === key && entry.session_id === sessionId && entry.message_id === messageId).length !== 1) return null
+  return reviewedLiveCandidate(project, loadSkillCandidates(project), sessionId, messageId, ledger)?.candidate ?? null
+}
+
+/** Caller holds the project mutation lock and supplies current mutable records. */
+function finalizeReviewedLiveCandidateLocked(
+  ledger: SkillEvolutionLedger,
+  claims: z.infer<typeof ReviewClaimsSchema>,
+  key: string,
+  reviewed: ReviewedLiveCandidate,
+): { ledgerChanged: boolean; claimsChanged: boolean } {
+  const record = ledger.records.find((entry) => entry.key === key)
+  if (!record || record.session_id !== reviewed.candidate.provenance.session_id ||
+    record.message_id !== reviewed.candidate.provenance.assistant_message_id) {
+    throw new Error("review-backed live candidate ledger identity is unavailable")
+  }
+  const ledgerChanged = record.status !== "candidate" || record.candidate_id !== reviewed.candidate.candidate_id ||
+    canonicalJson(record.evidence_ref ?? null) !== canonicalJson(reviewed.candidate.evidence_refs[0]) ||
+    record.trigger_score !== reviewed.evidence.trigger_score ||
+    canonicalJson(record.trigger_labels ?? null) !== canonicalJson(reviewed.evidence.trigger_labels) || record.error !== undefined
+  record.status = "candidate"
+  record.candidate_id = reviewed.candidate.candidate_id
+  record.evidence_ref = reviewed.candidate.evidence_refs[0]
+  record.trigger_score = reviewed.evidence.trigger_score
+  record.trigger_labels = reviewed.evidence.trigger_labels
+  record.updated_at = nowIso()
+  delete record.error
+
+  const claim = claims.claims.find((entry) => entry.session_id === record.session_id && entry.message_id === record.message_id)
+  const claimsChanged = Boolean(claim && claim.owner_kind === "live" && claim.owner_work_id === key && claim.state !== "completed")
+  if (claim && claim.owner_kind === "live" && claim.owner_work_id === key) {
+    claim.state = "completed"
+    claim.updated_at = nowIso()
+  }
+  return { ledgerChanged, claimsChanged }
+}
+
+export interface SkillCandidateCreationHooks {
+  /** Deterministic crash seam after candidate index durability, before live terminal state. */
+  afterCandidatesSave?: (candidate: SkillCandidateRecord) => void
 }
 
 export function createSkillCandidate(
@@ -516,13 +1248,68 @@ export function createSkillCandidate(
   checkerChildId: string | null,
   checker: SkillCheckerOutput | null,
   options: SkillEvolutionOptions,
+  historicalBinding?: HistoricalCandidateBinding,
+  liveOutcome?: { session_id: string; message_id: string; trigger_score: number; trigger_labels: SkillLedgerRecord["trigger_labels"] },
+  hooks: SkillCandidateCreationHooks = {},
 ): SkillCandidateRecord {
   return withSkillEvolutionLock(projectDirectory, "candidate-create", () => {
     const project = canonicalDirectory(projectDirectory)
     const index = loadSkillCandidates(project)
-    const candidateId = `se-${ledgerKey.slice(0, 24)}`
+    const binding = historicalBinding ? HistoricalCandidateBindingSchema.parse(historicalBinding) : undefined
+    if (binding) {
+      // Candidate publication and historical cancellation share this project
+      // mutation lock. Rechecking the durable plan here makes their ordering
+      // atomic: a cancellation committed first suppresses publication, while a
+      // cancellation waiting on this lock necessarily occurs afterward.
+      const historical = loadHistoricalIndex(project)
+      const expectedPlanId = `hist-${binding.plan_confirmation.slice(0, 32)}`
+      const plans = historical.plans.filter((plan: any) => plan.plan_id === expectedPlanId && plan.confirmation === binding.plan_confirmation)
+      const plan = plans[0] as any
+      if (plans.length !== 1 || !plan || plan.cancelled || plan.state !== "running" ||
+        canonicalJson(plan.reduction_ref ?? null) !== canonicalJson(binding.reduction_ref) ||
+        canonicalJson(plan.checker_ref ?? null) !== canonicalJson(binding.checker_ref)) {
+        throw new Error("historical candidate publication suppressed because the confirmed plan is not actively publishable")
+      }
+    }
+    if (liveOutcome) {
+      const claims = loadReviewClaims(project)
+      const claim = claims.claims.find((item) => item.session_id === liveOutcome.session_id && item.message_id === liveOutcome.message_id)
+      const evidence = loadEvidenceReference(project, evidenceRef)
+      if (ledgerKey !== skillLedgerKey(liveOutcome.session_id, liveOutcome.message_id) ||
+        output.provenance.session_id !== liveOutcome.session_id || output.provenance.assistant_message_id !== liveOutcome.message_id ||
+        canonicalJson(evidence.provenance) !== canonicalJson(output.provenance) || evidence.trigger_score !== liveOutcome.trigger_score ||
+        canonicalJson(evidence.trigger_labels) !== canonicalJson(liveOutcome.trigger_labels ?? []) ||
+        isHistoricalAssistantCovered(project, liveOutcome.session_id, liveOutcome.message_id) || !claim || claim.owner_kind !== "live" ||
+        claim.owner_work_id !== ledgerKey || claim.fencing_token !== liveReviewFencingToken(ledgerKey) || claim.state !== "active") {
+        throw new Error("live review publication suppressed because ownership was lost")
+      }
+    }
+    const candidateId = binding ? `se-h-${sha256Json(binding).slice(0, 40)}` : `se-${ledgerKey.slice(0, 24)}`
     const existing = index.candidates.find((candidate) => candidate.candidate_id === candidateId)
-    if (existing) return existing
+    if (existing) {
+      if (!binding) {
+        if (liveOutcome) {
+          const ledger = loadSkillLedger(project)
+          const reviewed = reviewedLiveCandidate(project, index, liveOutcome.session_id, liveOutcome.message_id, ledger)
+          if (!reviewed || reviewed.candidate.candidate_id !== existing.candidate_id) {
+            throw new Error("existing live candidate lacks exact durable review provenance")
+          }
+          const claims = loadReviewClaims(project)
+          const finalized = finalizeReviewedLiveCandidateLocked(ledger, claims, ledgerKey, reviewed)
+          if (finalized.claimsChanged) saveReviewClaimsLocked(project, claims)
+          if (finalized.ledgerChanged) saveLedger(project, ledger, ledger.revision)
+        }
+        return existing
+      }
+      const revision = loadCandidateRevision(project, existing, 1)
+      const exact = canonicalJson(existing.historical_binding ?? null) === canonicalJson(binding ?? null) &&
+        canonicalJson(revision.historical_binding ?? null) === canonicalJson(binding ?? null) &&
+        canonicalJson(revision.auditor_output ?? null) === canonicalJson(output) && canonicalJson(revision.checker_output ?? null) === canonicalJson(checker) &&
+        canonicalJson(existing.evidence_refs[0] ?? null) === canonicalJson(evidenceRef) && existing.auditor_child_id === auditorChildId &&
+        existing.checker_child_id === checkerChildId
+      if (!exact) throw new Error("existing historical candidate identity has unequal durable provenance")
+      return existing
+    }
     if (index.candidates.length >= options.maxCandidates) throw new Error("skill-evolution candidate capacity reached")
     if ((output.decision === "skill_candidate" || output.decision === "skill_revision") &&
       utf8Bytes(output.skill.content) > options.maxCandidateContentBytes) {
@@ -546,6 +1333,7 @@ export function createSkillCandidate(
       created_at: createdAt,
       auditor_output: output,
       ...(checker ? { checker_output: checker } : {}),
+      ...(binding ? { historical_binding: binding } : {}),
     })
     const ref = revisionReference(project, revision)
     const record = SkillCandidateRecordSchemaCompat({
@@ -561,6 +1349,7 @@ export function createSkillCandidate(
       auditor_child_id: auditorChildId,
       checker_child_id: checkerChildId,
       checker_findings: checker?.findings ?? [],
+      ...(binding ? { historical_binding: binding } : {}),
       created_at: createdAt,
       updated_at: createdAt,
       promoted_hash: null,
@@ -570,7 +1359,18 @@ export function createSkillCandidate(
     })
     index.candidates.push(record)
     const saved = saveCandidates(project, index, index.revision)
-    return saved.candidates.find((candidate) => candidate.candidate_id === candidateId)!
+    const persisted = saved.candidates.find((candidate) => candidate.candidate_id === candidateId)!
+    hooks.afterCandidatesSave?.(persisted)
+    if (liveOutcome) {
+      const ledger = loadSkillLedger(project)
+      const reviewed = reviewedLiveCandidate(project, saved, liveOutcome.session_id, liveOutcome.message_id, ledger)
+      if (!reviewed || reviewed.candidate.candidate_id !== candidateId) throw new Error("persisted live candidate lacks exact durable review provenance")
+      const claims = loadReviewClaims(project)
+      const finalized = finalizeReviewedLiveCandidateLocked(ledger, claims, ledgerKey, reviewed)
+      if (finalized.claimsChanged) saveReviewClaimsLocked(project, claims)
+      if (finalized.ledgerChanged) saveLedger(project, ledger, ledger.revision)
+    }
+    return persisted
   })
 }
 
@@ -628,6 +1428,7 @@ export function appendSkillCandidateRevisionLocked(
       actor_session_id: change.actorSessionId,
       reason: change.reason,
       created_at: nowIso(),
+      ...(record.historical_binding ? { historical_binding: record.historical_binding } : {}),
       ...(change.checkerOutput ? { checker_output: change.checkerOutput } : {}),
       ...(change.promotion ? { promotion: change.promotion } : {}),
     })
@@ -784,7 +1585,7 @@ export function transactionJournalPath(project: string, transactionId: string): 
 export function writeSkillTransaction(projectDirectory: string, journal: SkillTransactionJournal): string {
   const parsed = SkillTransactionJournalSchema.parse(journal)
   const path = transactionJournalPath(projectDirectory, parsed.transaction_id)
-  writeImmutable(path, parsed, 64 * 1024)
+  writeImmutable(canonicalDirectory(projectDirectory), path, parsed, 64 * 1024)
   return path
 }
 

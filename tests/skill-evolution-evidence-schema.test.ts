@@ -155,6 +155,12 @@ describe("skill-evolution options and strict schemas", () => {
     expect(SkillEvolutionLedgerSchema.safeParse(ledger).success).toBe(true)
     expect(SkillEvolutionLedgerSchema.safeParse({ ...ledger, extra: true }).success).toBe(false)
     expect(SkillEvolutionLedgerSchema.safeParse({ ...ledger, revision: -1 }).success).toBe(false)
+    const auditChild = { session_id: "child", parent_id: "parent", title: "private audit", role: "auditor", registered_at: timestamp }
+    expect(SkillEvolutionLedgerSchema.safeParse({ ...ledger, audit_children: [auditChild, auditChild] }).success).toBe(false)
+    expect(SkillEvolutionLedgerSchema.safeParse({
+      ...ledger,
+      audit_children: [auditChild, { ...auditChild, title: "private check", role: "checker" }],
+    }).success).toBe(false)
 
     const record = {
       candidate_id: "se-candidate",

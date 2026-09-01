@@ -54,6 +54,7 @@ export class FilesystemMutexContentionError extends FilesystemMutexError {
 export interface FilesystemMutex {
   path: string
   token: string
+  assertHeld(): void
   renew(): void
   release(): void
 }
@@ -373,6 +374,14 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
   return {
     path,
     token,
+    assertHeld() {
+      if (released || lost) throw new FilesystemMutexError("mutex is no longer held")
+      const current = readVerified(path)
+      if (current.token !== token || Date.parse(current.expires_at) <= now()) {
+        lost = true
+        throw new FilesystemMutexError("mutex token changed or expired")
+      }
+    },
     renew,
     release() {
       if (released) return

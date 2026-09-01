@@ -9,6 +9,7 @@ import type { AgentModelMap, ModelResolutionMap, ModelRef } from "./types.ts"
 import { snapshotModelResolutions } from "./models.ts"
 import { assertTextBytes, utf8Bytes } from "./limits.ts"
 import { buildSkillEvidence } from "./skill-evolution-evidence.ts"
+import { ALG_SKILL_HISTORICAL_TITLE_PREFIX, HistoricalInitializer, type HistoricalToolResult } from "./skill-evolution-historical.ts"
 import {
   AuditorOutputSchema,
   SkillCheckerOutputSchema,
@@ -25,11 +26,15 @@ import {
   enqueueSkillAudit,
   failSkillAudit,
   isRegisteredSkillAuditChild,
+  isHistoricalAssistantCovered,
   loadSkillCandidates,
   loadSkillLedger,
-  markSkillLedgerOutcome,
+  liveReviewFencingToken,
+  liveReviewStillOwned,
+  markLiveSkillLedgerOutcome,
   persistSkillEvidence,
   recoverPendingSkillAudits,
+  reconcileHistoricalCoverage,
   recoverSkillTransactions,
   registerSkillAuditChild,
   skillLedgerKey,
@@ -49,7 +54,8 @@ type Client = PluginInput["client"]
 type PromptBody = NonNullable<Parameters<Client["session"]["prompt"]>[0]["body"]> & { variant?: string }
 
 function privateTitle(title: string): boolean {
-  return title.startsWith(ALG_SKILL_AUDIT_TITLE_PREFIX) || title.startsWith(ALG_SKILL_CHECK_TITLE_PREFIX)
+  return title.startsWith(ALG_SKILL_AUDIT_TITLE_PREFIX) || title.startsWith(ALG_SKILL_CHECK_TITLE_PREFIX) ||
+    title.startsWith(ALG_SKILL_HISTORICAL_TITLE_PREFIX)
 }
 
 function responseText(parts: unknown): string {
@@ -161,6 +167,7 @@ export class SkillEvolutionRuntime {
   private active = false
   private disposed = false
   private restartRequired = false
+  private readonly historical: HistoricalInitializer
 
   constructor(plugin: PluginInput, config: SkillEvolutionRuntimeConfig) {
     this.plugin = plugin
@@ -175,6 +182,36 @@ export class SkillEvolutionRuntime {
       throw new Error("skill-evolution child call timeout must be a positive safe integer")
     }
     this.childCallTimeoutMs = config.childCallTimeoutMs ?? DEFAULT_CHILD_CALL_TIMEOUT_MS
+    this.historical = new HistoricalInitializer(
+      plugin,
+      this.options,
+      () => snapshotModelResolutions(this.project, this.configuredResolutions(), this.configuredModels()),
+      (parentId, role, prompt, model, cancelled, timeoutMs) => this.child(parentId, role === "checker" ? "historical-checker" : "historical-auditor", prompt, cancelled, timeoutMs, model),
+      (sessionId, snapshot, output, auditorChildId, checkerChildId, checker, historicalBinding) => {
+        if (output.decision !== "skill_candidate" && output.decision !== "skill_revision") {
+          throw new Error("historical reduction may forward only skill candidates to the checker pipeline")
+        }
+        const encoded = (snapshot as any)?.canonical_base64
+        if (typeof encoded !== "string") throw new Error("historical snapshot canonical payload is unavailable")
+        const grouped = new Map<string, any>()
+        for (const line of Buffer.from(encoded, "base64").toString("utf8").split("\n")) {
+          if (!line) continue
+          const record = JSON.parse(line)
+          const info = record?.info
+          if (!info || typeof info.id !== "string") throw new Error("historical snapshot record is malformed")
+          const envelope = grouped.get(info.id) ?? { info, parts: [] }
+          if (record.part !== null) envelope.parts.push(record.part)
+          grouped.set(info.id, envelope)
+        }
+        const messages = [...grouped.values()]
+        const evidence = buildSkillEvidence(messages, sessionId, output.provenance.assistant_message_id, this.options, true)
+        const validated = this.validateAuditor(output, evidence)
+        const evidenceRef = persistSkillEvidence(this.project, evidence)
+        return createSkillCandidate(this.project, skillLedgerKey(sessionId, output.provenance.assistant_message_id), validated,
+          evidenceRef, auditorChildId, checkerChildId, checker, this.options, historicalBinding)
+      },
+      this.abort.signal,
+    )
     if (this.options.enabled) {
       try {
         const transactions = recoverSkillTransactions(this.project, this.options)
@@ -323,7 +360,7 @@ export class SkillEvolutionRuntime {
    * Bounds an SDK call even when its implementation ignores AbortSignal. Each
    * call gets its own signal linked to both runtime disposal and its deadline.
    */
-  private boundedChildCall<T>(label: string, operation: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  private boundedChildCall<T>(label: string, operation: (signal: AbortSignal) => Promise<T>, timeoutMs = this.childCallTimeoutMs): Promise<T> {
     const controller = new AbortController()
     return new Promise<T>((resolve, reject) => {
       let settled = false
@@ -341,8 +378,8 @@ export class SkillEvolutionRuntime {
       }
       const timer = setTimeout(() => {
         controller.abort(`${label} timed out`)
-        finish(new Error(`${label} timed out after ${this.childCallTimeoutMs} ms`))
-      }, this.childCallTimeoutMs)
+        finish(new Error(`${label} timed out after ${timeoutMs} ms`))
+      }, timeoutMs)
       this.abort.signal.addEventListener("abort", onDispose, { once: true })
       if (this.abort.signal.aborted) {
         onDispose()
@@ -357,29 +394,40 @@ export class SkillEvolutionRuntime {
 
   private async child(
     parentId: string,
-    role: "auditor" | "checker",
+    role: "auditor" | "checker" | "historical-auditor" | "historical-checker",
     prompt: string,
+    cancelled: () => boolean = () => false,
+    timeoutMs = this.childCallTimeoutMs,
+    plannedModel?: ModelRef,
   ): Promise<ChildResult> {
-    const maximum = role === "auditor" ? MAX_AUDITOR_PROMPT_BYTES : MAX_CHECKER_PROMPT_BYTES
+    const checkerRole = role === "checker" || role === "historical-checker"
+    const historicalRole = role.startsWith("historical-")
+    const maximum = checkerRole ? MAX_CHECKER_PROMPT_BYTES : MAX_AUDITOR_PROMPT_BYTES
     assertTextBytes(prompt, maximum, `skill-evolution ${role} prompt`)
-    const prefix = role === "auditor" ? ALG_SKILL_AUDIT_TITLE_PREFIX : ALG_SKILL_CHECK_TITLE_PREFIX
+    const prefix = historicalRole ? ALG_SKILL_HISTORICAL_TITLE_PREFIX : role === "auditor" ? ALG_SKILL_AUDIT_TITLE_PREFIX : ALG_SKILL_CHECK_TITLE_PREFIX
     const title = `${prefix}${randomUUID()}`
+    const deadline = historicalRole ? Date.now() + timeoutMs : null
+    const callTimeout = () => deadline === null ? this.childCallTimeoutMs : Math.max(1, Math.min(this.childCallTimeoutMs, deadline - Date.now()))
     let childId = ""
     try {
+      if (cancelled()) return { sessionId: "", parsed: null, error: "skill-evolution review cancelled before child create" }
       const created = await this.boundedChildCall(`${role} session.create`, (signal) => this.client.session.create({
         body: { parentID: parentId, title }, query: { directory: this.directory },
         responseStyle: "fields", throwOnError: false, signal,
-      }))
+      }), callTimeout())
       if (created.error) return { sessionId: "", parsed: null, error: formatSdkDiagnostic("session.create failed: ", created.error) }
       childId = created.data?.id ?? ""
       if (!childId) return { sessionId: "", parsed: null, error: "session.create returned no child id" }
       // Pre-register immediately. The session.created event path handles the race where it arrived first.
       registerSkillAuditChild(this.project, {
-        session_id: childId, parent_id: parentId, title, role,
+        session_id: childId, parent_id: parentId, title, role: checkerRole ? "checker" : "auditor",
       })
-      const model = this.model(role === "auditor" ? "researcher" : "checker")
+      if (cancelled()) return { sessionId: childId, parsed: null, error: "skill-evolution review cancelled before child prompt" }
+      // Historical calls are bound to the immutable plan. In particular, do
+      // not resolve again after session.create, where configuration can race.
+      const model = historicalRole ? plannedModel : this.model(checkerRole ? "checker" : "researcher")
       const body: PromptBody = {
-        agent: role === "auditor" ? this.options.auditorAgent : this.options.checkerAgent,
+        agent: checkerRole ? this.options.checkerAgent : this.options.auditorAgent,
         ...(model ? { model: { providerID: model.providerID, modelID: model.modelID } } : {}),
         ...(model?.variant ? { variant: model.variant } : {}),
         tools: {
@@ -403,7 +451,7 @@ export class SkillEvolutionRuntime {
       const prompted = await this.boundedChildCall(`${role} session.prompt`, (signal) => this.client.session.prompt({
         path: { id: childId }, query: { directory: this.directory }, body,
         responseStyle: "fields", throwOnError: false, signal,
-      }))
+      }), callTimeout())
       if (prompted.error) return { sessionId: childId, parsed: null, error: formatSdkDiagnostic("session.prompt failed: ", prompted.error) }
       const text = responseText(prompted.data?.parts)
       return { sessionId: childId, parsed: extractJson(text) }
@@ -436,27 +484,50 @@ export class SkillEvolutionRuntime {
   private async process(key: string, manual: boolean): Promise<void> {
     const running = beginSkillAudit(this.project, key, this.options)
     if (running.status !== "running") return
+    const fencingToken = liveReviewFencingToken(key)
+    const reviewLost = () => !liveReviewStillOwned(
+      this.project, running.session_id, running.message_id, key, fencingToken,
+    )
+    const cancelled = () => this.disposed || reviewLost()
+    const stopped = () => {
+      if (this.disposed) throw new Error("skill-evolution live review aborted because the runtime was disposed")
+      return reviewLost()
+    }
+    if (stopped()) {
+      if (isHistoricalAssistantCovered(this.project, running.session_id, running.message_id)) {
+        reconcileHistoricalCoverage(this.project, running.session_id, [running.message_id])
+      }
+      return
+    }
     if (this.deletedSessions.has(running.session_id)) throw new Error("session was deleted before audit")
     if (isRegisteredSkillAuditChild(this.project, running.session_id)) throw new Error("audit child sessions are recursion-excluded")
     const session = await this.getSession(running.session_id)
+    // session.get and session.messages are separate SDK effects. Recheck the
+    // exact durable live owner/token and historical coverage between them.
+    if (stopped()) return
     if (privateTitle(String(session.title ?? ""))) throw new Error("private audit/check session is recursion-excluded")
     if (session.parentID && isRegisteredSkillAuditChild(this.project, session.id)) throw new Error("registered audit child is recursion-excluded")
-    const evidence = buildSkillEvidence(await this.messages(running.session_id), running.session_id, running.message_id, this.options, manual)
+    const messages = await this.messages(running.session_id)
+    if (stopped()) return
+    const evidence = buildSkillEvidence(messages, running.session_id, running.message_id, this.options, manual)
     const evidenceRef = persistSkillEvidence(this.project, evidence)
     if (!manual && this.options.mode === "triggered" && evidence.trigger_score < this.options.minimumTriggerScore) {
-      markSkillLedgerOutcome(this.project, key, {
+      if (stopped()) return
+      markLiveSkillLedgerOutcome(this.project, key, {
         status: "no-change", trigger_score: evidence.trigger_score, trigger_labels: evidence.trigger_labels, evidence_ref: evidenceRef,
       })
       return
     }
     const prompt = auditorPrompt(evidence)
+    if (stopped()) return
     if (utf8Bytes(prompt) > MAX_AUDITOR_PROMPT_BYTES) throw new Error("auditor prompt exceeds bound")
-    const audited = await this.child(running.session_id, "auditor", prompt)
+    const audited = await this.child(running.session_id, "auditor", prompt, cancelled)
+    if (stopped()) return
     if (audited.error) throw new Error(audited.error)
     if (!audited.sessionId || audited.parsed === null) throw new Error("auditor returned malformed strict JSON")
     const output = this.validateAuditor(audited.parsed, evidence)
     if (output.decision === "no_change") {
-      markSkillLedgerOutcome(this.project, key, {
+      markLiveSkillLedgerOutcome(this.project, key, {
         status: "no-change", trigger_score: evidence.trigger_score, trigger_labels: evidence.trigger_labels, evidence_ref: evidenceRef,
       })
       return
@@ -465,19 +536,19 @@ export class SkillEvolutionRuntime {
     let checkerResult: ReturnType<typeof SkillCheckerOutputSchema.parse> | null = null
     let checkerChildId: string | null = null
     if (output.decision === "skill_candidate" || output.decision === "skill_revision") {
-      const checked = await this.child(running.session_id, "checker", checkerPrompt(output))
+      if (stopped()) return
+      const checked = await this.child(running.session_id, "checker", checkerPrompt(output), cancelled)
+      if (stopped()) return
       checkerChildId = checked.sessionId || null
       if (checked.error) throw new Error(checked.error)
       if (!checkerChildId || checked.parsed === null) throw new Error("checker returned malformed strict JSON")
       checkerResult = SkillCheckerOutputSchema.parse(checked.parsed)
     }
-    const candidate = createSkillCandidate(
+    if (stopped()) return
+    createSkillCandidate(
       this.project, key, output, evidenceRef, audited.sessionId, checkerChildId, checkerResult, this.options,
+      undefined, { session_id: running.session_id, message_id: running.message_id, trigger_score: evidence.trigger_score, trigger_labels: evidence.trigger_labels },
     )
-    markSkillLedgerOutcome(this.project, key, {
-      status: "candidate", trigger_score: evidence.trigger_score, trigger_labels: evidence.trigger_labels,
-      evidence_ref: evidenceRef, candidate_id: candidate.candidate_id,
-    })
   }
 
   async manualAudit(request: ManualAuditRequest): Promise<{ record: SkillLedgerRecord; enqueued: boolean; candidate?: SkillCandidateRecord }> {
@@ -501,6 +572,10 @@ export class SkillEvolutionRuntime {
     if (result.enqueued) this.schedule(result.record.key, true)
     const candidate = result.record.candidate_id ? loadSkillCandidates(this.project).candidates.find((item) => item.candidate_id === result.record.candidate_id) : undefined
     return { record: result.record, enqueued: result.enqueued, ...(candidate ? { candidate } : {}) }
+  }
+
+  historicalInitialize(input: unknown): Promise<HistoricalToolResult> {
+    return this.historical.execute(input)
   }
 
   status() {

@@ -290,13 +290,16 @@ not require a top-level state migration. The retained-generation rollback check
 still requires both source and target declarations to claim mutual durable-state
 compatibility before registrations change.
 
-v0.3.0 adds five server tool IDs after the existing run tools:
+The current contract contains six skill-evolution server tool IDs after the existing run tools:
 `alg_skill_evolution_status`, `alg_skill_evolution_audit`,
+`alg_skill_evolution_historical`,
 `alg_skill_evolution_review`, `alg_skill_evolution_promote`, and
 `alg_skill_evolution_rollback`. Together with the existing IDs, live proof
-requires the exact ordered set of 14 while isolated verification keeps skill
+requires the exact ordered set of 15 while isolated verification keeps skill
 evolution disabled. The new runtime modules are automatically included by the
-bounded `src/**/*.ts` source identity and npm package allowlist.
+bounded `src/**/*.ts` source identity and npm package allowlist: the exact six
+skill-evolution modules are evidence, historical, runtime, schemas, store, and
+tools.
 
 Skill evolution has no implicit migration or activation:
 
@@ -318,8 +321,14 @@ Skill evolution has no implicit migration or activation:
    package downgrade if that is the intended result; created skills have no
    deletion rollback in v0.3.0.
 
+Historical initialization is not implied by that tuple. It needs the separate
+`"historical":{"enabled":true}` option and exact preview confirmation. Its
+guarantee is `v1_bounded_snapshot`; V1 list transport is unbounded, message
+overflow and unstable repeated reads fail closed, and effectiveness benchmarking
+and v2 support are deferred.
+
 Rolling package registration back to v0.2.0 leaves the v0.3.0 project store and
-any promoted project skills untouched. v0.2.0 does not expose the five tools and
+any promoted project skills untouched. v0.2.0 does not expose the six tools and
 does not process the tuple option; the files remain for a later v0.3.0 return or
 manual review. Do not hand-delete an unresolved skill transaction or its backup/
 claim/prepared files. Resolve/report recovery with v0.3.0 first. Restart after
