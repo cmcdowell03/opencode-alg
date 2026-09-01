@@ -21,6 +21,8 @@ import { verifyExcelManifest } from "../scripts/verify-excel-manifest.ts"
 import { sourceIdentityMessage } from "../src/source-identity.ts"
 import { ALG_TOOL_IDS, OPENCODE_ENGINE_REQUIREMENT, persistImmutableLiveEvidence, uniqueLiveEvidencePath, verificationPluginConfiguration, validateRetainedLiveEvidence } from "../scripts/live-verify.ts"
 import { ALG_TUI_REGISTRATION_SERVICE, ALG_TUI_REGISTRATION_TOKEN } from "../src/tui-registration.ts"
+import { algServerStartupMessage } from "../src/types.ts"
+import { MANAGER_VERSION } from "../scripts/manager-schema.ts"
 import { removeProject, tempProject } from "./helpers.ts"
 
 const temporary: string[] = []
@@ -38,8 +40,8 @@ function command(id: typeof RELEASE_COMMAND_IDS[number] = "typecheck") {
 
 function evidence() {
   return {
-    schema_version: 4 as const, kind: "opencode-alg-release-gate" as const,
-    generated_at: "2026-08-20T00:00:00.000Z", package_version: "0.2.0" as const,
+    schema_version: 5 as const, kind: "opencode-alg-release-gate" as const,
+    generated_at: "2026-08-20T00:00:00.000Z", package_version: "0.3.0" as const,
     source: { sha256: digest, files: 1, bytes: 1 }, release_inputs: { sha256: digest, files: 1, bytes: 1 }, commands: RELEASE_COMMAND_IDS.map((id) => command(id)),
     totals: { bun_pass: 1, bun_skip: 0, bun_fail: 0, bun_total: 1, bun_assertions: 1, bun_files: 1, manager_pass: 1, manager_skip: 0, manager_fail: 0, manager_total: 1, manager_assertions: 1, manager_files: 1, python_run: 1, python_skipped: 0, python_ok: true as const },
     excel: { manifest_sha256: digest, lock_sha256: digest, version: "0.1.8" as const, tool_count: 25 as const, eof_stdout_bytes: 0 as const },
@@ -63,6 +65,9 @@ function semanticEvidence(livePath: string) {
   }))
   const actualSnapshotDigest = createHash("sha256").update(JSON.stringify(snapshotEntries)).digest("hex")
   const serverSource = `INFO service=${ALG_TUI_REGISTRATION_SERVICE} ${sourceIdentityMessage("server", source)}`
+  const serverStartup = `timestamp=2026-08-30T08:46:45.371Z level=INFO run=c0d53d8d ` +
+    `message=${JSON.stringify(algServerStartupMessage(false))} ` +
+    `directory="D:\\\\Docker\\\\model-temp\\\\alg-live-verify-fixture\\\\project" skill_evolution_enabled=false`
   const tuiSource = `INFO service=${ALG_TUI_REGISTRATION_SERVICE} ${sourceIdentityMessage("tui", source)}`
   const cleanup = { root_pid: 1, cleanup_scope: "root-process", exit_observed: true, exit_code: 0, exit_signal: null, termination_attempted: false, termination_result: "already-exited", tree_termination_attempted: false, tree_termination_result: "not-required", best_effort_kill_attempted: false, passed: true }
   const live = {
@@ -75,7 +80,7 @@ function semanticEvidence(livePath: string) {
     },
     output_path: livePath, reason: "fixture passed",
     version: { executable_path: process.execPath, declared_engine_requirement: OPENCODE_ENGINE_REQUIREMENT, command: [process.execPath, "--version"], root_pid: 1, stdout: "1.18.18\n", stderr: "", exit_observed: true, exit_code: 0, exit_signal: null, timeout_ms: 30000, timed_out: false, cleanup, passed: true, parsed: { text: "1.18.18", major: 1, minor: 18, patch: 18 }, reason: "compatible" },
-    server: { command: [process.execPath, "serve"], root_pid: 1, endpoint: "http://127.0.0.1:1/experimental/tool/ids", readiness_attempts: 1, raw_http_status: 200, raw_http_body: JSON.stringify(ALG_TOOL_IDS), parsed_alg_ids: [...ALG_TOOL_IDS], source_identity_log: serverSource, cleanup },
+    server: { command: [process.execPath, "serve"], root_pid: 1, endpoint: "http://127.0.0.1:1/experimental/tool/ids", readiness_attempts: 1, raw_http_status: 200, raw_http_body: JSON.stringify(ALG_TOOL_IDS), parsed_alg_ids: [...ALG_TOOL_IDS], source_identity_log: serverSource, stdout_tail: serverStartup, stderr_tail: "", cleanup },
     tui: { command: [process.execPath, ROOT], root_pid: 1, registration_log: `INFO service=${ALG_TUI_REGISTRATION_SERVICE} ${ALG_TUI_REGISTRATION_TOKEN}`, source_identity_log: tuiSource, cleanup },
     temporary_environment_removed: true,
     isolation: {
@@ -169,6 +174,39 @@ afterEach(() => {
 })
 
 describe("bounded release-gate evidence", () => {
+  test("v0.3 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate", () => {
+    const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"))
+    const lock = JSON.parse(readFileSync(join(ROOT, "package-lock.json"), "utf8"))
+    expect(pkg.version).toBe("0.3.0")
+    expect(lock.version).toBe("0.3.0")
+    expect(lock.packages[""].version).toBe("0.3.0")
+    expect(pkg.opencodeAlg.durableState).toEqual({
+      format: "alg-run-state",
+      currentSchema: 2,
+      compatibleSchemas: [1, 2],
+      compatiblePackageVersions: ["0.1.0", "0.2.0", "0.3.0"],
+    })
+    expect(MANAGER_VERSION).toBe("0.2.0")
+    expect(ReleaseEvidenceSchema.parse(evidence())).toMatchObject({ schema_version: 5, package_version: "0.3.0" })
+    expect(ReleaseEvidenceSchema.safeParse({ ...evidence(), schema_version: 4 }).success).toBe(false)
+  })
+
+  test("source identity and npm allowlist automatically include every skill-evolution runtime module", () => {
+    const sourcePaths = verificationPluginConfiguration(ROOT).source.manifest.map((entry) => entry.path)
+    const packedPaths = expectedPackedPaths(ROOT)
+    for (const path of [
+      "src/skill-evolution-evidence.ts",
+      "src/skill-evolution-historical.ts",
+      "src/skill-evolution-runtime.ts",
+      "src/skill-evolution-schemas.ts",
+      "src/skill-evolution-store.ts",
+      "src/skill-evolution-tools.ts",
+    ]) {
+      expect(sourcePaths).toContain(path)
+      expect(packedPaths).toContain(path)
+    }
+  })
+
   test("strict schema rejects unknown or contradictory fields", () => {
     expect(ReleaseEvidenceSchema.parse(evidence()).passed).toBe(true)
     expect(ReleaseEvidenceSchema.safeParse({ ...evidence(), secret: "no" }).success).toBe(false)
@@ -349,7 +387,7 @@ describe("bounded release-gate evidence", () => {
     for (const [label, candidate] of cases) {
       expect(() => validateReleaseEvidenceSemantics(candidate, ROOT), label).toThrow()
     }
-  })
+  }, 15_000)
 
   test("strict live semantics reject minimal, empty, wrong-tool, manifest, and registration evidence", () => {
     const directory = tempProject("alg-adversarial-live-evidence-")
@@ -369,6 +407,16 @@ describe("bounded release-gate evidence", () => {
       { ...structuredClone(current), required_alg_tool_ids: ["alg_plan"] },
       { ...structuredClone(current), plugin_source: { ...structuredClone(current.plugin_source), runtime_manifest: { ...structuredClone(current.plugin_source.runtime_manifest), entries: [] } } },
       { ...structuredClone(current), plugin_source: { ...structuredClone(current.plugin_source), registrations: { server: ["file:///wrong"], tui: ["file:///wrong"] } } },
+      { ...structuredClone(current), no_model_calls: false },
+      { ...structuredClone(current), temporary_environment_removed: false },
+      { ...structuredClone(current), server: { ...structuredClone(current.server), stdout_tail: "", stderr_tail: "" } },
+      { ...structuredClone(current), server: { ...structuredClone(current.server), stdout_tail: current.server.stdout_tail.replace("skill_evolution_enabled=false", "skill_evolution_enabled=true") } },
+      { ...structuredClone(current), server: { ...structuredClone(current.server), parsed_alg_ids: ["alg_plan"] } },
+      { ...structuredClone(current), server: { ...structuredClone(current.server), source_identity_log: current.server.source_identity_log.replace("entry=server", "entry=tui") } },
+      { ...structuredClone(current), server: { ...structuredClone(current.server), cleanup: { ...structuredClone(current.server.cleanup), passed: false } } },
+      { ...structuredClone(current), tui: { ...structuredClone(current.tui), cleanup: { ...structuredClone(current.tui.cleanup), passed: false } } },
+      { ...structuredClone(current), isolation: { ...structuredClone(current.isolation), project_config_disabled: false } },
+      { ...structuredClone(current), isolation: { ...structuredClone(current.isolation), global_config_snapshots: { ...structuredClone(current.isolation.global_config_snapshots), unchanged: false } } },
     ]
     for (const candidate of cases) expect(() => validateRetainedLiveEvidence(candidate, ROOT)).toThrow()
   })

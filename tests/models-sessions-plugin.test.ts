@@ -17,6 +17,7 @@ import { extractJson, runNodeSession } from "../src/sessions.ts"
 import { createRun, loadRun, persistRun, runContainedPath } from "../src/store.ts"
 import { executeRun } from "../src/executor.ts"
 import { ModelRefSchema, ProjectModelSettingsSchema } from "../src/schemas.ts"
+import { ALG_TOOL_IDS, algServerStartupMessage } from "../src/types.ts"
 import { executeContext, inertClient, removeProject, tempProject } from "./helpers.ts"
 
 function toolContext(project: string) {
@@ -346,14 +347,17 @@ describe("models, SDK propagation, and registration", () => {
       expect(serverModule.id).toBe("opencode-alg")
       expect(typeof serverModule.server).toBe("function")
       expect(typeof directPlugin).toBe("function")
+      const logs: any[] = []
       const context = {
-        client: { app: { log: async () => ({ data: true, error: undefined }) } },
+        client: { app: { log: async (request: any) => { logs.push(request); return { data: true, error: undefined } } } },
         directory: project,
         worktree: project,
       } as never
       const hooks = await serverModule.server(context)
-      const names = Object.keys(hooks.tool ?? {}).sort()
-      expect(names).toEqual([
+      expect(Object.keys(hooks.tool ?? {})).toEqual([...ALG_TOOL_IDS])
+      expect(ALG_TOOL_IDS).toHaveLength(15)
+      expect(logs.map((entry) => entry.body.message)).toContain(algServerStartupMessage(false))
+      expect(Object.keys(createAlgTools(context)).sort()).toEqual([
         "alg_artifact",
         "alg_criteria",
         "alg_models",
@@ -364,7 +368,33 @@ describe("models, SDK propagation, and registration", () => {
         "alg_templates",
         "alg_transfer",
       ])
-      expect(Object.keys(createAlgTools(context))).toEqual(expect.arrayContaining(names))
+    } finally {
+      removeProject(project)
+    }
+  })
+
+  test("server consumes disabled, triggered, and every-turn plugin-tuple option payloads", async () => {
+    const project = tempProject()
+    try {
+      const logs: any[] = []
+      const context = {
+        client: { app: { log: async (request: any) => { logs.push(request); return { data: true, error: undefined } } } },
+        directory: project,
+        worktree: project,
+      } as never
+      for (const skillEvolution of [
+        { enabled: false },
+        { enabled: true, mode: "triggered" as const, skillRoots: ["project-skills"] },
+        { enabled: true, mode: "every-turn" as const, skillRoots: [".opencode/skills"] },
+      ]) {
+        const hooks = await directPlugin(context, { skillEvolution })
+        expect(Object.keys(hooks.tool ?? {})).toEqual([...ALG_TOOL_IDS])
+        await hooks.dispose?.()
+      }
+      expect(logs.map((entry) => entry.body.message)).toEqual(expect.arrayContaining([
+        algServerStartupMessage(false),
+        algServerStartupMessage(true),
+      ]))
     } finally {
       removeProject(project)
     }

@@ -1,8 +1,11 @@
 # Versioned install, update, and rollback
 
-v0.2.0 adds an opt-in release manager. The existing `scripts/install.ps1` and
-`scripts/install.sh` remain the compatible direct-install interface; they do
-not silently migrate an installation into managed layout.
+Package v0.3.0 continues the opt-in release manager introduced in v0.2.0. The
+manager and external receipt protocol deliberately remain version `0.2.0`; a
+package-version increase does not imply a manager-protocol migration. The
+existing `scripts/install.ps1` and `scripts/install.sh` remain the compatible
+direct-install interface and do not silently migrate an installation into
+managed layout.
 
 ## Managed layout
 
@@ -40,16 +43,18 @@ and mean disabled. The receipt contains no credentials or inherited environment.
 PowerShell and POSIX launchers call the same TypeScript CLI:
 
 ```powershell
-.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.2.0
-.\scripts\alg.ps1 update --tag v0.2.1
+# Fresh install, or use the update line instead from an older managed generation.
+.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.3.0
+.\scripts\alg.ps1 update --tag v0.3.0
 .\scripts\alg.ps1 doctor
 .\scripts\alg.ps1 rollback
 .\scripts\alg.ps1 uninstall --remove-agents
 ```
 
 ```sh
-./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.2.0
-./scripts/alg.sh update --tag v0.2.1
+# Fresh install, or use the update line instead from an older managed generation.
+./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.3.0
+./scripts/alg.sh update --tag v0.3.0
 ./scripts/alg.sh doctor
 ./scripts/alg.sh rollback
 ./scripts/alg.sh uninstall --remove-agents
@@ -79,6 +84,12 @@ configs and agents: complete preflight, independent exclusive backups, prepared
 files, hard-link claims, identity-checked unlink, create-if-absent publication,
 and all-file rollback preflight. It preserves comments/encodings/idempotence and
 never rename-overwrites or unchecked-deletes a detected third-party race.
+
+Both managed and direct config editors preserve an existing two-element ALG
+plugin tuple while replacing its package-root spec. This is how an explicit
+v0.3.0 server `skillEvolution` option survives package update; neither installer
+creates that option or enables the feature. Plugin options are loaded at OpenCode
+startup, not hot-reloaded.
 
 Receipt, config, and agent planning uses stable stat-before/read/stat-after
 sampling and records device/inode with exact bytes (or expected absence). Every
@@ -132,7 +143,7 @@ the process retains ambient permissions. Stage source workbooks with
 `workbook.py stage`, operate only on relative in-root copies, and run the
 read-only `workbook.py validate` afterward. openpyxl does not calculate
 formulas, the validator never claims recalculation/freshness, and optional
-LibreOffice recalculation is out of scope for v0.2.
+  LibreOffice recalculation is out of scope for Excel capability pack v0.2.
 
 ## Resolution and staging
 
@@ -158,7 +169,7 @@ npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 ```
 
 and verifies that the lockfile did not change. Bun dependency installation is
-not enabled in v0.2 because no tested no-lifecycle-script frozen mode is relied
+not enabled by manager protocol v0.2.0 because no tested no-lifecycle-script frozen mode is relied
 on. Required exports, OpenCode entry points, runtime source manifest, bundled
 agents, strict capability assets, and lock hash are checked before config writes.
 After staged npm installation, the manager also computes a bounded deterministic
@@ -263,6 +274,65 @@ dependency identity, exactly one server and TUI registration, agent status,
 previous rollback availability, and restart-pending state. The manager never
 detects that OpenCode restarted. After actually quitting and restarting, the
 user may attest that fact with `doctor --ack-restart`.
+
+## v0.2.0 to v0.3.0
+
+Use managed `update --tag v0.3.0` from an existing receipt-backed v0.2.0
+generation, or run the direct installer from the complete v0.3.0 package. The
+package and both package-lock root versions must be `0.3.0`; release evidence is
+schema 5 and binds `package_version:"0.3.0"`. Live evidence remains schema 2.
+The external manager/receipt `manager_version` remains exactly `0.2.0`, so there
+is no manager protocol conversion or mutable in-place package update.
+
+ALG run state remains current schema 2 with compatible schemas `[1,2]` and
+compatible package generations `0.1.0`, `0.2.0`, and `0.3.0`. Existing runs do
+not require a top-level state migration. The retained-generation rollback check
+still requires both source and target declarations to claim mutual durable-state
+compatibility before registrations change.
+
+The current contract contains six skill-evolution server tool IDs after the existing run tools:
+`alg_skill_evolution_status`, `alg_skill_evolution_audit`,
+`alg_skill_evolution_historical`,
+`alg_skill_evolution_review`, `alg_skill_evolution_promote`, and
+`alg_skill_evolution_rollback`. Together with the existing IDs, live proof
+requires the exact ordered set of 15 while isolated verification keeps skill
+evolution disabled. The new runtime modules are automatically included by the
+bounded `src/**/*.ts` source identity and npm package allowlist: the exact six
+skill-evolution modules are evidence, historical, runtime, schemas, store, and
+tools.
+
+Skill evolution has no implicit migration or activation:
+
+1. An existing string package-root registration remains disabled and creates no
+   skill-evolution store through event intake.
+2. Review any pre-existing ALG tuple before starting v0.3.0. Its options object
+   is now strict: the only top-level option is `skillEvolution`, and unknown
+   option names fail plugin startup instead of being ignored.
+3. To opt in, add a server tuple such as
+   `[<managed-or-direct-package-root>, {"skillEvolution":{"enabled":true,"mode":"triggered","skillRoots":[".opencode/skills"]}}]`.
+   Keep the TUI package-root registration. Quit and restart OpenCode.
+4. Enabling creates project-local state under `.opencode/skill-evolution/` and
+   may make auditor/checker model calls after eligible turns. It does not import,
+   rewrite, or delete existing skills merely because the package was upgraded.
+5. Promotion is a separate explicitly confirmed tool operation. The release
+   manager does not own `.opencode/skill-evolution/` or configured project skill
+   roots and therefore does not undo promoted skills during package rollback or
+   uninstall. Roll back an eligible promoted replacement explicitly before a
+   package downgrade if that is the intended result; created skills have no
+   deletion rollback in v0.3.0.
+
+Historical initialization is not implied by that tuple. It needs the separate
+`"historical":{"enabled":true}` option and exact preview confirmation. Its
+guarantee is `v1_bounded_snapshot`; V1 list transport is unbounded, message
+overflow and unstable repeated reads fail closed, and effectiveness benchmarking
+and v2 support are deferred.
+
+Rolling package registration back to v0.2.0 leaves the v0.3.0 project store and
+any promoted project skills untouched. v0.2.0 does not expose the six tools and
+does not process the tuple option; the files remain for a later v0.3.0 return or
+manual review. Do not hand-delete an unresolved skill transaction or its backup/
+claim/prepared files. Resolve/report recovery with v0.3.0 first. Restart after
+every update, rollback, tuple edit, promotion, or skill rollback.
 
 ## v0.1.0 to v0.2.0
 

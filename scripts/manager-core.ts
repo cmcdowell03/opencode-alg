@@ -884,7 +884,7 @@ function packageDurableCompatibility(pkg: Record<string, any>, version: string):
       format: "alg-run-state",
       current_schema: 2,
       compatible_schemas: [2],
-      compatible_package_versions: ["0.1.0", "0.2.0"],
+      compatible_package_versions: ["0.1.0", "0.2.0", "0.3.0"],
     }
   }
   if (!declaration || declaration.format !== "alg-run-state" ||

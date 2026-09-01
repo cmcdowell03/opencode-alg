@@ -19,6 +19,23 @@ The SDK/plugin dependency used to compile this package is pinned at `1.18.3`; th
 | `alg_resume` | Synchronously resume an incomplete owned run without resetting attempts |
 | `alg_artifact` | Return bounded artifact metadata/preview, or explicit full content |
 | `alg_transfer` | Auditably transfer a run to another OpenCode session |
+| `alg_skill_evolution_status` | Inspect opt-in skill-evolution configuration, recovery, ledger, and candidates |
+| `alg_skill_evolution_audit` | Idempotently enqueue a manual audit of an eligible completed assistant message |
+| `alg_skill_evolution_historical` | Preview and explicitly run bounded immutable V1 retrospective snapshots |
+| `alg_skill_evolution_review` | Explicitly reject or restore a candidate without bypassing checker provenance |
+| `alg_skill_evolution_promote` | Explicitly publish one validated skill candidate after confirmation |
+| `alg_skill_evolution_rollback` | Explicitly restore a promoted replacement from its verified backup |
+
+These are the exact 15 public server tool IDs, in registration order. The six
+`alg_skill_evolution_*` tools are always registered so configuration and status
+remain inspectable, but skill evolution is disabled by default and its audit or
+mutation operations fail closed until explicitly enabled.
+
+Historical review has a second, independent opt-in:
+`{"skillEvolution":{"enabled":true,"historical":{"enabled":true}}}`. Merely
+enabling live skill evolution does not enable discovery, preview, run, or resume.
+Historical preview also requires explicit `researcher` and `checker` provider/model
+resolutions; unresolved SDK defaults fail before session reads or model calls.
 
 State is project-local:
 
@@ -55,22 +72,25 @@ Each live node attempt gets a fresh OpenCode child session. ALG does not explici
 
 ## Install
 
-### Versioned manager (v0.2.0)
+### Versioned manager (protocol v0.2.0)
 
 The opt-in manager resolves exact stable Git tags into immutable side-by-side
 generations, keeps its strict receipt outside every release, and transactionally
-switches both server and TUI registrations:
+switches both server and TUI registrations. Package v0.3.0 deliberately retains
+manager/receipt protocol version `0.2.0`:
 
 ```powershell
-.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.2.0
-.\scripts\alg.ps1 update --tag v0.2.1
+# Fresh install, or use the update line instead from an older managed generation.
+.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.3.0
+.\scripts\alg.ps1 update --tag v0.3.0
 .\scripts\alg.ps1 doctor
 .\scripts\alg.ps1 rollback
 ```
 
 ```sh
-./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.2.0
-./scripts/alg.sh update --tag v0.2.1
+# Fresh install, or use the update line instead from an older managed generation.
+./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.3.0
+./scripts/alg.sh update --tag v0.3.0
 ./scripts/alg.sh doctor
 ./scripts/alg.sh rollback
 ```
@@ -134,14 +154,14 @@ install/update creates no Excel process or `mcp.alg_excel` entry unless the user
 explicitly enables the pack (or an update preserves an already enabled receipt):
 
 ```powershell
-.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.2.0 `
+.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.3.0 `
   --enable-capability excel --excel-root C:\work\alg-excel-staged
 .\scripts\alg.ps1 update
 .\scripts\alg.ps1 update --disable-capability excel
 ```
 
 ```sh
-./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.2.0 \
+./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.3.0 \
   --enable-capability excel --excel-root /work/alg-excel-staged
 ./scripts/alg.sh update
 ./scripts/alg.sh update --disable-capability excel
@@ -174,7 +194,7 @@ checks ZIP/OpenXML structure, sheets/dimensions, formulas, obvious dangerous or
 external functions, and detectable external relationships. openpyxl stores but
 does not calculate formulas, so validation reports calculation freshness as
 unverified and never says formulas were recalculated. LibreOffice recalculation
-is out of scope for v0.2.
+is out of scope for Excel capability pack v0.2.
 
 Use the deterministic validator as the optional shell gate for the built-in
 spreadsheet workflow:
@@ -222,6 +242,206 @@ Manual registration uses the same package-root spec in each file:
 On Windows use `file:///C:/...`, with forward slashes. The installer does **not** add permission grants to `opencode.jsonc`, set `default_agent`, providers, or arbitrary inline agent settings. It does copy missing bundled agent files; those files intentionally contain role-specific permissions, including `bash`/`edit` for orchestrator and implementer. Customized files are skipped unless `-UpdateAgents` / `--update-agents` (or the force alias) is explicit.
 
 **Quit and restart OpenCode after every install, update, uninstall, agent/config edit, or global model save.** Config and plugin modules are loaded at startup.
+
+## Opt-in skill evolution (v0.3.0)
+
+Skill evolution is a project-local candidate workflow, not automatic
+self-modification. A plain string plugin registration keeps it disabled. Enable
+it only in the **server** `opencode.jsonc` registration by changing that entry to
+a plugin tuple; the TUI registration can remain the package-root string:
+
+```jsonc
+{
+  "plugin": [
+    [
+      "file:///absolute/path/to/plugins/alg",
+      {
+        "skillEvolution": {
+          "enabled": true,
+          "mode": "triggered",
+          "skillRoots": [".opencode/skills"],
+          "minimumTriggerScore": 3,
+          "maxEvidenceBytes": 16384,
+          "maxBacklog": 32,
+          "maxAttempts": 2
+        }
+      }
+    ]
+  ]
+}
+```
+
+The options object is strict; unknown fields fail plugin startup rather than
+being ignored. Defaults and accepted bounds are:
+
+| Option | Default | Accepted value |
+|---|---:|---|
+| `enabled` | `false` | boolean; the only activation switch |
+| `mode` | `"triggered"` | `"triggered"` or `"every-turn"` |
+| `skillRoots` | `[".opencode/skills"]` | 1–8 unique normalized project-relative roots, never the evolution store |
+| `auditorAgent` | `"researcher"` | fixed to `"researcher"` in v0.3.0 |
+| `checkerAgent` | `"checker"` | fixed to `"checker"` in v0.3.0 |
+| `maxEvidenceBytes` | `16384` | 2,048–32,768 bytes |
+| `maxCandidateContentBytes` | `65536` | 1,024–65,536 bytes |
+| `maxCandidates` | `100` | 1–500 |
+| `maxLedgerRecords` | `1024` | 16–4,096; capacity exhaustion fails rather than discarding dedupe records |
+| `maxBacklog` | `32` | 1–128; overflow is persisted as a failed record |
+| `queueConcurrency` | `1` | fixed to `1` in v0.3.0 |
+| `minimumTriggerScore` | `3` | 1–10, used only by automatic `triggered` intake |
+| `maxAttempts` | `2` | 1–3 total audit attempts, including interrupted startup recovery and forced retry |
+
+Quit and restart OpenCode after changing the tuple. The manager/direct installer
+preserves an existing ALG tuple while replacing its package-root spec; neither
+installer enables this option on the user's behalf.
+
+### Candidate workflow
+
+When enabled, ALG listens only for a successful, non-summary, completed
+assistant `message.updated` event. It durably deduplicates the exact
+session/message pair, builds bounded redacted evidence from that assistant and
+its direct parent user message, and serializes a per-project queue. In
+`triggered` mode, evidence below `minimumTriggerScore` becomes `no-change`
+without a model call. `every-turn` audits every eligible completion. Private
+auditor/checker children are durably registered and recursion-excluded.
+
+An eligible audit creates a fresh no-tools `researcher` child. `no_change` ends
+the record; a memory proposal is retained as a non-promotable candidate; a skill
+create/revision proposal receives a second fresh no-tools `checker` child. Only
+a strict passing checker verdict produces `validated`. Model output is still
+nondeterministic, and prompt/tool restrictions are guardrails rather than an OS
+sandbox.
+
+Typical explicit workflow:
+
+```text
+# queue the latest eligible completion in this session (or provide both IDs)
+alg_skill_evolution_audit
+alg_skill_evolution_audit session_id="..." assistant_message_id="..."
+
+# inspect a bounded list, then one candidate with all immutable revisions
+alg_skill_evolution_status state="validated" limit=20
+alg_skill_evolution_status candidate_id="se-..." detail="full"
+
+# optional human disposition; restore preserves the original checker result
+alg_skill_evolution_review candidate_id="se-..." action="reject" reason="..."
+alg_skill_evolution_review candidate_id="se-..." action="restore" reason="..."
+
+# explicit publication; true is accepted, but the token is easier to audit
+alg_skill_evolution_promote candidate_id="se-..." confirm="PROMOTE:se-..."
+
+# replacement candidates only, and only while the public file still has the promoted hash
+alg_skill_evolution_rollback candidate_id="se-..." confirm="ROLLBACK:se-..."
+```
+
+### V1 retrospective initialization
+
+`alg_skill_evolution_historical` uses only the root V1 client supplied to the
+plugin. Discovery makes one `session.list({query:{directory}})` request; V1 has
+no list request limit, so transport is not bounded even though call time/count
+and the accepted aggregate/projection are. Preview accepts explicit unique
+session IDs, validates exact project identity and canonical directory
+containment, rejects private children, and performs repeated metadata plus full
+message reads. Every message request uses `maxMessagesPerSession + 1`; overflow
+is rejected without truncation or a seal. Two consecutive identical ordered
+commitments are required within finite rounds. Status/idle is advisory and is
+not evidence of permanent termination or process-global inactivity.
+
+Configure and use it as follows:
+
+```text
+# 1. Pin the two model-bearing roles. Use provider/model IDs available in your OpenCode runtime.
+alg_models agent="researcher" provider_id="openai" model_id="gpt-5"
+alg_models agent="checker" provider_id="openai" model_id="gpt-5"
+
+# 2. Register the server plugin as an options tuple, then quit and restart OpenCode.
+["file:///absolute/path/to/opencode-alg",{"skillEvolution":{"enabled":true,"historical":{"enabled":true}}}]
+
+# 3. Discover V1 sessions returned for the current project.
+alg_skill_evolution_historical request={"action":"discover"}
+
+# 4. Seal selected IDs and review the disclosed budgets. Preview makes no model calls.
+alg_skill_evolution_historical request={"action":"preview","session_ids":["ses_..."]}
+
+# 5. Copy plan_id and confirmation exactly from preview, then explicitly run.
+alg_skill_evolution_historical request={"action":"run","plan_id":"hist-...","confirmation":"..."}
+
+# 6. Inspect, resume an interrupted confirmed plan, or cancel before its next call.
+alg_skill_evolution_historical request={"action":"status","plan_id":"hist-..."}
+alg_skill_evolution_historical request={"action":"resume","plan_id":"hist-...","confirmation":"..."}
+alg_skill_evolution_historical request={"action":"cancel","plan_id":"hist-..."}
+```
+
+The plugin tuple belongs in the server-side OpenCode `plugin` array. Preserve the
+TUI registration if it is configured separately. Plugin options and promoted
+skills are loaded only at startup, so quit and restart OpenCode after changing
+the tuple. Status returns at most 128 checkpoint rows together with exact
+`checkpoints_total`, `checkpoints_omitted`, and `checkpoints_truncated` fields.
+
+A successful preview seals the redacted transcript as immutable fragments under
+`.opencode/skill-evolution/` and names its guarantee exactly
+`v1_bounded_snapshot`. The preview discloses estimated and hard model-call,
+input-byte, and time budgets and returns a confirmation bound to exact canonical
+plan bytes. Run/resume reject any other confirmation before model calls. Every
+fragment is reviewed by a fresh no-tools auditor, immutable outputs are reduced
+in ordered bounded form, and any skill proposal receives a fresh checker before
+entering the existing candidate validator. Calls and stage outputs use durable
+immutable checkpoints. Status, completion, and idempotent resume re-verify the
+confirmed plan, every ordered chunk/reduction/checker output, and a final
+checkpoint rather than trusting mutable counters or disposition. Before the
+first child call, one create-only execution epoch binds the plan to its original
+absolute deadline; interruption cannot reset or extend it. Child prompts use
+the exact auditor/checker model captured by the immutable plan even if live
+configuration changes during child creation. Historical candidate IDs and
+durable candidate revisions bind the sealed snapshot/transcript, ordered
+fragment outputs, reduction, auditor, and checker, so changed transcript bytes
+cannot reuse a predecessor candidate. Cancellation is checked before each next
+create/prompt.
+Historical work never promotes or deletes a
+skill, modifies global configuration, or writes user/global/configured skill
+roots. Existing explicit promotion remains required.
+
+V1 repeated reads can detect, but cannot prevent, concurrent mutation. Thus
+`unstable`, `overflow`, `oversized`, `unavailable`, `unsupported`,
+`cross_project`, `private_child`, and `cancelled` are explicit dispositions and
+must not be read as complete snapshots when no seal exists. Redaction is a
+privacy guardrail, not DLP; reviewing old sessions can incur substantial model
+cost and expose their redacted contents to configured providers. V2 behavior
+and effectiveness benchmarking are explicitly deferred.
+
+Promotion is never automatic. It accepts only a validated skill, rechecks strict
+`SKILL.md` frontmatter/content, project-root containment, configured roots,
+create absence or replace basis, and immutable checker provenance. Created
+skills are never deleted by rollback; v0.3.0 rollback restores only an exact
+pre-promotion replacement backup. Memory candidates cannot be promoted.
+Promotion, rollback, or startup/status recovery that mutates a skill file sets
+`restart_required`; quit and restart OpenCode before expecting new sessions to
+load the resulting skill.
+
+### Cost, privacy, and durability limits
+
+- Disabled mode performs no event intake and no auditor/checker model calls.
+  Status, review, promote, and rollback themselves make no model calls.
+- A qualifying/forced/every-turn audit costs one auditor call; a skill proposal
+  costs one additional checker call. Manual audit bypasses the trigger threshold,
+  and `force=true` can retry only an existing failed/no-change identity within
+  `maxAttempts`. Duplicate events do not normally call a model again, but a crash
+  during a running audit may cause one bounded recovery attempt, so model calls
+  are not an exactly-once external effect.
+- Evidence is bounded, path/credential/obvious-secret redacted, and treats quoted
+  content as untrusted data, but this is not a complete DLP or confidentiality
+  guarantee. Do not feed secrets into conversations expecting redaction to make
+  them safe.
+- Project state lives under `.opencode/skill-evolution/`: bounded ledger and
+  candidate indexes plus immutable evidence, revision, backup, and transaction
+  objects. Local hashes/identities detect drift and partial or stale state; they
+  do not authenticate against a principal able to rewrite the project coherently.
+- Each runtime's project queue is single-concurrency and bounded; the durable
+  begin transition prevents duplicate processing of the same key across runtime
+  instances, but distinct records can run in separate OpenCode server processes.
+  Audit failures are retained rather than silently retried in a loop. Unresolved transaction or
+  third-state/custom drift is preserved and reported by
+  `alg_skill_evolution_status`; do not delete its journal or auxiliary files
+  until the conflict is understood.
 
 ## `/alg-models` TUI workflow
 
@@ -366,9 +586,11 @@ checks, wrapper EOF stdout proof, and npm pack dry-run against a complete
 reviewed path allowlist. Its mandatory absolute
 external evidence directory receives one strict bounded redacted JSON document
 that references the separately retained live evidence by immutable unique
-path/hash/size/device-inode identity. Strict live artifacts carry schema v2 and
-kind `opencode-alg-live-verification`; release evidence schema v4 requires that
-live identity and separately runs/binds the complete manager suite. It retains
+path/hash/size/device-inode identity. Strict live artifacts remain schema v2 and
+kind `opencode-alg-live-verification`; package v0.3.0 release evidence is strict
+schema v5, requires that live identity, requires the exact 15 tool IDs with skill
+evolution disabled in the isolated live proof, and separately runs/binds the
+complete manager suite under manager protocol v0.2.0. It retains
 complete redacted stdout/stderr within strict per-command/aggregate limits and
 recomputes byte counts/SHA-256 over those exact strings. A separate semantic
 pass binds ordered command IDs and executable families, parsed test/manifest/

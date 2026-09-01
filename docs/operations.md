@@ -1,6 +1,10 @@
 # ALG operations checklist
 
 - Runtime support follows `package.json` `engines.opencode` (`>=1.18.0`) for stable OpenCode releases; live verification is currently exercised with `1.18.18`. The compiled SDK/plugin dependency is separately pinned at `1.18.3` and does not raise the runtime floor.
+- Keep the independent version contracts distinct: package `0.3.0`, ALG run
+  state schema 2 (compatible schemas 1/2 and package generations 0.1.0–0.3.0),
+  strict live evidence schema 2, strict release evidence schema 5, and release
+  manager/receipt protocol `0.2.0`.
 
 ## Registration
 
@@ -56,10 +60,131 @@
   only old, strictly marked grammar-valid directories whose owner is proven dead
   or PID-reused; malformed, unmarked, live-owner, legacy predictable, foreign,
   and ambiguous state is preserved. The former predictable Job-control DLL
-  fallback is not used. Schema-v4 release verification snapshots helpers before
+  fallback is not used. Schema-v5 release verification snapshots helpers before
   tests, cleans only net additions, and requires zero net owned artifacts.
 - Resume interrupted work; inspect stale lock and corrupt quarantine files rather than deleting unknown state.
 - Quarantine is claimed only after a confirmed rename; rename failure is reported honestly with the corrupt file left in place for manual action.
+
+## Opt-in skill evolution
+
+- A string ALG registration means disabled. To opt in, make only the server
+  `opencode.jsonc` entry a tuple such as
+  `["file:///absolute/path/to/alg", {"skillEvolution":{"enabled":true,"mode":"triggered","skillRoots":[".opencode/skills"]}}]`.
+  The options object is strict. Unknown names fail startup. Keep the TUI package-
+  root registration; restart OpenCode after any option or plugin edit.
+- The full bounded option surface is: `enabled` boolean; `mode` `triggered` or
+  `every-turn`; 1–8 unique normalized project-relative `skillRoots`;
+  `auditorAgent:"researcher"`; `checkerAgent:"checker"`;
+  `maxEvidenceBytes` 2,048–32,768; `maxCandidateContentBytes` 1,024–65,536;
+  `maxCandidates` 1–500; `maxLedgerRecords` 16–4,096; `maxBacklog` 1–128;
+  `queueConcurrency:1`; `minimumTriggerScore` 1–10; and `maxAttempts` 1–3.
+  Defaults are `enabled:false`, `mode:"triggered"`,
+  `skillRoots:[".opencode/skills"]`, the fixed auditor/checker/concurrency values
+  above, 16 KiB evidence, 64 KiB candidate content, 100 candidates, 1,024 ledger
+  records, backlog 32, trigger threshold 3, and two attempts.
+- All six tools remain registered while disabled so status/configuration can be
+  inspected. Audit/review/promotion/rollback operations require enablement. The
+  exact public server tool contract is:
+  `alg_templates`, `alg_models`, `alg_criteria`, `alg_plan`, `alg_run`,
+  `alg_status`, `alg_resume`, `alg_artifact`, `alg_transfer`,
+  `alg_skill_evolution_status`, `alg_skill_evolution_audit`,
+  `alg_skill_evolution_historical`,
+  `alg_skill_evolution_review`, `alg_skill_evolution_promote`, and
+  `alg_skill_evolution_rollback`.
+- Historical review additionally requires `historical.enabled:true`. Use
+  `alg_models` (or explicit merged `agent` configuration) to resolve both
+  `researcher` and `checker` to concrete provider/model IDs first; inherited SDK
+  defaults are not auditable and make preview fail before transcript reads.
+  Use
+  `discover`, then `preview` with explicit IDs, inspect the returned estimated
+  and hard call/input/time budgets, and pass the exact immutable-plan
+  confirmation to `run` or `resume`. `cancel` is durable before the next child
+  call. The V1-only `v1_bounded_snapshot` seal requires two consecutive
+  identical full reads, rejects `maxMessagesPerSession + 1` overflow without
+  truncation, and reports concurrent mutation as `unstable`. V1 cannot limit
+  `session.list` transport. Status/idle is advisory only. Confirmed processing
+  uses a fresh auditor per fragment, immutable ordered reduction, and a fresh
+  checker plus the existing candidate validator for a skill proposal.
+  Status and completion fail closed unless the immutable plan, exact ordered
+  chunk/reduction/checker outputs, and final checkpoint all verify. Interrupted
+  stages resume from those checkpoints; issued uncommitted calls are marked
+  potentially replayed. A create-only execution epoch fixes the original
+  absolute deadline before the first call and cannot be replaced to renew the
+  budget. Auditor/checker prompts retain the model captured in the plan across
+  configuration races. Candidate identity and its initial durable revision bind
+  the exact sealed transcript/snapshot and all review outputs, so a changed
+  transcript with reused session/message IDs is a distinct candidate.
+  Historical processing
+  writes only `.opencode/skill-evolution/` plus private child-session effects;
+  it never promotes/deletes skills or changes global configuration. V2 and
+  effectiveness benchmarking remain deferred.
+- Automatic intake accepts only successful, non-summary completed assistant
+  `message.updated` events. It durably keys exact session/assistant-message IDs;
+  duplicate post-processing events retain one record. It ignores idle/part/user/
+  incomplete/error/summary/deleted/private-child events. This deduplicates
+  intake, not external model effects: a process interruption may replay one audit
+  within `maxAttempts` if no terminal result was committed.
+- `triggered` mode scores/redacts/bounds evidence before model work and records
+  below-threshold turns as `no-change` with no call. `every-turn` audits every
+  eligible completion. A manual `alg_skill_evolution_audit` also bypasses the
+  threshold; omitted IDs mean the current session/latest eligible completion.
+  `force=true` is allowed only for an existing failed/no-change key and remains
+  inside the total attempt bound.
+- Cost accounting: a qualifying/manual/every-turn item makes one fresh auditor
+  call; a returned skill create/revision makes one additional fresh checker call.
+  Memory candidates make no checker call. Status/review/promote/rollback make no
+  model call. Disabled or below-threshold triggered intake makes none. Each
+  runtime serializes its project queue at concurrency 1 and durable begin-CAS
+  prevents the same record from running twice, but distinct records can run in
+  separate OpenCode server processes. Backlog overflow and ledger capacity are
+  explicit durable failures, never silent drops.
+- Evidence re-fetches the exact session/project/direct parent turn, keeps at most
+  100 message envelopes and 24 tool summaries, uses explicit UTF-8 omission
+  counts, and applies credential/obvious-secret/path redaction. Treat this as
+  minimization, not DLP. The auditor and checker receive bounded prompts marking
+  evidence/candidates untrusted and explicitly disable known tools, but fresh
+  children still use configured OpenCode/model context and are not sandboxes.
+- Inspect first:
+  `alg_skill_evolution_status state=validated limit=20`, then
+  `alg_skill_evolution_status candidate_id=<id> detail=full`. Review appends an
+  actor/reason revision. Reject accepts only proposed/validated; restore returns
+  a skill to validated only if its immutable initial checker result passed, so
+  review never bypasses the checker. Memory/checker-failed candidates remain
+  non-promotable.
+- Promote only after reviewing the complete initial proposal/current revision:
+  `alg_skill_evolution_promote candidate_id=<id> confirm="PROMOTE:<id>"`.
+  `confirm=true` is accepted but the exact token is operationally clearer.
+  Promotion is never automatic. It revalidates checker provenance, strict
+  `SKILL.md` frontmatter/content, configured roots, create absence across every
+  root or exact replacement basis, direct path components, parent identity, and
+  public bytes/hash before candidate-state commit.
+- The store is `.opencode/skill-evolution/`: mutable bounded `ledger.json` and
+  `candidates.json`; `mutation.lock`; immutable `evidence/`, `revisions/`,
+  `backups/`, and `transactions/`. Do not hand-edit it. Local hashes and
+  device/inode checks detect drift but do not authenticate a coherently rewritten
+  project. The tool confirmation/session ID is an intent/audit field, not an OS
+  ACL; restrict tool access with normal OpenCode agent/permission policy.
+- Promotion/rollback uses a create-only journal, independent replacement backup,
+  prepared file, exact hard-link claim, repeated identity/hash checks, unlink,
+  and create-if-absent hard-link publication. It never rename-overwrites a public
+  or occupied auxiliary name. Portable filesystems still have a final compare-
+  then-unlink race window; detected custom or third state is preserved.
+- Startup and enabled status run transaction recovery. Exact pre-publication
+  state is cleaned; an absent public target with an exact old claim is restored;
+  exact file-applied/state-uncommitted work receives its missing candidate
+  revision. Malformed/stale/wrong-root/path/hash/identity/third-state cases remain
+  unresolved with evidence intact. Inspect `doctor.recovery` and do not delete a
+  journal, claim, prepared file, or backup until the state is understood.
+- Roll back only a promoted replacement whose current target still equals the
+  promoted hash:
+  `alg_skill_evolution_rollback candidate_id=<id> confirm="ROLLBACK:<id>"`.
+  It restores the immutable independent backup through the same transaction
+  protocol. Created skills are deliberately not deleted; memory candidates have
+  no publication path; custom drift remains untouched.
+- Every successful promotion/rollback, and any recovery that changes a public
+  skill file, reports `restart_required:true`. Quit and restart OpenCode before
+  relying on the new/restored skill. A running session can retain old loaded
+  skill content.
 
 ## Installer
 
@@ -192,7 +317,8 @@
   `python capabilities/excel/workbook.py validate --root <root> --workbook <relative-copy.xlsx>`.
   Treat formula/external-link findings and bounds as failures. openpyxl stores
   formulas but does not calculate them; never report recalculation or verified
-  freshness. LibreOffice recalculation is out of scope for v0.2.
+  freshness. LibreOffice recalculation is out of scope for Excel capability pack
+  v0.2.
 - The wrapper rejects absolute/traversal/NUL/non-`.xlsx`/alternate-stream and
   symlink/junction/reparse escapes and uses stdio only. This confines workbook
   path arguments; it is not an OS sandbox and ambient process permissions remain.
@@ -211,7 +337,9 @@
   subprocesses run typecheck, all Bun tests, smoke, isolated live verification,
   Excel manifest and no-bytecode Python tests, frozen temporary-external uv
   sync, wrapper check/EOF probe, and npm pack dry-run.
-- Its strict JSON is capped at 512 KiB. It records complete redacted stdout and
+- Its strict JSON is capped at 512 KiB. For package 0.3.0 it uses release
+  evidence schema 5 while referenced live evidence remains schema 2. It records
+  complete redacted stdout and
   stderr under per-command and aggregate retention limits; byte counts and
   SHA-256 cover those exact retained UTF-8 strings. Eleven unique command IDs are
   required in exact order, with argv/cwd/exit status and executable-family/
@@ -223,8 +351,9 @@
   than duplicating it. Live filenames contain the source prefix and a random
   UUID; no-clobber publication never replaces an earlier artifact. Release
   live schema v2 requires exact kind/schema and rejects unknown critical fields;
-  release evidence schema v4 requires the referenced live identity and the
-  separate exact `manager_tests` command/totals. Hashes provide
+  release evidence schema v5 requires package version `0.3.0`, the referenced
+  live identity, and the separate exact `manager_tests` command/totals. The
+  manager itself remains protocol `0.2.0`. Hashes provide
   byte integrity, not authenticity against coherent local rewriting.
 - Runtime-source identity remains the narrow server/TUI loaded-code proof. A
   separate bounded `release_inputs` identity frames path/type/mode/size/content
@@ -260,7 +389,7 @@
   against a party that can coherently rewrite the checkout and all evidence.
 - Strict live semantics reject a minimal object carrying only pass and cleanup
   booleans. Exact package root/spec, runtime manifest and bounds, entrypoints,
-  registrations, nine ALG IDs, compatible engine/runtime evidence, server/TUI
+  registrations, the exact ordered 15 ALG IDs, compatible engine/runtime evidence, server/TUI
   markers and cleanup, isolation booleans, and nonempty equal/digested global
   snapshots are all required against the current checkout.
 - The complete allowlist combines runtime source identity with an explicit

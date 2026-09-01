@@ -26,6 +26,30 @@ export const MODEL_ROLES = [
   "default",
 ] as const
 
+/** Ordered public server registration contract shared by startup and live proof. */
+export const ALG_TOOL_IDS = [
+  "alg_templates",
+  "alg_models",
+  "alg_criteria",
+  "alg_plan",
+  "alg_run",
+  "alg_status",
+  "alg_resume",
+  "alg_artifact",
+  "alg_transfer",
+  "alg_skill_evolution_status",
+  "alg_skill_evolution_audit",
+  "alg_skill_evolution_historical",
+  "alg_skill_evolution_review",
+  "alg_skill_evolution_promote",
+  "alg_skill_evolution_rollback",
+] as const
+
+export function algServerStartupMessage(skillEvolutionEnabled: boolean): string {
+  return `alg plugin loaded skill_evolution=${skillEvolutionEnabled ? "enabled" : "disabled"} ` +
+    `tools=${ALG_TOOL_IDS.length} ids=${ALG_TOOL_IDS.join(",")}`
+}
+
 export type AlgAgent = (typeof ALG_AGENTS)[number]
 export type ModelAgent = (typeof MODEL_AGENTS)[number]
 export type ModelRole = (typeof MODEL_ROLES)[number]
