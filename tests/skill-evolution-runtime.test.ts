@@ -286,6 +286,21 @@ test("installed V1 contract lacks permission rules and fails closed before synth
   } finally { active.dispose(); removeProject(project) }
 })
 
+test("out-of-project sessions are skipped without failed ledger errors", async () => {
+  const project = tempProject("alg-evolution-home-")
+  const foreign = tempProject("alg-evolution-foreign-")
+  const sdk = new FakeSdk(project)
+  sdk.add("foreign")
+  sdk.sessions.get("foreign")!.directory = foreign
+  const active = runtime(project, sdk, { allowBuiltinToolMap: true }, undefined, false)
+  try {
+    active.handleEvent(event("foreign"))
+    const record = await waitForStatus(project, "foreign", "assistant-foreign", "no-change")
+    expect(record.error).toBeUndefined()
+    expect(sdk.creates).toHaveLength(0)
+  } finally { active.dispose(); removeProject(project); removeProject(foreign) }
+})
+
 test("explicit allowBuiltinToolMap dispatches auditor children without claiming deny-all", async () => {
   const project = tempProject("alg-evolution-builtin-map-")
   const sdk = new FakeSdk(project)

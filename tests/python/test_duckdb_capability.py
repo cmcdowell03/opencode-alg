@@ -111,16 +111,16 @@ class DuckDBCapabilityTests(unittest.TestCase):
             "SELECT count(*) FROM repo.main.events AS e WHERE e.event_date = DATE '2026-09-01'",
             "WITH x AS (SELECT e.value FROM repo.main.events AS e WHERE e.event_date = DATE '2026-09-01') SELECT count(*) FROM x",
             "SELECT count(*) FROM repo.main.events AS e JOIN repo.main.events AS f ON e.event_date = DATE '2026-09-01' AND f.event_date = DATE '2026-09-01'",
-            "SELECT * FROM repo.main.events AS e WHERE (e.event_date = DATE '2026-09-01' AND e.value = 'a') OR e.event_date = DATE '2026-09-02'",
+            "SELECT e.value FROM repo.main.events AS e WHERE (e.event_date = DATE '2026-09-01' AND e.value = 'a') OR e.event_date = DATE '2026-09-02'",
         ]
         for sql in accepted:
             with self.subTest(sql=sql):
                 self.assertEqual(policy.validate_sql(sql, self.payload["policy"]).statement_class, "select")
         plain = policy.validate_sql(
-            "EXPLAIN SELECT * FROM repo.main.events AS e WHERE e.event_date = DATE '2026-09-01'", self.payload["policy"]
+            "EXPLAIN SELECT e.value FROM repo.main.events AS e WHERE e.event_date = DATE '2026-09-01'", self.payload["policy"]
         )
         analyzed = policy.validate_sql(
-            "EXPLAIN ANALYZE SELECT * FROM repo.main.events AS e WHERE e.event_date = DATE '2026-09-01'",
+            "EXPLAIN ANALYZE SELECT e.value FROM repo.main.events AS e WHERE e.event_date = DATE '2026-09-01'",
             self.payload["policy"],
         )
         self.assertEqual((plain.statement_class, plain.executing), ("explain_select", False))
@@ -136,6 +136,7 @@ class DuckDBCapabilityTests(unittest.TestCase):
             "SELECT 'https://example.invalid/private'",
             "SELECT * FROM events AS e WHERE e.event_date = DATE '2026-09-01'",
             "SELECT * FROM repo.main.events AS e",
+            "SELECT * FROM repo.main.events AS e WHERE e.event_date = DATE '2026-09-01'",
             "SELECT * FROM repo.main.events AS e WHERE e.event_date = DATE '2026-09-01' OR e.value = 'bypass'",
             "SELECT * FROM repo.main.events AS e WHERE event_date = DATE '2026-09-01'",
             "SELECT * FROM repo.main.events AS e WHERE e.event_date = e.event_date",
@@ -157,7 +158,7 @@ class DuckDBCapabilityTests(unittest.TestCase):
 
     def test_disposable_execution_redacts_caps_and_reports_compatibility(self) -> None:
         digest = self.write_contract()
-        sql = "SELECT * FROM repo.main.events AS e WHERE e.event_date = DATE '2026-09-01' ORDER BY e.value"
+        sql = "SELECT e.event_date, e.value FROM repo.main.events AS e WHERE e.event_date = DATE '2026-09-01' ORDER BY e.value"
         result = query_plane.query(str(self.contract_path), digest, sql)
         self.assertTrue(result["ok"], result)
         encoded = json.dumps(result)
@@ -172,7 +173,7 @@ class DuckDBCapabilityTests(unittest.TestCase):
 
         explained = query_plane.query(
             str(self.contract_path), digest,
-            "EXPLAIN SELECT * FROM repo.main.events AS e WHERE e.event_date = DATE '2026-09-01'",
+            "EXPLAIN SELECT e.value FROM repo.main.events AS e WHERE e.event_date = DATE '2026-09-01'",
         )
         self.assertTrue(explained["ok"], explained)
         self.assertFalse(explained["executing"])

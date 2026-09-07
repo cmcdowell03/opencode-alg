@@ -60,7 +60,7 @@ def _read_message() -> dict[str, Any] | None:
 def _tool_definition(max_sql_characters: int) -> dict[str, Any]:
     return {
         "name": "query",
-        "description": "Run exactly one AST-policy-bounded query using the reviewed project DuckDB contract.",
+        "description": "Run exactly one read-only DuckDB statement (SELECT or EXPLAIN SELECT). Qualify every column as alias.column. Star projections (SELECT *) are rejected. Use only allowlisted catalog.schema.relation names. Do not ATTACH, COPY, or scan files.",
         "inputSchema": {
             "type": "object",
             "additionalProperties": False,
@@ -84,19 +84,27 @@ def serve(contract_path: str, expected_hash: str) -> int:
     def execute_call(identifier: Any, sql: str, cancelled: threading.Event) -> None:
         try:
             result = query(str(loaded.path), loaded.sha256, sql, cancelled)
+            public = {"ok": False, "error": result.get("error", "query failed")} if not result.get("ok") else {
+                "ok": True,
+                "columns": result.get("columns", []),
+                "rows": result.get("rows", []),
+                "truncated": bool(result.get("truncated")),
+            }
+            if result.get("cancelled"):
+                public["cancelled"] = True
             while True:
                 payload = {
-                    "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False, separators=(",", ":"))}],
-                    "isError": not result.get("ok", False),
+                    "content": [{"type": "text", "text": json.dumps(public, ensure_ascii=False, separators=(",", ":"))}],
+                    "isError": not public.get("ok", False),
                 }
                 envelope = {"jsonrpc": "2.0", "id": identifier, "result": payload}
                 if len((json.dumps(envelope, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")) <= _RESPONSE_BYTE_CAP:
                     break
-                if result.get("rows"):
-                    result["rows"].pop()
-                    result["truncated"] = True
+                if public.get("rows"):
+                    public["rows"].pop()
+                    public["truncated"] = True
                 else:
-                    result = {"ok": False, "error": "MCP result metadata exceeds byte cap", "cleanup": result.get("cleanup")}
+                    public = {"ok": False, "error": "MCP result metadata exceeds byte cap"}
             _reply(identifier, payload)
         except Exception:
             _reply(identifier, error="query failed policy or execution validation")

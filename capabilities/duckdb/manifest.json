@@ -22,11 +22,11 @@
     "contract.schema.json": "cac985fbad3d4994caa893af25725f3a44e52e73dd44ba0b7e4e77eb8407d145",
     "fastapi_adapter.py": "e6585d0044eaed867358b03d9c8f245c54eb2b0d092cfc4a4655a70fbfb882d0",
     "opencode.disabled.json": "def89aa5c6766b8f352a528d02b435c5f3584e03e21b7f1962cd3f6a2a6bdccb",
-    "policy.py": "e91962592174a4daadda0cecf643c68c52346d6185c8fa82cabf6ae1902abe3e",
+    "policy.py": "c14c74d3396cf47025229ca9fbb0e28082934b311a4f4bcc7b023303d0be6e81",
     "pyproject.toml": "609841c8b30184295650a9f04b10bc9f3b4acaf4de70936ec4d3140c0f61a51c",
     "query_plane.py": "dca6274232678bcaee7acb64a9ff5a197035181a0c5c960b8bbf2cc2a0e7615d",
     "uv.lock": "14da0b1cbfd03d80a7df9595aa9be9d7dd9ac0559f26e2f906e61128e45b77fa",
     "worker.py": "30f4d0c5b67916fada4fe37b7b1dc2496f60de1dc36eae71ab1d50178e1d97df",
-    "wrapper.py": "ef7685448c502802ee330f1842b52c4d02251875252c2804d1aa662a4af5bb96"
+    "wrapper.py": "90c133fc253de3577881f58378f0894aa2219c7951ca4d72cbd61bc6e4b35490"
   }
 }

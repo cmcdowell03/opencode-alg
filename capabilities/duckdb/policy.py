@@ -207,16 +207,10 @@ def _validate_ast(root: exp.Select, sensitive: set[str]) -> None:
             raise PolicyError("structured value access is not supported")
         if isinstance(node, exp.Column) and not node.table:
             raise PolicyError("column references must be explicitly relation-qualified")
-        if isinstance(node, exp.Star) and not isinstance(node.parent, (exp.Select, exp.Column, exp.Count)):
-            raise PolicyError("star transformations are prohibited")
+        if isinstance(node, exp.Star) and not isinstance(node.parent, exp.Count):
+            raise PolicyError("star projections are prohibited; qualify every selected column as alias.column")
         if isinstance(node, exp.Star) and any(node.args.values()):
             raise PolicyError("star transformations are prohibited")
-        if isinstance(node, exp.Star) and not isinstance(node.parent, exp.Count):
-            select = node.find_ancestor(exp.Select)
-            if select is not root or node.parent not in (root,) and not (
-                isinstance(node.parent, exp.Column) and node.parent.parent is root
-            ):
-                raise PolicyError("only final direct star projections are supported")
 
 
 def validate_sql(sql: str, policy: dict[str, Any]) -> ValidatedQuery:

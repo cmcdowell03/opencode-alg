@@ -524,6 +524,11 @@ export class SkillEvolutionRuntime {
       await this.processOwned(key, manual, fencingToken, acquisition.record, () => lease.assertHeld())
     } catch (error) {
       lease.assertHeld()
+      const text = error instanceof Error ? error.message : String(error)
+      if (/session directory is outside the current project|session belongs to another project/.test(text)) {
+        markLiveSkillLedgerOutcome(this.project, key, { status: "no-change", trigger_score: 0, trigger_labels: [] }, fencingToken)
+        return
+      }
       failSkillAudit(this.project, key, error, fencingToken)
     } finally { lease.release() }
   }
