@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1
+
+Package identity is `0.4.1`. Release evidence schema 6 binds `package_version:"0.4.1"`. Historical `v0.4.0` remains at tag `7cc2f21` and must not be moved.
+
+- Rejects DuckDB star projections except `COUNT(*)`. MCP query results return only `{ok, columns, rows, truncated}` (plus `error`/`cancelled`).
+- Marks skill-evolution audits for sessions outside the current project as `no-change` instead of `failed`.
+- Coerces auditor `confidence` numbers, nulls, and non-enum strings to `low`/`medium`/`high` so schema-valid otherwise jobs are not failed.
+
 ## 0.4.0
 
 Package identity is `0.4.0`. Release evidence schema 6 binds `package_version:"0.4.0"`. Historical `v0.3.0` remains schema 5 at tag `e16ca58` and must not be moved.

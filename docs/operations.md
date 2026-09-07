@@ -1,8 +1,8 @@
 # ALG operations checklist
 
 - Runtime support follows `package.json` `engines.opencode` (`>=1.18.0 <2.0.0`) for stable OpenCode V1 releases; historical live verification used `1.18.18`. Future majors require separate validation. The compiled SDK/plugin dependency is separately pinned at `1.18.3` and does not raise the runtime floor.
-- Keep the independent version contracts distinct: package `0.4.0`, ALG run
-  state schema 2 (compatible schemas 1/2 and package generations 0.1.0–0.4.0),
+- Keep the independent version contracts distinct: package `0.4.1`, ALG run
+  state schema 2 (compatible schemas 1/2 and package generations 0.1.0–0.4.1),
   strict live evidence schema 2, strict release evidence schema 6, and release
   manager/receipt protocol `0.2.0`. Historical package `0.3.0` used release schema 5.
 
@@ -337,7 +337,7 @@
   subprocesses run typecheck, all Bun tests, smoke, isolated live verification,
   Excel manifest and no-bytecode Python tests, frozen temporary-external uv
   sync, wrapper check/EOF probe, and npm pack dry-run.
-- Its strict JSON is capped at 512 KiB. For package 0.4.0 it uses release
+- Its strict JSON is capped at 512 KiB. For package 0.4.1 it uses release
   evidence schema 6 while referenced live evidence remains schema 2. It records
   complete redacted stdout and
   stderr under per-command and aggregate retention limits; byte counts and
@@ -351,7 +351,7 @@
   than duplicating it. Live filenames contain the source prefix and a random
   UUID; no-clobber publication never replaces an earlier artifact. Release
   live schema v2 requires exact kind/schema and rejects unknown critical fields;
-  release evidence schema v6 requires package version `0.4.0`, the referenced
+  release evidence schema v6 requires package version `0.4.1`, the referenced
   live identity, and the separate exact `manager_tests` command/totals. The
   manager itself remains protocol `0.2.0`. Hashes provide
   byte integrity, not authenticity against coherent local rewriting.

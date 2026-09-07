@@ -48,7 +48,7 @@ export const ReleaseEvidenceSchema = z.object({
   schema_version: z.literal(6),
   kind: z.literal("opencode-alg-release-gate"),
   generated_at: z.iso.datetime({ offset: true }),
-  package_version: z.literal("0.4.0"),
+  package_version: z.literal("0.4.1"),
   source: z.object({ sha256: Sha, files: z.number().int().positive(), bytes: z.number().int().positive() }).strict(),
   release_inputs: z.object({ sha256: Sha, files: z.number().int().positive(), bytes: z.number().int().positive() }).strict(),
   commands: z.array(CommandEvidenceSchema).length(RELEASE_COMMAND_IDS.length),
@@ -804,7 +804,7 @@ export async function runReleaseGate(args = process.argv.slice(2)): Promise<{ ev
   }, ROOT)
   if (!sameEvidenceIdentity(liveArtifact.identity, live.evidence_identity)) throw new Error("Retained live evidence identity differs from live summary")
   const evidence = ReleaseEvidenceSchema.parse({
-    schema_version: 6, kind: "opencode-alg-release-gate", generated_at: new Date().toISOString(), package_version: "0.4.0",
+    schema_version: 6, kind: "opencode-alg-release-gate", generated_at: new Date().toISOString(), package_version: "0.4.1",
     source: { sha256: source.digest, files: source.file_count, bytes: source.total_bytes }, release_inputs: releaseInputsAfter, commands,
     totals: { ...bunTotals, ...managerTotals, ...pythonTotals, ...duckdbPythonTotals },
     excel: { manifest_sha256: manifest.manifest_sha256, lock_sha256: manifest.files.lock, version: wrapperCheck.version, tool_count: wrapperCheck.tool_count, eof_stdout_bytes: eofStdoutBytes },

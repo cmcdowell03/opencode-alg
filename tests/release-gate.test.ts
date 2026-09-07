@@ -82,7 +82,7 @@ function command(id: typeof RELEASE_COMMAND_IDS[number] = "typecheck") {
 function evidence() {
   return {
     schema_version: 6 as const, kind: "opencode-alg-release-gate" as const,
-    generated_at: "2026-08-20T00:00:00.000Z", package_version: "0.4.0" as const,
+    generated_at: "2026-08-20T00:00:00.000Z", package_version: "0.4.1" as const,
     source: { sha256: digest, files: 1, bytes: 1 }, release_inputs: { sha256: digest, files: 1, bytes: 1 }, commands: RELEASE_COMMAND_IDS.map((id) => command(id)),
     totals: { bun_pass: 1, bun_skip: 0, bun_fail: 0, bun_total: 1, bun_assertions: 1, bun_files: 1, manager_pass: 1, manager_skip: 0, manager_fail: 0, manager_total: 1, manager_assertions: 1, manager_files: 1, python_run: 1, python_skipped: 0, python_ok: true as const, duckdb_python_run: 1, duckdb_python_skipped: 0, duckdb_python_ok: true as const },
     excel: { manifest_sha256: digest, lock_sha256: digest, version: "0.1.8" as const, tool_count: 25 as const, eof_stdout_bytes: 0 as const },
@@ -236,17 +236,17 @@ describe("bounded release-gate evidence", () => {
   test("v0.4 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate", () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"))
     const lock = JSON.parse(readFileSync(join(ROOT, "package-lock.json"), "utf8"))
-    expect(pkg.version).toBe("0.4.0")
-    expect(lock.version).toBe("0.4.0")
-    expect(lock.packages[""].version).toBe("0.4.0")
+    expect(pkg.version).toBe("0.4.1")
+    expect(lock.version).toBe("0.4.1")
+    expect(lock.packages[""].version).toBe("0.4.1")
     expect(pkg.opencodeAlg.durableState).toEqual({
       format: "alg-run-state",
       currentSchema: 2,
       compatibleSchemas: [1, 2],
-      compatiblePackageVersions: ["0.1.0", "0.2.0", "0.3.0", "0.4.0"],
+      compatiblePackageVersions: ["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1"],
     })
     expect(MANAGER_VERSION).toBe("0.2.0")
-    expect(ReleaseEvidenceSchema.parse(evidence())).toMatchObject({ schema_version: 6, package_version: "0.4.0" })
+    expect(ReleaseEvidenceSchema.parse(evidence())).toMatchObject({ schema_version: 6, package_version: "0.4.1" })
     expect(ReleaseEvidenceSchema.safeParse({ ...evidence(), schema_version: 5 }).success).toBe(false)
   })
 

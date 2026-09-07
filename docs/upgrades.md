@@ -44,8 +44,8 @@ PowerShell and POSIX launchers call the same TypeScript CLI:
 
 ```powershell
 # Fresh install, or use the update line instead from an older managed generation.
-.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.4.0
-.\scripts\alg.ps1 update --tag v0.4.0
+.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.4.1
+.\scripts\alg.ps1 update --tag v0.4.1
 .\scripts\alg.ps1 doctor
 .\scripts\alg.ps1 rollback
 .\scripts\alg.ps1 uninstall --remove-agents
@@ -53,8 +53,8 @@ PowerShell and POSIX launchers call the same TypeScript CLI:
 
 ```sh
 # Fresh install, or use the update line instead from an older managed generation.
-./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.4.0
-./scripts/alg.sh update --tag v0.4.0
+./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.4.1
+./scripts/alg.sh update --tag v0.4.1
 ./scripts/alg.sh doctor
 ./scripts/alg.sh rollback
 ./scripts/alg.sh uninstall --remove-agents
@@ -274,6 +274,21 @@ dependency identity, exactly one server and TUI registration, agent status,
 previous rollback availability, and restart-pending state. The manager never
 detects that OpenCode restarted. After actually quitting and restarting, the
 user may attest that fact with `doctor --ack-restart`.
+
+## v0.4.0 to v0.4.1
+
+Use managed `update --tag v0.4.1` from a receipt-backed v0.4.0 generation, or
+`install --source <clean-checkout> --tag v0.4.1` for a fresh managed generation.
+The package and both npm lock root versions must be `0.4.1`; release evidence
+remains schema 6 and binds `package_version:"0.4.1"`. Live evidence remains
+schema 2. Manager/receipt protocol remains `0.2.0`. ALG run state remains schema
+2 with compatible package generations `0.1.0`–`0.4.1`.
+
+This patch rejects DuckDB star projections except `COUNT(*)`, slims MCP query
+payloads, skips out-of-project skill-evolution sessions as `no-change`, and
+coerces auditor `confidence` so numeric/null values do not fail the job.
+
+Restart OpenCode after install or update before relying on reloaded plugin code.
 
 ## v0.3.0 to v0.4.0
 

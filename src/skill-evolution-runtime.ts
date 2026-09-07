@@ -79,7 +79,7 @@ function responseText(parts: unknown): string {
 
 function strictOutputContract(kind: "auditor" | "checker"): string {
   return kind === "auditor"
-    ? `Return one strict JSON object only. Required common fields: decision, rationale, confidence, triggers, provenance. decision is no_change, memory_candidate, skill_candidate, or skill_revision. memory_candidate also has memory {content,summary}. Skill decisions also have skill {target,operation,basis_sha256,content,summary}; target is <lowercase-hyphen-skill-id>/SKILL.md, create has null basis, replace has a lowercase SHA-256 basis. Do not add fields.`
+    ? `Return one strict JSON object only. Required common fields: decision, rationale, confidence, triggers, provenance. confidence is exactly "low", "medium", or "high" — never a number. decision is no_change, memory_candidate, skill_candidate, or skill_revision. memory_candidate also has memory {content,summary}. Skill decisions also have skill {target,operation,basis_sha256,content,summary}; target is <lowercase-hyphen-skill-id>/SKILL.md, create has null basis, replace has a lowercase SHA-256 basis. Do not add fields.`
     : `Return one strict JSON object only: {"passed":boolean,"findings":string[]}. passed is true exactly when findings is empty. Do not add fields.`
 }
 

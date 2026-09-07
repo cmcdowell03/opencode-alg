@@ -211,16 +211,32 @@ const SkillProposalSchema = z.object({
   }
 })
 
-const AuditorBaseSchema = z.object({
-  rationale: exact(1, 2_000, "rationale"),
-  confidence: z.preprocess((value) => {
-    if (typeof value !== "string") return value
+export function normalizeSkillConfidence(value: unknown): "low" | "medium" | "high" {
+  if (typeof value === "string") {
     const normalized = value.trim().toLowerCase()
     if (normalized === "low" || normalized === "medium" || normalized === "high") return normalized
     if (normalized.includes("high")) return "high"
     if (normalized.includes("low")) return "low"
     return "medium"
-  }, z.enum(["low", "medium", "high"])),
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    if (value >= 0 && value <= 1) {
+      if (value < 1 / 3) return "low"
+      if (value < 2 / 3) return "medium"
+      return "high"
+    }
+    if (value > 1 && value <= 100) {
+      if (value < 100 / 3) return "low"
+      if (value < 200 / 3) return "medium"
+      return "high"
+    }
+  }
+  return "medium"
+}
+
+const AuditorBaseSchema = z.object({
+  rationale: exact(1, 2_000, "rationale"),
+  confidence: z.preprocess(normalizeSkillConfidence, z.enum(["low", "medium", "high"])),
   triggers: z.array(SkillTriggerLabelSchema).max(7),
   provenance: ProvenanceSchema,
 }).strict()

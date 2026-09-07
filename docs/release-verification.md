@@ -23,7 +23,7 @@ Generated Python caches are excluded. `.gitattributes` fixes the strict Excel
 text assets to LF so manifest hashes are reproducible in Windows local clones;
 verification requires a clean clone and exact manifest hashes.
 
-For package v0.4.0, the `src/**/*.ts` rule necessarily includes the
+For package v0.4.1, the `src/**/*.ts` rule necessarily includes the
 skill-evolution runtime modules: `skill-evolution-evidence.ts`,
 `skill-evolution-historical.ts`, `skill-evolution-redaction.ts`,
 `skill-evolution-runtime.ts`, `skill-evolution-schemas.ts`,
@@ -116,14 +116,14 @@ bun run release:gate -- --evidence-dir <absolute-external-directory>
 ```
 
 The mandatory destination must be outside the repository. One strict package-
-v0.4.0 release JSON (maximum 512 KiB) uses schema 6 and records sixteen unique
+v0.4.1 release JSON (maximum 512 KiB) uses schema 6 and records sixteen unique
 command IDs in required order,
 argument vectors, executable identities/relationships, exit status, and complete
 redacted stdout/stderr under per-command and aggregate byte limits. Sizes and
 digests cover those exact retained UTF-8 strings. It records parsed totals, the
 complete sorted npm `{path,size,mode}` inventory/digest, source and
 release-input identities, Excel hashes, cleanup, and global-config proof.
-Release evidence schema v6 requires `package_version:"0.4.0"` and runs
+Release evidence schema v6 requires `package_version:"0.4.1"` and runs
 `bun test tests/manager.test.ts --timeout 60000` as exact `manager_tests`
 evidence in addition to the full suite, parses and binds
 its pass/skip/fail/test/assertion/file totals, and verifies then references the separately retained live

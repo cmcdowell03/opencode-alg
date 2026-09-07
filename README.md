@@ -82,22 +82,22 @@ Each live node attempt gets a fresh OpenCode child session. ALG does not explici
 
 The opt-in manager resolves exact stable Git tags into immutable side-by-side
 generations, keeps its strict receipt outside every release, and transactionally
-switches both server and TUI registrations. Package v0.4.0 deliberately retains
+switches both server and TUI registrations. Package v0.4.1 deliberately retains
 manager/receipt protocol version `0.2.0`. Install the current package from a
-clean checkout of tag `v0.4.0`:
+clean checkout of tag `v0.4.1`:
 
 ```powershell
 # Fresh install, or use the update line instead from an older managed generation.
-.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.4.0
-.\scripts\alg.ps1 update --tag v0.4.0
+.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.4.1
+.\scripts\alg.ps1 update --tag v0.4.1
 .\scripts\alg.ps1 doctor
 .\scripts\alg.ps1 rollback
 ```
 
 ```sh
 # Fresh install, or use the update line instead from an older managed generation.
-./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.4.0
-./scripts/alg.sh update --tag v0.4.0
+./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.4.1
+./scripts/alg.sh update --tag v0.4.1
 ./scripts/alg.sh doctor
 ./scripts/alg.sh rollback
 ```
@@ -107,8 +107,8 @@ On a second machine, clone a clean tag first, then install from that checkout:
 ```sh
 git clone https://github.com/cmcdowell03/opencode-alg.git
 cd opencode-alg
-git checkout v0.4.0
-./scripts/alg.sh install --source "$PWD" --tag v0.4.0
+git checkout v0.4.1
+./scripts/alg.sh install --source "$PWD" --tag v0.4.1
 ```
 
 Quit and restart OpenCode. A plain string plugin registration keeps skill evolution, Excel, and DuckDB off. Enable them explicitly after install; see below.
@@ -172,14 +172,14 @@ install/update creates no Excel process or `mcp.alg_excel` entry unless the user
 explicitly enables the pack (or an update preserves an already enabled receipt):
 
 ```powershell
-.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.4.0 `
+.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.4.1 `
   --enable-capability excel --excel-root C:\work\alg-excel-staged
 .\scripts\alg.ps1 update
 .\scripts\alg.ps1 update --disable-capability excel
 ```
 
 ```sh
-./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.4.0 \
+./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.4.1 \
   --enable-capability excel --excel-root /work/alg-excel-staged
 ./scripts/alg.sh update
 ./scripts/alg.sh update --disable-capability excel
@@ -607,7 +607,7 @@ reviewed path allowlist. Its mandatory absolute
 external evidence directory receives one strict bounded redacted JSON document
 that references the separately retained live evidence by immutable unique
 path/hash/size/device-inode identity. Strict live artifacts remain schema v2 and
-kind `opencode-alg-live-verification`; package v0.4.0 release evidence is strict
+kind `opencode-alg-live-verification`; package v0.4.1 release evidence is strict
 schema v6, requires that live identity, requires the exact 15 tool IDs with skill
 evolution disabled in the isolated live proof, and separately runs/binds the
 complete manager suite under manager protocol v0.2.0. It retains
