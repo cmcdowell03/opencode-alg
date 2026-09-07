@@ -286,6 +286,23 @@ test("installed V1 contract lacks permission rules and fails closed before synth
   } finally { active.dispose(); removeProject(project) }
 })
 
+test("explicit allowBuiltinToolMap dispatches auditor children without claiming deny-all", async () => {
+  const project = tempProject("alg-evolution-builtin-map-")
+  const sdk = new FakeSdk(project)
+  sdk.add("usable")
+  const active = runtime(project, sdk, { allowBuiltinToolMap: true }, undefined, false)
+  try {
+    active.handleEvent(event("usable"))
+    await waitForStatus(project, "usable", "assistant-usable", "no-change")
+    expect(sdk.creates).toHaveLength(1)
+    expect(sdk.prompts).toHaveLength(1)
+    expect(sdk.prompts[0].body.tools.bash).toBe(false)
+    expect(active.status().tool_permissions).toMatchObject({
+      model_calls_blocked: false, all_tools_denied: false, host_attested: false, scope: "explicit_builtin_tool_map",
+    })
+  } finally { active.dispose(); removeProject(project) }
+})
+
 describe("skill-evolution runtime event intake and queueing", () => {
   test("disabled runtime and finish-only, idle, user, incomplete, errored, and summary updates are ignored", async () => {
     const project = tempProject("alg-skill-events-")

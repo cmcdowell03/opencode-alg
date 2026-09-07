@@ -421,8 +421,8 @@ export class SkillEvolutionRuntime {
   }
 
   private childCapability(): { allowed: true } | { allowed: false; error: string } {
-    if (!V1_HAS_SESSION_PERMISSION_RULESET) return { allowed: false, error: NO_TOOLS_UNSUPPORTED }
-    return { allowed: true }
+    if (V1_HAS_SESSION_PERMISSION_RULESET || this.options.allowBuiltinToolMap) return { allowed: true }
+    return { allowed: false, error: NO_TOOLS_UNSUPPORTED }
   }
 
   private async child(
@@ -433,7 +433,7 @@ export class SkillEvolutionRuntime {
     timeoutMs = this.childCallTimeoutMs,
     plannedModel?: ModelRef,
   ): Promise<ChildResult> {
-    if (!V1_HAS_SESSION_PERMISSION_RULESET) return { sessionId: "", parsed: null, error: NO_TOOLS_UNSUPPORTED }
+    if (!this.childCapability().allowed) return { sessionId: "", parsed: null, error: NO_TOOLS_UNSUPPORTED }
     const checkerRole = role === "checker" || role === "historical-checker"
     const historicalRole = role.startsWith("historical-")
     const maximum = checkerRole ? MAX_CHECKER_PROMPT_BYTES : MAX_AUDITOR_PROMPT_BYTES
@@ -632,10 +632,18 @@ export class SkillEvolutionRuntime {
       tool_permissions: {
         all_tools_denied: false,
         host_attested: false,
-        model_calls_blocked: true,
-        scope: "unsupported_v1_fail_closed_before_child_create",
-        limitation: NO_TOOLS_UNSUPPORTED,
-        breaking_behavior: "New live and historical auditor/checker calls fail before session.create. Inspection and existing-candidate management remain available; previously completed evidence is not rewritten.",
+        model_calls_blocked: !this.childCapability().allowed,
+        scope: this.childCapability().allowed
+          ? (V1_HAS_SESSION_PERMISSION_RULESET ? "sdk_session_permission_ruleset" : "explicit_builtin_tool_map")
+          : "unsupported_v1_fail_closed_before_child_create",
+        limitation: this.childCapability().allowed
+          ? (V1_HAS_SESSION_PERMISSION_RULESET
+            ? null
+            : "allowBuiltinToolMap disables only the listed built-in tools; MCP and custom tools are not a deny-all guarantee")
+          : NO_TOOLS_UNSUPPORTED,
+        breaking_behavior: this.childCapability().allowed
+          ? "Auditor/checker children are created. The builtin tool map is not host-attested deny-all."
+          : "New live and historical auditor/checker calls fail before session.create. Inspection and existing-candidate management remain available; previously completed evidence is not rewritten.",
       },
       ledger,
       candidates,

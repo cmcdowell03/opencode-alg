@@ -146,11 +146,11 @@ def serve(contract_path: str, expected_hash: str) -> int:
                 _reply(identifier, {"tools": [_tool_definition(loaded.contract["policy"]["max_sql_characters"])]})
             elif method == "tools/call" and not is_notification and initialized:
                 params = request.get("params")
-                if not isinstance(params, dict) or set(params) != {"name", "arguments"} or params.get("name") != "query":
+                if not isinstance(params, dict) or params.get("name") != "query":
                     _reply(identifier, error="unsupported or invalid MCP tool call", code=-32_602)
                     continue
                 arguments = params.get("arguments")
-                if not isinstance(arguments, dict) or set(arguments) != {"sql"} or not isinstance(arguments.get("sql"), str):
+                if not isinstance(arguments, dict) or not isinstance(arguments.get("sql"), str) or not arguments["sql"].strip():
                     _reply(identifier, error="alg_duckdb_query requires only one SQL string", code=-32_602)
                     continue
                 with active_lock:

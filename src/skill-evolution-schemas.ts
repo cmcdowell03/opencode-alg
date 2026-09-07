@@ -107,6 +107,8 @@ const projectRelativeReference = exact(1, 512, "reference path")
 
 export const SkillEvolutionOptionsSchema = z.object({
   enabled: z.boolean().default(false),
+  /** Explicit V1 testing overlay. This is not a deny-all host permission ruleset. */
+  allowBuiltinToolMap: z.boolean().default(false),
   mode: z.enum(["triggered", "every-turn"]).default("triggered"),
   skillRoots: z.array(projectRelativeRoot).min(1).max(8).default([".opencode/skills"]),
   auditorAgent: z.literal("researcher").default("researcher"),
@@ -211,7 +213,14 @@ const SkillProposalSchema = z.object({
 
 const AuditorBaseSchema = z.object({
   rationale: exact(1, 2_000, "rationale"),
-  confidence: z.enum(["low", "medium", "high"]),
+  confidence: z.preprocess((value) => {
+    if (typeof value !== "string") return value
+    const normalized = value.trim().toLowerCase()
+    if (normalized === "low" || normalized === "medium" || normalized === "high") return normalized
+    if (normalized.includes("high")) return "high"
+    if (normalized.includes("low")) return "low"
+    return "medium"
+  }, z.enum(["low", "medium", "high"])),
   triggers: z.array(SkillTriggerLabelSchema).max(7),
   provenance: ProvenanceSchema,
 }).strict()

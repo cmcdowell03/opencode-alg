@@ -102,6 +102,17 @@ clean checkout of tag `v0.4.0`:
 ./scripts/alg.sh rollback
 ```
 
+On a second machine, clone a clean tag first, then install from that checkout:
+
+```sh
+git clone https://github.com/cmcdowell03/opencode-alg.git
+cd opencode-alg
+git checkout v0.4.0
+./scripts/alg.sh install --source "$PWD" --tag v0.4.0
+```
+
+Quit and restart OpenCode. A plain string plugin registration keeps skill evolution, Excel, and DuckDB off. Enable them explicitly after install; see below.
+
 The default roots are `<config>/.opencode-alg/` for receipt/lock/journals and
 `<config>/plugins/opencode-alg/releases/<version>-<commit12>/package` for packages.
 The generation directory and its `package` child are reserved by exclusive
@@ -265,6 +276,7 @@ a plugin tuple; the TUI registration can remain the package-root string:
       {
         "skillEvolution": {
           "enabled": true,
+          "allowBuiltinToolMap": true,
           "mode": "triggered",
           "skillRoots": [".opencode/skills"],
           "minimumTriggerScore": 3,
@@ -284,6 +296,7 @@ being ignored. Defaults and accepted bounds are:
 | Option | Default | Accepted value |
 |---|---:|---|
 | `enabled` | `false` | boolean; the only activation switch |
+| `allowBuiltinToolMap` | `false` | boolean; V1 testing overlay that disables listed built-ins only. Not deny-all. Required for auditor/checker model calls on the current SDK |
 | `mode` | `"triggered"` | `"triggered"` or `"every-turn"` |
 | `skillRoots` | `[".opencode/skills"]` | 1–8 unique normalized project-relative roots, never the evolution store |
 | `auditorAgent` | `"researcher"` | fixed to `"researcher"` in v0.3.0 |
