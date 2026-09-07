@@ -379,6 +379,8 @@ function runResponse(run: RunState, events: string[], detail: Detail) {
     const visibleEvents = events.slice(-128).map((event) => cap(event))
     return {
       ...full,
+      execution_directory: full.execution_directory ?? full.project_directory,
+      shell_gate_base: full.execution_directory ?? full.project_directory,
       events: visibleEvents,
       events_omitted: Math.max(0, events.length - visibleEvents.length),
       retry_routing: routingSummary(full),
@@ -399,6 +401,8 @@ function runResponse(run: RunState, events: string[], detail: Detail) {
     mode: run.mode,
     events: compactEvents,
     execution_summary: executionSummary(run, events),
+    execution_directory: run.execution_directory ?? run.project_directory,
+    shell_gate_base: run.execution_directory ?? run.project_directory,
     global_attempts: `${run.global_attempts}/${run.graph.max_global_attempts}`,
     nodes: compacted.nodes,
     retry_routing: routingSummary(run),
@@ -612,7 +616,7 @@ export function createAlgTools(
       },
       async execute(args, context) {
         try {
-          const { project } = roots(plugin, context)
+          const { project, directory } = roots(plugin, context)
           // Authorize root scope before model-settings recovery/quarantine or
           // run creation can touch the filesystem.
           const additionalFilesystemRoot = isAdditionalFilesystemRoot(project)
@@ -635,6 +639,7 @@ export function createAlgTools(
             criteria: args.criteria ?? [],
             graph,
             projectDirectory: project,
+            executionDirectory: directory,
             ownerSessionId: context.sessionID,
             mode: args.mode ?? "live",
             modelSnapshot: modelSnapshotFromResolution(modelResolution),
@@ -652,6 +657,8 @@ export function createAlgTools(
             criteria_locked: run.criteria_locked,
             criteria_count: run.criteria.length,
             project_scope: run.project_directory,
+            execution_directory: run.execution_directory,
+            shell_gate_base: run.execution_directory,
             root_authorization: rootAuthorization(run),
             model_resolution: compactModels(run),
             nodes: compactedNodes.nodes,
@@ -668,6 +675,8 @@ export function createAlgTools(
               criteria_locked: run.criteria_locked,
               criteria_count: run.criteria.length,
               project_scope: run.project_directory,
+              execution_directory: run.execution_directory,
+              shell_gate_base: run.execution_directory,
               root_authorization: rootAuthorization(run, "full"),
               model_resolution: compactModels(run),
               goal: run.goal,
@@ -836,6 +845,8 @@ export function createAlgTools(
             retry_routing: routingSummary(run),
             state_projection: run.state_projection,
             execution_summary: executionSummary(run, []),
+            execution_directory: run.execution_directory ?? run.project_directory,
+            shell_gate_base: run.execution_directory ?? run.project_directory,
             next: nextAction(run),
             truncation: compacted.truncation,
           })
@@ -843,6 +854,8 @@ export function createAlgTools(
             const full = hydrateRunFully(run)
             return ok("alg status", {
               ...full,
+              execution_directory: full.execution_directory ?? full.project_directory,
+              shell_gate_base: full.execution_directory ?? full.project_directory,
               retry_routing: routingSummary(full),
               root_authorization: rootAuthorization(full, "full"),
               failure_verification: failureVerification(

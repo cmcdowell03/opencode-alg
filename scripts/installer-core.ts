@@ -260,7 +260,7 @@ function printResult(result: InstallerResult): void {
   console.log("Quit and restart OpenCode for plugin/config changes to take effect.")
 }
 
-if (import.meta.main) {
+if (import.meta.main || (process.argv[1] !== undefined && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url)))) {
   try {
     const cli = parseArgs(process.argv.slice(2))
     const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")

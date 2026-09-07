@@ -30,7 +30,7 @@ try {
     & bun run "scripts/installer-core.ts" @coreArgs
     if ($LASTEXITCODE -ne 0) { throw "ALG installer failed ($LASTEXITCODE)" }
   } elseif (Get-Command npm -ErrorAction SilentlyContinue) {
-    if (-not (Test-Path -LiteralPath (Join-Path $root "package-lock.json"))) { throw "package-lock.json is required for npm ci" }
+    if (-not (Test-Path -LiteralPath (Join-Path $root "package-lock.json")) -and -not (Test-Path -LiteralPath (Join-Path $root "npm-shrinkwrap.json"))) { throw "package-lock.json or npm-shrinkwrap.json is required for npm ci" }
     & npm ci --ignore-scripts --no-audit --no-fund
     if ($LASTEXITCODE -ne 0) { throw "npm ci failed ($LASTEXITCODE)" }
     & npx --no-install tsx "scripts/installer-core.ts" @coreArgs

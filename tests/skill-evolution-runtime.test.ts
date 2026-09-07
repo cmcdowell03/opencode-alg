@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import { installSyntheticEvolutionChild } from "./skill-evolution-child-fixture.ts"
 import { existsSync } from "node:fs"
 import type { Event } from "@opencode-ai/sdk"
 import { createSkillEvolutionRuntime, ALG_SKILL_AUDIT_TITLE_PREFIX, ALG_SKILL_CHECK_TITLE_PREFIX } from "../src/skill-evolution-runtime.ts"
@@ -115,6 +116,7 @@ class FakeSdk {
   auditor: (prompt: string) => unknown = noChange
   checker: (prompt: string) => unknown = () => ({ passed: true, findings: [] })
   getError: unknown | null = null
+  readGate: "get" | "messages" | null = null
   createError: unknown | null = null
   promptError: unknown | null = null
   createDelay: ((request: any) => Promise<void>) | null = null
@@ -142,10 +144,14 @@ class FakeSdk {
       },
       session: {
         get: async (request: any) => {
+          if (this.readGate === "get") await new Promise(() => {})
           if (this.getError) throw this.getError
           return { data: this.sessions.get(request.path.id), error: undefined }
         },
-        messages: async (request: any) => ({ data: this.messageSets.get(request.path.id), error: undefined }),
+        messages: async (request: any) => {
+          if (this.readGate === "messages") await new Promise(() => {})
+          return { data: this.messageSets.get(request.path.id), error: undefined }
+        },
         create: async (request: any) => {
           this.creates.push(request)
           if (this.createDelay) await this.createDelay(request)
@@ -176,9 +182,9 @@ class FakeSdk {
   }
 }
 
-function runtime(project: string, sdk: FakeSdk, configured: Partial<SkillEvolutionOptions> = {}, childCallTimeoutMs?: number) {
+function runtime(project: string, sdk: FakeSdk, configured: Partial<SkillEvolutionOptions> = {}, childCallTimeoutMs?: number, syntheticChild = true) {
   const options = SkillEvolutionOptionsSchema.parse({ enabled: true, mode: "every-turn", ...configured })
-  return createSkillEvolutionRuntime({
+  const active = createSkillEvolutionRuntime({
     client: sdk.client(),
     project: { id: sdk.projectId },
     directory: project,
@@ -191,6 +197,8 @@ function runtime(project: string, sdk: FakeSdk, configured: Partial<SkillEvoluti
     }),
     ...(childCallTimeoutMs === undefined ? {} : { childCallTimeoutMs }),
   })
+  if (syntheticChild) installSyntheticEvolutionChild(active, sdk.client())
+  return active
 }
 
 async function waitFor(check: () => boolean, label = "condition", timeout = 4_000): Promise<void> {
@@ -207,6 +215,76 @@ async function waitForStatus(project: string, sessionId: string, messageId: stri
   await waitFor(() => loadSkillLedger(project).records.find((record) => record.key === key)?.status === status, `${key}=${status}`)
   return loadSkillLedger(project).records.find((record) => record.key === key)!
 }
+
+test.each(["get", "messages"] as const)("live SDK %s reads time out even if the client ignores abort", async (stage) => {
+  const project = tempProject("alg-evolution-read-deadline-")
+  const sdk = new FakeSdk(project)
+  sdk.add("bounded")
+  sdk.readGate = stage
+  const active = runtime(project, sdk, {}, 50)
+  try {
+    active.handleEvent(event("bounded"))
+    const failed = await waitForStatus(project, "bounded", "assistant-bounded", "failed")
+    expect(failed.error).toContain(`session.${stage} timed out`)
+    expect(sdk.creates).toHaveLength(0)
+    await waitFor(() => !active.status().queue.active)
+  } finally { active.dispose(); removeProject(project) }
+})
+
+test("overall disabled rejects historical enabled without SDK effects or store creation", async () => {
+  const project = tempProject("alg-evolution-disabled-parent-")
+  const sdk = new FakeSdk(project)
+  const active = runtime(project, sdk, { enabled: false, historical: SkillEvolutionOptionsSchema.parse({ historical: { enabled: true } }).historical })
+  try {
+    expect((await active.historicalInitialize({ action: "discover" })).code).toBe("disabled")
+    expect(existsSync(skillEvolutionRoot(project))).toBe(false)
+    expect(sdk.creates).toHaveLength(0)
+  } finally { active.dispose(); removeProject(project) }
+})
+
+test("live checker receives the persisted source evidence as untrusted data", async () => {
+  const project = tempProject("alg-evolution-checker-grounding-")
+  const sdk = new FakeSdk(project)
+  sdk.add("grounded", messages("grounded", "assistant-grounded", "Synthetic grounding source."))
+  sdk.auditor = skillCandidate
+  const active = runtime(project, sdk)
+  try {
+    active.handleEvent(event("grounded"))
+    await waitForStatus(project, "grounded", "assistant-grounded", "candidate")
+    const prompt = sdk.prompts[1].body.parts[0].text
+    expect(prompt).toContain("UNTRUSTED SOURCE EVIDENCE JSON:")
+    expect(prompt).toContain("Synthetic grounding source.")
+    expect(prompt).toContain('"redaction_policy_version":2')
+  } finally { active.dispose(); removeProject(project) }
+})
+
+test("installed V1 contract lacks permission rules and fails closed before synthetic sentinel execution", async () => {
+  // This compile-time assertion follows the actual installed V1 SDK contract.
+  // A SDK upgrade adding permission support must force this limitation test to change.
+  type CreateBody = NonNullable<import("@opencode-ai/sdk").SessionCreateData["body"]>
+  const supportsPermissionRules: "permission" extends keyof CreateBody ? true : false = false
+  expect(supportsPermissionRules).toBe(false)
+  const project = tempProject("alg-evolution-v1-permission-limit-")
+  const sdk = new FakeSdk(project)
+  sdk.add("sentinel")
+  sdk.auditor = skillCandidate
+  const active = runtime(project, sdk, {}, undefined, false)
+  try {
+    active.handleEvent(event("sentinel"))
+    const failed = await waitForStatus(project, "sentinel", "assistant-sentinel", "failed")
+    expect(failed.error).toContain("cannot declare a deny-all")
+    // Exercise the one shared boundary for all roles, including resumed history.
+    for (const role of ["auditor", "checker", "historical-auditor", "historical-checker"]) {
+      const result = await (active as any).child("sentinel", role, "Call synthetic_custom_sentinel and synthetic_mcp_sentinel")
+      expect(result).toMatchObject({ sessionId: "", parsed: null })
+      expect(result.error).toContain("model calls are blocked")
+    }
+    expect(sdk.creates).toHaveLength(0)
+    expect(sdk.prompts).toHaveLength(0)
+    expect(loadSkillCandidates(project).candidates).toHaveLength(0)
+    expect(active.status().tool_permissions).toMatchObject({ model_calls_blocked: true, all_tools_denied: false, host_attested: false })
+  } finally { active.dispose(); removeProject(project) }
+})
 
 describe("skill-evolution runtime event intake and queueing", () => {
   test("disabled runtime and finish-only, idle, user, incomplete, errored, and summary updates are ignored", async () => {
@@ -536,7 +614,7 @@ describe("skill-evolution fresh auditor/checker child protocol", () => {
     }
   })
 
-  test("auditor child uses the exact parent/title/agent/model/tools contract and treats injection evidence as data", async () => {
+  test("synthetic child receives parent/title/model fixture metadata and untrusted auditor evidence", async () => {
     const project = tempProject("alg-skill-auditor-child-")
     try {
       const sdk = new FakeSdk(project)

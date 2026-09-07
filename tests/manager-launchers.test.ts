@@ -159,7 +159,7 @@ describe("manager launchers and parser", () => {
       expect(text).not.toMatch(/npm install(?:\s|$)/)
     }
     expect(powershell).toContain("bun.lock is required")
-    expect(shell).toContain("package-lock.json is required")
+    expect(shell).toContain("package-lock.json or npm-shrinkwrap.json is required")
   })
 
   powershellTest("PowerShell direct installer executes exact frozen Bun argv on supported Windows", () => {

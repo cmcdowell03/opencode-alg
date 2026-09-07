@@ -10,7 +10,9 @@ export const DEFAULT_SHELL_TIMEOUT_MS = 60_000
 export const MAX_SHELL_TIMEOUT_MS = 600_000
 export const SHELL_TAIL_BYTES = 4_096
 export const DEFAULT_TERMINATION_GRACE_MS = 1_500
-const MAX_CONTROLLED_PATH_CHARS = 12_000
+// cmd.exe ignores inherited environment values longer than 8,191 characters,
+// even though Win32 permits a larger environment. Leave room below that limit.
+const MAX_CONTROLLED_PATH_CHARS = process.platform === "win32" ? 8_000 : 12_000
 const WINDOWS_JOB_READINESS_TIMEOUT_MS = 45_000
 
 /** Deliberately small inheritance set; graph definitions cannot add environment variables. */
@@ -713,8 +715,8 @@ export function controlledShellEnvironment(source = process.env): NodeJS.Process
     dirname(process.execPath),
     ...(systemRoot ? [join(systemRoot, "System32"), systemRoot] : []),
   ]
-  // Bun package scripts can duplicate enough PATH entries to overflow Windows'
-  // environment block. Locate essential JS runtimes before applying a hard cap.
+  // Bun package scripts can expand PATH beyond cmd.exe's inherited-value limit.
+  // Locate essential JS runtimes before applying the shell-specific hard cap.
   const runtimeNames = process.platform === "win32"
     ? ["node.exe", "npm.cmd", "bun.exe"]
     : ["node", "npm", "bun"]

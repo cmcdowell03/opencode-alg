@@ -12,6 +12,7 @@ import {
 } from "node:fs"
 import { dirname, isAbsolute, join, relative, resolve } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
+import { DUCKDB_ASSET_FILES, DATASCIENCE_ASSET_FILES, CONNECTOR_ASSET_FILES } from "./capability-assets.ts"
 
 export const ALG_LIVE_SOURCE_DIGEST_ENV = "OPENCODE_ALG_LIVE_SOURCE_DIGEST"
 export const ALG_LIVE_SOURCE_MARKER = "OPENCODE_ALG_SOURCE_ID"
@@ -212,6 +213,24 @@ function collectExcelCapabilityAssets(
   }
 }
 
+function collectDuckDbCapabilityAssets(
+  root: string,
+  collected: CollectedSource[],
+  bounds: AlgSourceManifestBounds,
+): void {
+  const duckdb = join(root, "capabilities", "duckdb")
+  assertUnlinkedPath(root, duckdb, "directory")
+  for (const name of ["manifest.json", ...DUCKDB_ASSET_FILES]) addSourceFile(root, `capabilities/duckdb/${name}`, collected, bounds)
+}
+
+function collectProjectSkillAssets(root: string, collected: CollectedSource[], bounds: AlgSourceManifestBounds): void {
+  const skill = join(root, ".opencode", "skills", "duckdb-lake")
+  assertUnlinkedPath(root, join(root, ".opencode"), "directory")
+  assertUnlinkedPath(root, join(root, ".opencode", "skills"), "directory")
+  assertUnlinkedPath(root, skill, "directory")
+  addSourceFile(root, ".opencode/skills/duckdb-lake/SKILL.md", collected, bounds)
+}
+
 export function canonicalPluginRoot(root: string): string {
   return realpathSync.native(resolve(root))
 }
@@ -237,7 +256,19 @@ export function computeAlgSourceIdentity(
   collectFlatAssets(canonicalRoot, "agents", ".md", collected, bounds)
   const capabilities = join(canonicalRoot, "capabilities")
   if (existsSync(capabilities)) {
-    collectExcelCapabilityAssets(canonicalRoot, collected, bounds)
+    if (existsSync(join(capabilities, "excel"))) collectExcelCapabilityAssets(canonicalRoot, collected, bounds)
+    if (existsSync(join(capabilities, "duckdb"))) collectDuckDbCapabilityAssets(canonicalRoot, collected, bounds)
+    if (existsSync(join(capabilities, "datascience"))) {
+      assertUnlinkedPath(canonicalRoot, join(capabilities, "datascience"), "directory")
+      for (const name of ["manifest.json", ...DATASCIENCE_ASSET_FILES]) addSourceFile(canonicalRoot, `capabilities/datascience/${name}`, collected, bounds)
+    }
+    if (existsSync(join(capabilities, "connectors"))) {
+      assertUnlinkedPath(canonicalRoot, join(capabilities, "connectors"), "directory")
+      for (const name of ["manifest.json", ...CONNECTOR_ASSET_FILES]) addSourceFile(canonicalRoot, `capabilities/connectors/${name}`, collected, bounds)
+    }
+  }
+  if (existsSync(join(canonicalRoot, ".opencode", "skills", "duckdb-lake"))) {
+    collectProjectSkillAssets(canonicalRoot, collected, bounds)
   }
   collected.sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0)
 

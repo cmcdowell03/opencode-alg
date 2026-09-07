@@ -3,9 +3,10 @@ import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, rmSync, writ
 import { dirname, join } from "node:path"
 import { createHash, randomUUID } from "node:crypto"
 import { EventEmitter } from "node:events"
-import { spawn } from "node:child_process"
+import { spawn, execFile } from "node:child_process"
 import {
   executeShellGate,
+  controlledShellEnvironment,
   SHELL_TAIL_BYTES,
   cleanupWindowsShellHelpers,
   windowsJobHelperBuildState,
@@ -27,6 +28,37 @@ function shellContext(project: string, options?: { ask?: () => Promise<void>; si
 }
 
 describe("permissioned bounded shell gate", () => {
+  windowsTest("oversized inherited PATH remains usable by cmd without broadening environment inheritance", async () => {
+    const project = tempProject("alg-long-path-")
+    try {
+      const base = controlledShellEnvironment()
+      // Existing distinct directories survive existence checks and deduplication.
+      // Put real runtime locations last to exercise priority before truncation.
+      const padding = Array.from({ length: 64 }, (_, index) => {
+        const path = join(project, `${index}-${"p".repeat(140)}`)
+        mkdirSync(path)
+        return path
+      })
+      const inherited = [...padding, base.PATH!].join(";")
+      expect(inherited.length).toBeGreaterThan(12_000)
+      const environment = controlledShellEnvironment({ ...base, PATH: inherited, ALG_SECRET: "synthetic-secret" })
+      expect(environment.PATH!.length).toBeLessThanOrEqual(8_000)
+      expect(environment.ALG_SECRET).toBeUndefined()
+      // Exercise cmd with asynchronous bounded I/O. A long-lived Bun test process
+      // reported spawnSync ETIMEDOUT after 109ms despite its 10s timeout; the
+      // isolated regression passed. Keep the deadline and every PATH assertion.
+      const result = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
+        execFile(environment.ComSpec!, ["/d", "/s", "/c", "node --version"], {
+          cwd: project, env: environment, windowsHide: true, encoding: "utf8", timeout: 10_000, maxBuffer: 4096,
+        }, (error, stdout, stderr) => error ? reject(error) : resolve({ stdout, stderr }))
+      })
+      expect(result.stderr).toBe("")
+      expect(result.stdout.trim()).toMatch(/^v\d+\.\d+\.\d+$/)
+    } finally {
+      removeProject(project)
+    }
+  })
+
   test("permission denial happens before spawn", async () => {
     const project = tempProject()
     const marker = join(project, "should-not-exist")
@@ -87,7 +119,7 @@ describe("permissioned bounded shell gate", () => {
       })
       expect(Date.now() - started).toBeLessThan(18_000)
       expect(result.ok).toBe(false)
-      expect(result.exit_code).toBe(7)
+      expect(result).toMatchObject({ exit_code: 7 })
       expect(result.stdout_tail.toLowerCase()).toBe(`${project.toLowerCase()}|undefined`)
       expect(result.stderr_tail).toBe("cached-stderr")
       expect(result.cwd.toLowerCase()).toBe(project.toLowerCase())
@@ -243,7 +275,7 @@ describe("permissioned bounded shell gate", () => {
         },
         metadata: { run_id: "r", node_id: "n" },
       })
-      expect(result.ok).toBe(true)
+      expect(result).toMatchObject({ ok: true })
       expect(result.cwd.toLowerCase()).toBe(child.toLowerCase())
       expect(result.stdout_tail.toLowerCase()).toBe(child.toLowerCase())
       expect(request).toMatchObject({ permission: "bash", patterns: [`node -e "process.stdout.write(process.cwd())"`], always: [] })

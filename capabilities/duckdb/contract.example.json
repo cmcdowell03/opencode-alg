@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "contract": {
+    "capability_version": "0.1.0",
+    "engine_version": "1.4.0",
+    "parser_version": "27.14.0",
+    "extensions": [],
+    "settings": {
+      "memory_limit": "256MB",
+      "threads": 2,
+      "max_temp_directory_size": "256MB"
+    },
+    "attachments": [],
+    "policy": {
+      "allowed_relations": [],
+      "protected_relations": {},
+      "sensitive_columns": ["email", "token"],
+      "max_sql_characters": 100000,
+      "max_rows": 100,
+      "max_characters": 65536,
+      "max_diagnostic_characters": 4096,
+      "timeout_ms": 5000
+    }
+  },
+  "contract_sha256": "046bdb31042f1d0dc0266417cbe7bc896b9d0e96c00eed59699b604400755508"
+}

@@ -44,8 +44,8 @@ PowerShell and POSIX launchers call the same TypeScript CLI:
 
 ```powershell
 # Fresh install, or use the update line instead from an older managed generation.
-.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.3.0
-.\scripts\alg.ps1 update --tag v0.3.0
+.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.4.0
+.\scripts\alg.ps1 update --tag v0.4.0
 .\scripts\alg.ps1 doctor
 .\scripts\alg.ps1 rollback
 .\scripts\alg.ps1 uninstall --remove-agents
@@ -53,8 +53,8 @@ PowerShell and POSIX launchers call the same TypeScript CLI:
 
 ```sh
 # Fresh install, or use the update line instead from an older managed generation.
-./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.3.0
-./scripts/alg.sh update --tag v0.3.0
+./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.4.0
+./scripts/alg.sh update --tag v0.4.0
 ./scripts/alg.sh doctor
 ./scripts/alg.sh rollback
 ./scripts/alg.sh uninstall --remove-agents
@@ -274,6 +274,23 @@ dependency identity, exactly one server and TUI registration, agent status,
 previous rollback availability, and restart-pending state. The manager never
 detects that OpenCode restarted. After actually quitting and restarting, the
 user may attest that fact with `doctor --ack-restart`.
+
+## v0.3.0 to v0.4.0
+
+Use managed `update --tag v0.4.0` from a receipt-backed v0.3.0 generation, or
+`install --source <clean-checkout> --tag v0.4.0` for a fresh managed generation.
+The package and both npm lock root versions must be `0.4.0`; release evidence is
+schema 6 and binds `package_version:"0.4.0"`. Live evidence remains schema 2.
+Manager/receipt protocol remains `0.2.0`. ALG run state remains schema 2 with
+compatible package generations `0.1.0`–`0.4.0`.
+
+The public server contract remains the exact 15 ALG tool IDs. Optional DuckDB,
+Data Science, connectors, and experience workflows are disabled by default and
+are not core tools. Private skill-evolution auditor/checker model calls fail
+closed on the pinned V1 SDK until a deny-all session permission transport exists.
+Excel capability enablement stays explicit.
+
+Restart OpenCode after install or update before relying on reloaded plugin code.
 
 ## v0.2.0 to v0.3.0
 

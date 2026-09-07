@@ -657,7 +657,14 @@ export function commitFileCasPlans(
   const records: CasRecord[] = plans.map((plan, index) => {
     const path = resolve(plan.path)
     const parent = dirname(path)
-    mkdirSync(parent, { recursive: true, mode: 0o700 })
+    try {
+      mkdirSync(parent, { recursive: true, mode: 0o700 })
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code
+      if (code !== "EEXIST") throw error
+      const parentStat = lstatSync(parent)
+      if (!parentStat.isDirectory() || parentStat.isSymbolicLink()) throw error
+    }
     const record: CasRecord = {
       plan: { path, before: plan.before, after: plan.after, expectedIdentity: plan.expectedIdentity },
       index,

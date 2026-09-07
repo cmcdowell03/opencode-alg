@@ -72,7 +72,9 @@ function partsToText(parts: unknown): string {
  */
 export async function runNodeSession(opts: NodePromptOpts): Promise<NodePromptResult> {
   let sessionId = ""
+  let callbackFailed = false
   try {
+    if (opts.abort?.aborted) throw new Error("Execution cancelled before child launch")
     const promptLimit = opts.agent === "checker" ? MAX_CHECKER_PROMPT_BYTES : MAX_WORKER_PROMPT_BYTES
     assertTextBytes(opts.userPrompt, promptLimit, `${opts.agent} prompt`)
     const fullPrompt = `${opts.userPrompt}
@@ -100,7 +102,13 @@ ${jsonSchemaHint(opts.agent)}
     if (!sessionId) {
       return { session_id: "", text: "", parsed: null, error: "session.create returned no session id" }
     }
-    await opts.onSessionCreated?.(sessionId)
+    try {
+      await opts.onSessionCreated?.(sessionId)
+    } catch (error) {
+      callbackFailed = true
+      throw error
+    }
+    if (opts.abort?.aborted) throw new Error("Execution cancelled before child prompt")
 
     const body: PromptBodyWithVariant = {
       agent: opts.agent,
@@ -132,6 +140,7 @@ ${jsonSchemaHint(opts.agent)}
     const text = partsToText(prompted.data?.parts)
     return { session_id: sessionId, text, parsed: extractJson(text) }
   } catch (error) {
+    if (callbackFailed) throw error
     return {
       session_id: sessionId,
       text: "",
@@ -177,7 +186,7 @@ export function buildWorkerPrompt(options: {
 }
 
 /** The checker prompt excludes worker chat/reasoning; SDK/project policy remains active. */
-export function buildCheckerPrompt(options: { criteria: string[]; claimed: unknown }): string {
+export function buildCheckerPrompt(options: { criteria: string[]; claimed: unknown; priorFailures?: string[] }): string {
   const prompt = [
     "You are a checker in a fresh child session.",
     "ALG's explicit task payload contains bounded claimed output and original hard criteria.",
@@ -193,6 +202,11 @@ export function buildCheckerPrompt(options: { criteria: string[]; claimed: unkno
     "```",
     "",
     "Return only the CheckOut JSON verdict.",
+    "score is an integer 0–10; passed must equal (score >= 7). Pass only when every hard criterion is met, with failures=[]. Otherwise score 0–6 and provide specific failures.",
+    ...(options.priorFailures?.length ? [
+      "PRIOR ATTEMPT VALIDATION/GATE FAILURES (correct the verdict contract; these are not new acceptance criteria):",
+      ...options.priorFailures.map((failure) => `- ${failure}`),
+    ] : []),
   ].join("\n")
   assertTextBytes(prompt, MAX_CHECKER_PROMPT_BYTES, "checker prompt")
   return prompt

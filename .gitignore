@@ -5,6 +5,17 @@ node_modules/
 # OpenCode runtime state and durable local runs
 .opencode/
 **/.opencode/
+!.opencode/
+.opencode/*
+!.opencode/skills/
+.opencode/skills/*
+!.opencode/skills/duckdb-lake/
+.opencode/skills/duckdb-lake/*
+!.opencode/skills/duckdb-lake/SKILL.md
+.opencode/runs/
+.opencode/model*.json
+.opencode/**/*private*
+.opencode/**/*receipt*
 runs/
 **/runs/
 
@@ -31,6 +42,8 @@ temp/
 __pycache__/
 **/__pycache__/
 *.py[cod]
+.venv/
+**/.venv/
 
 # Logs and local/live verification evidence
 *.log

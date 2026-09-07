@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto"
+import { FilesystemMutexContentionError } from "./filesystem-mutex.ts"
 import type { Event } from "@opencode-ai/sdk"
 import type { PluginInput } from "@opencode-ai/plugin"
 import { isDeepStrictEqual } from "node:util"
@@ -19,7 +20,8 @@ import {
   type SkillLedgerRecord,
 } from "./skill-evolution-schemas.ts"
 import {
-  beginSkillAudit,
+  acquireLiveSkillAudit,
+  acquireHistoricalExecutionLease,
   configuredSkillTarget,
   createSkillCandidate,
   directFileHash,
@@ -51,6 +53,12 @@ const DEFAULT_CHILD_CALL_TIMEOUT_MS = 30_000
 const projectFlights = new Map<string, Promise<void>>()
 
 type Client = PluginInput["client"]
+type V1CreateBody = NonNullable<import("@opencode-ai/sdk").SessionCreateData["body"]>
+// The installed V1 contract has no session permission ruleset. Deliberately
+// block model calls rather than treating a fixed builtin map as all-tool denial.
+// An SDK contract change must fail compilation here and receive explicit review.
+const V1_HAS_SESSION_PERMISSION_RULESET: "permission" extends keyof V1CreateBody ? true : false = false
+const NO_TOOLS_UNSUPPORTED = "skill evolution model calls are blocked: installed SDK V1 cannot declare a deny-all session permission ruleset for built-in, MCP, and custom tools"
 type PromptBody = NonNullable<Parameters<Client["session"]["prompt"]>[0]["body"]> & { variant?: string }
 
 function privateTitle(title: string): boolean {
@@ -92,7 +100,7 @@ function auditorPrompt(evidence: unknown): string {
   ].join("\n")
 }
 
-function checkerPrompt(output: AuditorOutput): string {
+function checkerPrompt(output: AuditorOutput, evidence: unknown): string {
   if (output.decision !== "skill_candidate" && output.decision !== "skill_revision") throw new Error("checker requires a skill candidate")
   const claimed = { decision: output.decision, skill: output.skill, provenance: output.provenance }
   return [
@@ -110,6 +118,8 @@ function checkerPrompt(output: AuditorOutput): string {
     "",
     "UNTRUSTED CLAIMED CANDIDATE JSON:",
     JSON.stringify(claimed),
+    "UNTRUSTED SOURCE EVIDENCE JSON:",
+    JSON.stringify(evidence),
     "",
     strictOutputContract("checker"),
   ].join("\n")
@@ -211,6 +221,7 @@ export class SkillEvolutionRuntime {
           evidenceRef, auditorChildId, checkerChildId, checker, this.options, historicalBinding)
       },
       this.abort.signal,
+      () => this.childCapability(),
     )
     if (this.options.enabled) {
       try {
@@ -219,7 +230,7 @@ export class SkillEvolutionRuntime {
         if (transactions.unresolved.length) {
           this.log("error", `skill-evolution transaction recovery is unresolved: ${transactions.unresolved[0]}`)
         }
-        for (const record of recoverPendingSkillAudits(this.project, this.options)) this.schedule(record.key)
+        this.recoverLiveQueue()
       } catch (error) {
         this.log("error", `skill-evolution startup recovery failed: ${formatSdkError(error)}`)
       }
@@ -231,6 +242,18 @@ export class SkillEvolutionRuntime {
     this.abort.abort("skill-evolution plugin disposed")
     this.pending.length = 0
     this.queued.clear()
+  }
+
+  private recoverLiveQueue(): void {
+    if (this.disposed || !this.options.enabled) return
+    try {
+      for (const record of recoverPendingSkillAudits(this.project, this.options)) this.schedule(record.key)
+    } catch (error) {
+      if (error instanceof FilesystemMutexContentionError) {
+        const timer = setTimeout(() => this.recoverLiveQueue(), 1_000)
+        timer.unref()
+      } else this.log("error", `skill-evolution recovery failed: ${formatSdkError(error)}`)
+    }
   }
 
   markRestartRequired(): void {
@@ -269,9 +292,12 @@ export class SkillEvolutionRuntime {
             if (!this.disposed) await this.process(key, manual)
           })
         } catch (error) {
-          try { failSkillAudit(this.project, key, error) } catch (persistError) {
-            this.log("error", `skill-evolution audit and failure persistence both failed: ${formatSdkError(persistError)}`)
+          if (error instanceof FilesystemMutexContentionError) {
+            const timer = setTimeout(() => this.schedule(key, manual), 1_000)
+            timer.unref()
+            continue
           }
+          this.log("error", `skill-evolution audit could not run: ${formatSdkError(error)}`)
         }
       }
     } finally {
@@ -316,10 +342,10 @@ export class SkillEvolutionRuntime {
   }
 
   private async getSession(sessionId: string): Promise<Record<string, any>> {
-    const response = await this.client.session.get({
+    const response = await this.boundedChildCall("session.get", (signal) => this.client.session.get({
       path: { id: sessionId }, query: { directory: this.directory }, responseStyle: "fields", throwOnError: false,
-      signal: this.abort.signal,
-    })
+      signal,
+    }))
     if (response.error) throw new Error(formatSdkDiagnostic("session lookup failed: ", response.error))
     const session = response.data as Record<string, any> | undefined
     if (!session || session.id !== sessionId) throw new Error("session lookup returned the wrong identity")
@@ -336,11 +362,13 @@ export class SkillEvolutionRuntime {
   }
 
   private async messages(sessionId: string): Promise<unknown> {
-    const response = await this.client.session.messages({
+    const response = await this.boundedChildCall("session.messages", (signal) => this.client.session.messages({
       path: { id: sessionId }, query: { directory: this.directory, limit: MAX_SESSION_MESSAGES },
-      responseStyle: "fields", throwOnError: false, signal: this.abort.signal,
-    })
+      responseStyle: "fields", throwOnError: false, signal,
+    }))
     if (response.error) throw new Error(formatSdkDiagnostic("session messages failed: ", response.error))
+    if (!Array.isArray(response.data) || response.data.length > MAX_SESSION_MESSAGES) throw new Error("session messages exceeds count bound")
+    assertTextBytes(JSON.stringify(response.data), 2 * 1024 * 1024, "session messages")
     return response.data
   }
 
@@ -392,6 +420,11 @@ export class SkillEvolutionRuntime {
     })
   }
 
+  private childCapability(): { allowed: true } | { allowed: false; error: string } {
+    if (!V1_HAS_SESSION_PERMISSION_RULESET) return { allowed: false, error: NO_TOOLS_UNSUPPORTED }
+    return { allowed: true }
+  }
+
   private async child(
     parentId: string,
     role: "auditor" | "checker" | "historical-auditor" | "historical-checker",
@@ -400,6 +433,7 @@ export class SkillEvolutionRuntime {
     timeoutMs = this.childCallTimeoutMs,
     plannedModel?: ModelRef,
   ): Promise<ChildResult> {
+    if (!V1_HAS_SESSION_PERMISSION_RULESET) return { sessionId: "", parsed: null, error: NO_TOOLS_UNSUPPORTED }
     const checkerRole = role === "checker" || role === "historical-checker"
     const historicalRole = role.startsWith("historical-")
     const maximum = checkerRole ? MAX_CHECKER_PROMPT_BYTES : MAX_AUDITOR_PROMPT_BYTES
@@ -482,12 +516,22 @@ export class SkillEvolutionRuntime {
   }
 
   private async process(key: string, manual: boolean): Promise<void> {
-    const running = beginSkillAudit(this.project, key, this.options)
-    if (running.status !== "running") return
-    const fencingToken = liveReviewFencingToken(key)
-    const reviewLost = () => !liveReviewStillOwned(
+    const lease = acquireHistoricalExecutionLease(this.project, `live-executor:${process.pid}`)
+    const fencingToken = liveReviewFencingToken(randomUUID())
+    try {
+      const acquisition = acquireLiveSkillAudit(this.project, key, this.options, fencingToken, lease)
+      if (!acquisition.acquired) return
+      await this.processOwned(key, manual, fencingToken, acquisition.record, () => lease.assertHeld())
+    } catch (error) {
+      lease.assertHeld()
+      failSkillAudit(this.project, key, error, fencingToken)
+    } finally { lease.release() }
+  }
+
+  private async processOwned(key: string, manual: boolean, fencingToken: string, running: SkillLedgerRecord, assertLease: () => void): Promise<void> {
+    const reviewLost = () => { assertLease(); return !liveReviewStillOwned(
       this.project, running.session_id, running.message_id, key, fencingToken,
-    )
+    ) }
     const cancelled = () => this.disposed || reviewLost()
     const stopped = () => {
       if (this.disposed) throw new Error("skill-evolution live review aborted because the runtime was disposed")
@@ -515,7 +559,7 @@ export class SkillEvolutionRuntime {
       if (stopped()) return
       markLiveSkillLedgerOutcome(this.project, key, {
         status: "no-change", trigger_score: evidence.trigger_score, trigger_labels: evidence.trigger_labels, evidence_ref: evidenceRef,
-      })
+      }, fencingToken)
       return
     }
     const prompt = auditorPrompt(evidence)
@@ -529,7 +573,7 @@ export class SkillEvolutionRuntime {
     if (output.decision === "no_change") {
       markLiveSkillLedgerOutcome(this.project, key, {
         status: "no-change", trigger_score: evidence.trigger_score, trigger_labels: evidence.trigger_labels, evidence_ref: evidenceRef,
-      })
+      }, fencingToken)
       return
     }
 
@@ -537,7 +581,7 @@ export class SkillEvolutionRuntime {
     let checkerChildId: string | null = null
     if (output.decision === "skill_candidate" || output.decision === "skill_revision") {
       if (stopped()) return
-      const checked = await this.child(running.session_id, "checker", checkerPrompt(output), cancelled)
+      const checked = await this.child(running.session_id, "checker", checkerPrompt(output, evidence), cancelled)
       if (stopped()) return
       checkerChildId = checked.sessionId || null
       if (checked.error) throw new Error(checked.error)
@@ -547,7 +591,7 @@ export class SkillEvolutionRuntime {
     if (stopped()) return
     createSkillCandidate(
       this.project, key, output, evidenceRef, audited.sessionId, checkerChildId, checkerResult, this.options,
-      undefined, { session_id: running.session_id, message_id: running.message_id, trigger_score: evidence.trigger_score, trigger_labels: evidence.trigger_labels },
+      undefined, { session_id: running.session_id, message_id: running.message_id, trigger_score: evidence.trigger_score, trigger_labels: evidence.trigger_labels, fencing_token: fencingToken },
     )
   }
 
@@ -585,6 +629,14 @@ export class SkillEvolutionRuntime {
       config: this.options,
       queue: { active: this.active, in_memory: this.pending.length, concurrency: 1, max_backlog: this.options.maxBacklog },
       restart_required: this.restartRequired,
+      tool_permissions: {
+        all_tools_denied: false,
+        host_attested: false,
+        model_calls_blocked: true,
+        scope: "unsupported_v1_fail_closed_before_child_create",
+        limitation: NO_TOOLS_UNSUPPORTED,
+        breaking_behavior: "New live and historical auditor/checker calls fail before session.create. Inspection and existing-candidate management remain available; previously completed evidence is not rewritten.",
+      },
       ledger,
       candidates,
     }

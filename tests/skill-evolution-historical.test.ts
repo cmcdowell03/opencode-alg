@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import { installSyntheticEvolutionChild } from "./skill-evolution-child-fixture.ts"
 import { createHash } from "node:crypto"
 import { lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
@@ -135,7 +136,9 @@ function fixedHistoricalResolutions() {
 }
 
 function createSkillEvolutionRuntime(input: any, config: any) {
-  return createSkillEvolutionRuntimeBase(input, { configuredResolutions: fixedHistoricalResolutions, ...config })
+  const active = createSkillEvolutionRuntimeBase(input, { configuredResolutions: fixedHistoricalResolutions, ...config })
+  installSyntheticEvolutionChild(active, input.client)
+  return active
 }
 
 function runtime(project: string, sdk: HistoricalSdk, enabled: boolean, overrides: Record<string, unknown> = {}) {
@@ -161,6 +164,34 @@ function persistReviewedLiveCandidate(project: string, values: any[], options: S
 }
 
 describe("V1-only historical skill evolution", () => {
+  test("new sealed snapshots and prompted fragments redact transcript and session metadata canaries", async () => {
+    const project = tempProject("alg-historical-redaction-v2-")
+    const token = "sk-proj-SyntheticCanary012345678901234567"
+    const password = "synthetic password words"
+    const values = transcript("selected", 2)
+    values[0].parts[0].text = token
+    values[1].parts.push({ id: "tool-secret", messageID: "message-1", sessionID: "selected", type: "tool", tool: "example", state: { status: "completed", input: { nested: [{ password }] }, output: "-----BEGIN PRIVATE KEY-----\nSyntheticPemCanary\n-----END PRIVATE KEY-----" } })
+    const sdk = new HistoricalSdk(project, values, token)
+    const active = runtime(project, sdk, true)
+    try {
+      const preview = await active.historicalInitialize({ action: "preview", session_ids: ["selected"] }) as any
+      expect(preview.ok).toBe(true)
+      const session = loadHistoricalIndex(project).snapshots[0]!
+      const snapshot = loadHistoricalImmutable(project, session.snapshot_ref, "snapshot", HISTORICAL_SNAPSHOT_REFERENCE_MAX_BYTES) as any
+      expect(snapshot.redaction_policy_version).toBe(2)
+      const representations = [JSON.stringify(snapshot), Buffer.from(snapshot.canonical_base64, "base64").toString("utf8")]
+      const result = await active.historicalInitialize({ action: "run", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })
+      expect(result.code).toBe("completed")
+      for (const request of sdk.prompts) {
+        const prompt = request.body.parts[0].text
+        representations.push(prompt)
+        const fragment = JSON.parse(prompt.split("UNTRUSTED FRAGMENT JSON:\n")[1])
+        representations.push(Buffer.from(fragment.data_base64, "base64").toString("utf8"))
+      }
+      for (const representation of representations) for (const canary of [token, password, "SyntheticPemCanary"]) expect(representation).not.toContain(canary)
+      expect(values[0].parts[0].text).toBe(token)
+    } finally { active.dispose(); removeProject(project) }
+  })
   test("source uses only the supplied V1 client and strict bounded action unions", () => {
     const source = readFileSync(join(import.meta.dir, "..", "src", "skill-evolution-historical.ts"), "utf8")
     expect(source).not.toContain("@opencode-ai/sdk/v2")
@@ -200,6 +231,30 @@ describe("V1-only historical skill evolution", () => {
       expect(sdk.creates).toEqual([])
       active.dispose()
     } finally { removeProject(project) }
+  })
+
+  test("production V1 historical run fails closed before issuing an uncommitted child checkpoint", async () => {
+    const project = tempProject("alg-historical-v1-preflight-")
+    const sdk = new HistoricalSdk(project, transcript("selected", 2))
+    const active = createSkillEvolutionRuntimeBase({ client: sdk.client(), project: { id: "project" }, directory: project, worktree: project } as never, {
+      options: SkillEvolutionOptionsSchema.parse({ enabled: true, historical: { enabled: true, maxMessagesPerSession: 150 } }),
+      configuredResolutions: fixedHistoricalResolutions,
+    })
+    try {
+      const preview = await active.historicalInitialize({ action: "preview", session_ids: ["selected"] }) as any
+      expect(preview.ok).toBe(true)
+      const run = await active.historicalInitialize({ action: "run", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })
+      expect(run).toMatchObject({ ok: false, action: "run", code: "unsupported" })
+      expect(String(run.error)).toContain("cannot declare a deny-all")
+      expect(sdk.creates).toEqual([])
+      expect(sdk.prompts).toEqual([])
+      const plan = loadHistoricalIndex(project).plans.find((entry: any) => entry.plan_id === preview.result.plan_id) as any
+      expect(plan).toMatchObject({ model_calls: 0, input_bytes: 0, checkpoints: [], state: "previewed" })
+      const resume = await active.historicalInitialize({ action: "resume", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })
+      expect(resume).toMatchObject({ ok: false, action: "resume", code: "unsupported" })
+      expect(String(resume.error)).not.toContain("unknown durable outcome")
+      expect(sdk.creates).toEqual([])
+    } finally { active.dispose(); removeProject(project) }
   })
 
   test("fails closed without exact current V1 project identity and filters discovery by identity plus canonical containment", async () => {
@@ -1105,7 +1160,7 @@ describe("V1-only historical skill evolution", () => {
     }
   }, 30_000)
 
-  test("historical completion while a live auditor create is blocked prevents its prompt and publication", async () => {
+  test("historical execution waits for a live auditor create lease and stale live publication stays fenced", async () => {
     const project = tempProject("alg-historical-live-create-cancel-")
     let releaseLive!: () => void
     try {
@@ -1125,9 +1180,10 @@ describe("V1-only historical skill evolution", () => {
       expect(liveSdk.prompts).toHaveLength(0)
 
       failSkillAudit(project, skillLedgerKey("selected", "message-1"), "simulated loss while live session.create is blocked")
-      expect((await historical.historicalInitialize({ action: "run", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })).code).toBe("completed")
+      expect((await historical.historicalInitialize({ action: "run", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })).code).toBe("resumable")
       releaseLive()
-      await Bun.sleep(50)
+      while (live.status().queue.active) await Bun.sleep(5)
+      expect((await historical.historicalInitialize({ action: "run", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })).code).toBe("completed")
 
       expect(liveSdk.prompts).toHaveLength(0)
       expect(loadSkillCandidates(project).candidates).toHaveLength(1)
@@ -1299,7 +1355,7 @@ describe("V1-only historical skill evolution", () => {
     } finally { removeProject(project) }
   }, 30_000)
 
-  test("historical completion during each live external review stage suppresses late publication", async () => {
+  test("historical execution waits for each live review lease and rejects stale live publication", async () => {
     for (const stage of ["auditor", "checker"] as const) {
       const project = tempProject(`alg-historical-in-flight-${stage}-`)
       let releaseLive!: () => void
@@ -1323,10 +1379,12 @@ describe("V1-only historical skill evolution", () => {
         while (liveSdk.prompts.length < expectedLivePrompts) await Bun.sleep(5)
 
         failSkillAudit(project, skillLedgerKey("selected", "message-1"), "simulated stale live owner during external review")
+        const blocked = await historical.historicalInitialize({ action: "run", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation }) as any
+        expect(blocked.code).toBe("resumable")
+        releaseLive()
+        while (live.status().queue.active) await Bun.sleep(5)
         const completed = await historical.historicalInitialize({ action: "run", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation }) as any
         expect(completed).toMatchObject({ ok: true, code: "completed", result: { reduction: "candidate" } })
-        releaseLive()
-        await Bun.sleep(50)
         expect(liveSdk.prompts).toHaveLength(expectedLivePrompts)
         expect(loadSkillCandidates(project).candidates).toHaveLength(1)
         expect(loadSkillCandidates(project).candidates[0]!.candidate_id).toStartWith("se-h-")

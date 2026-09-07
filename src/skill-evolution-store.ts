@@ -86,8 +86,9 @@ function loadReviewClaims(project: string): z.infer<typeof ReviewClaimsSchema> {
 /** Caller holds the project mutation lock. */
 function saveReviewClaimsLocked(project: string, value: z.infer<typeof ReviewClaimsSchema>): void {
   const next = ReviewClaimsSchema.parse({ ...value, revision: value.revision + 1, updated_at: nowIso() })
-  if (serializedBytes(next) > MAX_REVIEW_CLAIMS_BYTES) throw new Error("review claim coordination exceeds aggregate bound")
-  atomicWriteFile(storePath(project, REVIEW_CLAIMS_FILE), `${JSON.stringify(next, null, 2)}\n`, true)
+  const bytes = `${JSON.stringify(next, null, 2)}\n`
+  if (Buffer.byteLength(bytes) > MAX_REVIEW_CLAIMS_BYTES) throw new Error("review claim coordination exceeds aggregate bound")
+  atomicWriteFile(storePath(project, REVIEW_CLAIMS_FILE), bytes, true)
 }
 
 function claimActive(claim: ReviewClaim, now = Date.now()): boolean {
@@ -103,7 +104,7 @@ export function liveReviewFencingToken(workId: string): string {
   return createHash("sha256").update(`live\0${workId}`).digest("hex")
 }
 
-function upsertLiveClaimLocked(project: string, sessionId: string, messageId: string, workId: string): ReviewClaim | null {
+function upsertLiveClaimLocked(project: string, sessionId: string, messageId: string, workId: string, fencingToken = liveReviewFencingToken(workId)): ReviewClaim | null {
   const claims = loadReviewClaims(project); const now = Date.now()
   const found = claims.claims.find((item) => item.session_id === sessionId && item.message_id === messageId)
   if (found && found.owner_kind === "historical" && claimActive(found, now)) return null
@@ -112,7 +113,7 @@ function upsertLiveClaimLocked(project: string, sessionId: string, messageId: st
   // identity) remains terminal and cannot be overwritten.
   if (found?.state === "completed" &&
     (found.owner_kind !== "live" || found.owner_work_id !== workId)) return null
-  const at = new Date(now).toISOString(); const token = liveReviewFencingToken(workId)
+  const at = new Date(now).toISOString(); const token = fencingToken
   const next = { session_id: sessionId, message_id: messageId, owner_kind: "live" as const, owner_work_id: workId, state: "active" as const,
     fencing_token: token, acquired_at: found?.acquired_at ?? at, updated_at: at, expires_at: new Date(now + REVIEW_CLAIM_LEASE_MS).toISOString() }
   if (found) Object.assign(found, next); else claims.claims.push(next)
@@ -281,7 +282,13 @@ function ensureVerifiedDirectory(project: string, path: string): string {
   let current = canonicalProject
   for (const component of rel) {
     current = join(current, component)
-    if (!existsSync(current)) mkdirSync(current, { mode: 0o700 })
+    if (!existsSync(current)) {
+      try { mkdirSync(current, { mode: 0o700 }) } catch (error) {
+        // Another process may create this component between exists and mkdir.
+        // EEXIST is not proof of safety: validate its type and realpath below.
+        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error
+      }
+    }
     assertDirectDirectory(current)
   }
   return current
@@ -392,8 +399,9 @@ function saveLedger(project: string, ledger: SkillEvolutionLedger, expectedRevis
   const current = loadSkillLedger(project)
   if (current.revision !== expectedRevision) throw new Error("skill-evolution ledger changed concurrently")
   const next = SkillEvolutionLedgerSchema.parse({ ...ledger, revision: expectedRevision + 1, updated_at: nowIso() })
-  if (serializedBytes(next) > SKILL_EVOLUTION_MAX_JSON_BYTES) throw new Error("skill-evolution ledger exceeds aggregate bound")
-  atomicWriteFile(storePath(project, LEDGER_FILE), `${JSON.stringify(next, null, 2)}\n`, true)
+  const bytes = `${JSON.stringify(next, null, 2)}\n`
+  if (Buffer.byteLength(bytes) > SKILL_EVOLUTION_MAX_JSON_BYTES) throw new Error("skill-evolution ledger exceeds aggregate bound")
+  atomicWriteFile(storePath(project, LEDGER_FILE), bytes, true)
   return next
 }
 
@@ -401,8 +409,9 @@ function saveCandidates(project: string, index: SkillCandidateIndex, expectedRev
   const current = loadSkillCandidates(project)
   if (current.revision !== expectedRevision) throw new Error("skill-evolution candidate index changed concurrently")
   const next = SkillCandidateIndexSchema.parse({ ...index, revision: expectedRevision + 1, updated_at: nowIso() })
-  if (serializedBytes(next) > SKILL_EVOLUTION_MAX_JSON_BYTES) throw new Error("skill-evolution candidate index exceeds aggregate bound")
-  atomicWriteFile(storePath(project, CANDIDATE_FILE), `${JSON.stringify(next, null, 2)}\n`, true)
+  const bytes = `${JSON.stringify(next, null, 2)}\n`
+  if (Buffer.byteLength(bytes) > SKILL_EVOLUTION_MAX_JSON_BYTES) throw new Error("skill-evolution candidate index exceeds aggregate bound")
+  atomicWriteFile(storePath(project, CANDIDATE_FILE), bytes, true)
   return next
 }
 
@@ -562,7 +571,7 @@ export function updateSkillLedgerRecord(
   })
 }
 
-export function beginSkillAudit(projectDirectory: string, key: string, options: SkillEvolutionOptions): SkillLedgerRecord {
+export function beginSkillAudit(projectDirectory: string, key: string, options: SkillEvolutionOptions, fencingToken = liveReviewFencingToken(key), onAcquired?: () => void): SkillLedgerRecord {
   return withSkillEvolutionLock(projectDirectory, "audit-begin", () => {
     const ledger = loadSkillLedger(projectDirectory)
     const record = ledger.records.find((candidate) => candidate.key === key)
@@ -590,7 +599,7 @@ export function beginSkillAudit(projectDirectory: string, key: string, options: 
       record.updated_at = nowIso()
       return saveLedger(projectDirectory, ledger, ledger.revision).records.find((candidate) => candidate.key === key)!
     }
-    if (!upsertLiveClaimLocked(projectDirectory, record.session_id, record.message_id, key)) {
+    if (!upsertLiveClaimLocked(projectDirectory, record.session_id, record.message_id, key, fencingToken)) {
       record.status = "failed"; record.error = LOST_LIVE_REVIEW_BLOCK
       record.updated_at = nowIso(); const saved = saveLedger(projectDirectory, ledger, ledger.revision)
       return saved.records.find((candidate) => candidate.key === key)!
@@ -599,16 +608,25 @@ export function beginSkillAudit(projectDirectory: string, key: string, options: 
     record.attempts++
     record.updated_at = nowIso()
     const saved = saveLedger(projectDirectory, ledger, ledger.revision)
+    onAcquired?.()
     return saved.records.find((candidate) => candidate.key === key)!
   })
 }
 
-export function failSkillAudit(projectDirectory: string, key: string, error: unknown): SkillLedgerRecord {
-  const diagnostic = safeDiagnosticText(error instanceof Error ? error.message : String(error))
+export function acquireLiveSkillAudit(project: string, key: string, options: SkillEvolutionOptions, fencingToken: string, lease: FilesystemMutex): { acquired: boolean; record: SkillLedgerRecord } {
+  lease.assertHeld()
+  let acquired = false
+  const record = beginSkillAudit(project, key, options, fencingToken, () => { acquired = true })
+  return { acquired, record }
+}
+
+export function failSkillAudit(projectDirectory: string, key: string, error: unknown, fencingToken?: string): SkillLedgerRecord {
+  const diagnostic = safeDiagnosticText(error instanceof Error ? error.message : String(error)).trim() || "skill audit failed"
   return withSkillEvolutionLock(projectDirectory, "audit-fail", () => {
     const ledger = loadSkillLedger(projectDirectory); const record = ledger.records.find((candidate) => candidate.key === key)
     if (!record) throw new Error("skill-evolution ledger record not found")
     if (record.status === "candidate" || record.status === "no-change") return record
+    if (fencingToken && !loadReviewClaims(projectDirectory).claims.some((claim) => claim.owner_kind === "live" && claim.owner_work_id === key && claim.fencing_token === fencingToken && claim.state === "active")) return record
     const reviewed = reviewedLiveCandidate(projectDirectory, loadSkillCandidates(projectDirectory), record.session_id, record.message_id, ledger)
     if (reviewed) {
       const claims = loadReviewClaims(projectDirectory)
@@ -646,20 +664,21 @@ export function liveReviewStillOwned(project: string, sessionId: string, message
   })
 }
 
-export function markLiveSkillLedgerOutcome(project: string, key: string, outcome: Parameters<typeof markSkillLedgerOutcome>[2]): SkillLedgerRecord | null {
+export function markLiveSkillLedgerOutcome(project: string, key: string, outcome: Parameters<typeof markSkillLedgerOutcome>[2], fencingToken = liveReviewFencingToken(key)): SkillLedgerRecord | null {
   return withSkillEvolutionLock(project, "live-terminal", () => {
     const ledger = loadSkillLedger(project); const record = ledger.records.find((item) => item.key === key)
     if (!record) throw new Error("skill-evolution ledger record not found")
     const claims = loadReviewClaims(project); const claim = claims.claims.find((item) => item.session_id === record.session_id && item.message_id === record.message_id)
-    if (isHistoricalAssistantCovered(project, record.session_id, record.message_id) || !claim || claim.owner_kind !== "live" ||
-      claim.owner_work_id !== key || claim.fencing_token !== liveReviewFencingToken(key) || claim.state !== "active") return null
+    if (record.status !== "running" || isHistoricalAssistantCovered(project, record.session_id, record.message_id) || !claim || claim.owner_kind !== "live" ||
+      claim.owner_work_id !== key || claim.fencing_token !== fencingToken || claim.state !== "active") return null
     Object.assign(record, outcome); record.updated_at = nowIso(); delete record.error; claim.state = "completed"; claim.updated_at = nowIso()
     saveReviewClaimsLocked(project, claims); return saveLedger(project, ledger, ledger.revision).records.find((item) => item.key === key)!
   })
 }
 
 export function recoverPendingSkillAudits(projectDirectory: string, options: SkillEvolutionOptions): SkillLedgerRecord[] {
-  return withSkillEvolutionLock(projectDirectory, "startup-recovery", () => {
+  const lease = acquireHistoricalExecutionLease(projectDirectory, `live-recovery:${process.pid}`)
+  try { return withSkillEvolutionLock(projectDirectory, "startup-recovery", () => {
     const ledger = loadSkillLedger(projectDirectory)
     const candidates = loadSkillCandidates(projectDirectory)
     const claims = loadReviewClaims(projectDirectory)
@@ -678,6 +697,8 @@ export function recoverPendingSkillAudits(projectDirectory: string, options: Ski
     }
     for (const record of ledger.records) {
       if (record.status !== "running") continue
+      const abandoned = claims.claims.find((claim) => claim.owner_kind === "live" && claim.owner_work_id === record.key && claim.state === "active")
+      if (abandoned) { abandoned.state = "failed"; abandoned.updated_at = nowIso(); claimsChanged = true }
       changed = true
       if (record.attempts < options.maxAttempts) {
         record.status = "pending"
@@ -688,6 +709,7 @@ export function recoverPendingSkillAudits(projectDirectory: string, options: Ski
       }
       record.updated_at = nowIso()
     }
+    if (claimsChanged) saveReviewClaimsLocked(projectDirectory, claims)
     for (const record of ledger.records) {
       if (!recoverableHistoricalBlock(record)) continue
       if (isHistoricalAssistantCovered(projectDirectory, record.session_id, record.message_id)) {
@@ -716,10 +738,9 @@ export function recoverPendingSkillAudits(projectDirectory: string, options: Ski
       record.error = "skill-evolution queue backlog limit reached during startup recovery"
       record.updated_at = nowIso()
     }
-    if (claimsChanged) saveReviewClaimsLocked(projectDirectory, claims)
     const saved = changed ? saveLedger(projectDirectory, ledger, ledger.revision) : ledger
     return saved.records.filter((record) => record.status === "pending")
-  })
+  }) } finally { lease.release() }
 }
 
 export function registerSkillAuditChild(
@@ -1033,8 +1054,9 @@ export function updateHistoricalIndex(
     HistoricalPlansSchema.parse(next.plans)
     HistoricalSnapshotsSchema.parse(next.snapshots)
     z.array(HistoricalCoverageEntrySchema).max(16_384).parse(next.coverage)
-    if (serializedBytes(next) > MAX_HISTORICAL_INDEX_BYTES) throw new Error("historical index exceeds aggregate bound")
-    atomicWriteFile(storePath(projectDirectory, HISTORICAL_INDEX_FILE), `${JSON.stringify(next, null, 2)}\n`, true)
+    const bytes = `${JSON.stringify(next, null, 2)}\n`
+    if (Buffer.byteLength(bytes) > MAX_HISTORICAL_INDEX_BYTES) throw new Error("historical index exceeds aggregate bound")
+    atomicWriteFile(storePath(projectDirectory, HISTORICAL_INDEX_FILE), bytes, true)
     return next
   })
 }
@@ -1249,7 +1271,7 @@ export function createSkillCandidate(
   checker: SkillCheckerOutput | null,
   options: SkillEvolutionOptions,
   historicalBinding?: HistoricalCandidateBinding,
-  liveOutcome?: { session_id: string; message_id: string; trigger_score: number; trigger_labels: SkillLedgerRecord["trigger_labels"] },
+  liveOutcome?: { session_id: string; message_id: string; trigger_score: number; trigger_labels: SkillLedgerRecord["trigger_labels"]; fencing_token?: string },
   hooks: SkillCandidateCreationHooks = {},
 ): SkillCandidateRecord {
   return withSkillEvolutionLock(projectDirectory, "candidate-create", () => {
@@ -1280,7 +1302,7 @@ export function createSkillCandidate(
         canonicalJson(evidence.provenance) !== canonicalJson(output.provenance) || evidence.trigger_score !== liveOutcome.trigger_score ||
         canonicalJson(evidence.trigger_labels) !== canonicalJson(liveOutcome.trigger_labels ?? []) ||
         isHistoricalAssistantCovered(project, liveOutcome.session_id, liveOutcome.message_id) || !claim || claim.owner_kind !== "live" ||
-        claim.owner_work_id !== ledgerKey || claim.fencing_token !== liveReviewFencingToken(ledgerKey) || claim.state !== "active") {
+        claim.owner_work_id !== ledgerKey || claim.fencing_token !== (liveOutcome.fencing_token ?? liveReviewFencingToken(ledgerKey)) || claim.state !== "active") {
         throw new Error("live review publication suppressed because ownership was lost")
       }
     }
@@ -1615,9 +1637,10 @@ interface ScannedSkillTransaction {
 }
 
 function scanSkillTransactions(projectDirectory: string): ScannedSkillTransaction[] {
-  const root = ensureStore(projectDirectory)
+  const root = skillEvolutionRoot(projectDirectory)
   const directory = resolveContainedPath(root, "transactions")
-  ensureVerifiedDirectory(canonicalDirectory(projectDirectory), directory)
+  assertExistingDirectComponents(canonicalDirectory(projectDirectory), directory, "directory")
+  if (!existsSync(directory)) return []
   const children = readdirSync(directory, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name))
   if (children.length > 128) throw new Error("skill-evolution transaction scan exceeded its bound")
   return children.map((entry) => {
@@ -2045,6 +2068,26 @@ export interface SkillRecoveryReport {
   unresolved: string[]
   pending: number
   file_mutations: number
+}
+
+/** Inspection never acquires a writer or repairs files. Pending is not healthy. */
+export function inspectSkillTransactions(project: string): SkillRecoveryReport {
+  const entries = scanSkillTransactions(project)
+  return { recovered: [], unresolved: entries.filter((entry) => entry.error).map((entry) => `${entry.name}: ${entry.error}`), pending: entries.length, file_mutations: 0 }
+}
+
+export function inspectSkillCapacity(project: string) {
+  return [
+    [LEDGER_FILE, SKILL_EVOLUTION_MAX_JSON_BYTES],
+    [CANDIDATE_FILE, SKILL_EVOLUTION_MAX_JSON_BYTES],
+    [HISTORICAL_INDEX_FILE, MAX_HISTORICAL_INDEX_BYTES],
+    [REVIEW_CLAIMS_FILE, MAX_REVIEW_CLAIMS_BYTES],
+  ].map(([name, maximum]) => {
+    const path = storePath(project, name as string)
+    assertExistingDirectComponents(canonicalDirectory(project), path, "file")
+    const bytes = existsSync(path) ? lstatSync(path).size : 0
+    return { file: name as string, bytes, maximum_bytes: maximum as number, near_capacity: bytes >= Number(maximum) * 0.8 }
+  })
 }
 
 function validateJournalPaths(project: string, journal: SkillTransactionJournal, options: SkillEvolutionOptions, record: SkillCandidateRecord) {

@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opencode-alg.invalid/schemas/duckdb-query-contract-v1.json",
+  "title": "ALG DuckDB query contract v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "contract", "contract_sha256"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "contract_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability_version",
+        "engine_version",
+        "parser_version",
+        "extensions",
+        "settings",
+        "attachments",
+        "policy"
+      ],
+      "properties": {
+        "capability_version": { "const": "0.1.0" },
+        "engine_version": { "const": "1.4.0" },
+        "parser_version": { "const": "27.14.0" },
+        "extensions": { "type": "array", "maxItems": 0 },
+        "settings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["memory_limit", "threads", "max_temp_directory_size"],
+          "properties": {
+            "memory_limit": { "type": "string", "pattern": "^[1-9][0-9]{0,5}(KB|MB|GB)$" },
+            "threads": { "type": "integer", "minimum": 1, "maximum": 16 },
+            "max_temp_directory_size": { "type": "string", "pattern": "^[1-9][0-9]{0,5}(KB|MB|GB)$" }
+          }
+        },
+        "attachments": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["alias", "source_env", "format", "read_only"],
+            "properties": {
+              "alias": { "$ref": "#/$defs/identifier" },
+              "source_env": { "type": "string", "pattern": "^ALG_DUCKDB_[A-Z0-9_]{1,80}$" },
+              "format": { "const": "duckdb" },
+              "read_only": { "const": true }
+            }
+          }
+        },
+        "policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "allowed_relations",
+            "protected_relations",
+            "sensitive_columns",
+            "max_sql_characters",
+            "max_rows",
+            "max_characters",
+            "max_diagnostic_characters",
+            "timeout_ms"
+          ],
+          "properties": {
+            "allowed_relations": {
+              "type": "array",
+              "maxItems": 256,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/relation" }
+            },
+            "protected_relations": {
+              "type": "object",
+              "maxProperties": 256,
+              "propertyNames": { "$ref": "#/$defs/relation" },
+              "additionalProperties": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": { "$ref": "#/$defs/identifier" }
+              }
+            },
+            "sensitive_columns": {
+              "type": "array",
+              "maxItems": 128,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/identifier" }
+            },
+            "max_sql_characters": { "type": "integer", "minimum": 1, "maximum": 100000 },
+            "max_rows": { "type": "integer", "minimum": 1, "maximum": 10000 },
+            "max_characters": { "type": "integer", "minimum": 1024, "maximum": 2000000 },
+            "max_diagnostic_characters": { "type": "integer", "minimum": 128, "maximum": 32768 },
+            "timeout_ms": { "type": "integer", "minimum": 50, "maximum": 120000 }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "identifier": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,62}$" },
+    "relation": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,62}\\.[A-Za-z_][A-Za-z0-9_]{0,62}\\.[A-Za-z_][A-Za-z0-9_]{0,62}$"
+    }
+  }
+}

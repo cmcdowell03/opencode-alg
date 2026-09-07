@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto"
+import { redactEvolutionText } from "./skill-evolution-redaction.ts"
 import { canonicalJson } from "./persistence.ts"
 import { serializedBytes, truncateUtf8, utf8Bytes } from "./limits.ts"
 import {
@@ -22,8 +23,8 @@ const WINDOWS_ABSOLUTE_PATH = /\b[A-Za-z]:[\\/][^\s"'`<>|]+/g
 const FILE_ABSOLUTE_PATH = /\bfile:\/{2,3}(?:[A-Za-z]:)?\/(?:[^\s"'`<>|]+\/?)+/gi
 const POSIX_ABSOLUTE_PATH = /(^|[\s("'`])\/(?:Users|home|root|tmp|var|etc|opt|srv|private)(?:\/[^\s"'`<>|,;]+)+/g
 
-function redactObviousSecrets(value: string): string {
-  let redacted = value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "�")
+function redactObviousSecrets(value: string, policy: 1 | 2 = 2): string {
+  let redacted = (policy === 2 ? redactEvolutionText(value) : value).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "�")
   for (const pattern of OBVIOUS_SECRET) redacted = redacted.replace(pattern, "[REDACTED]")
   redacted = redacted.replace(CREDENTIAL_ASSIGNMENT, (_match, key: string, separator: string) => `${key}${separator}[REDACTED]`)
   redacted = redacted.replace(FILE_ABSOLUTE_PATH, "[REDACTED_PATH]")
@@ -32,13 +33,13 @@ function redactObviousSecrets(value: string): string {
   return redacted
 }
 
-function boundedJsonSummary(value: unknown): string {
+function boundedJsonSummary(value: unknown, policy: 1 | 2): string {
   const seen = new WeakSet<object>()
   let serialized: string
   try {
     serialized = JSON.stringify(value, (key, item) => {
       if (SENSITIVE_KEY.test(key)) return "[REDACTED]"
-      if (typeof item === "string") return redactObviousSecrets(item)
+      if (typeof item === "string") return redactObviousSecrets(item, policy)
       if (item && typeof item === "object") {
         if (seen.has(item)) return "[Circular]"
         seen.add(item)
@@ -48,7 +49,7 @@ function boundedJsonSummary(value: unknown): string {
   } catch {
     serialized = "[Unserializable]"
   }
-  return redactObviousSecrets(serialized)
+  return redactObviousSecrets(serialized, policy)
 }
 
 export interface BoundedEvidenceText {
@@ -58,9 +59,9 @@ export interface BoundedEvidenceText {
   bytes_omitted: number
 }
 
-export function redactEvidenceText(value: unknown, maximumBytes = 2_000): BoundedEvidenceText {
-  const source = typeof value === "string" ? value : boundedJsonSummary(value)
-  const fullyRedacted = redactObviousSecrets(source)
+export function redactEvidenceText(value: unknown, maximumBytes = 2_000, policy: 1 | 2 = 2): BoundedEvidenceText {
+  const source = typeof value === "string" ? value : boundedJsonSummary(value, policy)
+  const fullyRedacted = redactObviousSecrets(source, policy)
   const originalBytes = utf8Bytes(fullyRedacted)
   const maximum = Math.max(32, Math.min(2_000, maximumBytes))
   const excerpt = originalBytes <= maximum ? fullyRedacted : truncateUtf8(fullyRedacted, maximum)
@@ -145,7 +146,9 @@ export function buildSkillEvidence(
   messageId: string,
   options: SkillEvolutionOptions,
   manual = false,
+  redactionPolicy: 1 | 2 = 2,
 ): SkillEvidence {
+  const redactText = (value: unknown, limit: number) => redactEvidenceText(value, limit, redactionPolicy)
   if (!Array.isArray(messagesValue)) throw new Error("session messages response is not an array")
   const messages = messagesValue.filter(isEnvelope)
   // SDK post-processing may surface more than one envelope for the same
@@ -170,13 +173,13 @@ export function buildSkillEvidence(
     return {
       name: typeof part.tool === "string" && part.tool.trim() ? part.tool.slice(0, 256) : "unknown-tool",
       status: toolStatus(state.status),
-      input: redactEvidenceText(state.input ?? "", perField),
-      result: redactEvidenceText(state.status === "completed" ? { title: state.title, output: state.output } : "", perField),
-      error: redactEvidenceText(state.status === "error" ? state.error : "", perField),
+      input: redactText(state.input ?? "", perField),
+      result: redactText(state.status === "completed" ? { title: state.title, output: state.output } : "", perField),
+      error: redactText(state.status === "error" ? state.error : "", perField),
     }
   })
-  let userText = redactEvidenceText(rawUserText, Math.min(2_000, Math.floor(options.maxEvidenceBytes / 4)))
-  let assistantText = redactEvidenceText(rawAssistantText, Math.min(2_000, Math.floor(options.maxEvidenceBytes / 4)))
+  let userText = redactText(rawUserText, Math.min(2_000, Math.floor(options.maxEvidenceBytes / 4)))
+  let assistantText = redactText(rawAssistantText, Math.min(2_000, Math.floor(options.maxEvidenceBytes / 4)))
   const signals = scoreSignals(rawUserText, rawAssistantText, assistant.parts, tools)
   if (manual && !signals.labels.includes("manual")) signals.labels.push("manual")
 
@@ -195,6 +198,7 @@ export function buildSkillEvidence(
     const fields = [userText, assistantText, ...tools.flatMap((tool) => [tool.input, tool.result, tool.error])]
     return {
       schema_version: 1,
+      ...(redactionPolicy === 2 ? { redaction_policy_version: 2 as const } : {}),
       kind: "skill_evolution_evidence",
       created_at: new Date().toISOString(),
       provenance,
@@ -226,8 +230,8 @@ export function buildSkillEvidence(
   }
   if (serializedBytes({ ...make(), evidence_id: "0".repeat(64) }) > options.maxEvidenceBytes) {
     const smaller = Math.max(32, Math.floor(options.maxEvidenceBytes / 12))
-    userText = redactEvidenceText(rawUserText, smaller)
-    assistantText = redactEvidenceText(rawAssistantText, smaller)
+    userText = redactText(rawUserText, smaller)
+    assistantText = redactText(rawAssistantText, smaller)
   }
   const withoutId = make()
   const evidenceId = createHash("sha256").update(canonicalJson(withoutId), "utf8").digest("hex")

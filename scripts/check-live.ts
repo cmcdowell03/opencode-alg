@@ -1,9 +1,12 @@
 import { createHash } from "node:crypto"
 import { existsSync, readFileSync } from "node:fs"
 import { dirname, extname, isAbsolute, resolve } from "node:path"
+import { captureStableRegularFile } from "../src/config-editor.ts"
+import { safeDiagnosticText } from "../src/diagnostics.ts"
 import {
   DEFAULT_LIVE_EVIDENCE_ROOT,
   LIVE_EVIDENCE_LIMIT_BYTES,
+  LiveEvidenceSchema,
   retainedLiveEvidencePassed,
   runLiveVerification,
   uniqueLiveEvidencePath,
@@ -11,6 +14,32 @@ import {
   verificationPluginConfiguration,
 } from "./live-verify.ts"
 
+export function reportLiveFailure(evidence: string, sourceSha: string, failure: unknown): never {
+  let retained: Record<string, unknown> = {}
+  let secondary: string | undefined
+  try {
+    const captured = captureStableRegularFile(evidence)
+    if (!captured.exists) throw new Error("live verification did not retain evidence")
+    if (captured.bytes.byteLength > LIVE_EVIDENCE_LIMIT_BYTES) throw new Error("retained live evidence exceeds its byte limit")
+    const parsed = LiveEvidenceSchema.parse(JSON.parse(captured.bytes.toString("utf8")))
+    if (parsed.plugin_source.sha256 !== sourceSha || resolve(parsed.output_path) !== resolve(evidence)) throw new Error("failed live evidence source/path differs")
+    retained = {
+      evidence_sha256: captured.hash, evidence_bytes: captured.bytes.byteLength, evidence_identity: captured.identity,
+      reason: parsed.reason, phase: parsed.tui ? "tui-or-cleanup" : parsed.server ? "server" : "version",
+      server_cleanup: parsed.server?.cleanup ?? null, tui_cleanup: parsed.tui?.cleanup ?? null,
+      temporary_environment_removed: parsed.temporary_environment_removed, cleanup_failures: parsed.cleanup_failures ?? [],
+    }
+  } catch (error) {
+    secondary = safeDiagnosticText(error instanceof Error ? error.message : String(error)).trim()
+  }
+  console.log(JSON.stringify({ check: "opencode-alg-live", passed: false, evidence_path: evidence,
+    original_failure: safeDiagnosticText(failure instanceof Error ? failure.message : String(failure)).trim(),
+    ...retained, evidence_validation_error: secondary ?? null }))
+  // Preserve the original object/cause even when evidence is missing or malformed.
+  throw failure
+}
+
+export async function checkLive(): Promise<void> {
 const configuration = verificationPluginConfiguration()
 const requested = process.env.OPENCODE_ALG_LIVE_EVIDENCE?.trim()
 const requestedRoot = requested ? (extname(requested).toLowerCase() === ".json" ? dirname(resolve(requested)) : resolve(requested)) : DEFAULT_LIVE_EVIDENCE_ROOT
@@ -27,6 +56,8 @@ try {
 } catch (error) {
   failure = error
 }
+
+if (failure !== undefined) reportLiveFailure(evidence, configuration.source.digest, failure)
 
 if (!existsSync(evidence)) throw failure ?? new Error("live verification did not retain evidence")
 const bytes = readFileSync(evidence)
@@ -75,3 +106,6 @@ const summary = {
 console.log(JSON.stringify(summary))
 if (failure) throw failure
 if (!summary.passed) throw new Error("generated live evidence did not pass")
+}
+
+if (import.meta.main) await checkLive()

@@ -1,6 +1,6 @@
 import type { ToolContext } from "@opencode-ai/plugin"
 import type { NodeAttempt, NodeDef, RunState, ShellGateDef } from "./types.ts"
-import { assertFilesystemRootAuthorized } from "./paths.ts"
+import { assertFilesystemRootAuthorized, canonicalContainedDirectory } from "./paths.ts"
 import {
   allTerminal,
   anyFailed,
@@ -79,13 +79,22 @@ export interface ExecuteOptions {
 }
 
 function log(options: ExecuteOptions, message: string): void {
-  options.onEvent?.(message)
+  // Observability must never rewrite a committed worker outcome.
+  try { options.onEvent?.(message) } catch { /* best-effort observer */ }
+}
+
+class PersistenceBoundaryError extends Error {
+  constructor(cause: unknown) { super("Run persistence boundary failed", { cause }) }
 }
 
 function save(run: RunState, options: ExecuteOptions): void {
   if (options.deferPersistence) return
   if (!options.activeLock) throw new Error("execution save requires an active fenced run lock")
-  persistRunFenced(run, options.worktree, options.activeLock)
+  try {
+    persistRunFenced(run, options.worktree, options.activeLock)
+  } catch (error) {
+    throw new PersistenceBoundaryError(error)
+  }
 }
 
 function shellFailure(exitCode: number, stderr: string): string {
@@ -134,7 +143,9 @@ function reserveAttempt(
     return null
   }
   if (run.global_attempts >= run.graph.max_global_attempts) {
-    state.status = "failed"
+    // A reopened node still owns its successful historical attempt. Budget
+    // exhaustion blocks rescheduling; it cannot retroactively fail that attempt.
+    state.status = state.attempts.at(-1)?.status === "done" ? "pending" : "failed"
     state.last_failures = [`Global attempt limit reached (${run.graph.max_global_attempts})`]
     save(run, options)
     return null
@@ -171,6 +182,7 @@ async function runOneNode(
     ? reserveAttempt(run, definition, options)
     : reservedAttempt
   if (!attemptRecord) return
+    if (options.toolContext.abort.aborted) throw new Error("Execution cancelled before child launch")
     const attempt = attemptRecord.attempt
     log(options, `node ${definition.id} attempt ${attempt}/${localLimit}`)
 
@@ -222,6 +234,7 @@ async function runOneNode(
         ? buildCheckerPrompt({
             criteria: run.criteria.length ? run.criteria : ["Output must be complete and match the goal."],
             claimed: inputs.claimed ?? inputs,
+            priorFailures: state.attempts.at(-2)?.outcome === "substantive_rejection" ? [] : state.last_failures,
           })
         : buildWorkerPrompt({
             goal: run.goal,
@@ -241,17 +254,20 @@ async function runOneNode(
         model: run.model_snapshot[definition.agent],
         abort: options.toolContext.abort,
         onSessionCreated: async (createdSessionId) => {
-          linkSession(run, options.worktree, definition.id, attempt, createdSessionId)
-          options.afterSessionSidecar?.()
-          attemptRecord.session_id = createdSessionId
-          save(run, { ...options, deferPersistence: false })
+          try {
+            linkSession(run, options.worktree, definition.id, attempt, createdSessionId)
+            options.afterSessionSidecar?.()
+            attemptRecord.session_id = createdSessionId
+            save(run, { ...options, deferPersistence: false })
+          } catch (error) { throw new PersistenceBoundaryError(error) }
         },
       })
       sessionId = result.session_id || undefined
       if (sessionId && !attemptRecord.session_id) {
         attemptRecord.session_id = sessionId
         save(run, { ...options, deferPersistence: false })
-        linkSession(run, options.worktree, definition.id, attempt, sessionId)
+        try { linkSession(run, options.worktree, definition.id, attempt, sessionId) }
+        catch (error) { throw new PersistenceBoundaryError(error) }
       }
       error = result.error ? safeDiagnosticText(result.error) : undefined
       rawOutput = result.parsed
@@ -423,10 +439,14 @@ function applyCheckerFeedback(run: RunState, options: ExecuteOptions): boolean {
     const targetState = run.nodes[targetDefinition.id]!
     const checkerLimit = checker.loop?.max_attempts ?? 1
     const targetLimit = targetDefinition.loop?.max_attempts ?? 1
+    const invalidated = descendantsOf(run.graph, targetDefinition.id)
+    const exhaustedDescendant = run.graph.nodes.some((node) => invalidated.has(node.id) &&
+      run.nodes[node.id]!.current_attempt >= (node.loop?.max_attempts ?? 1))
     if (
+      exhaustedDescendant ||
       checkState.current_attempt >= checkerLimit ||
       targetState.current_attempt >= targetLimit ||
-      run.global_attempts >= run.graph.max_global_attempts
+      run.graph.max_global_attempts - run.global_attempts < 1 + invalidated.size
     ) {
       last.feedback_applied = true
       save(run, options)
@@ -436,7 +456,7 @@ function applyCheckerFeedback(run: RunState, options: ExecuteOptions): boolean {
     last.feedback_applied = true
     targetState.status = "pending"
     targetState.last_failures = boundDiagnosticList(checkState.last_failures)
-    for (const descendantId of descendantsOf(run.graph, targetDefinition.id)) {
+    for (const descendantId of invalidated) {
       const definition = run.graph.nodes.find((node) => node.id === descendantId)!
       const state = run.nodes[descendantId]!
       if (state.current_attempt < (definition.loop?.max_attempts ?? 1)) state.status = "pending"
@@ -454,22 +474,12 @@ function finishGlobalLimit(run: RunState): void {
     const state = run.nodes[definition.id]!
     if ((state.status === "pending" || state.status === "ready") &&
       definition.depends_on.every((dependency) => run.nodes[dependency]?.status === "done")) {
-      state.status = "failed"
+      state.status = state.attempts.at(-1)?.status === "done" ? "pending" : "failed"
       state.last_failures = [`Global attempt limit reached (${run.graph.max_global_attempts})`]
     }
   }
   while (skipFailedDescendants(run)) {
     // Topological order makes one pass sufficient, loop keeps this robust to future ordering changes.
-  }
-}
-
-function failPendingOnCancellation(run: RunState): void {
-  for (const definition of run.graph.nodes) {
-    const state = run.nodes[definition.id]!
-    if (state.status === "pending" || state.status === "ready") {
-      state.status = "failed"
-      state.last_failures = ["Execution cancelled"]
-    }
   }
 }
 
@@ -531,6 +541,9 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     // Preserve the caller-visible RunState object identity used by existing
     // integrations while replacing its nested state with safely hydrated data.
     Object.assign(run, hydrated)
+    run.execution_directory = canonicalContainedDirectory(options.worktree,
+      run.execution_directory ?? run.project_directory)
+    options.directory = run.execution_directory
     if (filesystemRoot) {
       ;(run.filesystem_root_authorizations ??= []).push({
         operation,
@@ -554,7 +567,6 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
 
     for (let wave = 0; wave < maxWaves && !allTerminal(run); wave++) {
       if (options.toolContext.abort.aborted) {
-        failPendingOnCancellation(run)
         break
       }
       while (skipFailedDescendants(run)) {
@@ -567,6 +579,7 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
       log(options, `wave ${wave + 1}: ${ready.map((node) => node.id).join(", ")}`)
 
       for (let offset = 0; offset < ready.length; offset += concurrency) {
+        if (options.toolContext.abort.aborted) break
         const batch = ready.slice(offset, offset + concurrency)
         const batchOptions = { ...options, deferPersistence: true }
         const reservations = batch.map((definition) => reserveAttempt(run, definition, batchOptions))
@@ -577,16 +590,24 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
           runOneNode(run, definition, batchOptions, reservations[index])))
         settled.forEach((result, i) => {
           if (result.status === "fulfilled") return
+          if (result.reason instanceof PersistenceBoundaryError) throw result.reason
           const state = run.nodes[batch[i]!.id]!
+          const last = state.attempts.at(-1)
+          if (last?.status !== "running") throw result.reason
           const diagnostic = formatSdkDiagnostic("Executor error: ", result.reason)
           state.status = "failed"
           state.last_failures = boundDiagnosticList([diagnostic], { retain: [diagnostic] })
-          const last = state.attempts.at(-1)
           if (last?.status === "running") {
             last.status = "failed"
             last.finished_at = new Date().toISOString()
             last.failures = boundDiagnosticList([...last.failures, diagnostic], { retain: [diagnostic] })
             last.schema_ok = false
+            last.error = diagnostic
+            last.outcome = "sdk_error"
+            if (state.current_attempt < (batch[i]!.loop?.max_attempts ?? 1)) state.status = "pending"
+          } else {
+            // An unexpected post-outcome exception is not a new worker failure.
+            throw result.reason
           }
         })
         // The next batch's pre-child reservation fence also commits this
@@ -599,6 +620,7 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
       applyCheckerFeedback(run, options)
       finishGlobalLimit(run)
       save(run, options)
+      if (run.global_attempts >= run.graph.max_global_attempts) break
     }
 
     while (skipFailedDescendants(run)) {
@@ -608,11 +630,6 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     if (allTerminal(run)) {
       run.status = anyFailed(run) ? "failed" : "done"
       run.phase = run.status
-    } else if (anyFailed(run)) {
-      // Defensive: no failed dependency may leave the run merely blocked.
-      while (skipFailedDescendants(run)) {}
-      run.status = "failed"
-      run.phase = "failed"
     } else {
       run.status = "blocked"
       run.phase = "blocked"

@@ -271,6 +271,7 @@ const EvidenceToolSchema = z.object({
 
 export const SkillEvidenceSchema = z.object({
   schema_version: z.literal(SKILL_EVOLUTION_SCHEMA_VERSION),
+  redaction_policy_version: z.literal(2).optional(),
   kind: z.literal("skill_evolution_evidence"),
   evidence_id: sha256,
   created_at: iso,

@@ -49,6 +49,7 @@ import {
   assertSafeId,
   assertFilesystemRootAuthorized,
   canonicalDirectory,
+  canonicalContainedDirectory,
   isContained,
   isSafeId,
   isSafeProjectRelativePath,
@@ -1030,6 +1031,7 @@ export function createRun(options: {
   criteria: string[]
   graph: GraphDef | unknown
   projectDirectory: string
+  executionDirectory?: string
   ownerSessionId: string
   parentSessionId?: string
   mode?: "live" | "dry"
@@ -1046,6 +1048,7 @@ export function createRun(options: {
     throw new StoreError("parentSessionId must equal the creating owner session")
   }
   const projectDirectory = canonicalDirectory(options.projectDirectory)
+  const executionDirectory = options.executionDirectory === undefined ? undefined : canonicalContainedDirectory(projectDirectory, options.executionDirectory)
   const filesystemRoot = assertFilesystemRootAuthorized(
     projectDirectory,
     options.allowFilesystemRoot,
@@ -1076,6 +1079,7 @@ export function createRun(options: {
     parent_session_id: options.parentSessionId ?? options.ownerSessionId,
     owner_transfers: [],
     project_directory: projectDirectory,
+    ...(executionDirectory ? { execution_directory: executionDirectory } : {}),
     goal: options.goal,
     criteria: options.criteria,
     criteria_locked: options.criteria.length > 0,

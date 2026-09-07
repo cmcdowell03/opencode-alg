@@ -148,14 +148,16 @@ const NodeDefSchema = z
   })
   .strict()
 
-function referencedNode(expr: string): string | null {
-  if (expr === "$goal" || expr === "$criteria") return null
-  if (expr.startsWith("$")) return expr
+export function parseInputExpression(expr: string):
+  | { kind: "special"; name: string }
+  | { kind: "literal"; value: unknown }
+  | { kind: "reference"; node: string; path: string[] } {
+  if (expr.startsWith("$")) return { kind: "special", name: expr }
   try {
-    JSON.parse(expr)
-    return null
+    return { kind: "literal", value: JSON.parse(expr) }
   } catch {
-    return expr.split(".", 1)[0] ?? expr
+    const [node, ...path] = expr.split(".")
+    return { kind: "reference", node: node ?? expr, path }
   }
 }
 
@@ -228,8 +230,14 @@ export const GraphDefSchema: z.ZodType<GraphDef> = z
       }
 
       for (const [key, expr] of Object.entries(node.inputs ?? {})) {
-        const ref = referencedNode(expr)
-        if (ref === null) continue
+        const parsed = parseInputExpression(expr)
+        if (parsed.kind === "literal") continue
+        if (parsed.kind === "special" && (parsed.name === "$goal" || parsed.name === "$criteria")) continue
+        const ref = parsed.kind === "special" ? parsed.name : parsed.node
+        if (parsed.kind === "reference" && parsed.path.some((part) =>
+          !/^[A-Za-z0-9_-]{1,64}$/.test(part) || ["__proto__", "constructor", "prototype"].includes(part))) {
+          ctx.addIssue({ code: "custom", path: ["nodes", i, "inputs", key], message: "unsafe input field path" })
+        }
         if (ref.startsWith("$")) {
           ctx.addIssue({ code: "custom", path: ["nodes", i, "inputs", key], message: `unknown special input: ${ref}` })
         } else if (!index.has(ref)) {
@@ -632,6 +640,8 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
     owner_session_id: sessionId,
     parent_session_id: sessionId,
     owner_transfers: z.array(OwnerTransferSchema).max(1_000),
+    execution_directory: exactString(1, 4_096, "execution_directory")
+      .refine(isAbsolute, "execution_directory must be absolute").optional(),
     project_directory: exactString(1, 4_096, "project_directory")
       .refine(isAbsolute, "project_directory must be absolute"),
     goal: text,
