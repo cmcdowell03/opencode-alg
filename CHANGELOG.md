@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.4.1
+
+Package identity is `0.4.1`. Release evidence schema 6 binds `package_version:"0.4.1"`. Historical `v0.4.0` remains at tag `7cc2f21` and must not be moved.
+
+- Rejects DuckDB star projections except `COUNT(*)`. MCP query results return only `{ok, columns, rows, truncated}` (plus `error`/`cancelled`).
+- Marks skill-evolution audits for sessions outside the current project as `no-change` instead of `failed`.
+- Coerces auditor `confidence` numbers, nulls, and non-enum strings to `low`/`medium`/`high` so schema-valid otherwise jobs are not failed.
+
+## 0.4.0
+
+Package identity is `0.4.0`. Release evidence schema 6 binds `package_version:"0.4.0"`. Historical `v0.3.0` remains schema 5 at tag `e16ca58` and must not be moved.
+
+- Repairs execution diagnostics, terminal/persistence boundaries, expression parsing,
+  initial execution-directory binding, privacy redaction, exact-byte bounds and
+  cross-process evolution fencing. Private evolution model calls now fail closed
+  on the pinned V1 SDK's missing all-tool permission contract; existing candidate
+  management remains available. This is a documented breaking safety restriction.
+- Hardens the optional local DuckDB policy, worker supervision and project-owned
+  installation. Adds synthetic-only connector preparation, pinned local Data
+  Science, explicit experience intake, incident evidence and paired evaluation.
+- Adds immutable dataset-receipt intake, non-destructive archival copies and a
+  rebuildable derived catalog. No automatic background collector or remote driver
+  activation is claimed.
+- Repairs frozen npm package installation, Node entrypoint dispatch, Windows
+  shell PATH bounds, version range checks and failure-preserving verification.
+- Adds a source-bound synthetic gate. See `docs/implementation-status.md` for
+  incomplete implementation and deployment/host/platform acceptance gates.
+
 ## 0.3.0
 
 - Adds disabled-by-default, project-local skill evolution behind the strict

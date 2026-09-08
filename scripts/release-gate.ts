@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto"
-import { spawnSync } from "node:child_process"
+import { spawn } from "node:child_process"
 import {
   closeSync, constants, existsSync, fstatSync, linkSync, lstatSync, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, unlinkSync, writeFileSync,
 } from "node:fs"
@@ -8,10 +8,11 @@ import { tmpdir } from "node:os"
 import { fileURLToPath } from "node:url"
 import { z } from "zod"
 import { computeAlgSourceIdentity } from "../src/source-identity.ts"
-import { cleanupWindowsShellHelpers, windowsShellHelperArtifactSnapshot } from "../src/shell.ts"
+import { cleanupWindowsShellHelpers, windowsShellHelperArtifactSnapshot, terminateProcessTree } from "../src/shell.ts"
 import { verifyRetainedLiveEvidenceArtifact, type EvidenceFileIdentity } from "./live-verify.ts"
 import { resolveNpmInvocation } from "./npm-invocation.ts"
 import { verifyExcelManifest } from "./verify-excel-manifest.ts"
+import { DUCKDB_CAPABILITY_FILES, verifyDuckDbManifest } from "./verify-duckdb-manifest.ts"
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const MAX_EVIDENCE_BYTES = 512 * 1024
@@ -22,8 +23,9 @@ const TAIL_BYTES = 2_048
 const Sha = z.string().regex(/^[a-f0-9]{64}$/)
 const FileIdentitySchema = z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict()
 export const RELEASE_COMMAND_IDS = [
-  "typecheck", "bun_test", "manager_tests", "smoke", "live_verify", "excel_manifest", "python_tests",
-  "uv_sync", "excel_wrapper_check", "excel_wrapper_eof", "npm_pack",
+  "typecheck", "bun_test", "manager_tests", "smoke", "live_verify", "excel_manifest", "duckdb_manifest",
+  "python_tests", "excel_uv_sync", "excel_wrapper_check", "excel_wrapper_eof", "duckdb_uv_sync",
+  "duckdb_python_tests", "duckdb_wrapper_preflight", "duckdb_wrapper_eof", "npm_pack",
 ] as const
 const CommandIdSchema = z.enum(RELEASE_COMMAND_IDS)
 
@@ -43,24 +45,26 @@ const CommandEvidenceSchema = z.object({
 const PackedFileSchema = z.object({ path: z.string().max(512), size: z.number().int().nonnegative(), mode: z.number().int() }).strict()
 
 export const ReleaseEvidenceSchema = z.object({
-  schema_version: z.literal(5),
+  schema_version: z.literal(6),
   kind: z.literal("opencode-alg-release-gate"),
   generated_at: z.iso.datetime({ offset: true }),
-  package_version: z.literal("0.3.0"),
+  package_version: z.literal("0.4.1"),
   source: z.object({ sha256: Sha, files: z.number().int().positive(), bytes: z.number().int().positive() }).strict(),
   release_inputs: z.object({ sha256: Sha, files: z.number().int().positive(), bytes: z.number().int().positive() }).strict(),
   commands: z.array(CommandEvidenceSchema).length(RELEASE_COMMAND_IDS.length),
-  totals: z.object({ bun_pass: z.number().int().nonnegative(), bun_skip: z.number().int().nonnegative(), bun_fail: z.number().int().nonnegative(), bun_total: z.number().int().nonnegative(), bun_assertions: z.number().int().nonnegative(), bun_files: z.number().int().positive(), manager_pass: z.number().int().nonnegative(), manager_skip: z.number().int().nonnegative(), manager_fail: z.number().int().nonnegative(), manager_total: z.number().int().nonnegative(), manager_assertions: z.number().int().nonnegative(), manager_files: z.number().int().positive(), python_run: z.number().int().nonnegative(), python_skipped: z.number().int().nonnegative(), python_ok: z.literal(true) }).strict(),
+  totals: z.object({ bun_pass: z.number().int().nonnegative(), bun_skip: z.number().int().nonnegative(), bun_fail: z.number().int().nonnegative(), bun_total: z.number().int().nonnegative(), bun_assertions: z.number().int().nonnegative(), bun_files: z.number().int().positive(), manager_pass: z.number().int().nonnegative(), manager_skip: z.number().int().nonnegative(), manager_fail: z.number().int().nonnegative(), manager_total: z.number().int().nonnegative(), manager_assertions: z.number().int().nonnegative(), manager_files: z.number().int().positive(), python_run: z.number().int().nonnegative(), python_skipped: z.number().int().nonnegative(), python_ok: z.literal(true), duckdb_python_run: z.number().int().positive(), duckdb_python_skipped: z.number().int().nonnegative(), duckdb_python_ok: z.literal(true) }).strict(),
   excel: z.object({ manifest_sha256: Sha, lock_sha256: Sha, version: z.literal("0.1.8"), tool_count: z.literal(25), eof_stdout_bytes: z.literal(0) }).strict(),
+  duckdb: z.object({ manifest_sha256: Sha, lock_sha256: Sha, version: z.literal("0.1.0"), engine_version: z.literal("1.4.0"), parser_version: z.literal("27.14.0"), tool_count: z.literal(1), eof_stdout_bytes: z.literal(0), contract_sha256: Sha }).strict(),
   package: z.object({
     entries: z.number().int().positive(), packed_bytes: z.number().int().positive(), unpacked_bytes: z.number().int().positive(),
     files: z.array(PackedFileSchema).min(1).max(128), inventory_sha256: Sha,
-    capability_files: z.array(z.string()).length(6), lock_bytes: z.number().int().positive(),
+    capability_files: z.array(z.string()).length(19),
+    lock_bytes: z.object({ excel: z.number().int().positive(), duckdb: z.number().int().positive() }).strict(),
     tgz_created: z.literal(false),
   }).strict(),
   live: z.object({ passed: z.literal(true), evidence_path: z.string().max(4_096), evidence_sha256: Sha, evidence_bytes: z.number().int().positive(), evidence_identity: FileIdentitySchema, source_sha256: Sha, user_global_config_modified: z.literal(false), global_config_snapshot_sha256: Sha, temporary_environment_removed: z.literal(true) }).strict(),
   cleanup: z.object({
-    temporary_excel_environment_removed: z.literal(true), repository_artifacts_absent: z.literal(true),
+    temporary_excel_environment_removed: z.literal(true), temporary_duckdb_environment_removed: z.literal(true), repository_artifacts_absent: z.literal(true),
     helper_owned_before: z.number().int().nonnegative(), helper_owned_after: z.number().int().nonnegative(), helper_net_additions: z.literal(0),
   }).strict(),
   passed: z.literal(true),
@@ -107,11 +111,17 @@ export function repositoryReleaseArtifacts(root: string): string[] {
 
 const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "CHANGELOG.md", "DESIGN.md", "README.md",
+  "bun.lock", "npm-shrinkwrap.json",
   "docs/operations.md", "docs/release-verification.md", "docs/upgrades.md",
+  "docs/duckdb-query-plane.md",
+  "docs/experience-and-data-science.md", "docs/connectors.md", "docs/implementation-status.md",
   "scripts/alg.ps1", "scripts/alg.sh", "scripts/check-live.ts", "scripts/install.ps1", "scripts/install.sh",
   "scripts/installer-core.ts", "scripts/live-verify.ts", "scripts/manager-cli.ts", "scripts/manager-core.ts",
   "scripts/manager-schema.ts", "scripts/npm-invocation.ts", "scripts/release-gate.ts", "scripts/smoke.ts",
-  "scripts/verify-excel-manifest.ts",
+  "scripts/verify-duckdb-manifest.ts", "scripts/verify-excel-manifest.ts",
+  "scripts/duckdb-project.ts", "scripts/datascience-project.ts",
+  "scripts/data-science-cli.ts", "scripts/experience-cli.ts", "scripts/verify-optional-manifests.ts",
+  "scripts/synthetic-gate.ts",
 ] as const
 
 const RELEASE_CONTROL_PATHS = [
@@ -280,13 +290,17 @@ function parsedBunTotals(command: z.infer<typeof CommandEvidenceSchema>) {
   return { bun_pass: bunPass, bun_skip: bunSkip, bun_fail: bunFail, bun_total: bunTotal, bun_assertions: bunAssertions, bun_files: bunFiles }
 }
 
-function parsedPythonTotals(command: z.infer<typeof CommandEvidenceSchema>) {
+function parsedPythonTotals(command: z.infer<typeof CommandEvidenceSchema>, prefix = "python") {
   const output = combinedOutput(command)
   const run = output.match(/Ran (\d+) tests? /)
   const skipped = output.match(/OK \(skipped=(\d+)\)/)
   const ok = /(?:^|\r?\n)OK(?: \(skipped=\d+\))?(?:\r?\n|$)/.test(output)
   if (!run || !ok) throw new Error("Retained Python output lacks Ran/OK totals")
-  return { python_run: Number(run[1]), python_skipped: Number(skipped?.[1] ?? 0), python_ok: true as const }
+  return {
+    [`${prefix}_run`]: Number(run[1]),
+    [`${prefix}_skipped`]: Number(skipped?.[1] ?? 0),
+    [`${prefix}_ok`]: true as const,
+  }
 }
 
 function assertRegularExecutable(path: string, family: RegExp, label: string): void {
@@ -309,8 +323,9 @@ export function validateReleaseEvidenceSemantics(value: unknown, root = ROOT): R
   const releaseInputs = computeReleaseInputIdentity(canonicalRoot)
   if (!exactJson(evidence.release_inputs, releaseInputs)) throw new Error("Release evidence full input identity differs from the current checkout")
   if (!exactJson(evidence.commands.map((item) => item.id), RELEASE_COMMAND_IDS) || new Set(evidence.commands.map((item) => item.id)).size !== RELEASE_COMMAND_IDS.length || evidence.commands.some((item) => item.exit_code !== 0)) {
-    throw new Error("Release evidence must contain the exact ten successful commands")
+    throw new Error("Release evidence must contain the exact sixteen successful commands")
   }
+  const byId = Object.fromEntries(evidence.commands.map((item) => [item.id, item])) as Record<typeof RELEASE_COMMAND_IDS[number], ReleaseEvidence["commands"][number]>
   let retainedTotal = 0
   for (const item of evidence.commands) {
     const bytes = retainedCommandBytes(item)
@@ -318,62 +333,101 @@ export function validateReleaseEvidenceSemantics(value: unknown, root = ROOT): R
   }
   if (retainedTotal > MAX_RETAINED_OUTPUT_TOTAL_BYTES) throw new Error("Release evidence retained command output total exceeds bounds")
   const excelRoot = join(canonicalRoot, "capabilities", "excel")
-  const wrapper = join(excelRoot, "wrapper.py")
+  const excelWrapper = join(excelRoot, "wrapper.py")
+  const duckdbRoot = join(canonicalRoot, "capabilities", "duckdb")
+  const duckdbWrapper = join(duckdbRoot, "wrapper.py")
+  const duckdbContract = join(duckdbRoot, "contract.example.json")
+  const duckdbTest = join(canonicalRoot, "tests", "python", "test_duckdb_capability.py")
   for (const [index, item] of evidence.commands.entries()) {
-    const expectedCwd = index === 7 ? excelRoot : canonicalRoot
+    const expectedCwd = item.id === "excel_uv_sync" ? excelRoot : item.id === "duckdb_uv_sync" ? duckdbRoot : canonicalRoot
     if (!sameResolvedPath(item.cwd, expectedCwd)) throw new Error(`Release evidence command ${index} cwd differs from the current checkout`)
   }
-  exactArgs(evidence.commands[0]!, ["run", "typecheck"], "typecheck")
-  exactArgs(evidence.commands[1]!, ["test", "--timeout", "60000"], "test")
-  exactArgs(evidence.commands[2]!, ["test", "tests/manager.test.ts", "--timeout", "60000"], "manager test")
-  exactArgs(evidence.commands[3]!, ["run", "smoke"], "smoke")
-  exactArgs(evidence.commands[4]!, ["run", "check:live"], "live")
-  exactArgs(evidence.commands[5]!, ["run", "check:excel-manifest"], "manifest")
-  exactArgs(evidence.commands[6]!, ["-m", "unittest", "discover", "-s", "tests/python", "-v"], "Python test")
-  exactArgs(evidence.commands[7]!, ["sync", "--frozen", "--no-dev"], "uv sync")
+  exactArgs(byId.typecheck, ["run", "typecheck"], "typecheck")
+  exactArgs(byId.bun_test, ["test", "--timeout", "60000"], "test")
+  exactArgs(byId.manager_tests, ["test", "tests/manager.test.ts", "--timeout", "60000"], "manager test")
+  exactArgs(byId.smoke, ["run", "smoke"], "smoke")
+  exactArgs(byId.live_verify, ["run", "check:live"], "live")
+  exactArgs(byId.excel_manifest, ["run", "check:excel-manifest"], "Excel manifest")
+  exactArgs(byId.duckdb_manifest, ["run", "check:duckdb-manifest"], "DuckDB manifest")
+  exactArgs(byId.python_tests, ["-m", "unittest", "discover", "-s", "tests/python", "-v"], "Python test")
+  exactArgs(byId.excel_uv_sync, ["sync", "--frozen", "--no-dev"], "Excel uv sync")
+  exactArgs(byId.duckdb_uv_sync, ["sync", "--frozen", "--no-dev"], "DuckDB uv sync")
+  exactArgs(byId.duckdb_python_tests, [duckdbTest, "-v"], "DuckDB Python test")
   const canonicalBun = realpathSync.native(process.execPath)
-  for (const command of evidence.commands.slice(0, 6)) {
+  for (const command of evidence.commands.slice(0, 7)) {
     if (!sameResolvedPath(command.argv[0]!, canonicalBun)) throw new Error("Release evidence Bun executable differs from current Bun")
   }
-  assertRegularExecutable(evidence.commands[6]!.argv[0]!, /^python(?:3(?:\.\d+)?)?(?:\.exe)?$/i, "Python")
-  assertRegularExecutable(evidence.commands[7]!.argv[0]!, /^uv(?:\.exe)?$/i, "uv")
-  if (evidence.commands[8]!.argv.length !== 3 || !sameResolvedPath(evidence.commands[8]!.argv[1]!, wrapper) || evidence.commands[8]!.argv[2] !== "--check") {
+  assertRegularExecutable(byId.python_tests.argv[0]!, /^python(?:3(?:\.\d+)?)?(?:\.exe)?$/i, "Python")
+  assertRegularExecutable(byId.excel_uv_sync.argv[0]!, /^uv(?:\.exe)?$/i, "Excel uv")
+  assertRegularExecutable(byId.duckdb_uv_sync.argv[0]!, /^uv(?:\.exe)?$/i, "DuckDB uv")
+  if (byId.excel_wrapper_check.argv.length !== 3 || !sameResolvedPath(byId.excel_wrapper_check.argv[1]!, excelWrapper) || byId.excel_wrapper_check.argv[2] !== "--check") {
     throw new Error("Release evidence wrapper check command arguments are not exact")
   }
-  if (evidence.commands[9]!.argv.length !== 2 || !sameResolvedPath(evidence.commands[9]!.argv[1]!, wrapper)) {
+  if (byId.excel_wrapper_eof.argv.length !== 2 || !sameResolvedPath(byId.excel_wrapper_eof.argv[1]!, excelWrapper)) {
     throw new Error("Release evidence wrapper EOF command arguments are not exact")
   }
-  const wrapperInterpreter = evidence.commands[8]!.argv[0]!
-  if (!sameResolvedPath(wrapperInterpreter, evidence.commands[9]!.argv[0]!) || !isAbsolute(wrapperInterpreter) ||
-    !/^python(?:3)?(?:\.exe)?$/i.test(basename(wrapperInterpreter)) || !wrapperInterpreter.includes("opencode-alg-excel-release-gate-")) {
+  const excelInterpreter = byId.excel_wrapper_check.argv[0]!
+  if (!sameResolvedPath(excelInterpreter, byId.excel_wrapper_eof.argv[0]!) || !isAbsolute(excelInterpreter) ||
+    !/^python(?:3)?(?:\.exe)?$/i.test(basename(excelInterpreter)) || !excelInterpreter.includes("opencode-alg-excel-release-gate-")) {
     throw new Error("Release evidence wrapper interpreter relationship is invalid")
   }
+  const duckdbInterpreter = byId.duckdb_python_tests.argv[0]!
+  if (!sameResolvedPath(duckdbInterpreter, byId.duckdb_wrapper_preflight.argv[0]!) ||
+    !sameResolvedPath(duckdbInterpreter, byId.duckdb_wrapper_eof.argv[0]!) || !isAbsolute(duckdbInterpreter) ||
+    !/^python(?:3)?(?:\.exe)?$/i.test(basename(duckdbInterpreter)) || !duckdbInterpreter.includes("opencode-alg-duckdb-release-gate-")) {
+    throw new Error("Release evidence DuckDB interpreter relationship is invalid")
+  }
+  const example = JSON.parse(readFileSync(duckdbContract, "utf8")) as { contract_sha256?: unknown }
+  const contractHash = example.contract_sha256
+  if (typeof contractHash !== "string" || !/^[a-f0-9]{64}$/.test(contractHash)) throw new Error("DuckDB example contract hash is invalid")
+  if (!exactJson(byId.duckdb_wrapper_preflight.argv.slice(1), [duckdbWrapper, "--preflight", "--contract", duckdbContract, "--hash", contractHash]) ||
+    !exactJson(byId.duckdb_wrapper_eof.argv.slice(1), [duckdbWrapper, "--mcp", "--contract", duckdbContract, "--hash", contractHash])) {
+    throw new Error("Release evidence DuckDB wrapper command arguments are not exact")
+  }
   const npm = resolveNpmInvocation()
-  if (!exactJson(evidence.commands[10]!.argv, [npm.executable, ...npm.argsPrefix, "pack", "--dry-run", "--json"])) {
+  if (!exactJson(byId.npm_pack.argv, [npm.executable, ...npm.argsPrefix, "pack", "--dry-run", "--json"])) {
     throw new Error("Release evidence npm invocation differs from the current safe canonical resolver")
   }
-  const bunTotals = parsedBunTotals(evidence.commands[1]!)
-  const manager = parsedBunTotals(evidence.commands[2]!)
+  const bunTotals = parsedBunTotals(byId.bun_test)
+  const manager = parsedBunTotals(byId.manager_tests)
   const managerTotals = { manager_pass: manager.bun_pass, manager_skip: manager.bun_skip, manager_fail: manager.bun_fail, manager_total: manager.bun_total, manager_assertions: manager.bun_assertions, manager_files: manager.bun_files }
-  const pythonTotals = parsedPythonTotals(evidence.commands[6]!)
-  if (!exactJson(evidence.totals, { ...bunTotals, ...managerTotals, ...pythonTotals }) || evidence.totals.bun_fail !== 0 || evidence.totals.manager_fail !== 0 || evidence.totals.bun_pass < 1 || evidence.totals.manager_pass < 1 || evidence.totals.python_run < 1) {
-    throw new Error("Release evidence test totals do not prove successful Bun and Python suites")
+  const pythonTotals = parsedPythonTotals(byId.python_tests)
+  const duckdbPythonTotals = parsedPythonTotals(byId.duckdb_python_tests, "duckdb_python")
+  if (!exactJson(evidence.totals, { ...bunTotals, ...managerTotals, ...pythonTotals, ...duckdbPythonTotals }) || evidence.totals.bun_fail !== 0 || evidence.totals.manager_fail !== 0 || evidence.totals.bun_pass < 1 || evidence.totals.manager_pass < 1 || evidence.totals.python_run < 1 || evidence.totals.duckdb_python_run < 1 || evidence.totals.duckdb_python_skipped !== 0) {
+    throw new Error("Release evidence test totals do not prove successful Bun, Python, and prepared DuckDB suites")
   }
   const manifest = verifyExcelManifest(canonicalRoot)
-  const manifestOutput = finalJsonLine(evidence.commands[5]!.stdout)
+  const manifestOutput = finalJsonLine(byId.excel_manifest.stdout)
   if (manifestOutput?.ok !== true || manifestOutput.manifest_sha256 !== manifest.manifest_sha256 || !exactJson(manifestOutput.files, manifest.files) ||
     evidence.excel.manifest_sha256 !== manifest.manifest_sha256 || evidence.excel.lock_sha256 !== manifest.files.lock) {
     throw new Error("Release evidence Excel hashes differ from the current package")
   }
-  const wrapperOutput = finalJsonLine(evidence.commands[8]!.stdout)
+  const duckdbManifest = verifyDuckDbManifest(canonicalRoot)
+  const duckdbManifestOutput = finalJsonLine(byId.duckdb_manifest.stdout)
+  if (duckdbManifestOutput?.ok !== true || duckdbManifestOutput.manifest_sha256 !== duckdbManifest.manifest_sha256 ||
+    !exactJson(duckdbManifestOutput.files, duckdbManifest.files) || evidence.duckdb.manifest_sha256 !== duckdbManifest.manifest_sha256 ||
+    evidence.duckdb.lock_sha256 !== duckdbManifest.files["uv.lock"]) {
+    throw new Error("Release evidence DuckDB hashes differ from the current package")
+  }
+  const wrapperOutput = finalJsonLine(byId.excel_wrapper_check.stdout)
   if (wrapperOutput?.ok !== true || wrapperOutput.version !== "0.1.8" || wrapperOutput.tool_count !== EXCEL_TOOLS.length ||
     !exactJson(wrapperOutput.tools, EXCEL_TOOLS) || wrapperOutput.remote_transports !== false ||
     wrapperOutput.path_policy?.ok !== true || wrapperOutput.path_policy?.path_argument_confinement !== true ||
     evidence.excel.version !== wrapperOutput.version || evidence.excel.tool_count !== wrapperOutput.tool_count ||
-    evidence.commands[9]!.stdout !== "" || evidence.excel.eof_stdout_bytes !== 0) throw new Error("Release evidence wrapper output contract is invalid")
+    byId.excel_wrapper_eof.stdout !== "" || evidence.excel.eof_stdout_bytes !== 0) throw new Error("Release evidence wrapper output contract is invalid")
+  const duckdbPreflight = finalJsonLine(byId.duckdb_wrapper_preflight.stdout)
+  if (duckdbPreflight?.ok !== true || duckdbPreflight.compatibility?.capability_version !== "0.1.0" ||
+    duckdbPreflight.compatibility?.engine_version !== "1.4.0" || duckdbPreflight.compatibility?.parser_version !== "27.14.0" ||
+    !exactJson(duckdbPreflight.compatibility?.extensions, []) || !exactJson(duckdbPreflight.compatibility?.attachment_aliases, []) ||
+    duckdbPreflight.compatibility?.contract_sha256 !== contractHash || evidence.duckdb.version !== "0.1.0" ||
+    evidence.duckdb.engine_version !== duckdbPreflight.compatibility.engine_version ||
+    evidence.duckdb.parser_version !== duckdbPreflight.compatibility.parser_version || evidence.duckdb.tool_count !== 1 ||
+    evidence.duckdb.contract_sha256 !== contractHash || byId.duckdb_wrapper_eof.stdout !== "" || evidence.duckdb.eof_stdout_bytes !== 0) {
+    throw new Error("Release evidence DuckDB wrapper output contract is invalid")
+  }
   const expectedPaths = expectedPackedPaths(canonicalRoot)
   let packArray: any
-  try { packArray = JSON.parse(evidence.commands[10]!.stdout) } catch { throw new Error("Retained npm output is not JSON") }
+  try { packArray = JSON.parse(byId.npm_pack.stdout) } catch { throw new Error("Retained npm output is not JSON") }
   if (!Array.isArray(packArray) || packArray.length !== 1 || !Array.isArray(packArray[0]?.files)) throw new Error("Retained npm output shape is invalid")
   const pack = packArray[0]
   const parsedFiles = pack.files.map((file: any) => ({ path: file.path, size: file.size, mode: file.mode })).sort((a: any, b: any) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0)
@@ -382,12 +436,16 @@ export function validateReleaseEvidenceSemantics(value: unknown, root = ROOT): R
   const expectedCapabilities = [
     "capabilities/excel/manifest.json", "capabilities/excel/policy.py", "capabilities/excel/pyproject.toml",
     "capabilities/excel/uv.lock", "capabilities/excel/workbook.py", "capabilities/excel/wrapper.py",
-  ]
+    ...[...DUCKDB_CAPABILITY_FILES, "manifest.json"].sort().map((name) => `capabilities/duckdb/${name}`),
+  ].sort()
   if (evidence.package.entries !== parsedFiles.length || evidence.package.entries !== pack.entryCount || pack.unpackedSize !== parsedUnpackedBytes ||
     !exactJson(evidence.package.files, parsedFiles) || evidence.package.packed_bytes !== pack.size || evidence.package.unpacked_bytes !== pack.unpackedSize ||
     evidence.package.inventory_sha256 !== inventory.sha256 ||
     JSON.stringify(evidence.package.capability_files) !== JSON.stringify(expectedCapabilities) ||
-    evidence.package.lock_bytes !== statSync(join(excelRoot, "uv.lock")).size) {
+    !exactJson(evidence.package.lock_bytes, {
+      excel: statSync(join(excelRoot, "uv.lock")).size,
+      duckdb: statSync(join(duckdbRoot, "uv.lock")).size,
+    })) {
     throw new Error("Release evidence package inventory differs from the current reviewed package")
   }
   for (const file of parsedFiles) {
@@ -432,16 +490,60 @@ export function verifyRetainedReleaseEvidence(
   return { path: resolve(path), sha256: digest, bytes: bytes.byteLength, identity, evidence }
 }
 
-interface Captured { evidence: z.infer<typeof CommandEvidenceSchema>; stdout: string; stderr: string }
+interface Captured {
+  evidence: z.infer<typeof CommandEvidenceSchema>; stdout: string; stderr: string
+  supervision: { duration_ms: number; deadline_ms: number; signal: string | null; timed_out: boolean; output_exceeded: boolean; error: string | null; cleanup_error: string | null }
+}
 
-function run(id: typeof RELEASE_COMMAND_IDS[number], executable: string, args: string[], cwd = ROOT, env?: Record<string, string>, input?: Buffer): Captured {
-  const child = spawnSync(executable, args, {
-    cwd, env: env ? { ...process.env, ...env } : process.env, input,
-    shell: false, windowsHide: true, maxBuffer: MAX_CAPTURE_BYTES,
+export const RELEASE_COMMAND_DEADLINES_MS: Record<typeof RELEASE_COMMAND_IDS[number], number> = {
+  typecheck: 300_000, bun_test: 3_600_000, manager_tests: 1_800_000, smoke: 300_000,
+  live_verify: 600_000, excel_manifest: 60_000, duckdb_manifest: 60_000, python_tests: 300_000,
+  excel_uv_sync: 600_000, excel_wrapper_check: 120_000, excel_wrapper_eof: 60_000,
+  duckdb_uv_sync: 600_000, duckdb_python_tests: 600_000, duckdb_wrapper_preflight: 120_000,
+  duckdb_wrapper_eof: 60_000, npm_pack: 300_000,
+}
+
+export async function runReleaseCommand(id: typeof RELEASE_COMMAND_IDS[number], executable: string, args: string[], cwd = ROOT, env?: Record<string, string>, input?: Buffer, deadlineMs = RELEASE_COMMAND_DEADLINES_MS[id]): Promise<Captured> {
+  if (!Number.isSafeInteger(deadlineMs) || deadlineMs < 1) throw new Error("invalid release command deadline")
+  const started = performance.now()
+  const child = spawn(executable, args, {
+    cwd, env: env ? { ...process.env, ...env } : process.env,
+    shell: false, windowsHide: true, detached: process.platform !== "win32", stdio: "pipe",
   })
-  if (child.error) throw child.error
-  const stdout = redactReleaseText((Buffer.isBuffer(child.stdout) ? child.stdout : Buffer.from(child.stdout ?? "")).toString("utf8"))
-  const stderr = redactReleaseText((Buffer.isBuffer(child.stderr) ? child.stderr : Buffer.from(child.stderr ?? "")).toString("utf8"))
+  const chunks = { stdout: [] as Buffer[], stderr: [] as Buffer[] }
+  const sizes = { stdout: 0, stderr: 0 }
+  let timedOut = false, outputExceeded = false
+  let commandError: string | null = null, cleanupError: string | null = null
+  let termination: Promise<void> | undefined
+  const stop = () => termination ??= terminateProcessTree(child, { terminationGraceMs: 250 }).catch((error) => {
+    cleanupError = boundedReleaseTail(String(error)); try { child.kill("SIGKILL") } catch { /* reported above */ }
+  })
+  for (const stream of ["stdout", "stderr"] as const) child[stream]!.on("data", (data: Buffer) => {
+    const remaining = Math.max(0, MAX_CAPTURE_BYTES - sizes[stream])
+    if (remaining) chunks[stream].push(Buffer.from(data.subarray(0, remaining)))
+    sizes[stream] += data.length
+    if (sizes[stream] > MAX_CAPTURE_BYTES) outputExceeded = true
+  })
+  child.stdin!.on("error", () => { /* exit/error event owns command status */ })
+  child.stdin!.end(input ?? Buffer.alloc(0))
+  let exitCode: number | null = null, signal: string | null = null
+  await new Promise<void>((done) => {
+    const timer = setTimeout(() => {
+      timedOut = true
+      void stop().finally(() => { child.stdout!.destroy(); child.stderr!.destroy(); done() })
+    }, deadlineMs)
+    child.once("error", (error) => { commandError = boundedReleaseTail(String(error)); clearTimeout(timer); done() })
+    child.once("close", (code, observedSignal) => { exitCode = code; signal = observedSignal; clearTimeout(timer); done() })
+  })
+  if (termination) await termination
+  const retainedOutput = (buffers: Buffer[]) => {
+    const bytes = Buffer.from(redactReleaseText(Buffer.concat(buffers).toString("utf8")))
+    if (bytes.byteLength <= MAX_RETAINED_COMMAND_BYTES) return bytes.toString("utf8")
+    outputExceeded = true
+    return bytes.subarray(0, MAX_RETAINED_COMMAND_BYTES - 4).toString("utf8")
+  }
+  const stdout = retainedOutput(chunks.stdout)
+  const stderr = retainedOutput(chunks.stderr)
   const stdoutBytes = Buffer.from(stdout, "utf8")
   const stderrBytes = Buffer.from(stderr, "utf8")
   if (stdoutBytes.byteLength > MAX_RETAINED_COMMAND_BYTES || stderrBytes.byteLength > MAX_RETAINED_COMMAND_BYTES) {
@@ -449,17 +551,41 @@ function run(id: typeof RELEASE_COMMAND_IDS[number], executable: string, args: s
   }
   return {
     evidence: CommandEvidenceSchema.parse({
-      id, argv: [executable, ...args], cwd, exit_code: child.status ?? 1,
+      id, argv: [executable, ...args], cwd, exit_code: timedOut || commandError || cleanupError ? 1 : exitCode ?? 1,
       stdout_bytes: stdoutBytes.byteLength, stdout_sha256: sha256(stdoutBytes), stdout,
       stderr_bytes: stderrBytes.byteLength, stderr_sha256: sha256(stderrBytes), stderr,
     }),
     stdout, stderr,
+    supervision: { duration_ms: Math.round(performance.now() - started), deadline_ms: deadlineMs, signal,
+      timed_out: timedOut, output_exceeded: outputExceeded, error: commandError, cleanup_error: cleanupError },
   }
 }
 
 function requireSuccess(result: Captured): Captured {
-  if (result.evidence.exit_code !== 0) throw new Error(`Release command failed: ${result.evidence.argv[0]} ${result.evidence.argv.slice(1).join(" ")}`)
+  if (result.evidence.exit_code !== 0) throw new Error(`Release command ${result.evidence.id} failed: ${result.supervision.error ?? (result.supervision.timed_out ? "deadline exceeded" : boundedReleaseTail(result.stderr || result.stdout))}`)
   return result
+}
+
+/** Failed attempts have a separate bounded format and can never be success evidence. */
+export function writeReleaseFailure(directory: string, releaseInputs: ReleaseEvidence["release_inputs"], attempts: Captured[], failure: unknown, cleanupErrors: string[]) {
+  const path = join(externalEvidenceDirectory(directory), `release-failed-${releaseInputs.sha256.slice(0, 16)}-${randomUUID()}.json`)
+  const record = {
+    schema_version: 1, kind: "opencode-alg-release-failed-attempt", passed: false,
+    generated_at: new Date().toISOString(), release_inputs: releaseInputs,
+    original_failure: boundedReleaseTail(failure instanceof Error ? failure.message : String(failure)),
+    attempts: attempts.map(({ evidence, supervision }) => {
+      const { stdout, stderr, ...identity } = evidence
+      return { ...identity, argv: identity.argv.map(redactReleaseText), supervision,
+        stdout_tail: boundedReleaseTail(stdout), stderr_tail: boundedReleaseTail(stderr) }
+    }),
+    cleanup_errors: cleanupErrors.map((error) => boundedReleaseTail(error)),
+  }
+  const bytes = Buffer.from(`${JSON.stringify(record, null, 2)}\n`)
+  if (attempts.length > RELEASE_COMMAND_IDS.length || bytes.byteLength > MAX_EVIDENCE_BYTES) throw new Error("failed release evidence exceeds bounds")
+  writeFileSync(path, bytes, { flag: "wx", mode: 0o600 })
+  const retained = readFileSync(path)
+  if (!retained.equals(bytes)) throw new Error("failed release evidence changed during retention")
+  return { path, bytes: retained.byteLength, sha256: sha256(retained) }
 }
 
 function finalJsonLine(text: string): any {
@@ -572,22 +698,26 @@ function argument(args: string[], name: string): string {
   return args[index + 1]!
 }
 
-export function runReleaseGate(args = process.argv.slice(2)): { evidence: ReleaseEvidence; retained: { path: string; sha256: string; bytes: number; identity: EvidenceFileIdentity } } {
-  const evidenceDir = argument(args, "--evidence-dir")
+export async function runReleaseGate(args = process.argv.slice(2)): Promise<{ evidence: ReleaseEvidence; retained: { path: string; sha256: string; bytes: number; identity: EvidenceFileIdentity } }> {
+  const evidenceDir = externalEvidenceDirectory(argument(args, "--evidence-dir"))
   if (repositoryReleaseArtifacts(ROOT).length) throw new Error(`Repository contains generated release artifacts: ${repositoryReleaseArtifacts(ROOT).join(", ")}`)
   const helperArtifactsBefore = windowsShellHelperArtifactSnapshot()
   const releaseInputsBefore = computeReleaseInputIdentity(ROOT)
   const commands: ReleaseEvidence["commands"] = []
-  const capture = (result: Captured) => { commands.push(result.evidence); return requireSuccess(result) }
+  const attempts: Captured[] = []
+  const cleanupErrors: string[] = []
+  const capture = (result: Captured) => { attempts.push(result); commands.push(result.evidence); return requireSuccess(result) }
+  try {
   const bun = process.execPath
   const python = pathExecutable(process.platform === "win32" ? "python.exe" : "python3")
-  capture(run("typecheck", bun, ["run", "typecheck"]))
-  const tests = capture(run("bun_test", bun, ["test", "--timeout", "60000"]))
-  const managerTests = capture(run("manager_tests", bun, ["test", "tests/manager.test.ts", "--timeout", "60000"]))
-  capture(run("smoke", bun, ["run", "smoke"]))
-  const live = finalJsonLine(capture(run("live_verify", bun, ["run", "check:live"])).stdout)
-  const manifest = finalJsonLine(capture(run("excel_manifest", bun, ["run", "check:excel-manifest"])).stdout)
-  const pythonTests = capture(run("python_tests", python, ["-m", "unittest", "discover", "-s", "tests/python", "-v"], ROOT, { PYTHONDONTWRITEBYTECODE: "1" }))
+  capture(await runReleaseCommand("typecheck", bun, ["run", "typecheck"]))
+  const tests = capture(await runReleaseCommand("bun_test", bun, ["test", "--timeout", "60000"]))
+  const managerTests = capture(await runReleaseCommand("manager_tests", bun, ["test", "tests/manager.test.ts", "--timeout", "60000"]))
+  capture(await runReleaseCommand("smoke", bun, ["run", "smoke"]))
+  const live = finalJsonLine(capture(await runReleaseCommand("live_verify", bun, ["run", "check:live"])).stdout)
+  const manifest = finalJsonLine(capture(await runReleaseCommand("excel_manifest", bun, ["run", "check:excel-manifest"])).stdout)
+  const duckdbManifest = finalJsonLine(capture(await runReleaseCommand("duckdb_manifest", bun, ["run", "check:duckdb-manifest"])).stdout)
+  const pythonTests = capture(await runReleaseCommand("python_tests", python, ["-m", "unittest", "discover", "-s", "tests/python", "-v"], ROOT, { PYTHONDONTWRITEBYTECODE: "1" }))
 
   const temp = mkdtempSync(join(tmpdir(), "opencode-alg-excel-release-gate-"))
   const envPath = join(temp, "env")
@@ -596,29 +726,54 @@ export function runReleaseGate(args = process.argv.slice(2)): { evidence: Releas
   let wrapperCheck: any
   let eofStdoutBytes = -1
   try {
-    capture(run("uv_sync", pathExecutable(process.platform === "win32" ? "uv.exe" : "uv"), ["sync", "--frozen", "--no-dev"], join(ROOT, "capabilities", "excel"), {
+    capture(await runReleaseCommand("excel_uv_sync", pathExecutable(process.platform === "win32" ? "uv.exe" : "uv"), ["sync", "--frozen", "--no-dev"], join(ROOT, "capabilities", "excel"), {
       UV_PROJECT_ENVIRONMENT: envPath, UV_NO_PROGRESS: "1", PYTHONDONTWRITEBYTECODE: "1",
     }))
     const interpreter = process.platform === "win32" ? join(envPath, "Scripts", "python.exe") : join(envPath, "bin", "python")
     const wrapper = join(ROOT, "capabilities", "excel", "wrapper.py")
     const runtimeEnv = { ALG_EXCEL_ROOT: workbookRoot, PYTHONDONTWRITEBYTECODE: "1", PYTHONNOUSERSITE: "1", PYTHONUTF8: "1" }
-    wrapperCheck = finalJsonLine(capture(run("excel_wrapper_check", interpreter, [wrapper, "--check"], ROOT, runtimeEnv)).stdout)
-    const eof = capture(run("excel_wrapper_eof", interpreter, [wrapper], ROOT, runtimeEnv, Buffer.alloc(0)))
+    wrapperCheck = finalJsonLine(capture(await runReleaseCommand("excel_wrapper_check", interpreter, [wrapper, "--check"], ROOT, runtimeEnv)).stdout)
+    const eof = capture(await runReleaseCommand("excel_wrapper_eof", interpreter, [wrapper], ROOT, runtimeEnv, Buffer.alloc(0)))
     eofStdoutBytes = eof.evidence.stdout_bytes
     if (eofStdoutBytes !== 0) throw new Error("Excel wrapper emitted pre-handshake stdout")
   } finally {
-    rmSync(temp, { recursive: true, force: true })
+    try { rmSync(temp, { recursive: true, force: true }) } catch (error) { cleanupErrors.push(boundedReleaseTail(String(error))) }
   }
+
+  const duckdbTemp = mkdtempSync(join(tmpdir(), "opencode-alg-duckdb-release-gate-"))
+  const duckdbEnvPath = join(duckdbTemp, "env")
+  let duckdbPreflight: any
+  let duckdbEofStdoutBytes = -1
+  let duckdbPythonTests: Captured
+  try {
+    capture(await runReleaseCommand("duckdb_uv_sync", pathExecutable(process.platform === "win32" ? "uv.exe" : "uv"), ["sync", "--frozen", "--no-dev"], join(ROOT, "capabilities", "duckdb"), {
+      UV_PROJECT_ENVIRONMENT: duckdbEnvPath, UV_NO_PROGRESS: "1", PYTHONDONTWRITEBYTECODE: "1",
+    }))
+    const interpreter = process.platform === "win32" ? join(duckdbEnvPath, "Scripts", "python.exe") : join(duckdbEnvPath, "bin", "python")
+    const wrapper = join(ROOT, "capabilities", "duckdb", "wrapper.py")
+    const contract = join(ROOT, "capabilities", "duckdb", "contract.example.json")
+    const contractHash = JSON.parse(readFileSync(contract, "utf8")).contract_sha256 as string
+    const runtimeEnv = { PYTHONDONTWRITEBYTECODE: "1", PYTHONNOUSERSITE: "1", PYTHONUTF8: "1" }
+    duckdbPythonTests = capture(await runReleaseCommand("duckdb_python_tests", interpreter, [join(ROOT, "tests", "python", "test_duckdb_capability.py"), "-v"], ROOT, runtimeEnv))
+    duckdbPreflight = finalJsonLine(capture(await runReleaseCommand("duckdb_wrapper_preflight", interpreter, [wrapper, "--preflight", "--contract", contract, "--hash", contractHash], ROOT, runtimeEnv)).stdout)
+    const eof = capture(await runReleaseCommand("duckdb_wrapper_eof", interpreter, [wrapper, "--mcp", "--contract", contract, "--hash", contractHash], ROOT, runtimeEnv, Buffer.alloc(0)))
+    duckdbEofStdoutBytes = eof.evidence.stdout_bytes
+    if (duckdbEofStdoutBytes !== 0) throw new Error("DuckDB wrapper emitted pre-handshake stdout")
+  } finally {
+    try { rmSync(duckdbTemp, { recursive: true, force: true }) } catch (error) { cleanupErrors.push(boundedReleaseTail(String(error))) }
+  }
+  if (cleanupErrors.length) throw new Error(`Release environment cleanup failed: ${cleanupErrors.join("; ")}`)
   const npm = resolveNpmInvocation()
-  const pack = JSON.parse(capture(run("npm_pack", npm.executable, [...npm.argsPrefix, "pack", "--dry-run", "--json"])).stdout)[0]
+  const pack = JSON.parse(capture(await runReleaseCommand("npm_pack", npm.executable, [...npm.argsPrefix, "pack", "--dry-run", "--json"])).stdout)[0]
   const packageInventory = validatePackedInventory(pack.files)
-  const capabilityFiles = pack.files.filter((file: any) => file.path.startsWith("capabilities/excel/")).map((file: any) => file.path).sort()
+  const capabilityFiles = pack.files.filter((file: any) => /^capabilities\/(?:duckdb|excel)\//.test(file.path)).map((file: any) => file.path).sort()
   const expectedCapabilityFiles = [
     "capabilities/excel/manifest.json", "capabilities/excel/policy.py", "capabilities/excel/pyproject.toml",
     "capabilities/excel/uv.lock", "capabilities/excel/workbook.py", "capabilities/excel/wrapper.py",
-  ]
-  if (JSON.stringify(capabilityFiles) !== JSON.stringify(expectedCapabilityFiles)) throw new Error("npm pack capability inventory is not the exact six-file contract")
-  const capabilityModes = pack.files.filter((file: any) => file.path.startsWith("capabilities/excel/")).map((file: any) => file.mode)
+    ...[...DUCKDB_CAPABILITY_FILES, "manifest.json"].map((name) => `capabilities/duckdb/${name}`),
+  ].sort()
+  if (JSON.stringify(capabilityFiles) !== JSON.stringify(expectedCapabilityFiles)) throw new Error("npm pack capability inventory is not the exact reviewed Excel and DuckDB contract")
+  const capabilityModes = pack.files.filter((file: any) => /^capabilities\/(?:duckdb|excel)\//.test(file.path)).map((file: any) => file.mode)
   if (capabilityModes.some((mode: number) => mode !== 420)) throw new Error("npm pack capability modes must all be 0644")
   const tgzCreated = readdirSync(ROOT).some((name) => name.endsWith(".tgz"))
   if (tgzCreated) throw new Error("npm pack --dry-run created a repository tgz")
@@ -635,6 +790,7 @@ export function runReleaseGate(args = process.argv.slice(2)): { evidence: Releas
   const manager = parsedBunTotals(managerTests.evidence)
   const managerTotals = { manager_pass: manager.bun_pass, manager_skip: manager.bun_skip, manager_fail: manager.bun_fail, manager_total: manager.bun_total, manager_assertions: manager.bun_assertions, manager_files: manager.bun_files }
   const pythonTotals = parsedPythonTotals(pythonTests.evidence)
+  const duckdbPythonTotals = parsedPythonTotals(duckdbPythonTests!.evidence, "duckdb_python")
   if (live.passed !== true || live.user_global_config_modified !== false || live.global_config_snapshot_unchanged !== true ||
     !/^[a-f0-9]{64}$/.test(live.global_config_snapshot_sha256 ?? "") || live.temporary_environment_removed !== true) {
     throw new Error("Live evidence did not prove isolated success/measured global-config preservation/cleanup")
@@ -648,24 +804,41 @@ export function runReleaseGate(args = process.argv.slice(2)): { evidence: Releas
   }, ROOT)
   if (!sameEvidenceIdentity(liveArtifact.identity, live.evidence_identity)) throw new Error("Retained live evidence identity differs from live summary")
   const evidence = ReleaseEvidenceSchema.parse({
-    schema_version: 5, kind: "opencode-alg-release-gate", generated_at: new Date().toISOString(), package_version: "0.3.0",
+    schema_version: 6, kind: "opencode-alg-release-gate", generated_at: new Date().toISOString(), package_version: "0.4.1",
     source: { sha256: source.digest, files: source.file_count, bytes: source.total_bytes }, release_inputs: releaseInputsAfter, commands,
-    totals: { ...bunTotals, ...managerTotals, ...pythonTotals },
+    totals: { ...bunTotals, ...managerTotals, ...pythonTotals, ...duckdbPythonTotals },
     excel: { manifest_sha256: manifest.manifest_sha256, lock_sha256: manifest.files.lock, version: wrapperCheck.version, tool_count: wrapperCheck.tool_count, eof_stdout_bytes: eofStdoutBytes },
-    package: { entries: pack.entryCount, packed_bytes: pack.size, unpacked_bytes: pack.unpackedSize, files: pack.files.map((file: any) => ({ path: file.path, size: file.size, mode: file.mode })).sort((a: any, b: any) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0), inventory_sha256: packageInventory.sha256, capability_files: capabilityFiles, lock_bytes: pack.files.find((file: any) => file.path.endsWith("uv.lock")).size, tgz_created: tgzCreated },
+    duckdb: { manifest_sha256: duckdbManifest.manifest_sha256, lock_sha256: duckdbManifest.files["uv.lock"], version: duckdbPreflight.compatibility.capability_version, engine_version: duckdbPreflight.compatibility.engine_version, parser_version: duckdbPreflight.compatibility.parser_version, tool_count: 1, eof_stdout_bytes: duckdbEofStdoutBytes, contract_sha256: duckdbPreflight.compatibility.contract_sha256 },
+    package: { entries: pack.entryCount, packed_bytes: pack.size, unpacked_bytes: pack.unpackedSize, files: pack.files.map((file: any) => ({ path: file.path, size: file.size, mode: file.mode })).sort((a: any, b: any) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0), inventory_sha256: packageInventory.sha256, capability_files: capabilityFiles, lock_bytes: { excel: statSync(join(ROOT, "capabilities", "excel", "uv.lock")).size, duckdb: statSync(join(ROOT, "capabilities", "duckdb", "uv.lock")).size }, tgz_created: tgzCreated },
     live: { passed: live.passed, evidence_path: live.evidence_path, evidence_sha256: live.evidence_sha256, evidence_bytes: live.evidence_bytes, evidence_identity: live.evidence_identity, source_sha256: live.source_sha256, user_global_config_modified: live.user_global_config_modified, global_config_snapshot_sha256: live.global_config_snapshot_sha256, temporary_environment_removed: live.temporary_environment_removed },
-    cleanup: { temporary_excel_environment_removed: !existsSync(temp), repository_artifacts_absent: repositoryReleaseArtifacts(ROOT).length === 0, helper_owned_before: helperArtifactsBefore.length, helper_owned_after: helperArtifactsAfter.length, helper_net_additions: 0 },
+    cleanup: { temporary_excel_environment_removed: !existsSync(temp), temporary_duckdb_environment_removed: !existsSync(duckdbTemp), repository_artifacts_absent: repositoryReleaseArtifacts(ROOT).length === 0, helper_owned_before: helperArtifactsBefore.length, helper_owned_after: helperArtifactsAfter.length, helper_net_additions: 0 },
     passed: true,
   })
   validateReleaseEvidenceSemantics(evidence, ROOT)
   const written = writeReleaseEvidence(evidenceDir, evidence)
   const retained = verifyRetainedReleaseEvidence(written.path, written, ROOT)
   return { evidence: retained.evidence, retained: { path: retained.path, sha256: retained.sha256, bytes: retained.bytes, identity: retained.identity } }
+  } catch (error) {
+    try {
+      const before = new Set(helperArtifactsBefore.map((path) => resolve(path)))
+      const additions = windowsShellHelperArtifactSnapshot().filter((path) => !before.has(resolve(path)))
+      cleanupWindowsShellHelpers({ candidates: additions, minimumAgeMs: 0 })
+      const remaining = windowsShellHelperArtifactSnapshot().filter((path) => !before.has(resolve(path)))
+      if (remaining.length) cleanupErrors.push(`Windows helper artifacts remain: ${remaining.join(", ")}`)
+    } catch (cleanupError) { cleanupErrors.push(boundedReleaseTail(String(cleanupError))) }
+    let failurePath: string
+    try {
+      failurePath = writeReleaseFailure(evidenceDir, releaseInputsBefore, attempts, error, cleanupErrors).path
+    } catch (publicationError) {
+      throw new AggregateError([error, publicationError], `Release failed; failure evidence publication also failed: ${boundedReleaseTail(String(error))}`)
+    }
+    throw new Error(`Release failed; retained diagnostics: ${failurePath}; ${boundedReleaseTail(String(error))}`, { cause: error })
+  }
 }
 
 if (import.meta.main) {
   try {
-    const result = runReleaseGate()
+    const result = await runReleaseGate()
     console.log(JSON.stringify({ passed: true, ...result.retained, source_sha256: result.evidence.source.sha256 }))
   } catch (error) {
     console.error(redactReleaseText(error instanceof Error ? error.message : String(error)))

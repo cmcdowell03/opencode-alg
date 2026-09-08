@@ -228,7 +228,7 @@ export function safeDiagnosticText(
 ): string {
   const maximum = Math.max(32, Math.min(maximumBytes, MAX_SDK_DIAGNOSTIC_BYTES))
   const redacted = redactInline(value)
-  return capDiagnosticText(redacted, maximum)
+  return capDiagnosticText(redacted.trim(), maximum).trim() || "[No diagnostic text]"
 }
 
 function capDiagnosticText(value: string, maximum: number): string {

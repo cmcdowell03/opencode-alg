@@ -128,6 +128,14 @@ describe("skill-evolution options and strict schemas", () => {
       skill: { target: "useful-skill/SKILL.md", operation: "replace", basis_sha256: "a".repeat(64), content, summary: "Revise workflow" },
     }).decision).toBe("skill_revision")
 
+    expect(AuditorOutputSchema.parse({ decision: "no_change", ...auditorBase, confidence: 0.8 }).confidence).toBe("high")
+    expect(AuditorOutputSchema.parse({ decision: "no_change", ...auditorBase, confidence: 0.2 }).confidence).toBe("low")
+    expect(AuditorOutputSchema.parse({ decision: "no_change", ...auditorBase, confidence: 80 }).confidence).toBe("high")
+    expect(AuditorOutputSchema.parse({ decision: "no_change", ...auditorBase, confidence: null }).confidence).toBe("medium")
+    expect(AuditorOutputSchema.parse({ decision: "no_change", ...auditorBase, confidence: undefined }).confidence).toBe("medium")
+    const { confidence: _ignored, ...withoutConfidence } = { decision: "no_change" as const, ...auditorBase }
+    expect(AuditorOutputSchema.parse(withoutConfidence).confidence).toBe("medium")
+
     for (const malformed of [
       { decision: "no_change", ...auditorBase, extra: true },
       { decision: "memory_candidate", ...auditorBase },

@@ -15,7 +15,7 @@ if command -v bun >/dev/null 2>&1; then
   exec bun run scripts/installer-core.ts --config-dir "$CONFIG_DIR" "$@"
 fi
 if command -v npm >/dev/null 2>&1; then
-  [[ -f "$ROOT/package-lock.json" ]] || { echo "package-lock.json is required for npm ci" >&2; exit 1; }
+  [[ -f "$ROOT/package-lock.json" || -f "$ROOT/npm-shrinkwrap.json" ]] || { echo "package-lock.json or npm-shrinkwrap.json is required for npm ci" >&2; exit 1; }
   npm ci --ignore-scripts --no-audit --no-fund
   exec npx --no-install tsx scripts/installer-core.ts --config-dir "$CONFIG_DIR" "$@"
 fi

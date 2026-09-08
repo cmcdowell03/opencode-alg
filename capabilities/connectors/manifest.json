@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "alg-connectors",
+  "version": "0.1.0",
+  "mode": "preparation_only",
+  "remote_activation": false,
+  "engine_version": "1.4.0",
+  "files_sha256": {
+    "__init__.py": "b3ea654913a99b0aa7d3fc8b6adaeb4348a3938131c4a780d8ddd3ca50340783",
+    "adapter.py": "8bfdb1f78f291a8aadf1d837b827050351bdfb06fab5e33cf5a219c614f1b456",
+    "contract.py": "8b549c3a6e19dc5f02096313a560c6e5ae53a5e17a36f02617686dce95861bda"
+  }
+}

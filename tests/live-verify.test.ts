@@ -168,32 +168,36 @@ describe("complete bounded runtime source identity", () => {
 })
 
 describe("live verifier OpenCode compatibility", () => {
+  test("rejects unsupported future stable majors", () => {
+    expect(validateOpenCodeVersion("2.0.0").compatible).toBe(false)
+    expect(validateOpenCodeVersion("3.18.0").compatible).toBe(false)
+  })
   test("derives the verifier requirement from package metadata", () => {
     const packageJson = JSON.parse(readFileSync(resolve(ROOT, "package.json"), "utf8"))
     expect(OPENCODE_ENGINE_REQUIREMENT).toBe(packageJson.engines.opencode)
-    expect(OPENCODE_ENGINE_REQUIREMENT).toBe(">=1.18.0")
+    expect(OPENCODE_ENGINE_REQUIREMENT).toBe(">=1.18.0 <2.0.0")
   })
 
   test.each(["1.18.0", "1.18.18"])("accepts compatible stable version %s", (version) => {
     expect(validateOpenCodeVersion(version)).toEqual({
       compatible: true,
-      requirement: ">=1.18.0",
+      requirement: ">=1.18.0 <2.0.0",
       parsed: {
         text: version,
         major: 1,
         minor: 18,
         patch: version === "1.18.0" ? 0 : 18,
       },
-      reason: `OpenCode ${version} satisfies >=1.18.0`,
+      reason: `OpenCode ${version} satisfies >=1.18.0 <2.0.0`,
     })
   })
 
   test("rejects a stable version below the declared minimum", () => {
     expect(validateOpenCodeVersion("1.17.99")).toMatchObject({
       compatible: false,
-      requirement: ">=1.18.0",
+      requirement: ">=1.18.0 <2.0.0",
       parsed: { text: "1.17.99", major: 1, minor: 17, patch: 99 },
-      reason: "OpenCode 1.17.99 does not satisfy >=1.18.0",
+      reason: "OpenCode 1.17.99 does not satisfy >=1.18.0 <2.0.0",
     })
   })
 
@@ -207,7 +211,7 @@ describe("live verifier OpenCode compatibility", () => {
     expect(parseStableVersion(output)).toBeNull()
     expect(validateOpenCodeVersion(output)).toEqual({
       compatible: false,
-      requirement: ">=1.18.0",
+      requirement: ">=1.18.0 <2.0.0",
       parsed: null,
       reason: "runtime output is not a stable MAJOR.MINOR.PATCH version",
     })

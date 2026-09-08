@@ -11,6 +11,7 @@ import {
 } from "node:fs"
 import { dirname, join } from "node:path"
 import { describe, expect, test } from "bun:test"
+import { installSyntheticEvolutionChild } from "./skill-evolution-child-fixture.ts"
 import { buildSkillEvidence } from "../src/skill-evolution-evidence.ts"
 import { createSkillEvolutionRuntime, ALG_SKILL_AUDIT_TITLE_PREFIX } from "../src/skill-evolution-runtime.ts"
 import { SkillEvolutionOptionsSchema, type AuditorOutput, type SkillEvolutionOptions } from "../src/skill-evolution-schemas.ts"
@@ -193,6 +194,7 @@ function runtime(project: string, sdk = new AuditSdk(project), configured: Parti
     directory: project,
     worktree: project,
   } as never, { options: SkillEvolutionOptionsSchema.parse({ ...options, ...configured }) })
+  installSyntheticEvolutionChild(active, sdk.client())
   return { active, sdk, tools: createSkillEvolutionTools(active) }
 }
 
@@ -466,7 +468,7 @@ describe("skill transaction recovery and rollback", () => {
     }
   })
 
-  test("startup and status recover file-applied/state-uncommitted transactions and truthfully require restart", async () => {
+  test("startup recovers transactions while status reports pending work without mutations", async () => {
     const projects = [tempProject("alg-skill-startup-recovery-"), tempProject("alg-skill-status-recovery-")]
     try {
       for (const [index, project] of projects.entries()) {
@@ -489,9 +491,12 @@ describe("skill transaction recovery and rollback", () => {
           const instance = runtime(project, new AuditSdk(project), { enabled: false })
           ;(instance.active.options as any).enabled = true
           const status = output(await instance.tools.alg_skill_evolution_status.execute({}, context(project)))
-          expect(status.doctor.healthy).toBe(true)
-          expect(status.restart_required).toBe(true)
-          expect(findSkillCandidate(project, candidate.candidate_id)?.state).toBe("promoted")
+          expect(status.doctor.healthy).toBe(false)
+          expect(status.doctor.recovery.pending).toBe(1)
+          expect(status.doctor.recovery.file_mutations).toBe(0)
+          expect(status.restart_required).toBe(false)
+          expect(findSkillCandidate(project, candidate.candidate_id)?.state).toBe("validated")
+          expect(readFileSync(path, "utf8")).toBe(replacement)
           instance.active.dispose()
         }
       }

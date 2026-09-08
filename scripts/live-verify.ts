@@ -443,10 +443,10 @@ function compareVersions(left: StableVersion, right: StableVersion): number {
 export const OPENCODE_ENGINE_REQUIREMENT = declaredOpenCodeEngineRequirement()
 
 function minimumVersionForRequirement(requirement: string): StableVersion {
-  if (!requirement.startsWith(">=")) {
+  if (!/^>=\d+\.\d+\.\d+ <2\.0\.0$/.test(requirement)) {
     throw new Error(`unsupported package.json engines.opencode requirement: ${JSON.stringify(requirement)}`)
   }
-  const minimum = parseStableVersion(requirement.slice(2))
+  const minimum = parseStableVersion(requirement.split(" ")[0]!.slice(2))
   if (!minimum) {
     throw new Error(`engines.opencode must be a stable >=MAJOR.MINOR.PATCH requirement: ${JSON.stringify(requirement)}`)
   }
@@ -465,7 +465,7 @@ export function validateOpenCodeVersion(text: string): VersionCompatibility {
       reason: "runtime output is not a stable MAJOR.MINOR.PATCH version",
     }
   }
-  if (compareVersions(parsed, MINIMUM_OPENCODE_VERSION) < 0) {
+  if (compareVersions(parsed, MINIMUM_OPENCODE_VERSION) < 0 || parsed.major !== 1) {
     return {
       compatible: false,
       requirement: OPENCODE_ENGINE_REQUIREMENT,

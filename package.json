@@ -1,11 +1,11 @@
 {
   "name": "opencode-alg",
-  "version": "0.3.0",
+  "version": "0.4.1",
   "description": "Agents + Loops + Graphs runtime for OpenCode — typed DAG, fresh-child checker, durable runs, session-tree execution",
   "type": "module",
   "license": "MIT",
   "engines": {
-    "opencode": ">=1.18.0"
+    "opencode": ">=1.18.0 <2.0.0"
   },
   "exports": {
     ".": "./src/index.ts",
@@ -21,7 +21,7 @@
       "format": "alg-run-state",
       "currentSchema": 2,
       "compatibleSchemas": [1, 2],
-      "compatiblePackageVersions": ["0.1.0", "0.2.0", "0.3.0"]
+      "compatiblePackageVersions": ["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1"]
     }
   },
   "files": [
@@ -34,11 +34,17 @@
     "capabilities/excel/uv.lock",
     "capabilities/excel/workbook.py",
     "capabilities/excel/wrapper.py",
+    "capabilities/duckdb",
+    "capabilities/datascience",
+    "capabilities/connectors",
+    ".opencode/skills/duckdb-lake/SKILL.md",
     "docs",
     "DESIGN.md",
     "CHANGELOG.md",
     "scripts",
     "README.md",
+    "bun.lock",
+    "npm-shrinkwrap.json",
     "package.json"
   ],
   "scripts": {
@@ -51,9 +57,16 @@
     "live:verify": "bun run scripts/live-verify.ts",
     "check:live": "bun run scripts/check-live.ts",
     "check:excel-manifest": "bun run scripts/verify-excel-manifest.ts",
+    "check:duckdb-manifest": "bun run scripts/verify-duckdb-manifest.ts",
+    "check:optional-manifests": "bun run scripts/verify-optional-manifests.ts",
+    "check:synthetic": "bun run scripts/synthetic-gate.ts",
+    "duckdb": "bun run scripts/duckdb-project.ts",
+    "experience": "bun run scripts/experience-cli.ts",
+    "data-science": "bun run scripts/data-science-cli.ts",
+    "datascience": "bun run scripts/datascience-project.ts",
     "release:gate": "bun run scripts/release-gate.ts",
     "typecheck": "bun ./node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
-    "check": "bun run typecheck && bun run test && bun run smoke && bun run check:live"
+    "check": "bun run typecheck && bun run test && bun run smoke && bun run check:live && bun run check:excel-manifest && bun run check:duckdb-manifest && bun run check:optional-manifests"
   },
   "dependencies": {
     "@opencode-ai/plugin": "1.18.3",

@@ -237,7 +237,7 @@ describe("architecture audit remediation", () => {
         ownerSessionId: "session-owner",
       })
       let observedGap = false
-      await executeRun(run, {
+      await expect(executeRun(run, {
         ...executeContext(project),
         client: {
           session: {
@@ -264,7 +264,7 @@ describe("architecture audit remediation", () => {
           observedGap = true
           throw new Error("injected crash between sidecar and progress")
         },
-      })
+      })).rejects.toThrow("Run persistence boundary failed")
       expect(observedGap).toBe(true)
     } finally {
       removeProject(project)

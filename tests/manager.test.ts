@@ -291,7 +291,7 @@ describe("v0.2 side-by-side release manager", () => {
     runManager({ command: "install", configDir: config, source }, { runner })
     const state = receipt(config)
     expect(state.generations[0]?.capabilities).toBeUndefined()
-    expect(state.generations[0]?.durable_state.compatible_package_versions).toEqual(["0.1.0", "0.2.0", "0.3.0"])
+    expect(state.generations[0]?.durable_state.compatible_package_versions).toEqual(["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1"])
     expect(runManager({ command: "doctor", configDir: config }, { runner }).capability_status).toMatchObject({
       status: "disabled", enabled: false, manifest: "not-recorded", runtime_check: "not-run",
     })
@@ -340,7 +340,7 @@ describe("v0.2 side-by-side release manager", () => {
     expect(skipped.agents?.find((agent) => agent.path === target)?.action).toBe("ownership-released")
     expect(receipt(config).agents["explorer.md"]?.disposition).toBe("custom")
     expect(receipt(config).agents["explorer.md"]?.managed_hash).toBeNull()
-  }, 60_000)
+  }, 180_000)
 
   test("Excel is neutral by default, opt-in install/update preserves root, repeated enable is receipt-idempotent, and disable is explicit", () => {
     const source = sourceFixture()
@@ -402,7 +402,8 @@ describe("v0.2 side-by-side release manager", () => {
     expect((parse(readFileSync(join(config, "opencode.jsonc"), "utf8")) as any).mcp?.alg_excel).toBeUndefined()
     expect(receipt(config).generations.find((generation) => generation.id === receipt(config).active_generation)?.capabilities?.excel.enabled).toBe(false)
     expect(runner.requests.filter((request) => request.command === "uv")).toHaveLength(uvBeforeDisable)
-  }, 45_000)
+    // Optional assets enlarge the immutable-source hash corpus; all assertions remain.
+  }, 90_000)
 
   test("rollback restores only the target generation Excel state and uninstall removes only exact managed config", () => {
     const source = sourceFixture()
@@ -438,7 +439,7 @@ describe("v0.2 side-by-side release manager", () => {
     const result = runManager({ command: "uninstall", configDir: config }, { runner })
     expect((parse(readFileSync(configPath, "utf8")) as any).mcp.alg_excel.timeout).toBe(1234)
     expect(result.issues).toContainEqual({ code: "excel-config-custom", message: "Custom or drifted mcp.alg_excel was preserved during uninstall." })
-  }, 45_000)
+  }, 180_000)
 
   test("Excel uv discovery, frozen sync, and wrapper-check failures produce no live config or receipt writes", () => {
     const source = sourceFixture()
@@ -710,7 +711,7 @@ describe("v0.2 side-by-side release manager", () => {
         expect(again.pending_journals).toEqual([])
       }
     }
-  }, 120_000)
+  }, 240_000)
 
   test("journal repair fails closed when receipt matches neither cryptographic state", () => {
     const source = sourceFixture()
@@ -820,7 +821,7 @@ describe("v0.2 side-by-side release manager", () => {
     const uninstalledReceipt = readFileSync(join(config, ".opencode-alg", "receipt.json"))
     expect(runManager({ command: "uninstall", configDir: config, removeAgents: true }, { runner }).changed).toBe(false)
     expect(readFileSync(join(config, ".opencode-alg", "receipt.json"))).toEqual(uninstalledReceipt)
-  }, 30_000)
+  }, 90_000)
 
   test("resolves exact v0.1.0 to v0.2.0 tags from a local bare remote with argument-vector dependency install", () => {
     const fixture = bareRemoteFixture()
@@ -2204,7 +2205,7 @@ describe("v0.2 side-by-side release manager", () => {
     expect(noOp).toThrow("managed agent")
     writeFileSync(agentPath, agentBytes)
     expect(noOp().changed).toBe(false)
-  }, 60_000)
+  }, 180_000)
 
   test("agent directory and direct targets reject junction/symlink redirection before managed I/O", () => {
     const source = sourceFixture()

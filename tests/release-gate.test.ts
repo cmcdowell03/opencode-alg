@@ -6,6 +6,9 @@ import { fileURLToPath } from "node:url"
 import {
   ReleaseEvidenceSchema,
   RELEASE_COMMAND_IDS,
+  RELEASE_COMMAND_DEADLINES_MS,
+  runReleaseCommand,
+  writeReleaseFailure,
   boundedReleaseTail,
   computeReleaseInputIdentity,
   redactReleaseText,
@@ -18,6 +21,7 @@ import {
 } from "../scripts/release-gate.ts"
 import { resolveNpmInvocation } from "../scripts/npm-invocation.ts"
 import { verifyExcelManifest } from "../scripts/verify-excel-manifest.ts"
+import { DUCKDB_CAPABILITY_FILES, verifyDuckDbManifest } from "../scripts/verify-duckdb-manifest.ts"
 import { sourceIdentityMessage } from "../src/source-identity.ts"
 import { ALG_TOOL_IDS, OPENCODE_ENGINE_REQUIREMENT, persistImmutableLiveEvidence, uniqueLiveEvidencePath, verificationPluginConfiguration, validateRetainedLiveEvidence } from "../scripts/live-verify.ts"
 import { ALG_TUI_REGISTRATION_SERVICE, ALG_TUI_REGISTRATION_TOKEN } from "../src/tui-registration.ts"
@@ -28,6 +32,43 @@ import { removeProject, tempProject } from "./helpers.ts"
 const temporary: string[] = []
 const digest = "a".repeat(64)
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+
+test("every release command has a deadline and failed commands retain diagnostics", async () => {
+  expect(Object.keys(RELEASE_COMMAND_DEADLINES_MS).sort()).toEqual([...RELEASE_COMMAND_IDS].sort())
+  const result = await runReleaseCommand("typecheck", process.execPath,
+    ["-e", 'console.error("synthetic command failure"); process.exit(7)'], ROOT, undefined, undefined, 10_000)
+  expect(result.evidence.exit_code).toBe(7)
+  expect(result.stderr).toContain("synthetic command failure")
+  expect(result.supervision.timed_out).toBe(false)
+  const directory = tempProject("alg-release-failure-")
+  temporary.push(directory)
+  const written = writeReleaseFailure(directory, { sha256: digest, files: 1, bytes: 1 }, [result], new Error("original failure"), ["cleanup diagnostic"])
+  const retained = JSON.parse(readFileSync(written.path, "utf8"))
+  expect(retained.passed).toBe(false)
+  expect(retained.original_failure).toBe("original failure")
+  expect(retained.attempts[0].stderr_tail).toContain("synthetic command failure")
+  expect(retained.cleanup_errors).toEqual(["cleanup diagnostic"])
+  expect(ReleaseEvidenceSchema.safeParse(retained).success).toBe(false)
+})
+
+test("release command launch errors and deadlines return failure diagnostics", async () => {
+  const missing = await runReleaseCommand("typecheck", join(ROOT, "nonexistent-release-tool"), [], ROOT, undefined, undefined, 1000)
+  expect(missing.evidence.exit_code).not.toBe(0)
+  expect(missing.supervision.error).toBeTruthy()
+  const hung = await runReleaseCommand("typecheck", process.execPath,
+    ["-e", "setInterval(() => {}, 1000)"], ROOT, undefined, undefined, 250)
+  expect(hung.supervision.timed_out).toBe(true)
+  expect(hung.evidence.exit_code).not.toBe(0)
+  expect(hung.supervision.duration_ms).toBeLessThan(30_000)
+}, 35_000)
+
+test("release output overflow is bounded without killing a successful command", async () => {
+  const result = await runReleaseCommand("typecheck", process.execPath,
+    ["-e", 'process.stdout.write("x".repeat(200000))'], ROOT, undefined, undefined, 5000)
+  expect(result.supervision.output_exceeded).toBe(true)
+  expect(result.evidence.exit_code).toBe(0)
+  expect(result.evidence.stdout_bytes).toBeLessThanOrEqual(96 * 1024)
+}, 35_000)
 
 function command(id: typeof RELEASE_COMMAND_IDS[number] = "typecheck") {
   const empty = createHash("sha256").update("").digest("hex")
@@ -40,19 +81,20 @@ function command(id: typeof RELEASE_COMMAND_IDS[number] = "typecheck") {
 
 function evidence() {
   return {
-    schema_version: 5 as const, kind: "opencode-alg-release-gate" as const,
-    generated_at: "2026-08-20T00:00:00.000Z", package_version: "0.3.0" as const,
+    schema_version: 6 as const, kind: "opencode-alg-release-gate" as const,
+    generated_at: "2026-08-20T00:00:00.000Z", package_version: "0.4.1" as const,
     source: { sha256: digest, files: 1, bytes: 1 }, release_inputs: { sha256: digest, files: 1, bytes: 1 }, commands: RELEASE_COMMAND_IDS.map((id) => command(id)),
-    totals: { bun_pass: 1, bun_skip: 0, bun_fail: 0, bun_total: 1, bun_assertions: 1, bun_files: 1, manager_pass: 1, manager_skip: 0, manager_fail: 0, manager_total: 1, manager_assertions: 1, manager_files: 1, python_run: 1, python_skipped: 0, python_ok: true as const },
+    totals: { bun_pass: 1, bun_skip: 0, bun_fail: 0, bun_total: 1, bun_assertions: 1, bun_files: 1, manager_pass: 1, manager_skip: 0, manager_fail: 0, manager_total: 1, manager_assertions: 1, manager_files: 1, python_run: 1, python_skipped: 0, python_ok: true as const, duckdb_python_run: 1, duckdb_python_skipped: 0, duckdb_python_ok: true as const },
     excel: { manifest_sha256: digest, lock_sha256: digest, version: "0.1.8" as const, tool_count: 25 as const, eof_stdout_bytes: 0 as const },
+    duckdb: { manifest_sha256: digest, lock_sha256: digest, version: "0.1.0" as const, engine_version: "1.4.0" as const, parser_version: "27.14.0" as const, tool_count: 1 as const, eof_stdout_bytes: 0 as const, contract_sha256: digest },
     package: {
-      entries: 6, packed_bytes: 1, unpacked_bytes: 1,
-      files: ["a", "b", "c", "d", "e", "f"].map((path) => ({ path, size: 1, mode: 420 })), inventory_sha256: digest,
-      capability_files: ["a", "b", "c", "d", "e", "f"], lock_bytes: 1,
+      entries: 19, packed_bytes: 1, unpacked_bytes: 1,
+      files: Array.from({ length: 19 }, (_, index) => ({ path: `f${index}`, size: 1, mode: 420 })), inventory_sha256: digest,
+      capability_files: Array.from({ length: 19 }, (_, index) => `f${index}`), lock_bytes: { excel: 1, duckdb: 1 },
       tgz_created: false as const,
     },
     live: { passed: true as const, evidence_path: "C:\\external\\live.json", evidence_sha256: digest, evidence_bytes: 1, evidence_identity: { dev: "1", ino: "1" }, source_sha256: digest, user_global_config_modified: false as const, global_config_snapshot_sha256: digest, temporary_environment_removed: true as const },
-    cleanup: { temporary_excel_environment_removed: true as const, repository_artifacts_absent: true as const, helper_owned_before: 0, helper_owned_after: 0, helper_net_additions: 0 as const },
+    cleanup: { temporary_excel_environment_removed: true as const, temporary_duckdb_environment_removed: true as const, repository_artifacts_absent: true as const, helper_owned_before: 0, helper_owned_after: 0, helper_net_additions: 0 as const },
     passed: true as const,
   }
 }
@@ -100,19 +142,29 @@ function semanticEvidence(livePath: string) {
   const packedFiles = paths.map((path) => ({ path, size: statSync(join(ROOT, ...path.split("/"))).size, mode: 420 }))
   const inventory = validatePackedInventory(packedFiles, paths)
   const excel = verifyExcelManifest(ROOT)
+  const duckdb = verifyDuckDbManifest(ROOT)
   const wrapper = join(ROOT, "capabilities", "excel", "wrapper.py")
   const excelRoot = join(ROOT, "capabilities", "excel")
+  const duckdbRoot = join(ROOT, "capabilities", "duckdb")
+  const duckdbWrapper = join(duckdbRoot, "wrapper.py")
+  const duckdbContract = join(duckdbRoot, "contract.example.json")
+  const contractHash = JSON.parse(readFileSync(duckdbContract, "utf8")).contract_sha256 as string
+  const duckdbTest = join(ROOT, "tests", "python", "test_duckdb_capability.py")
   const npm = resolveNpmInvocation()
   const findExecutable = (names: string[]) => (process.env.PATH ?? "").split(process.platform === "win32" ? ";" : ":")
     .flatMap((directory) => names.map((name) => join(directory.replace(/^"|"$/g, ""), name))).find(existsSync)!
   const python = findExecutable(process.platform === "win32" ? ["python.exe"] : ["python3", "python"])
   const uv = findExecutable(process.platform === "win32" ? ["uv.exe"] : ["uv"])
   const interpreter = join(resolve("C:/tmp/opencode-alg-excel-release-gate-fixture"), "env", process.platform === "win32" ? "Scripts/python.exe" : "bin/python")
+  const duckdbInterpreter = join(resolve("C:/tmp/opencode-alg-duckdb-release-gate-fixture"), "env", process.platform === "win32" ? "Scripts/python.exe" : "bin/python")
   const bunOutput = " 12 pass\n 2 skip\n 0 fail\n 34 expect() calls\nRan 14 tests across 3 files. [1.00s]\n"
   const managerOutput = " 12 pass\n 1 skip\n 0 fail\n 34 expect() calls\nRan 13 tests across 1 file. [1.00s]\n"
   const pythonOutput = "Ran 7 tests in 0.1s\n\nOK (skipped=1)\n"
+  const duckdbPythonOutput = "Ran 6 tests in 1.0s\n\nOK\n"
   const manifestOutput = `${JSON.stringify({ ok: true, ...excel })}\n`
+  const duckdbManifestOutput = `${JSON.stringify({ ok: true, ...duckdb })}\n`
   const wrapperJson = { ok: true, version: "0.1.8", tool_count: 25, tools: ["apply_formula", "copy_range", "copy_worksheet", "create_chart", "create_pivot_table", "create_table", "create_workbook", "create_worksheet", "delete_range", "delete_sheet_columns", "delete_sheet_rows", "delete_worksheet", "format_range", "get_data_validation_info", "get_merged_cells", "get_workbook_metadata", "insert_columns", "insert_rows", "merge_cells", "read_data_from_excel", "rename_worksheet", "unmerge_cells", "validate_excel_range", "validate_formula_syntax", "write_data_to_excel"], remote_transports: false, path_policy: { ok: true, path_argument_confinement: true } }
+  const duckdbPreflight = { ok: true, compatibility: { schema_version: 1, capability_version: "0.1.0", contract_sha256: contractHash, engine_version: "1.4.0", parser_version: "27.14.0", extensions: [], attachment_aliases: [], effective_settings: {} } }
   const pack = [{ entryCount: packedFiles.length, size: 12345, unpackedSize: packedFiles.reduce((sum, file) => sum + file.size, 0), files: packedFiles }]
   const commands = [
     commandWith("typecheck", [process.execPath, "run", "typecheck"]),
@@ -121,10 +173,15 @@ function semanticEvidence(livePath: string) {
     commandWith("smoke", [process.execPath, "run", "smoke"]),
     commandWith("live_verify", [process.execPath, "run", "check:live"]),
     commandWith("excel_manifest", [process.execPath, "run", "check:excel-manifest"], ROOT, manifestOutput),
+    commandWith("duckdb_manifest", [process.execPath, "run", "check:duckdb-manifest"], ROOT, duckdbManifestOutput),
     commandWith("python_tests", [python, "-m", "unittest", "discover", "-s", "tests/python", "-v"], ROOT, "", pythonOutput),
-    commandWith("uv_sync", [uv, "sync", "--frozen", "--no-dev"], excelRoot),
+    commandWith("excel_uv_sync", [uv, "sync", "--frozen", "--no-dev"], excelRoot),
     commandWith("excel_wrapper_check", [interpreter, wrapper, "--check"], ROOT, `${JSON.stringify(wrapperJson)}\n`),
     commandWith("excel_wrapper_eof", [interpreter, wrapper]),
+    commandWith("duckdb_uv_sync", [uv, "sync", "--frozen", "--no-dev"], duckdbRoot),
+    commandWith("duckdb_python_tests", [duckdbInterpreter, duckdbTest, "-v"], ROOT, "", duckdbPythonOutput),
+    commandWith("duckdb_wrapper_preflight", [duckdbInterpreter, duckdbWrapper, "--preflight", "--contract", duckdbContract, "--hash", contractHash], ROOT, `${JSON.stringify(duckdbPreflight)}\n`),
+    commandWith("duckdb_wrapper_eof", [duckdbInterpreter, duckdbWrapper, "--mcp", "--contract", duckdbContract, "--hash", contractHash]),
     commandWith("npm_pack", [npm.executable, ...npm.argsPrefix, "pack", "--dry-run", "--json"], ROOT, JSON.stringify(pack)),
   ]
   return ReleaseEvidenceSchema.parse({
@@ -132,8 +189,9 @@ function semanticEvidence(livePath: string) {
     source: { sha256: source.digest, files: source.file_count, bytes: source.total_bytes },
     release_inputs: computeReleaseInputIdentity(ROOT),
     commands,
-    totals: { bun_pass: 12, bun_skip: 2, bun_fail: 0, bun_total: 14, bun_assertions: 34, bun_files: 3, manager_pass: 12, manager_skip: 1, manager_fail: 0, manager_total: 13, manager_assertions: 34, manager_files: 1, python_run: 7, python_skipped: 1, python_ok: true },
+    totals: { bun_pass: 12, bun_skip: 2, bun_fail: 0, bun_total: 14, bun_assertions: 34, bun_files: 3, manager_pass: 12, manager_skip: 1, manager_fail: 0, manager_total: 13, manager_assertions: 34, manager_files: 1, python_run: 7, python_skipped: 1, python_ok: true, duckdb_python_run: 6, duckdb_python_skipped: 0, duckdb_python_ok: true },
     excel: { ...evidence().excel, manifest_sha256: excel.manifest_sha256, lock_sha256: excel.files.lock },
+    duckdb: { ...evidence().duckdb, manifest_sha256: duckdb.manifest_sha256, lock_sha256: duckdb.files["uv.lock"], contract_sha256: contractHash },
     package: {
       ...evidence().package,
       entries: paths.length, packed_bytes: pack[0]!.size, unpacked_bytes: pack[0]!.unpackedSize,
@@ -142,8 +200,9 @@ function semanticEvidence(livePath: string) {
       capability_files: [
         "capabilities/excel/manifest.json", "capabilities/excel/policy.py", "capabilities/excel/pyproject.toml",
         "capabilities/excel/uv.lock", "capabilities/excel/workbook.py", "capabilities/excel/wrapper.py",
-      ],
-      lock_bytes: readFileSync(join(excelRoot, "uv.lock")).byteLength,
+        ...[...DUCKDB_CAPABILITY_FILES, "manifest.json"].map((name) => `capabilities/duckdb/${name}`),
+      ].sort(),
+      lock_bytes: { excel: readFileSync(join(excelRoot, "uv.lock")).byteLength, duckdb: readFileSync(join(duckdbRoot, "uv.lock")).byteLength },
     },
     live: {
       passed: true,
@@ -174,21 +233,21 @@ afterEach(() => {
 })
 
 describe("bounded release-gate evidence", () => {
-  test("v0.3 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate", () => {
+  test("v0.4 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate", () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"))
     const lock = JSON.parse(readFileSync(join(ROOT, "package-lock.json"), "utf8"))
-    expect(pkg.version).toBe("0.3.0")
-    expect(lock.version).toBe("0.3.0")
-    expect(lock.packages[""].version).toBe("0.3.0")
+    expect(pkg.version).toBe("0.4.1")
+    expect(lock.version).toBe("0.4.1")
+    expect(lock.packages[""].version).toBe("0.4.1")
     expect(pkg.opencodeAlg.durableState).toEqual({
       format: "alg-run-state",
       currentSchema: 2,
       compatibleSchemas: [1, 2],
-      compatiblePackageVersions: ["0.1.0", "0.2.0", "0.3.0"],
+      compatiblePackageVersions: ["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1"],
     })
     expect(MANAGER_VERSION).toBe("0.2.0")
-    expect(ReleaseEvidenceSchema.parse(evidence())).toMatchObject({ schema_version: 5, package_version: "0.3.0" })
-    expect(ReleaseEvidenceSchema.safeParse({ ...evidence(), schema_version: 4 }).success).toBe(false)
+    expect(ReleaseEvidenceSchema.parse(evidence())).toMatchObject({ schema_version: 6, package_version: "0.4.1" })
+    expect(ReleaseEvidenceSchema.safeParse({ ...evidence(), schema_version: 5 }).success).toBe(false)
   })
 
   test("source identity and npm allowlist automatically include every skill-evolution runtime module", () => {
@@ -197,6 +256,7 @@ describe("bounded release-gate evidence", () => {
     for (const path of [
       "src/skill-evolution-evidence.ts",
       "src/skill-evolution-historical.ts",
+      "src/skill-evolution-redaction.ts",
       "src/skill-evolution-runtime.ts",
       "src/skill-evolution-schemas.ts",
       "src/skill-evolution-store.ts",
@@ -387,7 +447,7 @@ describe("bounded release-gate evidence", () => {
     for (const [label, candidate] of cases) {
       expect(() => validateReleaseEvidenceSemantics(candidate, ROOT), label).toThrow()
     }
-  }, 15_000)
+  }, 30_000)
 
   test("strict live semantics reject minimal, empty, wrong-tool, manifest, and registration evidence", () => {
     const directory = tempProject("alg-adversarial-live-evidence-")

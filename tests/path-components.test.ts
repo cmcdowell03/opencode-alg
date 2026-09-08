@@ -377,7 +377,7 @@ describe("existing-component realpath containment", () => {
         executeArtifactPath,
       )).toThrow(/must resolve within.*artifacts/)
       removeDirectoryLink(executeNested)
-      await expect(executeRun(executing, {
+      const rejectedExecution = executeRun(executing, {
         ...executeContext(executeProject),
         sessionRunner: async () => {
           directoryLink(outside, executeNested)
@@ -394,7 +394,11 @@ describe("existing-component realpath containment", () => {
             },
           }
         },
-      })).rejects.toThrow(/existing path component escapes/)
+      })
+      await expect(rejectedExecution).rejects.toThrow("Run persistence boundary failed")
+      const boundaryError = await rejectedExecution.catch((error: Error) => error)
+      expect((boundaryError as Error).cause).toBeInstanceOf(Error)
+      expect(String((boundaryError as Error).cause)).toMatch(/existing path component escapes/)
       expect(readFileSync(sentinel, "utf8")).toBe("keep")
       expect(readdirSync(outside)).toEqual(["sentinel.txt"])
     } finally {

@@ -282,6 +282,8 @@ export interface RunState {
   /** Immutable creator/original owner; retained as parent_session_id for schema-v2 compatibility. */
   parent_session_id: string
   owner_transfers: OwnerTransfer[]
+  /** Child-session cwd and relative shell-gate base; legacy runs use project_directory. */
+  execution_directory?: string
   project_directory: string
   goal: string
   criteria: string[]

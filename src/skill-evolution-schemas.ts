@@ -107,6 +107,8 @@ const projectRelativeReference = exact(1, 512, "reference path")
 
 export const SkillEvolutionOptionsSchema = z.object({
   enabled: z.boolean().default(false),
+  /** Explicit V1 testing overlay. This is not a deny-all host permission ruleset. */
+  allowBuiltinToolMap: z.boolean().default(false),
   mode: z.enum(["triggered", "every-turn"]).default("triggered"),
   skillRoots: z.array(projectRelativeRoot).min(1).max(8).default([".opencode/skills"]),
   auditorAgent: z.literal("researcher").default("researcher"),
@@ -209,9 +211,32 @@ const SkillProposalSchema = z.object({
   }
 })
 
+export function normalizeSkillConfidence(value: unknown): "low" | "medium" | "high" {
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase()
+    if (normalized === "low" || normalized === "medium" || normalized === "high") return normalized
+    if (normalized.includes("high")) return "high"
+    if (normalized.includes("low")) return "low"
+    return "medium"
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    if (value >= 0 && value <= 1) {
+      if (value < 1 / 3) return "low"
+      if (value < 2 / 3) return "medium"
+      return "high"
+    }
+    if (value > 1 && value <= 100) {
+      if (value < 100 / 3) return "low"
+      if (value < 200 / 3) return "medium"
+      return "high"
+    }
+  }
+  return "medium"
+}
+
 const AuditorBaseSchema = z.object({
   rationale: exact(1, 2_000, "rationale"),
-  confidence: z.enum(["low", "medium", "high"]),
+  confidence: z.preprocess(normalizeSkillConfidence, z.enum(["low", "medium", "high"])),
   triggers: z.array(SkillTriggerLabelSchema).max(7),
   provenance: ProvenanceSchema,
 }).strict()
@@ -271,6 +296,7 @@ const EvidenceToolSchema = z.object({
 
 export const SkillEvidenceSchema = z.object({
   schema_version: z.literal(SKILL_EVOLUTION_SCHEMA_VERSION),
+  redaction_policy_version: z.literal(2).optional(),
   kind: z.literal("skill_evolution_evidence"),
   evidence_id: sha256,
   created_at: iso,

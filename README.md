@@ -1,6 +1,12 @@
 # opencode-alg
 
-**Agents + Loops + Graphs** for OpenCode stable runtimes satisfying the declared `engines.opencode` range (`>=1.18.0`): a typed DAG executor with durable project state, bounded attempts and payloads, fresh-child checking, model snapshots, and audited run ownership.
+Optional capabilities: [policy-bounded DuckDB developer query plane](docs/duckdb-query-plane.md). It is project-local, separately prepared, disabled by default, and is not an ALG core tool.
+
+New explicit workflows: [experience records, troubleshooting, paired skill evaluation, and pinned local data science](docs/experience-and-data-science.md); [synthetic connector preparation](docs/connectors.md). These are default-off and do not imply live deployment validation.
+
+See [implementation status and remaining completion gates](docs/implementation-status.md). Private skill-evolution model calls currently fail closed because the pinned V1 SDK cannot express the required all-tool session permission policy; ordinary ALG execution is unaffected.
+
+**Agents + Loops + Graphs** for OpenCode stable runtimes satisfying the declared `engines.opencode` range (`>=1.18.0 <2.0.0`): a typed DAG executor with durable project state, bounded attempts and payloads, fresh-child checking, model snapshots, and audited run ownership.
 
 **Architecture:** [read the design and implementation guide](DESIGN.md).
 
@@ -76,24 +82,36 @@ Each live node attempt gets a fresh OpenCode child session. ALG does not explici
 
 The opt-in manager resolves exact stable Git tags into immutable side-by-side
 generations, keeps its strict receipt outside every release, and transactionally
-switches both server and TUI registrations. Package v0.3.0 deliberately retains
-manager/receipt protocol version `0.2.0`:
+switches both server and TUI registrations. Package v0.4.1 deliberately retains
+manager/receipt protocol version `0.2.0`. Install the current package from a
+clean checkout of tag `v0.4.1`:
 
 ```powershell
 # Fresh install, or use the update line instead from an older managed generation.
-.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.3.0
-.\scripts\alg.ps1 update --tag v0.3.0
+.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.4.1
+.\scripts\alg.ps1 update --tag v0.4.1
 .\scripts\alg.ps1 doctor
 .\scripts\alg.ps1 rollback
 ```
 
 ```sh
 # Fresh install, or use the update line instead from an older managed generation.
-./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.3.0
-./scripts/alg.sh update --tag v0.3.0
+./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.4.1
+./scripts/alg.sh update --tag v0.4.1
 ./scripts/alg.sh doctor
 ./scripts/alg.sh rollback
 ```
+
+On a second machine, clone a clean tag first, then install from that checkout:
+
+```sh
+git clone https://github.com/cmcdowell03/opencode-alg.git
+cd opencode-alg
+git checkout v0.4.1
+./scripts/alg.sh install --source "$PWD" --tag v0.4.1
+```
+
+Quit and restart OpenCode. A plain string plugin registration keeps skill evolution, Excel, and DuckDB off. Enable them explicitly after install; see below.
 
 The default roots are `<config>/.opencode-alg/` for receipt/lock/journals and
 `<config>/plugins/opencode-alg/releases/<version>-<commit12>/package` for packages.
@@ -154,14 +172,14 @@ install/update creates no Excel process or `mcp.alg_excel` entry unless the user
 explicitly enables the pack (or an update preserves an already enabled receipt):
 
 ```powershell
-.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.3.0 `
+.\scripts\alg.ps1 install --source C:\reviewed\opencode-alg --tag v0.4.1 `
   --enable-capability excel --excel-root C:\work\alg-excel-staged
 .\scripts\alg.ps1 update
 .\scripts\alg.ps1 update --disable-capability excel
 ```
 
 ```sh
-./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.3.0 \
+./scripts/alg.sh install --source /reviewed/opencode-alg --tag v0.4.1 \
   --enable-capability excel --excel-root /work/alg-excel-staged
 ./scripts/alg.sh update
 ./scripts/alg.sh update --disable-capability excel
@@ -258,6 +276,7 @@ a plugin tuple; the TUI registration can remain the package-root string:
       {
         "skillEvolution": {
           "enabled": true,
+          "allowBuiltinToolMap": true,
           "mode": "triggered",
           "skillRoots": [".opencode/skills"],
           "minimumTriggerScore": 3,
@@ -277,6 +296,7 @@ being ignored. Defaults and accepted bounds are:
 | Option | Default | Accepted value |
 |---|---:|---|
 | `enabled` | `false` | boolean; the only activation switch |
+| `allowBuiltinToolMap` | `false` | boolean; V1 testing overlay that disables listed built-ins only. Not deny-all. Required for auditor/checker model calls on the current SDK |
 | `mode` | `"triggered"` | `"triggered"` or `"every-turn"` |
 | `skillRoots` | `[".opencode/skills"]` | 1–8 unique normalized project-relative roots, never the evolution store |
 | `auditorAgent` | `"researcher"` | fixed to `"researcher"` in v0.3.0 |
@@ -587,8 +607,8 @@ reviewed path allowlist. Its mandatory absolute
 external evidence directory receives one strict bounded redacted JSON document
 that references the separately retained live evidence by immutable unique
 path/hash/size/device-inode identity. Strict live artifacts remain schema v2 and
-kind `opencode-alg-live-verification`; package v0.3.0 release evidence is strict
-schema v5, requires that live identity, requires the exact 15 tool IDs with skill
+kind `opencode-alg-live-verification`; package v0.4.1 release evidence is strict
+schema v6, requires that live identity, requires the exact 15 tool IDs with skill
 evolution disabled in the isolated live proof, and separately runs/binds the
 complete manager suite under manager protocol v0.2.0. It retains
 complete redacted stdout/stderr within strict per-command/aggregate limits and

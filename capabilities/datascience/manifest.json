@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "id": "alg-datascience",
+  "version": "0.1.0",
+  "runtime": {
+    "python": ">=3.11,<3.14",
+    "prepared_interpreter_only": true,
+    "network_access": false
+  },
+  "dependencies": {
+    "duckdb": "1.4.0",
+    "pyarrow": "21.0.0",
+    "lock": "uv.lock"
+  },
+  "files_sha256": {
+    "__init__.py": "c89a432f1be5c45d08b19dec33c74504dbacd9aba6b12cdb8f1ab37f40aee318",
+    "catalog.py": "9f77f54fefd74af2190a13c379cf68d74fd9d0e0ab29bffc6d7d6499b5d96482",
+    "operations.py": "50fcd2040d864f2c7492f2ef85dc096cba32ea688e1fbb3b3092b49cefd3c2e3",
+    "pyproject.toml": "17e021c5fa2d590fd9c15a603ee87d37a20ecea378c49682a06021f2d716a590",
+    "runner.py": "e40f2f5b7b641f89b9501ffee9685097f0dd63c3dcb08c529950420879a9f224",
+    "uv.lock": "15e5f57b75c2b3336c98ef3be1d0701628d539abaadf65661f2957b7353cd79b"
+  }
+}

@@ -10,6 +10,8 @@ import {
   loadSkillLedger,
   promoteSkillCandidate,
   recoverSkillTransactions,
+  inspectSkillTransactions,
+  inspectSkillCapacity,
   rollbackSkillCandidate,
 } from "./skill-evolution-store.ts"
 
@@ -54,10 +56,7 @@ export function createSkillEvolutionTools(runtime: SkillEvolutionRuntime) {
       },
       async execute(args) {
         try {
-          const recovery = runtime.options.enabled
-            ? recoverSkillTransactions(runtime.project, runtime.options)
-            : { recovered: [], unresolved: [], pending: 0, file_mutations: 0 }
-          if (recovery.file_mutations > 0) runtime.markRestartRequired()
+          const recovery = inspectSkillTransactions(runtime.project)
           const ledger = loadSkillLedger(runtime.project)
           const index = loadSkillCandidates(runtime.project)
           let candidates = index.candidates
@@ -97,6 +96,13 @@ export function createSkillEvolutionTools(runtime: SkillEvolutionRuntime) {
             error: record.error,
           }))
           const runtimeState = runtime.status()
+          const capacity = inspectSkillCapacity(runtime.project)
+          const capacityWarnings = [
+            ...capacity.filter((entry) => entry.near_capacity).map((entry) => `${entry.file} is at least 80% full`),
+            ...(ledger.records.length >= 3276 ? ["ledger record capacity is at least 80% full"] : []),
+            ...(ledger.audit_children.length >= 800 ? ["audit child registry capacity is at least 80% full"] : []),
+            ...(index.candidates.length >= 400 ? ["candidate capacity is at least 80% full"] : []),
+          ]
           return ok("alg skill evolution status", {
             enabled: runtime.options.enabled,
             detail,
@@ -119,8 +125,9 @@ export function createSkillEvolutionTools(runtime: SkillEvolutionRuntime) {
               omitted: Math.max(0, candidates.length - records.length),
               records,
             },
-            doctor: { recovery, healthy: recovery.unresolved.length === 0 },
+            doctor: { recovery, capacity, warnings: capacityWarnings, healthy: recovery.pending === 0 && recovery.unresolved.length === 0 && capacityWarnings.length === 0 },
             limitations: {
+              tool_permissions: runtimeState.tool_permissions,
               automatic_promotion: false,
               memory_promotion: false,
               skill_deletion: false,

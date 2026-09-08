@@ -1,5 +1,5 @@
 import type { GraphDef, NodeDef, NodeState, RunState } from "./types.ts"
-import { parseGraph } from "./schemas.ts"
+import { parseGraph, parseInputExpression } from "./schemas.ts"
 
 export class GraphError extends Error {
   constructor(message: string) {
@@ -81,27 +81,19 @@ export function descendantsOf(graph: GraphDef, nodeId: string): Set<string> {
 export function resolveInputValue(expr: string, run: RunState): unknown {
   if (expr === "$goal") return run.goal
   if (expr === "$criteria") return run.criteria
-  if (Object.hasOwn(run.nodes, expr)) return run.nodes[expr]?.output
-
-  const dot = expr.indexOf(".")
-  if (dot > 0) {
-    const nodeId = expr.slice(0, dot)
-    const output = run.nodes[nodeId]?.output
-    return output === undefined ? undefined : getSafePath(output, expr.slice(dot + 1))
-  }
-  try {
-    return JSON.parse(expr)
-  } catch {
-    // Graph validation rejects unquoted literals and missing references.
-    return undefined
-  }
+  const parsed = parseInputExpression(expr)
+  if (parsed.kind === "literal") return parsed.value
+  if (parsed.kind === "special") return undefined
+  if (!Object.hasOwn(run.nodes, parsed.node)) return undefined
+  const output = run.nodes[parsed.node]?.output
+  return parsed.path.length ? getSafePath(output, parsed.path.join(".")) : output
 }
 
 function getSafePath(value: unknown, path: string): unknown {
   const parts = path.split(".")
   let current = value
   for (const part of parts) {
-    if (!/^[A-Za-z0-9_-]{1,64}$/.test(part) || part === "__proto__" || part === "constructor") {
+    if (!/^[A-Za-z0-9_-]{1,64}$/.test(part) || part === "__proto__" || part === "constructor" || part === "prototype") {
       return undefined
     }
     if (current === null || typeof current !== "object" || !Object.hasOwn(current, part)) return undefined

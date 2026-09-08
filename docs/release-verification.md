@@ -23,9 +23,10 @@ Generated Python caches are excluded. `.gitattributes` fixes the strict Excel
 text assets to LF so manifest hashes are reproducible in Windows local clones;
 verification requires a clean clone and exact manifest hashes.
 
-For package v0.3.0, the `src/**/*.ts` rule necessarily includes all six
+For package v0.4.1, the `src/**/*.ts` rule necessarily includes the
 skill-evolution runtime modules: `skill-evolution-evidence.ts`,
-`skill-evolution-historical.ts`, `skill-evolution-runtime.ts`, `skill-evolution-schemas.ts`,
+`skill-evolution-historical.ts`, `skill-evolution-redaction.ts`,
+`skill-evolution-runtime.ts`, `skill-evolution-schemas.ts`,
 `skill-evolution-store.ts`, and `skill-evolution-tools.ts`. They are not a
 parallel hand-maintained exception list; omitting any matching regular source
 file changes/fails source identity and the reviewed npm allowlist.
@@ -115,14 +116,14 @@ bun run release:gate -- --evidence-dir <absolute-external-directory>
 ```
 
 The mandatory destination must be outside the repository. One strict package-
-v0.3.0 release JSON (maximum 512 KiB) uses schema 5 and records eleven unique
+v0.4.1 release JSON (maximum 512 KiB) uses schema 6 and records sixteen unique
 command IDs in required order,
 argument vectors, executable identities/relationships, exit status, and complete
 redacted stdout/stderr under per-command and aggregate byte limits. Sizes and
 digests cover those exact retained UTF-8 strings. It records parsed totals, the
 complete sorted npm `{path,size,mode}` inventory/digest, source and
 release-input identities, Excel hashes, cleanup, and global-config proof.
-Release evidence schema v5 requires `package_version:"0.3.0"` and runs
+Release evidence schema v6 requires `package_version:"0.4.1"` and runs
 `bun test tests/manager.test.ts --timeout 60000` as exact `manager_tests`
 evidence in addition to the full suite, parses and binds
 its pass/skip/fail/test/assertion/file totals, and verifies then references the separately retained live
@@ -134,10 +135,10 @@ verification require it, so even a same-byte replacement fails. A later live
 check creates a different file and cannot replace release-referenced evidence.
 The referenced live JSON remains strict schema v2 with kind
 `opencode-alg-live-verification`; unknown or malformed critical fields fail shape
-validation before semantic checks. Release schema 5 does not renumber the live
+validation before semantic checks. Release schema 6 does not renumber the live
 contract. The manager/receipt protocol likewise remains `0.2.0` and is checked
 separately from the package version.
-Schema v5 also records strictly marked Windows helper counts before and after
+Schema v6 also records strictly marked Windows helper counts before and after
 the commands and requires zero net additions. Cleanup is limited to additions
 to that TEMP snapshot whose strict owner is proven dead or PID-reused;
 preexisting, malformed, unmarked, live, or ambiguous directories are preserved.
@@ -224,6 +225,10 @@ Retained evidence and the printed summary identify:
   and
 - retained evidence path, byte size, and independently calculated SHA-256 in
   the `check:live` summary.
+
+New optional Data Science, connector-preparation, and experience work also requires
+the separate synthetic gate described in [implementation status](implementation-status.md).
+This legacy release gate does not by itself certify those optional runtimes.
 
 Any hash, test total, duration, or evidence path shown outside ignored task
 state is non-authoritative unless it was produced by the current invocation.

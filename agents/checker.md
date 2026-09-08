@@ -55,6 +55,7 @@ Return **only** this JSON object:
 ### Scoring
 
 - `score`: integer 0–10
+- `passed` must equal `(score >= 7)`: use 7–10 for a pass and 0–6 for a rejection.
 - `passed: true` only if **every** hard criterion is met
 - If `passed: true`, `failures` must be `[]`
 - If `passed: false`, each failure must be a **specific, falsifiable** statement

@@ -875,10 +875,13 @@ describe("safe durable store and ownership", () => {
 
       const staleExecutor = loadRun(project, run.run_id)!
       transferRunOwnership(project, run.run_id, "session-owner", "new-owner")
-      await expect(executeRun(staleExecutor, {
+      const staleExecution = executeRun(staleExecutor, {
         ...executeContext(project),
         dry: true,
-      })).rejects.toThrow(/revision conflict/)
+      })
+      await expect(staleExecution).rejects.toThrow("Run persistence boundary failed")
+      const boundaryError = await staleExecution.catch((error: Error) => error)
+      expect(String((boundaryError as Error).cause)).toMatch(/revision conflict/)
       expect(loadRun(project, run.run_id)?.owner_session_id).toBe("new-owner")
     } finally {
       removeProject(project)
