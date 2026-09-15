@@ -79,11 +79,13 @@
   `auditorAgent:"researcher"`; `checkerAgent:"checker"`;
   `maxEvidenceBytes` 2,048–32,768; `maxCandidateContentBytes` 1,024–65,536;
   `maxCandidates` 1–500; `maxLedgerRecords` 16–4,096; `maxBacklog` 1–128;
-  `queueConcurrency:1`; `minimumTriggerScore` 1–10; and `maxAttempts` 1–3.
+  `queueConcurrency:1`; `minimumTriggerScore` 1–10; `skipUninformativeAudits`
+  boolean; and `maxAttempts` 1–3.
   Defaults are `enabled:false`, `mode:"triggered"`,
   `skillRoots:[".opencode/skills"]`, the fixed auditor/checker/concurrency values
   above, 16 KiB evidence, 64 KiB candidate content, 100 candidates, 1,024 ledger
-  records, backlog 32, trigger threshold 3, and two attempts.
+  records, backlog 32, trigger threshold 3, skip uninformative audits true, and
+  two attempts.
 - All six tools remain registered while disabled so status/configuration can be
   inspected. Audit/review/promotion/rollback operations require enablement. The
   exact public server tool contract is:
@@ -120,6 +122,10 @@
   writes only `.opencode/skill-evolution/` plus private child-session effects;
   it never promotes/deletes skills or changes global configuration. V2 and
   effectiveness benchmarking remain deferred.
+- Existing `SKILL.md` files under configured `skillRoots` are the managed
+  catalog. Matching bodies are injected into chat system context and compaction.
+  OpenCode config skills may be observed for use but are not revised. Auditors
+  prefer `no_change` or `skill_revision` over creating a duplicate name.
 - Automatic intake accepts only successful, non-summary completed assistant
   `message.updated` events. It durably keys exact session/assistant-message IDs;
   duplicate post-processing events retain one record. It ignores idle/part/user/
@@ -130,9 +136,12 @@
   interruption may replay one audit within `maxAttempts` if no terminal result
   was committed.
 - `triggered` mode scores/redacts/bounds evidence before model work and records
-  below-threshold turns as `no-change` with no call. `every-turn` audits every
-  eligible completion. A manual `alg_skill_evolution_audit` also bypasses the
-  threshold; omitted IDs mean the current session/latest eligible completion.
+  below-threshold turns as `no-change` with no call. `every-turn` still records
+  every eligible completion; with `skipUninformativeAudits` (default true) it
+  skips the auditor model call unless the turn is informative, including an
+  unused catalog skill or a user correction. A manual `alg_skill_evolution_audit`
+  also bypasses the threshold; omitted IDs mean the current session/latest
+  eligible completion.
   `force=true` is allowed only for an existing failed/no-change key and remains
   inside the total attempt bound.
 - Cost accounting: a qualifying/manual/every-turn item makes one fresh auditor

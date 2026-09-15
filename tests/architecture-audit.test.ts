@@ -449,8 +449,9 @@ describe("architecture audit remediation", () => {
 
       const output = { context: [] as string[] }
       await hooks["experimental.session.compacting"]!({ sessionID: "bob" } as never, output as never)
-      expect(output.context).toHaveLength(1)
-      expect(output.context[0]).toContain(bob.run_id)
+      expect(output.context.some((text: string) => text.includes(bob.run_id))).toBe(true)
+      expect(output.context.length).toBeGreaterThanOrEqual(1)
+      expect(output.context.length).toBeLessThanOrEqual(3)
       expect(snapshotDirectory(aliceDirectory)).toEqual(beforeAlice)
       expect(snapshotDirectory(corruptDirectory)).toEqual(beforeCorrupt)
     } finally {

@@ -17,6 +17,14 @@
   numeric ranges; substring matches such as `highly uncertain` fail closed.
 - Documents status as inspect-only; transaction repair remains startup and the
   mutating review/promote/rollback tools.
+- Skill evolution reads existing `SKILL.md` files from configured roots (and
+  observes OpenCode config skills for use). Evidence includes that catalog.
+  Auditors prefer `no_change` or `skill_revision` over duplicate creates.
+- Matching skill bodies are injected into chat system context and compaction so
+  catalog skills are followed. `applicable_skill_unused` fires when related
+  tools run without loading the skill.
+- `skipUninformativeAudits` defaults true: `every-turn` still records, but skips
+  auditor model calls on uninformative turns.
 
 ## 0.4.1
 

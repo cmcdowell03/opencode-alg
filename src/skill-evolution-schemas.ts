@@ -120,6 +120,8 @@ export const SkillEvolutionOptionsSchema = z.object({
   maxBacklog: z.number().int().min(1).max(128).default(32),
   queueConcurrency: z.literal(1).default(1),
   minimumTriggerScore: z.number().int().min(1).max(10).default(3),
+  /** Skip auditor model calls for uninformative turns even in every-turn mode. */
+  skipUninformativeAudits: z.boolean().default(true),
   maxAttempts: z.number().int().min(1).max(3).default(2),
   historical: z.object({
     enabled: z.boolean().default(false),
@@ -179,6 +181,7 @@ export const SkillTriggerLabelSchema = z.enum([
   "loaded_skill_inadequacy",
   "repeated_attempts",
   "reusable_successful_procedure",
+  "applicable_skill_unused",
   "manual",
 ])
 export type SkillTriggerLabel = z.infer<typeof SkillTriggerLabelSchema>
@@ -236,7 +239,7 @@ export function normalizeSkillConfidence(value: unknown): unknown {
 const AuditorBaseSchema = z.object({
   rationale: exact(1, 2_000, "rationale"),
   confidence: z.preprocess(normalizeSkillConfidence, z.enum(["low", "medium", "high"])),
-  triggers: z.array(SkillTriggerLabelSchema).max(7),
+  triggers: z.array(SkillTriggerLabelSchema).max(8),
   provenance: ProvenanceSchema,
 }).strict()
 
@@ -293,6 +296,17 @@ const EvidenceToolSchema = z.object({
   error: EvidenceTextSchema,
 }).strict()
 
+const SkillCatalogEvidenceEntrySchema = z.object({
+  name: exact(1, 64, "skill name"),
+  target: skillTarget,
+  root: exact(1, 512, "skill root"),
+  sha256,
+  managed: z.boolean(),
+  applicable: z.boolean(),
+  loaded: z.boolean(),
+  description: exact(1, 240, "skill description"),
+}).strict()
+
 export const SkillEvidenceSchema = z.object({
   schema_version: z.literal(SKILL_EVOLUTION_SCHEMA_VERSION),
   redaction_policy_version: z.literal(2).optional(),
@@ -304,8 +318,12 @@ export const SkillEvidenceSchema = z.object({
   user_text: EvidenceTextSchema,
   assistant_text: EvidenceTextSchema,
   tools: z.array(EvidenceToolSchema).max(24),
+  catalog: z.object({
+    skills: z.array(SkillCatalogEvidenceEntrySchema).max(16),
+    omitted: z.number().int().nonnegative(),
+  }).strict().optional(),
   trigger_score: z.number().int().min(0).max(20),
-  trigger_labels: z.array(SkillTriggerLabelSchema).max(7),
+  trigger_labels: z.array(SkillTriggerLabelSchema).max(8),
   truncation: z.object({
     parts_omitted: z.number().int().nonnegative(),
     tools_omitted: z.number().int().nonnegative(),
@@ -341,7 +359,7 @@ export const SkillLedgerRecordSchema = z.object({
   created_at: iso,
   updated_at: iso,
   trigger_score: z.number().int().min(0).max(20).optional(),
-  trigger_labels: z.array(SkillTriggerLabelSchema).max(7).optional(),
+  trigger_labels: z.array(SkillTriggerLabelSchema).max(8).optional(),
   evidence_ref: z.object({ path: projectRelativeReference, sha256, byte_size: z.number().int().positive().max(32_768) }).strict().optional(),
   candidate_id: safeId.optional(),
   error: z.string().max(2_000).optional(),

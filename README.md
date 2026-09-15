@@ -298,6 +298,7 @@ being ignored. Defaults and accepted bounds are:
 | `enabled` | `false` | boolean; the only activation switch |
 | `allowBuiltinToolMap` | `false` | boolean; V1 testing overlay that disables listed built-ins only. Not deny-all. Required for auditor/checker model calls on the current SDK |
 | `mode` | `"triggered"` | `"triggered"` or `"every-turn"` |
+| `skipUninformativeAudits` | `true` | boolean; skip auditor model calls for uninformative turns even in `every-turn` |
 | `skillRoots` | `[".opencode/skills"]` | 1–8 unique normalized project-relative roots, never the evolution store |
 | `auditorAgent` | `"researcher"` | fixed to `"researcher"` in v0.3.0 |
 | `checkerAgent` | `"checker"` | fixed to `"checker"` in v0.3.0 |
@@ -329,10 +330,15 @@ compact can drop the turn, and serializes a per-project queue. Process prefers
 that snapshot over a later live re-fetch. Live `session.messages` uses a
 `100 + 1` overflow check; overflow or a missing target ID is classified
 (`overflow` / `compacted_or_unavailable`) rather than treated as truncated
-evidence. In `triggered` mode, evidence below `minimumTriggerScore` becomes
-`no-change` without a model call. `every-turn` audits every eligible
-completion. Private auditor/checker children are durably registered and
-recursion-excluded.
+evidence. Evidence includes the bounded SKILL.md catalog so auditors revise
+existing managed skills instead of minting duplicates. In `triggered` mode,
+evidence below `minimumTriggerScore` becomes `no-change` without a model call.
+`every-turn` records every eligible completion; by default it still skips the
+auditor model call unless the turn is informative (threshold, unused catalog
+skill, loaded-skill inadequacy, or user correction). Private auditor/checker
+children are durably registered and recursion-excluded. The server also injects
+matching SKILL.md bodies into chat system context and compaction so catalog
+skills are followed rather than only listed.
 
 An eligible audit creates a fresh no-tools `researcher` child. `no_change` ends
 the record; a memory proposal is retained as a non-promotable candidate; a skill

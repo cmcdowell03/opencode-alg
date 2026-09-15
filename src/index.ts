@@ -18,6 +18,7 @@ import { verifiedLiveSourceIdentity } from "./source-identity.ts"
 import { parseSkillEvolutionOptions } from "./skill-evolution-schemas.ts"
 import { createSkillEvolutionRuntime } from "./skill-evolution-runtime.ts"
 import { createSkillEvolutionTools } from "./skill-evolution-tools.ts"
+import { observedConfigSkillRoots, SkillGuidance } from "./skill-catalog.ts"
 
 const server: Plugin = async (ctx, pluginOptions) => {
   const { client, directory } = ctx
@@ -41,8 +42,11 @@ const server: Plugin = async (ctx, pluginOptions) => {
     () => structuredClone(configuredModels),
     () => structuredClone(modelResolutions),
   )
+  const extraSkillRoots = observedConfigSkillRoots()
+  const skillGuidance = new SkillGuidance(ctx.worktree || directory, skillEvolutionOptions, extraSkillRoots)
   const skillEvolution = createSkillEvolutionRuntime(ctx, {
     options: skillEvolutionOptions,
+    extraSkillRoots,
     configuredModels: () => structuredClone(configuredModels),
     configuredResolutions: () => structuredClone(modelResolutions),
   })
@@ -82,6 +86,23 @@ const server: Plugin = async (ctx, pluginOptions) => {
       modelResolutions = configuredModelResolutions(config)
     },
 
+    "experimental.chat.messages.transform": async (_input, output) => {
+      try {
+        skillGuidance.observeChatMessages(output.messages)
+      } catch {
+        /* non-fatal */
+      }
+    },
+
+    "experimental.chat.system.transform": async (input, output) => {
+      try {
+        const context = skillGuidance.systemContext(input.sessionID)
+        if (context) output.system.push(context)
+      } catch {
+        /* non-fatal */
+      }
+    },
+
     "experimental.session.compacting": async (input, output) => {
       const logCompactionFailure = (message: string) => {
         try {
@@ -93,6 +114,8 @@ const server: Plugin = async (ctx, pluginOptions) => {
         }
       }
       try {
+        const skills = skillGuidance.compactionContext()
+        if (skills) output.context.push(skills)
         const run = findLatestIncompleteRunForSession(ctx.worktree || directory, input.sessionID)
         if (run) output.context.push(formatCompactionContext(run))
       } catch (error) {

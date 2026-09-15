@@ -79,6 +79,7 @@ describe("skill-evolution options and strict schemas", () => {
       skillRoots: [".opencode/skills"],
       queueConcurrency: 1,
       maxBacklog: 32,
+      skipUninformativeAudits: true,
     })
     expect(parseSkillEvolutionOptions({ skillEvolution: { enabled: false } })).toMatchObject({ enabled: false, mode: "triggered" })
     expect(parseSkillEvolutionOptions({ skillEvolution: { enabled: true, mode: "triggered", skillRoots: ["project-skills"] } }))

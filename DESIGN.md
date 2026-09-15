@@ -84,7 +84,7 @@ The server plugin installs:
 - a `tool` map containing the exact 15 ordered `alg_*` IDs below;
 - a `config` hook that captures merged OpenCode model configuration for future plans;
 - an event hook and disposable project runtime for disabled-by-default skill evolution; and
-- `experimental.session.compacting`, which injects a deterministic-by-state, bounded summary of the latest incomplete run owned by that parent session, plus bounded skill-evolution pointers when that store has pending/running work. Hook failures are logged and do not block host compact. These summaries do not copy child reasoning.
+- `experimental.session.compacting`, which injects a deterministic-by-state, bounded summary of the latest incomplete run owned by that parent session, matching SKILL.md catalog text, plus bounded skill-evolution pointers when that store has pending/running work. Hook failures are logged and do not block host compact. These summaries do not copy child reasoning.
 
 The TUI plugin registers two palette/slash commands and emits a bounded registration marker. Verification-only source identity is described under [Safety boundaries](#source-bound-release-identity).
 
@@ -215,9 +215,18 @@ redaction cannot prove that all secrets or identifying data were removed. The
 auditor prompt labels the evidence untrusted and instructs the model not to
 obey it, but prompt-injection resistance is not assumed.
 
+Live evidence also includes a bounded catalog of existing `SKILL.md` files from
+configured project roots, plus optional observed OpenCode config skills that
+cannot be revised. Matching skill bodies are injected into chat system context
+and compaction so the parent agent follows those files instead of rediscovering
+the procedure. `applicable_skill_unused` is scored when a managed catalog skill's
+related tools ran without a `skill` load.
+
 In `triggered` mode, deterministic labels/scores are computed before model work;
 an automatic item below `minimumTriggerScore` becomes `no-change` without a
-child. `every-turn` and manual audit proceed regardless of that threshold. An
+child. `every-turn` still records every eligible completion. With
+`skipUninformativeAudits` (default true), it skips the auditor model call unless
+the turn is informative. Manual audit proceeds regardless of that threshold. An
 audit creates a fresh child of the source session with a private random title,
 uses the configured `researcher` role/model resolution at processing time, and
 sets the known shell/edit/read/search/task/skill/web/question tools to false.
@@ -354,7 +363,8 @@ skill until restart.
 | `src/compaction.ts` | Bounded active-run and skill-evolution context for the server compaction hook. |
 | `src/tools.ts` | Core DAG/run/model public tool schemas, ownership/root checks, compact/full response projection. |
 | `src/skill-evolution-schemas.ts` | Strict plugin options plus evidence, auditor/checker, ledger, candidate, revision, and transaction contracts. |
-| `src/skill-evolution-evidence.ts` | Exact-turn selection, trigger scoring, redaction, UTF-8 bounds, and canonical evidence identity. |
+| `src/skill-catalog.ts` | Bounded SKILL.md listing, matching, system/compaction injection, and catalog evidence. |
+| `src/skill-evolution-evidence.ts` | Exact-turn selection, trigger scoring, redaction, UTF-8 bounds, catalog coverage, and canonical evidence identity. |
 | `src/skill-evolution-runtime.ts` | Event filtering, durable enqueue, serialized audit queue, fresh no-tools children, and recursion exclusion. |
 | `src/skill-evolution-historical.ts` | V1 historical discovery, stable snapshot sealing, confirmed bounded execution, checkpoints, and coverage publication. |
 | `src/skill-evolution-store.ts` | Project store, immutable references, candidate CAS, contained promotion/rollback, and transaction recovery. |

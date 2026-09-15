@@ -1126,7 +1126,7 @@ describe("V1-only historical skill evolution", () => {
       liveSdk.promptGate = new Promise<void>((resolve) => { releaseLive = resolve })
       liveSdk.promptGateFor = (prompt) => prompt.includes("UNTRUSTED EVIDENCE JSON:\n")
       const liveFirst = createSkillEvolutionRuntime({ client: liveSdk.client(), project: { id: "project" }, directory: liveFirstProject, worktree: liveFirstProject } as never, {
-        options: SkillEvolutionOptionsSchema.parse({ enabled: true, mode: "every-turn", historical: { enabled: true } }),
+        options: SkillEvolutionOptionsSchema.parse({ enabled: true, mode: "every-turn", skipUninformativeAudits: false, historical: { enabled: true } }),
       })
       const livePreview = await liveFirst.historicalInitialize({ action: "preview", session_ids: ["selected"] }) as any
       liveFirst.handleEvent({ type: "message.updated", properties: { info: transcript("selected", 2)[1]!.info } } as any)
@@ -1173,7 +1173,7 @@ describe("V1-only historical skill evolution", () => {
       liveSdk.candidate = true
       liveSdk.createGate = new Promise<void>((resolve) => { releaseLive = resolve })
       const live = createSkillEvolutionRuntime({ client: liveSdk.client(), project: { id: "project" }, directory: project, worktree: project } as never, {
-        options: SkillEvolutionOptionsSchema.parse({ enabled: true, mode: "every-turn", historical: { enabled: true } }),
+        options: SkillEvolutionOptionsSchema.parse({ enabled: true, mode: "every-turn", skipUninformativeAudits: false, historical: { enabled: true } }),
       })
       live.handleEvent({ type: "message.updated", properties: { info: transcript("selected", 2)[1]!.info } } as any)
       while (liveSdk.creates.length === 0) await Bun.sleep(5)
@@ -1372,7 +1372,7 @@ describe("V1-only historical skill evolution", () => {
           ? prompt.includes("UNTRUSTED EVIDENCE JSON:\n")
           : prompt.includes("pure checker")
         const live = createSkillEvolutionRuntime({ client: liveSdk.client(), project: { id: "project" }, directory: project, worktree: project } as never, {
-          options: SkillEvolutionOptionsSchema.parse({ enabled: true, mode: "every-turn", historical: { enabled: true } }),
+          options: SkillEvolutionOptionsSchema.parse({ enabled: true, mode: "every-turn", skipUninformativeAudits: false, historical: { enabled: true } }),
         })
         live.handleEvent({ type: "message.updated", properties: { info: transcript("selected", 2)[1]!.info } } as any)
         const expectedLivePrompts = stage === "auditor" ? 1 : 2

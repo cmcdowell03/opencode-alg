@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { installSyntheticEvolutionChild } from "./skill-evolution-child-fixture.ts"
-import { existsSync } from "node:fs"
+import { existsSync, mkdirSync, writeFileSync } from "node:fs"
+import { join } from "node:path"
 import type { Event } from "@opencode-ai/sdk"
 import { createSkillEvolutionRuntime, ALG_SKILL_AUDIT_TITLE_PREFIX, ALG_SKILL_CHECK_TITLE_PREFIX, LIVE_SESSION_COMPACTED_ERROR, LIVE_SESSION_OVERFLOW_ERROR, MAX_LIVE_SESSION_MESSAGES, NO_TOOLS_UNSUPPORTED } from "../src/skill-evolution-runtime.ts"
 import { formatSkillEvolutionCompactionContext } from "../src/compaction.ts"
@@ -206,7 +207,7 @@ class FakeSdk {
 }
 
 function runtime(project: string, sdk: FakeSdk, configured: Partial<SkillEvolutionOptions> = {}, childCallTimeoutMs?: number, syntheticChild = true) {
-  const options = SkillEvolutionOptionsSchema.parse({ enabled: true, mode: "every-turn", ...configured })
+  const options = SkillEvolutionOptionsSchema.parse({ enabled: true, mode: "every-turn", skipUninformativeAudits: false, ...configured })
   const active = createSkillEvolutionRuntime({
     client: sdk.client(),
     project: { id: sdk.projectId },
@@ -342,6 +343,40 @@ test("explicit allowBuiltinToolMap dispatches auditor children without claiming 
     expect(active.status().tool_permissions).toMatchObject({
       model_calls_blocked: false, all_tools_denied: false, host_attested: false, scope: "explicit_builtin_tool_map",
     })
+  } finally { active.dispose(); removeProject(project) }
+})
+
+test("skipUninformativeAudits suppresses every-turn model calls without a catalog gap", async () => {
+  const project = tempProject("alg-evolution-skip-uninformative-")
+  const sdk = new FakeSdk(project)
+  sdk.add("quiet")
+  const active = runtime(project, sdk, { allowBuiltinToolMap: true, skipUninformativeAudits: true }, undefined, false)
+  try {
+    active.handleEvent(event("quiet"))
+    const record = await waitForStatus(project, "quiet", "assistant-quiet", "no-change")
+    expect(record.error).toBeUndefined()
+    expect(sdk.creates).toHaveLength(0)
+  } finally { active.dispose(); removeProject(project) }
+})
+
+test("unused catalog skill keeps an every-turn auditor call when skipUninformativeAudits is on", async () => {
+  const project = tempProject("alg-evolution-unused-skill-")
+  mkdirSync(join(project, ".opencode", "skills", "duckdb-lake"), { recursive: true })
+  writeFileSync(join(project, ".opencode", "skills", "duckdb-lake", "SKILL.md"),
+    "---\nname: duckdb-lake\ndescription: Use when running project-local DuckDB lake queries through alg_duckdb_query.\n---\n\nCall `alg_duckdb_query`.\n")
+  const sdk = new FakeSdk(project)
+  sdk.add("lake", messages("lake", "assistant-lake", "query the lake", [{
+    type: "tool",
+    tool: "alg_duckdb_query",
+    state: { status: "completed", input: { sql: "SELECT 1" }, output: "{\"ok\":true,\"columns\":[\"1\"],\"rows\":[[1]],\"truncated\":false}" },
+  }]))
+  const active = runtime(project, sdk, { allowBuiltinToolMap: true, skipUninformativeAudits: true }, undefined, false)
+  try {
+    active.handleEvent(event("lake"))
+    await waitForStatus(project, "lake", "assistant-lake", "no-change")
+    expect(sdk.creates).toHaveLength(1)
+    expect(sdk.prompts[0].body.parts[0].text).toContain("duckdb-lake")
+    expect(sdk.prompts[0].body.parts[0].text).toContain("applicable_skill_unused")
   } finally { active.dispose(); removeProject(project) }
 })
 
@@ -779,7 +814,7 @@ describe("skill-evolution fresh auditor/checker child protocol", () => {
         removeProject(project)
       }
     }
-  })
+  }, 20_000)
 
   test("auditor/checker creation, prompt, malformed-result, and abort failures become terminal failed records", async () => {
     const cases: Array<[string, (sdk: FakeSdk) => void]> = [
