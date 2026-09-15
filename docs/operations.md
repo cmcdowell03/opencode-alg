@@ -69,10 +69,12 @@
 
 - A string ALG registration means disabled. To opt in, make only the server
   `opencode.jsonc` entry a tuple such as
-  `["file:///absolute/path/to/alg", {"skillEvolution":{"enabled":true,"mode":"triggered","skillRoots":[".opencode/skills"]}}]`.
+  `["file:///absolute/path/to/alg", {"skillEvolution":{"enabled":true,"allowBuiltinToolMap":true,"mode":"triggered","skillRoots":[".opencode/skills"]}}]`.
   The options object is strict. Unknown names fail startup. Keep the TUI package-
   root registration; restart OpenCode after any option or plugin edit.
-- The full bounded option surface is: `enabled` boolean; `mode` `triggered` or
+- The full bounded option surface is: `enabled` boolean;
+  `allowBuiltinToolMap` boolean (required for auditor/checker model calls on
+  the pinned V1 SDK; without it live intake does not enqueue); `mode` `triggered` or
   `every-turn`; 1–8 unique normalized project-relative `skillRoots`;
   `auditorAgent:"researcher"`; `checkerAgent:"checker"`;
   `maxEvidenceBytes` 2,048–32,768; `maxCandidateContentBytes` 1,024–65,536;
@@ -121,9 +123,12 @@
 - Automatic intake accepts only successful, non-summary completed assistant
   `message.updated` events. It durably keys exact session/assistant-message IDs;
   duplicate post-processing events retain one record. It ignores idle/part/user/
-  incomplete/error/summary/deleted/private-child events. This deduplicates
-  intake, not external model effects: a process interruption may replay one audit
-  within `maxAttempts` if no terminal result was committed.
+  incomplete/error/summary/deleted/private-child/`alg:` executor events and does
+  not enqueue when model calls are blocked. `summary:true` recaps stay
+  historical-only after compact. `session.deleted` is persisted and cancels
+  queued rows. This deduplicates intake, not external model effects: a process
+  interruption may replay one audit within `maxAttempts` if no terminal result
+  was committed.
 - `triggered` mode scores/redacts/bounds evidence before model work and records
   below-threshold turns as `no-change` with no call. `every-turn` audits every
   eligible completion. A manual `alg_skill_evolution_audit` also bypasses the
@@ -138,12 +143,17 @@
   prevents the same record from running twice, but distinct records can run in
   separate OpenCode server processes. Backlog overflow and ledger capacity are
   explicit durable failures, never silent drops.
-- Evidence re-fetches the exact session/project/direct parent turn, keeps at most
-  100 message envelopes and 24 tool summaries, uses explicit UTF-8 omission
-  counts, and applies credential/obvious-secret/path redaction. Treat this as
-  minimization, not DLP. The auditor and checker receive bounded prompts marking
+- Evidence is snapshotted at enqueue and again at `experimental.session.compacting`
+  for pending/running identities in that session. Process prefers the durable
+  snapshot. A live re-fetch uses `limit: 100 + 1` and rejects overflow without
+  building evidence; a missing target ID is `compacted_or_unavailable`. Evidence
+  keeps at most 24 tool summaries, uses explicit UTF-8 omission counts, and
+  applies credential/obvious-secret/path redaction. Treat this as minimization,
+  not DLP. The auditor and checker receive bounded prompts marking
   evidence/candidates untrusted and explicitly disable known tools, but fresh
   children still use configured OpenCode/model context and are not sandboxes.
+  Auditor `confidence` accepts only `low|medium|high` or the documented numeric
+  ranges; substring matches such as `highly uncertain` fail the job.
 - Inspect first:
   `alg_skill_evolution_status state=validated limit=20`, then
   `alg_skill_evolution_status candidate_id=<id> detail=full`. Review appends an
@@ -169,7 +179,9 @@
   and create-if-absent hard-link publication. It never rename-overwrites a public
   or occupied auxiliary name. Portable filesystems still have a final compare-
   then-unlink race window; detected custom or third state is preserved.
-- Startup and enabled status run transaction recovery. Exact pre-publication
+- Startup and the mutating review/promote/rollback tools run transaction
+  recovery. Enabled status is inspect-only and reports pending journals through
+  `doctor.recovery` without repairing files. Exact pre-publication
   state is cleaned; an absent public target with an exact old claim is restored;
   exact file-applied/state-uncommitted work receives its missing candidate
   revision. Malformed/stale/wrong-root/path/hash/identity/third-state cases remain

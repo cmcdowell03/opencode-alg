@@ -211,13 +211,11 @@ const SkillProposalSchema = z.object({
   }
 })
 
-export function normalizeSkillConfidence(value: unknown): "low" | "medium" | "high" {
+export function normalizeSkillConfidence(value: unknown): unknown {
   if (typeof value === "string") {
     const normalized = value.trim().toLowerCase()
     if (normalized === "low" || normalized === "medium" || normalized === "high") return normalized
-    if (normalized.includes("high")) return "high"
-    if (normalized.includes("low")) return "low"
-    return "medium"
+    return value
   }
   if (typeof value === "number" && Number.isFinite(value)) {
     if (value >= 0 && value <= 1) {
@@ -231,7 +229,8 @@ export function normalizeSkillConfidence(value: unknown): "low" | "medium" | "hi
       return "high"
     }
   }
-  return "medium"
+  if (value === null || value === undefined) return "medium"
+  return value
 }
 
 const AuditorBaseSchema = z.object({

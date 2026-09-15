@@ -38,7 +38,7 @@ remain inspectable, but skill evolution is disabled by default and its audit or
 mutation operations fail closed until explicitly enabled.
 
 Historical review has a second, independent opt-in:
-`{"skillEvolution":{"enabled":true,"historical":{"enabled":true}}}`. Merely
+`{"skillEvolution":{"enabled":true,"allowBuiltinToolMap":true,"historical":{"enabled":true}}}`. Merely
 enabling live skill evolution does not enable discovery, preview, run, or resume.
 Historical preview also requires explicit `researcher` and `checker` provider/model
 resolutions; unresolved SDK defaults fail before session reads or model calls.
@@ -317,12 +317,22 @@ installer enables this option on the user's behalf.
 ### Candidate workflow
 
 When enabled, ALG listens only for a successful, non-summary, completed
-assistant `message.updated` event. It durably deduplicates the exact
-session/message pair, builds bounded redacted evidence from that assistant and
-its direct parent user message, and serializes a per-project queue. In
-`triggered` mode, evidence below `minimumTriggerScore` becomes `no-change`
-without a model call. `every-turn` audits every eligible completion. Private
-auditor/checker children are durably registered and recursion-excluded.
+assistant `message.updated` event. Summary recaps stay ineligible for live
+intake; after compact they are historical-only. `alg:` executor children are
+excluded from automatic intake. Deleted sessions are persisted and cancel
+queued rows. If V1 model calls are blocked (`allowBuiltinToolMap` unset),
+intake does not enqueue identities that can only fail; `alg_skill_evolution_audit`
+returns the same `tool_permissions` limitation immediately. It durably
+deduplicates the exact session/message pair, snapshots bounded redacted
+evidence from that assistant and its direct parent user message before host
+compact can drop the turn, and serializes a per-project queue. Process prefers
+that snapshot over a later live re-fetch. Live `session.messages` uses a
+`100 + 1` overflow check; overflow or a missing target ID is classified
+(`overflow` / `compacted_or_unavailable`) rather than treated as truncated
+evidence. In `triggered` mode, evidence below `minimumTriggerScore` becomes
+`no-change` without a model call. `every-turn` audits every eligible
+completion. Private auditor/checker children are durably registered and
+recursion-excluded.
 
 An eligible audit creates a fresh no-tools `researcher` child. `no_change` ends
 the record; a memory proposal is retained as a non-promotable candidate; a skill
@@ -374,7 +384,7 @@ alg_models agent="researcher" provider_id="openai" model_id="gpt-5"
 alg_models agent="checker" provider_id="openai" model_id="gpt-5"
 
 # 2. Register the server plugin as an options tuple, then quit and restart OpenCode.
-["file:///absolute/path/to/opencode-alg",{"skillEvolution":{"enabled":true,"historical":{"enabled":true}}}]
+["file:///absolute/path/to/opencode-alg",{"skillEvolution":{"enabled":true,"allowBuiltinToolMap":true,"historical":{"enabled":true}}}]
 
 # 3. Discover V1 sessions returned for the current project.
 alg_skill_evolution_historical request={"action":"discover"}
@@ -433,9 +443,10 @@ Promotion is never automatic. It accepts only a validated skill, rechecks strict
 create absence or replace basis, and immutable checker provenance. Created
 skills are never deleted by rollback; v0.3.0 rollback restores only an exact
 pre-promotion replacement backup. Memory candidates cannot be promoted.
-Promotion, rollback, or startup/status recovery that mutates a skill file sets
+Promotion, rollback, or startup recovery that mutates a skill file sets
 `restart_required`; quit and restart OpenCode before expecting new sessions to
-load the resulting skill.
+load the resulting skill. Status inspects pending journals without repairing
+them.
 
 ### Cost, privacy, and durability limits
 

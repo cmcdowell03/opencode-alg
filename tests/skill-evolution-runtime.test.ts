@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test"
 import { installSyntheticEvolutionChild } from "./skill-evolution-child-fixture.ts"
 import { existsSync } from "node:fs"
 import type { Event } from "@opencode-ai/sdk"
-import { createSkillEvolutionRuntime, ALG_SKILL_AUDIT_TITLE_PREFIX, ALG_SKILL_CHECK_TITLE_PREFIX } from "../src/skill-evolution-runtime.ts"
+import { createSkillEvolutionRuntime, ALG_SKILL_AUDIT_TITLE_PREFIX, ALG_SKILL_CHECK_TITLE_PREFIX, LIVE_SESSION_COMPACTED_ERROR, LIVE_SESSION_OVERFLOW_ERROR, MAX_LIVE_SESSION_MESSAGES, NO_TOOLS_UNSUPPORTED } from "../src/skill-evolution-runtime.ts"
+import { formatSkillEvolutionCompactionContext } from "../src/compaction.ts"
 import { SkillEvolutionOptionsSchema, type SkillEvolutionOptions } from "../src/skill-evolution-schemas.ts"
 import {
   beginSkillAudit,
@@ -36,6 +37,24 @@ function messages(sessionId: string, messageId = `assistant-${sessionId}`, userT
         time: { created: 11, completed: 12 },
       },
       parts: assistantParts ?? [{ type: "text", text: "Done." }],
+    },
+  ]
+}
+
+function compactedMessages(sessionId: string) {
+  return [
+    {
+      info: {
+        id: `summary-${sessionId}`,
+        sessionID: sessionId,
+        role: "assistant",
+        summary: true,
+        time: { created: 100, completed: 101 },
+      },
+      parts: [
+        { type: "compaction", time: { start: 100, end: 101 } },
+        { type: "text", text: "The previous turns were compacted." },
+      ],
     },
   ]
 }
@@ -121,6 +140,7 @@ class FakeSdk {
   promptError: unknown | null = null
   createDelay: ((request: any) => Promise<void>) | null = null
   promptDelay: (() => Promise<void>) | null = null
+  messageLimits: number[] = []
   onCreate: ((session: Session) => void) | null = null
   activePrompts = 0
   maximumActivePrompts = 0
@@ -150,7 +170,10 @@ class FakeSdk {
         },
         messages: async (request: any) => {
           if (this.readGate === "messages") await new Promise(() => {})
-          return { data: this.messageSets.get(request.path.id), error: undefined }
+          const all = this.messageSets.get(request.path.id) ?? []
+          const limit = request.query?.limit
+          if (typeof limit === "number") this.messageLimits.push(limit)
+          return { data: typeof limit === "number" ? all.slice(0, limit) : all, error: undefined }
         },
         create: async (request: any) => {
           this.creates.push(request)
@@ -271,8 +294,9 @@ test("installed V1 contract lacks permission rules and fails closed before synth
   const active = runtime(project, sdk, {}, undefined, false)
   try {
     active.handleEvent(event("sentinel"))
-    const failed = await waitForStatus(project, "sentinel", "assistant-sentinel", "failed")
-    expect(failed.error).toContain("cannot declare a deny-all")
+    await Bun.sleep(20)
+    expect(loadSkillLedger(project).records).toEqual([])
+    await expect(active.manualAudit({ actorSessionId: "sentinel" })).rejects.toThrow(NO_TOOLS_UNSUPPORTED)
     // Exercise the one shared boundary for all roles, including resumed history.
     for (const role of ["auditor", "checker", "historical-auditor", "historical-checker"]) {
       const result = await (active as any).child("sentinel", role, "Call synthetic_custom_sentinel and synthetic_mcp_sentinel")
@@ -282,7 +306,10 @@ test("installed V1 contract lacks permission rules and fails closed before synth
     expect(sdk.creates).toHaveLength(0)
     expect(sdk.prompts).toHaveLength(0)
     expect(loadSkillCandidates(project).candidates).toHaveLength(0)
-    expect(active.status().tool_permissions).toMatchObject({ model_calls_blocked: true, all_tools_denied: false, host_attested: false })
+    expect(active.status().tool_permissions).toMatchObject({
+      model_calls_blocked: true, all_tools_denied: false, host_attested: false,
+      limitation: NO_TOOLS_UNSUPPORTED,
+    })
   } finally { active.dispose(); removeProject(project) }
 })
 
@@ -807,4 +834,163 @@ describe("skill-evolution fresh auditor/checker child protocol", () => {
       removeProject(project)
     }
   }, 15_000)
+})
+
+describe("skill-evolution compaction-loss handling", () => {
+  test("enqueue then compact snapshot then dropped transcript still audits the durable evidence", async () => {
+    const project = tempProject("alg-skill-compact-snapshot-")
+    let releaseFirst!: () => void
+    const blocked = new Promise<void>((resolve) => { releaseFirst = resolve })
+    try {
+      const sdk = new FakeSdk(project)
+      sdk.add("blocker")
+      sdk.add("target", messages("target", "assistant-target", "Please keep this reusable workflow."))
+      sdk.createDelay = async () => {
+        if (sdk.creates.length === 1) await blocked
+      }
+      const active = runtime(project, sdk)
+      active.handleEvent(event("blocker"))
+      await waitFor(() => sdk.creates.length === 1, "blocker child create")
+      active.handleEvent(event("target"))
+      await waitFor(() => Boolean(loadSkillLedger(project).records.find((record) => record.session_id === "target")?.evidence_ref), "target snapshot")
+      const context = await active.compactSession("target")
+      expect(context).toContain(".opencode/skill-evolution/")
+      expect(context).toContain(skillLedgerKey("target", "assistant-target"))
+      expect(context).toContain("historical-only")
+      sdk.messageSets.set("target", compactedMessages("target"))
+      releaseFirst()
+      await waitForStatus(project, "target", "assistant-target", "no-change")
+      expect(sdk.prompts.some((request) => String(request.body.parts[0].text).includes("Please keep this reusable workflow."))).toBe(true)
+      expect(sdk.messageLimits[0]).toBe(MAX_LIVE_SESSION_MESSAGES + 1)
+      active.dispose()
+    } finally {
+      releaseFirst?.()
+      removeProject(project)
+    }
+  })
+
+  test("enqueue then drop the assistant envelope without a snapshot is compacted_or_unavailable", async () => {
+    const project = tempProject("alg-skill-compact-loss-")
+    try {
+      const sdk = new FakeSdk(project)
+      sdk.add("session")
+      const active = runtime(project, sdk)
+      active.handleEvent(event("session"))
+      sdk.messageSets.set("session", compactedMessages("session"))
+      const failed = await waitForStatus(project, "session", "assistant-session", "failed")
+      expect(failed.error).toContain("compacted_or_unavailable")
+      expect(failed.error).toBe(LIVE_SESSION_COMPACTED_ERROR)
+      expect(sdk.creates).toHaveLength(0)
+      active.dispose()
+    } finally {
+      removeProject(project)
+    }
+  })
+
+  test("live session.messages uses limit+1 and classifies overflow instead of truncating", async () => {
+    const project = tempProject("alg-skill-live-overflow-")
+    try {
+      const sdk = new FakeSdk(project)
+      const overflow: any[] = Array.from({ length: MAX_LIVE_SESSION_MESSAGES + 1 }, (_, index) => ({
+        info: {
+          id: index === MAX_LIVE_SESSION_MESSAGES ? "assistant-overflow" : `msg-${index}`,
+          sessionID: "overflow",
+          role: index === MAX_LIVE_SESSION_MESSAGES ? "assistant" : "user",
+          parentID: index === MAX_LIVE_SESSION_MESSAGES ? "msg-0" : undefined,
+          time: { created: index, ...(index === MAX_LIVE_SESSION_MESSAGES ? { completed: index + 1 } : {}) },
+        },
+        parts: [{ type: "text", text: `row-${index}` }],
+      }))
+      sdk.add("overflow", overflow)
+      const active = runtime(project, sdk)
+      active.handleEvent(event("overflow", "assistant-overflow"))
+      const failed = await waitForStatus(project, "overflow", "assistant-overflow", "failed")
+      expect(failed.error).toBe(LIVE_SESSION_OVERFLOW_ERROR)
+      expect(String(failed.error).startsWith("overflow:")).toBe(true)
+      expect(sdk.messageLimits[0]).toBe(MAX_LIVE_SESSION_MESSAGES + 1)
+      expect(sdk.creates).toHaveLength(0)
+      active.dispose()
+    } finally {
+      removeProject(project)
+    }
+  })
+
+  test("a 100-envelope window that lacks the target id is compacted_or_unavailable", async () => {
+    const project = tempProject("alg-skill-live-window-miss-")
+    try {
+      const sdk = new FakeSdk(project)
+      const window: any[] = Array.from({ length: MAX_LIVE_SESSION_MESSAGES }, (_, index) => ({
+        info: { id: `other-${index}`, sessionID: "window", role: "user", time: { created: index } },
+        parts: [{ type: "text", text: `other-${index}` }],
+      }))
+      sdk.add("window", window)
+      const active = runtime(project, sdk)
+      active.handleEvent(event("window", "assistant-window"))
+      const failed = await waitForStatus(project, "window", "assistant-window", "failed")
+      expect(failed.error).toBe(LIVE_SESSION_COMPACTED_ERROR)
+      expect(sdk.creates).toHaveLength(0)
+      active.dispose()
+    } finally {
+      removeProject(project)
+    }
+  })
+
+  test("alg executor children are excluded from automatic intake", async () => {
+    const project = tempProject("alg-skill-alg-executor-")
+    try {
+      const sdk = new FakeSdk(project)
+      sdk.add("worker", messages("worker"), "alg:research/1", "parent")
+      const active = runtime(project, sdk)
+      active.handleEvent({
+        type: "session.created",
+        properties: { info: { id: "worker", parentID: "parent", title: "alg:research/1" } },
+      } as Event)
+      active.handleEvent(event("worker"))
+      await Bun.sleep(30)
+      expect(loadSkillLedger(project).records.some((record) => record.session_id === "worker")).toBe(false)
+      expect(sdk.creates).toHaveLength(0)
+      active.dispose()
+    } finally {
+      removeProject(project)
+    }
+  })
+
+  test("session.deleted is persisted and cancels queued audits across restart", async () => {
+    const project = tempProject("alg-skill-session-deleted-")
+    try {
+      const sdk = new FakeSdk(project)
+      sdk.add("doomed")
+      const first = runtime(project, sdk)
+      first.handleEvent(event("doomed"))
+      first.handleEvent({
+        type: "session.deleted",
+        properties: { info: { id: "doomed" } },
+      } as Event)
+      const cancelled = await waitForStatus(project, "doomed", "assistant-doomed", "failed")
+      expect(cancelled.error).toContain("session was deleted")
+      first.dispose()
+
+      sdk.add("doomed", messages("doomed", "assistant-later"))
+      const restarted = runtime(project, sdk)
+      restarted.handleEvent(event("doomed", "assistant-later"))
+      await Bun.sleep(30)
+      expect(loadSkillLedger(project).records.some((record) => record.message_id === "assistant-later")).toBe(false)
+      restarted.dispose()
+    } finally {
+      removeProject(project)
+    }
+  })
+
+  test("skill-evolution compaction context stays bounded and names pending keys", () => {
+    const text = formatSkillEvolutionCompactionContext({
+      pendingKeys: ["a".repeat(64), "b".repeat(64)],
+      runningKeys: [],
+      candidateCount: 3,
+      restartRequired: true,
+    })
+    expect(text).toContain(".opencode/skill-evolution/")
+    expect(text).toContain("a".repeat(64))
+    expect(text).toContain("restart_required: true")
+    expect(text).toContain("candidates: 3")
+  })
 })

@@ -61,3 +61,38 @@ export function formatCompactionContext(run: RunState): string {
   const suffix = "\n[ALG compaction summary truncated]"
   return `${truncateUtf8(context, MAX_COMPACTION_CONTEXT_BYTES - utf8Bytes(suffix))}${suffix}`
 }
+
+export interface SkillEvolutionCompactionInput {
+  pendingKeys: string[]
+  runningKeys: string[]
+  candidateCount: number
+  restartRequired: boolean
+}
+
+function formatKeyList(keys: string[]): string {
+  if (!keys.length) return "(none)"
+  const visible = keys.slice(0, 16)
+  const omitted = keys.length - visible.length
+  return omitted > 0 ? `${visible.join(", ")} (+${omitted})` : visible.join(", ")
+}
+
+export function formatSkillEvolutionCompactionContext(input: SkillEvolutionCompactionInput): string {
+  const lines = [
+    "## ALG skill-evolution state (bounded)",
+    "",
+    "Live intake ignores summary:true recaps. Post-compact summaries are historical-only.",
+    "Queued-turn evidence is snapshotted before host compact when still available.",
+    "",
+    "- path: .opencode/skill-evolution/",
+    `- restart_required: ${input.restartRequired}`,
+    `- candidates: ${input.candidateCount}`,
+    `- session pending keys: ${formatKeyList(input.pendingKeys)}`,
+    `- session running keys: ${formatKeyList(input.runningKeys)}`,
+    "",
+    "Use alg_skill_evolution_status / alg_skill_evolution_audit for authoritative details.",
+  ]
+  const context = lines.join("\n")
+  if (utf8Bytes(context) <= MAX_COMPACTION_CONTEXT_BYTES) return context
+  const suffix = "\n[ALG skill-evolution compaction summary truncated]"
+  return `${truncateUtf8(context, MAX_COMPACTION_CONTEXT_BYTES - utf8Bytes(suffix))}${suffix}`
+}
