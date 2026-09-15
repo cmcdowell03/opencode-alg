@@ -335,10 +335,11 @@ existing managed skills instead of minting duplicates. In `triggered` mode,
 evidence below `minimumTriggerScore` becomes `no-change` without a model call.
 `every-turn` records every eligible completion; by default it still skips the
 auditor model call unless the turn is informative (threshold, unused catalog
-skill, loaded-skill inadequacy, or user correction). Private auditor/checker
-children are durably registered and recursion-excluded. The server also injects
-matching SKILL.md bodies into chat system context and compaction so catalog
-skills are followed rather than only listed.
+skill, loaded-skill inadequacy, or user correction). `applicable_skill_unused`
+does not spawn an auditor in `triggered` mode. Private auditor/checker
+children are durably registered and recursion-excluded. When skill evolution is
+enabled, the server also injects matching SKILL.md bodies into chat system
+context and compaction so catalog skills are followed rather than only listed.
 
 An eligible audit creates a fresh no-tools `researcher` child. `no_change` ends
 the record; a memory proposal is retained as a non-promotable candidate; a skill

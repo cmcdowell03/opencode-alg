@@ -3,7 +3,7 @@ import { installSyntheticEvolutionChild } from "./skill-evolution-child-fixture.
 import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import type { Event } from "@opencode-ai/sdk"
-import { createSkillEvolutionRuntime, ALG_SKILL_AUDIT_TITLE_PREFIX, ALG_SKILL_CHECK_TITLE_PREFIX, LIVE_SESSION_COMPACTED_ERROR, LIVE_SESSION_OVERFLOW_ERROR, MAX_LIVE_SESSION_MESSAGES, NO_TOOLS_UNSUPPORTED } from "../src/skill-evolution-runtime.ts"
+import { createSkillEvolutionRuntime, ALG_SKILL_AUDIT_TITLE_PREFIX, ALG_SKILL_CHECK_TITLE_PREFIX, COMPACT_SESSION_TIMEOUT_MS, LIVE_SESSION_COMPACTED_ERROR, LIVE_SESSION_OVERFLOW_ERROR, MAX_LIVE_SESSION_MESSAGES, NO_TOOLS_UNSUPPORTED } from "../src/skill-evolution-runtime.ts"
 import { formatSkillEvolutionCompactionContext } from "../src/compaction.ts"
 import { SkillEvolutionOptionsSchema, type SkillEvolutionOptions } from "../src/skill-evolution-schemas.ts"
 import {
@@ -142,6 +142,7 @@ class FakeSdk {
   createDelay: ((request: any) => Promise<void>) | null = null
   promptDelay: (() => Promise<void>) | null = null
   messageLimits: number[] = []
+  messageCalls = 0
   onCreate: ((session: Session) => void) | null = null
   activePrompts = 0
   maximumActivePrompts = 0
@@ -170,6 +171,7 @@ class FakeSdk {
           return { data: this.sessions.get(request.path.id), error: undefined }
         },
         messages: async (request: any) => {
+          this.messageCalls++
           if (this.readGate === "messages") await new Promise(() => {})
           const all = this.messageSets.get(request.path.id) ?? []
           const limit = request.query?.limit
@@ -354,6 +356,27 @@ test("skipUninformativeAudits suppresses every-turn model calls without a catalo
   try {
     active.handleEvent(event("quiet"))
     const record = await waitForStatus(project, "quiet", "assistant-quiet", "no-change")
+    expect(record.error).toBeUndefined()
+    expect(sdk.creates).toHaveLength(0)
+  } finally { active.dispose(); removeProject(project) }
+})
+
+test("triggered mode records unused catalog skill without an auditor call", async () => {
+  const project = tempProject("alg-evolution-triggered-unused-skill-")
+  mkdirSync(join(project, ".opencode", "skills", "duckdb-lake"), { recursive: true })
+  writeFileSync(join(project, ".opencode", "skills", "duckdb-lake", "SKILL.md"),
+    "---\nname: duckdb-lake\ndescription: Use when running project-local DuckDB lake queries through alg_duckdb_query.\n---\n\nCall `alg_duckdb_query`.\n")
+  const sdk = new FakeSdk(project)
+  sdk.add("lake", messages("lake", "assistant-lake", "query the lake", [{
+    type: "tool",
+    tool: "alg_duckdb_query",
+    state: { status: "completed", input: { sql: "SELECT 1" }, output: "{\"ok\":true,\"columns\":[\"1\"],\"rows\":[[1]],\"truncated\":false}" },
+  }]))
+  const active = runtime(project, sdk, { allowBuiltinToolMap: true, mode: "triggered" }, undefined, false)
+  try {
+    active.handleEvent(event("lake"))
+    const record = await waitForStatus(project, "lake", "assistant-lake", "no-change")
+    expect(record.trigger_labels).toContain("applicable_skill_unused")
     expect(record.error).toBeUndefined()
     expect(sdk.creates).toHaveLength(0)
   } finally { active.dispose(); removeProject(project) }
@@ -900,6 +923,68 @@ describe("skill-evolution compaction-loss handling", () => {
       active.dispose()
     } finally {
       releaseFirst?.()
+      removeProject(project)
+    }
+  })
+
+  test("compactSession fetches session.messages once per session", async () => {
+    const project = tempProject("alg-skill-compact-dedupe-")
+    try {
+      const sdk = new FakeSdk(project)
+      const envelopes = Array.from({ length: 4 }, (_, index) => {
+        const userId = `user-${index}`
+        const messageId = `assistant-${index}`
+        return [
+          { info: { id: userId, sessionID: "target", role: "user", time: { created: index * 10 } }, parts: [{ type: "text", text: `Task ${index}` }] },
+          {
+            info: {
+              id: messageId,
+              parentID: userId,
+              sessionID: "target",
+              role: "assistant",
+              mode: "build",
+              providerID: "source-provider",
+              modelID: "source-model",
+              time: { created: index * 10 + 1, completed: index * 10 + 2 },
+            },
+            parts: [{ type: "text", text: "Done." }],
+          },
+        ]
+      }).flat()
+      sdk.add("target", envelopes)
+      const options = SkillEvolutionOptionsSchema.parse({ enabled: true, allowBuiltinToolMap: true })
+      const active = runtime(project, sdk)
+      for (let index = 0; index < 4; index++) {
+        expect(enqueueSkillAudit(project, "target", `assistant-${index}`, options).enqueued).toBe(true)
+      }
+      const before = sdk.messageCalls
+      const context = await active.compactSession("target")
+      expect(sdk.messageCalls - before).toBe(1)
+      expect(sdk.messageLimits.at(-1)).toBe(MAX_LIVE_SESSION_MESSAGES + 1)
+      expect(context).toContain(".opencode/skill-evolution/")
+      expect(loadSkillLedger(project).records.filter((record) => record.session_id === "target" && record.evidence_ref)).toHaveLength(4)
+      active.dispose()
+    } finally {
+      removeProject(project)
+    }
+  })
+
+  test("compactSession does not wait the full child call timeout", async () => {
+    const project = tempProject("alg-skill-compact-deadline-")
+    try {
+      const sdk = new FakeSdk(project)
+      sdk.add("target")
+      sdk.readGate = "messages"
+      const options = SkillEvolutionOptionsSchema.parse({ enabled: true, allowBuiltinToolMap: true })
+      const active = runtime(project, sdk)
+      expect(enqueueSkillAudit(project, "target", "assistant-target", options).enqueued).toBe(true)
+      const started = Date.now()
+      const context = await active.compactSession("target")
+      expect(Date.now() - started).toBeLessThan(COMPACT_SESSION_TIMEOUT_MS + 750)
+      expect(context).toContain(".opencode/skill-evolution/")
+      expect(context).toContain(skillLedgerKey("target", "assistant-target"))
+      active.dispose()
+    } finally {
       removeProject(project)
     }
   })

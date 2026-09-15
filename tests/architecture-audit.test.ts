@@ -34,9 +34,11 @@ import {
   saveModelSettings,
 } from "../src/models.ts"
 import {
+  capCompactionOutputContext,
   formatCompactionContext,
   formatSkillEvolutionCompactionContext,
   MAX_COMPACTION_CONTEXT_BYTES,
+  MAX_COMPACTION_OUTPUT_BYTES,
   selectCompactionRun,
 } from "../src/compaction.ts"
 import serverModule from "../src/server.ts"
@@ -375,6 +377,18 @@ describe("architecture audit remediation", () => {
     }
   })
 
+  test("compaction output join is capped across chunks", () => {
+    const context = [
+      "a".repeat(MAX_COMPACTION_CONTEXT_BYTES),
+      "b".repeat(MAX_COMPACTION_CONTEXT_BYTES),
+      "c".repeat(4 * 1024),
+    ]
+    expect(utf8Bytes(context.join("\n"))).toBeGreaterThan(MAX_COMPACTION_OUTPUT_BYTES)
+    capCompactionOutputContext(context)
+    expect(utf8Bytes(context.join("\n"))).toBeLessThanOrEqual(MAX_COMPACTION_OUTPUT_BYTES)
+    expect(context.join("\n")).toContain("[ALG compaction context truncated]")
+  })
+
   test("listing, explicit access, and compaction never mutate another owner's runs", async () => {
     const project = tempProject()
     try {
@@ -459,6 +473,35 @@ describe("architecture audit remediation", () => {
     }
   })
 
+  test("disabled skill evolution does not inject SKILL.md into chat or compact context", async () => {
+    const project = tempProject()
+    try {
+      mkdirSync(join(project, ".opencode", "skills", "duckdb-lake"), { recursive: true })
+      writeFileSync(join(project, ".opencode", "skills", "duckdb-lake", "SKILL.md"),
+        "---\nname: duckdb-lake\ndescription: Use when running project-local DuckDB lake queries.\n---\n\nCall `alg_duckdb_query`.\n")
+      const hooks = await serverModule.server({
+        client: inertClient(),
+        project: { id: "project" },
+        directory: project,
+        worktree: project,
+      } as never)
+      await hooks["experimental.chat.messages.transform"]!({} as never, {
+        messages: [{ info: { sessionID: "owner", role: "user" }, parts: [{ type: "text", text: "query the lake" }] }],
+      } as never)
+      const system = { system: [] as string[] }
+      await hooks["experimental.chat.system.transform"]!({ sessionID: "owner" } as never, system as never)
+      expect(system.system.join("\n")).not.toContain("ALG skills")
+      expect(system.system.join("\n")).not.toContain("duckdb-lake")
+      const output = { context: [] as string[] }
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" } as never, output as never)
+      expect(output.context.join("\n")).not.toContain("ALG skills")
+      expect(output.context.join("\n")).not.toContain("duckdb-lake")
+      await hooks.dispose?.()
+    } finally {
+      removeProject(project)
+    }
+  })
+
   test("compacting hook logs run-store failures instead of swallowing them", async () => {
     const project = tempProject()
     try {
@@ -509,7 +552,7 @@ describe("architecture audit remediation", () => {
       expect(output.context.some((entry) => entry.includes(".opencode/skill-evolution/"))).toBe(true)
       expect(output.context.some((entry) => entry.includes(skillLedgerKey("owner", "assistant-owner")))).toBe(true)
       expect(output.context.some((entry) => entry.includes("historical-only"))).toBe(true)
-      expect(utf8Bytes(output.context.join("\n"))).toBeLessThanOrEqual(MAX_COMPACTION_CONTEXT_BYTES * 2)
+      expect(utf8Bytes(output.context.join("\n"))).toBeLessThanOrEqual(MAX_COMPACTION_OUTPUT_BYTES)
       expect(formatSkillEvolutionCompactionContext({
         pendingKeys: [queued.record.key],
         runningKeys: [],

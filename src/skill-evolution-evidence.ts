@@ -9,6 +9,7 @@ import {
   type SkillTriggerLabel,
 } from "./skill-evolution-schemas.ts"
 import {
+  APPLICABLE_SKILL_UNUSED_POINTS,
   catalogEvidenceField,
   catalogTriggerLabels,
   type SkillCatalog,
@@ -159,7 +160,7 @@ function scoreSignals(
       tools: tools.map((tool) => tool.name),
       loadedSkills: loadedSkillNames(tools),
     }
-    for (const label of catalogTriggerLabels(catalog, hint)) add(label, 3)
+    for (const label of catalogTriggerLabels(catalog, hint)) add(label, APPLICABLE_SKILL_UNUSED_POINTS)
   }
   return { score: Math.min(20, score), labels }
 }

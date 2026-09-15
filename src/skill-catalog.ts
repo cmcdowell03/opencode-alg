@@ -12,6 +12,7 @@ export const SKILL_SYSTEM_CONTEXT_MAX_BYTES = 12 * 1024
 export const SKILL_COMPACTION_CONTEXT_MAX_BYTES = 4 * 1024
 export const SKILL_INJECT_MAX_SKILLS = 3
 export const SKILL_INJECT_BODY_MAX_BYTES = 6 * 1024
+export const APPLICABLE_SKILL_UNUSED_POINTS = 3
 
 export interface SkillCatalogEntry {
   name: string
@@ -308,10 +309,15 @@ export function isInformativeSkillTurn(
   triggerScore: number,
   triggerLabels: readonly SkillTriggerLabel[],
   minimumTriggerScore: number,
+  mode: SkillEvolutionOptions["mode"] = "every-turn",
 ): boolean {
-  if (triggerScore >= minimumTriggerScore) return true
+  const unused = triggerLabels.includes("applicable_skill_unused")
+  const auditorScore = mode === "triggered" && unused
+    ? Math.max(0, triggerScore - APPLICABLE_SKILL_UNUSED_POINTS)
+    : triggerScore
+  if (auditorScore >= minimumTriggerScore) return true
   return triggerLabels.some((label) =>
-    label === "applicable_skill_unused" ||
+    (mode !== "triggered" && label === "applicable_skill_unused") ||
     label === "loaded_skill_inadequacy" ||
     label === "explicit_user_correction",
   )
@@ -415,12 +421,14 @@ export class SkillGuidance {
   }
 
   observeChatMessages(messages: Array<{ info?: any; parts?: any[] }>): void {
+    if (!this.options.enabled) return
     const sessionId = sessionIdFromMessages(messages)
     if (!sessionId) return
     this.hints.set(sessionId, hintFromMessages(messages))
   }
 
   systemContext(sessionId?: string): string {
+    if (!this.options.enabled) return ""
     try {
       return formatSkillSystemContext(this.catalog(), sessionId ? this.hints.get(sessionId) : undefined)
     } catch {
@@ -429,6 +437,7 @@ export class SkillGuidance {
   }
 
   compactionContext(): string {
+    if (!this.options.enabled) return ""
     try {
       return formatSkillCompactionContext(this.catalog())
     } catch {

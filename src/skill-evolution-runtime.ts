@@ -60,6 +60,7 @@ export const MAX_LIVE_SESSION_MESSAGES = 100
 export const LIVE_SESSION_OVERFLOW_ERROR = "overflow: live session exceeds 100 message envelopes; nothing was truncated or used as evidence"
 export const LIVE_SESSION_COMPACTED_ERROR = "compacted_or_unavailable: completed assistant message was deleted or is unavailable"
 export const NO_TOOLS_UNSUPPORTED = "skill evolution model calls are blocked: installed SDK V1 cannot declare a deny-all session permission ruleset for built-in, MCP, and custom tools"
+export const COMPACT_SESSION_TIMEOUT_MS = 2_000
 const MAX_CHILD_RESPONSE_BYTES = 96 * 1024
 const MAX_AUDITOR_PROMPT_BYTES = 64 * 1024
 const MAX_CHECKER_PROMPT_BYTES = 64 * 1024
@@ -410,11 +411,11 @@ export class SkillEvolutionRuntime {
     }
   }
 
-  private async messages(sessionId: string): Promise<unknown> {
+  private async messages(sessionId: string, timeoutMs = this.childCallTimeoutMs): Promise<unknown> {
     const response = await this.boundedChildCall("session.messages", (signal) => this.client.session.messages({
       path: { id: sessionId }, query: { directory: this.directory, limit: MAX_LIVE_SESSION_MESSAGES + 1 },
       responseStyle: "fields", throwOnError: false, signal,
-    }))
+    }), timeoutMs)
     if (response.error) throw new Error(formatSdkDiagnostic("session messages failed: ", response.error))
     if (!Array.isArray(response.data)) throw new Error("session messages response is not an array")
     if (response.data.length > MAX_LIVE_SESSION_MESSAGES) throw new Error(LIVE_SESSION_OVERFLOW_ERROR)
@@ -435,16 +436,45 @@ export class SkillEvolutionRuntime {
     this.snapshots.set(key, work)
   }
 
-  private async snapshotEvidence(sessionId: string, messageId: string, manual: boolean): Promise<void> {
+  private async snapshotEvidence(sessionId: string, messageId: string, manual: boolean, fetched?: unknown): Promise<void> {
     if (isDeletedSkillSession(this.project, sessionId)) return
     if (!manual && isAlgExecutorSession(this.project, sessionId)) return
     const key = skillLedgerKey(sessionId, messageId)
     const existing = loadSkillLedger(this.project).records.find((record) => record.key === key)
     if (existing?.evidence_ref) return
-    const fetched = await this.messages(sessionId)
-    assertLiveEvidenceTarget(fetched, messageId)
-    const evidence = buildSkillEvidence(fetched, sessionId, messageId, this.options, manual, 2, this.catalog())
+    const messages = fetched ?? await this.messages(sessionId)
+    assertLiveEvidenceTarget(messages, messageId)
+    const evidence = buildSkillEvidence(messages, sessionId, messageId, this.options, manual, 2, this.catalog())
     attachSkillEvidenceRef(this.project, key, persistSkillEvidence(this.project, evidence))
+  }
+
+  private async snapshotCompactSession(sessionId: string, timeoutMs: number): Promise<void> {
+    const work = listSessionSkillLedgerWork(this.project, sessionId)
+    const records = [...work.pending, ...work.running]
+    let fetch: Promise<unknown> | undefined
+    const messages = () => {
+      fetch ??= this.messages(sessionId, timeoutMs)
+      return fetch
+    }
+    await Promise.all(records.map(async (record) => {
+      const inflight = this.snapshots.get(record.key)
+      if (inflight) {
+        await inflight
+        return
+      }
+      const latest = loadSkillLedger(this.project).records.find((item) => item.key === record.key)
+      if (latest?.evidence_ref) return
+      try {
+        await this.snapshotEvidence(
+          record.session_id,
+          record.message_id,
+          this.manualKeys.has(record.key),
+          await messages(),
+        )
+      } catch (error) {
+        this.log("error", `skill-evolution compact snapshot failed: ${formatSdkError(error)}`)
+      }
+    }))
   }
 
   private async ensureEvidenceSnapshot(record: SkillLedgerRecord, manual: boolean): Promise<void> {
@@ -462,15 +492,14 @@ export class SkillEvolutionRuntime {
 
   async compactSession(sessionId: string): Promise<string | null> {
     if (!this.options.enabled) return null
-    const work = listSessionSkillLedgerWork(this.project, sessionId)
-    await Promise.all([...work.pending, ...work.running].map((record) => {
-      const inflight = this.snapshots.get(record.key)
-      if (inflight) return inflight
-      if (record.evidence_ref) return Promise.resolve()
-      return this.snapshotEvidence(record.session_id, record.message_id, this.manualKeys.has(record.key)).catch((error) => {
-        this.log("error", `skill-evolution compact snapshot failed: ${formatSdkError(error)}`)
-      })
-    }))
+    const timeoutMs = Math.min(this.childCallTimeoutMs, COMPACT_SESSION_TIMEOUT_MS)
+    try {
+      await this.boundedChildCall("compactSession snapshots", async () => {
+        await this.snapshotCompactSession(sessionId, timeoutMs)
+      }, timeoutMs)
+    } catch (error) {
+      this.log("warn", `skill-evolution compact snapshot failed: ${formatSdkError(error)}`)
+    }
     const refreshed = listSessionSkillLedgerWork(this.project, sessionId)
     const candidates = loadSkillCandidates(this.project)
     if (!refreshed.pending.length && !refreshed.running.length && !candidates.candidates.length && !this.restartRequired) {
@@ -689,7 +718,12 @@ export class SkillEvolutionRuntime {
       evidenceRef = persistSkillEvidence(this.project, evidence)
       attachSkillEvidenceRef(this.project, key, evidenceRef)
     }
-    const informative = isInformativeSkillTurn(evidence.trigger_score, evidence.trigger_labels, this.options.minimumTriggerScore)
+    const informative = isInformativeSkillTurn(
+      evidence.trigger_score,
+      evidence.trigger_labels,
+      this.options.minimumTriggerScore,
+      this.options.mode,
+    )
     if (!manual && (this.options.mode === "triggered" || this.options.skipUninformativeAudits) && !informative) {
       if (stopped()) return
       markLiveSkillLedgerOutcome(this.project, key, {

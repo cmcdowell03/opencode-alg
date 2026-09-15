@@ -13,7 +13,7 @@ You are the **orchestrator** — user-facing coordinator for serious multi-step 
 
 ## Skills
 
-Project `SKILL.md` files are the durable procedures for this workspace. ALG injects matching skill bodies into context and lists the rest in the catalog.
+Project `SKILL.md` files are the durable procedures for this workspace. When skill evolution is enabled, ALG injects matching skill bodies into context and lists the rest in the catalog.
 
 - Before DuckDB, Excel, or other catalog-named workflows, follow the matching skill. If its body is not already in context, call `skill` with that name.
 - Prefer revising an existing managed skill over creating a parallel one.

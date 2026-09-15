@@ -123,9 +123,10 @@
   it never promotes/deletes skills or changes global configuration. V2 and
   effectiveness benchmarking remain deferred.
 - Existing `SKILL.md` files under configured `skillRoots` are the managed
-  catalog. Matching bodies are injected into chat system context and compaction.
-  OpenCode config skills may be observed for use but are not revised. Auditors
-  prefer `no_change` or `skill_revision` over creating a duplicate name.
+  catalog. Matching bodies are injected into chat system context and compaction
+  only while `skillEvolution.enabled` is true. OpenCode config skills may be
+  observed for use but are not revised. Auditors prefer `no_change` or
+  `skill_revision` over creating a duplicate name.
 - Automatic intake accepts only successful, non-summary completed assistant
   `message.updated` events. It durably keys exact session/assistant-message IDs;
   duplicate post-processing events retain one record. It ignores idle/part/user/
@@ -136,10 +137,12 @@
   interruption may replay one audit within `maxAttempts` if no terminal result
   was committed.
 - `triggered` mode scores/redacts/bounds evidence before model work and records
-  below-threshold turns as `no-change` with no call. `every-turn` still records
-  every eligible completion; with `skipUninformativeAudits` (default true) it
-  skips the auditor model call unless the turn is informative, including an
-  unused catalog skill or a user correction. A manual `alg_skill_evolution_audit`
+  below-threshold turns as `no-change` with no call. `applicable_skill_unused`
+  may still label that evidence; it does not force an auditor in `triggered`
+  mode. `every-turn` still records every eligible completion; with
+  `skipUninformativeAudits` (default true) it skips the auditor model call
+  unless the turn is informative, including an unused catalog skill or a user
+  correction. A manual `alg_skill_evolution_audit`
   also bypasses the threshold; omitted IDs mean the current session/latest
   eligible completion.
   `force=true` is allowed only for an existing failed/no-change key and remains
@@ -153,7 +156,9 @@
   separate OpenCode server processes. Backlog overflow and ledger capacity are
   explicit durable failures, never silent drops.
 - Evidence is snapshotted at enqueue and again at `experimental.session.compacting`
-  for pending/running identities in that session. Process prefers the durable
+  for pending/running identities in that session. Compact snapshots share one
+  `session.messages` fetch per session and the hook is time-bounded below the
+  child-call timeout. Joined hook `context` is capped. Process prefers the durable
   snapshot. A live re-fetch uses `limit: 100 + 1` and rejects overflow without
   building evidence; a missing target ID is `compacted_or_unavailable`. Evidence
   keeps at most 24 tool summaries, uses explicit UTF-8 omission counts, and

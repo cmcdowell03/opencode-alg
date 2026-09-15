@@ -20,11 +20,15 @@
 - Skill evolution reads existing `SKILL.md` files from configured roots (and
   observes OpenCode config skills for use). Evidence includes that catalog.
   Auditors prefer `no_change` or `skill_revision` over duplicate creates.
-- Matching skill bodies are injected into chat system context and compaction so
-  catalog skills are followed. `applicable_skill_unused` fires when related
-  tools run without loading the skill.
+- Matching skill bodies are injected into chat system context and compaction only
+  when `skillEvolution.enabled` is true. `applicable_skill_unused` still labels
+  evidence; it does not spawn an auditor in `triggered` mode (humans /
+  `every-turn` only).
 - `skipUninformativeAudits` defaults true: `every-turn` still records, but skips
   auditor model calls on uninformative turns.
+- `compactSession` snapshots share one `session.messages` fetch per session and
+  the compacting hook is time-bounded below the child-call timeout. Joined
+  `output.context` is capped, not only each chunk.
 
 ## 0.4.1
 

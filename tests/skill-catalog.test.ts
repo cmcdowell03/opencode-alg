@@ -9,6 +9,7 @@ import {
   isInformativeSkillTurn,
   loadSkillCatalog,
   matchSkills,
+  SkillGuidance,
 } from "../src/skill-catalog.ts"
 import { buildSkillEvidence } from "../src/skill-evolution-evidence.ts"
 import { SkillEvolutionOptionsSchema } from "../src/skill-evolution-schemas.ts"
@@ -106,6 +107,22 @@ describe("skill catalog", () => {
       })
       expect(evidence.trigger_labels).toContain("applicable_skill_unused")
       expect(isInformativeSkillTurn(evidence.trigger_score, evidence.trigger_labels, 3)).toBe(true)
+      expect(isInformativeSkillTurn(evidence.trigger_score, evidence.trigger_labels, 3, "triggered")).toBe(false)
+    } finally {
+      removeProject(project)
+    }
+  })
+
+  test("SkillGuidance does not inject catalog text when evolution is disabled", () => {
+    const project = tempProject("alg-skill-disabled-inject-")
+    try {
+      writeSkill(project, "duckdb-lake", "Use when running project-local DuckDB lake queries through alg_duckdb_query.", "Call `alg_duckdb_query`.")
+      const disabled = new SkillGuidance(project, SkillEvolutionOptionsSchema.parse({ enabled: false }))
+      disabled.observeChatMessages([
+        { info: { role: "user", sessionID: "session" }, parts: [{ type: "text", text: "query the lake" }] },
+      ])
+      expect(disabled.systemContext("session")).toBe("")
+      expect(disabled.compactionContext()).toBe("")
     } finally {
       removeProject(project)
     }

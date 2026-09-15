@@ -2,6 +2,7 @@ import type { RunState } from "./types.ts"
 import { truncateUtf8, utf8Bytes } from "./limits.ts"
 
 export const MAX_COMPACTION_CONTEXT_BYTES = 16 * 1024
+export const MAX_COMPACTION_OUTPUT_BYTES = 32 * 1024
 export const COMPACTION_GOAL_CHARS = 1_000
 export const COMPACTION_CRITERIA_COUNT = 20
 export const COMPACTION_CRITERION_CHARS = 300
@@ -95,4 +96,16 @@ export function formatSkillEvolutionCompactionContext(input: SkillEvolutionCompa
   if (utf8Bytes(context) <= MAX_COMPACTION_CONTEXT_BYTES) return context
   const suffix = "\n[ALG skill-evolution compaction summary truncated]"
   return `${truncateUtf8(context, MAX_COMPACTION_CONTEXT_BYTES - utf8Bytes(suffix))}${suffix}`
+}
+
+export function capCompactionOutputContext(
+  context: string[],
+  maximumBytes = MAX_COMPACTION_OUTPUT_BYTES,
+): void {
+  const joined = context.join("\n")
+  if (utf8Bytes(joined) <= maximumBytes) return
+  const suffix = "\n[ALG compaction context truncated]"
+  const text = `${truncateUtf8(joined, Math.max(0, maximumBytes - utf8Bytes(suffix)))}${suffix}`
+  context.length = 0
+  context.push(text)
 }
