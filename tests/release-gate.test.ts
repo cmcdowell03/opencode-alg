@@ -254,6 +254,7 @@ describe("bounded release-gate evidence", () => {
     const sourcePaths = verificationPluginConfiguration(ROOT).source.manifest.map((entry) => entry.path)
     const packedPaths = expectedPackedPaths(ROOT)
     for (const path of [
+      "src/skill-catalog.ts",
       "src/skill-evolution-evidence.ts",
       "src/skill-evolution-historical.ts",
       "src/skill-evolution-redaction.ts",

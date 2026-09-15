@@ -107,6 +107,7 @@ export function createSkillEvolutionTools(runtime: SkillEvolutionRuntime) {
             enabled: runtime.options.enabled,
             detail,
             restart_required: runtimeState.restart_required,
+            catalog: runtimeState.catalog,
             config: runtime.options,
             queue: {
               concurrency: 1,

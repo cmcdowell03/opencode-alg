@@ -34,11 +34,16 @@ import {
   saveModelSettings,
 } from "../src/models.ts"
 import {
+  capCompactionOutputContext,
   formatCompactionContext,
+  formatSkillEvolutionCompactionContext,
   MAX_COMPACTION_CONTEXT_BYTES,
+  MAX_COMPACTION_OUTPUT_BYTES,
   selectCompactionRun,
 } from "../src/compaction.ts"
 import serverModule from "../src/server.ts"
+import { enqueueSkillAudit, skillLedgerKey } from "../src/skill-evolution-store.ts"
+import { SkillEvolutionOptionsSchema } from "../src/skill-evolution-schemas.ts"
 import { executeContext, inertClient, removeProject, tempProject } from "./helpers.ts"
 
 function toolContext(project: string, sessionID = "owner") {
@@ -372,6 +377,18 @@ describe("architecture audit remediation", () => {
     }
   })
 
+  test("compaction output join is capped across chunks", () => {
+    const context = [
+      "a".repeat(MAX_COMPACTION_CONTEXT_BYTES),
+      "b".repeat(MAX_COMPACTION_CONTEXT_BYTES),
+      "c".repeat(4 * 1024),
+    ]
+    expect(utf8Bytes(context.join("\n"))).toBeGreaterThan(MAX_COMPACTION_OUTPUT_BYTES)
+    capCompactionOutputContext(context)
+    expect(utf8Bytes(context.join("\n"))).toBeLessThanOrEqual(MAX_COMPACTION_OUTPUT_BYTES)
+    expect(context.join("\n")).toContain("[ALG compaction context truncated]")
+  })
+
   test("listing, explicit access, and compaction never mutate another owner's runs", async () => {
     const project = tempProject()
     try {
@@ -446,10 +463,103 @@ describe("architecture audit remediation", () => {
 
       const output = { context: [] as string[] }
       await hooks["experimental.session.compacting"]!({ sessionID: "bob" } as never, output as never)
-      expect(output.context).toHaveLength(1)
-      expect(output.context[0]).toContain(bob.run_id)
+      expect(output.context.some((text: string) => text.includes(bob.run_id))).toBe(true)
+      expect(output.context.length).toBeGreaterThanOrEqual(1)
+      expect(output.context.length).toBeLessThanOrEqual(3)
       expect(snapshotDirectory(aliceDirectory)).toEqual(beforeAlice)
       expect(snapshotDirectory(corruptDirectory)).toEqual(beforeCorrupt)
+    } finally {
+      removeProject(project)
+    }
+  })
+
+  test("disabled skill evolution does not inject SKILL.md into chat or compact context", async () => {
+    const project = tempProject()
+    try {
+      mkdirSync(join(project, ".opencode", "skills", "duckdb-lake"), { recursive: true })
+      writeFileSync(join(project, ".opencode", "skills", "duckdb-lake", "SKILL.md"),
+        "---\nname: duckdb-lake\ndescription: Use when running project-local DuckDB lake queries.\n---\n\nCall `alg_duckdb_query`.\n")
+      const hooks = await serverModule.server({
+        client: inertClient(),
+        project: { id: "project" },
+        directory: project,
+        worktree: project,
+      } as never)
+      await hooks["experimental.chat.messages.transform"]!({} as never, {
+        messages: [{ info: { sessionID: "owner", role: "user" }, parts: [{ type: "text", text: "query the lake" }] }],
+      } as never)
+      const system = { system: [] as string[] }
+      await hooks["experimental.chat.system.transform"]!({ sessionID: "owner" } as never, system as never)
+      expect(system.system.join("\n")).not.toContain("ALG skills")
+      expect(system.system.join("\n")).not.toContain("duckdb-lake")
+      const output = { context: [] as string[] }
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" } as never, output as never)
+      expect(output.context.join("\n")).not.toContain("ALG skills")
+      expect(output.context.join("\n")).not.toContain("duckdb-lake")
+      await hooks.dispose?.()
+    } finally {
+      removeProject(project)
+    }
+  })
+
+  test("compacting hook logs run-store failures instead of swallowing them", async () => {
+    const project = tempProject()
+    try {
+      const logs: any[] = []
+      const hooks = await serverModule.server({
+        client: {
+          app: { log: async (request: any) => { logs.push(request); return { data: true, error: undefined } } },
+          session: { create: async () => { throw new Error("unused") }, prompt: async () => { throw new Error("unused") } },
+        },
+        project: { id: "project" },
+        directory: project,
+        worktree: project,
+      } as never)
+      const runs = join(project, ".opencode", "runs")
+      mkdirSync(join(project, ".opencode"), { recursive: true })
+      writeFileSync(runs, "not-a-directory", "utf8")
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" } as never, { context: [] } as never)
+      expect(logs.some((entry) => String(entry.body?.message ?? "").includes("ALG compaction hook failed"))).toBe(true)
+      await hooks.dispose?.()
+    } finally {
+      removeProject(project)
+    }
+  })
+
+  test("compacting hook includes skill-evolution pointers when the store has pending rows", async () => {
+    const project = tempProject()
+    try {
+      const options = SkillEvolutionOptionsSchema.parse({ enabled: true, allowBuiltinToolMap: true, mode: "every-turn" })
+      const queued = enqueueSkillAudit(project, "owner", "assistant-owner", options)
+      expect(queued.enqueued).toBe(true)
+      const logs: any[] = []
+      const hooks = await serverModule.server({
+        client: {
+          app: { log: async (request: any) => { logs.push(request); return { data: true, error: undefined } } },
+          session: {
+            get: async () => new Promise(() => {}),
+            messages: async () => ({ data: [], error: undefined }),
+            create: async () => new Promise(() => {}),
+            prompt: async () => new Promise(() => {}),
+          },
+        },
+        project: { id: "project" },
+        directory: project,
+        worktree: project,
+      } as never, { skillEvolution: { enabled: true, allowBuiltinToolMap: true, mode: "every-turn" } })
+      const output = { context: [] as string[] }
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" } as never, output as never)
+      expect(output.context.some((entry) => entry.includes(".opencode/skill-evolution/"))).toBe(true)
+      expect(output.context.some((entry) => entry.includes(skillLedgerKey("owner", "assistant-owner")))).toBe(true)
+      expect(output.context.some((entry) => entry.includes("historical-only"))).toBe(true)
+      expect(utf8Bytes(output.context.join("\n"))).toBeLessThanOrEqual(MAX_COMPACTION_OUTPUT_BYTES)
+      expect(formatSkillEvolutionCompactionContext({
+        pendingKeys: [queued.record.key],
+        runningKeys: [],
+        candidateCount: 0,
+        restartRequired: false,
+      })).toContain(queued.record.key)
+      await hooks.dispose?.()
     } finally {
       removeProject(project)
     }

@@ -12,11 +12,13 @@ import { createAlgTools } from "./tools.ts"
 import { findLatestIncompleteRunForSession } from "./store.ts"
 import { configuredAgentModels, configuredModelResolutions } from "./models.ts"
 import type { AgentModelMap, ModelResolutionMap } from "./types.ts"
-import { formatCompactionContext } from "./compaction.ts"
+import { capCompactionOutputContext, formatCompactionContext } from "./compaction.ts"
+import { formatSdkError } from "./diagnostics.ts"
 import { verifiedLiveSourceIdentity } from "./source-identity.ts"
 import { parseSkillEvolutionOptions } from "./skill-evolution-schemas.ts"
 import { createSkillEvolutionRuntime } from "./skill-evolution-runtime.ts"
 import { createSkillEvolutionTools } from "./skill-evolution-tools.ts"
+import { observedConfigSkillRoots, SkillGuidance } from "./skill-catalog.ts"
 
 const server: Plugin = async (ctx, pluginOptions) => {
   const { client, directory } = ctx
@@ -40,8 +42,11 @@ const server: Plugin = async (ctx, pluginOptions) => {
     () => structuredClone(configuredModels),
     () => structuredClone(modelResolutions),
   )
+  const extraSkillRoots = observedConfigSkillRoots()
+  const skillGuidance = new SkillGuidance(ctx.worktree || directory, skillEvolutionOptions, extraSkillRoots)
   const skillEvolution = createSkillEvolutionRuntime(ctx, {
     options: skillEvolutionOptions,
+    extraSkillRoots,
     configuredModels: () => structuredClone(configuredModels),
     configuredResolutions: () => structuredClone(modelResolutions),
   })
@@ -81,14 +86,48 @@ const server: Plugin = async (ctx, pluginOptions) => {
       modelResolutions = configuredModelResolutions(config)
     },
 
-    "experimental.session.compacting": async (input, output) => {
+    "experimental.chat.messages.transform": async (_input, output) => {
       try {
-        const run = findLatestIncompleteRunForSession(ctx.worktree || directory, input.sessionID)
-        if (!run) return
-        output.context.push(formatCompactionContext(run))
+        skillGuidance.observeChatMessages(output.messages)
       } catch {
         /* non-fatal */
       }
+    },
+
+    "experimental.chat.system.transform": async (input, output) => {
+      try {
+        const context = skillGuidance.systemContext(input.sessionID)
+        if (context) output.system.push(context)
+      } catch {
+        /* non-fatal */
+      }
+    },
+
+    "experimental.session.compacting": async (input, output) => {
+      const logCompactionFailure = (message: string) => {
+        try {
+          Promise.resolve(client.app.log({
+            body: { service: ALG_PLUGIN_ID, level: "error", message },
+          })).catch(() => {})
+        } catch {
+          /* log optional */
+        }
+      }
+      try {
+        const skills = skillGuidance.compactionContext()
+        if (skills) output.context.push(skills)
+        const run = findLatestIncompleteRunForSession(ctx.worktree || directory, input.sessionID)
+        if (run) output.context.push(formatCompactionContext(run))
+      } catch (error) {
+        logCompactionFailure(`ALG compaction hook failed: ${formatSdkError(error)}`)
+      }
+      try {
+        const context = await skillEvolution.compactSession(input.sessionID)
+        if (context) output.context.push(context)
+      } catch (error) {
+        logCompactionFailure(`ALG skill-evolution compaction hook failed: ${formatSdkError(error)}`)
+      }
+      capCompactionOutputContext(output.context)
     },
   }
 }

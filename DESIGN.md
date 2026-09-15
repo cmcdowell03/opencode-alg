@@ -84,7 +84,7 @@ The server plugin installs:
 - a `tool` map containing the exact 15 ordered `alg_*` IDs below;
 - a `config` hook that captures merged OpenCode model configuration for future plans;
 - an event hook and disposable project runtime for disabled-by-default skill evolution; and
-- `experimental.session.compacting`, which injects a deterministic-by-state, bounded summary of the latest incomplete run owned by that parent session. This summary does not copy child reasoning.
+- `experimental.session.compacting`, which injects a deterministic-by-state, bounded summary of the latest incomplete run owned by that parent session, matching SKILL.md catalog text when skill evolution is enabled, plus bounded skill-evolution pointers when that store has pending/running work. Joined hook context is capped. Hook failures are logged and do not block host compact. These summaries do not copy child reasoning.
 
 The TUI plugin registers two palette/slash commands and emits a bounded registration marker. Verification-only source identity is described under [Safety boundaries](#source-bound-release-identity).
 
@@ -101,7 +101,7 @@ The TUI plugin registers two palette/slash commands and emits a bounded registra
 | `alg_resume` | Reconcile interrupted state and execute more bounded waves without resetting counters. |
 | `alg_artifact` | Read a node’s current typed output as compact metadata/preview or full content. |
 | `alg_transfer` | Validate a target OpenCode session and append an audited ownership transfer. |
-| `alg_skill_evolution_status` | Inspect strict options, queue/ledger totals, transaction recovery, and bounded candidate details. |
+| `alg_skill_evolution_status` | Inspect strict options, queue/ledger totals, pending-journal health, and bounded candidate details. |
 | `alg_skill_evolution_audit` | Idempotently enqueue a manual audit for an eligible completed assistant message in this project. |
 | `alg_skill_evolution_historical` | Discover, seal, confirm, process, resume, inspect, or cancel V1 bounded historical snapshots. |
 | `alg_skill_evolution_review` | Reject or restore a candidate while preserving its immutable checker disposition. |
@@ -141,11 +141,13 @@ These are packaged defaults, not a permission guarantee. The installer adds no t
 levels reject unknown keys. The resolved defaults are disabled, `triggered`
 mode, `.opencode/skills`, one queue worker, 16 KiB evidence, 64 KiB candidate
 content, 100 candidates, 1,024 ledger records, backlog 32, trigger threshold 3,
-and two total attempts. The selectable agents and concurrency are deliberately
-fixed to `researcher`, `checker`, and `1`; all numeric settings have finite
-schema bounds. Plugin options load at startup, so changing the tuple requires an
-OpenCode restart. A string registration remains disabled, and installers never
-opt a user in.
+and two total attempts. `allowBuiltinToolMap` defaults to false and is required
+for auditor/checker model calls on the pinned V1 SDK; without it, live intake
+does not enqueue identities that can only fail. The selectable agents and
+concurrency are deliberately fixed to `researcher`, `checker`, and `1`; all
+numeric settings have finite schema bounds. Plugin options load at startup, so
+changing the tuple requires an OpenCode restart. A string registration remains
+disabled, and installers never opt a user in.
 
 Historical initialization is independently disabled unless
 `skillEvolution.historical.enabled` is true. Its V1-only guarantee is
@@ -167,11 +169,16 @@ effectiveness benchmarking are deferred.
 The event callback is fire-and-forget and deliberately performs only synchronous
 filtering plus a durable enqueue. It ignores `session.idle`, step/part events,
 user messages, summaries, errored assistants, incomplete messages, invalid
-completion times, deleted sessions, and registered/private audit children. A
-successful non-summary completed assistant `message.updated` is keyed as
-`SHA-256(session_id NUL assistant_message_id)`. The ledger records that key
-before asynchronous model work. Duplicate terminal or post-processing events
-therefore retain one durable record across restart.
+completion times, deleted sessions, `alg:` executor children, and
+registered/private audit children. Live intake keeps ignoring `summary:true`
+recaps; post-compact summaries are historical-only. `session.deleted` is
+persisted and cancels queued rows for that session. When model calls are
+blocked, intake does not enqueue. A successful non-summary completed assistant
+`message.updated` is keyed as `SHA-256(session_id NUL assistant_message_id)`.
+The ledger records that key before asynchronous model work, and a bounded
+evidence snapshot is started immediately so host compact cannot drop the turn
+before process runs. Duplicate terminal or post-processing events therefore
+retain one durable record across restart.
 
 This is **deduplicated intake, not exactly-once model execution**. A process can
 stop after creating/prompting a child but before recording its result. Startup
@@ -187,11 +194,15 @@ processes, so `queueConcurrency:1` is not a distributed project-wide lease.
 
 ### Evidence and auditor boundary
 
-Processing re-fetches the target session in the plugin directory, requires the
+Processing prefers a durable pre-compact evidence snapshot when one exists,
+otherwise re-fetches the target session in the plugin directory, requires the
 SDK project identity when available, and realpath-confines its directory to the
-current project. It reads at most 100 message envelopes, selects the final
-envelope for the exact completed assistant ID, and requires its exact direct
-parent user message. It does not summarize an arbitrary conversation window.
+current project. The live read uses `100 + 1` envelopes and rejects overflow
+without truncation; a missing target ID is `compacted_or_unavailable`, not a
+generic failure. It selects the final envelope for the exact completed
+assistant ID and requires its exact direct parent user message. It does not
+summarize an arbitrary conversation window. `evidence_id` includes `created_at`
+and is not a content address of the turn.
 Evidence includes provenance timestamps/IDs, source agent/model labels, bounded
 user/assistant excerpts, and at most 24 bounded tool summaries. Credential-like
 keys, obvious token/private-key forms, control data, and common absolute local
@@ -204,10 +215,22 @@ redaction cannot prove that all secrets or identifying data were removed. The
 auditor prompt labels the evidence untrusted and instructs the model not to
 obey it, but prompt-injection resistance is not assumed.
 
+Live evidence also includes a bounded catalog of existing `SKILL.md` files from
+configured project roots, plus optional observed OpenCode config skills that
+cannot be revised. When `skillEvolution.enabled` is true, matching skill bodies
+are injected into chat system context and compaction so the parent agent follows
+those files instead of rediscovering the procedure. `applicable_skill_unused` is
+scored when a managed catalog skill's related tools ran without a `skill` load;
+that label stays on evidence and may force an auditor in `every-turn` or a
+manual audit, but not in `triggered` mode.
+
 In `triggered` mode, deterministic labels/scores are computed before model work;
-an automatic item below `minimumTriggerScore` becomes `no-change` without a
-child. `every-turn` and manual audit proceed regardless of that threshold. An
-audit creates a fresh child of the source session with a private random title,
+an automatic item below `minimumTriggerScore` (excluding unused-catalog-skill
+points) becomes `no-change` without a child. `every-turn` still records every
+eligible completion. With `skipUninformativeAudits` (default true), it skips
+the auditor model call unless the turn is informative. Manual audit proceeds
+regardless of that threshold. An audit creates a fresh child of the source
+session with a private random title,
 uses the configured `researcher` role/model resolution at processing time, and
 sets the known shell/edit/read/search/task/skill/web/question tools to false.
 Prompt and response text are separately bounded. The returned object must match
@@ -291,8 +314,10 @@ atomic compare-identity/hash-and-unlink primitive, so a final instruction-window
 race from a non-cooperating writer cannot be eliminated; detected third states
 are preserved.
 
-Startup and `alg_skill_evolution_status` run bounded transaction recovery when
-the feature is enabled. An exact before-state transaction is cleaned without
+Startup and the mutating review/promote/rollback tools run bounded transaction
+recovery when the feature is enabled. `alg_skill_evolution_status` is
+inspect-only: it reports pending journals through `doctor.recovery` without
+repairing files. An exact before-state transaction is cleaned without
 applying the proposal. If a crash left the public target absent with an exact old
 claim, recovery restores the old hard link create-if-absent rather than guessing
 forward. If exact proposed/backup bytes are already public but candidate state
@@ -338,10 +363,11 @@ skill until restart.
 | `src/global-model-config.ts` | `/alg-models` global API updates and fail-closed local JSONC deletion path. |
 | `src/config-editor.ts` | Encoding-aware, comment-preserving JSONC plans, backups, atomic replacement, transactional rollback. |
 | `src/diagnostics.ts` | Bounded SDK diagnostics and credential/content/header redaction. |
-| `src/compaction.ts` | Bounded active-run context for the server compaction hook. |
+| `src/compaction.ts` | Bounded active-run and skill-evolution context for the server compaction hook. |
 | `src/tools.ts` | Core DAG/run/model public tool schemas, ownership/root checks, compact/full response projection. |
 | `src/skill-evolution-schemas.ts` | Strict plugin options plus evidence, auditor/checker, ledger, candidate, revision, and transaction contracts. |
-| `src/skill-evolution-evidence.ts` | Exact-turn selection, trigger scoring, redaction, UTF-8 bounds, and canonical evidence identity. |
+| `src/skill-catalog.ts` | Bounded SKILL.md listing, matching, system/compaction injection, and catalog evidence. |
+| `src/skill-evolution-evidence.ts` | Exact-turn selection, trigger scoring, redaction, UTF-8 bounds, catalog coverage, and canonical evidence identity. |
 | `src/skill-evolution-runtime.ts` | Event filtering, durable enqueue, serialized audit queue, fresh no-tools children, and recursion exclusion. |
 | `src/skill-evolution-historical.ts` | V1 historical discovery, stable snapshot sealing, confirmed bounded execution, checkpoints, and coverage publication. |
 | `src/skill-evolution-store.ts` | Project store, immutable references, candidate CAS, contained promotion/rollback, and transaction recovery. |

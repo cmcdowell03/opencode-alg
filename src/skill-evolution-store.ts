@@ -56,7 +56,10 @@ import {
 const STORE_RELATIVE = ".opencode/skill-evolution"
 const LEDGER_FILE = "ledger.json"
 const CANDIDATE_FILE = "candidates.json"
+const SESSION_EXCLUSIONS_FILE = "session-exclusions.json"
 const MAX_CHILDREN = 1_000
+const MAX_EXCLUDED_SESSIONS = 4_096
+export const SESSION_DELETED_ERROR = "session was deleted"
 const MAX_EVIDENCE_FILE_BYTES = 32_768
 const REVIEW_CLAIMS_FILE = "review-claims.json"
 // One confirmed plan can name 32 sessions with 2,000 assistant identities
@@ -76,6 +79,15 @@ const ReviewClaimSchema = z.object({
 }).strict()
 type ReviewClaim = z.infer<typeof ReviewClaimSchema>
 const ReviewClaimsSchema = z.object({ schema_version: z.literal(1), kind: z.literal("skill_evolution_review_claims"), revision: z.number().int().nonnegative(), claims: z.array(ReviewClaimSchema).max(MAX_REVIEW_CLAIMS), updated_at: z.iso.datetime({ offset: true }) }).strict()
+const SessionExclusionsSchema = z.object({
+  schema_version: z.literal(1),
+  kind: z.literal("skill_evolution_session_exclusions"),
+  revision: z.number().int().nonnegative(),
+  deleted: z.array(z.string().min(1).max(256)).max(MAX_EXCLUDED_SESSIONS),
+  alg_executors: z.array(z.string().min(1).max(256)).max(MAX_EXCLUDED_SESSIONS),
+  updated_at: z.iso.datetime({ offset: true }),
+}).strict()
+type SessionExclusions = z.infer<typeof SessionExclusionsSchema>
 
 function loadReviewClaims(project: string): z.infer<typeof ReviewClaimsSchema> {
   const path = storePath(project, REVIEW_CLAIMS_FILE)
@@ -93,6 +105,82 @@ function saveReviewClaimsLocked(project: string, value: z.infer<typeof ReviewCla
 
 function claimActive(claim: ReviewClaim, now = Date.now()): boolean {
   return claim.state === "active" && Date.parse(claim.expires_at) > now
+}
+
+function emptySessionExclusions(): SessionExclusions {
+  return {
+    schema_version: 1, kind: "skill_evolution_session_exclusions", revision: 0,
+    deleted: [], alg_executors: [], updated_at: new Date(0).toISOString(),
+  }
+}
+
+function loadSessionExclusions(project: string): SessionExclusions {
+  const path = storePath(project, SESSION_EXCLUSIONS_FILE)
+  if (!existsSync(path)) return emptySessionExclusions()
+  return SessionExclusionsSchema.parse(readBoundedJson(path))
+}
+
+function saveSessionExclusionsLocked(project: string, value: SessionExclusions): SessionExclusions {
+  const next = SessionExclusionsSchema.parse({ ...value, revision: value.revision + 1, updated_at: nowIso() })
+  const bytes = `${JSON.stringify(next, null, 2)}\n`
+  if (Buffer.byteLength(bytes) > SKILL_EVOLUTION_MAX_JSON_BYTES) throw new Error("skill-evolution session exclusions exceed aggregate bound")
+  atomicWriteFile(storePath(project, SESSION_EXCLUSIONS_FILE), bytes, true)
+  return next
+}
+
+function rememberExcludedSessionLocked(project: string, list: "deleted" | "alg_executors", sessionId: string): void {
+  const exclusions = loadSessionExclusions(project)
+  if (exclusions[list].includes(sessionId)) return
+  if (exclusions[list].length >= MAX_EXCLUDED_SESSIONS) exclusions[list].shift()
+  exclusions[list].push(sessionId)
+  saveSessionExclusionsLocked(project, exclusions)
+}
+
+export function listDeletedSkillSessions(project: string): string[] {
+  return [...loadSessionExclusions(project).deleted]
+}
+
+export function isDeletedSkillSession(project: string, sessionId: string): boolean {
+  return loadSessionExclusions(project).deleted.includes(sessionId)
+}
+
+export function isAlgExecutorSession(project: string, sessionId: string): boolean {
+  return loadSessionExclusions(project).alg_executors.includes(sessionId)
+}
+
+export function recordAlgExecutorSession(project: string, sessionId: string): void {
+  withSkillEvolutionLock(project, "alg-executor", () => {
+    rememberExcludedSessionLocked(project, "alg_executors", sessionId)
+  })
+}
+
+export function recordDeletedSkillSession(project: string, sessionId: string): void {
+  withSkillEvolutionLock(project, "session-deleted", () => {
+    rememberExcludedSessionLocked(project, "deleted", sessionId)
+    const ledger = loadSkillLedger(project)
+    const claims = loadReviewClaims(project)
+    let changed = false
+    let claimsChanged = false
+    for (const record of ledger.records) {
+      if (record.session_id !== sessionId || (record.status !== "pending" && record.status !== "running")) continue
+      record.status = "failed"
+      record.error = SESSION_DELETED_ERROR
+      record.updated_at = nowIso()
+      const claim = claims.claims.find((item) => item.owner_kind === "live" && item.owner_work_id === record.key && item.state === "active")
+      if (claim) { claim.state = "failed"; claim.updated_at = nowIso(); claimsChanged = true }
+      changed = true
+    }
+    if (claimsChanged) saveReviewClaimsLocked(project, claims)
+    if (changed) saveLedger(project, ledger, ledger.revision)
+  })
+}
+
+export function listSessionSkillLedgerWork(project: string, sessionId: string): { pending: SkillLedgerRecord[]; running: SkillLedgerRecord[] } {
+  const records = loadSkillLedger(project).records.filter((record) => record.session_id === sessionId)
+  return {
+    pending: records.filter((record) => record.status === "pending"),
+    running: records.filter((record) => record.status === "running"),
+  }
 }
 
 function recoverableHistoricalBlock(record: SkillLedgerRecord): boolean {
@@ -709,6 +797,16 @@ export function recoverPendingSkillAudits(projectDirectory: string, options: Ski
       }
       record.updated_at = nowIso()
     }
+    const exclusions = loadSessionExclusions(projectDirectory)
+    for (const record of ledger.records) {
+      if ((record.status !== "pending" && record.status !== "running") || !exclusions.deleted.includes(record.session_id)) continue
+      record.status = "failed"
+      record.error = SESSION_DELETED_ERROR
+      record.updated_at = nowIso()
+      const abandoned = claims.claims.find((claim) => claim.owner_kind === "live" && claim.owner_work_id === record.key && claim.state === "active")
+      if (abandoned) { abandoned.state = "failed"; abandoned.updated_at = nowIso(); claimsChanged = true }
+      changed = true
+    }
     if (claimsChanged) saveReviewClaimsLocked(projectDirectory, claims)
     for (const record of ledger.records) {
       if (!recoverableHistoricalBlock(record)) continue
@@ -1109,6 +1207,22 @@ export function persistSkillEvidence(projectDirectory: string, evidence: SkillEv
     throw new Error("evidence immutable hash mismatch")
   }
   return { path: projectRelative(project, path), ...integrity }
+}
+
+export function attachSkillEvidenceRef(
+  projectDirectory: string,
+  key: string,
+  reference: { path: string; sha256: string; byte_size: number },
+): SkillLedgerRecord {
+  return withSkillEvolutionLock(projectDirectory, "evidence-attach", () => {
+    const ledger = loadSkillLedger(projectDirectory)
+    const record = ledger.records.find((item) => item.key === key)
+    if (!record) throw new Error("skill-evolution ledger record not found")
+    if (record.evidence_ref) return record
+    record.evidence_ref = reference
+    record.updated_at = nowIso()
+    return saveLedger(projectDirectory, ledger, ledger.revision).records.find((item) => item.key === key)!
+  })
 }
 
 export function loadEvidenceReference(projectDirectory: string, reference: { path: string; sha256: string; byte_size: number }): SkillEvidence {
@@ -2082,6 +2196,7 @@ export function inspectSkillCapacity(project: string) {
     [CANDIDATE_FILE, SKILL_EVOLUTION_MAX_JSON_BYTES],
     [HISTORICAL_INDEX_FILE, MAX_HISTORICAL_INDEX_BYTES],
     [REVIEW_CLAIMS_FILE, MAX_REVIEW_CLAIMS_BYTES],
+    [SESSION_EXCLUSIONS_FILE, SKILL_EVOLUTION_MAX_JSON_BYTES],
   ].map(([name, maximum]) => {
     const path = storePath(project, name as string)
     assertExistingDirectComponents(canonicalDirectory(project), path, "file")

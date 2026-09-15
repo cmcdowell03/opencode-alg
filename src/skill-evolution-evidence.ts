@@ -8,6 +8,13 @@ import {
   type SkillEvolutionOptions,
   type SkillTriggerLabel,
 } from "./skill-evolution-schemas.ts"
+import {
+  APPLICABLE_SKILL_UNUSED_POINTS,
+  catalogEvidenceField,
+  catalogTriggerLabels,
+  type SkillCatalog,
+  type SkillTurnHint,
+} from "./skill-catalog.ts"
 
 type MessageEnvelope = { info: Record<string, any>; parts: Array<Record<string, any>> }
 
@@ -91,11 +98,29 @@ function toolStatus(value: unknown): "pending" | "running" | "completed" | "erro
   return value === "pending" || value === "running" || value === "completed" || value === "error" ? value : "unknown"
 }
 
+function loadedSkillNames(
+  tools: Array<{ name: string; input: BoundedEvidenceText }>,
+): string[] {
+  const names: string[] = []
+  for (const tool of tools) {
+    if (!/skill/i.test(tool.name)) continue
+    try {
+      const parsed = JSON.parse(tool.input.excerpt)
+      if (parsed && typeof parsed.name === "string" && parsed.name.trim()) names.push(parsed.name.trim())
+    } catch {
+      const match = /"name"\s*:\s*"([^"]+)"/.exec(tool.input.excerpt)
+      if (match?.[1]) names.push(match[1])
+    }
+  }
+  return names
+}
+
 function scoreSignals(
   userText: string,
   assistantText: string,
   parts: Array<Record<string, any>>,
   tools: Array<{ name: string; status: string; input: BoundedEvidenceText; result: BoundedEvidenceText; error: BoundedEvidenceText }>,
+  catalog?: SkillCatalog,
 ): { score: number; labels: SkillTriggerLabel[] } {
   const labels: SkillTriggerLabel[] = []
   let score = 0
@@ -124,8 +149,18 @@ function scoreSignals(
     add("repeated_attempts", 2)
   }
   const completedTools = tools.filter((tool) => tool.status === "completed").length
-  if (completedTools >= 2 && /\b(?:passed|succeeded|works|working|repeatable|procedure|steps|workflow)\b/i.test(all)) {
-    add("reusable_successful_procedure", 2)
+  const successfulProcedure = completedTools >= 2 && /\b(?:passed|succeeded|works|working|repeatable|procedure|steps|workflow)\b/i.test(all)
+  const successfulCapability = tools.some((tool) =>
+    tool.status === "completed" && /^alg_(?:duckdb|excel)_/.test(tool.name) && /"ok"\s*:\s*true/.test(tool.result.excerpt))
+  if (successfulProcedure || successfulCapability) add("reusable_successful_procedure", 2)
+  if (catalog) {
+    const hint: SkillTurnHint = {
+      userText,
+      assistantText,
+      tools: tools.map((tool) => tool.name),
+      loadedSkills: loadedSkillNames(tools),
+    }
+    for (const label of catalogTriggerLabels(catalog, hint)) add(label, APPLICABLE_SKILL_UNUSED_POINTS)
   }
   return { score: Math.min(20, score), labels }
 }
@@ -147,6 +182,7 @@ export function buildSkillEvidence(
   options: SkillEvolutionOptions,
   manual = false,
   redactionPolicy: 1 | 2 = 2,
+  catalog?: SkillCatalog,
 ): SkillEvidence {
   const redactText = (value: unknown, limit: number) => redactEvidenceText(value, limit, redactionPolicy)
   if (!Array.isArray(messagesValue)) throw new Error("session messages response is not an array")
@@ -180,8 +216,15 @@ export function buildSkillEvidence(
   })
   let userText = redactText(rawUserText, Math.min(2_000, Math.floor(options.maxEvidenceBytes / 4)))
   let assistantText = redactText(rawAssistantText, Math.min(2_000, Math.floor(options.maxEvidenceBytes / 4)))
-  const signals = scoreSignals(rawUserText, rawAssistantText, assistant.parts, tools)
+  const signals = scoreSignals(rawUserText, rawAssistantText, assistant.parts, tools, catalog)
   if (manual && !signals.labels.includes("manual")) signals.labels.push("manual")
+  const hint: SkillTurnHint = {
+    userText: rawUserText,
+    assistantText: rawAssistantText,
+    tools: tools.map((tool) => tool.name),
+    loadedSkills: loadedSkillNames(tools),
+  }
+  let catalogField = catalog ? catalogEvidenceField(catalog, hint) : undefined
 
   const provenance = {
     session_id: sessionId,
@@ -210,6 +253,7 @@ export function buildSkillEvidence(
       user_text: userText,
       assistant_text: assistantText,
       tools,
+      ...(catalogField ? { catalog: catalogField } : {}),
       trigger_score: signals.score,
       trigger_labels: signals.labels,
       truncation: {
@@ -224,7 +268,13 @@ export function buildSkillEvidence(
 
   // Tool evidence is least important. Reduce it until the strict aggregate
   // bound is met, then reduce the two text excerpts if fixed metadata dominates.
-  while (tools.length && serializedBytes({ ...make(), evidence_id: "0".repeat(64) }) > options.maxEvidenceBytes) {
+  while ((tools.length || catalogField?.skills.length) &&
+    serializedBytes({ ...make(), evidence_id: "0".repeat(64) }) > options.maxEvidenceBytes) {
+    if (catalogField && catalogField.skills.length) {
+      catalogField = { skills: catalogField.skills.slice(0, -1), omitted: catalogField.omitted + 1 }
+      if (!catalogField.skills.length) catalogField = undefined
+      continue
+    }
     tools.pop()
     toolsOmitted++
   }

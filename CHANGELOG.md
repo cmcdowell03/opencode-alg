@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased
+
+- Snapshots live skill-evolution evidence at enqueue and on
+  `experimental.session.compacting`, then prefers that snapshot after host
+  compact. Live message reads use `100 + 1` overflow detection and classify
+  `overflow` / `compacted_or_unavailable`. The compacting hook injects bounded
+  skill-evolution pointers and logs hook failures.
+- Fails closed at live intake when V1 model calls are blocked, so DESIGN-style
+  enablement without `allowBuiltinToolMap` no longer writes failed ledger
+  identities. Manual audit surfaces the same `tool_permissions` limitation.
+- Excludes `alg:` executor children from automatic intake, persists
+  `session.deleted` and cancels queued rows, and documents that `summary:true`
+  recaps are historical-only.
+- Accepts auditor `confidence` only as `low|medium|high` or the documented
+  numeric ranges; substring matches such as `highly uncertain` fail closed.
+- Documents status as inspect-only; transaction repair remains startup and the
+  mutating review/promote/rollback tools.
+- Skill evolution reads existing `SKILL.md` files from configured roots (and
+  observes OpenCode config skills for use). Evidence includes that catalog.
+  Auditors prefer `no_change` or `skill_revision` over duplicate creates.
+- Matching skill bodies are injected into chat system context and compaction only
+  when `skillEvolution.enabled` is true. `applicable_skill_unused` still labels
+  evidence; it does not spawn an auditor in `triggered` mode (humans /
+  `every-turn` only).
+- `skipUninformativeAudits` defaults true: `every-turn` still records, but skips
+  auditor model calls on uninformative turns.
+- `compactSession` snapshots share one `session.messages` fetch per session and
+  the compacting hook is time-bounded below the child-call timeout. Joined
+  `output.context` is capped, not only each chunk.
+
 ## 0.4.1
 
 Package identity is `0.4.1`. Release evidence schema 6 binds `package_version:"0.4.1"`. Historical `v0.4.0` remains at tag `7cc2f21` and must not be moved.

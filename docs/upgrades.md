@@ -341,7 +341,7 @@ Skill evolution has no implicit migration or activation:
    is now strict: the only top-level option is `skillEvolution`, and unknown
    option names fail plugin startup instead of being ignored.
 3. To opt in, add a server tuple such as
-   `[<managed-or-direct-package-root>, {"skillEvolution":{"enabled":true,"mode":"triggered","skillRoots":[".opencode/skills"]}}]`.
+   `[<managed-or-direct-package-root>, {"skillEvolution":{"enabled":true,"allowBuiltinToolMap":true,"mode":"triggered","skillRoots":[".opencode/skills"]}}]`.
    Keep the TUI package-root registration. Quit and restart OpenCode.
 4. Enabling creates project-local state under `.opencode/skill-evolution/` and
    may make auditor/checker model calls after eligible turns. It does not import,

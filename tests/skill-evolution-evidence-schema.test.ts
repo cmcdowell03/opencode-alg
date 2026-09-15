@@ -79,6 +79,7 @@ describe("skill-evolution options and strict schemas", () => {
       skillRoots: [".opencode/skills"],
       queueConcurrency: 1,
       maxBacklog: 32,
+      skipUninformativeAudits: true,
     })
     expect(parseSkillEvolutionOptions({ skillEvolution: { enabled: false } })).toMatchObject({ enabled: false, mode: "triggered" })
     expect(parseSkillEvolutionOptions({ skillEvolution: { enabled: true, mode: "triggered", skillRoots: ["project-skills"] } }))
@@ -135,6 +136,10 @@ describe("skill-evolution options and strict schemas", () => {
     expect(AuditorOutputSchema.parse({ decision: "no_change", ...auditorBase, confidence: undefined }).confidence).toBe("medium")
     const { confidence: _ignored, ...withoutConfidence } = { decision: "no_change" as const, ...auditorBase }
     expect(AuditorOutputSchema.parse(withoutConfidence).confidence).toBe("medium")
+    expect(AuditorOutputSchema.parse({ decision: "no_change", ...auditorBase, confidence: " HIGH " }).confidence).toBe("high")
+    expect(AuditorOutputSchema.safeParse({ decision: "no_change", ...auditorBase, confidence: "highly uncertain" }).success).toBe(false)
+    expect(AuditorOutputSchema.safeParse({ decision: "no_change", ...auditorBase, confidence: "not high" }).success).toBe(false)
+    expect(AuditorOutputSchema.safeParse({ decision: "no_change", ...auditorBase, confidence: "low-to-high" }).success).toBe(false)
 
     for (const malformed of [
       { decision: "no_change", ...auditorBase, extra: true },
