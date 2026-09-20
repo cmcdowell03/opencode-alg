@@ -356,11 +356,11 @@ describe("live verifier reviewed-checkout binding", () => {
     expect(findServerStartupLine(JSON.stringify({ service: ALG_PLUGIN_ID, message: algServerStartupMessage(true) }), false)).toBeUndefined()
   })
 
-  test("structured startup grammar requires the canonical ordered fifteen IDs and disabled state", () => {
+  test("structured startup grammar requires the canonical ordered nineteen IDs and disabled state", () => {
     const exact = structuredServerStartup()
     const [first, second] = ALG_TOOL_IDS
     const mutations = [
-      exact.replace("tools=15", "tools=14"),
+      exact.replace("tools=19", "tools=18"),
       exact.replace(`${first},`, ""),
       exact.replace(first, "alg_replacement"),
       exact.replace(`${first},${second}`, `${second},${first}`),
@@ -388,6 +388,20 @@ describe("live verifier reviewed-checkout binding", () => {
 })
 
 describe("server tool registration readiness", () => {
+  test("transport failures retain readiness stage and redacted nested causes", async () => {
+    let failure: unknown
+    try {
+      await fetchToolIds("http://unit.test/experimental/tool/ids", captured({ pid: 304, exitCode: null }, ""), computeAlgSourceIdentity(ROOT), {
+        timeoutMs: 25, pollIntervalMs: 1, requestTimeoutMs: 5,
+        request: async () => { throw new TypeError("fetch failed", { cause: Object.assign(new Error("connection refused"), { code: "ECONNREFUSED", authorization: "Bearer private-fixture" }) }) },
+      })
+    } catch (error) { failure = error }
+    expect(failure).toBeInstanceOf(ToolReadinessError)
+    const diagnostic = (failure as ToolReadinessError).evidence.last_request_error!
+    expect(diagnostic).toContain("tool-registry readiness")
+    expect(diagnostic).toContain("ECONNREFUSED")
+    expect(diagnostic).not.toContain("private-fixture")
+  })
   test("keeps polling after an initial empty 200 until source identity and exact tools are ready", async () => {
     const identity = computeAlgSourceIdentity(ROOT)
     let output = "server listening\n"

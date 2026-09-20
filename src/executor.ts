@@ -68,6 +68,8 @@ export interface ExecuteOptions {
   }) => Promise<ShellExecutionResult>
   /** Test-only fault barrier after atomic sidecar write and before progress fencing. */
   afterSessionSidecar?: () => void
+  /** Scoped procedure handoff must succeed before the child prompt is sent. */
+  beforeChildPrompt?: (child: string, role: "worker" | "checker") => Promise<void>
   allowFilesystemRoot?: boolean
   /** Additive test/path-policy seam; cannot disable actual-root detection. */
   treatProjectAsFilesystemRoot?: boolean
@@ -259,6 +261,7 @@ async function runOneNode(
             options.afterSessionSidecar?.()
             attemptRecord.session_id = createdSessionId
             save(run, { ...options, deferPersistence: false })
+            await options.beforeChildPrompt?.(createdSessionId, checker ? "checker" : "worker")
           } catch (error) { throw new PersistenceBoundaryError(error) }
         },
       })

@@ -68,6 +68,10 @@ export interface SkillEvolutionCompactionInput {
   runningKeys: string[]
   candidateCount: number
   restartRequired: boolean
+  capturedCount?: number
+  missingCount?: number
+  missingKeys?: string[]
+  checkpoint?: string
 }
 
 function formatKeyList(keys: string[]): string {
@@ -82,7 +86,11 @@ export function formatSkillEvolutionCompactionContext(input: SkillEvolutionCompa
     "## ALG skill-evolution state (bounded)",
     "",
     "Live intake ignores summary:true recaps. Post-compact summaries are historical-only.",
-    "Queued-turn evidence is snapshotted before host compact when still available.",
+    "Capture is best-effort, not a host compaction barrier or a full conversation backup.",
+    `- evidence coverage: captured=${input.capturedCount ?? "unknown"} missing=${input.missingCount ?? "unknown"}`,
+    `- missing evidence keys (including terminal rows): ${formatKeyList(input.missingKeys ?? [])}`,
+    ...(input.missingCount ? ["- DEGRADED: evidence missing; never substitute the compaction summary for the original turn."] : []),
+    ...(input.checkpoint ? [`- checkpoint: ${input.checkpoint}`] : []),
     "",
     "- path: .opencode/skill-evolution/",
     `- restart_required: ${input.restartRequired}`,
@@ -98,6 +106,7 @@ export function formatSkillEvolutionCompactionContext(input: SkillEvolutionCompa
   return `${truncateUtf8(context, MAX_COMPACTION_CONTEXT_BYTES - utf8Bytes(suffix))}${suffix}`
 }
 
+/** Only pass ALG-owned chunks here, in recovery-priority order. Never the host's shared array. */
 export function capCompactionOutputContext(
   context: string[],
   maximumBytes = MAX_COMPACTION_OUTPUT_BYTES,
@@ -108,4 +117,9 @@ export function capCompactionOutputContext(
   const text = `${truncateUtf8(joined, Math.max(0, maximumBytes - utf8Bytes(suffix)))}${suffix}`
   context.length = 0
   context.push(text)
+}
+
+export function appendAlgCompactionContext(shared: string[], owned: string[]): void {
+  capCompactionOutputContext(owned)
+  shared.push(...owned)
 }

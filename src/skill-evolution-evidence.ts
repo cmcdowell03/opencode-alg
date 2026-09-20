@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto"
 import { redactEvolutionText } from "./skill-evolution-redaction.ts"
 import { canonicalJson } from "./persistence.ts"
+import { completedTurn, mentionsSkill, isCompletedUserTurn } from "./turn-boundary.ts"
 import { serializedBytes, truncateUtf8, utf8Bytes } from "./limits.ts"
 import {
   SkillEvidenceSchema,
@@ -99,11 +100,11 @@ function toolStatus(value: unknown): "pending" | "running" | "completed" | "erro
 }
 
 function loadedSkillNames(
-  tools: Array<{ name: string; input: BoundedEvidenceText }>,
+  tools: Array<{ name: string; status: string; input: BoundedEvidenceText }>,
 ): string[] {
   const names: string[] = []
   for (const tool of tools) {
-    if (!/skill/i.test(tool.name)) continue
+    if (tool.name !== "skill" || tool.status !== "completed") continue
     try {
       const parsed = JSON.parse(tool.input.excerpt)
       if (parsed && typeof parsed.name === "string" && parsed.name.trim()) names.push(parsed.name.trim())
@@ -121,6 +122,7 @@ function scoreSignals(
   parts: Array<Record<string, any>>,
   tools: Array<{ name: string; status: string; input: BoundedEvidenceText; result: BoundedEvidenceText; error: BoundedEvidenceText }>,
   catalog?: SkillCatalog,
+  injectedSkills: string[] = [],
 ): { score: number; labels: SkillTriggerLabel[] } {
   const labels: SkillTriggerLabel[] = []
   let score = 0
@@ -158,7 +160,7 @@ function scoreSignals(
       userText,
       assistantText,
       tools: tools.map((tool) => tool.name),
-      loadedSkills: loadedSkillNames(tools),
+      loadedSkills: [...loadedSkillNames(tools), ...injectedSkills],
     }
     for (const label of catalogTriggerLabels(catalog, hint)) add(label, APPLICABLE_SKILL_UNUSED_POINTS)
   }
@@ -183,6 +185,7 @@ export function buildSkillEvidence(
   manual = false,
   redactionPolicy: 1 | 2 = 2,
   catalog?: SkillCatalog,
+  injectedSkills: string[] = [],
 ): SkillEvidence {
   const redactText = (value: unknown, limit: number) => redactEvidenceText(value, limit, redactionPolicy)
   if (!Array.isArray(messagesValue)) throw new Error("session messages response is not an array")
@@ -192,6 +195,9 @@ export function buildSkillEvidence(
   const assistant = [...messages].reverse().find((message) => message.info.role === "assistant" && message.info.id === messageId)
   if (!assistant) throw new Error("completed assistant message was deleted or is unavailable")
   assertTerminalAssistant(assistant.info, sessionId, messageId)
+  // Legacy immutable snapshots may predate finish reasons. Explicit nonterminal
+  // reasons are never accepted, including tool-calls, length and unknown.
+  const turn = completedTurn(messages, sessionId, messageId, true)
   const user = [...messages].reverse().find((message) => message.info.role === "user" && message.info.id === assistant.info.parentID)
   if (!user) throw new Error("assistant parent user message is unavailable")
   if (user.info.sessionID !== sessionId || !Number.isSafeInteger(user.info.time?.created)) {
@@ -200,29 +206,33 @@ export function buildSkillEvidence(
 
   const rawUserText = partText(user.parts)
   const rawAssistantText = partText(assistant.parts)
-  const rawTools = assistant.parts.filter((part) => part.type === "tool")
+  const rawTools = turn.parts.filter((part) => part.type === "tool")
+  const loaded = rawTools.filter((part) => part.tool === "skill" && part.state?.status === "completed" && part.state?.metadata?.error !== true)
+    .map((part) => part.state.input?.name).filter((name): name is string => typeof name === "string")
   const maximumTools = Math.min(24, Math.max(1, Math.floor(options.maxEvidenceBytes / 800)))
   let toolsOmitted = Math.max(0, rawTools.length - maximumTools)
   const perField = Math.max(64, Math.min(2_000, Math.floor(options.maxEvidenceBytes / Math.max(4, 2 + maximumTools * 3))))
-  let tools = rawTools.slice(0, maximumTools).map((part) => {
+  const selectedTools = rawTools.length <= maximumTools ? rawTools :
+    [...rawTools.slice(0, Math.floor(maximumTools / 2)), ...rawTools.slice(-Math.ceil(maximumTools / 2))]
+  let tools = selectedTools.map((part) => {
     const state = part.state && typeof part.state === "object" ? part.state : {}
     return {
       name: typeof part.tool === "string" && part.tool.trim() ? part.tool.slice(0, 256) : "unknown-tool",
-      status: toolStatus(state.status),
+      status: state.metadata?.error === true ? "error" as const : toolStatus(state.status),
       input: redactText(state.input ?? "", perField),
-      result: redactText(state.status === "completed" ? { title: state.title, output: state.output } : "", perField),
-      error: redactText(state.status === "error" ? state.error : "", perField),
+      result: redactText(state.status === "completed" ? { title: state.title, output: state.output } : "", part.tool === "skill" ? 2000 : perField),
+      error: redactText(state.status === "error" ? state.error : state.metadata?.error === true ? state.output : "", perField),
     }
   })
   let userText = redactText(rawUserText, Math.min(2_000, Math.floor(options.maxEvidenceBytes / 4)))
   let assistantText = redactText(rawAssistantText, Math.min(2_000, Math.floor(options.maxEvidenceBytes / 4)))
-  const signals = scoreSignals(rawUserText, rawAssistantText, assistant.parts, tools, catalog)
+  const signals = scoreSignals(rawUserText, rawAssistantText, turn.parts, tools, catalog, [...loaded, ...injectedSkills])
   if (manual && !signals.labels.includes("manual")) signals.labels.push("manual")
   const hint: SkillTurnHint = {
     userText: rawUserText,
     assistantText: rawAssistantText,
     tools: tools.map((tool) => tool.name),
-    loadedSkills: loadedSkillNames(tools),
+    loadedSkills: [...loaded, ...injectedSkills],
   }
   let catalogField = catalog ? catalogEvidenceField(catalog, hint) : undefined
 
@@ -234,14 +244,15 @@ export function buildSkillEvidence(
     assistant_created_at: Number(assistant.info.time?.created),
     assistant_completed_at: Number(assistant.info.time.completed),
   }
-  const totalParts = user.parts.length + assistant.parts.length
+  const totalParts = user.parts.length + turn.parts.length
   const retainedParts = user.parts.filter((part) => part.type === "text" && part.ignored !== true).length +
-    assistant.parts.filter((part) => (part.type === "text" && part.ignored !== true) || part.type === "tool").length
+    assistant.parts.filter((part) => part.type === "text" && part.ignored !== true).length
   const make = (): Omit<SkillEvidence, "evidence_id"> => {
     const fields = [userText, assistantText, ...tools.flatMap((tool) => [tool.input, tool.result, tool.error])]
     return {
       schema_version: 1,
       ...(redactionPolicy === 2 ? { redaction_policy_version: 2 as const } : {}),
+      ...(isCompletedUserTurn(assistant.info) ? { turn_scope: "completed-user-turn-v1" as const } : {}),
       kind: "skill_evolution_evidence",
       created_at: new Date().toISOString(),
       provenance,
@@ -257,7 +268,7 @@ export function buildSkillEvidence(
       trigger_score: signals.score,
       trigger_labels: signals.labels,
       truncation: {
-        parts_omitted: Math.max(0, totalParts - retainedParts),
+        parts_omitted: Math.max(0, totalParts - retainedParts - tools.length),
         tools_omitted: toolsOmitted,
         text_fields_truncated: fields.filter((field) => field.bytes_omitted > 0).length,
         bytes_omitted: fields.reduce((sum, field) => sum + field.bytes_omitted, 0),
@@ -270,12 +281,14 @@ export function buildSkillEvidence(
   // bound is met, then reduce the two text excerpts if fixed metadata dominates.
   while ((tools.length || catalogField?.skills.length) &&
     serializedBytes({ ...make(), evidence_id: "0".repeat(64) }) > options.maxEvidenceBytes) {
-    if (catalogField && catalogField.skills.length) {
-      catalogField = { skills: catalogField.skills.slice(0, -1), omitted: catalogField.omitted + 1 }
+    const lastSkill = catalogField?.skills.at(-1)
+    if (catalogField && lastSkill && (!lastSkill.loaded && !mentionsSkill(rawUserText, lastSkill.name) || !tools.length)) {
+      catalogField = { ...catalogField, skills: catalogField.skills.slice(0, -1), omitted: catalogField.omitted + 1 }
       if (!catalogField.skills.length) catalogField = undefined
       continue
     }
-    tools.pop()
+    // Keep early failure and final success whenever possible.
+    tools.splice(Math.floor(tools.length / 2), 1)
     toolsOmitted++
   }
   if (serializedBytes({ ...make(), evidence_id: "0".repeat(64) }) > options.maxEvidenceBytes) {

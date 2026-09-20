@@ -1,7 +1,7 @@
 import { tool } from "@opencode-ai/plugin"
 import type { PluginInput, ToolContext } from "@opencode-ai/plugin"
 import { validateGraph } from "./graph.ts"
-import { executeRun, prepareRunForResume } from "./executor.ts"
+import { prepareRunForResume } from "./executor.ts"
 import {
   createRun,
   hydrateRunFully,
@@ -30,6 +30,8 @@ import {
 } from "./paths.ts"
 import { formatSdkError } from "./diagnostics.ts"
 import { serializedBytes, truncateUtf8, utf8Bytes } from "./limits.ts"
+import { executeWithMemory } from "./session-memory/attempts.ts"
+import type { SessionMemoryRuntime } from "./session-memory/runtime.ts"
 
 type Detail = "compact" | "full"
 const PREVIEW_BYTES = 2_048
@@ -94,6 +96,7 @@ function rootAuthorization(run: RunState, detail: Detail = "compact") {
 }
 
 export interface AlgToolRuntime {
+  sessionMemory?: SessionMemoryRuntime
   /** Additive root classification for isolated tool-path tests; cannot unmark a real root. */
   additionalFilesystemRoot?: (projectDirectory: string) => boolean
 }
@@ -723,7 +726,7 @@ export function createAlgTools(
             throw new Error("shell_timeout_ms requires shell_gate")
           }
           const events: string[] = []
-          const updated = await executeRun(run, {
+          const updated = await executeWithMemory(runtime.sessionMemory, run, {
             client,
             parentSessionId: context.sessionID,
             directory,
@@ -896,7 +899,7 @@ export function createAlgTools(
           else if (args.shell_timeout_ms !== undefined) throw new Error("shell_timeout_ms requires shell_gate")
           prepareRunForResume(run)
           const events: string[] = []
-          const updated = await executeRun(run, {
+          const updated = await executeWithMemory(runtime.sessionMemory, run, {
             client,
             parentSessionId: context.sessionID,
             directory,

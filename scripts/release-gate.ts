@@ -57,7 +57,7 @@ export const ReleaseEvidenceSchema = z.object({
   duckdb: z.object({ manifest_sha256: Sha, lock_sha256: Sha, version: z.literal("0.1.0"), engine_version: z.literal("1.4.0"), parser_version: z.literal("27.14.0"), tool_count: z.literal(1), eof_stdout_bytes: z.literal(0), contract_sha256: Sha }).strict(),
   package: z.object({
     entries: z.number().int().positive(), packed_bytes: z.number().int().positive(), unpacked_bytes: z.number().int().positive(),
-    files: z.array(PackedFileSchema).min(1).max(128), inventory_sha256: Sha,
+    files: z.array(PackedFileSchema).min(1).max(256), inventory_sha256: Sha,
     capability_files: z.array(z.string()).length(19),
     lock_bytes: z.object({ excel: z.number().int().positive(), duckdb: z.number().int().positive() }).strict(),
     tgz_created: z.literal(false),
@@ -115,6 +115,8 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "docs/operations.md", "docs/release-verification.md", "docs/upgrades.md",
   "docs/duckdb-query-plane.md",
   "docs/experience-and-data-science.md", "docs/connectors.md", "docs/implementation-status.md",
+  "docs/session-continuity.md", "docs/session-memory.md", "docs/session-memory-implementation-plan.md",
+  "docs/model-agnostic-recovery.md",
   "scripts/alg.ps1", "scripts/alg.sh", "scripts/check-live.ts", "scripts/install.ps1", "scripts/install.sh",
   "scripts/installer-core.ts", "scripts/live-verify.ts", "scripts/manager-cli.ts", "scripts/manager-core.ts",
   "scripts/manager-schema.ts", "scripts/npm-invocation.ts", "scripts/release-gate.ts", "scripts/smoke.ts",
@@ -122,6 +124,7 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "scripts/duckdb-project.ts", "scripts/datascience-project.ts",
   "scripts/data-science-cli.ts", "scripts/experience-cli.ts", "scripts/verify-optional-manifests.ts",
   "scripts/synthetic-gate.ts",
+  "scripts/memory-cli.ts", "scripts/session-memory-gate.ts", "scripts/session-memory-benchmark.ts",
 ] as const
 
 const RELEASE_CONTROL_PATHS = [

@@ -537,7 +537,7 @@ describe("architecture audit remediation", () => {
         client: {
           app: { log: async (request: any) => { logs.push(request); return { data: true, error: undefined } } },
           session: {
-            get: async () => new Promise(() => {}),
+            get: async () => ({ data: { id: "owner", projectID: "project", directory: project, title: "ordinary" }, error: undefined }),
             messages: async () => ({ data: [], error: undefined }),
             create: async () => new Promise(() => {}),
             prompt: async () => new Promise(() => {}),

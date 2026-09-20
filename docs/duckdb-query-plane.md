@@ -1,6 +1,6 @@
 # Optional DuckDB developer query plane (rollout 1–3)
 
-Stable OpenCode v1 (`engines.opencode >=1.18.0`) remains the supported daily driver. OpenCode2 is not imported, installed, configured, tested, or required. This operational query plane is not an ALG core tool and is absent from the exact 15-tool ALG registry. It is also separate from any future experience catalog.
+Stable OpenCode v1 (`engines.opencode >=1.18.0`) remains the supported daily driver. OpenCode2 is not imported, installed, configured, tested, or required. This operational query plane is not an ALG core tool and is absent from the exact 19-tool ALG registry. It is also separate from the session-memory tools.
 
 The capability is disabled by default. Package install/update, normal OpenCode startup, and `status`/`doctor` do not install Python packages, download or load extensions, open DuckDB, attach replicas, or contact a network. `capabilities/duckdb/opencode.disabled.json` is a schema-declared reference only; it is not loaded by the package.
 

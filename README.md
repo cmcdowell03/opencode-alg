@@ -1,5 +1,8 @@
 # opencode-alg
 
+New opt-in [environment-aware session memory](docs/session-memory.md) restores exact
+procedures after compaction, with bounded context and scoped repeat-work guards.
+
 Optional capabilities: [policy-bounded DuckDB developer query plane](docs/duckdb-query-plane.md). It is project-local, separately prepared, disabled by default, and is not an ALG core tool.
 
 New explicit workflows: [experience records, troubleshooting, paired skill evaluation, and pinned local data science](docs/experience-and-data-science.md); [synthetic connector preparation](docs/connectors.md). These are default-off and do not imply live deployment validation.
@@ -325,8 +328,10 @@ queued rows. If V1 model calls are blocked (`allowBuiltinToolMap` unset),
 intake does not enqueue identities that can only fail; `alg_skill_evolution_audit`
 returns the same `tool_permissions` limitation immediately. It durably
 deduplicates the exact session/message pair, snapshots bounded redacted
-evidence from that assistant and its direct parent user message before host
-compact can drop the turn, and serializes a per-project queue. Process prefers
+evidence from that assistant and its direct parent user message when still
+available, and serializes a per-project queue. Normal message transforms also
+capture stable host-supplied envelopes. This is not a host compaction barrier;
+missing evidence remains explicit in a durable coverage checkpoint. Process prefers
 that snapshot over a later live re-fetch. Live `session.messages` uses a
 `100 + 1` overflow check; overflow or a missing target ID is classified
 (`overflow` / `compacted_or_unavailable`) rather than treated as truncated
@@ -338,8 +343,14 @@ auditor model call unless the turn is informative (threshold, unused catalog
 skill, loaded-skill inadequacy, or user correction). `applicable_skill_unused`
 does not spawn an auditor in `triggered` mode. Private auditor/checker
 children are durably registered and recursion-excluded. When skill evolution is
-enabled, the server also injects matching SKILL.md bodies into chat system
-context and compaction so catalog skills are followed rather than only listed.
+enabled, the server injects only complete matching SKILL.md bodies into system
+context. Oversized bodies require a full skill-tool load; an unmatched task
+activates no skills. Session-active skill paths/hashes survive restart, and changed
+or missing versions produce reload warnings. Compaction receives these references,
+not partial instructions. Run state and recovery warnings are reloaded into later
+system context independently of the summary. Only ALG's chunks are budgeted;
+other plugins' context is preserved. See [session continuity and the knowledge
+graph](docs/session-continuity.md) for exact guarantees and next-stage design.
 
 An eligible audit creates a fresh no-tools `researcher` child. `no_change` ends
 the record; a memory proposal is retained as a non-promotable candidate; a skill
@@ -626,7 +637,7 @@ external evidence directory receives one strict bounded redacted JSON document
 that references the separately retained live evidence by immutable unique
 path/hash/size/device-inode identity. Strict live artifacts remain schema v2 and
 kind `opencode-alg-live-verification`; package v0.4.1 release evidence is strict
-schema v6, requires that live identity, requires the exact 15 tool IDs with skill
+schema v6, requires that live identity, requires the exact 19 tool IDs with skill
 evolution disabled in the isolated live proof, and separately runs/binds the
 complete manager suite under manager protocol v0.2.0. It retains
 complete redacted stdout/stderr within strict per-command/aggregate limits and

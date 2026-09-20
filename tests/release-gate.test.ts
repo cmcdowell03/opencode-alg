@@ -253,7 +253,12 @@ describe("bounded release-gate evidence", () => {
   test("source identity and npm allowlist automatically include every skill-evolution runtime module", () => {
     const sourcePaths = verificationPluginConfiguration(ROOT).source.manifest.map((entry) => entry.path)
     const packedPaths = expectedPackedPaths(ROOT)
+    expect(packedPaths).toContain("docs/model-agnostic-recovery.md")
     for (const path of [
+      "src/session-memory/runtime.ts",
+      "src/session-memory/store.ts",
+      "src/session-memory/attempts.ts",
+      "src/session-memory/tools.ts",
       "src/skill-catalog.ts",
       "src/skill-evolution-evidence.ts",
       "src/skill-evolution-historical.ts",

@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { isSafeId, isSafeProjectRelativePath } from "./paths.ts"
 import { serializedBytes, utf8Bytes } from "./limits.ts"
+import { MemoryOptionsSchema } from "./session-memory/schemas.ts"
 
 export const SKILL_EVOLUTION_SCHEMA_VERSION = 1 as const
 export const SKILL_EVOLUTION_MAX_CONTENT_BYTES = 64 * 1024
@@ -123,6 +124,9 @@ export const SkillEvolutionOptionsSchema = z.object({
   /** Skip auditor model calls for uninformative turns even in every-turn mode. */
   skipUninformativeAudits: z.boolean().default(true),
   maxAttempts: z.number().int().min(1).max(3).default(2),
+  /** Generic host-call and whole live-audit budgets, never selected by model identity. */
+  callTimeoutMs: z.number().int().min(1_000).max(300_000).default(120_000),
+  auditTimeoutMs: z.number().int().min(1_000).max(900_000).default(300_000),
   historical: z.object({
     enabled: z.boolean().default(false),
     maxDiscoverySessions: z.number().int().min(1).max(1_000).default(200),
@@ -165,6 +169,7 @@ export const SkillEvolutionOptionsSchema = z.object({
 
 export const AlgPluginOptionsSchema = z.object({
   skillEvolution: SkillEvolutionOptionsSchema.optional(),
+  sessionMemory: MemoryOptionsSchema.optional(),
 }).strict()
 
 export type SkillEvolutionOptions = z.infer<typeof SkillEvolutionOptionsSchema>
@@ -310,6 +315,7 @@ const SkillCatalogEvidenceEntrySchema = z.object({
 export const SkillEvidenceSchema = z.object({
   schema_version: z.literal(SKILL_EVOLUTION_SCHEMA_VERSION),
   redaction_policy_version: z.literal(2).optional(),
+  turn_scope: z.literal("completed-user-turn-v1").optional(),
   kind: z.literal("skill_evolution_evidence"),
   evidence_id: sha256,
   created_at: iso,
@@ -321,6 +327,7 @@ export const SkillEvidenceSchema = z.object({
   catalog: z.object({
     skills: z.array(SkillCatalogEvidenceEntrySchema).max(16),
     omitted: z.number().int().nonnegative(),
+    complete: z.boolean().optional(),
   }).strict().optional(),
   trigger_score: z.number().int().min(0).max(20),
   trigger_labels: z.array(SkillTriggerLabelSchema).max(8),
@@ -353,6 +360,7 @@ export const SkillLedgerRecordSchema = z.object({
   key: sha256,
   session_id: sessionId,
   message_id: messageId,
+  user_message_id: messageId.optional(),
   status: LedgerStatusSchema,
   attempts: z.number().int().nonnegative().max(3),
   forced_retries: z.number().int().nonnegative().max(3),
@@ -377,6 +385,7 @@ export const SkillEvolutionLedgerSchema = z.object({
     title: exact(1, 512, "title"),
     role: z.enum(["auditor", "checker"]),
     registered_at: iso,
+    lifecycle: z.enum(["created", "running", "completed", "abort-requested", "aborted", "uncertain"]).optional(),
   }).strict()).max(1_000).superRefine((children, ctx) => {
     const identities = new Set<string>()
     children.forEach((child, index) => {

@@ -1,11 +1,15 @@
-import { createHash } from "node:crypto"
-import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs"
+import { existsSync, lstatSync, realpathSync } from "node:fs"
 import { homedir } from "node:os"
 import { isAbsolute, join, resolve } from "node:path"
-import { isContained, isSafeId, isSafeProjectRelativePath } from "./paths.ts"
-import { truncateUtf8, utf8Bytes } from "./limits.ts"
+import { utf8Bytes } from "./limits.ts"
+import { isDeletedSkillSession, loadSessionRecovery, sessionRecoveryRelativePath, updateSessionRecovery, type SessionSkillRef } from "./skill-evolution-store.ts"
 import type { SkillEvolutionOptions, SkillTriggerLabel } from "./skill-evolution-schemas.ts"
+import { SkillIndex } from "./session-memory/skill-index.ts"
+import { mentionsSkill } from "./turn-boundary.ts"
+import { scoreSkill } from "./skill-metadata.ts"
+export { parseSkillMarkdown, extractToolHints, scoreSkill } from "./skill-metadata.ts"
 
+/** Legacy display budget, not a discovery cutoff. */
 export const SKILL_CATALOG_MAX_SKILLS = 32
 export const SKILL_CATALOG_MAX_FILE_BYTES = 64 * 1024
 export const SKILL_SYSTEM_CONTEXT_MAX_BYTES = 12 * 1024
@@ -24,14 +28,18 @@ export interface SkillCatalogEntry {
   managed: boolean
   tools: string[]
   content: string
+  /** Metadata-only discovery; read and verify only selected bodies. */
+  readContent?: () => string
 }
 
 export interface SkillCatalog {
   skills: SkillCatalogEntry[]
   omitted: number
+  complete?: boolean
 }
 
 export interface SkillTurnHint {
+  userMessageId?: string
   userText: string
   assistantText: string
   tools: string[]
@@ -52,9 +60,10 @@ export interface SkillCatalogEvidenceEntry {
 export interface SkillCatalogEvidence {
   skills: SkillCatalogEvidenceEntry[]
   omitted: number
+  complete?: boolean
 }
 
-const emptyCatalog = (): SkillCatalog => ({ skills: [], omitted: 0 })
+const emptyCatalog = (): SkillCatalog => ({ skills: [], omitted: 0, complete: false })
 
 function samePath(left: string, right: string): boolean {
   const a = resolve(left)
@@ -71,117 +80,6 @@ function directDirectory(path: string): boolean {
   }
 }
 
-function readRegularFileBounded(path: string, maximumBytes: number): Buffer | null {
-  try {
-    const stat = lstatSync(path)
-    if (!stat.isFile() || stat.isSymbolicLink() || stat.size > maximumBytes) return null
-    if (!samePath(realpathSync.native(path), path)) return null
-    const bytes = readFileSync(path)
-    if (bytes.byteLength !== stat.size) return null
-    return bytes
-  } catch {
-    return null
-  }
-}
-
-function scalarFrontmatter(block: string, key: string): string | null {
-  for (const line of block.split(/\r?\n/)) {
-    const match = new RegExp(`^${key}\\s*:\\s*(.*)$`).exec(line)
-    if (!match) continue
-    let value = match[1]!.trim()
-    if (!value) return null
-    if ((value.startsWith("\"") || value.startsWith("'")) && value.length >= 2 && value.at(-1) === value[0]) {
-      value = value.slice(1, -1)
-    }
-    return value.trim() || null
-  }
-  return null
-}
-
-function parseSkillMarkdown(folder: string, content: string): { name: string; description: string } | null {
-  if (!isSafeId(folder) || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(folder)) return null
-  const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(content)
-  const name = (match ? scalarFrontmatter(match[1]!, "name") : null) ?? folder
-  if (name !== folder) return null
-  const description = (match ? scalarFrontmatter(match[1]!, "description") : null) ??
-    (content.match(/^#\s+(.+)$/m)?.[1]?.trim() || `Use the ${folder} project skill when it applies.`)
-  if (!description || description.length > 1_024) return null
-  return { name, description }
-}
-
-function extractToolHints(content: string): string[] {
-  const tools = new Set<string>()
-  for (const match of content.matchAll(/`([a-z][a-z0-9_]{2,64})`/g)) tools.add(match[1]!)
-  for (const match of content.matchAll(/\b(alg_[a-z0-9_]{2,64})\b/g)) tools.add(match[1]!)
-  return [...tools].slice(0, 16)
-}
-
-function hashBytes(bytes: Buffer): string {
-  return createHash("sha256").update(bytes).digest("hex")
-}
-
-function collectRoot(
-  root: string,
-  rootLabel: string,
-  managed: boolean,
-  seenNames: Set<string>,
-  seenPaths: Set<string>,
-): { skills: SkillCatalogEntry[]; omitted: number } {
-  const skills: SkillCatalogEntry[] = []
-  let omitted = 0
-  if (!directDirectory(root)) return { skills, omitted }
-  let entries: Array<{ name: string }>
-  try {
-    entries = readdirSync(root, { withFileTypes: true }).filter((entry) => entry.isDirectory())
-  } catch {
-    return { skills, omitted }
-  }
-  for (const entry of entries) {
-    if (skills.length + omitted >= SKILL_CATALOG_MAX_SKILLS) {
-      omitted++
-      continue
-    }
-    const folder = join(root, entry.name)
-    if (!directDirectory(folder)) {
-      omitted++
-      continue
-    }
-    const file = join(folder, "SKILL.md")
-    const bytes = readRegularFileBounded(file, SKILL_CATALOG_MAX_FILE_BYTES)
-    if (!bytes) {
-      omitted++
-      continue
-    }
-    const identity = process.platform === "win32" ? resolve(file).toLowerCase() : resolve(file)
-    if (seenPaths.has(identity)) continue
-    const parsed = parseSkillMarkdown(entry.name, bytes.toString("utf8"))
-    if (!parsed) {
-      omitted++
-      continue
-    }
-    if (seenNames.has(parsed.name)) {
-      omitted++
-      continue
-    }
-    seenNames.add(parsed.name)
-    seenPaths.add(identity)
-    const relativePath = isSafeProjectRelativePath(rootLabel)
-      ? `${rootLabel}/${parsed.name}/SKILL.md`
-      : `${parsed.name}/SKILL.md`
-    skills.push({
-      name: parsed.name,
-      target: `${parsed.name}/SKILL.md`,
-      root: rootLabel,
-      relative: relativePath,
-      sha256: hashBytes(bytes),
-      description: parsed.description,
-      managed,
-      tools: extractToolHints(bytes.toString("utf8")),
-      content: bytes.toString("utf8"),
-    })
-  }
-  return { skills, omitted }
-}
 
 export function observedConfigSkillRoots(): Array<{ root: string; label: string }> {
   const roots: Array<{ root: string; label: string }> = []
@@ -215,52 +113,21 @@ export function loadSkillCatalog(
   try {
     if (!isAbsolute(projectDirectory) || !existsSync(projectDirectory)) return emptyCatalog()
     const project = realpathSync.native(projectDirectory)
-    const seenNames = new Set<string>()
-    const seenPaths = new Set<string>()
+    const index = new SkillIndex(project, options.skillRoots, [...extraRoots])
     const skills: SkillCatalogEntry[] = []
-    let omitted = 0
-    for (const rootRelative of options.skillRoots) {
-      if (!isSafeProjectRelativePath(rootRelative)) continue
-      const root = resolve(project, ...rootRelative.split("/"))
-      if (!isContained(project, root) || root === project) continue
-      const collected = collectRoot(root, rootRelative, true, seenNames, seenPaths)
-      skills.push(...collected.skills)
-      omitted += collected.omitted
+    for (const descriptor of index.catalog().skills) {
+      skills.push({ ...descriptor, content: "", readContent: () => {
+        const loaded = index.load(descriptor.key, { source: descriptor.root, name: descriptor.name })
+        if (loaded.descriptor.sha256 !== descriptor.sha256) throw new Error("skill changed during catalog selection")
+        return loaded.files.find((file) => file.path === "SKILL.md")!.body
+      } })
     }
-    for (const extra of extraRoots) {
-      const collected = collectRoot(extra.root, extra.label, extra.managed === true, seenNames, seenPaths)
-      skills.push(...collected.skills)
-      omitted += collected.omitted
-    }
-    return {
-      skills: skills.slice(0, SKILL_CATALOG_MAX_SKILLS),
-      omitted: omitted + Math.max(0, skills.length - SKILL_CATALOG_MAX_SKILLS),
-    }
+    return { skills, omitted: index.rejected, complete: index.complete }
   } catch {
     return emptyCatalog()
   }
 }
 
-const STOP = new Set(["the", "and", "for", "with", "from", "that", "this", "when", "only", "use", "using"])
-
-function tokens(value: string): Set<string> {
-  return new Set(
-    value.toLowerCase().split(/[^a-z0-9]+/).filter((token) => token.length >= 3 && !STOP.has(token)),
-  )
-}
-
-export function scoreSkill(entry: SkillCatalogEntry, hint: SkillTurnHint): number {
-  const haystack = `${hint.userText}\n${hint.assistantText}\n${hint.tools.join("\n")}`.toLowerCase()
-  let score = 0
-  if (haystack.includes(entry.name)) score += 5
-  if (hint.loadedSkills.includes(entry.name)) score += 4
-  for (const tool of entry.tools) {
-    if (hint.tools.includes(tool) || haystack.includes(tool.toLowerCase())) score += 4
-  }
-  const overlap = [...tokens(entry.description)].filter((token) => tokens(haystack).has(token)).length
-  score += Math.min(6, overlap)
-  return score
-}
 
 export function matchSkills(catalog: SkillCatalog, hint: SkillTurnHint): Array<SkillCatalogEntry & { score: number; applicable: boolean; loaded: boolean }> {
   return catalog.skills
@@ -273,7 +140,9 @@ export function matchSkills(catalog: SkillCatalog, hint: SkillTurnHint): Array<S
         loaded: hint.loadedSkills.includes(entry.name),
       }
     })
-    .sort((left, right) => right.score - left.score || left.name.localeCompare(right.name))
+    .sort((left, right) => Number(right.loaded) - Number(left.loaded) ||
+      Number(mentionsSkill(hint.userText, right.name)) - Number(mentionsSkill(hint.userText, left.name)) ||
+      right.score - left.score || left.name.localeCompare(right.name) || left.root.localeCompare(right.root))
 }
 
 export function catalogTriggerLabels(catalog: SkillCatalog, hint: SkillTurnHint): SkillTriggerLabel[] {
@@ -302,6 +171,7 @@ export function catalogEvidenceField(catalog: SkillCatalog, hint: SkillTurnHint)
       description: entry.description.length <= 240 ? entry.description : `${entry.description.slice(0, 239)}…`,
     })),
     omitted: catalog.omitted + Math.max(0, matched.length - 16),
+    ...(catalog.complete === undefined ? {} : { complete: catalog.complete }),
   }
 }
 
@@ -327,48 +197,70 @@ function cap(value: string, maximum: number): string {
   return value.length <= maximum ? value : `${value.slice(0, Math.max(0, maximum - 1))}…`
 }
 
-export function formatSkillSystemContext(catalog: SkillCatalog, hint?: SkillTurnHint): string {
+export function formatSkillSystemContext(catalog: SkillCatalog, hint?: SkillTurnHint, included?: SessionSkillRef[]): string {
   if (!catalog.skills.length) return ""
-  const matched = hint ? matchSkills(catalog, hint).filter((entry) => entry.applicable) : catalog.skills
-  const inject = (matched.length ? matched : catalog.skills).slice(0, SKILL_INJECT_MAX_SKILLS)
+  const matched = hint ? matchSkills(catalog, hint).filter((entry) => entry.applicable) : []
+  const inject = matched.filter((entry) => catalog.skills.filter((other) => other.name === entry.name).length === 1).slice(0, SKILL_INJECT_MAX_SKILLS)
   const lines = [
     "## ALG skills",
     "",
-    "Follow matching SKILL.md files. If a skill body is included below, obey it for this turn.",
-    "Otherwise call the `skill` tool with that skill name before using its related tools.",
+    "Only explicitly marked complete bodies are loaded instructions for this turn.",
+    "Catalog entries are discovery metadata, not active instructions. Load a matching omitted body in full with the skill tool before using it.",
     "Do not invent a parallel skill when a catalog entry already covers the work.",
     "",
     "Catalog:",
   ]
+  // Reserve space for omission notices and whole bodies. Never clip instructions.
+  let listed = 0
   for (const entry of catalog.skills) {
     const tools = entry.tools.length ? `; tools: ${entry.tools.slice(0, 6).join(", ")}` : ""
     const scope = entry.managed ? "managed" : "observed"
-    lines.push(`- ${entry.name} [${scope}] ${cap(entry.description, 180)}${tools}`)
+    const line = `- ${entry.name} [${scope}] ${cap(entry.description, 180)}${tools}`
+    if (utf8Bytes([...lines, line].join("\n")) > 3500) break
+    lines.push(line)
+    listed++
   }
-  if (catalog.omitted) lines.push(`- (${catalog.omitted} additional skill files omitted)`)
+  const omitted = catalog.omitted + catalog.skills.length - listed
+  if (omitted) lines.push(`- catalog omitted: ${omitted}; discover/load matching skills explicitly`)
+  if (catalog.complete === false) lines.push("- discovery incomplete: omitted count is a lower bound; do not assume all skills are listed")
+  if (matched.length > inject.length) lines.push(`- matching bodies omitted by count limit: ${matched.length - inject.length}`)
   for (const entry of inject) {
-    lines.push("", `### Active skill: ${entry.name}`, "", truncateUtf8(entry.content, SKILL_INJECT_BODY_MAX_BYTES))
+    const content = entry.readContent ? entry.readContent() : entry.content
+    const source = entry.root + "/" + entry.target
+    const metadata = `name=${entry.name} source=${source.length <= 400 ? JSON.stringify(source) : "(path omitted: load by skill name)"} sha256=${entry.sha256} bytes=${utf8Bytes(content)}`
+    const body = `\n### Active skill: ${entry.name} (complete body)\n${metadata}\n\n${content}`
+    if (utf8Bytes(content) <= SKILL_INJECT_BODY_MAX_BYTES &&
+      utf8Bytes([...lines, body].join("\n")) <= SKILL_SYSTEM_CONTEXT_MAX_BYTES - 1800) {
+      lines.push(body)
+      included?.push({ name: entry.name, root: entry.root, target: entry.target, sha256: entry.sha256 })
+    } else {
+      lines.push(`- requires_full_load: ${metadata}; body omitted, not loaded`)
+    }
   }
-  const text = lines.join("\n")
-  if (utf8Bytes(text) <= SKILL_SYSTEM_CONTEXT_MAX_BYTES) return text
-  return truncateUtf8(text, SKILL_SYSTEM_CONTEXT_MAX_BYTES)
+  return lines.join("\n")
 }
 
-export function formatSkillCompactionContext(catalog: SkillCatalog): string {
-  if (!catalog.skills.length) return ""
+export function formatSkillCompactionContext(catalog: SkillCatalog, active: SessionSkillRef[] = [], pointer?: string, priorOmitted = 0): string {
+  if (!active.length && !pointer) return ""
   const lines = [
     "## ALG skills to retain after compaction",
     "",
-    "Reload matching skills after compaction. Prefer `skill` plus the named file over ad-hoc tool sequences.",
+    "Session-active skill references only; these are not loaded bodies or permission grants.",
+    "Reload in full before use. A changed hash requires explicit revision review; never silently substitute it.",
     "Evolution may revise a managed skill; it must not create a duplicate of a catalog name.",
+    ...(pointer ? [`- checkpoint: ${pointer}`] : []),
   ]
-  for (const entry of catalog.skills.slice(0, 16)) {
-    const tools = entry.tools.length ? ` tools=${entry.tools.slice(0, 4).join(",")}` : ""
-    lines.push(`- ${entry.name} [${entry.managed ? "managed" : "observed"}] ${cap(entry.description, 140)}${tools}`)
+  let visible = 0
+  for (const entry of active) {
+    const current = catalog.skills.find((skill) => skill.name === entry.name && skill.root === entry.root && skill.target === entry.target)
+    const state = !current ? "missing_or_not_catalogued" : current.sha256 !== entry.sha256 ? "changed" : "reload_required"
+    const line = `- ${entry.name} sha256=${entry.sha256} state=${state} source=${JSON.stringify(entry.root + "/" + entry.target)}`
+    if (utf8Bytes([...lines, line].join("\n")) > SKILL_COMPACTION_CONTEXT_MAX_BYTES - 200) break
+    lines.push(line)
+    visible++
   }
-  const text = lines.join("\n")
-  if (utf8Bytes(text) <= SKILL_COMPACTION_CONTEXT_MAX_BYTES) return text
-  return truncateUtf8(text, SKILL_COMPACTION_CONTEXT_MAX_BYTES)
+  lines.push(`- active references omitted: ${active.length - visible + priorOmitted}; read checkpoint for retained references`)
+  return lines.join("\n")
 }
 
 export function hintFromMessages(messages: Array<{ info?: any; parts?: any[] }>): SkillTurnHint {
@@ -380,14 +272,17 @@ export function hintFromMessages(messages: Array<{ info?: any; parts?: any[] }>)
       .filter((part) => part?.type === "text" && part.ignored !== true && typeof part.text === "string")
       .map((part) => part.text)
       .join("\n")
-    if (role === "user" && text) hint.userText = text
+    if (role === "user" && text) {
+      hint.userText = text
+      hint.userMessageId = message.info?.id
+    }
     if (role === "assistant" && text) hint.assistantText = text
     for (const part of parts) {
       if (part?.type !== "tool") continue
       const name = typeof part.tool === "string" ? part.tool : ""
       if (name) hint.tools.push(name)
       const input = part.state && typeof part.state === "object" ? (part.state as any).input : part.input
-      if (name === "skill" && input && typeof input.name === "string" && input.name.trim()) {
+      if (role === "assistant" && name === "skill" && part.state?.status === "completed" && part.state?.metadata?.error !== true && input && typeof input.name === "string" && input.name.trim()) {
         hint.loadedSkills.push(input.name.trim())
       }
     }
@@ -409,6 +304,15 @@ export function sessionIdFromMessages(messages: Array<{ info?: any }>): string |
 
 export class SkillGuidance {
   private readonly hints = new Map<string, SkillTurnHint>()
+  private readonly injected = new Map<string, { userMessageId: string; refs: SessionSkillRef[] }>()
+
+  injectedSkillsForTurn(sessionId: string, userMessageId: string): string[] {
+    const entry = this.injected.get(sessionId)
+    if (entry?.userMessageId !== userMessageId) return []
+    const catalog = this.catalog()
+    return entry.refs.filter((ref) => catalog.skills.some((skill) => skill.name === ref.name &&
+      skill.root === ref.root && skill.target === ref.target && skill.sha256 === ref.sha256)).map((ref) => ref.name)
+  }
 
   constructor(
     private readonly project: string,
@@ -424,24 +328,62 @@ export class SkillGuidance {
     if (!this.options.enabled) return
     const sessionId = sessionIdFromMessages(messages)
     if (!sessionId) return
+    if (messages.some((message) => message.info?.sessionID !== sessionId)) return
     this.hints.set(sessionId, hintFromMessages(messages))
+    if (this.hints.size > 256) {
+      const oldest = this.hints.keys().next().value!
+      this.hints.delete(oldest)
+      this.injected.delete(oldest)
+    }
+  }
+
+  private remember(sessionId: string, entries: SessionSkillRef[]): void {
+    if (!entries.length) return
+    updateSessionRecovery(this.project, sessionId, (current) => {
+      // Historical tool calls do not prove the bytes of a revised skill were read.
+      // Keep the first observed identity; drift stays visible until reviewed.
+      const merged = [...current.skills]
+      for (const entry of entries) {
+        if (!merged.some((item) => item.name === entry.name && item.root === entry.root && item.target === entry.target)) merged.push(entry)
+      }
+      if (merged.length > 32) throw new Error("active skill checkpoint capacity reached; existing references retained")
+      return { ...current, skills: merged }
+    })
   }
 
   systemContext(sessionId?: string): string {
     if (!this.options.enabled) return ""
     try {
-      return formatSkillSystemContext(this.catalog(), sessionId ? this.hints.get(sessionId) : undefined)
+      if (sessionId && isDeletedSkillSession(this.project, sessionId)) return ""
+      const catalog = this.catalog()
+      const hint = sessionId ? this.hints.get(sessionId) : undefined
+      const recovery = sessionId ? loadSessionRecovery(this.project, sessionId) : null
+      const eligible = { ...catalog, skills: catalog.skills.filter((skill) => !recovery?.skills.some((ref) =>
+        ref.name === skill.name && (ref.root !== skill.root || ref.target !== skill.target || ref.sha256 !== skill.sha256))) }
+      const included: SessionSkillRef[] = []
+      const text = formatSkillSystemContext(eligible, hint, included)
+      if (sessionId) {
+        // A successful skill-tool observation records identity, not a retained body.
+        const observed = catalog.skills.filter((skill) => hint?.loadedSkills.includes(skill.name))
+        this.remember(sessionId, [...included, ...observed.map(({ name, root, target, sha256 }) => ({ name, root, target, sha256 }))])
+      }
+      if (sessionId && hint?.userMessageId) this.injected.set(sessionId, { userMessageId: hint.userMessageId, refs: included })
+      return [sessionId ? this.compactionContext(sessionId) : "", text].filter(Boolean).join("\n\n")
     } catch {
-      return ""
+      if (sessionId) this.injected.delete(sessionId)
+      return "ALG session skill checkpoint unavailable; do not assume previous skills are loaded. Reload matching skills in full."
     }
   }
 
-  compactionContext(): string {
+  compactionContext(sessionId?: string): string {
     if (!this.options.enabled) return ""
     try {
-      return formatSkillCompactionContext(this.catalog())
+      if (!sessionId || isDeletedSkillSession(this.project, sessionId)) return ""
+      const recovery = loadSessionRecovery(this.project, sessionId)
+      if (!recovery) return ""
+      return formatSkillCompactionContext(this.catalog(), recovery?.skills, sessionRecoveryRelativePath(sessionId), recovery?.skills_omitted)
     } catch {
-      return ""
+      return "ALG session skill checkpoint unavailable; previous skill identities could not be verified."
     }
   }
 

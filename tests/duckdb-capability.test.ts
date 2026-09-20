@@ -155,7 +155,7 @@ describe("optional DuckDB capability", () => {
       "scripts/duckdb-project.ts",
       "scripts/verify-duckdb-manifest.ts",
     ]) expect(packed, path).toContain(path)
-    expect(ALG_TOOL_IDS).toHaveLength(15)
+    expect(ALG_TOOL_IDS).toHaveLength(19)
     expect(ALG_TOOL_IDS.some((name) => name.includes("duckdb"))).toBe(false)
   })
 

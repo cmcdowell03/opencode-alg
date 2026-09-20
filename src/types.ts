@@ -43,6 +43,10 @@ export const ALG_TOOL_IDS = [
   "alg_skill_evolution_review",
   "alg_skill_evolution_promote",
   "alg_skill_evolution_rollback",
+  "alg_memory_search",
+  "alg_memory_read",
+  "alg_context_status",
+  "alg_memory_propose",
 ] as const
 
 export function algServerStartupMessage(skillEvolutionEnabled: boolean): string {

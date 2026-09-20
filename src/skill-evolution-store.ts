@@ -56,6 +56,66 @@ import {
 const STORE_RELATIVE = ".opencode/skill-evolution"
 const LEDGER_FILE = "ledger.json"
 const CANDIDATE_FILE = "candidates.json"
+const SessionSkillRefSchema = z.object({
+  name: z.string().min(1).max(128),
+  root: z.string().min(1).max(1024),
+  target: z.string().min(1).max(256),
+  sha256: z.string().regex(/^[a-f0-9]{64}$/),
+}).strict()
+const SessionRecoverySchema = z.object({
+  schema_version: z.literal(1),
+  project: z.string().regex(/^[a-f0-9]{64}$/),
+  session_id: z.string().min(1).max(256),
+  updated_at: z.iso.datetime(),
+  skills: z.array(SessionSkillRefSchema).max(32),
+  skills_omitted: z.number().int().nonnegative(),
+  capture: z.object({
+    captured: z.number().int().nonnegative(),
+    missing: z.number().int().nonnegative(),
+    missing_keys: z.array(z.string().regex(/^[a-f0-9]{64}$/)).max(16),
+  }).strict().nullable(),
+}).strict()
+export type SessionSkillRef = z.infer<typeof SessionSkillRefSchema>
+export type SessionRecovery = z.infer<typeof SessionRecoverySchema>
+
+export function sessionRecoveryRelativePath(sessionId: string): string {
+  return `${STORE_RELATIVE}/session-recovery/${sha256Json(sessionId)}.json`
+}
+
+export function loadSessionRecovery(project: string, sessionId: string): SessionRecovery | null {
+  const path = resolveContainedPath(canonicalDirectory(project), sessionRecoveryRelativePath(sessionId))
+  if (!existsSync(path)) return null
+  const value = SessionRecoverySchema.parse(JSON.parse(readDirectBounded(canonicalDirectory(project), path, 64 * 1024, "session recovery").toString("utf8")))
+  if (value.session_id !== sessionId || value.project !== sha256Json(canonicalDirectory(project))) {
+    throw new Error("session recovery owner mismatch")
+  }
+  return value
+}
+
+/** Metadata only: never a transcript, credential store, or authority grant. */
+export function updateSessionRecovery(
+  project: string, sessionId: string,
+  update: (current: SessionRecovery) => SessionRecovery,
+): SessionRecovery {
+  return withSkillEvolutionLock(project, "session-recovery", () => {
+    if (isDeletedSkillSession(project, sessionId)) throw new Error("session was deleted")
+    const directory = storePath(project, "session-recovery")
+    ensureVerifiedDirectory(canonicalDirectory(project), directory)
+    const path = resolveContainedPath(canonicalDirectory(project), sessionRecoveryRelativePath(sessionId))
+    if (!existsSync(path) && readdirSync(directory).length >= 4096) throw new Error("session recovery capacity reached; no checkpoint evicted")
+    const current = loadSessionRecovery(project, sessionId) ?? {
+      schema_version: 1, project: sha256Json(canonicalDirectory(project)), session_id: sessionId,
+      updated_at: new Date().toISOString(), skills: [], skills_omitted: 0, capture: null,
+    }
+    const next = SessionRecoverySchema.parse({
+      ...update(current), project: current.project, session_id: current.session_id, updated_at: new Date().toISOString(),
+    })
+    const bytes = JSON.stringify(next)
+    if (utf8Bytes(bytes) > 64 * 1024) throw new Error("session recovery exceeds byte bound")
+    atomicWriteFile(path, bytes, true)
+    return next
+  })
+}
 const SESSION_EXCLUSIONS_FILE = "session-exclusions.json"
 const MAX_CHILDREN = 1_000
 const MAX_EXCLUDED_SESSIONS = 4_096
@@ -544,11 +604,14 @@ export function enqueueSkillAudit(
   messageId: string,
   options: SkillEvolutionOptions,
   force = false,
+  userMessageId?: string,
 ): EnqueueLedgerResult {
   return withSkillEvolutionLock(projectDirectory, "enqueue", () => {
     const ledger = loadSkillLedger(projectDirectory)
     const key = skillLedgerKey(sessionId, messageId)
     const existing = ledger.records.find((record) => record.key === key)
+    const priorTurn = userMessageId && ledger.records.find((record) => record.session_id === sessionId && record.user_message_id === userMessageId)
+    if (!existing && priorTurn) return { record: priorTurn, enqueued: false, reason: "duplicate" }
     const claims = loadReviewClaims(projectDirectory)
     const historicalOwner = claims.claims.find((claim) => claim.session_id === sessionId && claim.message_id === messageId &&
       claim.owner_kind === "historical" && claimActive(claim))
@@ -621,7 +684,7 @@ export function enqueueSkillAudit(
     const pending = ledger.records.filter((record) => record.status === "pending" || record.status === "running").length
     const created = nowIso()
     const record: SkillLedgerRecord = SkillLedgerRecordSchemaCompat({
-      key, session_id: sessionId, message_id: messageId,
+      key, session_id: sessionId, message_id: messageId, ...(userMessageId ? { user_message_id: userMessageId } : {}),
       status: pending >= options.maxBacklog ? "failed" : "pending",
       attempts: 0, forced_retries: 0, created_at: created, updated_at: created,
       ...(pending >= options.maxBacklog ? { error: "skill-evolution queue backlog limit reached" } : {}),
@@ -862,6 +925,16 @@ export function registerSkillAuditChild(
 
 export function isRegisteredSkillAuditChild(projectDirectory: string, sessionId: string): boolean {
   return loadSkillLedger(projectDirectory).audit_children.some((child) => child.session_id === sessionId)
+}
+
+export function markSkillAuditChild(project: string, sessionId: string, lifecycle: NonNullable<SkillEvolutionLedger["audit_children"][number]["lifecycle"]>): void {
+  withSkillEvolutionLock(project, "child-lifecycle", () => {
+    const ledger = loadSkillLedger(project)
+    const child = ledger.audit_children.find((entry) => entry.session_id === sessionId)
+    if (!child) throw new Error("cannot change an unowned audit child")
+    child.lifecycle = lifecycle
+    saveLedger(project, ledger, ledger.revision)
+  })
 }
 
 function immutablePathFor(project: string, directory: "evidence" | "revisions" | "backups" | "transactions" | "historical-snapshots" | "historical-chunks" | "historical-plans" | "historical-checkpoints", filename: string): string {

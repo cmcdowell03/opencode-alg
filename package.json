@@ -48,6 +48,8 @@
     "package.json"
   ],
   "scripts": {
+    "memory": "bun run scripts/memory-cli.ts",
+    "check:session-memory": "bun run scripts/session-memory-gate.ts",
     "alg": "bun run scripts/manager-cli.ts",
     "test": "bun test --timeout 60000",
     "test:installer": "bun test tests/installer.test.ts tests/manager.test.ts tests/manager-launchers.test.ts",

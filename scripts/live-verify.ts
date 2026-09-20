@@ -29,6 +29,7 @@ import {
   ALG_TUI_REGISTRATION_TOKEN,
 } from "../src/tui-registration.ts"
 import { ALG_PLUGIN_ID, ALG_TOOL_IDS, algServerStartupMessage } from "../src/types.ts"
+import { formatSdkError } from "../src/diagnostics.ts"
 export { ALG_TOOL_IDS } from "../src/types.ts"
 // `opencode --version` is the only bounded one-shot command. On Windows the
 // packaged executable has repeatedly taken 10-15 seconds to exit after a
@@ -1200,7 +1201,7 @@ export async function fetchToolIds(
       evidence.parsed_alg_ids = parseAlgToolIds(body)
       delete evidence.last_request_error
     } catch (error) {
-      evidence.last_request_error = boundedError(error)
+      evidence.last_request_error = `tool-registry readiness: ${formatSdkError(error)}`.slice(0, 2048)
     }
     const combined = `${capturedProcess.stdout()}\n${capturedProcess.stderr()}`
     evidence.source_identity_log = findSourceIdentityLine(combined, "server", identity) ?? null

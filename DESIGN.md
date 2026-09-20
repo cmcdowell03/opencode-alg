@@ -84,7 +84,14 @@ The server plugin installs:
 - a `tool` map containing the exact 15 ordered `alg_*` IDs below;
 - a `config` hook that captures merged OpenCode model configuration for future plans;
 - an event hook and disposable project runtime for disabled-by-default skill evolution; and
-- `experimental.session.compacting`, which injects a deterministic-by-state, bounded summary of the latest incomplete run owned by that parent session, matching SKILL.md catalog text when skill evolution is enabled, plus bounded skill-evolution pointers when that store has pending/running work. Joined hook context is capped. Hook failures are logged and do not block host compact. These summaries do not copy child reasoning.
+- `experimental.session.compacting`, which injects bounded latest-owned-run state,
+  durable session-active skill identities, and explicit evidence coverage (including
+  failed capture rows). Only ALG-owned chunks are capped. Normal message transforms
+  attempt early stable-envelope capture; later system transforms reload durable run
+  and recovery state independently of the host summary. Complete matching skill
+  bodies are loaded whole or omitted with a full-load requirement. Hook failures
+  do not block host compact. No complete transcript or host barrier is claimed.
+  See [session continuity](docs/session-continuity.md) for the graph projection design.
 
 The TUI plugin registers two palette/slash commands and emits a bounded registration marker. Verification-only source identity is described under [Safety boundaries](#source-bound-release-identity).
 

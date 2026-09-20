@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Adds opt-in session memory independent of learning: exact skill/dependency
+  bindings, durable checkpoints, bounded graph context, reviewed environments,
+  single-use retries and scoped child handoff. Four memory tools expand the exact
+  registry to 19. See `docs/session-memory.md` for synthetic-tested boundaries.
+
+- Repairs compaction continuity: whole skill bodies or explicit full-load pointers,
+  no unmatched-skill activation, durable session-owned skill hashes with drift
+  warnings, and per-turn accounting for complete system injections.
+- Validates source ownership/exclusions before evidence reads and publication.
+  Captures stable host envelopes at ordinary turn boundaries and persists explicit
+  evidence-coverage gaps, including failed terminal rows. Later system context
+  reloads recovery state independently of the host summary.
+- Budgets ALG-owned context only; existing other-plugin chunks remain exact.
+  See `docs/session-continuity.md` for implemented boundaries and proposed
+  session-scoped knowledge-graph retrieval.
 - Snapshots live skill-evolution evidence at enqueue and on
   `experimental.session.compacting`, then prefers that snapshot after host
   compact. Live message reads use `100 + 1` overflow detection and classify
@@ -20,7 +35,8 @@
 - Skill evolution reads existing `SKILL.md` files from configured roots (and
   observes OpenCode config skills for use). Evidence includes that catalog.
   Auditors prefer `no_change` or `skill_revision` over duplicate creates.
-- Matching skill bodies are injected into chat system context and compaction only
+- Matching complete skill bodies enter system context; session-active identity
+  pointers enter compaction only
   when `skillEvolution.enabled` is true. `applicable_skill_unused` still labels
   evidence; it does not spawn an auditor in `triggered` mode (humans /
   `every-turn` only).
@@ -28,7 +44,7 @@
   auditor model calls on uninformative turns.
 - `compactSession` snapshots share one `session.messages` fetch per session and
   the compacting hook is time-bounded below the child-call timeout. Joined
-  `output.context` is capped, not only each chunk.
+  ALG-owned context is capped, not the shared `output.context` of other plugins.
 
 ## 0.4.1
 

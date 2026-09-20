@@ -161,7 +161,7 @@ bytes also equal summed file sizes); this is still a local command record, not
 a cryptographic signature.
 
 1. Run focused runtime-source/live and destination-confinement tests, including
-   exact 15-tool startup registration with skill evolution disabled in the
+   exact 19-tool startup registration with skill evolution disabled in the
    isolated live configuration and automatic inclusion of all six new runtime
    modules.
 2. Run strict typecheck.

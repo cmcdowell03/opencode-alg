@@ -21,7 +21,7 @@ function transcript(sessionId: string, count: number, suffix = ""): any[] {
       info: {
         id: messageId, sessionID: sessionId, role,
         time: role === "assistant" ? { created: index, completed: index + 1 } : { created: index },
-        ...(role === "assistant" ? { parentID: `message-${index - 1}${suffix}`, mode: "build", providerID: "p", modelID: "m" } : {}),
+        ...(role === "assistant" ? { parentID: `message-${index - 1}${suffix}`, finish: "stop", mode: "build", providerID: "p", modelID: "m" } : {}),
       },
       parts: [{ id: `part-${index}${suffix}`, sessionID: sessionId, messageID: messageId, type: "text", text: `text ${index} ${suffix}` }],
     }
@@ -1057,7 +1057,9 @@ describe("V1-only historical skill evolution", () => {
       expect(active.status().candidates.candidates.map((candidate) => candidate.candidate_id)).toContainAllValues([first.result.candidate_id, second.result.candidate_id])
       active.dispose()
     } finally { removeProject(project) }
-  }, 30_000)
+  // Two complete durable reviews plus an idempotent replay can exceed 30s on
+  // Windows under sustained filesystem load. Production audit budgets stay fixed.
+  }, 60_000)
 
   test("project lease rejects a concurrent resume before another child create", async () => {
     const project = tempProject("alg-historical-concurrent-")

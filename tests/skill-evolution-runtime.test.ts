@@ -11,6 +11,8 @@ import {
   enqueueSkillAudit,
   loadSkillCandidates,
   loadSkillLedger,
+  loadSessionRecovery,
+  loadEvidenceReference,
   registerSkillAuditChild,
   skillEvolutionRoot,
   skillLedgerKey,
@@ -19,7 +21,7 @@ import { removeProject, tempProject } from "./helpers.ts"
 
 type Session = { id: string; projectID: string; directory: string; title: string; parentID?: string }
 
-function messages(sessionId: string, messageId = `assistant-${sessionId}`, userText = "Please complete this task.", assistantParts?: any[]) {
+function messages(sessionId: string, messageId = `assistant-${sessionId}`, userText = "Please complete this task.", assistantParts?: any[]): any[] {
   const userId = `user-${sessionId}`
   return [
     {
@@ -32,6 +34,7 @@ function messages(sessionId: string, messageId = `assistant-${sessionId}`, userT
         parentID: userId,
         sessionID: sessionId,
         role: "assistant",
+        finish: "stop",
         mode: "build",
         providerID: "source-provider",
         modelID: "source-model",
@@ -69,6 +72,7 @@ function event(sessionId: string, messageId = `assistant-${sessionId}`, override
         sessionID: sessionId,
         role: "assistant",
         time: { created: 11, completed: 12 },
+        finish: "stop",
         ...overrides,
       },
     },
@@ -227,7 +231,9 @@ function runtime(project: string, sdk: FakeSdk, configured: Partial<SkillEvoluti
   return active
 }
 
-async function waitFor(check: () => boolean, label = "condition", timeout = 4_000): Promise<void> {
+// Durable filesystem fixtures can exceed four seconds under Windows host load.
+// This bounds fixture polling only; production deadlines are tested separately.
+async function waitFor(check: () => boolean, label = "condition", timeout = 8_000): Promise<void> {
   const deadline = Date.now() + timeout
   while (Date.now() < deadline) {
     if (check()) return
@@ -328,6 +334,12 @@ test("out-of-project sessions are skipped without failed ledger errors", async (
     const record = await waitForStatus(project, "foreign", "assistant-foreign", "no-change")
     expect(record.error).toBeUndefined()
     expect(sdk.creates).toHaveLength(0)
+    expect(sdk.messageCalls).toBe(0)
+    expect(record.evidence_ref).toBeUndefined()
+    expect(existsSync(join(skillEvolutionRoot(project), "evidence"))).toBe(false)
+    await active.compactSession("foreign")
+    expect(loadSessionRecovery(project, "foreign")).toBeNull()
+    expect(sdk.messageCalls).toBe(0)
   } finally { active.dispose(); removeProject(project); removeProject(foreign) }
 })
 
@@ -837,7 +849,7 @@ describe("skill-evolution fresh auditor/checker child protocol", () => {
         removeProject(project)
       }
     }
-  }, 20_000)
+  }, 60_000)
 
   test("auditor/checker creation, prompt, malformed-result, and abort failures become terminal failed records", async () => {
     const cases: Array<[string, (sdk: FakeSdk) => void]> = [
@@ -895,6 +907,39 @@ describe("skill-evolution fresh auditor/checker child protocol", () => {
 })
 
 describe("skill-evolution compaction-loss handling", () => {
+  test("ordinary turn capture uses stable envelopes before the backend transcript disappears", async () => {
+    const project = tempProject("alg-skill-ordinary-capture-")
+    const sdk = new FakeSdk(project)
+    sdk.add("target", messages("target", "assistant-target", "ORIGINAL_TURN_SENTINEL"))
+    const original = structuredClone(sdk.messageSets.get("target")!)
+    const active = runtime(project, sdk)
+    try {
+      sdk.readGate = "messages"
+      await active.captureChatMessages(original)
+      const record = loadSkillLedger(project).records.find((entry) => entry.message_id === "assistant-target")!
+      expect(record.evidence_ref).toBeDefined()
+      expect(JSON.stringify(loadEvidenceReference(project, record.evidence_ref!))).toContain("ORIGINAL_TURN_SENTINEL")
+      sdk.messageSets.set("target", compactedMessages("target"))
+      await active.compactSession("target")
+      await waitForStatus(project, "target", "assistant-target", "no-change")
+      expect(sdk.messageCalls).toBe(0)
+    } finally { active.dispose(); removeProject(project) }
+  })
+
+  test("ordinary capture refuses foreign envelopes before enqueue and persistence", async () => {
+    const project = tempProject("alg-skill-capture-owner-")
+    const sdk = new FakeSdk(project)
+    sdk.add("foreign")
+    sdk.sessions.get("foreign")!.projectID = "other-project"
+    const active = runtime(project, sdk)
+    try {
+      await expect(active.captureChatMessages(messages("foreign"))).rejects.toThrow("another project")
+      expect(loadSkillLedger(project).records).toHaveLength(0)
+      expect(sdk.messageCalls).toBe(0)
+      expect(existsSync(join(skillEvolutionRoot(project), "evidence"))).toBe(false)
+    } finally { active.dispose(); removeProject(project) }
+  })
+
   test("enqueue then compact snapshot then dropped transcript still audits the durable evidence", async () => {
     const project = tempProject("alg-skill-compact-snapshot-")
     let releaseFirst!: () => void
@@ -914,6 +959,7 @@ describe("skill-evolution compaction-loss handling", () => {
       const context = await active.compactSession("target")
       expect(context).toContain(".opencode/skill-evolution/")
       expect(context).toContain(skillLedgerKey("target", "assistant-target"))
+      expect(context).toContain("missing=0")
       expect(context).toContain("historical-only")
       sdk.messageSets.set("target", compactedMessages("target"))
       releaseFirst()
@@ -983,6 +1029,13 @@ describe("skill-evolution compaction-loss handling", () => {
       expect(Date.now() - started).toBeLessThan(COMPACT_SESSION_TIMEOUT_MS + 750)
       expect(context).toContain(".opencode/skill-evolution/")
       expect(context).toContain(skillLedgerKey("target", "assistant-target"))
+      expect(context).toContain("DEGRADED")
+      expect(loadSessionRecovery(project, "target")?.capture?.missing).toBe(1)
+      active.dispose()
+      const restarted = runtime(project, sdk)
+      expect(restarted.recoveryContext("target")).toContain("DEGRADED")
+      expect(restarted.recoveryContext("other-session")).toBe("")
+      restarted.dispose()
       active.dispose()
     } finally {
       removeProject(project)

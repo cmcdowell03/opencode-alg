@@ -155,10 +155,15 @@
   prevents the same record from running twice, but distinct records can run in
   separate OpenCode server processes. Backlog overflow and ledger capacity are
   explicit durable failures, never silent drops.
-- Evidence is snapshotted at enqueue and again at `experimental.session.compacting`
+- Evidence capture is attempted at enqueue, ordinary message transforms, and `experimental.session.compacting`
   for pending/running identities in that session. Compact snapshots share one
   `session.messages` fetch per session and the hook is time-bounded below the
-  child-call timeout. Joined hook `context` is capped. Process prefers the durable
+  child-call timeout. Only ALG-owned hook chunks are capped; other plugins'
+  `context` stays unchanged. Ownership/exclusions are validated before reads and
+  publication. Session recovery records include failed/terminal missing evidence,
+  and later system context reloads coverage and skill-version references. Capture
+  remains best-effort, not a host barrier or complete session backup; see
+  [session continuity](session-continuity.md). Process prefers the durable
   snapshot. A live re-fetch uses `limit: 100 + 1` and rejects overflow without
   building evidence; a missing target ID is `compacted_or_unavailable`. Evidence
   keeps at most 24 tool summaries, uses explicit UTF-8 omission counts, and
