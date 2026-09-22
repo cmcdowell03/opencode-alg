@@ -198,6 +198,8 @@ const ProvenanceSchema = z.object({
   user_created_at: z.number().int().nonnegative(),
   assistant_created_at: z.number().int().nonnegative(),
   assistant_completed_at: z.number().int().nonnegative(),
+  /** Host finish reason. Absent on evidence written before turn identity was shared. */
+  finish: z.string().min(1).max(64).optional(),
 }).strict()
 
 const skillTarget = exact(10, 96, "skill target")

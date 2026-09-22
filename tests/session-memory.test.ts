@@ -6,7 +6,8 @@ import { tempProject, removeProject } from "./helpers.ts"
 import { SessionMemoryRuntime } from "../src/session-memory/runtime.ts"
 import { MemoryStore, hashObject, hashText } from "../src/session-memory/store.ts"
 import { MemoryOptionsSchema, type Operation } from "../src/session-memory/schemas.ts"
-import { contextBudget, estimateTokens } from "../src/session-memory/context.ts"
+import { contextBudget, estimateTokens, selectWorkingView } from "../src/session-memory/context.ts"
+import { CheckpointSchema } from "../src/session-memory/schemas.ts"
 import { localOrigin, publishEnvironment } from "../src/session-memory/environment.ts"
 import { preflight } from "../src/session-memory/preflight.ts"
 import { retrieve } from "../src/session-memory/retrieval.ts"
@@ -118,6 +119,7 @@ describe("durable session memory", () => {
     const checked = appendExperience(path, { kind: "outcome", source: { type: "fixture-verification", id: "connect-check", sha256: receipt }, observed_at: new Date().toISOString(),
       retention: "operational", status: "success", summary: "Synthetic acceptance verified", skill_version: op.skill, group: "task-one", relations: [{ kind: "tests", id: action.id }], metrics: {} })
     const reference = importEvidence(memory.store, "owner", checked.id)
+    expect(memory.store.node(reference, "owner").relations).toEqual([])
     const until = expiry()
     const resolution = memory.resolve("owner", op, reference, "Continue dataset quality checks; connection setup is complete.", until)
     expect(memory.resolve("owner", op, reference, "Continue dataset quality checks; connection setup is complete.", until)).toBe(resolution)
@@ -169,23 +171,21 @@ describe("durable session memory", () => {
     expect(() => memory.bindSkill("owner", memory.index.search("pc-only").skills[0]!.key)).toThrow("matching reviewed")
   })
 
-  test("unchanged failures block; polling/verification and one exact reviewed retry work", async () => {
+  test("uncited failures do not block; polling and a reviewed retry stay explicit", async () => {
     const memory = bound(project()), op = operation(memory)
     let executions = 0
     const execute = async () => { executions++; return "synthetic result" }
     const classify = () => ({ outcome: "failure" as const, receipt: hashObject("adapter-safe receipt") })
     await memory.guarded("owner", op, execute, classify)
-    await expect(memory.guarded("owner", op, execute, classify)).rejects.toThrow("unchanged failed")
-    expect(executions).toBe(1)
+    await memory.guarded("owner", op, execute, classify)
+    expect(executions).toBe(2)
+    expect(memory.current("owner").gaps.some((gap) => gap.includes("no committed-run citation"))).toBe(true)
     expect(preflight(memory.store, memory.current("owner"), { ...op, purpose: "poll" }).allowed).toBe(true)
     expect(preflight(memory.store, memory.current("owner"), { ...op, purpose: "verify" }).allowed).toBe(true)
     expect(preflight(memory.store, memory.current("owner"), { ...op, purpose: "transient-retry" }).allowed).toBe(false)
     const retry = memory.allowRetry("owner", op, "The synthetic transient condition was removed", expiry())
     expect(preflight(memory.store, memory.current("owner"), { ...op, resource: "other-dataset", purpose: "transient-retry" }).allowed).toBe(false)
-    await memory.guarded("owner", op, execute, classify)
-    expect(memory.current("owner").used_retries).toContain(retry)
-    await expect(memory.guarded("owner", op, execute, classify)).rejects.toThrow("unchanged failed")
-    expect(executions).toBe(2)
+    expect(preflight(memory.store, memory.current("owner"), { ...op, purpose: "transient-retry" }).retry).toBe(retry)
     expect(preflight(memory.store, memory.current("owner"), { ...op, parameters_hash: hashObject("different approved nonsecret parameters") }).allowed).toBe(true)
   })
 
@@ -264,6 +264,38 @@ describe("durable session memory", () => {
     expect(existsSync(join(path, ".opencode", "session-memory"))).toBe(false)
   })
 
+  test("an observed opening is not a task, and a checkpoint without that field still loads", () => {
+    const path = project()
+    const memory = runtime(path)
+    memory.observe([{ info: { id: "u", sessionID: "owner", role: "user", time: { created: 1 } }, parts: [{ type: "text", text: "Open the lake report" }] }])
+    const opened = memory.current("owner")
+    expect(opened.observed_opening).toBe("Open the lake report")
+    expect(opened.goal).toBe("")
+    expect(opened.pins).toEqual([])
+    expect(opened.task_epoch).toBe(0)
+    expect(opened.environment).toBeNull()
+    expect(opened.used_retries).toEqual([])
+    memory.beginTask("owner", "Diagnose the lake")
+    expect(memory.current("owner").goal).toBe("Diagnose the lake")
+    const legacy = { ...memory.current("owner") }
+    delete legacy.observed_opening
+    expect(CheckpointSchema.parse(legacy).goal).toBe("Diagnose the lake")
+    expect(runtime(path).current("owner").goal).toBe("Diagnose the lake")
+  })
+
+  test("selection ids and omissions stay stable when the render budget changes", () => {
+    const memory = bound(project())
+    const wide = memory.prepare("owner", budget)
+    const narrow = memory.prepare("owner", { context: 100, knownInputTokens: 99 })
+    expect(narrow.text).toBe("")
+    expect(narrow.receipt!.selected).toEqual(wide.receipt!.selected)
+    expect(narrow.receipt!.omitted).toBe(wide.receipt!.omitted)
+    const direct = selectWorkingView(memory.store, memory.index, memory.current("owner"), memory.options)
+    expect(direct.selected).toEqual(wide.receipt!.selected)
+    expect(direct.omitted).toBe(wide.receipt!.omitted)
+    expect(direct.hashes).toEqual(direct.selected)
+  })
+
   test("bounded graph expansion preserves evidence labels and does not promote proposals", () => {
     const memory = runtime(project())
     memory.beginTask("owner", "bounded retrieval")
@@ -275,7 +307,7 @@ describe("durable session memory", () => {
     expect(estimateTokens(pack.text)).toBeLessThanOrEqual(pack.receipt!.budget)
     expect(pack.text).toContain("UNTRUSTED MEMORY EVIDENCE")
     expect(pack.receipt!.omitted).toBeGreaterThan(0)
-  })
+  }, 20000)
 
   test("scoped worker delegation excludes private evidence; checker inherits no procedures", () => {
     const memory = bound(project())

@@ -243,6 +243,7 @@ export function buildSkillEvidence(
     user_created_at: Number(user.info.time.created),
     assistant_created_at: Number(assistant.info.time?.created),
     assistant_completed_at: Number(assistant.info.time.completed),
+    ...(typeof assistant.info.finish === "string" && assistant.info.finish.trim() ? { finish: String(assistant.info.finish).slice(0, 64) } : {}),
   }
   const totalParts = user.parts.length + turn.parts.length
   const retainedParts = user.parts.filter((part) => part.type === "text" && part.ignored !== true).length +

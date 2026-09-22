@@ -192,9 +192,21 @@ const server: Plugin = async (ctx, pluginOptions) => {
 
     "experimental.session.compacting": async (input, output) => {
       const owned: string[] = []
+      if (memory.enabled && memory.options.mode === "assist") {
+        try {
+          await captureResults(input.sessionID)
+          await authorizeMemory(input.sessionID)
+          const pack = memory.prepare(input.sessionID)
+          if (pack.text) owned.push(pack.text)
+        } catch {
+          owned.push("ALG working view unavailable; consult authoritative records before resuming.")
+        }
+        appendAlgCompactionContext(output.context, owned)
+        return
+      }
       if (memory.enabled) {
-        try { await captureResults(input.sessionID); await authorizeMemory(input.sessionID); const context = memory.compact(input.sessionID); if (context && memory.options.mode === "assist") owned.push(context) }
-        catch { if (memory.options.mode === "assist") owned.push("ALG checkpoint unavailable; do not assume skill restoration succeeded.") }
+        try { await captureResults(input.sessionID); await authorizeMemory(input.sessionID) }
+        catch { /* observe/off capture failure stays off the context channel */ }
       }
       const logCompactionFailure = (message: string) => {
         try {

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- System and compaction hooks share one durable-fact selection. Assist compaction
+  no longer appends a separate run summary, skill-evolution paragraph, or checkpoint
+  sentence. The first user sentence is stored as an observed opening, not a task goal.
+  An assist-mode retry blocks only while the cited committed run is still that failure.
 - Adds opt-in session memory independent of learning: exact skill/dependency
   bindings, durable checkpoints, bounded graph context, reviewed environments,
   single-use retries and scoped child handoff. Four memory tools expand the exact

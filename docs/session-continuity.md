@@ -188,3 +188,10 @@ TypeScript validation passed. The synthetic acceptance set passed 95 tests with
 set, not the entire release gate or a live OpenCode/model compaction acceptance run.
 The repair is on `codex/compaction-recovery-20260920`; installation, commit and
 push are separate steps.
+
+## Current status
+
+The September 20 paragraphs above are the baseline for that repair. They are not
+the current tree. The canonical checkout is commit `dc55386` on `origin/main`,
+in the worktree `D:\alg-worktrees\compaction-recovery-20260920`. Later changes
+branch from that commit.

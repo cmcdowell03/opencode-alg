@@ -1,7 +1,7 @@
 import type { SkillTurnHint } from "../skill-catalog.ts"
 import { hintFromMessages, observedConfigSkillRoots } from "../skill-catalog.ts"
 import { loadSessionRecovery } from "../skill-evolution-store.ts"
-import { MemoryOptionsSchema, MemoryNodeSchema, OperationSchema, SessionId, type Checkpoint, type MemoryOptions, type Operation } from "./schemas.ts"
+import { MemoryOptionsSchema, MemoryNodeSchema, OperationSchema, RunCitationSchema, SessionId, type Checkpoint, type MemoryOptions, type Operation, type RunCitation } from "./schemas.ts"
 import { MemoryStore, hashObject } from "./store.ts"
 import { SkillIndex } from "./skill-index.ts"
 import { buildContext, type ModelBudget } from "./context.ts"
@@ -32,6 +32,17 @@ export class SessionMemoryRuntime {
   beginTask(owner: string, goal: string, constraints: string[] = [], resultAfter = Date.now()) {
     return this.update(owner, (value) => ({ ...value, task_epoch: value.task_epoch + 1, generation: value.generation + 1,
       goal, constraints, skills: [], pins: [], used_retries: [], completed: [], next_step: "", gaps: [], source_cursor: null, result_after: resultAfter }))
+  }
+  /** Bookmark the first user sentence. Does not start a task or change pins. */
+  noteOpening(owner: string, text: string) {
+    this.requireEnabled()
+    const observed_opening = text.slice(0, 2000)
+    if (!observed_opening) return this.current(owner)
+    return this.update(owner, (value) => value.observed_opening ? value : { ...value, observed_opening })
+  }
+  private addGap(owner: string, gap: string) {
+    if (!gap || this.current(owner).gaps.includes(gap)) return
+    this.update(owner, (value) => ({ ...value, gaps: [...value.gaps.slice(-15), gap] }))
   }
   selectEnvironment(owner: string, id: string | null) {
     const current = this.current(owner)
@@ -79,7 +90,7 @@ export class SessionMemoryRuntime {
     let current = this.current(owner)
     if (current.deleted) return
     // Only initialize a goal once. New task epochs are explicit, never guessed from a summary.
-    if (!current.revision && hint.userText) current = this.beginTask(owner, hint.userText.slice(0, 2000), [], latestUser?.info?.time?.created ?? 0)
+    if (!current.revision && hint.userText) current = this.noteOpening(owner, hint.userText)
     if (!current.revision) return
     if (current.result_after !== undefined && Number.isSafeInteger(latestUser?.info?.time?.created) && latestUser!.info.time.created < current.result_after) return
     if (current.delegation?.role === "checker") return
@@ -144,6 +155,7 @@ export class SessionMemoryRuntime {
       created_at: new Date(terminal.info.time.completed).toISOString(), kind: "result", summary: "Prior completed answer; correctness unverified",
       relations: [], payload: { validation: "unverified-assistant-claim", task_epoch: current.task_epoch,
         user_message_id: latestUser.info.id, assistant_message_id: terminal.info.id, environment: current.environment,
+        session_id: owner, finish: String(terminal.info.finish),
         artifact, excerpt, bytes_omitted: Buffer.byteLength(text) - Buffer.byteLength(excerpt), tool_evidence: toolEvidence, completed: "assistant-turn-only" } })
     const results = current.pins.filter((pin) => this.store.node(pin, owner).kind === "result")
     const keep = new Set(results.slice(-7))
@@ -185,13 +197,14 @@ export class SessionMemoryRuntime {
     return this.update(owner, (value) => ({ ...value, pins: [...new Set([...value.pins, id])] }))
   }
   /** Only structured, integrated adapters call this; generic model text is not an outcome. */
-  recordAttempt(owner: string, raw: Operation, outcome: "success" | "failure" | "indeterminate", receipt: string, expires: string) {
+  recordAttempt(owner: string, raw: Operation, outcome: "success" | "failure" | "indeterminate", receipt: string, expires: string, citation?: RunCitation) {
     this.requireEnabled()
     const operation = OperationSchema.parse(raw)
+    const run_citation = citation ? RunCitationSchema.parse(citation) : undefined
     const state = this.current(owner)
     preflight(this.store, state, { ...operation, purpose: "verify" })
     const id = this.store.putNode({ schema_version: 1, project: this.store.projectId, owner, visibility: "session", created_at: new Date().toISOString(),
-      kind: "attempt", summary: `${operation.operation}: ${outcome}`, relations: [], payload: { operation, signature: operationSignature(operation), outcome, receipt, expires_at: expires } })
+      kind: "attempt", summary: `${operation.operation}: ${outcome}`, relations: [], payload: { operation, signature: operationSignature(operation), outcome, receipt, expires_at: expires, ...(run_citation ? { run_citation } : {}) } })
     this.pin(owner, id)
     return id
   }
@@ -218,20 +231,20 @@ export class SessionMemoryRuntime {
     this.pin(owner, id)
     return id
   }
-  async guarded<T>(owner: string, operation: Operation, execute: () => Promise<T>, classify: (result: T) => { outcome: "success" | "failure" | "indeterminate"; receipt: string }): Promise<T> {
+  async guarded<T>(owner: string, operation: Operation, execute: () => Promise<T>, classify: (result: T) => { outcome: "success" | "failure" | "indeterminate"; receipt: string; run_citation?: RunCitation }): Promise<T> {
     this.requireEnabled()
     if (this.options.mode === "observe") {
       try { this.prepare(owner); preflight(this.store, this.current(owner), operation) } catch { /* advisory only */ }
       const result = await execute()
       try {
         const observed = classify(result)
-        this.recordAttempt(owner, operation, observed.outcome, observed.receipt, new Date(Date.now() + 900000).toISOString())
+        this.recordAttempt(owner, operation, observed.outcome, observed.receipt, new Date(Date.now() + 900000).toISOString(), observed.run_citation)
       } catch { /* observation cannot rewrite an action result */ }
       return result
     }
-    const prepared = this.prepare(owner)
-    if (this.options.mode === "assist" && prepared.blocked) throw new Error("memory preflight requires complete context")
+    try { this.prepare(owner) } catch { /* a failed view must not veto the run */ }
     const decision = preflight(this.store, this.current(owner), operation)
+    if (decision.gap) try { this.addGap(owner, decision.gap) } catch { /* gap reporting must not veto the run */ }
     if (this.options.mode === "assist" && !decision.allowed) throw new Error(decision.reason)
     if (this.options.mode === "assist" && decision.retry) this.update(owner, (state) => ({ ...state, used_retries: [...state.used_retries, decision.retry!] }))
     // Authorization belongs to execute's adapter, never to the memory decision.
@@ -243,7 +256,7 @@ export class SessionMemoryRuntime {
       throw error
     }
     const outcome = classify(result)
-    this.recordAttempt(owner, operation, outcome.outcome, outcome.receipt, new Date(Date.now() + 900000).toISOString())
+    this.recordAttempt(owner, operation, outcome.outcome, outcome.receipt, new Date(Date.now() + 900000).toISOString(), outcome.run_citation)
     return result
   }
   delegate(parent: string, child: string, role: "worker" | "checker") {
