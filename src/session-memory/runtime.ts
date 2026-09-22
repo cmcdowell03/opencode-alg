@@ -231,10 +231,10 @@ export class SessionMemoryRuntime {
     this.pin(owner, id)
     return id
   }
-  async guarded<T>(owner: string, operation: Operation, execute: () => Promise<T>, classify: (result: T) => { outcome: "success" | "failure" | "indeterminate"; receipt: string; run_citation?: RunCitation }): Promise<T> {
+  async guarded<T>(owner: string, operation: Operation, execute: () => Promise<T>, classify: (result: T) => { outcome: "success" | "failure" | "indeterminate"; receipt: string; run_citation?: RunCitation }, prospectiveShellGateHash?: string): Promise<T> {
     this.requireEnabled()
     if (this.options.mode === "observe") {
-      try { this.prepare(owner); preflight(this.store, this.current(owner), operation) } catch { /* advisory only */ }
+      try { this.prepare(owner); preflight(this.store, this.current(owner), operation, prospectiveShellGateHash) } catch { /* advisory only */ }
       const result = await execute()
       try {
         const observed = classify(result)
@@ -243,7 +243,7 @@ export class SessionMemoryRuntime {
       return result
     }
     try { this.prepare(owner) } catch { /* a failed view must not veto the run */ }
-    const decision = preflight(this.store, this.current(owner), operation)
+    const decision = preflight(this.store, this.current(owner), operation, prospectiveShellGateHash)
     if (decision.gap) try { this.addGap(owner, decision.gap) } catch { /* gap reporting must not veto the run */ }
     if (this.options.mode === "assist" && !decision.allowed) throw new Error(decision.reason)
     if (this.options.mode === "assist" && decision.retry) this.update(owner, (state) => ({ ...state, used_retries: [...state.used_retries, decision.retry!] }))

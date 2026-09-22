@@ -9,7 +9,7 @@ import { executeWithMemory } from "../src/session-memory/attempts.ts"
 import { localOrigin, publishEnvironment } from "../src/session-memory/environment.ts"
 import { hashObject } from "../src/session-memory/store.ts"
 import { runNodeSession } from "../src/sessions.ts"
-import { createRun, loadRun, persistRun } from "../src/store.ts"
+import { createRun, loadRun } from "../src/store.ts"
 import { withShellGate } from "../src/tools.ts"
 import { prepareRunForResume } from "../src/executor.ts"
 import { tempProject, removeProject, executeContext, singleImplementGraph } from "./helpers.ts"
@@ -246,15 +246,14 @@ describe("session memory SDK-boundary conformance", () => {
     expect(unreadable.status).toBe("failed")
     expect(memory.current(owner).gaps.some((gap) => gap.includes("unreadable"))).toBe(true)
 
-    const current = loadRun(path, failed.run_id)
-    if (!current) throw new Error("committed run missing")
-    const implementer = current.graph.nodes.find((node) => node.agent === "implementer")
-    if (!implementer) throw new Error("missing implementer")
-    implementer.shell_gate = { cmd: "bun test --changed" }
-    persistRun(current, path)
-    const changed = await executeWithMemory(memory, reload(), wider)
+    const pending = reload()
+    const revisionBefore = pending.revision
+    pending.graph = withShellGate(pending.graph, "bun test --changed")
+    const changed = await executeWithMemory(memory, pending, { ...wider, shellGateCmd: "bun test --changed" })
     expect(changed.status).toBe("failed")
-    const gap = memory.current(owner).gaps.find((item) => item.includes("revision moved"))
-    expect(gap).toContain("shell gate changed")
+    const gap = memory.current(owner).gaps.find((item) => item.includes("shell gate changed"))
+    expect(gap).toBeTruthy()
+    expect(gap).not.toContain("revision moved")
+    expect(loadRun(path, failed.run_id)!.revision).toBeGreaterThan(revisionBefore)
   }, 30000)
 })

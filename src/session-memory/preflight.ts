@@ -11,7 +11,19 @@ export function operationSignature(raw: Operation): string {
 }
 
 export function shellGateHash(run: RunState): string {
-  const gate = run.graph.nodes.find((node) => node.agent === "implementer")?.shell_gate ?? null
+  return prospectiveShellGateHash(run)
+}
+
+/** Gate the implementer will run. Matches executor shellDefinition, including a command not yet persisted. */
+export function prospectiveShellGateHash(run: RunState, options: { shellGateCmd?: string; shellGateTimeoutMs?: number } = {}): string {
+  const definition = run.graph.nodes.find((node) => node.agent === "implementer")
+  const gate = definition && options.shellGateCmd
+    ? {
+        ...definition.shell_gate,
+        cmd: options.shellGateCmd,
+        ...(options.shellGateTimeoutMs !== undefined ? { timeout_ms: options.shellGateTimeoutMs } : {}),
+      }
+    : definition?.shell_gate ?? null
   return hashObject(gate)
 }
 
@@ -24,7 +36,7 @@ export interface PreflightDecision {
 }
 
 /** A failure pin blocks only while the committed run still shows that same failure. */
-export function committedFailureDecision(store: MemoryStore, owner: string, citation: RunCitation, operation: Operation): PreflightDecision {
+export function committedFailureDecision(store: MemoryStore, owner: string, citation: RunCitation, operation: Operation, prospectiveShellGateHashValue?: string): PreflightDecision {
   const signature = operationSignature(operation)
   let run: RunState | null
   try {
@@ -35,7 +47,7 @@ export function committedFailureDecision(store: MemoryStore, owner: string, cita
   if (!run) return { allowed: true, signature, reason: `committed run ${citation.run_id} is unreadable; retry memory will not block`, gap: `committed run ${citation.run_id} is unreadable; retry memory will not block` }
   const reasons: string[] = []
   if (run.revision !== citation.revision) reasons.push("revision moved")
-  if (shellGateHash(run) !== citation.shell_gate_hash) reasons.push("shell gate changed")
+  if ((prospectiveShellGateHashValue ?? shellGateHash(run)) !== citation.shell_gate_hash) reasons.push("shell gate changed")
   if (operation.parameters_hash !== citation.limits_hash) reasons.push("limits changed")
   if (reasons.length) {
     const gap = `committed run ${citation.run_id} ${reasons.join(", ")}; retry memory will not block`
@@ -44,7 +56,7 @@ export function committedFailureDecision(store: MemoryStore, owner: string, cita
   return { allowed: false, signature, reason: `unchanged failed attempt on run ${citation.run_id}; operator must authorize a scoped retry or changed conditions` }
 }
 
-export function preflight(store: MemoryStore, checkpoint: Checkpoint, raw: Operation): PreflightDecision {
+export function preflight(store: MemoryStore, checkpoint: Checkpoint, raw: Operation, prospectiveShellGateHashValue?: string): PreflightDecision {
   const operation = OperationSchema.parse(raw)
   verifyEnvironment(store, checkpoint)
   if (operation.environment !== checkpoint.environment || !checkpoint.skills.some((binding) => binding.id === operation.skill)) throw new Error("operation scope differs from active bindings")
@@ -69,7 +81,7 @@ export function preflight(store: MemoryStore, checkpoint: Checkpoint, raw: Opera
         const gap = `attempt ${id} has no committed-run citation; the limits-only signature is not an unchanged failure`
         return { allowed: true, signature, reason: gap, gap }
       }
-      const decision = committedFailureDecision(store, checkpoint.owner, node.payload.run_citation, operation)
+      const decision = committedFailureDecision(store, checkpoint.owner, node.payload.run_citation, operation, prospectiveShellGateHashValue)
       if (!decision.allowed) return { ...decision, reason: `unchanged failed attempt ${id}; operator must authorize a scoped retry or changed conditions` }
       return decision
     }

@@ -4,7 +4,7 @@ import { canonicalDirectory } from "../paths.ts"
 import { loadRunForOwner } from "../store.ts"
 import type { RunState } from "../types.ts"
 import { hashObject } from "./store.ts"
-import { shellGateHash } from "./preflight.ts"
+import { prospectiveShellGateHash } from "./preflight.ts"
 import type { SessionMemoryRuntime } from "./runtime.ts"
 import type { Operation, Checkpoint, RunCitation } from "./schemas.ts"
 
@@ -40,6 +40,7 @@ export async function executeWithMemory(memory: SessionMemoryRuntime | undefined
   const operation: Operation = { adapter: "alg", operation: "alg_execute", resource: run.run_id,
     parameters_hash: hashObject({ dry: Boolean(options.dry || run.mode === "dry"), max_waves: options.maxWaves ?? null, max_concurrency: options.maxConcurrency ?? null }),
     environment: state.environment, skill: candidates[0]!.id, purpose: "action" }
+  const gateHash = prospectiveShellGateHash(run, options)
   return memory.guarded(owner, operation, () => executeRun(run, delegated), (result) => {
     let run_citation: RunCitation | undefined
     try {
@@ -47,7 +48,7 @@ export async function executeWithMemory(memory: SessionMemoryRuntime | undefined
       if (committed) run_citation = {
         run_id: committed.run_id,
         revision: committed.revision,
-        shell_gate_hash: shellGateHash(committed),
+        shell_gate_hash: prospectiveShellGateHash(run, options),
         limits_hash: operation.parameters_hash,
       }
     } catch { /* an unreadable run is recorded without a citation and cannot block later */ }
@@ -57,5 +58,5 @@ export async function executeWithMemory(memory: SessionMemoryRuntime | undefined
         attempts: result.global_attempts, nodes: Object.values(result.nodes).map((node) => ({ id: node.id, status: node.status, attempt: node.current_attempt })) }),
       run_citation,
     }
-  })
+  }, gateHash)
 }
