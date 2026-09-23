@@ -10,6 +10,8 @@ import { localOrigin, publishEnvironment } from "../src/session-memory/environme
 import { hashObject } from "../src/session-memory/store.ts"
 import { runNodeSession } from "../src/sessions.ts"
 import { createRun, loadRun } from "../src/store.ts"
+import { SkillEvolutionOptionsSchema } from "../src/skill-evolution-schemas.ts"
+import { enqueueSkillAudit, loadSessionRecovery, loadSkillLedger } from "../src/skill-evolution-store.ts"
 import { withShellGate } from "../src/tools.ts"
 import { prepareRunForResume } from "../src/executor.ts"
 import { tempProject, removeProject, executeContext, singleImplementGraph } from "./helpers.ts"
@@ -67,6 +69,32 @@ describe("session memory SDK-boundary conformance", () => {
     expect(status.coverage.host_prompt_delivery).toBe("NOT_ATTESTED")
     expect(hooks["experimental.compaction.autocontinue"]).toBeUndefined()
     await hooks.dispose?.()
+  })
+
+  test("assist compaction captures pending learning evidence before rendering one working view", async () => {
+    const { path } = fixture()
+    const base = plugin(path)
+    base.client.session.messages = async () => ({ data: [
+      { info: { id: "u", sessionID: "owner", role: "user", time: { created: 1 } }, parts: [{ type: "text", text: "Diagnose synthetic paging" }] },
+      { info: { id: "final", parentID: "u", sessionID: "owner", role: "assistant", finish: "stop", time: { created: 2, completed: 3 } },
+        parts: [{ type: "text", text: "Use page size 50." }] },
+    ] })
+    const learning = SkillEvolutionOptionsSchema.parse({ enabled: true, allowBuiltinToolMap: true, mode: "every-turn" })
+    const hooks = await server(base, { sessionMemory: { mode: "assist", fallbackTokens: 4096 }, skillEvolution: learning })
+    try {
+      enqueueSkillAudit(path, "owner", "final", learning, false, "u")
+      const compact = { context: ["other plugin context"] }
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+      expect(loadSkillLedger(path).records[0]?.evidence_ref).toBeTruthy()
+      expect(loadSessionRecovery(path, "owner")?.capture).toMatchObject({ captured: 1, missing: 0 })
+      expect(compact.context[0]).toBe("other plugin context")
+      expect(compact.context.join("\n")).not.toContain("## ALG skill-evolution state")
+      const system = { system: ["host policy"] }
+      await hooks["experimental.chat.system.transform"]!(input(), system)
+      expect(system.system.join("\n")).toContain("Last compaction coverage: captured=1, missing=0")
+    } finally {
+      await hooks.dispose?.()
+    }
   })
 
   test("off and observe do not emit new memory context", async () => {

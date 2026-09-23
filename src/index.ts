@@ -192,7 +192,14 @@ const server: Plugin = async (ctx, pluginOptions) => {
 
     "experimental.session.compacting": async (input, output) => {
       const owned: string[] = []
+      const logCompactionFailure = (message: string) => {
+        try { Promise.resolve(client.app.log({ body: { service: ALG_PLUGIN_ID, level: "error", message } })).catch(() => {}) }
+        catch { /* log optional */ }
+      }
       if (memory.enabled && memory.options.mode === "assist") {
+        // The learning snapshot is a durable write, not merely another context paragraph.
+        try { await skillEvolution.compactSession(input.sessionID) }
+        catch (error) { logCompactionFailure(`ALG skill-evolution compaction hook failed: ${formatSdkError(error)}`) }
         try {
           await captureResults(input.sessionID)
           await authorizeMemory(input.sessionID)
@@ -207,15 +214,6 @@ const server: Plugin = async (ctx, pluginOptions) => {
       if (memory.enabled) {
         try { await captureResults(input.sessionID); await authorizeMemory(input.sessionID) }
         catch { /* observe/off capture failure stays off the context channel */ }
-      }
-      const logCompactionFailure = (message: string) => {
-        try {
-          Promise.resolve(client.app.log({
-            body: { service: ALG_PLUGIN_ID, level: "error", message },
-          })).catch(() => {})
-        } catch {
-          /* log optional */
-        }
       }
       try {
         const run = findLatestIncompleteRunForSession(ctx.worktree || directory, input.sessionID)

@@ -165,9 +165,13 @@ export class SessionMemoryRuntime {
   prepare(owner: string, model: ModelBudget = {}) {
     this.requireEnabled()
     const checkpoint = this.current(owner)
-    if (!checkpoint.revision || checkpoint.deleted) return { text: "", blocked: false, receipt: null }
+    if (!checkpoint.revision || checkpoint.deleted) return { text: "", blocked: false, requiredUnavailable: false, receipt: null }
     const result = buildContext(this.store, this.index, checkpoint, this.options, model)
-    this.store.receipt(result.receipt)
+    try { this.store.receipt(result.receipt) }
+    catch (error) {
+      // A receipt write failure must not turn an unavailable required skill into permission to run.
+      if (!result.requiredUnavailable) throw error
+    }
     return result
   }
   compact(owner: string) {
@@ -242,7 +246,10 @@ export class SessionMemoryRuntime {
       } catch { /* observation cannot rewrite an action result */ }
       return result
     }
-    try { this.prepare(owner) } catch { /* a failed view must not veto the run */ }
+    let prepared: ReturnType<SessionMemoryRuntime["prepare"]> | undefined
+    try { prepared = this.prepare(owner) }
+    catch { /* Optional view/receipt failures remain advisory; adapter permissions are checked below. */ }
+    if (prepared?.requiredUnavailable) throw new Error(`memory preflight requires complete context: ${prepared.receipt?.reasons.at(-1) ?? "mandatory context unavailable"}`)
     const decision = preflight(this.store, this.current(owner), operation, prospectiveShellGateHash)
     if (decision.gap) try { this.addGap(owner, decision.gap) } catch { /* gap reporting must not veto the run */ }
     if (this.options.mode === "assist" && !decision.allowed) throw new Error(decision.reason)

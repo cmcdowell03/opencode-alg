@@ -7,6 +7,10 @@
   sentence. The first user sentence is stored as an observed opening, not a task goal.
   An assist-mode retry blocks only while the cited committed run is still that failure,
   comparing the shell gate this call will run, including a command not yet persisted.
+- Assist compaction completes the pending learning-evidence snapshot before building
+  its working view. Required skills that do not fit the context budget still stop
+  guarded execution. Context receipts distinguish eligible candidates from items
+  actually rendered and count evidence omitted for the budget.
 - Adds opt-in session memory independent of learning: exact skill/dependency
   bindings, durable checkpoints, bounded graph context, reviewed environments,
   single-use retries and scoped child handoff. Four memory tools expand the exact

@@ -98,6 +98,8 @@ export type Checkpoint = z.infer<typeof CheckpointSchema>
 export const ContextReceiptSchema = z.object({
   schema_version: z.literal(1), owner: SessionId, revision: z.number().int().nonnegative(), generation: z.number().int().nonnegative(),
   context_hash: Hash, selected: z.array(Hash).max(128), omitted: z.number().int().nonnegative(),
+  /** Eligible durable facts before rendering; selected contains only facts actually in context. */
+  candidates: z.array(Hash).max(128).optional(), budget_omitted: z.number().int().nonnegative().optional(),
   budget: z.number().int().nonnegative(), estimated_tokens: z.number().int().nonnegative(),
   estimator: z.literal("utf8-byte-upper-estimate-v1"), total_headroom_known: z.boolean(),
   state: z.enum(["prepared", "blocked", "observed"]), reasons: z.array(z.string().max(256)).max(64),

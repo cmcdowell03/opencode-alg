@@ -223,6 +223,28 @@ describe("durable session memory", () => {
     }), { numRuns: 100 })
   })
 
+  test("assist refuses execution when a bound complete skill exceeds the context budget", async () => {
+    const path = project()
+    skill(path, "large", "Required complete procedure.\n".repeat(180), { schema_version: 1, operations: ["alg_execute"] })
+    const memory = runtime(path)
+    memory.beginTask("owner", "Apply the complete synthetic procedure")
+    memory.selectEnvironment("owner", publishEnvironment(memory.store, profile()))
+    memory.bindSkill("owner", memory.index.search("large").skills[0]!.key)
+    const pack = memory.prepare("owner")
+    expect(pack.blocked).toBe(true)
+    expect(pack.requiredUnavailable).toBe(true)
+    const state = memory.current("owner")
+    const op: Operation = { adapter: "alg", operation: "alg_execute", resource: "synthetic-run", parameters_hash: hashObject("fixture"),
+      environment: state.environment!, skill: state.skills[0]!.id, purpose: "action" }
+    let executions = 0
+    await expect(memory.guarded("owner", op, async () => { executions++; return "executed" },
+      () => ({ outcome: "success", receipt: hashObject("synthetic-result") }))).rejects.toThrow("needs_context")
+    memory.store.receipt = () => { throw new Error("synthetic receipt write failure") }
+    await expect(memory.guarded("owner", op, async () => { executions++; return "executed" },
+      () => ({ outcome: "success", receipt: hashObject("synthetic-result") }))).rejects.toThrow("needs_context")
+    expect(executions).toBe(0)
+  })
+
   test("CAS and interrupted publication preserve last committed cursor", () => {
     const memory = runtime(project())
     const first = memory.beginTask("owner", "durable task")
@@ -283,17 +305,34 @@ describe("durable session memory", () => {
     expect(runtime(path).current("owner").goal).toBe("Diagnose the lake")
   })
 
-  test("selection ids and omissions stay stable when the render budget changes", () => {
+  test("candidate selection stays stable while receipts show what the budget actually rendered", () => {
     const memory = bound(project())
     const wide = memory.prepare("owner", budget)
     const narrow = memory.prepare("owner", { context: 100, knownInputTokens: 99 })
     expect(narrow.text).toBe("")
-    expect(narrow.receipt!.selected).toEqual(wide.receipt!.selected)
-    expect(narrow.receipt!.omitted).toBe(wide.receipt!.omitted)
+    expect(narrow.receipt!.candidates).toEqual(wide.receipt!.candidates)
+    expect(narrow.receipt!.selected).toEqual([])
+    expect(narrow.receipt!.omitted).toBeGreaterThan(wide.receipt!.omitted)
     const direct = selectWorkingView(memory.store, memory.index, memory.current("owner"), memory.options)
-    expect(direct.selected).toEqual(wide.receipt!.selected)
-    expect(direct.omitted).toBe(wide.receipt!.omitted)
+    expect(direct.selected).toEqual(wide.receipt!.candidates!)
+    expect(direct.omitted).toBe(wide.receipt!.omitted - wide.receipt!.budget_omitted!)
     expect(direct.hashes).toEqual(direct.selected)
+  })
+
+  test("budget-trimmed evidence is counted and offered for explicit retrieval", () => {
+    const memory = new SessionMemoryRuntime(project(), { mode: "assist", fallbackTokens: 1024 }, [".opencode/skills"], [])
+    memory.beginTask("owner", "Bounded recall")
+    for (const marker of ["OMITTED_EVIDENCE_ALPHA", "OMITTED_EVIDENCE_BETA"]) {
+      memory.pin("owner", memory.propose("owner", marker + " benign evidence".repeat(100)))
+    }
+    const pack = memory.prepare("owner")
+    expect(pack.blocked).toBe(false)
+    expect(pack.receipt!.candidates).toHaveLength(2)
+    expect(pack.receipt!.selected).toEqual([])
+    expect(pack.receipt!.budget_omitted).toBe(2)
+    expect(pack.receipt!.omitted).toBe(2)
+    expect(pack.text).toContain("Memory objects omitted: 2")
+    expect(pack.text).not.toContain("OMITTED_EVIDENCE_ALPHA")
   })
 
   test("bounded graph expansion preserves evidence labels and does not promote proposals", () => {

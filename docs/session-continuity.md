@@ -80,6 +80,12 @@ previously stored byte has been erased.
   snapshot. It can conservatively continue warning after later capture succeeds,
   until the next compaction refresh. Missing/corrupt checkpoints are warnings,
   not fabricated empty success.
+- In assist mode, compaction snapshots pending learning evidence before it renders
+  the memory working view. The following system transform restores run recovery
+  and learning coverage from durable records. Receipt `candidates` lists eligible durable facts;
+  `selected` lists facts rendered in the view. `budget_omitted` and `omitted`
+  expose context limits so a missing item can be fetched by its retrieval handle.
+  An incomplete required skill remains an execution preflight error.
 - Learning remains opt-in. The existing SDK V1 model-call safety gate is unchanged.
   No real model, PostgreSQL replica, Kubernetes cluster, S3/Iceberg environment or
   production MCP is used by the synthetic regression tests.
