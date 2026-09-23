@@ -73,29 +73,28 @@ provider-paired evaluation was run for this implementation.
 
 ## Short smoke evidence
 
-On 2026-09-23, the command shown at the top was rerun after the final review repair. It
-completed 12 workload commits against
+On 2026-09-23, the command shown at the top was run from the clean implementation
+commit. It completed 12 workload commits against
 a 16-entity, 9-relation graph, with 25 fixture setup operations and 3 engine
-reopens. It took 75.31 ms for the event workload and 168.16 ms from workload
+reopens. It took 73.03 ms for the event workload and 151.42 ms from workload
 start through local replication and restore. The duration bound was disabled,
 so this is a smoke result, not a soak.
 
 | Measurement | Result |
 | --- | ---: |
-| Commit latency p50 / p95 | 2.0349 / 3.3149 ms (12 samples) |
-| Query latency p50 / p95 | 0.7574 / 2.2220 ms (12 samples) |
-| Recovery latency p50 / p95 | 8.0586 / 12.8244 ms (4 samples) |
-| Sampled RSS initial / high-water | 101,335,040 / 115,986,432 bytes |
+| Commit latency p50 / p95 | 1.8426 / 2.9201 ms (12 samples) |
+| Query latency p50 / p95 | 0.4168 / 4.5796 ms (12 samples) |
+| Recovery latency p50 / p95 | 8.4678 / 11.8071 ms (4 samples) |
+| Sampled RSS initial / high-water | 101,330,944 / 116,654,080 bytes |
 | SQLite / local object-store bytes | 192,568 / 25,484 bytes |
 | Cache entries / capacity / evictions | 0 / 128 / 0 |
 | Replication lag at completion | 0 revisions |
 | Retained entities / relations | 16 / 9 |
 | Structural route / permission violations | 0 / 0 |
 
-The rerun report identified Bun 1.3.14, Bun's Node compatibility version v24.3.0,
-Windows x64, Git HEAD
-304b4017efb4fa8d4e03b277f2366b7cc21f23dc, and working_tree_dirty: true.
-The dirty tree means the recorded HEAD is the plan revision, not a commit
-identity for these uncommitted implementation files. This small run is
-provisional until an exact-commit rerun; it is not evidence for a long-duration
-soak or production performance.
+The report identified Bun 1.3.14, Bun's Node compatibility version v24.3.0,
+Windows x64, source revision
+9a2aea9b67e88620c7fd8b3227092657ec3122a9, and working_tree_dirty: false.
+These measurements identify that clean implementation commit; this evidence-only
+documentation update does not change the measured code. The small run is not
+evidence for a long-duration soak or production performance.
