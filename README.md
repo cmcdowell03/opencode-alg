@@ -3,6 +3,11 @@
 New opt-in [environment-aware session memory](docs/session-memory.md) restores exact
 procedures after compaction, with bounded context and scoped repeat-work guards.
 
+The separate, default-off [environment memory engine](docs/environment-memory.md)
+stores reviewed, scoped environment facts in local SQLite and supports immutable
+snapshot/journal replication. It performs no automatic discovery and adds no tool
+IDs; the existing read-only memory tools expose its bounded results when enabled.
+
 Optional capabilities: [policy-bounded DuckDB developer query plane](docs/duckdb-query-plane.md). It is project-local, separately prepared, disabled by default, and is not an ALG core tool.
 
 New explicit workflows: [experience records, troubleshooting, paired skill evaluation, and pinned local data science](docs/experience-and-data-science.md); [synthetic connector preparation](docs/connectors.md). These are default-off and do not imply live deployment validation.
@@ -35,10 +40,14 @@ The SDK/plugin dependency used to compile this package is pinned at `1.18.3`; th
 | `alg_skill_evolution_promote` | Explicitly publish one validated skill candidate after confirmation |
 | `alg_skill_evolution_rollback` | Explicitly restore a promoted replacement from its verified backup |
 
-These are the exact 15 public server tool IDs, in registration order. The six
+These are the 15 base public server tool IDs, in registration order. The six
 `alg_skill_evolution_*` tools are always registered so configuration and status
 remain inspectable, but skill evolution is disabled by default and its audit or
 mutation operations fail closed until explicitly enabled.
+
+Four session-memory tools are also registered, keeping the full public tool
+registry at 19 IDs. Environment memory expands the existing read-only search,
+read, and status results rather than adding tools.
 
 Historical review has a second, independent opt-in:
 `{"skillEvolution":{"enabled":true,"allowBuiltinToolMap":true,"historical":{"enabled":true}}}`. Merely
