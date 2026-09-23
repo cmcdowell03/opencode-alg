@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Adds a default-off environment memory engine for reviewed, scoped machine,
+  route, endpoint, API, repository, deployment, database, and principal facts.
+  Bun's native SQLite store commits revisioned observations transactionally;
+  bounded context and the existing read-only memory tools expose scoped results
+  without changing the 19-tool registry. No automatic discovery or credentials
+  are stored. See `docs/environment-memory.md`.
+- Adds explicit import, query, snapshot, restore, local/S3 replication commands
+  and a deterministic synthetic benchmark. Local SQLite commitment and remote
+  manifest publication are reported as distinct durability levels; synthetic
+  transport tests do not claim live S3 validation.
 - System and compaction hooks share one durable-fact selection. Assist compaction
   no longer appends a separate run summary, skill-evolution paragraph, or checkpoint
   sentence. The first user sentence is stored as an observed opening, not a task goal.
