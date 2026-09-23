@@ -1,10 +1,12 @@
 import type { ExecuteOptions } from "../executor.ts"
 import { executeRun } from "../executor.ts"
 import { canonicalDirectory } from "../paths.ts"
+import { loadRunForOwner } from "../store.ts"
 import type { RunState } from "../types.ts"
 import { hashObject } from "./store.ts"
+import { prospectiveShellGateHash } from "./preflight.ts"
 import type { SessionMemoryRuntime } from "./runtime.ts"
-import type { Operation, Checkpoint } from "./schemas.ts"
+import type { Operation, Checkpoint, RunCitation } from "./schemas.ts"
 
 /** This adapter covers ALG run/resume only, never arbitrary shell/MCP calls. */
 export async function executeWithMemory(memory: SessionMemoryRuntime | undefined, run: RunState, options: ExecuteOptions) {
@@ -13,7 +15,8 @@ export async function executeWithMemory(memory: SessionMemoryRuntime | undefined
   let state: Checkpoint, candidates: Checkpoint["skills"]
   try {
     if (canonicalDirectory(options.worktree) !== memory.store.project) throw new Error("memory adapter project mismatch")
-    state = memory.current(owner)
+    try { state = memory.current(owner) }
+    catch { return executeRun(run, options) }
     candidates = state.skills.filter((binding) => {
       const node = memory.store.node(binding.id, owner)
       return node.kind === "skill" && node.payload.operations.includes("alg_execute")
@@ -37,9 +40,23 @@ export async function executeWithMemory(memory: SessionMemoryRuntime | undefined
   const operation: Operation = { adapter: "alg", operation: "alg_execute", resource: run.run_id,
     parameters_hash: hashObject({ dry: Boolean(options.dry || run.mode === "dry"), max_waves: options.maxWaves ?? null, max_concurrency: options.maxConcurrency ?? null }),
     environment: state.environment, skill: candidates[0]!.id, purpose: "action" }
-  return memory.guarded(owner, operation, () => executeRun(run, delegated), (result) => ({
-    outcome: result.status === "done" ? "success" : result.status === "failed" ? "failure" : "indeterminate",
-    receipt: hashObject({ run_id: result.run_id, revision: result.revision, status: result.status,
-      attempts: result.global_attempts, nodes: Object.values(result.nodes).map((node) => ({ id: node.id, status: node.status, attempt: node.current_attempt })) }),
-  }))
+  const gateHash = prospectiveShellGateHash(run, options)
+  return memory.guarded(owner, operation, () => executeRun(run, delegated), (result) => {
+    let run_citation: RunCitation | undefined
+    try {
+      const committed = loadRunForOwner(memory.store.project, result.run_id, owner)
+      if (committed) run_citation = {
+        run_id: committed.run_id,
+        revision: committed.revision,
+        shell_gate_hash: prospectiveShellGateHash(run, options),
+        limits_hash: operation.parameters_hash,
+      }
+    } catch { /* an unreadable run is recorded without a citation and cannot block later */ }
+    return {
+      outcome: result.status === "done" ? "success" as const : result.status === "failed" ? "failure" as const : "indeterminate" as const,
+      receipt: hashObject({ run_id: result.run_id, revision: result.revision, status: result.status,
+        attempts: result.global_attempts, nodes: Object.values(result.nodes).map((node) => ({ id: node.id, status: node.status, attempt: node.current_attempt })) }),
+      run_citation,
+    }
+  }, gateHash)
 }

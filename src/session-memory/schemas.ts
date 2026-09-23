@@ -41,6 +41,13 @@ export const OperationSchema = z.object({
   purpose: z.enum(["action", "poll", "verify", "refresh", "regression", "transient-retry"]).default("action"),
 }).strict()
 export type Operation = z.infer<typeof OperationSchema>
+export const RunCitationSchema = z.object({
+  run_id: Id,
+  revision: z.number().int().positive(),
+  shell_gate_hash: Hash,
+  limits_hash: Hash,
+}).strict()
+export type RunCitation = z.infer<typeof RunCitationSchema>
 const Edge = z.object({ kind: z.enum(["applies-to", "requires", "resolved-by", "attempted-in", "supports", "refutes", "supersedes", "source"]), id: Hash }).strict()
 const common = { schema_version: z.literal(1), project: Hash, owner: SessionId.nullable(),
   visibility: z.enum(["session", "project"]), created_at: Time,
@@ -52,6 +59,7 @@ export const MemoryNodeSchema = z.discriminatedUnion("kind", [
   z.object({ ...common, kind: z.literal("result"), payload: z.object({
     validation: z.literal("unverified-assistant-claim"), task_epoch: z.number().int().nonnegative(),
     user_message_id: SessionId, assistant_message_id: SessionId, environment: Hash.nullable(),
+    session_id: SessionId.optional(), finish: z.string().min(1).max(64).optional(),
     artifact: Hash, excerpt: z.string().max(2000), bytes_omitted: z.number().int().nonnegative(),
     /** Hash of redacted tool evidence, not proof that the answer was verified. */
     tool_evidence: Hash.nullable(), completed: z.literal("assistant-turn-only"),
@@ -62,7 +70,7 @@ export const MemoryNodeSchema = z.discriminatedUnion("kind", [
   }).strict() }).strict(),
   z.object({ ...common, kind: z.literal("attempt"), payload: z.object({
     signature: Hash, operation: OperationSchema, outcome: z.enum(["success", "failure", "indeterminate"]),
-    receipt: Hash, expires_at: Time,
+    receipt: Hash, expires_at: Time, run_citation: RunCitationSchema.optional(),
   }).strict() }).strict(),
   z.object({ ...common, kind: z.literal("resolution"), payload: z.object({
     signature: Hash, environment: Hash, skill: Hash, verification: Hash,
@@ -80,6 +88,8 @@ export const CheckpointSchema = z.object({
   environment: Hash.nullable(), skills: z.array(BindingSchema).max(32),
   pins: z.array(Hash).max(64), used_retries: z.array(Hash).max(64), completed: z.array(Id).max(64),
   next_step: z.string().max(2000), gaps: z.array(Text).max(16),
+  /** First user sentence seen for this session. Not a committed task goal. */
+  observed_opening: z.string().max(2000).optional(),
   source_cursor: z.string().max(256).nullable(), deleted: z.boolean(),
   result_after: z.number().int().nonnegative().optional(),
   delegation: z.object({ parent_owner: SessionId, parent_checkpoint: Hash, role: z.enum(["worker", "checker"]) }).strict().nullable(),
@@ -88,6 +98,8 @@ export type Checkpoint = z.infer<typeof CheckpointSchema>
 export const ContextReceiptSchema = z.object({
   schema_version: z.literal(1), owner: SessionId, revision: z.number().int().nonnegative(), generation: z.number().int().nonnegative(),
   context_hash: Hash, selected: z.array(Hash).max(128), omitted: z.number().int().nonnegative(),
+  /** Eligible durable facts before rendering; selected contains only facts actually in context. */
+  candidates: z.array(Hash).max(128).optional(), budget_omitted: z.number().int().nonnegative().optional(),
   budget: z.number().int().nonnegative(), estimated_tokens: z.number().int().nonnegative(),
   estimator: z.literal("utf8-byte-upper-estimate-v1"), total_headroom_known: z.boolean(),
   state: z.enum(["prepared", "blocked", "observed"]), reasons: z.array(z.string().max(256)).max(64),

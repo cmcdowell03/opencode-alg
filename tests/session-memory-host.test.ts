@@ -9,7 +9,10 @@ import { executeWithMemory } from "../src/session-memory/attempts.ts"
 import { localOrigin, publishEnvironment } from "../src/session-memory/environment.ts"
 import { hashObject } from "../src/session-memory/store.ts"
 import { runNodeSession } from "../src/sessions.ts"
-import { createRun } from "../src/store.ts"
+import { createRun, loadRun } from "../src/store.ts"
+import { SkillEvolutionOptionsSchema } from "../src/skill-evolution-schemas.ts"
+import { enqueueSkillAudit, loadSessionRecovery, loadSkillLedger } from "../src/skill-evolution-store.ts"
+import { withShellGate } from "../src/tools.ts"
 import { prepareRunForResume } from "../src/executor.ts"
 import { tempProject, removeProject, executeContext, singleImplementGraph } from "./helpers.ts"
 
@@ -40,10 +43,20 @@ describe("session memory SDK-boundary conformance", () => {
     const { path, body } = fixture(), options = { sessionMemory: { mode: "assist", fallbackTokens: 4096 }, skillEvolution: { enabled: false } }
     let hooks = await server(plugin(path), options)
     await hooks["experimental.chat.messages.transform"]!({}, { messages: [{ info: { id: "user-1", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "Use fixture-procedure" }] }] } as any)
+    const system = { system: ["host policy"] }
+    await hooks["experimental.chat.system.transform"]!(input(), system)
+    const afterSystem = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
     const compact = { context: ["another plugin context"] }
     await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+    const afterCompact = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
     expect(compact.context[0]).toBe("another plugin context")
-    expect(compact.context.join("\n")).toContain("durable task checkpoint")
+    expect(afterCompact.receipt.selected).toEqual(afterSystem.receipt.selected)
+    expect(afterCompact.receipt.omitted).toBe(afterSystem.receipt.omitted)
+    expect(afterSystem.receipt.selected.length).toBeGreaterThan(0)
+    expect(compact.context.join("\n")).toContain(body)
+    expect(compact.context.join("\n")).not.toContain("durable task checkpoint")
+    expect(compact.context.join("\n")).not.toContain("ALG active run state")
+    expect(compact.context.join("\n")).not.toContain("evidence coverage")
     await hooks.dispose?.()
     hooks = await server(plugin(path), options)
     // System-before-messages after restart: restoration must not depend on a new lexical hint.
@@ -56,6 +69,32 @@ describe("session memory SDK-boundary conformance", () => {
     expect(status.coverage.host_prompt_delivery).toBe("NOT_ATTESTED")
     expect(hooks["experimental.compaction.autocontinue"]).toBeUndefined()
     await hooks.dispose?.()
+  })
+
+  test("assist compaction captures pending learning evidence before rendering one working view", async () => {
+    const { path } = fixture()
+    const base = plugin(path)
+    base.client.session.messages = async () => ({ data: [
+      { info: { id: "u", sessionID: "owner", role: "user", time: { created: 1 } }, parts: [{ type: "text", text: "Diagnose synthetic paging" }] },
+      { info: { id: "final", parentID: "u", sessionID: "owner", role: "assistant", finish: "stop", time: { created: 2, completed: 3 } },
+        parts: [{ type: "text", text: "Use page size 50." }] },
+    ] })
+    const learning = SkillEvolutionOptionsSchema.parse({ enabled: true, allowBuiltinToolMap: true, mode: "every-turn" })
+    const hooks = await server(base, { sessionMemory: { mode: "assist", fallbackTokens: 4096 }, skillEvolution: learning })
+    try {
+      enqueueSkillAudit(path, "owner", "final", learning, false, "u")
+      const compact = { context: ["other plugin context"] }
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+      expect(loadSkillLedger(path).records[0]?.evidence_ref).toBeTruthy()
+      expect(loadSessionRecovery(path, "owner")?.capture).toMatchObject({ captured: 1, missing: 0 })
+      expect(compact.context[0]).toBe("other plugin context")
+      expect(compact.context.join("\n")).not.toContain("## ALG skill-evolution state")
+      const system = { system: ["host policy"] }
+      await hooks["experimental.chat.system.transform"]!(input(), system)
+      expect(system.system.join("\n")).toContain("Last compaction coverage: captured=1, missing=0")
+    } finally {
+      await hooks.dispose?.()
+    }
   })
 
   test("off and observe do not emit new memory context", async () => {
@@ -158,4 +197,91 @@ describe("session memory SDK-boundary conformance", () => {
     await expect(executeWithMemory(memory, failed, options)).rejects.toThrow("unchanged failed")
     expect(children).toBe(1)
   })
+
+  test("ownership is validated again after the message read returns", async () => {
+    const { path } = fixture()
+    let gets = 0
+    const base = plugin(path)
+    base.client.session.get = async (request: any) => {
+      gets++
+      if (gets > 1) return { error: { message: "owner changed" } }
+      return { data: { id: request.path.id, projectID: "fixture-project", directory: path, title: "normal" } }
+    }
+    base.client.session.messages = async () => ({ data: [{ info: { id: "u", role: "user", sessionID: "owner", time: { created: 1 } }, parts: [{ type: "text", text: "Open the lake report" }] }] })
+    const hooks = await server(base, { sessionMemory: { mode: "assist" } })
+    await hooks.event!({ event: { type: "message.updated", properties: { info: { id: "a", role: "assistant", sessionID: "owner", finish: "stop", time: { completed: 2 } } } } } as any)
+    expect(gets).toBeGreaterThanOrEqual(2)
+    expect(existsSync(join(path, ".opencode", "session-memory"))).toBe(false)
+    await hooks.dispose?.()
+  })
+
+  test("a corrupt assist view does not stop the run", async () => {
+    const { path } = fixture()
+    const memory = new SessionMemoryRuntime(path, { mode: "assist" }, [".opencode/skills"], [])
+    memory.beginTask("session-owner", "fixture-procedure")
+    writeFileSync(memory.store.path(["heads", `${hashObject("session-owner")}.json`]), "corrupt")
+    const run = createRun({ projectDirectory: path, ownerSessionId: "session-owner", goal: "synthetic", criteria: [], mode: "dry", graph: singleImplementGraph() })
+    expect((await executeWithMemory(memory, run, { ...executeContext(path), dry: true })).status).toBe("done")
+  })
+
+  test("assist retry blocks only a matching committed failure", async () => {
+    const { path } = fixture()
+    writeFileSync(join(path, ".opencode", "skills", "fixture-procedure", "ALG.json"), JSON.stringify({ schema_version: 1, operations: ["alg_execute"] }))
+    const memory = new SessionMemoryRuntime(path, { mode: "assist", fallbackTokens: 4096 }, [".opencode/skills"], [])
+    const owner = "session-owner"
+    memory.beginTask(owner, "fixture-procedure")
+    const env = publishEnvironment(memory.store, { name: "fixture-pc", origin: "pc", origin_fingerprint: localOrigin().id, target: "local-test", kind: "pc",
+      namespace: null, tenant: null, principal_ref: "tester", protocol: "local", api_version: "v1", client_version: "fixture", endpoint_refs: [], route_refs: [], tools: ["alg_execute"],
+      credential_refs: [], scopes: ["synthetic"], source_ref: hashObject("fixture"), verified_at: new Date(Date.now() - 1000).toISOString(), expires_at: new Date(Date.now() + 3600000).toISOString() })
+    memory.selectEnvironment(owner, env)
+    memory.bindSkill(owner, memory.index.search("fixture-procedure").skills[0]!.key)
+    const run = createRun({ projectDirectory: path, ownerSessionId: owner, goal: "test", criteria: ["Synthetic acceptance"], graph: withShellGate(singleImplementGraph(), "bun test") })
+    let children = 0
+    const options = { ...executeContext(path), sessionRunner: async (opts: any) => {
+      const child = `child-${++children}`
+      await opts.onSessionCreated(child)
+      return { session_id: child, text: "", parsed: null, error: "synthetic failure" }
+    } }
+    const failed = await executeWithMemory(memory, run, options)
+    expect(failed.status).toBe("failed")
+    const reload = () => {
+      const current = loadRun(path, failed.run_id)
+      if (!current) throw new Error("committed run missing")
+      prepareRunForResume(current)
+      return current
+    }
+    await expect(executeWithMemory(memory, reload(), options)).rejects.toThrow("unchanged failed")
+    expect(children).toBe(1)
+
+    const wider = { ...options, maxWaves: 2 }
+    const limited = await executeWithMemory(memory, reload(), wider)
+    expect(limited.status).toBe("failed")
+    expect(memory.current(owner).gaps.some((gap) => gap.includes("limits changed"))).toBe(true)
+
+    const cited = memory.current(owner).pins.map((id) => memory.store.node(id, owner)).reverse().find((node) => node.kind === "attempt" && node.payload.outcome === "failure" && node.payload.run_citation)
+    if (!cited || cited.kind !== "attempt") throw new Error("missing cited failure")
+    const operation = cited.payload.operation
+    const expires = new Date(Date.now() + 600000).toISOString()
+    memory.recordAttempt(owner, operation, "failure", hashObject("uncited"), expires)
+    const uncited = await executeWithMemory(memory, reload(), wider)
+    expect(uncited.status).toBe("failed")
+    expect(memory.current(owner).gaps.some((gap) => gap.includes("no committed-run citation"))).toBe(true)
+
+    memory.recordAttempt(owner, operation, "failure", hashObject("missing-run"), expires, {
+      run_id: "missing-run", revision: 1, shell_gate_hash: hashObject(null), limits_hash: operation.parameters_hash,
+    })
+    const unreadable = await executeWithMemory(memory, reload(), wider)
+    expect(unreadable.status).toBe("failed")
+    expect(memory.current(owner).gaps.some((gap) => gap.includes("unreadable"))).toBe(true)
+
+    const pending = reload()
+    const revisionBefore = pending.revision
+    pending.graph = withShellGate(pending.graph, "bun test --changed")
+    const changed = await executeWithMemory(memory, pending, { ...wider, shellGateCmd: "bun test --changed" })
+    expect(changed.status).toBe("failed")
+    const gap = memory.current(owner).gaps.find((item) => item.includes("shell gate changed"))
+    expect(gap).toBeTruthy()
+    expect(gap).not.toContain("revision moved")
+    expect(loadRun(path, failed.run_id)!.revision).toBeGreaterThan(revisionBefore)
+  }, 30000)
 })

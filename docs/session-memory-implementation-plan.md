@@ -8,6 +8,14 @@ derived index, whole-profile freshness, and revised 500 ms warm/500 ms cold gate
 The original proposed 100 ms warm target remains recorded as unmet. This document authorizes no
 installation, production connection, credential discovery, deployment, or model call.
 
+## Current status
+
+The September 20 baseline above, including the note that recovery work was
+uncommitted in an isolated worktree, describes that planning snapshot. It is not
+the current tree. The canonical checkout is commit `dc55386` on `origin/main`,
+in the worktree `D:\alg-worktrees\compaction-recovery-20260920`. Later changes
+branch from that commit.
+
 ## Outcome
 
 After compaction or restart, “continue” restores the correct operating environment,

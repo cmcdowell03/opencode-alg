@@ -1,4 +1,6 @@
-import { OperationSchema, type Checkpoint, type Operation } from "./schemas.ts"
+import { loadRunForOwner } from "../store.ts"
+import type { RunState } from "../types.ts"
+import { OperationSchema, type Checkpoint, type Operation, type RunCitation } from "./schemas.ts"
 import { MemoryStore, hashObject } from "./store.ts"
 import { verifyEnvironment } from "./environment.ts"
 import { verifyResolutionEvidence } from "./experience-adapter.ts"
@@ -7,7 +9,54 @@ export function operationSignature(raw: Operation): string {
   const { purpose: _purpose, ...identity } = OperationSchema.parse(raw)
   return hashObject(identity)
 }
-export function preflight(store: MemoryStore, checkpoint: Checkpoint, raw: Operation) {
+
+export function shellGateHash(run: RunState): string {
+  return prospectiveShellGateHash(run)
+}
+
+/** Gate the implementer will run. Matches executor shellDefinition, including a command not yet persisted. */
+export function prospectiveShellGateHash(run: RunState, options: { shellGateCmd?: string; shellGateTimeoutMs?: number } = {}): string {
+  const definition = run.graph.nodes.find((node) => node.agent === "implementer")
+  const gate = definition && options.shellGateCmd
+    ? {
+        ...definition.shell_gate,
+        cmd: options.shellGateCmd,
+        ...(options.shellGateTimeoutMs !== undefined ? { timeout_ms: options.shellGateTimeoutMs } : {}),
+      }
+    : definition?.shell_gate ?? null
+  return hashObject(gate)
+}
+
+export interface PreflightDecision {
+  allowed: boolean
+  signature: string
+  reason: string
+  retry?: string
+  gap?: string
+}
+
+/** A failure pin blocks only while the committed run still shows that same failure. */
+export function committedFailureDecision(store: MemoryStore, owner: string, citation: RunCitation, operation: Operation, prospectiveShellGateHashValue?: string): PreflightDecision {
+  const signature = operationSignature(operation)
+  let run: RunState | null
+  try {
+    run = loadRunForOwner(store.project, citation.run_id, owner)
+  } catch {
+    return { allowed: true, signature, reason: `committed run ${citation.run_id} is unreadable; retry memory will not block`, gap: `committed run ${citation.run_id} is unreadable; retry memory will not block` }
+  }
+  if (!run) return { allowed: true, signature, reason: `committed run ${citation.run_id} is unreadable; retry memory will not block`, gap: `committed run ${citation.run_id} is unreadable; retry memory will not block` }
+  const reasons: string[] = []
+  if (run.revision !== citation.revision) reasons.push("revision moved")
+  if ((prospectiveShellGateHashValue ?? shellGateHash(run)) !== citation.shell_gate_hash) reasons.push("shell gate changed")
+  if (operation.parameters_hash !== citation.limits_hash) reasons.push("limits changed")
+  if (reasons.length) {
+    const gap = `committed run ${citation.run_id} ${reasons.join(", ")}; retry memory will not block`
+    return { allowed: true, signature, reason: gap, gap }
+  }
+  return { allowed: false, signature, reason: `unchanged failed attempt on run ${citation.run_id}; operator must authorize a scoped retry or changed conditions` }
+}
+
+export function preflight(store: MemoryStore, checkpoint: Checkpoint, raw: Operation, prospectiveShellGateHashValue?: string): PreflightDecision {
   const operation = OperationSchema.parse(raw)
   verifyEnvironment(store, checkpoint)
   if (operation.environment !== checkpoint.environment || !checkpoint.skills.some((binding) => binding.id === operation.skill)) throw new Error("operation scope differs from active bindings")
@@ -24,8 +73,17 @@ export function preflight(store: MemoryStore, checkpoint: Checkpoint, raw: Opera
       verifyResolutionEvidence(store, checkpoint.owner, node.payload.verification)
       return { allowed: false, signature, reason: `verified solution ${id}; resume at ${node.payload.next_step}` }
     }
-    if (node.kind === "attempt" && node.payload.signature === signature && node.payload.outcome === "failure" && Date.parse(node.payload.expires_at) > Date.now()) {
-      return { allowed: false, signature, reason: `unchanged failed attempt ${id}; operator must authorize a scoped retry or changed conditions` }
+    if (node.kind === "attempt" && node.payload.outcome === "failure" && Date.parse(node.payload.expires_at) > Date.now() &&
+      node.payload.operation.adapter === operation.adapter && node.payload.operation.operation === operation.operation &&
+      node.payload.operation.resource === operation.resource && node.payload.operation.environment === operation.environment &&
+      node.payload.operation.skill === operation.skill) {
+      if (!node.payload.run_citation) {
+        const gap = `attempt ${id} has no committed-run citation; the limits-only signature is not an unchanged failure`
+        return { allowed: true, signature, reason: gap, gap }
+      }
+      const decision = committedFailureDecision(store, checkpoint.owner, node.payload.run_citation, operation, prospectiveShellGateHashValue)
+      if (!decision.allowed) return { ...decision, reason: `unchanged failed attempt ${id}; operator must authorize a scoped retry or changed conditions` }
+      return decision
     }
   }
   return { allowed: true, signature, reason: "no applicable exact repeat" }
