@@ -11,7 +11,8 @@
 - Adds explicit import, query, snapshot, restore, local/S3 replication commands
   and a deterministic synthetic benchmark. Local SQLite commitment and remote
   manifest publication are reported as distinct durability levels; synthetic
-  transport tests do not claim live S3 validation.
+  transport tests do not claim live S3 validation. `@aws-sdk/client-s3` is an
+  optional peer dependency, so default installs do not include it.
 - System and compaction hooks share one durable-fact selection. Assist compaction
   no longer appends a separate run summary, skill-evolution paragraph, or checkpoint
   sentence. The first user sentence is stored as an observed opening, not a task goal.

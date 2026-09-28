@@ -428,7 +428,7 @@ export async function openS3ObjectStore(options: S3ObjectStoreOptions, transport
     return new S3ObjectStore(options, productionTransport);
   } catch (error) {
     if (error instanceof ObjectStoreError) throw error;
-    if ((error as { code?: string } | undefined)?.code === "ERR_MODULE_NOT_FOUND") throw new ObjectStoreError("unsupported-runtime", "S3 support is unavailable in this package", { cause: error });
+    if ((error as { code?: string } | undefined)?.code === "ERR_MODULE_NOT_FOUND") throw new ObjectStoreError("unsupported-runtime", "S3 replication needs the optional peer dependency @aws-sdk/client-s3; install it alongside opencode-alg", { cause: error });
     throw new ObjectStoreError("unavailable", "Could not initialize the S3 object-store client", { cause: error });
   }
 }

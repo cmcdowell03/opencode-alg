@@ -185,11 +185,14 @@ bun run environment-memory replicate D:/projects/demo/.opencode/environment-memo
 bun run environment-memory restore-remote D:/recovery/demo.sqlite demo-environment local D:/backup/demo-environment
 ```
 
-S3 can be selected explicitly with a bucket, region, and prefix. The AWS SDK
-uses its standard external credential provider chain; secrets are not CLI
-arguments or stored in memory:
+S3 can be selected explicitly with a bucket, region, and prefix. The AWS SDK is
+an optional peer dependency, so default installs do not carry it; install it
+next to opencode-alg before using S3, otherwise S3 commands fail with an
+`unsupported-runtime` error. The SDK uses its standard external credential
+provider chain; secrets are not CLI arguments or stored in memory:
 
 ```powershell
+npm install --no-save @aws-sdk/client-s3@^3.1137.0
 bun run environment-memory replicate D:/projects/demo/.opencode/environment-memory/demo.sqlite demo-environment s3 example-bucket us-east-1 alg/demo-environment
 ```
 
