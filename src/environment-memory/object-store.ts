@@ -1,5 +1,7 @@
 /** Bounded byte storage used by environment-memory replication. */
 
+import { acquireFilesystemMutex, FilesystemMutexContentionError, FilesystemMutexError, type FilesystemMutex } from "../filesystem-mutex.ts";
+
 export type ObjectStoreErrorCode =
   | "invalid-key"
   | "object-too-large"
@@ -157,8 +159,7 @@ export class LocalDirectoryObjectStore implements ObjectStore {
     const target = await this.resolveKey(safeKey, true);
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
-    const lockPath = `${target}.lock`;
-    const lock = await this.acquireLock(fs, lockPath, options.signal);
+    const lock = await this.acquireLock(`${target}.lock`, options.signal);
     const temp = path.join(path.dirname(target), `.manifest-${crypto.randomUUID()}.tmp`);
     try {
       const current = await this.readFileBounded(fs, target);
@@ -168,15 +169,16 @@ export class LocalDirectoryObjectStore implements ObjectStore {
       const handle = await fs.open(temp, "wx", 0o600);
       try { await handle.writeFile(bytes); await handle.sync(); } finally { await handle.close(); }
       throwIfAborted(options.signal);
+      lock.assertHeld();
       await fs.rename(temp, target);
       await this.syncDirectory(fs, path.dirname(target));
       return { version: await sha256(bytes) };
     } catch (error) {
+      if (error instanceof FilesystemMutexError) throw new ObjectStoreError("unavailable", "Manifest lock was lost before replacement", { cause: error });
       classifyLocalError(error);
     } finally {
       await fs.rm(temp, { force: true }).catch(() => undefined);
-      await lock.close().catch(() => undefined);
-      await fs.rm(lockPath, { force: true }).catch(() => undefined);
+      lock.release();
     }
   }
 
@@ -229,13 +231,18 @@ export class LocalDirectoryObjectStore implements ObjectStore {
     }
   }
 
-  private async acquireLock(fs: typeof import("node:fs/promises"), lockPath: string, signal?: AbortSignal): Promise<import("node:fs/promises").FileHandle> {
+  /**
+   * Uses the shared lease mutex: a crashed writer's lock is taken over once its lease expires and its same-host PID
+   * is dead; remote or unverifiable owners fail closed. The mutex waits synchronously, so contention is retried here
+   * asynchronously instead, letting a holder in this same process finish.
+   */
+  private async acquireLock(lockPath: string, signal?: AbortSignal): Promise<FilesystemMutex> {
     const deadline = Date.now() + this.lockWaitMs;
     while (true) {
       throwIfAborted(signal);
-      try { return await fs.open(lockPath, "wx", 0o600); }
+      try { return acquireFilesystemMutex(lockPath, { owner: "environment-memory:manifest" }); }
       catch (error) {
-        if ((error as NodeJS.ErrnoException | undefined)?.code !== "EEXIST") classifyLocalError(error);
+        if (!(error instanceof FilesystemMutexContentionError)) throw new ObjectStoreError("unavailable", "Manifest lock is held by an unverifiable owner", { cause: error });
         if (Date.now() >= deadline) throw new ObjectStoreError("unavailable", "Timed out waiting for the manifest lock", { cause: error });
         await new Promise<void>((resolve, reject) => {
           const timer = setTimeout(() => { signal?.removeEventListener("abort", onAbort); resolve(); }, 10);

@@ -204,6 +204,38 @@ export async function replicateEnvironmentMemory(
   throw lastError
 }
 
+/**
+ * Upload a complete local checkpoint. When it replaces an existing remote head, that head must be an ancestor of the
+ * local journal (its receipt carries the same event hash); otherwise publishing would silently discard remote history.
+ */
+async function uploadCheckpoint(engine: EnvironmentMemoryEngineContract, store: ObjectStore, local: { revision: number; event_hash: string | null },
+  ancestor: { revision: number; hash: string | null } | null, signal?: AbortSignal): Promise<{ reference: SnapshotReference; uploaded: number }> {
+  const snapshot = SnapshotSchema.parse(engine.exportSnapshot())
+  if (snapshot.revision !== local.revision || snapshot.event_hash !== local.event_hash) fail("CONFLICT", "Local writer advanced during replication")
+  if (snapshot.namespace !== engine.namespace) fail("CORRUPTION", "Engine snapshot namespace is inconsistent")
+  if (ancestor && ancestor.revision > 0 &&
+      snapshot.idempotency.find((receipt) => receipt.revision === ancestor.revision)?.event_hash !== ancestor.hash) {
+    fail("CONFLICT", "Remote replication head is not an ancestor of the local journal")
+  }
+  const bytes = encode(snapshot)
+  if (bytes.byteLength > store.maxObjectBytes) fail("CAPACITY", "Snapshot exceeds the configured object-store limit")
+  const digest = await hashBytes(bytes)
+  const reference = { key: `${OBJECT_PREFIX}/${digest}.snapshot.json`, sha256: digest, revision: snapshot.revision, event_hash: snapshot.event_hash }
+  return { reference, uploaded: Number(await putImmutable(store, reference.key, bytes, signal)) }
+}
+
+/** Null means the local journal no longer retains the cursor (for example after a snapshot restore), so a checkpoint is required. */
+function retainedEventsSince(engine: EnvironmentMemoryEngineContract, revision: number, limit: number): EnvironmentMemoryEventBatch | null {
+  let batch: EnvironmentMemoryEventBatch | null
+  try { batch = engine.eventsSince(revision, limit) }
+  catch (cause) {
+    if (cause instanceof EnvironmentMemoryError && cause.code === "CONFLICT") return null
+    throw cause
+  }
+  if (!batch) fail("CORRUPTION", "Engine has a newer revision but returned no journal events")
+  return batch
+}
+
 async function replicateAttempt(engine: EnvironmentMemoryEngineContract, store: ObjectStore, options: { eventLimit: number; signal?: AbortSignal; attempts: number }): Promise<ReplicationReceipt> {
   const localStatus = engine.status()
   const localRevision = localStatus.revision
@@ -219,20 +251,15 @@ async function replicateAttempt(engine: EnvironmentMemoryEngineContract, store: 
   let remoteHash: string | null
 
   if (!remote) {
-    const snapshot = SnapshotSchema.parse(engine.exportSnapshot())
-    if (snapshot.revision !== localRevision || snapshot.event_hash !== localStatus.event_hash) fail("CONFLICT", "Local writer advanced during replication")
-    if (snapshot.namespace !== engine.namespace) fail("CORRUPTION", "Engine snapshot namespace is inconsistent")
-    const bytes = encode(snapshot)
-    if (bytes.byteLength > store.maxObjectBytes) fail("CAPACITY", "Snapshot exceeds the configured object-store limit")
-    const digest = await hashBytes(bytes)
-    snapshotRef = { key: `${OBJECT_PREFIX}/${digest}.snapshot.json`, sha256: digest, revision: snapshot.revision, event_hash: snapshot.event_hash }
-    uploadedObjects += Number(await putImmutable(store, snapshotRef.key, bytes, options.signal))
+    const checkpoint = await uploadCheckpoint(engine, store, localStatus, null, options.signal)
+    snapshotRef = checkpoint.reference
+    uploadedObjects += checkpoint.uploaded
     batchRefs = []
     generation = 1
     predecessor = null
     expectedVersion = null
-    remoteRevision = snapshot.revision
-    remoteHash = snapshot.event_hash
+    remoteRevision = localRevision
+    remoteHash = localStatus.event_hash
   } else {
     const current = remote.manifest
     if (current.revision > localRevision) fail("CONFLICT", "Remote replication cursor is ahead of the local engine")
@@ -251,36 +278,28 @@ async function replicateAttempt(engine: EnvironmentMemoryEngineContract, store: 
     remoteRevision = current.revision
     remoteHash = current.event_hash
 
-    if (batchRefs.length >= MAX_MANIFEST_BATCHES) {
-      const snapshot = SnapshotSchema.parse(engine.exportSnapshot())
-      if (snapshot.revision !== localRevision || snapshot.event_hash !== localStatus.event_hash) fail("CONFLICT", "Local writer advanced during replication")
-      const bytes = encode(snapshot)
+    // Bound the batch by the observed status so a concurrent local append cannot push the cursor past localRevision.
+    const batch = batchRefs.length < MAX_MANIFEST_BATCHES
+      ? retainedEventsSince(engine, remoteRevision, Math.min(options.eventLimit, localRevision - remoteRevision))
+      : null
+    if (batch) {
+      const verified = await verifyEventChainAsync(batch, engine.namespace, remoteRevision, remoteHash)
+      const bytes = encode(batch)
+      if (bytes.byteLength > store.maxObjectBytes) fail("CAPACITY", "Journal segment exceeds the configured object-store limit")
       const digest = await hashBytes(bytes)
-      snapshotRef = { key: `${OBJECT_PREFIX}/${digest}.snapshot.json`, sha256: digest, revision: snapshot.revision, event_hash: snapshot.event_hash }
-      uploadedObjects += Number(await putImmutable(store, snapshotRef.key, bytes, options.signal))
+      const key = `${OBJECT_PREFIX}/${digest}.events.json`
+      uploadedObjects += Number(await putImmutable(store, key, bytes, options.signal))
+      batchRefs.push({ key, sha256: digest, from_revision: batch.from_revision, to_revision: verified.revision, previous_hash: batch.previous_hash })
+      remoteRevision = verified.revision
+      remoteHash = verified.hash
+    } else {
+      const checkpoint = await uploadCheckpoint(engine, store, localStatus, { revision: remoteRevision, hash: remoteHash }, options.signal)
+      snapshotRef = checkpoint.reference
+      uploadedObjects += checkpoint.uploaded
       batchRefs = []
-      remoteRevision = snapshot.revision
-      remoteHash = snapshot.event_hash
+      remoteRevision = localRevision
+      remoteHash = localStatus.event_hash
     }
-  }
-
-  if (remoteRevision < localRevision) {
-    let batch: EnvironmentMemoryEventBatch | null
-    try { batch = engine.eventsSince(remoteRevision, options.eventLimit) }
-    catch (cause) {
-      if (cause instanceof EnvironmentMemoryError && cause.code === "CONFLICT") fail("CONFLICT", "Local journal no longer contains the remote cursor", cause)
-      throw cause
-    }
-    if (!batch) fail("CORRUPTION", "Engine has a newer revision but returned no journal events")
-    const verified = await verifyEventChainAsync(batch, engine.namespace, remoteRevision, remoteHash)
-    const bytes = encode(batch)
-    if (bytes.byteLength > store.maxObjectBytes) fail("CAPACITY", "Journal segment exceeds the configured object-store limit")
-    const digest = await hashBytes(bytes)
-    const key = `${OBJECT_PREFIX}/${digest}.events.json`
-    uploadedObjects += Number(await putImmutable(store, key, bytes, options.signal))
-    batchRefs.push({ key, sha256: digest, from_revision: batch.from_revision, to_revision: verified.revision, previous_hash: batch.previous_hash })
-    remoteRevision = verified.revision
-    remoteHash = verified.hash
   }
 
   const manifest: EnvironmentMemoryReplicationManifest = { schema_version: 1, namespace: engine.namespace,

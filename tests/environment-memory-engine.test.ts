@@ -171,6 +171,26 @@ describe("environment memory SQLite core", () => {
     } finally { source.close(); destination.close() }
   })
 
+  test("entity scope changes cannot leave a dependent relation broader, so exported state always restores", async () => {
+    const source = await open(directory()), destination = await open(directory())
+    const privateScope = { ...scope, visibility: "session" as const, owner: "session-a" }
+    try {
+      upsertEntity(source, entity("gateway"), 0)
+      upsertEntity(source, entity("api"), 1)
+      append(source, { type: "upsert_relation", relation: relation("route", "gateway", "api") }, 2, "route")
+      expect(() => upsertEntity(source, entity("gateway", { scope: privateScope }), 3, "narrow-gateway"))
+        .toThrow(expect.objectContaining({ code: "SCOPE_DENIED" }))
+      expect(() => upsertEntity(source, entity("api", { scope: { ...scope, project: "elsewhere", visibility: "project", owner: null } }), 3, "move-api"))
+        .toThrow(expect.objectContaining({ code: "SCOPE_DENIED" }))
+      expect(source.status().revision).toBe(3)
+
+      append(source, { type: "upsert_relation", relation: relation("route", "gateway", "api", { scope: privateScope }) }, 3, "narrow-route")
+      upsertEntity(source, entity("gateway", { scope: privateScope }), 4, "narrow-gateway")
+      expect(destination.restoreSnapshot(source.exportSnapshot())).toMatchObject({ revision: 5, entities: 2, relations: 1 })
+      expect(destination.get("route", scope)).toMatchObject({ id: "route" })
+    } finally { source.close(); destination.close() }
+  })
+
   test("direct reads recheck relation time, endpoints and return defensive copies", async () => {
     const engine = await open(directory())
     try {

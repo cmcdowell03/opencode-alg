@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto"
 import { mkdirSync } from "node:fs"
 import { dirname, resolve } from "node:path"
-import type { Database } from "bun:sqlite"
+import type { Database, SQLQueryBindings, Statement } from "bun:sqlite"
 import { canonicalJson } from "../persistence.ts"
 import { redactEvolutionText } from "../skill-evolution-redaction.ts"
 import {
@@ -47,6 +47,13 @@ function visible(record: { scope: { namespace: string; project: string; visibili
     (record.scope.visibility === "project" || record.scope.owner === scope.owner)
 }
 
+/** A relation is never broader than its endpoints: each must be visible to it, and project scope needs project endpoints. */
+function relationScopeFits(scope: StoredRelation["scope"], source: StoredEntity, target: StoredEntity): boolean {
+  const reader: ReadScope = { namespace: scope.namespace, project: scope.project, owner: scope.owner ?? "" }
+  return visible(source, reader) && visible(target, reader) &&
+    (scope.visibility !== "project" || (source.scope.visibility === "project" && target.scope.visibility === "project"))
+}
+
 function validity(record: StoredRelation, now: number): boolean {
   const { valid_from, valid_until } = record.conditions
   return (valid_from === null || Date.parse(valid_from) <= now) &&
@@ -58,6 +65,8 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
   readonly namespace: string
   private readonly db: Database
   private readonly cache = new Map<string, Cached>()
+  // Bun's db.query() cache holds 20 statements and never finalizes evicted ones, which keeps the file open after close().
+  private readonly statements = new Map<string, Statement<any, any>>()
   private readonly counters: CacheCounters = { hits: 0, misses: 0, evictions: 0 }
   private readonly cacheEntries: number
   private readonly maxRecordBytes: number
@@ -117,7 +126,7 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
 
   private initialize() {
     this.db.exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = FULL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;")
-    const version = Number(this.db.query<{ user_version: number }, []>("PRAGMA user_version").get()?.user_version ?? 0)
+    const version = Number(this.sql<{ user_version: number }, []>("PRAGMA user_version").get()?.user_version ?? 0)
     if (version > 1) fail("CORRUPTION", `database schema version ${version} is newer than this engine`)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS engine_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT;
@@ -151,30 +160,35 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
     `)
     this.db.exec(`INSERT OR IGNORE INTO idempotency_history(idempotency_key,operation_hash,revision,event_hash,content_hash)
       SELECT idempotency_key,operation_hash,revision,event_hash,content_hash FROM event_log`)
-    const storedNamespace = this.db.query<{ value: string }, [string]>("SELECT value FROM engine_meta WHERE key = ?").get("namespace")?.value
+    const storedNamespace = this.sql<{ value: string }, [string]>("SELECT value FROM engine_meta WHERE key = ?").get("namespace")?.value
     if (storedNamespace !== undefined && storedNamespace !== this.namespace) fail("SCOPE_DENIED", "database belongs to a different namespace")
     if (storedNamespace === undefined) {
-      this.db.query("INSERT INTO engine_meta(key,value) VALUES ('namespace',?),('revision','0'),('head_hash',''),('base_revision','0'),('base_hash','')").run(this.namespace)
+      this.sql("INSERT INTO engine_meta(key,value) VALUES ('namespace',?),('revision','0'),('head_hash',''),('base_revision','0'),('base_hash','')").run(this.namespace)
     }
     this.observedRevision = this.currentRevision()
   }
 
+  private sql<R = unknown, P extends SQLQueryBindings[] = SQLQueryBindings[]>(text: string): Statement<R, P> {
+    let statement = this.statements.get(text)
+    if (!statement) { statement = this.db.prepare<R, P>(text); this.statements.set(text, statement) }
+    return statement as Statement<R, P>
+  }
   private assertOpen() { if (this.closed) fail("CLOSED", "environment memory engine is closed") }
   private currentRevision(): number {
-    return Number(this.db.query<{ value: string }, [string]>("SELECT value FROM engine_meta WHERE key = ?").get("revision")?.value ?? 0)
+    return Number(this.sql<{ value: string }, [string]>("SELECT value FROM engine_meta WHERE key = ?").get("revision")?.value ?? 0)
   }
   private headHash(): string | null {
-    const value = this.db.query<{ value: string }, [string]>("SELECT value FROM engine_meta WHERE key = ?").get("head_hash")?.value
+    const value = this.sql<{ value: string }, [string]>("SELECT value FROM engine_meta WHERE key = ?").get("head_hash")?.value
     return value || null
   }
   private baseRevision(): number {
-    return Number(this.db.query<{ value: string }, [string]>("SELECT value FROM engine_meta WHERE key = ?").get("base_revision")?.value ?? 0)
+    return Number(this.sql<{ value: string }, [string]>("SELECT value FROM engine_meta WHERE key = ?").get("base_revision")?.value ?? 0)
   }
   private baseHash(): string | null {
-    const value = this.db.query<{ value: string }, [string]>("SELECT value FROM engine_meta WHERE key = ?").get("base_hash")?.value
+    const value = this.sql<{ value: string }, [string]>("SELECT value FROM engine_meta WHERE key = ?").get("base_hash")?.value
     return value || null
   }
-  private setMeta(key: string, value: string) { this.db.query("UPDATE engine_meta SET value = ? WHERE key = ?").run(value, key) }
+  private setMeta(key: string, value: string) { this.sql("UPDATE engine_meta SET value = ? WHERE key = ?").run(value, key) }
   private begin() { this.db.exec("BEGIN IMMEDIATE") }
   private commit() { this.db.exec("COMMIT") }
   private rollback() { try { this.db.exec("ROLLBACK") } catch { /* original failure wins */ } }
@@ -218,7 +232,7 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
     const operationHash = digestJson(normalized)
     this.begin()
     try {
-      const duplicate = this.db.query<{ revision: number; event_hash: string; content_hash: string; operation_hash: string }, [string]>(
+      const duplicate = this.sql<{ revision: number; event_hash: string; content_hash: string; operation_hash: string }, [string]>(
         "SELECT revision,event_hash,content_hash,operation_hash FROM idempotency_history WHERE idempotency_key = ?").get(appendOptions.idempotency_key)
       if (duplicate) {
         if (duplicate.operation_hash !== operationHash) fail("CONFLICT", "idempotency key was already used for a different operation")
@@ -235,9 +249,9 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
       const hashes = eventHashes(eventInput)
       const event = EventSchema.parse({ ...eventInput, ...hashes })
       const eventJson = canonicalJson(event)
-      this.db.query("INSERT INTO event_log(revision,event_json,content_hash,event_hash,idempotency_key,operation_hash) VALUES (?,?,?,?,?,?)")
+      this.sql("INSERT INTO event_log(revision,event_json,content_hash,event_hash,idempotency_key,operation_hash) VALUES (?,?,?,?,?,?)")
         .run(event.revision, eventJson, event.content_hash, event.event_hash, event.idempotency_key, operationHash)
-      this.db.query("INSERT INTO idempotency_history(idempotency_key,operation_hash,revision,event_hash,content_hash) VALUES (?,?,?,?,?)")
+      this.sql("INSERT INTO idempotency_history(idempotency_key,operation_hash,revision,event_hash,content_hash) VALUES (?,?,?,?,?)")
         .run(event.idempotency_key, operationHash, event.revision, event.event_hash, event.content_hash)
       this.setMeta("revision", String(event.revision)); this.setMeta("head_hash", event.event_hash)
       this.commit()
@@ -256,13 +270,24 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
     if (operation.type === "upsert_entity") {
       const entity = EntitySchema.parse(operation.entity)
       if (entity.scope.namespace !== this.namespace) fail("SCOPE_DENIED", "entity namespace differs from engine namespace")
-      const prior = this.db.query<{ record_type: string; revoked: number }, [string]>("SELECT record_type,revoked FROM identities WHERE id=?").get(entity.id)
+      const prior = this.sql<{ record_type: string; revoked: number }, [string]>("SELECT record_type,revoked FROM identities WHERE id=?").get(entity.id)
       if (prior && (prior.record_type !== "entity" || prior.revoked)) fail("CONFLICT", "entity identity is already used or revoked")
-      if (!prior) this.db.query("INSERT INTO identities(id,record_type) VALUES (?, 'entity')").run(entity.id)
+      if (!prior) this.sql("INSERT INTO identities(id,record_type) VALUES (?, 'entity')").run(entity.id)
       const stored = StoredEntitySchema.parse({ ...entity, revision })
       if (byteLength(stored) > this.maxRecordBytes) fail("CAPACITY", "entity exceeds the configured record limit")
+      // Narrowing an endpoint must not leave a dependent relation broader than it; snapshot restore enforces the same rule.
+      const dependents = this.sql<{ record_json: string }, [string, string]>(
+        "SELECT record_json FROM relations WHERE source_id=? OR target_id=?").all(entity.id, entity.id)
+      for (const row of dependents) {
+        const dependent = StoredRelationSchema.parse(JSON.parse(row.record_json))
+        const source = dependent.source_id === entity.id ? stored : this.readEntity(dependent.source_id)
+        const target = dependent.target_id === entity.id ? stored : this.readEntity(dependent.target_id)
+        if (!source || !target || !relationScopeFits(dependent.scope, source, target)) {
+          fail("SCOPE_DENIED", `entity scope change would leave relation ${dependent.id} broader than its endpoints; narrow or revoke it first`)
+        }
+      }
       const s = stored.scope
-      this.db.query(`INSERT INTO entities(id,project,visibility,owner,expires_at,record_json,revision) VALUES (?,?,?,?,?,?,?)
+      this.sql(`INSERT INTO entities(id,project,visibility,owner,expires_at,record_json,revision) VALUES (?,?,?,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET project=excluded.project,visibility=excluded.visibility,owner=excluded.owner,
         expires_at=excluded.expires_at,record_json=excluded.record_json,revision=excluded.revision`)
         .run(entity.id, s.project, s.visibility, s.owner, entity.provenance.expires_at, canonicalJson(stored), revision)
@@ -271,21 +296,16 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
     if (operation.type === "upsert_relation") {
       const relation = RelationSchema.parse(operation.relation)
       if (relation.scope.namespace !== this.namespace) fail("SCOPE_DENIED", "relation namespace differs from engine namespace")
-      const prior = this.db.query<{ record_type: string; revoked: number }, [string]>("SELECT record_type,revoked FROM identities WHERE id=?").get(relation.id)
+      const prior = this.sql<{ record_type: string; revoked: number }, [string]>("SELECT record_type,revoked FROM identities WHERE id=?").get(relation.id)
       if (prior && (prior.record_type !== "relation" || prior.revoked)) fail("CONFLICT", "relation identity is already used or revoked")
       const source = this.readEntity(relation.source_id), target = this.readEntity(relation.target_id)
       if (!source || !target) fail("NOT_FOUND", "relation endpoints must exist in the current projection")
-      const scope = relation.scope
-      const relationReader: ReadScope = { namespace: scope.namespace, project: scope.project, owner: scope.owner ?? "" }
-      if (!visible(source, relationReader) || !visible(target, relationReader) ||
-          (scope.visibility === "project" && (source.scope.visibility !== "project" || target.scope.visibility !== "project"))) {
-        fail("SCOPE_DENIED", "relation scope would broaden visibility of an endpoint")
-      }
-      if (!prior) this.db.query("INSERT INTO identities(id,record_type) VALUES (?, 'relation')").run(relation.id)
+      if (!relationScopeFits(relation.scope, source, target)) fail("SCOPE_DENIED", "relation scope would broaden visibility of an endpoint")
+      if (!prior) this.sql("INSERT INTO identities(id,record_type) VALUES (?, 'relation')").run(relation.id)
       const stored = StoredRelationSchema.parse({ ...relation, revision })
       if (byteLength(stored) > this.maxRecordBytes) fail("CAPACITY", "relation exceeds the configured record limit")
       const s = stored.scope
-      this.db.query(`INSERT INTO relations(id,source_id,target_id,project,visibility,owner,expires_at,valid_until,record_json,revision)
+      this.sql(`INSERT INTO relations(id,source_id,target_id,project,visibility,owner,expires_at,valid_until,record_json,revision)
         VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET source_id=excluded.source_id,target_id=excluded.target_id,
         project=excluded.project,visibility=excluded.visibility,owner=excluded.owner,expires_at=excluded.expires_at,
         valid_until=excluded.valid_until,record_json=excluded.record_json,revision=excluded.revision`)
@@ -293,23 +313,23 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
           relation.provenance.expires_at, relation.conditions.valid_until, canonicalJson(stored), revision)
       return
     }
-    const identity = this.db.query<{ record_type: string; revoked: number }, [string]>(
+    const identity = this.sql<{ record_type: string; revoked: number }, [string]>(
       "SELECT record_type,revoked FROM identities WHERE id=?").get(operation.target_id)
     if (!identity) fail("NOT_FOUND", "cannot revoke a missing identity")
     if (identity.record_type !== operation.target_type) fail("INVALID_OPERATION", "revocation target type does not match")
     if (identity.revoked) fail("CONFLICT", "identity is already revoked")
-    this.db.query("UPDATE identities SET revoked=1 WHERE id=?").run(operation.target_id)
+    this.sql("UPDATE identities SET revoked=1 WHERE id=?").run(operation.target_id)
     if (operation.target_type === "entity") {
-      const dependent = this.db.query<{ id: string }, [string, string]>(
+      const dependent = this.sql<{ id: string }, [string, string]>(
         "SELECT id FROM relations WHERE source_id=? OR target_id=?").all(operation.target_id, operation.target_id)
-      for (const row of dependent) this.db.query("UPDATE identities SET revoked=1 WHERE id=?").run(row.id)
-      this.db.query("DELETE FROM relations WHERE source_id=? OR target_id=?").run(operation.target_id, operation.target_id)
-      this.db.query("DELETE FROM entities WHERE id=?").run(operation.target_id)
-    } else this.db.query("DELETE FROM relations WHERE id=?").run(operation.target_id)
+      for (const row of dependent) this.sql("UPDATE identities SET revoked=1 WHERE id=?").run(row.id)
+      this.sql("DELETE FROM relations WHERE source_id=? OR target_id=?").run(operation.target_id, operation.target_id)
+      this.sql("DELETE FROM entities WHERE id=?").run(operation.target_id)
+    } else this.sql("DELETE FROM relations WHERE id=?").run(operation.target_id)
   }
 
   private readEntity(id: string): StoredEntity | null {
-    const row = this.db.query<{ record_json: string }, [string]>("SELECT record_json FROM entities WHERE id=?").get(id)
+    const row = this.sql<{ record_json: string }, [string]>("SELECT record_json FROM entities WHERE id=?").get(id)
     return row ? StoredEntitySchema.parse(JSON.parse(row.record_json)) : null
   }
 
@@ -325,7 +345,7 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
       return value && this.readable(value, scope, this.now().getTime()) ? structuredClone(value) : null
     }
     const entity = this.readEntity(id)
-    const relationRow = entity ? null : this.db.query<{ record_json: string }, [string]>("SELECT record_json FROM relations WHERE id=?").get(id)
+    const relationRow = entity ? null : this.sql<{ record_json: string }, [string]>("SELECT record_json FROM relations WHERE id=?").get(id)
     const value = entity ?? (relationRow ? StoredRelationSchema.parse(JSON.parse(relationRow.record_json)) : null)
     const result = value && this.readable(value, scope, this.now().getTime()) ? value : null
     this.cacheSet(key, result, revision)
@@ -376,18 +396,18 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
       entities.set(entity.id, entity); visited.add(entity.id)
       addPath({ root_id: current.root, entity_ids: [...current.entityIds, entity.id], relation_ids: current.relationIds })
       if (current.relationIds.length >= options.max_depth) {
-        omitted_count += Number(this.db.query<{ count: number }, [string, string, string]>(
+        omitted_count += Number(this.sql<{ count: number }, [string, string, string]>(
           "SELECT count(*) AS count FROM relations WHERE source_id=? AND project=? AND (visibility='project' OR owner=?)")
           .get(entity.id, options.scope.project, options.scope.owner)?.count ?? 0)
         continue
       }
       const relationLimit = options.max_nodes * 4
-      const rows = this.db.query<{ record_json: string }, [string, string, string]>(
+      const rows = this.sql<{ record_json: string }, [string, string, string, number]>(
         `SELECT record_json FROM relations WHERE source_id=? AND project=? AND (visibility='project' OR owner=?)
-         AND visibility IN ('project','session') ORDER BY id LIMIT ${relationLimit + 1}`)
-        .all(entity.id, options.scope.project, options.scope.owner)
+         AND visibility IN ('project','session') ORDER BY id LIMIT ?`)
+        .all(entity.id, options.scope.project, options.scope.owner, relationLimit + 1)
       if (rows.length > relationLimit) {
-        const total = Number(this.db.query<{ count: number }, [string, string, string]>(
+        const total = Number(this.sql<{ count: number }, [string, string, string]>(
           "SELECT count(*) AS count FROM relations WHERE source_id=? AND project=? AND (visibility='project' OR owner=?)")
           .get(entity.id, options.scope.project, options.scope.owner)?.count ?? rows.length)
         omitted_count += total - relationLimit
@@ -423,8 +443,8 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
     this.assertOpen()
     return this.readTransaction(() => {
     const revision = this.invalidateIfChanged()
-    const entities = Number(this.db.query<{ count: number }, []>("SELECT count(*) AS count FROM entities").get()?.count ?? 0)
-    const relations = Number(this.db.query<{ count: number }, []>("SELECT count(*) AS count FROM relations").get()?.count ?? 0)
+    const entities = Number(this.sql<{ count: number }, []>("SELECT count(*) AS count FROM entities").get()?.count ?? 0)
+    const relations = Number(this.sql<{ count: number }, []>("SELECT count(*) AS count FROM relations").get()?.count ?? 0)
     return EngineStatusSchema.parse({ namespace: this.namespace, revision, event_hash: this.headHash(), entities, relations,
       cache: { entries: this.cache.size, ...this.counters, capacity: this.cacheEntries },
       capacity: { max_record_bytes: this.maxRecordBytes, max_snapshot_bytes: this.maxSnapshotBytes, max_event_batch: MEMORY_MAX_EVENT_BATCH },
@@ -436,12 +456,12 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
     this.assertOpen(); this.db.exec("BEGIN")
     try {
       const revision = this.currentRevision(), event_hash = this.headHash()
-      const entityRows = this.db.query<{ record_json: string }, []>("SELECT record_json FROM entities ORDER BY id").all()
-      const relationRows = this.db.query<{ record_json: string }, []>("SELECT record_json FROM relations ORDER BY id").all()
-      const identities = this.db.query<{ id: string; record_type: string; revoked: number }, []>(
+      const entityRows = this.sql<{ record_json: string }, []>("SELECT record_json FROM entities ORDER BY id").all()
+      const relationRows = this.sql<{ record_json: string }, []>("SELECT record_json FROM relations ORDER BY id").all()
+      const identities = this.sql<{ id: string; record_type: string; revoked: number }, []>(
         "SELECT id,record_type,revoked FROM identities ORDER BY id").all().map((row) =>
         IdentitySchema.parse({ id: row.id, record_type: row.record_type, revoked: row.revoked === 1 }))
-      const idempotency = this.db.query<{ idempotency_key: string; operation_hash: string; revision: number; event_hash: string; content_hash: string }, []>(
+      const idempotency = this.sql<{ idempotency_key: string; operation_hash: string; revision: number; event_hash: string; content_hash: string }, []>(
         "SELECT idempotency_key,operation_hash,revision,event_hash,content_hash FROM idempotency_history ORDER BY revision").all()
         .map((row) => IdempotencyReceiptSchema.parse(row))
       const snapshot = SnapshotSchema.parse({ schema_version: 1, namespace: this.namespace, revision, event_hash,
@@ -463,7 +483,7 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
     if (revision < base) fail("CONFLICT", "requested events predate the restored snapshot cursor")
     const current = this.currentRevision()
     if (revision > current) fail("CONFLICT", "requested event cursor is ahead of the local revision")
-    const rows = this.db.query<{ event_json: string }, [number, number]>(
+    const rows = this.sql<{ event_json: string }, [number, number]>(
       "SELECT event_json FROM event_log WHERE revision>? ORDER BY revision LIMIT ?").all(revision, limit)
     if (!rows.length) return null
     const events = rows.map((row) => EventSchema.parse(JSON.parse(row.event_json)))
@@ -477,7 +497,7 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
   private hashAt(revision: number): string | null {
     if (revision === this.baseRevision()) return this.baseHash()
     if (revision === 0) return null
-    const value = this.db.query<{ event_hash: string }, [number]>("SELECT event_hash FROM event_log WHERE revision=?").get(revision)?.event_hash
+    const value = this.sql<{ event_hash: string }, [number]>("SELECT event_hash FROM event_log WHERE revision=?").get(revision)?.event_hash
     if (!value) fail("CONFLICT", "event cursor is not retained locally")
     return value
   }
@@ -510,15 +530,15 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
   }
 
   private loadSnapshot(snapshot: EnvironmentMemorySnapshot) {
-    if (this.currentRevision() !== 0 || Number(this.db.query<{ count: number }, []>("SELECT count(*) AS count FROM identities").get()?.count ?? 0) !== 0 ||
-        Number(this.db.query<{ count: number }, []>("SELECT count(*) AS count FROM idempotency_history").get()?.count ?? 0) !== 0) {
+    if (this.currentRevision() !== 0 || Number(this.sql<{ count: number }, []>("SELECT count(*) AS count FROM identities").get()?.count ?? 0) !== 0 ||
+        Number(this.sql<{ count: number }, []>("SELECT count(*) AS count FROM idempotency_history").get()?.count ?? 0) !== 0) {
       fail("CONFLICT", "snapshot restore requires an empty destination")
     }
     const identities = new Map<string, { record_type: "entity" | "relation"; revoked: boolean }>()
     for (const identity of snapshot.identities) {
       if (identities.has(identity.id)) fail("CORRUPTION", "snapshot has duplicate identities")
       identities.set(identity.id, identity)
-      this.db.query("INSERT INTO identities(id,record_type,revoked) VALUES (?,?,?)")
+      this.sql("INSERT INTO identities(id,record_type,revoked) VALUES (?,?,?)")
         .run(identity.id, identity.record_type, Number(identity.revoked))
     }
     const active = new Set<string>()
@@ -533,12 +553,9 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
     }
     for (const relation of snapshot.relations) {
       const source = entities.get(relation.source_id), target = entities.get(relation.target_id)
-      const scope = relation.scope
-      const reader: ReadScope = { namespace: scope.namespace, project: scope.project, owner: scope.owner ?? "" }
-      if (containsSuspectedSecret(relation) || scope.namespace !== this.namespace || relation.revision > snapshot.revision ||
+      if (containsSuspectedSecret(relation) || relation.scope.namespace !== this.namespace || relation.revision > snapshot.revision ||
           identities.get(relation.id)?.record_type !== "relation" || identities.get(relation.id)?.revoked || active.has(relation.id) ||
-          !source || !target || !visible(source, reader) || !visible(target, reader) ||
-          (scope.visibility === "project" && (source.scope.visibility !== "project" || target.scope.visibility !== "project"))) {
+          !source || !target || !relationScopeFits(relation.scope, source, target)) {
         fail("CORRUPTION", "snapshot relation identity, endpoints, or scope are invalid")
       }
       active.add(relation.id)
@@ -556,7 +573,7 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
       }
       keys.add(receipt.idempotency_key); revisions.add(receipt.revision)
       if (receipt.revision === snapshot.revision && receipt.event_hash === snapshot.event_hash) hasHead = true
-      this.db.query("INSERT INTO idempotency_history(idempotency_key,operation_hash,revision,event_hash,content_hash) VALUES (?,?,?,?,?)")
+      this.sql("INSERT INTO idempotency_history(idempotency_key,operation_hash,revision,event_hash,content_hash) VALUES (?,?,?,?,?)")
         .run(receipt.idempotency_key, receipt.operation_hash, receipt.revision, receipt.event_hash, receipt.content_hash)
     }
     if (!hasHead) fail("CORRUPTION", "snapshot head has no matching idempotency receipt")
@@ -566,12 +583,12 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
 
   private writeRestoredEntity(entity: StoredEntity) {
     const s = entity.scope
-    this.db.query("INSERT INTO entities(id,project,visibility,owner,expires_at,record_json,revision) VALUES (?,?,?,?,?,?,?)")
+    this.sql("INSERT INTO entities(id,project,visibility,owner,expires_at,record_json,revision) VALUES (?,?,?,?,?,?,?)")
       .run(entity.id, s.project, s.visibility, s.owner, entity.provenance.expires_at, canonicalJson(entity), entity.revision)
   }
   private writeRestoredRelation(relation: StoredRelation) {
     const s = relation.scope
-    this.db.query("INSERT INTO relations(id,source_id,target_id,project,visibility,owner,expires_at,valid_until,record_json,revision) VALUES (?,?,?,?,?,?,?,?,?,?)")
+    this.sql("INSERT INTO relations(id,source_id,target_id,project,visibility,owner,expires_at,valid_until,record_json,revision) VALUES (?,?,?,?,?,?,?,?,?,?)")
       .run(relation.id, relation.source_id, relation.target_id, s.project, s.visibility, s.owner, relation.provenance.expires_at,
         relation.conditions.valid_until, canonicalJson(relation), relation.revision)
   }
@@ -606,9 +623,9 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
       if (hashes.content_hash !== event.content_hash || hashes.event_hash !== event.event_hash) fail("CORRUPTION", "event content hash is invalid")
       this.applyOperation(event.operation, event.revision)
       const operationHash = digestJson(event.operation)
-      this.db.query("INSERT INTO event_log(revision,event_json,content_hash,event_hash,idempotency_key,operation_hash) VALUES (?,?,?,?,?,?)")
+      this.sql("INSERT INTO event_log(revision,event_json,content_hash,event_hash,idempotency_key,operation_hash) VALUES (?,?,?,?,?,?)")
         .run(event.revision, canonicalJson(event), event.content_hash, event.event_hash, event.idempotency_key, operationHash)
-      this.db.query("INSERT INTO idempotency_history(idempotency_key,operation_hash,revision,event_hash,content_hash) VALUES (?,?,?,?,?)")
+      this.sql("INSERT INTO idempotency_history(idempotency_key,operation_hash,revision,event_hash,content_hash) VALUES (?,?,?,?,?)")
         .run(event.idempotency_key, operationHash, event.revision, event.event_hash, event.content_hash)
       this.setMeta("revision", String(event.revision)); this.setMeta("head_hash", event.event_hash)
       previous_hash = event.event_hash
@@ -616,11 +633,15 @@ export class EnvironmentMemoryEngine implements EnvironmentMemoryEngineContract 
   }
 
   private restoreResult(): RestoreResult {
-    const entities = Number(this.db.query<{ count: number }, []>("SELECT count(*) AS count FROM entities").get()?.count ?? 0)
-    const relations = Number(this.db.query<{ count: number }, []>("SELECT count(*) AS count FROM relations").get()?.count ?? 0)
+    const entities = Number(this.sql<{ count: number }, []>("SELECT count(*) AS count FROM entities").get()?.count ?? 0)
+    const relations = Number(this.sql<{ count: number }, []>("SELECT count(*) AS count FROM relations").get()?.count ?? 0)
     return RestoreResultSchema.parse({ namespace: this.namespace, revision: this.currentRevision(), entities, relations,
       durability: "local-sqlite-commit" })
   }
 
-  close() { if (!this.closed) { this.db.close(); this.cache.clear(); this.closed = true } }
+  close() {
+    if (this.closed) return
+    for (const statement of this.statements.values()) statement.finalize()
+    this.statements.clear(); this.db.close(); this.cache.clear(); this.closed = true
+  }
 }

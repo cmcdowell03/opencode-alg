@@ -125,6 +125,12 @@ classification (`declared`, `observed`, `inferred`, or `unknown`), observation
 time, optional verification time, and optional expiry. Expired facts are omitted
 from reads; query results expose stale, missing, and omitted counts.
 
+A relation is never broader than its endpoints: both must be visible in the
+relation's own scope, and a project-visible relation requires project-visible
+endpoints. The rule applies when either side changes, so narrowing an entity or
+moving it to another project is rejected while a broader relation still depends
+on it. Narrow or revoke that relation first.
+
 Reachability, authentication, and authorization are different relation kinds.
 A `reaches` edge does not mean a caller authenticated; `authenticates-as` does
 not mean that principal has a needed privilege; `authorized-for` is still stored
@@ -158,6 +164,19 @@ snapshots preserve live/revoked identities and committed idempotency receipts so
 restore cannot reuse old IDs or retry keys. Remote restore verifies all
 referenced hashes and the journal chain before atomically restoring and replaying.
 Hashes detect corruption, but do not authenticate the publisher.
+
+When the local journal no longer holds the remote cursor (for example after a
+local snapshot restore newer than the remote head) or the manifest reaches its
+segment limit, replication publishes a fresh snapshot checkpoint. It does so only
+when the remote head's event hash appears in the local idempotency history;
+otherwise the remote is a different lineage and replication fails with
+`CONFLICT` without replacing the manifest.
+
+The local-directory store serializes manifest updates with ALG's shared lease
+mutex. A lock left by a crashed writer on the same host is taken over once its
+30-second lease expires and its process is gone, so an interrupted replication
+does not block later ones. A lock owned by another host or in an unverifiable
+state fails closed and must be inspected before it is removed.
 
 Local-directory replication is useful for synthetic recovery checks:
 

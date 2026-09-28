@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, test } from "bun:test"
-import { mkdtempSync, rmSync } from "node:fs"
-import { tmpdir } from "node:os"
+import { spawnSync } from "node:child_process"
+import { randomUUID } from "node:crypto"
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { hostname, tmpdir } from "node:os"
 import { join } from "node:path"
 import { EnvironmentMemoryEngine } from "../src/environment-memory/index.ts"
 import type { Entity, Provenance, ReadScope, Relation } from "../src/environment-memory/index.ts"
@@ -87,6 +89,34 @@ describe("environment memory object stores", () => {
     expect((await store.getManifest("manifest.json"))?.version).toBe(updated.version)
   })
 
+  test("local store takes over a crashed writer's expired manifest lock but waits on a live one", async () => {
+    const root = directory()
+    const store = await LocalDirectoryObjectStore.open({ directory: root, lockWaitMs: 50 })
+    const lockPath = join(root, "manifest.json.lock")
+    const lease = (pid: number, expiresInMs: number) => JSON.stringify({ version: 1, owner: "environment-memory:manifest", token: randomUUID(),
+      pid, host: hostname(), resource: lockPath, acquired_at: new Date(Date.now() - 60_000).toISOString(),
+      expires_at: new Date(Date.now() + expiresInMs).toISOString() })
+    writeFileSync(lockPath, lease(process.pid, 60_000))
+    await expect(store.replaceManifest("manifest.json", new Uint8Array([1]), null)).rejects.toMatchObject({ code: "unavailable" })
+    const exited = spawnSync(process.execPath, ["--version"])
+    expect(exited.pid).toBeGreaterThan(0)
+    writeFileSync(lockPath, lease(exited.pid!, -1_000))
+    const published = await store.replaceManifest("manifest.json", new Uint8Array([1]), null)
+    expect((await store.getManifest("manifest.json"))?.version).toBe(published.version)
+    expect(existsSync(lockPath)).toBe(false)
+  })
+
+  test("concurrent manifest writers in one process wait asynchronously instead of blocking each other", async () => {
+    const store = await LocalDirectoryObjectStore.open({ directory: directory() })
+    const initial = await store.replaceManifest("manifest.json", new Uint8Array([1]), null)
+    const results = await Promise.allSettled([
+      store.replaceManifest("manifest.json", new Uint8Array([2]), initial.version),
+      store.replaceManifest("manifest.json", new Uint8Array([3]), initial.version),
+    ])
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1)
+    expect(results.filter((result) => result.status === "rejected" && (result.reason as ObjectStoreError).code === "conflict")).toHaveLength(1)
+  })
+
   test("injected S3 transport uses conditional requests, bounded streaming, and no credentials", async () => {
     const transport = new MemoryS3Transport()
     const store = await openS3ObjectStore({ bucket: "synthetic-bucket", region: "us-east-1", prefix: "memory", maxObjectBytes: 8 }, transport)
@@ -156,6 +186,30 @@ describe("environment memory replication and recovery", () => {
         expect(destination.status().revision).toBe(0)
       } finally { destination.close() }
     } finally { source.close() }
+  })
+
+  test("a restore newer than the remote cursor republishes a checkpoint only over an ancestor head", async () => {
+    const store = await LocalDirectoryObjectStore.open({ directory: directory() })
+    const source = await engine(directory()), restored = await engine(directory())
+    const divergent = await engine(directory()), divergentCopy = await engine(directory()), recovered = await engine(directory())
+    try {
+      addEntity(source, entity("gateway"), 0)
+      await replicateEnvironmentMemory(source, store)
+      addEntity(source, entity("api"), 1)
+      addEntity(source, entity("db"), 2)
+      restored.restoreSnapshot(source.exportSnapshot())
+      addEntity(restored, entity("cache"), 3)
+      const receipt = await replicateEnvironmentMemory(restored, store)
+      expect(receipt.remote).toMatchObject({ highest_replicated_revision: 4, pending_lag: 0 })
+      expect(await restoreEnvironmentMemory(recovered, store)).toMatchObject({ revision: 4, restored_batches: 0 })
+      expect(recovered.get("cache", scope)?.revision).toBe(4)
+
+      for (const [index, id] of ["x", "y", "z", "w", "v"].entries()) addEntity(divergent, entity(id), index)
+      divergentCopy.restoreSnapshot(divergent.exportSnapshot())
+      const before = await store.getManifest("manifest.json")
+      await expect(replicateEnvironmentMemory(divergentCopy, store, { maxAttempts: 1 })).rejects.toMatchObject({ code: "CONFLICT" })
+      expect((await store.getManifest("manifest.json"))?.version).toBe(before!.version)
+    } finally { for (const value of [source, restored, divergent, divergentCopy, recovered]) value.close() }
   })
 
   test("namespace mismatch and cancellation are typed without mutating a destination", async () => {
