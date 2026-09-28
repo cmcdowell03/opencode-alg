@@ -104,8 +104,10 @@ Packing the same commit twice produces the same SHA-256; if it does not, stop.
 ## 5. Install the snapshot (writes only a new directory)
 
 ```bash
-bun scripts/snapshot-upgrade.ts install <out-dir>/opencode-alg-<version>.tgz <target-commit>
+bun scripts/snapshot-upgrade.ts install <out-dir>/opencode-alg-<version>.tgz "$(git rev-parse <target-commit>)"
 ```
+
+Pass the full commit SHA; it is recorded as given.
 
 This extracts the package to
 `~/.local/share/opencode-alg/development/<yyyymmdd>-<sha12>/package`, runs
@@ -145,16 +147,19 @@ bun scripts/snapshot-upgrade.ts verify after.json
 bun scripts/snapshot-upgrade.ts check-backup <backup-dir>
 ```
 
-`verify` starts a throwaway `opencode serve` in an isolated temporary git
-project (so ALG binds to that folder, not to real state), asks it which tools
-loaded, and stops it. Compare with `baseline.json`:
+`verify` starts a throwaway `opencode serve` on an OS-assigned port in an
+isolated temporary git project (so ALG binds to that folder, not to real state),
+asks it which tools loaded, and stops it. The server's output is kept in
+`<out>.serve.log`; if the server exits or never becomes ready, the error quotes
+its last lines. Compare with `baseline.json`:
 
 - `alg_tools` is identical, unless the release notes say the tool set changed.
 - `alg_registrations` shows the new spec with the same options.
 - `alg_schema_sha256` changes when the new build changed any tool schema; this
   is the proof that the new code, not a cached copy, is loaded. If it is
   unchanged, the upgrade may still be correct (no schema changes), so state that
-  in the report instead of claiming proof.
+  in the report instead of claiming proof, and use the optional live smoke test
+  below or a check against a changed source file in the installed package.
 
 `check-backup` must report `changed` containing only the edited config files,
 `missing: []`, and `added: 0`. Anything else means something wrote to ALG state
@@ -162,6 +167,20 @@ during the upgrade; report it.
 
 Finally, ask the user to start OpenCode normally. The server log line
 `alg plugin loaded skill_evolution=… tools=19 …` confirms the plugin loaded.
+
+### Optional live smoke test (uses model calls)
+
+Only with the user's consent, since it costs model usage. Create a throwaway git
+project so ALG writes its state there, give it a small failing test, and run:
+
+```bash
+opencode run --dir <project> -m <provider/model> "Fix the bug so 'node test.js' passes. Use alg_plan with the coding-diamond template, then alg_run until done, failed, or blocked, then report alg_status."
+```
+
+Expect the run to finish `done` and the test to pass. Then start
+`opencode serve` in that project once, request
+`/experimental/tool/ids?directory=<project>`, and confirm that any skill audit
+left `running` by the previous exit completes (skill evolution only).
 
 ## 9. Report
 
@@ -224,3 +243,10 @@ upgrading snapshot `20260920-4b81773d5a7f` (commit `dc55386`) to
 parsed all existing state; after the repoint OpenCode loaded the same 19 ALG
 tools with the options unchanged and the new `alg_memory_read` schema; and the
 backup manifest showed only the two config files changed.
+
+It was executed again the same day with the helper, from `20260928-749ef3c337a7`
+to `20260928-c0752f863e53` (commit `37f93de`), over 1,438 backed-up files. Tool
+schemas were unchanged, so the proof came from the live smoke test: every node
+passed on its first attempt, and an audit interrupted by `opencode run` exiting
+completed on the next startup. One `verify` run failed transiently; the helper
+now uses an OS-assigned port and reports the server's output.

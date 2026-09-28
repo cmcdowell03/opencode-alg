@@ -5,7 +5,8 @@
  */
 import { spawn, spawnSync } from "node:child_process"
 import { createHash, randomUUID } from "node:crypto"
-import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { closeSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { createServer } from "node:net"
 import { homedir, tmpdir } from "node:os"
 import { basename, dirname, join, parse as parsePath, resolve } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
@@ -223,21 +224,39 @@ function repoint(backupDir: string, oldSpec: string, newSpec: string) {
   return { changed, spec: newSpec }
 }
 
+function freePort(): Promise<number> {
+  return new Promise((resolvePort, reject) => {
+    const probe = createServer()
+    probe.once("error", reject)
+    probe.listen(0, "127.0.0.1", () => {
+      const address = probe.address()
+      probe.close(() => (address && typeof address === "object" ? resolvePort(address.port) : reject(new Error("no free port"))))
+    })
+  })
+}
+
 /** Starts a throwaway `opencode serve` in an isolated git project and reports what actually loaded. */
 async function verify(outFile: string) {
   const project = mkdtempSync(join(tmpdir(), "alg-verify-"))
   spawnSync("git", ["init", "-q"], { cwd: project })
-  const port = 40_000 + Math.floor(Math.random() * 9_000)
-  const server = spawn("opencode", ["serve", "--port", String(port)], { cwd: project, shell: process.platform === "win32", stdio: "ignore" })
+  // An OS-assigned port avoids Windows' reserved (excluded) port ranges.
+  const port = await freePort()
+  const logFile = `${outFile}.serve.log`
+  const log = openSync(logFile, "w")
+  const server = spawn("opencode", ["serve", "--port", String(port), "--print-logs", "--log-level", "INFO"],
+    { cwd: project, shell: process.platform === "win32", stdio: ["ignore", log, log] })
   const base = `http://127.0.0.1:${port}`
   const get = async (path: string) => {
-    const response = await fetch(`${base}${path}${path.includes("?") ? "&" : "?"}directory=${encodeURIComponent(project)}`)
+    const response = await fetch(`${base}${path}${path.includes("?") ? "&" : "?"}directory=${encodeURIComponent(project)}`, { signal: AbortSignal.timeout(60_000) })
     if (!response.ok) throw new Error(`GET ${path} -> ${response.status}`)
     return response.json() as Promise<any>
   }
+  const notReady = (reason: string) => new Error(`opencode serve ${reason}; last server output (${logFile}):\n${
+    readFileSync(logFile, "utf8").trim().split("\n").slice(-15).join("\n")}`)
   try {
     for (let attempt = 0; ; attempt++) {
-      try { await get("/config"); break } catch { if (attempt > 120) throw new Error("opencode serve did not become ready"); await Bun.sleep(500) }
+      if (server.exitCode !== null) throw notReady(`exited with code ${server.exitCode}`)
+      try { await get("/config"); break } catch { if (attempt > 120) throw notReady("did not become ready"); await Bun.sleep(500) }
     }
     const ids = await get("/experimental/tool/ids") as string[]
     const config = await get("/config")
@@ -253,6 +272,7 @@ async function verify(outFile: string) {
   } finally {
     if (process.platform === "win32" && server.pid) spawnSync("taskkill", ["/PID", String(server.pid), "/T", "/F"], { stdio: "ignore" })
     else server.kill()
+    closeSync(log)
     await Bun.sleep(500)
     // The server may still hold handles briefly on Windows; a leftover temp project is harmless.
     try { rmSync(project, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }) } catch { /* best effort */ }
