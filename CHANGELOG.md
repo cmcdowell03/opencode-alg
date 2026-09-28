@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Worker prompts no longer show the JSON Schema `$schema` marker, and an echoed
+  top-level `$schema` key no longer fails output validation. Live models copied it
+  and lost an attempt; a node with one attempt failed the run.
+- A live skill audit interrupted by plugin shutdown (every `opencode run` exit, or
+  quitting mid-audit) stays recoverable: startup recovery requeues it within
+  `maxAttempts` instead of the turn being recorded as permanently failed.
 - Adds a default-off environment memory engine for reviewed, scoped machine,
   route, endpoint, API, repository, deployment, database, and principal facts.
   Bun's native SQLite store commits revisioned observations transactionally;

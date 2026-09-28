@@ -814,6 +814,9 @@ export class SkillEvolutionRuntime {
       await this.processOwned(key, manual, fencingToken, acquisition.record, () => lease.assertHeld())
     } catch (error) {
       lease.assertHeld()
+      // Shutdown is not an audit outcome. Leave the record running, exactly as a crash would, so
+      // the next startup's recovery requeues it within maxAttempts instead of losing the turn.
+      if (this.disposed) return
       const text = error instanceof Error ? error.message : String(error)
       if (/session directory is outside the current project|session belongs to another project/.test(text)) {
         markLiveSkillLedgerOutcome(this.project, key, { status: "no-change", trigger_score: 0, trigger_labels: [] }, fencingToken)

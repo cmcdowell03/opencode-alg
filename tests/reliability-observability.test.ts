@@ -218,7 +218,7 @@ describe("reliability and observability hardening", () => {
           session_id: `explore-${++calls}`,
           text: "",
           parsed: calls === 1
-            ? { $schema: "unexpected", query: "q", map: [{ path: "x", role: "r" }], key_hits: [], next: "none" }
+            ? { unexpected: true, query: "q", map: [{ path: "x", role: "r" }], key_hits: [], next: "none" }
             : { query: "q", map: [{ path: "x", role: "r" }], key_hits: [], next: "none" },
         }),
       })

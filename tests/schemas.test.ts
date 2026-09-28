@@ -4,6 +4,7 @@ import { validateGraph } from "../src/graph.ts"
 import {
   CheckOut,
   ImplementOut,
+  jsonSchemaHint,
   NodeAttemptSchema,
   parseAndValidate,
   parsePersistedNodeAttempt,
@@ -143,6 +144,18 @@ describe("strict contracts", () => {
     ]) {
       expect(ImplementOut.safeParse({ ...valid, artifact_path: artifactPath }).success).toBe(false)
     }
+  })
+
+  test("the prompt schema hint omits $schema and an echoed $schema marker does not fail validation", () => {
+    const checker = { passed: true, failures: [], score: 9 }
+    for (const agent of ["explorer", "researcher", "implementer", "checker", "shell"]) {
+      expect(Object.hasOwn(JSON.parse(jsonSchemaHint(agent)), "$schema")).toBe(false)
+    }
+    // Live models copied the marker from earlier hints, which cost a whole attempt per affected node.
+    expect(parseAndValidate("checker", { $schema: "https://json-schema.org/draft/2020-12/schema", ...checker }))
+      .toEqual({ ok: true, data: checker })
+    expect(parseAndValidate("checker", { ...checker, extra: true })).toMatchObject({ ok: false })
+    expect(parseAndValidate("checker", { ...checker, notes: { $schema: "nested" } })).toMatchObject({ ok: false })
   })
 
   test("unknown agents are rejected instead of receiving a permissive record", () => {
