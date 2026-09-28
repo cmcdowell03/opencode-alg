@@ -12,6 +12,8 @@ Optional capabilities: [policy-bounded DuckDB developer query plane](docs/duckdb
 
 New explicit workflows: [experience records, troubleshooting, paired skill evaluation, and pinned local data science](docs/experience-and-data-science.md); [synthetic connector preparation](docs/connectors.md). These are default-off and do not imply live deployment validation.
 
+Installing or upgrading on a machine that already has ALG state: follow the [agent install and upgrade runbook](docs/agent-install-upgrade-runbook.md).
+
 See [implementation status and remaining completion gates](docs/implementation-status.md). Private skill-evolution model calls currently fail closed because the pinned V1 SDK cannot express the required all-tool session permission policy; ordinary ALG execution is unaffected.
 
 **Agents + Loops + Graphs** for OpenCode stable runtimes satisfying the declared `engines.opencode` range (`>=1.18.0 <2.0.0`): a typed DAG executor with durable project state, bounded attempts and payloads, fresh-child checking, model snapshots, and audited run ownership.

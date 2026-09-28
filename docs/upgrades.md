@@ -1,5 +1,9 @@
 # Versioned install, update, and rollback
 
+> Machines registered to a development snapshot (`~/.local/share/opencode-alg/development/…`)
+> or a checkout path are upgraded with the
+> [agent install and upgrade runbook](agent-install-upgrade-runbook.md), not the manager below.
+
 Package v0.3.0 continues the opt-in release manager introduced in v0.2.0. The
 manager and external receipt protocol deliberately remain version `0.2.0`; a
 package-version increase does not imply a manager-protocol migration. The
