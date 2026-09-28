@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, setDefaultTimeout, test } from "bun:test"
 import { installSyntheticEvolutionChild } from "./skill-evolution-child-fixture.ts"
 import { createHash } from "node:crypto"
 import { lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
@@ -12,6 +12,9 @@ import { beginSkillAudit, createSkillCandidate, enqueueSkillAudit, failSkillAudi
 import { createSkillEvolutionTools } from "../src/skill-evolution-tools.ts"
 import { realUserGlobalConfigRoots } from "../scripts/live-verify.ts"
 import { removeProject, tempProject } from "./helpers.ts"
+
+// Historical runs seal snapshots and drive several locked child steps; many take 3-7s, so Bun's 5s default flakes.
+setDefaultTimeout(30_000)
 
 function transcript(sessionId: string, count: number, suffix = ""): any[] {
   return Array.from({ length: count }, (_, index) => {
@@ -97,7 +100,7 @@ class HistoricalSdk {
 }
 
 function candidateOutput(): Extract<AuditorOutput, { decision: "skill_candidate" }> {
-  return { decision: "skill_candidate", rationale: "A reusable procedure was found.", confidence: "high", triggers: [], provenance: { session_id: "selected", user_message_id: "message-0", assistant_message_id: "message-1", user_created_at: 0, assistant_created_at: 1, assistant_completed_at: 2 }, skill: { target: "retrospective-review/SKILL.md", operation: "create", basis_sha256: null, content: "---\nname: retrospective-review\ndescription: Reviews bounded retrospective evidence when reusable project procedures are requested.\n---\n\n# Retrospective review\n\nReview the complete sealed evidence, preserve provenance, and report only reusable project procedures.\n", summary: "Adds a bounded retrospective review procedure." } }
+  return { decision: "skill_candidate", rationale: "A reusable procedure was found.", confidence: "high", triggers: [], provenance: { session_id: "selected", user_message_id: "message-0", assistant_message_id: "message-1", user_created_at: 0, assistant_created_at: 1, assistant_completed_at: 2, finish: "stop" }, skill: { target: "retrospective-review/SKILL.md", operation: "create", basis_sha256: null, content: "---\nname: retrospective-review\ndescription: Reviews bounded retrospective evidence when reusable project procedures are requested.\n---\n\n# Retrospective review\n\nReview the complete sealed evidence, preserve provenance, and report only reusable project procedures.\n", summary: "Adds a bounded retrospective review procedure." } }
 }
 
 function memoryCandidateOutput() {

@@ -851,7 +851,7 @@ describe("skill-evolution fresh auditor/checker child protocol", () => {
     }
   }, 60_000)
 
-  test("auditor/checker creation, prompt, malformed-result, and abort failures become terminal failed records", async () => {
+  test("auditor/checker creation, prompt, and malformed-result failures become terminal failed records; shutdown aborts stay recoverable", async () => {
     const cases: Array<[string, (sdk: FakeSdk) => void]> = [
       ["auditor-create", (sdk) => { sdk.createError = { message: "auditor create rejected" } }],
       ["auditor-prompt", (sdk) => { sdk.promptError = { message: "auditor prompt rejected" } }],
@@ -897,9 +897,13 @@ describe("skill-evolution fresh auditor/checker child protocol", () => {
       const active = runtime(project, sdk)
       active.handleEvent(event("session"))
       await started
-      active.dispose()
-      const failed = await waitForStatus(project, "session", "assistant-session", "failed")
-      expect(failed.error).toContain("aborted")
+      await active.dispose()
+      // Shutdown still cancels the in-flight child, but it is not an audit outcome: the record stays
+      // running so startup recovery requeues it (see "shutting down mid-audit leaves the turn …").
+      expect((sdk.prompts.at(-1)!.signal as AbortSignal).aborted).toBe(true)
+      await waitFor(() => sdk.activePrompts === 0, "aborted prompt settled")
+      await Bun.sleep(250)
+      expect(loadSkillLedger(project).records.find((record) => record.key === skillLedgerKey("session", "assistant-session"))?.status).toBe("running")
     } finally {
       removeProject(project)
     }
@@ -1010,6 +1014,34 @@ describe("skill-evolution compaction-loss handling", () => {
       expect(context).toContain(".opencode/skill-evolution/")
       expect(loadSkillLedger(project).records.filter((record) => record.session_id === "target" && record.evidence_ref)).toHaveLength(4)
       active.dispose()
+    } finally {
+      removeProject(project)
+    }
+  })
+
+  test("shutting down mid-audit leaves the turn for startup recovery instead of failing it", async () => {
+    const project = tempProject("alg-skill-dispose-mid-audit-")
+    try {
+      const sdk = new FakeSdk(project)
+      sdk.add("interrupted")
+      let release!: () => void
+      const held = new Promise<void>((resolve) => { release = resolve })
+      sdk.promptDelay = () => held
+      const active = runtime(project, sdk)
+      active.handleEvent(event("interrupted"))
+      await waitFor(() => sdk.activePrompts === 1, "auditor prompt in flight")
+      // `opencode run` disposes the plugin as soon as the turn ends, often while an audit is in flight.
+      await active.dispose()
+      release()
+      await waitFor(() => sdk.activePrompts === 0, "auditor prompt settled")
+      await Bun.sleep(250)
+      const key = skillLedgerKey("interrupted", "assistant-interrupted")
+      expect(loadSkillLedger(project).records.find((record) => record.key === key)).toMatchObject({ status: "running", attempts: 1 })
+      sdk.promptDelay = null
+      const restarted = runtime(project, sdk)
+      try {
+        expect(await waitForStatus(project, "interrupted", "assistant-interrupted", "no-change")).toMatchObject({ attempts: 2 })
+      } finally { restarted.dispose() }
     } finally {
       removeProject(project)
     }

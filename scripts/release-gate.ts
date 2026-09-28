@@ -117,6 +117,8 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "docs/experience-and-data-science.md", "docs/connectors.md", "docs/implementation-status.md",
   "docs/session-continuity.md", "docs/session-memory.md", "docs/session-memory-implementation-plan.md",
   "docs/model-agnostic-recovery.md",
+  "docs/environment-memory.md", "docs/environment-memory-design.md", "docs/environment-memory-engine-plan.md",
+  "docs/environment-memory-benchmarks.md", "docs/agent-install-upgrade-runbook.md",
   "scripts/alg.ps1", "scripts/alg.sh", "scripts/check-live.ts", "scripts/install.ps1", "scripts/install.sh",
   "scripts/installer-core.ts", "scripts/live-verify.ts", "scripts/manager-cli.ts", "scripts/manager-core.ts",
   "scripts/manager-schema.ts", "scripts/npm-invocation.ts", "scripts/release-gate.ts", "scripts/smoke.ts",
@@ -125,6 +127,7 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "scripts/data-science-cli.ts", "scripts/experience-cli.ts", "scripts/verify-optional-manifests.ts",
   "scripts/synthetic-gate.ts",
   "scripts/memory-cli.ts", "scripts/session-memory-gate.ts", "scripts/session-memory-benchmark.ts",
+  "scripts/environment-memory-cli.ts", "scripts/environment-memory-benchmark.ts", "scripts/snapshot-upgrade.ts",
 ] as const
 
 const RELEASE_CONTROL_PATHS = [

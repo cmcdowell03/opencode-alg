@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- Worker prompts no longer show the JSON Schema `$schema` marker, and an echoed
+  top-level `$schema` key no longer fails output validation. Live models copied it
+  and lost an attempt; a node with one attempt failed the run.
+- A live skill audit interrupted by plugin shutdown (every `opencode run` exit, or
+  quitting mid-audit) stays recoverable: startup recovery requeues it within
+  `maxAttempts` instead of the turn being recorded as permanently failed.
+- Adds a default-off environment memory engine for reviewed, scoped machine,
+  route, endpoint, API, repository, deployment, database, and principal facts.
+  Bun's native SQLite store commits revisioned observations transactionally;
+  bounded context and the existing read-only memory tools expose scoped results
+  without changing the 19-tool registry. No automatic discovery or credentials
+  are stored. See `docs/environment-memory.md`.
+- Adds explicit import, query, snapshot, restore, local/S3 replication commands
+  and a deterministic synthetic benchmark. Local SQLite commitment and remote
+  manifest publication are reported as distinct durability levels; synthetic
+  transport tests do not claim live S3 validation. `@aws-sdk/client-s3` is an
+  optional peer dependency, so default installs do not include it.
 - System and compaction hooks share one durable-fact selection. Assist compaction
   no longer appends a separate run summary, skill-evolution paragraph, or checkpoint
   sentence. The first user sentence is stored as an observed opening, not a task goal.

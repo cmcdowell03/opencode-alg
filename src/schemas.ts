@@ -1220,10 +1220,17 @@ export function parsePersistedAttemptDetail(raw: unknown, context: PersistedAtte
   return parsePersistedNodeAttempt(detail, context)
 }
 
+/** Models copy the JSON Schema `$schema` marker into their answers; it is metadata, never output content. */
+function withoutSchemaMarker(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value) || !Object.hasOwn(value, "$schema")) return value
+  const { $schema: _marker, ...rest } = value as Record<string, unknown>
+  return rest
+}
+
 export function jsonSchemaHint(agent: string): string {
   const schema = schemaForAgent(agent)
   try {
-    return JSON.stringify(z.toJSONSchema(schema), null, 2)
+    return JSON.stringify(withoutSchemaMarker(z.toJSONSchema(schema)), null, 2)
   } catch {
     return `{ "agent": ${JSON.stringify(agent)}, "note": "Return the documented strict output object." }`
   }
@@ -1239,7 +1246,7 @@ export function parseAndValidate(
   } catch (error) {
     return { ok: false, failures: [error instanceof Error ? error.message : String(error)] }
   }
-  const result = schema.safeParse(raw)
+  const result = schema.safeParse(withoutSchemaMarker(raw))
   if (result.success) return { ok: true, data: result.data }
   const converted = result.error.issues.map((issue) => safeDiagnosticText(
     `${issue.path.join(".") || "(root)"}: ${issue.message}`,

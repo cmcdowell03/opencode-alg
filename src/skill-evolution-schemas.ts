@@ -2,6 +2,7 @@ import { z } from "zod"
 import { isSafeId, isSafeProjectRelativePath } from "./paths.ts"
 import { serializedBytes, utf8Bytes } from "./limits.ts"
 import { MemoryOptionsSchema } from "./session-memory/schemas.ts"
+import { EnvironmentMemoryOptionsSchema } from "./environment-memory/runtime.ts"
 
 export const SKILL_EVOLUTION_SCHEMA_VERSION = 1 as const
 export const SKILL_EVOLUTION_MAX_CONTENT_BYTES = 64 * 1024
@@ -170,6 +171,7 @@ export const SkillEvolutionOptionsSchema = z.object({
 export const AlgPluginOptionsSchema = z.object({
   skillEvolution: SkillEvolutionOptionsSchema.optional(),
   sessionMemory: MemoryOptionsSchema.optional(),
+  environmentMemory: EnvironmentMemoryOptionsSchema.optional(),
 }).strict()
 
 export type SkillEvolutionOptions = z.infer<typeof SkillEvolutionOptionsSchema>

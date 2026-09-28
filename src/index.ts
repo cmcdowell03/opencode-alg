@@ -12,7 +12,7 @@ import { createAlgTools } from "./tools.ts"
 import { findLatestIncompleteRunForSession } from "./store.ts"
 import { configuredAgentModels, configuredModelResolutions } from "./models.ts"
 import type { AgentModelMap, ModelResolutionMap } from "./types.ts"
-import { appendAlgCompactionContext, formatCompactionContext } from "./compaction.ts"
+import { appendAlgCompactionContext, formatCompactionContext, MAX_COMPACTION_OUTPUT_BYTES } from "./compaction.ts"
 import { formatSdkError } from "./diagnostics.ts"
 import { verifiedLiveSourceIdentity } from "./source-identity.ts"
 import { parseSkillEvolutionOptions, AlgPluginOptionsSchema } from "./skill-evolution-schemas.ts"
@@ -26,6 +26,7 @@ import { isCompletedUserTurn } from "./turn-boundary.ts"
 
 const server: Plugin = async (ctx, pluginOptions) => {
   const { client, directory } = ctx
+  const pluginConfiguration = AlgPluginOptionsSchema.parse(pluginOptions ?? {})
   const skillEvolutionOptions = parseSkillEvolutionOptions(pluginOptions)
   let configuredModels: AgentModelMap = {}
   let modelResolutions: ModelResolutionMap = configuredModelResolutions({})
@@ -42,8 +43,14 @@ const server: Plugin = async (ctx, pluginOptions) => {
   }
 
   const extraSkillRoots = observedConfigSkillRoots()
-  const memory = new SessionMemoryRuntime(ctx.worktree || directory, AlgPluginOptionsSchema.parse(pluginOptions ?? {}).sessionMemory,
+  const memory = new SessionMemoryRuntime(ctx.worktree || directory, pluginConfiguration.sessionMemory,
     skillEvolutionOptions.skillRoots, extraSkillRoots)
+  const environmentMemory = pluginConfiguration.environmentMemory && pluginConfiguration.environmentMemory.mode !== "off"
+    ? await (await import("./environment-memory/runtime.ts")).EnvironmentMemoryRuntime.open({
+      ...pluginConfiguration.environmentMemory,
+      project: pluginConfiguration.environmentMemory.project ?? ctx.project.id,
+    })
+    : null
   const tools = createAlgTools(ctx, () => structuredClone(configuredModels), () => structuredClone(modelResolutions), { sessionMemory: memory })
   const authorizeMemory = async (owner: string) => {
     const controller = new AbortController()
@@ -91,9 +98,10 @@ const server: Plugin = async (ctx, pluginOptions) => {
     configuredResolutions: () => structuredClone(modelResolutions),
   })
   const skillEvolutionTools = createSkillEvolutionTools(skillEvolution)
-  const allTools = { ...tools, ...skillEvolutionTools, ...createMemoryTools(memory, authorizeMemory) }
+  const allTools = { ...tools, ...skillEvolutionTools, ...createMemoryTools(memory, authorizeMemory, environmentMemory ?? undefined) }
   if (JSON.stringify(Object.keys(allTools)) !== JSON.stringify(ALG_TOOL_IDS)) {
-    skillEvolution.dispose()
+    await skillEvolution.dispose()
+    environmentMemory?.close()
     throw new Error("ALG server tool registration differs from the exact public tool-ID contract")
   }
 
@@ -115,7 +123,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
 
     dispose: async () => {
       disposed = true
-      await skillEvolution.dispose()
+      try { await skillEvolution.dispose() } finally { environmentMemory?.close() }
     },
 
     event: async ({ event }) => {
@@ -168,6 +176,18 @@ const server: Plugin = async (ctx, pluginOptions) => {
       }
       if (input.sessionID) {
         const sessionId = input.sessionID
+        const appendEnvironmentMemory = async () => {
+          if (environmentMemory?.mode !== "assist") return
+          try {
+            await authorizeMemory(sessionId)
+            const remaining = input.model.limit.context - input.model.limit.output - memory.options.toolReserve - 512 -
+              Buffer.byteLength(output.system.join("\n"), "utf8")
+            if (!Number.isFinite(remaining) || remaining <= 0) return
+            const context = environmentMemory.render(sessionId, remaining)
+            if (context) output.system.push(context)
+          }
+          catch { output.system.push("Environment memory unavailable; verify current identity, reachability, and permissions before acting.") }
+        }
         const recovery: string[] = []
         const collect = (label: string, read: () => string) => {
           try { const value = read(); if (value) recovery.push(value) }
@@ -180,14 +200,16 @@ const server: Plugin = async (ctx, pluginOptions) => {
             await authorizeMemory(sessionId)
             const pack = memory.prepare(sessionId, { context: input.model.limit.context, output: input.model.limit.output, existingText: output.system.join("\n"), mandatoryContext: recovery })
             if (pack.text) output.system.push(pack.text)
-            if (memory.options.mode === "assist" && pack.receipt) return
+            if (memory.options.mode === "assist" && pack.receipt) { await appendEnvironmentMemory(); return }
           } catch {
             if (memory.options.mode === "assist") { output.system.push("ALG session memory unavailable; use alg_context_status before relying on restored procedures."); return }
           }
         }
         output.system.push(...recovery)
+        if (memory.options.mode !== "assist") appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID))
+        await appendEnvironmentMemory()
       }
-      if (memory.options.mode !== "assist") appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID))
+      if (!input.sessionID && memory.options.mode !== "assist") appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID))
     },
 
     "experimental.session.compacting": async (input, output) => {
@@ -207,6 +229,15 @@ const server: Plugin = async (ctx, pluginOptions) => {
           if (pack.text) owned.push(pack.text)
         } catch {
           owned.push("ALG working view unavailable; consult authoritative records before resuming.")
+        }
+        if (environmentMemory?.mode === "assist") {
+          try {
+            await authorizeMemory(input.sessionID)
+            const remaining = MAX_COMPACTION_OUTPUT_BYTES - Buffer.byteLength(owned.join("\n"), "utf8") - 1
+            const context = environmentMemory.render(input.sessionID, remaining)
+            if (context) owned.push(context)
+          }
+          catch { owned.push("Environment memory unavailable; verify current identity, reachability, and permissions before acting.") }
         }
         appendAlgCompactionContext(output.context, owned)
         return
@@ -229,6 +260,15 @@ const server: Plugin = async (ctx, pluginOptions) => {
       }
       const skills = memory.options.mode === "assist" ? "" : skillGuidance.compactionContext(input.sessionID)
       if (skills) owned.push(skills)
+      if (environmentMemory?.mode === "assist") {
+        try {
+          await authorizeMemory(input.sessionID)
+          const remaining = MAX_COMPACTION_OUTPUT_BYTES - Buffer.byteLength(owned.join("\n"), "utf8") - 1
+          const context = environmentMemory.render(input.sessionID, remaining)
+          if (context) owned.push(context)
+        }
+        catch { owned.push("Environment memory unavailable; verify current identity, reachability, and permissions before acting.") }
+      }
       appendAlgCompactionContext(output.context, owned)
     },
   }
