@@ -10,7 +10,8 @@ interface EnvironmentMemoryToolPort {
   read(id: string, owner: string): unknown | null
 }
 
-export function createMemoryTools(runtime: SessionMemoryRuntime, authorize: (owner: string) => Promise<void>, environment?: EnvironmentMemoryToolPort) {
+export function createMemoryTools(runtime: SessionMemoryRuntime, authorize: (owner: string) => Promise<void>, environment?: EnvironmentMemoryToolPort,
+  deployment?: () => unknown) {
   const run = async (context: ToolContext, action: (owner: string) => unknown, status = false) => {
     try {
       if (canonicalDirectory(context.worktree || context.directory) !== runtime.store.project) throw new Error("foreign tool project")
@@ -53,8 +54,8 @@ export function createMemoryTools(runtime: SessionMemoryRuntime, authorize: (own
     }),
     alg_context_status: tool({ description: "Inspect durable task bindings, coverage, context budget and the last assembly receipt without modifying memory.", args: {},
       execute: async (_args, context) => run(context, (owner) => environment
-        ? { ...runtime.status(owner), environment_memory: environment.status(owner) }
-        : runtime.status(owner), true),
+        ? { ...runtime.status(owner), environment_memory: environment.status(owner), ...(deployment ? { deployment: deployment() } : {}) }
+        : { ...runtime.status(owner), ...(deployment ? { deployment: deployment() } : {}) }, true),
     }),
     alg_memory_propose: tool({ description: availability + "Store an unverified private memory proposal. Cannot publish, bind environments, approve permissions or mark a solution verified.",
       args: { content: tool.schema.string().min(1).max(2000) },

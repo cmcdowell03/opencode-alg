@@ -22,6 +22,7 @@ import {
 import {
   buildCheckerPrompt,
   buildWorkerPrompt,
+  normalizeFreshResponsePaths,
   runNodeSession,
   type Client,
   type NodePromptOpts,
@@ -240,6 +241,7 @@ async function runOneNode(
           })
         : buildWorkerPrompt({
             goal: run.goal,
+            runId: run.run_id,
             criteria: run.criteria,
             agent: definition.agent,
             inputs,
@@ -273,7 +275,10 @@ async function runOneNode(
         catch (error) { throw new PersistenceBoundaryError(error) }
       }
       error = result.error ? safeDiagnosticText(result.error) : undefined
-      rawOutput = result.parsed
+      rawOutput = definition.agent === "implementer"
+        ? normalizeFreshResponsePaths(result.parsed)
+        : result.parsed
+      if (result.response_diagnostic) failures.push(safeDiagnosticText(result.response_diagnostic))
       if (rawOutput === null && result.text) failures.push("Could not parse JSON from agent response")
     }
 
@@ -286,11 +291,16 @@ async function runOneNode(
           const filesTouched = (rawOutput as { files_touched?: unknown }).files_touched
           if (Array.isArray(filesTouched)) {
             for (const filePath of filesTouched) {
-              try {
-                assertProjectFilePathContained(options.worktree, String(filePath))
-              } catch (error) {
+              if (typeof filePath !== "string") {
                 schemaOk = false
-                failures.push(safeDiagnosticText(`schema: ${error instanceof Error ? error.message : String(error)}`))
+                failures.push("schema: files_touched: code=invalid_type expected=string")
+                continue
+              }
+              try {
+                assertProjectFilePathContained(options.worktree, filePath)
+              } catch {
+                schemaOk = false
+                failures.push("schema: files_touched: code=path_not_contained expected=project-relative contained path")
               }
             }
           }
@@ -298,9 +308,9 @@ async function runOneNode(
           if (typeof artifactPath === "string") {
             try {
               assertRunArtifactPathContained(options.worktree, run.run_id, artifactPath)
-            } catch (error) {
+            } catch {
               schemaOk = false
-              failures.push(safeDiagnosticText(`schema: ${error instanceof Error ? error.message : String(error)}`))
+              failures.push("schema: artifact_path: code=path_not_contained expected=current-run artifact path")
             }
           }
         }

@@ -25,7 +25,7 @@
     }
   },
   "files": [
-    "src",
+    "src/**/*.ts",
     "agents",
     "templates",
     "capabilities/excel/manifest.json",
@@ -69,6 +69,7 @@
     "data-science": "bun run scripts/data-science-cli.ts",
     "datascience": "bun run scripts/datascience-project.ts",
     "release:gate": "bun run scripts/release-gate.ts",
+    "offline:diagnostics": "bun --no-install run scripts/offline-diagnostics.ts",
     "typecheck": "bun ./node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
     "check": "bun run typecheck && bun run test && bun run smoke && bun run check:live && bun run check:excel-manifest && bun run check:duckdb-manifest && bun run check:optional-manifests"
   },

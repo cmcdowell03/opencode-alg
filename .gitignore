@@ -3,6 +3,8 @@ node_modules/
 **/node_modules/
 
 # OpenCode runtime state and durable local runs
+/alg-plugin-config.json
+/src/alg-plugin-config.json
 .opencode/
 **/.opencode/
 !.opencode/

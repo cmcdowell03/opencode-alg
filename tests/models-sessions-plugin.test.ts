@@ -13,7 +13,7 @@ import {
   setAgentModelVariant,
   snapshotModels,
 } from "../src/models.ts"
-import { extractJson, runNodeSession } from "../src/sessions.ts"
+import { extractJson, extractJsonDetailed, runNodeSession } from "../src/sessions.ts"
 import { createRun, loadRun, persistRun, runContainedPath } from "../src/store.ts"
 import { executeRun } from "../src/executor.ts"
 import { ModelRefSchema, ProjectModelSettingsSchema } from "../src/schemas.ts"
@@ -38,14 +38,31 @@ function toolOutput(result: unknown): any {
 }
 
 describe("models, SDK propagation, and registration", () => {
-  test("JSON extraction accepts only a whole object or one anchored fence", () => {
+  test("JSON extraction accepts one object in surrounding prose or fences and rejects ambiguity", () => {
     expect(extractJson(' {"ok":true} ')).toEqual({ ok: true })
     expect(extractJson(' \n```json\n{"ok":true}\n```\n ')).toEqual({ ok: true })
     expect(extractJson('```\n{"ok":true}\n```')).toEqual({ ok: true })
-    expect(extractJson('Here you go: {"ok":true}')).toBeNull()
-    expect(extractJson('Here you go:\n```json\n{"ok":true}\n```')).toBeNull()
+    expect(extractJson('Here you go: {"ok":true}')).toEqual({ ok: true })
+    expect(extractJson('Here you go:\n```json\n{"ok":true}\n```')).toEqual({ ok: true })
+    expect(extractJson('Here is JSON: {"ok":true} and that is all.')).toEqual({ ok: true })
     expect(extractJson('```json\n{"one":1}\n```\n```json\n{"two":2}\n```')).toBeNull()
     expect(extractJson('[{"not":"an object response"}]')).toBeNull()
+    expect(extractJson('Result: {"text":"escaped \\\" brace } and { value"}')).toEqual({ text: 'escaped " brace } and { value' })
+    expect(extractJson('{"unfinished":')).toBeNull()
+    expect(extractJsonDetailed(" \n ").reason).toBe("empty")
+    expect(extractJsonDetailed("no JSON here").reason).toBe("no_json")
+  })
+
+  test("role schema selects one valid response among competing objects without weakening validation", () => {
+    const body = '{"passed":true,"failures":[],"score":9}'
+    expect(extractJsonDetailed(`Progress: {"step":1}\nFinal: ${body}`, "checker").value)
+      .toEqual({ passed: true, failures: [], score: 9 })
+    expect(extractJsonDetailed(`${body}\n${body}`, "checker")).toMatchObject({ value: null, reason: "ambiguous" })
+    expect(extractJsonDetailed('{"passed":"wrong type","failures":[],"score":9}', "checker").value)
+      .toEqual({ passed: "wrong type", failures: [], score: 9 })
+    expect(extractJsonDetailed('Note {"step":1} only', "checker").value).toEqual({ step: 1 })
+    expect(extractJsonDetailed('{"$schema":"https://json-schema.org/draft/2020-12/schema","passed":true,"failures":[],"score":9}', "checker").value)
+      .toMatchObject({ passed: true, score: 9 })
   })
 
   test("strict project model settings persist and snapshot independently", () => {
@@ -356,7 +373,8 @@ describe("models, SDK propagation, and registration", () => {
       const hooks = await serverModule.server(context)
       expect(Object.keys(hooks.tool ?? {})).toEqual([...ALG_TOOL_IDS])
       expect(ALG_TOOL_IDS).toHaveLength(19)
-      expect(logs.map((entry) => entry.body.message)).toContain(algServerStartupMessage(false))
+      expect(logs.some((entry) => entry.body.message.startsWith(algServerStartupMessage(false)) &&
+        entry.body.message.includes("source_manifest_at_module_load="))).toBe(true)
       expect(Object.keys(createAlgTools(context)).sort()).toEqual([
         "alg_artifact",
         "alg_criteria",
@@ -391,10 +409,10 @@ describe("models, SDK propagation, and registration", () => {
         expect(Object.keys(hooks.tool ?? {})).toEqual([...ALG_TOOL_IDS])
         await hooks.dispose?.()
       }
-      expect(logs.map((entry) => entry.body.message)).toEqual(expect.arrayContaining([
-        algServerStartupMessage(false),
-        algServerStartupMessage(true),
-      ]))
+      for (const enabled of [false, true]) {
+        expect(logs.some((entry) => entry.body.message.startsWith(algServerStartupMessage(enabled)) &&
+          entry.body.message.includes("source_manifest_at_module_load="))).toBe(true)
+      }
     } finally {
       removeProject(project)
     }

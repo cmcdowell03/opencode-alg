@@ -15,7 +15,9 @@ import type { AgentModelMap, ModelResolutionMap } from "./types.ts"
 import { appendAlgCompactionContext, formatCompactionContext, MAX_COMPACTION_OUTPUT_BYTES } from "./compaction.ts"
 import { formatSdkError } from "./diagnostics.ts"
 import { verifiedLiveSourceIdentity } from "./source-identity.ts"
-import { parseSkillEvolutionOptions, AlgPluginOptionsSchema } from "./skill-evolution-schemas.ts"
+import { parseSkillEvolutionOptions } from "./skill-evolution-schemas.ts"
+import { resolvePluginConfiguration } from "./plugin-configuration.ts"
+import { captureRuntimeIdentityAtModuleLoad, inspectRuntimeIdentityNow, runtimeIdentityStartupMessage } from "./runtime-identity.ts"
 import { createSkillEvolutionRuntime } from "./skill-evolution-runtime.ts"
 import { createSkillEvolutionTools } from "./skill-evolution-tools.ts"
 import { observedConfigSkillRoots, SkillGuidance } from "./skill-catalog.ts"
@@ -24,10 +26,13 @@ import { createMemoryTools } from "./session-memory/tools.ts"
 import { canonicalDirectory, isContained } from "./paths.ts"
 import { isCompletedUserTurn } from "./turn-boundary.ts"
 
+const runtimeIdentityAtModuleLoad = captureRuntimeIdentityAtModuleLoad()
+
 const server: Plugin = async (ctx, pluginOptions) => {
   const { client, directory } = ctx
-  const pluginConfiguration = AlgPluginOptionsSchema.parse(pluginOptions ?? {})
-  const skillEvolutionOptions = parseSkillEvolutionOptions(pluginOptions)
+  const resolvedConfiguration = resolvePluginConfiguration(pluginOptions)
+  const pluginConfiguration = resolvedConfiguration.options
+  const skillEvolutionOptions = parseSkillEvolutionOptions(pluginConfiguration)
   let configuredModels: AgentModelMap = {}
   let modelResolutions: ModelResolutionMap = configuredModelResolutions({})
 
@@ -98,7 +103,9 @@ const server: Plugin = async (ctx, pluginOptions) => {
     configuredResolutions: () => structuredClone(modelResolutions),
   })
   const skillEvolutionTools = createSkillEvolutionTools(skillEvolution)
-  const allTools = { ...tools, ...skillEvolutionTools, ...createMemoryTools(memory, authorizeMemory, environmentMemory ?? undefined) }
+  const allTools = { ...tools, ...skillEvolutionTools, ...createMemoryTools(memory, authorizeMemory, environmentMemory ?? undefined,
+    () => ({ ...inspectRuntimeIdentityNow(runtimeIdentityAtModuleLoad), configuration_source: resolvedConfiguration.source,
+      configuration_sidecar_present: resolvedConfiguration.sidecar_present })) }
   if (JSON.stringify(Object.keys(allTools)) !== JSON.stringify(ALG_TOOL_IDS)) {
     await skillEvolution.dispose()
     environmentMemory?.close()
@@ -110,8 +117,10 @@ const server: Plugin = async (ctx, pluginOptions) => {
       body: {
         service: ALG_PLUGIN_ID,
         level: "info",
-        message: algServerStartupMessage(skillEvolutionOptions.enabled),
-        extra: { directory, skill_evolution_enabled: skillEvolutionOptions.enabled },
+        message: `${algServerStartupMessage(skillEvolutionOptions.enabled)} ${runtimeIdentityStartupMessage(runtimeIdentityAtModuleLoad)} configuration_source=${resolvedConfiguration.source}`,
+        extra: { directory, skill_evolution_enabled: skillEvolutionOptions.enabled, configuration_source: resolvedConfiguration.source,
+          configuration_sidecar_present: resolvedConfiguration.sidecar_present, deployment_identity_protocol: runtimeIdentityAtModuleLoad.protocol,
+          deployment_build: runtimeIdentityAtModuleLoad.build, source_manifest_at_module_load: runtimeIdentityAtModuleLoad.source_manifest_at_module_load },
       },
     })
   } catch {

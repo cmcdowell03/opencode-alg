@@ -468,7 +468,7 @@ describe("existing-component realpath containment", () => {
         }),
       })
       expect(executed.status).toBe("failed")
-      expect(executed.nodes.work!.last_failures.join(" ")).toContain("files_touched path must resolve within")
+      expect(executed.nodes.work!.last_failures.join(" ")).toContain("schema: files_touched: code=path_not_contained")
       expect(readdirSync(outside)).toEqual([])
     } finally {
       for (const project of projects) removeProject(project)
