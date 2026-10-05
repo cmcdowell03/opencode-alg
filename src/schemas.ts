@@ -1248,9 +1248,21 @@ export function parseAndValidate(
   }
   const result = schema.safeParse(withoutSchemaMarker(raw))
   if (result.success) return { ok: true, data: result.data }
-  const converted = result.error.issues.map((issue) => safeDiagnosticText(
-    `${issue.path.join(".") || "(root)"}: ${issue.message}`,
-  ))
+  const knownOutputFields = new Set([
+    "summary", "files_touched", "commands_run", "cmd", "outcome", "risks", "done", "blockers",
+    "answer", "evidence", "path", "finding", "constraints", "options", "name", "pros", "cons",
+    "acceptance_criteria", "passed", "failures", "score", "notes",
+  ])
+  const converted = result.error.issues.map((issue) => {
+    const path = issue.path.map((part) => typeof part === "number" && Number.isSafeInteger(part) && part >= 0
+      ? String(part)
+      : typeof part === "string" && knownOutputFields.has(part) ? part : "?").join(".") || "(root)"
+    const details = issue as typeof issue & { expected?: unknown; minimum?: unknown; maximum?: unknown }
+    const expected = typeof details.expected === "string" ? ` expected=${details.expected}` : ""
+    const minimum = typeof details.minimum === "number" ? ` min=${details.minimum}` : ""
+    const maximum = typeof details.maximum === "number" ? ` max=${details.maximum}` : ""
+    return safeDiagnosticText(`${path}: code=${issue.code}${expected}${minimum}${maximum}`)
+  })
   return {
     ok: false,
     failures: boundDiagnosticList(converted, {

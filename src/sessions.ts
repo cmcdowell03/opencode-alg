@@ -1,5 +1,5 @@
 import type { PluginInput } from "@opencode-ai/plugin"
-import { jsonSchemaHint } from "./schemas.ts"
+import { jsonSchemaHint, parseAndValidate } from "./schemas.ts"
 import type { AlgAgent, ModelRef } from "./types.ts"
 import {
   MAX_AGENT_RESPONSE_TEXT_BYTES,
@@ -36,34 +36,128 @@ export interface NodePromptResult {
   text: string
   parsed: unknown | null
   error?: string
+  response_diagnostic?: string
 }
 
-/** Extract one JSON object from a fenced or raw response. */
-export function extractJson(text: string): unknown | null {
-  if (!text?.trim()) return null
-  const trimmed = text.trim()
-  const fence = trimmed.match(/^```(?:json)?[ \t]*\r?\n([\s\S]*?)\r?\n?```$/i)
-  const candidate = fence ? fence[1]!.trim() : trimmed
-  try {
-    const parsed: unknown = JSON.parse(candidate)
-    return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)
-      ? parsed
-      : null
-  } catch {
-    return null
+export type JsonExtractionReason = "empty" | "no_json" | "truncated" | "oversized" | "too_many" | "invalid_json" | "not_object" | "ambiguous"
+export interface JsonExtraction {
+  value: unknown | null
+  reason?: JsonExtractionReason
+  candidate_count: number
+}
+
+const MAX_JSON_CANDIDATES = 8
+const MAX_JSON_CANDIDATE_BYTES = MAX_AGENT_RESPONSE_TEXT_BYTES
+
+function jsonObjectCandidates(text: string): { candidates: unknown[]; reason?: JsonExtractionReason } {
+  if (!text.trim()) return { candidates: [], reason: "empty" }
+  if (Buffer.byteLength(text, "utf8") > MAX_JSON_CANDIDATE_BYTES) return { candidates: [], reason: "oversized" }
+  const candidates: unknown[] = []
+  let scannedCandidates = 0
+  let reason: JsonExtractionReason | undefined
+  for (let start = 0; start < text.length;) {
+    const opener = text[start]
+    if (opener !== "{" && opener !== "[") { start++; continue }
+    if (scannedCandidates >= MAX_JSON_CANDIDATES) return { candidates, reason: "too_many" }
+    scannedCandidates++
+    const stack: string[] = []
+    let inString = false
+    let escaped = false
+    let end = start
+    for (; end < text.length; end++) {
+      const char = text[end]!
+      if (inString) {
+        if (escaped) escaped = false
+        else if (char === "\\") escaped = true
+        else if (char === '"') inString = false
+        continue
+      }
+      if (char === '"') { inString = true; continue }
+      if (char === "{" || char === "[") stack.push(char === "{" ? "}" : "]")
+      else if (char === "}" || char === "]") {
+        if (stack.pop() !== char) { reason ??= "invalid_json"; end++; break }
+        if (stack.length === 0) { end++; break }
+      }
+    }
+    if (stack.length > 0 || inString) {
+      reason ??= "truncated"
+      break
+    }
+    const source = text.slice(start, end)
+    if (Buffer.byteLength(source, "utf8") > MAX_JSON_CANDIDATE_BYTES) reason ??= "oversized"
+    else {
+      try {
+        const parsed: unknown = JSON.parse(source)
+        if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) candidates.push(parsed)
+        else reason ??= "not_object"
+      } catch { reason ??= "invalid_json" }
+    }
+    start = end
   }
+  return { candidates, reason: reason ?? (candidates.length ? undefined : "no_json") }
 }
 
-function partsToText(parts: unknown): string {
-  if (!Array.isArray(parts)) return ""
-  const text = parts
-    .filter((part): part is { type: "text"; text: string } =>
-      Boolean(part && typeof part === "object" && (part as { type?: unknown }).type === "text" && typeof (part as { text?: unknown }).text === "string"),
-    )
-    .map((part) => part.text)
-    .join("\n")
-  assertTextBytes(text, MAX_AGENT_RESPONSE_TEXT_BYTES, "agent response text")
-  return text
+/** Converts only fresh response path metadata; all other output fields stay untouched. */
+export function normalizeFreshResponsePaths(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value
+  const output = { ...(value as Record<string, unknown>) }
+  if (Array.isArray(output.files_touched)) {
+    output.files_touched = output.files_touched.map((path) => typeof path === "string" ? path.replaceAll("\\", "/") : path)
+  }
+  if (typeof output.artifact_path === "string") output.artifact_path = output.artifact_path.replaceAll("\\", "/")
+  return output
+}
+
+export function extractJsonDetailed(text: string, agent?: Exclude<AlgAgent, "shell">): JsonExtraction {
+  const result = jsonObjectCandidates(text)
+  const candidates = result.candidates.map(normalizeFreshResponsePaths)
+  if (result.reason === "too_many" || result.reason === "oversized" || result.reason === "truncated") {
+    return { value: null, reason: result.reason, candidate_count: candidates.length }
+  }
+  if (candidates.length === 1) return { value: candidates[0], candidate_count: 1 }
+  if (candidates.length === 0) return { value: null, reason: result.reason, candidate_count: 0 }
+  if (agent) {
+    const valid = candidates.filter((candidate) => parseAndValidate(agent, candidate).ok)
+    if (valid.length === 1) return { value: valid[0], candidate_count: candidates.length }
+  }
+  return { value: null, reason: "ambiguous", candidate_count: candidates.length }
+}
+
+/** Extract one object; multiple candidates are rejected unless a role schema selects one. */
+export function extractJson(text: string): unknown | null {
+  return extractJsonDetailed(text).value
+}
+
+function partsToText(parts: unknown): { text: string; textPartCount: number; oversized: boolean } {
+  if (!Array.isArray(parts)) return { text: "", textPartCount: 0, oversized: false }
+  const chunks: string[] = []
+  let textPartCount = 0
+  let bytes = 0
+  let oversized = false
+  for (const part of parts) {
+    if (!part || typeof part !== "object" || (part as { type?: unknown }).type !== "text" ||
+      typeof (part as { text?: unknown }).text !== "string") continue
+    const chunk = (part as { text: string }).text
+    if (!oversized) {
+      bytes += Buffer.byteLength(chunk, "utf8") + (textPartCount ? 1 : 0)
+      if (bytes > MAX_AGENT_RESPONSE_TEXT_BYTES) oversized = true
+      else chunks.push(chunk)
+    }
+    textPartCount++
+  }
+  return { text: oversized ? "" : chunks.join("\n"), textPartCount, oversized }
+}
+
+function finishReason(data: unknown): string | undefined {
+  if (!data || typeof data !== "object") return undefined
+  const record = data as Record<string, unknown>
+  const info = record.info && typeof record.info === "object" ? record.info as Record<string, unknown> : {}
+  const raw = info.finishReason ?? info.finish_reason ?? record.finishReason ?? record.finish_reason
+  if (typeof raw !== "string") return undefined
+  const normalized = raw.toLowerCase()
+  return ["stop", "length", "tool_calls", "content_filter", "error", "unknown"].includes(normalized)
+    ? normalized
+    : "other"
 }
 
 /**
@@ -137,8 +231,17 @@ ${jsonSchemaHint(opts.agent)}
         error: formatSdkDiagnostic("session.prompt failed: ", prompted.error),
       }
     }
-    const text = partsToText(prompted.data?.parts)
-    return { session_id: sessionId, text, parsed: extractJson(text) }
+    const parts = (prompted.data as { parts?: unknown } | undefined)?.parts
+    const partCount = Array.isArray(parts) ? parts.length : 0
+    const { text, textPartCount, oversized } = partsToText(parts)
+    const extraction = oversized
+      ? { value: null, reason: "oversized" as const, candidate_count: 0 }
+      : extractJsonDetailed(text, opts.agent)
+    const finish = finishReason(prompted.data)
+    const responseDiagnostic = extraction.value === null
+      ? `Response parse: ${extraction.reason ?? "no_json"}; error_category=none; parts=${partCount}; text_parts=${textPartCount}; non_text_parts=${partCount - textPartCount}${finish ? `; finish=${finish}` : ""}`
+      : undefined
+    return { session_id: sessionId, text, parsed: extraction.value, ...(responseDiagnostic ? { response_diagnostic: responseDiagnostic } : {}) }
   } catch (error) {
     if (callbackFailed) throw error
     return {
@@ -152,6 +255,7 @@ ${jsonSchemaHint(opts.agent)}
 
 export function buildWorkerPrompt(options: {
   goal: string
+  runId?: string
   criteria: string[]
   agent: AlgAgent
   inputs: Record<string, unknown>
@@ -172,6 +276,15 @@ export function buildWorkerPrompt(options: {
     JSON.stringify(options.inputs, null, 2),
     "```",
   ]
+  if (options.agent === "implementer" && options.runId) {
+    lines.push(
+      "",
+      `RUN ID: ${options.runId}`,
+      "Return files_touched as project-relative paths using forward slashes (for example, src/file.ts).",
+      `If you create a report artifact, save it under exactly .opencode/runs/${options.runId}/artifacts/ and return that project-relative path as artifact_path.`,
+      "If you did not create an artifact, omit artifact_path.",
+    )
+  }
   if (options.priorFailures.length) {
     lines.push(
       "",

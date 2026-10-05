@@ -5,3 +5,5 @@
 **/.venv/**
 **/*private*
 **/*receipt*
+/alg-plugin-config.json
+/src/alg-plugin-config.json
