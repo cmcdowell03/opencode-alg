@@ -3,7 +3,7 @@ import type { SkillEvolutionRuntime } from "../src/skill-evolution-runtime.ts"
 import { ALG_SKILL_AUDIT_TITLE_PREFIX, ALG_SKILL_CHECK_TITLE_PREFIX } from "../src/skill-evolution-runtime.ts"
 import { ALG_SKILL_HISTORICAL_TITLE_PREFIX } from "../src/skill-evolution-historical.ts"
 import { registerSkillAuditChild } from "../src/skill-evolution-store.ts"
-import { extractJson } from "../src/sessions.ts"
+import { extractJsonDetailed } from "../src/sessions.ts"
 import { formatSdkError } from "../src/diagnostics.ts"
 
 /**
@@ -47,9 +47,27 @@ export function installSyntheticEvolutionChild(active: SkillEvolutionRuntime, fa
         },
       }))
       if (response.error) throw new Error(formatSdkError(response.error))
-      const text = (response.data?.parts ?? []).filter((part: any) => part.type === "text" && typeof part.text === "string").map((part: any) => part.text).join("\n")
-      if (Buffer.byteLength(text) > 96 * 1024) throw new Error("synthetic child response exceeds bound")
-      return { sessionId, parsed: extractJson(text) }
-    } catch (error) { return { sessionId, parsed: null, error: formatSdkError(error) } }
+      if (!response.data || typeof response.data !== "object") {
+        return { sessionId, parsed: null, outcome: "unknown", error: "synthetic child response is missing" }
+      }
+      const info = response.data?.info
+      // Legacy synthetic fixtures omit metadata; that absence is trusted only
+      // here, where the fake represents a finalized successful response with parts.
+      if (info === undefined && !Array.isArray(response.data.parts)) {
+        return { sessionId, parsed: null, outcome: "unknown", error: "synthetic child response lacks terminal evidence" }
+      }
+      if (info !== undefined && (info.sessionID !== sessionId || info.role !== "assistant" || info.error !== undefined ||
+        info.summary === true || info.finish !== "stop" || !Number.isSafeInteger(info.time?.completed) || info.time.completed < 0)) {
+        return { sessionId, parsed: null, outcome: "unknown", error: "synthetic child response is not a completed terminal turn" }
+      }
+      const chunks = (response.data?.parts ?? []).filter((part: any) => part.type === "text" && typeof part.text === "string").map((part: any) => part.text)
+      const text = chunks.join("\n")
+      if (Buffer.byteLength(text, "utf8") > 96 * 1024) {
+        return { sessionId, parsed: null, outcome: "completed", output_error: "response_oversized" }
+      }
+      const extracted = extractJsonDetailed(text)
+      return { sessionId, parsed: extracted.value, outcome: "completed",
+        ...(extracted.value === null ? { output_error: `response_${extracted.reason ?? "invalid_json"}` } : {}) }
+    } catch (error) { return { sessionId, parsed: null, outcome: "unknown", error: formatSdkError(error) } }
   }
 }

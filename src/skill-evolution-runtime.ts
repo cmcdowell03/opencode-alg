@@ -3,7 +3,7 @@ import { FilesystemMutexContentionError } from "./filesystem-mutex.ts"
 import type { Event } from "@opencode-ai/sdk"
 import type { PluginInput } from "@opencode-ai/plugin"
 import { isDeepStrictEqual } from "node:util"
-import { extractJson } from "./sessions.ts"
+import { extractJsonDetailed } from "./sessions.ts"
 import { formatSkillEvolutionCompactionContext } from "./compaction.ts"
 import { formatSdkDiagnostic, formatSdkError, safeDiagnosticText } from "./diagnostics.ts"
 import { canonicalDirectory, isContained } from "./paths.ts"
@@ -95,15 +95,21 @@ export function assertLiveEvidenceTarget(messages: unknown, messageId: string): 
   if (!present) throw new Error(LIVE_SESSION_COMPACTED_ERROR)
 }
 
-function responseText(parts: unknown): string {
-  if (!Array.isArray(parts)) return ""
-  const text = parts
-    .filter((part): part is { type: "text"; text: string } => Boolean(part && typeof part === "object" &&
-      (part as any).type === "text" && typeof (part as any).text === "string"))
-    .map((part) => part.text)
-    .join("\n")
-  assertTextBytes(text, MAX_CHILD_RESPONSE_BYTES, "skill-evolution child response")
-  return text
+function extractChildOutput(parts: unknown): { parsed: unknown | null; output_error?: string } {
+  if (!Array.isArray(parts)) return { parsed: null, output_error: "response_empty" }
+  const chunks: string[] = []
+  let bytes = 0
+  for (const part of parts) {
+    if (!part || typeof part !== "object" || (part as any).type !== "text" || typeof (part as any).text !== "string") continue
+    const chunk = (part as { text: string }).text
+    bytes += Buffer.byteLength(chunk, "utf8") + (chunks.length ? 1 : 0)
+    if (bytes > MAX_CHILD_RESPONSE_BYTES) return { parsed: null, output_error: "response_oversized" }
+    chunks.push(chunk)
+  }
+  const extracted = extractJsonDetailed(chunks.join("\n"))
+  if (extracted.value !== null) return { parsed: extracted.value }
+  const reason = extracted.reason ?? "invalid_json"
+  return { parsed: null, output_error: `response_${reason}` }
 }
 
 function strictOutputContract(kind: "auditor" | "checker"): string {
@@ -161,6 +167,8 @@ function checkerPrompt(output: AuditorOutput, evidence: unknown): string {
 interface ChildResult {
   sessionId: string
   parsed: unknown | null
+  outcome?: "completed" | "unknown"
+  output_error?: string
   error?: string
 }
 
@@ -699,7 +707,7 @@ export class SkillEvolutionRuntime {
     timeoutMs = this.childCallTimeoutMs,
     plannedModel?: ModelRef,
   ): Promise<ChildResult> {
-    if (!this.childCapability().allowed) return { sessionId: "", parsed: null, error: NO_TOOLS_UNSUPPORTED }
+    if (!this.childCapability().allowed) return { sessionId: "", parsed: null, outcome: "unknown", error: NO_TOOLS_UNSUPPORTED }
     const checkerRole = role === "checker" || role === "historical-checker"
     const historicalRole = role.startsWith("historical-")
     const maximum = checkerRole ? MAX_CHECKER_PROMPT_BYTES : MAX_AUDITOR_PROMPT_BYTES
@@ -713,7 +721,7 @@ export class SkillEvolutionRuntime {
     }
     let childId = ""
     try {
-      if (cancelled()) return { sessionId: "", parsed: null, error: "skill-evolution review cancelled before child create" }
+      if (cancelled()) return { sessionId: "", parsed: null, outcome: "unknown", error: "skill-evolution review cancelled before child create" }
       const unresolved = loadSkillLedger(this.project).audit_children.filter((child) => child.parent_id === parentId &&
         child.lifecycle && ["running", "abort-requested", "uncertain"].includes(child.lifecycle))
       if (unresolved.length > 8) throw new Error("too many unresolved audit children; operator review required")
@@ -732,15 +740,15 @@ export class SkillEvolutionRuntime {
         }
         return result
       }), callTimeout())
-      if (created.error) return { sessionId: "", parsed: null, error: formatSdkDiagnostic("session.create failed: ", created.error) }
+      if (created.error) return { sessionId: "", parsed: null, outcome: "unknown", error: formatSdkDiagnostic("session.create failed: ", created.error) }
       childId = created.data?.id ?? ""
-      if (!childId) return { sessionId: "", parsed: null, error: "session.create returned no child id" }
+      if (!childId) return { sessionId: "", parsed: null, outcome: "unknown", error: "session.create returned no child id" }
       // Pre-register immediately. The session.created event path handles the race where it arrived first.
       registerSkillAuditChild(this.project, {
         session_id: childId, parent_id: parentId, title, role: checkerRole ? "checker" : "auditor",
       })
       markSkillAuditChild(this.project, childId, "created")
-      if (cancelled()) return { sessionId: childId, parsed: null, error: "skill-evolution review cancelled before child prompt" }
+      if (cancelled()) return { sessionId: childId, parsed: null, outcome: "unknown", error: "skill-evolution review cancelled before child prompt" }
       // Historical calls are bound to the immutable plan. In particular, do
       // not resolve again after session.create, where configuration can race.
       const model = historicalRole ? plannedModel : this.model(checkerRole ? "checker" : "researcher")
@@ -773,13 +781,17 @@ export class SkillEvolutionRuntime {
         responseStyle: "fields", throwOnError: false, signal,
       }), callTimeout())
       if (prompted.error) throw new Error(formatSdkDiagnostic("session.prompt failed: ", prompted.error))
-      if (prompted.data?.info && !isCompletedUserTurn(prompted.data.info)) throw new Error("audit child did not return a completed turn")
+      if (prompted.data?.info?.sessionID !== childId || !isCompletedUserTurn(prompted.data?.info)) {
+        throw new Error("audit child did not return a positively completed terminal turn for the created child")
+      }
       markSkillAuditChild(this.project, childId, "completed")
-      const text = responseText(prompted.data?.parts)
-      return { sessionId: childId, parsed: extractJson(text) }
+      // Completion is established by terminal SDK metadata. Output extraction is
+      // deliberately separate: bad/missing output must not turn a finished child
+      // into an abort or imply that replay is safe.
+      return { sessionId: childId, outcome: "completed", ...extractChildOutput(prompted.data?.parts) }
     } catch (error) {
       const confirmed = childId ? await this.abortOwnedChild(childId) : true
-      return { sessionId: childId, parsed: null, error: `${formatSdkError(error)}${confirmed ? "" : "; child cancellation uncertain; retry blocked"}` }
+      return { sessionId: childId, parsed: null, outcome: "unknown", error: `${formatSdkError(error)}${confirmed ? "" : "; child cancellation uncertain; retry blocked"}` }
     } finally { this.activeChildren.delete(childId) }
   }
 

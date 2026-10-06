@@ -396,6 +396,8 @@ alg_skill_evolution_rollback candidate_id="se-..." confirm="ROLLBACK:se-..."
 
 ### V1 retrospective initialization
 
+See [historical audit recovery](docs/historical-audit-recovery.md) for bounded retries of known invalid child responses, preservation of committed progress, and the distinction from unresolved calls that cannot safely be replayed.
+
 `alg_skill_evolution_historical` uses only the root V1 client supplied to the
 plugin. Discovery makes one `session.list({query:{directory}})` request; V1 has
 no list request limit, so transport is not bounded even though call time/count

@@ -44,6 +44,12 @@ class HistoricalSdk {
   memoryCandidate = false
   forgeSource = false
   failuresRemaining = 0
+  invalidAuditorResponses = 0
+  invalidCheckerResponses = 0
+  checkerRejects = false
+  checkerResponses = 0
+  historicalAuditorResponses = 0
+  invalidAuditorAt?: number
   createGate?: Promise<void>
   promptGate?: Promise<void>
   promptGateFor?: (prompt: string) => boolean
@@ -72,7 +78,7 @@ class HistoricalSdk {
           if (this.failuresRemaining-- > 0) return { data: undefined, error: { name: "APIError", message: "interrupted" } }
           const fragment = prompt.includes("UNTRUSTED FRAGMENT JSON:\n")
             ? JSON.parse(prompt.split("UNTRUSTED FRAGMENT JSON:\n")[1]!) : undefined
-          const text = prompt.includes("pure checker")
+          let text = prompt.includes("pure checker")
             ? '{"passed":true,"findings":[]}'
             : prompt.includes("UNTRUSTED EVIDENCE JSON:\n")
               ? JSON.stringify(this.candidate ? candidateOutput() : {
@@ -92,6 +98,18 @@ class HistoricalSdk {
                   `\"fragment_index\":${fragment.fragment_index + 1}`,
                 )
                 : '{"findings":[]}'
+          if (prompt.includes("pure checker")) {
+            this.checkerResponses++
+            if (this.invalidCheckerResponses > 0) { this.invalidCheckerResponses--; text = "{ malformed checker output" }
+            else if (this.checkerRejects) text = '{"passed":false,"findings":["The skill lacks required evidence."]}'
+          }
+          if (fragment) {
+            this.historicalAuditorResponses++
+            if (this.invalidAuditorAt === this.historicalAuditorResponses || this.invalidAuditorResponses > 0) {
+              if (this.invalidAuditorResponses > 0) this.invalidAuditorResponses--
+              text = "{ malformed auditor output"
+            }
+          }
           return { data: { parts: [{ type: "text", text }] }, error: undefined }
         },
       },
@@ -822,6 +840,222 @@ describe("V1-only historical skill evolution", () => {
       expect(resumed.code).toBe("unavailable")
       expect(sdk.creates).toHaveLength(1)
       expect(loadHistoricalIndex(project).plans[0]).toMatchObject({ state: "resumable", next_chunk: 0 })
+      active.dispose()
+    } finally { removeProject(project) }
+  })
+
+  test("a completed malformed auditor response is durably rejected and retried within maxAttempts", async () => {
+    const project = tempProject("alg-historical-known-reject-retry-")
+    try {
+      const sdk = new HistoricalSdk(project, transcript("selected", 2))
+      sdk.invalidAuditorResponses = 1
+      const active = runtime(project, sdk, true, { maxAttempts: 2 })
+      const preview = await active.historicalInitialize({ action: "preview", session_ids: ["selected"] }) as any
+      expect((await active.historicalInitialize({ action: "run", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })).code).toBe("completed")
+      const status = await active.historicalInitialize({ action: "status", plan_id: preview.result.plan_id }) as any
+      expect(status.result).toMatchObject({ rejected_attempts: 1, rejected_reasons: ["output_unparseable"], chunks: { completed: status.result.chunks.total } })
+      const plan = loadHistoricalIndex(project).plans[0] as any
+      const rejected = plan.checkpoints.find((entry: any) => entry.stage === "rejected")
+      expect(rejected).toMatchObject({ model_calls: 1, attempts: 1, committed_at: expect.any(String), child_session_id: expect.any(String) })
+      const receipt = loadHistoricalImmutable(project, rejected.output_ref, "checkpoint", 4_096) as any
+      expect(receipt).toMatchObject({ kind: "historical_rejected_attempt", role: "auditor", target: "chunk", reason_code: "output_unparseable" })
+      expect(JSON.stringify(receipt)).not.toContain("malformed auditor output")
+      active.dispose()
+    } finally { removeProject(project) }
+  })
+
+  test("maxAttempts=1 rejection resumes in a reconstructed runtime without repeating the accepted chunk prefix", async () => {
+    const project = tempProject("alg-historical-known-reject-resume-")
+    try {
+      const values = transcript("selected", 2)
+      values[1]!.parts[0]!.text = "x".repeat(70_000)
+      const sdk = new HistoricalSdk(project, values)
+      const first = runtime(project, sdk, true, { maxAttempts: 1, maxChunkBytes: 4_096 })
+      const preview = await first.historicalInitialize({ action: "preview", session_ids: ["selected"] }) as any
+      const totalChunks = preview.result.sessions[0].chunk_refs.length
+      expect(totalChunks).toBeGreaterThan(1)
+      sdk.invalidAuditorAt = totalChunks
+      const interrupted = await first.historicalInitialize({ action: "run", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })
+      expect(interrupted.ok).toBe(false)
+      const blocked = await first.historicalInitialize({ action: "status", plan_id: preview.result.plan_id }) as any
+      expect(blocked.result).toMatchObject({ state: "resumable", rejected_attempts: 1, chunks: { completed: totalChunks - 1 } })
+      first.dispose()
+      const beforeResumeAuditorCalls = sdk.historicalAuditorResponses
+      const resumedRuntime = runtime(project, sdk, true, { maxAttempts: 1, maxChunkBytes: 4_096 })
+      expect((await resumedRuntime.historicalInitialize({ action: "resume", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })).code).toBe("completed")
+      expect(sdk.historicalAuditorResponses).toBe(beforeResumeAuditorCalls + 1)
+      const complete = await resumedRuntime.historicalInitialize({ action: "status", plan_id: preview.result.plan_id }) as any
+      expect(complete.result).toMatchObject({ rejected_attempts: 1, chunks: { completed: totalChunks } })
+      resumedRuntime.dispose()
+    } finally { removeProject(project) }
+  }, 30_000)
+
+  test("a completed malformed checker response retries without creating a candidate from rejected output", async () => {
+    const project = tempProject("alg-historical-checker-known-reject-")
+    try {
+      const sdk = new HistoricalSdk(project, transcript("selected", 2))
+      sdk.candidate = true
+      sdk.invalidCheckerResponses = 1
+      const active = runtime(project, sdk, true, { maxAttempts: 2 })
+      const preview = await active.historicalInitialize({ action: "preview", session_ids: ["selected"] }) as any
+      const result = await active.historicalInitialize({ action: "run", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })
+      expect(result.code).toBe("completed")
+      const plan = loadHistoricalIndex(project).plans[0] as any
+      const rejected = plan.checkpoints.find((entry: any) => entry.stage === "rejected")
+      expect(loadHistoricalImmutable(project, rejected.output_ref, "checkpoint", 4_096)).toMatchObject({
+        role: "checker", target: "checker", reason_code: "output_unparseable", reduction_ref_sha256: plan.reduction_ref.sha256,
+      })
+      expect(plan.checkpoints.some((entry: any) => entry.stage === "checker" && entry.committed_at)).toBe(true)
+      active.dispose()
+    } finally { removeProject(project) }
+  }, 30_000)
+
+  test("an exhausted checker batch resumes after reconstruction without repeating auditors", async () => {
+    const project = tempProject("alg-historical-checker-resume-")
+    try {
+      const sdk = new HistoricalSdk(project, transcript("selected", 2))
+      sdk.candidate = true
+      sdk.invalidCheckerResponses = 1
+      const first = runtime(project, sdk, true, { maxAttempts: 1 })
+      const preview = await first.historicalInitialize({ action: "preview", session_ids: ["selected"] }) as any
+      expect((await first.historicalInitialize({ action: "run", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })).code).toBe("resumable")
+      const before = await first.historicalInitialize({ action: "status", plan_id: preview.result.plan_id }) as any
+      expect(before.result).toMatchObject({ state: "resumable", rejected_attempts: 1, chunks: { completed: before.result.chunks.total } })
+      expect(loadSkillCandidates(project).candidates).toHaveLength(0)
+      const auditorCalls = sdk.historicalAuditorResponses
+      const chargedCalls = before.result.model_calls
+      first.dispose()
+      const resumed = runtime(project, sdk, true, { maxAttempts: 1 })
+      expect((await resumed.historicalInitialize({ action: "resume", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })).code).toBe("completed")
+      const after = await resumed.historicalInitialize({ action: "status", plan_id: preview.result.plan_id }) as any
+      expect(after.result.model_calls).toBe(chargedCalls + 1)
+      expect(sdk.historicalAuditorResponses).toBe(auditorCalls)
+      expect(sdk.checkerResponses).toBe(2)
+      resumed.dispose()
+    } finally { removeProject(project) }
+  }, 30_000)
+
+  test("a substantive checker rejection is recorded once and never retried as invalid format", async () => {
+    const project = tempProject("alg-historical-checker-quality-")
+    try {
+      const sdk = new HistoricalSdk(project, transcript("selected", 2))
+      sdk.candidate = true
+      sdk.checkerRejects = true
+      const active = runtime(project, sdk, true, { maxAttempts: 2 })
+      const preview = await active.historicalInitialize({ action: "preview", session_ids: ["selected"] }) as any
+      expect((await active.historicalInitialize({ action: "run", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })).code).toBe("completed")
+      expect(sdk.checkerResponses).toBe(1)
+      const status = await active.historicalInitialize({ action: "status", plan_id: preview.result.plan_id }) as any
+      expect(status.result.rejected_attempts).toBe(0)
+      expect(loadSkillCandidates(project).candidates[0]).toMatchObject({ state: "proposed", checker_findings: ["The skill lacks required evidence."] })
+      active.dispose()
+    } finally { removeProject(project) }
+  }, 30_000)
+
+  test("checker rejection references, content, order, and accounting are verified independently", async () => {
+    const project = tempProject("alg-historical-checker-receipt-proof-")
+    try {
+      const sdk = new HistoricalSdk(project, transcript("selected", 2))
+      sdk.candidate = true
+      sdk.invalidCheckerResponses = 1
+      const active = runtime(project, sdk, true, { maxAttempts: 2 })
+      const preview = await active.historicalInitialize({ action: "preview", session_ids: ["selected"] }) as any
+      expect((await active.historicalInitialize({ action: "run", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })).code).toBe("completed")
+      const baseline = structuredClone(loadHistoricalIndex(project).plans[0]) as any
+      const rejection = baseline.checkpoints.find((entry: any) => entry.stage === "rejected")
+      const saved = loadHistoricalImmutable(project, rejection.output_ref, "checkpoint", 4_096) as any
+      const forgedRef = persistHistoricalImmutable(project, "checkpoint", { ...saved, reviewed_source_digest: "f".repeat(64) }, 4_096)
+      const mutations: Array<[string, (plan: any) => void]> = [
+        ["reference", (plan) => { plan.checkpoints.find((entry: any) => entry.stage === "rejected").output_ref.sha256 = "f".repeat(64) }],
+        ["content", (plan) => { plan.checkpoints.find((entry: any) => entry.stage === "rejected").output_ref = forgedRef }],
+        ["wrong-prompt", (plan) => { plan.checkpoints.find((entry: any) => entry.stage === "rejected").chunk_sha256 = "f".repeat(64) }],
+        ["counter", (plan) => { plan.checkpoints.find((entry: any) => entry.stage === "rejected").input_bytes++; plan.input_bytes++ }],
+        ["order", (plan) => {
+          const index = plan.checkpoints.findIndex((entry: any) => entry.stage === "rejected")
+          const [entry] = plan.checkpoints.splice(index, 1)
+          plan.checkpoints.splice(plan.checkpoints.findIndex((value: any) => value.stage === "checker") + 1, 0, entry)
+        }],
+        ["duplicate", (plan) => {
+          const index = plan.checkpoints.findIndex((entry: any) => entry.stage === "rejected")
+          const entry = structuredClone(plan.checkpoints[index])
+          plan.checkpoints.splice(index + 1, 0, entry)
+          plan.model_calls++; plan.input_bytes += entry.input_bytes
+        }],
+        ["removed", (plan) => { plan.checkpoints.splice(plan.checkpoints.findIndex((entry: any) => entry.stage === "rejected"), 1) }],
+      ]
+      const childCreates = sdk.creates.length
+      for (const [name, mutate] of mutations) {
+        updateHistoricalIndex(project, `test-rejection-${name}`, (index) => {
+          const plan = structuredClone(baseline)
+          mutate(plan)
+          index.plans[0] = plan
+        })
+        expect((await active.historicalInitialize({ action: "status", plan_id: preview.result.plan_id })).code, name).toBe("confirmation_mismatch")
+        expect((await active.historicalInitialize({ action: "resume", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })).code, name).toBe("confirmation_mismatch")
+        expect(sdk.creates.length, name).toBe(childCreates)
+      }
+      updateHistoricalIndex(project, "test-rejection-restore", (index) => { index.plans[0] = structuredClone(baseline) })
+      expect((await active.historicalInitialize({ action: "status", plan_id: preview.result.plan_id })).code).toBe("completed")
+      const receiptPath = join(project, ...rejection.output_ref.path.split("/"))
+      const originalReceipt = readFileSync(receiptPath)
+      try {
+        writeFileSync(receiptPath, '{"corrupt":true}')
+        expect((await active.historicalInitialize({ action: "status", plan_id: preview.result.plan_id })).code).toBe("confirmation_mismatch")
+      } finally { writeFileSync(receiptPath, originalReceipt) }
+      expect((await active.historicalInitialize({ action: "status", plan_id: preview.result.plan_id })).code).toBe("completed")
+      active.dispose()
+    } finally { removeProject(project) }
+  }, 30_000)
+
+  test("new previews pin a recognized recovery protocol while legacy completed plans remain readable", async () => {
+    const project = tempProject("alg-historical-recovery-protocol-")
+    try {
+      const sdk = new HistoricalSdk(project, transcript("selected", 2))
+      const active = runtime(project, sdk, true)
+      const preview = await active.historicalInitialize({ action: "preview", session_ids: ["selected"] }) as any
+      const original = loadHistoricalImmutable(project, preview.result.immutable_plan_ref, "plan", 512 * 1024) as any
+      expect(original.recovery_protocol).toBe("rejected-attempt-v1")
+      const rebind = (value: any) => {
+        const reference = persistHistoricalImmutable(project, "plan", value, 512 * 1024)
+        const planId = `hist-${reference.sha256.slice(0, 32)}`
+        updateHistoricalIndex(project, "test-protocol-rebind", (index) => {
+          const plan = index.plans[0] as any
+          const previousId = plan.plan_id
+          plan.plan_id = planId; plan.plan_ref = reference; plan.confirmation = reference.sha256
+          for (const snapshot of index.snapshots) {
+            snapshot.plan_ids = snapshot.plan_ids.map((id: string) => id === previousId ? planId : id)
+            for (const state of snapshot.state_history) if (state.plan_id === previousId) state.plan_id = planId
+          }
+        })
+        return { planId, confirmation: reference.sha256 }
+      }
+      const unknown = rebind({ ...original, recovery_protocol: "unknown-future-protocol" })
+      expect((await active.historicalInitialize({ action: "status", plan_id: unknown.planId })).code).toBe("confirmation_mismatch")
+      expect((await active.historicalInitialize({ action: "run", plan_id: unknown.planId, confirmation: unknown.confirmation })).code).toBe("confirmation_mismatch")
+      expect(sdk.creates).toHaveLength(0)
+      const legacy = structuredClone(original)
+      delete legacy.recovery_protocol
+      const legacyPlan = rebind(legacy)
+      expect((await active.historicalInitialize({ action: "run", plan_id: legacyPlan.planId, confirmation: legacyPlan.confirmation })).code).toBe("completed")
+      expect((await active.historicalInitialize({ action: "status", plan_id: legacyPlan.planId })).code).toBe("completed")
+      active.dispose()
+    } finally { removeProject(project) }
+  }, 30_000)
+
+  test("persistent completed invalid output stays resumable and tampered rejection bindings fail closed", async () => {
+    const project = tempProject("alg-historical-reject-tamper-")
+    try {
+      const sdk = new HistoricalSdk(project, transcript("selected", 2))
+      sdk.invalidAuditorResponses = 1
+      const active = runtime(project, sdk, true, { maxAttempts: 1 })
+      const preview = await active.historicalInitialize({ action: "preview", session_ids: ["selected"] }) as any
+      expect((await active.historicalInitialize({ action: "run", plan_id: preview.result.plan_id, confirmation: preview.result.confirmation })).ok).toBe(false)
+      expect((await active.historicalInitialize({ action: "status", plan_id: preview.result.plan_id }) as any).result).toMatchObject({ state: "resumable", rejected_attempts: 1, chunks: { completed: 0 } })
+      updateHistoricalIndex(project, "tamper-rejection-binding", (index) => {
+        const rejected = (index.plans[0] as any).checkpoints.find((entry: any) => entry.stage === "rejected")
+        rejected.key = "f".repeat(64)
+      })
+      expect((await active.historicalInitialize({ action: "status", plan_id: preview.result.plan_id })).code).toBe("confirmation_mismatch")
       active.dispose()
     } finally { removeProject(project) }
   })

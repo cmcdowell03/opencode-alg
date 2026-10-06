@@ -202,7 +202,10 @@ class FakeSdk {
             const prompt = request.body.parts[0].text
             const output = request.body.agent === "checker" ? this.checker(prompt) : this.auditor(prompt)
             const text = typeof output === "string" ? output : JSON.stringify(output)
-            return { data: { parts: [{ type: "text", text }] }, error: undefined }
+            return { data: {
+              info: { id: `child-output-${this.prompts.length}`, sessionID: request.path.id, role: "assistant", finish: "stop", time: { created: 1, completed: 2 } },
+              parts: [{ type: "text", text }],
+            }, error: undefined }
           } finally {
             this.activePrompts--
           }

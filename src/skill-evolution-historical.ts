@@ -47,6 +47,7 @@ import {
 
 export const ALG_SKILL_HISTORICAL_TITLE_PREFIX = "alg-private-skill-evolution-historical:"
 export const HISTORICAL_COMPLETENESS = "v1_bounded_snapshot" as const
+const HISTORICAL_RECOVERY_PROTOCOL = "rejected-attempt-v1" as const
 
 function privateTitle(title: string): boolean {
   return title.startsWith("alg-private-skill-evolution-audit:") || title.startsWith("alg-private-skill-evolution-check:") ||
@@ -105,11 +106,12 @@ const resultVariants = [
     plan_id: planId, state: z.enum(["previewed", "running", "resumable", "completed", "cancelled"]), disposition: HistoricalCodeSchema,
     completeness: z.literal(HISTORICAL_COMPLETENESS), sealed_sessions: z.number().int().nonnegative().max(32),
     chunks: z.object({ total: z.number().int().nonnegative().max(65_536), completed: z.number().int().nonnegative().max(65_536) }).strict(),
-    checkpoints: z.array(z.object({ stage: z.enum(["chunk", "reduction", "checker", "final"]).optional(), key: z.string().max(256).optional(), chunk_sha256: confirmation,
+    checkpoints: z.array(z.object({ stage: z.enum(["chunk", "reduction", "checker", "final", "rejected"]).optional(), key: z.string().max(256).optional(), chunk_sha256: confirmation,
       child_session_id: z.string().max(256), issued_at: z.string().max(64), committed_at: z.string().max(64).optional(), potentially_replayed: z.boolean().optional(),
       attempts: z.number().int().nonnegative().max(100), model_calls: z.number().int().nonnegative().max(1),
       input_bytes: z.number().int().nonnegative().max(128 * 1024 * 1024), output_ref: immutableReferenceResult.optional() }).strict()).max(128),
-    checkpoints_total: z.number().int().nonnegative().max(4_096), checkpoints_omitted: z.number().int().nonnegative().max(4_096),
+      rejected_attempts: z.number().int().nonnegative().max(4_096).optional(), rejected_reasons: z.array(z.enum(["output_unparseable", "output_schema_invalid", "output_provenance_invalid"])).max(32).optional(),
+      checkpoints_total: z.number().int().nonnegative().max(4_096), checkpoints_omitted: z.number().int().nonnegative().max(4_096),
     checkpoints_truncated: z.boolean(),
     attempts: z.number().int().nonnegative().max(10_000), model_calls: z.number().int().nonnegative().max(10_000), input_bytes: z.number().int().nonnegative().max(128 * 1024 * 1024),
     elapsed_ms: z.number().int().nonnegative().max(3_600_000), remaining_hard_budgets: budgetResult, cancelled: z.boolean(),
@@ -171,7 +173,7 @@ interface PlanRecord {
   execution_epoch_ref?: HistoricalImmutableReference
   cancelled: boolean
   disposition: HistoricalCode
-  checkpoints: Array<{ stage?: "chunk" | "reduction" | "checker" | "final"; key?: string; chunk_sha256: string; child_session_id: string; issued_at: string; committed_at?: string; potentially_replayed?: boolean; attempts: number; model_calls: number; input_bytes: number; output_ref?: HistoricalImmutableReference }>
+  checkpoints: Array<{ stage?: "chunk" | "reduction" | "checker" | "final" | "rejected"; key?: string; chunk_sha256: string; child_session_id: string; issued_at: string; committed_at?: string; potentially_replayed?: boolean; attempts: number; model_calls: number; input_bytes: number; output_ref?: HistoricalImmutableReference }>
   reduction_ref?: HistoricalImmutableReference
   checker_ref?: HistoricalImmutableReference
   final_ref?: HistoricalImmutableReference
@@ -228,7 +230,7 @@ function transitionSnapshots(index: any, sessions: SealedSession[], planIdValue:
 
 type RootClient = PluginInput["client"]
 type HistoricalRole = "auditor" | "checker"
-type ChildInvoker = (parentId: string, role: HistoricalRole, prompt: string, model: ModelRef, cancelled: () => boolean, timeoutMs: number) => Promise<{ sessionId: string; parsed: unknown | null; error?: string }>
+type ChildInvoker = (parentId: string, role: HistoricalRole, prompt: string, model: ModelRef, cancelled: () => boolean, timeoutMs: number) => Promise<{ sessionId: string; parsed: unknown | null; error?: string; outcome?: "completed" | "unknown"; output_error?: string }>
 type ChildCapability = () => { allowed: true } | { allowed: false; error: string }
 type CandidateFinalizer = (sessionId: string, snapshot: unknown, output: AuditorOutput, auditorChildId: string, checkerChildId: string, checker: SkillCheckerOutput, binding: HistoricalCandidateBinding) => { candidate_id: string }
 
@@ -630,7 +632,7 @@ export class HistoricalInitializer {
       const code: HistoricalCode = text.startsWith("cross_project:") ? "cross_project" : text.startsWith("private_child:") ? "private_child" :
         text.startsWith("overflow:") ? "overflow" : text.startsWith("unstable:") ? "unstable" : text.startsWith("oversized:") ? "oversized" :
           text.startsWith("unavailable:") ? "unavailable" : text.startsWith("inconsistent:") ? "inconsistent" :
-            text.startsWith("cancelled:") ? "cancelled" : "unsupported"
+            text.startsWith("cancelled:") ? "cancelled" : text.startsWith("resumable:") ? "resumable" : "unsupported"
       return failure(args.action, code, text.replace(/^[a-z_]+:\s*/, ""))
     }
   }
@@ -772,6 +774,7 @@ export class HistoricalInitializer {
     const estimatedInputBytes = Math.min(hard.input_bytes, auditorInputBytes + 128 * 1024)
     const immutablePlan = {
       schema_version: 1, kind: "skill_evolution_historical_plan", completeness: HISTORICAL_COMPLETENESS,
+      recovery_protocol: HISTORICAL_RECOVERY_PROTOCOL,
       project: this.project, project_id: this.projectId ?? null, selected_session_ids: sessionIds, sessions,
       limits: this.options, runtime_options: this.runtimeOptions, model_resolution: modelResolution,
       estimated: { model_calls: estimatedCalls, input_bytes: estimatedInputBytes, time_ms: Math.min(hard.time_ms, estimatedCalls * this.options.callTimeoutMs) }, hard,
@@ -811,9 +814,16 @@ export class HistoricalInitializer {
     const remainingCalls = Math.max(0, immutable.hard.model_calls - plan.model_calls)
     const remainingTime = epoch ? Math.max(0, Date.parse(epoch.deadline_at) - Date.now()) : immutable.hard.time_ms
     const elapsed = immutable.hard.time_ms - remainingTime
+    const rejectedReasons = new Set<string>()
+    for (const entry of plan.checkpoints.filter((checkpoint) => checkpoint.stage === "rejected")) {
+      const receipt = loadHistoricalImmutable(this.project, entry.output_ref!, "checkpoint", 4_096) as any
+      if (["output_unparseable", "output_schema_invalid", "output_provenance_invalid"].includes(receipt.reason_code)) rejectedReasons.add(receipt.reason_code)
+    }
     return success("status", plan.disposition, { plan_id: plan.plan_id, state: plan.state, disposition: plan.disposition,
       completeness: HISTORICAL_COMPLETENESS, sealed_sessions: plan.sessions.length, chunks: { total, completed: plan.next_chunk },
       checkpoints: plan.checkpoints.slice(-128), checkpoints_total: plan.checkpoints.length,
+      rejected_attempts: plan.checkpoints.filter((entry) => entry.stage === "rejected").length,
+      rejected_reasons: [...rejectedReasons] as Array<"output_unparseable" | "output_schema_invalid" | "output_provenance_invalid">,
       checkpoints_omitted: Math.max(0, plan.checkpoints.length - 128), checkpoints_truncated: plan.checkpoints.length > 128,
       attempts: plan.model_calls, model_calls: plan.model_calls, input_bytes: plan.input_bytes, elapsed_ms: elapsed,
       remaining_hard_budgets: { model_calls: remainingCalls, input_bytes: Math.max(0, immutable.hard.input_bytes - plan.input_bytes), time_ms: remainingTime }, cancelled: plan.cancelled })
@@ -840,7 +850,8 @@ export class HistoricalInitializer {
     const expectedId = `hist-${token.slice(0, 32)}`
     if ((suppliedToken !== undefined && suppliedToken !== token) || plan.plan_id !== expectedId || planIdValue !== expectedId || plan.plan_ref.sha256 !== token || plan.confirmation !== token ||
       !plan.plan_ref.path.endsWith(`/${token}.json`) || immutable?.schema_version !== 1 || immutable?.kind !== "skill_evolution_historical_plan" ||
-      immutable?.completeness !== HISTORICAL_COMPLETENESS || immutable?.project !== this.project || immutable?.project_id !== this.projectId ||
+      immutable?.completeness !== HISTORICAL_COMPLETENESS || ![undefined, HISTORICAL_RECOVERY_PROTOCOL].includes(immutable?.recovery_protocol) ||
+      immutable?.project !== this.project || immutable?.project_id !== this.projectId ||
       canonicalJson(plan.selected_session_ids) !== canonicalJson(immutable.selected_session_ids) ||
       canonicalJson(plan.sessions) !== canonicalJson(immutable.sessions)) {
       throw new Error("confirmation_mismatch: mutable historical plan fields do not match the exact immutable confirmed plan")
@@ -897,6 +908,7 @@ export class HistoricalInitializer {
     const immutableChunks = chunkContexts.map((context) => context.reference)
     const chunkEntries = plan.checkpoints.filter((entry) => entry.stage === "chunk")
     const committedChunks = chunkEntries.filter((entry) => entry.committed_at && entry.output_ref)
+    const rejectedEntries = plan.checkpoints.filter((entry) => entry.stage === "rejected")
     const derivedCalls = plan.checkpoints.reduce((sum, entry) => sum + entry.model_calls, 0)
     const derivedInputBytes = plan.checkpoints.reduce((sum, entry) => sum + entry.input_bytes, 0)
     const issued = plan.checkpoints.filter((entry) => !entry.committed_at)
@@ -907,10 +919,73 @@ export class HistoricalInitializer {
       plan.checkpoints.some((entry) => !!entry.committed_at !== !!entry.output_ref || (entry.committed_at && !entry.stage)) ||
       chunkEntries.length !== committedChunks.length || committedChunks.length !== plan.next_chunk || committedChunks.some((entry, index) =>
       entry.key !== immutableChunks[index]?.sha256 || entry.chunk_sha256 !== immutableChunks[index]?.sha256) ||
+      rejectedEntries.some((entry) => !entry.committed_at || !entry.output_ref || entry.model_calls !== 1 || entry.attempts !== 1 || !entry.child_session_id) ||
       derivedCalls !== plan.model_calls || derivedInputBytes !== plan.input_bytes ||
       plan.checkpoints.some((entry) => !Number.isSafeInteger(entry.model_calls) || entry.model_calls < 0 || entry.model_calls > 1 ||
         !Number.isSafeInteger(entry.input_bytes) || entry.input_bytes < 0 || (entry.model_calls === 0) !== (entry.input_bytes === 0))) {
       throw new Error("confirmation_mismatch: mutable historical progress is not proven by ordered checkpoint evidence")
+    }
+    let acceptedPosition = 0
+    let phase: "chunks" | "checker" | "final" | "complete" = "chunks"
+    const rejectedOrdinals = new Map<string, number>()
+    const checkerRejections: Array<{ entry: PlanRecord["checkpoints"][number]; receipt: any; ordinal: number }> = []
+    for (const entry of plan.checkpoints.slice(0, committedCheckpointCount)) {
+      if (entry.stage === "rejected") {
+        const isChunk = phase === "chunks" && acceptedPosition < chunkContexts.length
+        const isChecker = phase === "checker"
+        if (!isChunk && !isChecker) throw new Error("confirmation_mismatch: rejected attempt is outside its unfinished stage")
+        const context = isChunk ? chunkContexts[acceptedPosition]! : undefined
+        const targetKey = isChunk ? context!.reference.sha256 : "final"
+        const role = isChunk ? "auditor" : "checker"
+        const ordinalKey = `${role}\0${targetKey}`
+        const ordinal = (rejectedOrdinals.get(ordinalKey) ?? 0) + 1
+        rejectedOrdinals.set(ordinalKey, ordinal)
+        const receipt = loadHistoricalImmutable(this.project, entry.output_ref!, "checkpoint", 4_096) as any
+        if (receipt.schema_version !== 1 || receipt.kind !== "historical_rejected_attempt" || receipt.plan_confirmation !== token ||
+          receipt.role !== role || receipt.target !== (isChunk ? "chunk" : "checker") || receipt.target_key !== targetKey ||
+          receipt.child_session_id !== entry.child_session_id || receipt.ordinal !== ordinal || receipt.model_calls !== 1 ||
+          receipt.input_bytes !== entry.input_bytes || entry.key !== targetKey ||
+          !["output_unparseable", "output_schema_invalid", "output_provenance_invalid"].includes(receipt.reason_code)) {
+          throw new Error("confirmation_mismatch: rejected historical attempt receipt binding or order is invalid")
+        }
+        if (context) {
+          const prompt = historicalAuditorPrompt({ ...context.fragment, session_id: context.session.session_id,
+            sealed_session_commitment: context.session.commitment, transcript_commitment: context.snapshot.transcript_commitment,
+            chunk_sha256: context.reference.sha256 } as HistoricalFragment)
+          const expectedReceipt = {
+            schema_version: 1, kind: "historical_rejected_attempt", plan_confirmation: token,
+            role: "auditor", target: "chunk", target_key: targetKey,
+            session_id: context.session.session_id, session_commitment: context.session.commitment,
+            source_digest: hash(canonicalJson(expectedFindingSource(context.session, context.snapshot, context.reference, context.fragment))),
+            prompt_sha256: hash(prompt), child_session_id: entry.child_session_id, ordinal,
+            model_calls: 1, input_bytes: utf8Bytes(prompt), reason_code: receipt.reason_code,
+          }
+          if (entry.chunk_sha256 !== context.reference.sha256 || entry.input_bytes !== utf8Bytes(prompt) ||
+            canonicalJson(receipt) !== canonicalJson(expectedReceipt)) {
+            throw new Error("confirmation_mismatch: rejected auditor attempt does not match its sealed source and prompt")
+          }
+        } else {
+          if (receipt.reason_code === "output_provenance_invalid") throw new Error("confirmation_mismatch: checker rejection has an invalid reason")
+          checkerRejections.push({ entry, receipt, ordinal })
+        }
+      } else if (entry.stage === "chunk") {
+        if (phase !== "chunks" || entry.key !== immutableChunks[acceptedPosition]?.sha256 ||
+          entry.chunk_sha256 !== immutableChunks[acceptedPosition]?.sha256) {
+          throw new Error("confirmation_mismatch: accepted chunk does not follow the rejected-attempt chain")
+        }
+        acceptedPosition++
+      } else if (entry.stage === "reduction") {
+        if (phase !== "chunks" || acceptedPosition !== chunkContexts.length) throw new Error("confirmation_mismatch: reduction precedes complete chunk coverage")
+        phase = "checker"
+      } else if (entry.stage === "checker") {
+        if (phase !== "checker") throw new Error("confirmation_mismatch: checker checkpoint order is invalid")
+        phase = "final"
+      } else if (entry.stage === "final") {
+        if (phase !== "checker" && phase !== "final") throw new Error("confirmation_mismatch: final checkpoint order is invalid")
+        phase = "complete"
+      } else {
+        throw new Error("confirmation_mismatch: historical checkpoint has no committed stage")
+      }
     }
     const chunkBindings = committedChunks.map((entry, index) => {
       const { reference, session, snapshot, fragment } = chunkContexts[index]!
@@ -957,6 +1032,27 @@ export class HistoricalInitializer {
         throw new Error("confirmation_mismatch: no-change reduction carries candidate source provenance")
       }
     }
+    if (checkerRejections.length) {
+      if (!reduction || reduction.decision !== "candidate" || !plan.reduction_ref) {
+        throw new Error("confirmation_mismatch: rejected checker attempt lacks a candidate reduction")
+      }
+      const prompt = this.sourceCheckerPrompt(reduction.output, immutable.sessions, confirmedRuntime)
+      const candidateSha = hash(canonicalJson(reduction.output))
+      const sourceDigest = hash(canonicalJson(chunkBindings))
+      for (const { entry, receipt, ordinal } of checkerRejections) {
+        const expectedReceipt = {
+          schema_version: 1, kind: "historical_rejected_attempt", plan_confirmation: token,
+          role: "checker", target: "checker", target_key: "final",
+          reviewed_source_digest: sourceDigest, reduction_ref_sha256: plan.reduction_ref.sha256,
+          candidate_sha256: candidateSha, prompt_sha256: hash(prompt), child_session_id: entry.child_session_id,
+          ordinal, model_calls: 1, input_bytes: utf8Bytes(prompt), reason_code: receipt.reason_code,
+        }
+        if (entry.chunk_sha256 !== hash(prompt) || entry.input_bytes !== utf8Bytes(prompt) ||
+          canonicalJson(receipt) !== canonicalJson(expectedReceipt)) {
+          throw new Error("confirmation_mismatch: rejected checker attempt does not match its reduction and prompt")
+        }
+      }
+    }
     const checkers = plan.checkpoints.filter((entry) => entry.stage === "checker")
     let savedChecker: any
     if (plan.checker_ref || checkers.length) {
@@ -974,15 +1070,6 @@ export class HistoricalInitializer {
       SkillCheckerOutputSchema.parse(savedChecker.output)
     }
     const finals = plan.checkpoints.filter((entry) => entry.stage === "final")
-    const expectedCommittedStages = [
-      ...Array.from({ length: plan.next_chunk }, () => "chunk" as const),
-      ...(reductions.length ? ["reduction" as const] : []),
-      ...(checkers.length ? ["checker" as const] : []),
-      ...(finals.length ? ["final" as const] : []),
-    ]
-    if (canonicalJson(plan.checkpoints.filter((entry) => entry.committed_at).map((entry) => entry.stage)) !== canonicalJson(expectedCommittedStages)) {
-      throw new Error("confirmation_mismatch: historical checkpoint stage order is invalid")
-    }
     if (plan.state === "completed") {
       if (issued.length !== 0 || plan.next_chunk !== total || !reduction || reductions.length !== 1 || finals.length !== 1 || !finals[0]!.committed_at ||
         canonicalJson(finals[0]!.output_ref) !== canonicalJson(plan.final_ref) || finals[0]!.key !== "final" ||
@@ -1234,6 +1321,37 @@ export class HistoricalInitializer {
       }
       return Math.max(0, Date.parse(epoch.deadline_at) - Date.now())
     }
+    const commitRejectedAttempt = (input: {
+      key: string; chunkSha: string; role: HistoricalRole; target: "chunk" | "checker"; childId: string; inputBytes: number;
+      issuedAt: string; promptSha: string; reason: "output_unparseable" | "output_schema_invalid" | "output_provenance_invalid";
+      session?: SealedSession; snapshot?: any; reference?: HistoricalImmutableReference; fragment?: HistoricalFragment;
+      reductionRefSha?: string; candidateSha?: string; reviewedSourceDigest?: string;
+    }) => {
+      const prior = this.plan(planIdValue).checkpoints.filter((entry) => entry.stage === "rejected" && entry.key === input.key).length
+      const receipt = {
+        schema_version: 1, kind: "historical_rejected_attempt", plan_confirmation: token,
+        role: input.role, target: input.target, target_key: input.key,
+        ...(input.session ? { session_id: input.session.session_id, session_commitment: input.session.commitment,
+          source_digest: hash(canonicalJson(expectedFindingSource(input.session, input.snapshot, input.reference!, input.fragment!))) } : {}),
+        ...(input.reviewedSourceDigest ? { reviewed_source_digest: input.reviewedSourceDigest } : {}),
+        ...(input.reductionRefSha ? { reduction_ref_sha256: input.reductionRefSha } : {}),
+        ...(input.candidateSha ? { candidate_sha256: input.candidateSha } : {}),
+        prompt_sha256: input.promptSha, child_session_id: input.childId, ordinal: prior + 1,
+        model_calls: 1, input_bytes: input.inputBytes, reason_code: input.reason,
+      }
+      const outputRef = persistHistoricalImmutable(this.project, "checkpoint", receipt, 4_096)
+      updateHistoricalIndex(this.project, "rejected-attempt", (mutableIndex) => {
+        const mutable = (mutableIndex.plans as PlanRecord[]).find((entry) => entry.plan_id === planIdValue)!
+        const issued = [...mutable.checkpoints].reverse().find((entry) => !entry.committed_at && entry.issued_at === input.issuedAt && entry.key === input.key)
+        if (!issued || issued.chunk_sha256 !== input.chunkSha || issued.model_calls !== 1 || issued.attempts !== 1 ||
+          issued.input_bytes !== input.inputBytes || mutable.cancelled || this.abort.aborted) {
+          throw new Error("cancelled: rejected attempt could not be committed after cancellation or issue drift")
+        }
+        issued.stage = "rejected"; issued.key = input.key; issued.child_session_id = input.childId
+        issued.output_ref = outputRef; issued.committed_at = new Date().toISOString()
+        mutable.updated_at = new Date().toISOString()
+      })
+    }
     const limits = verified.immutable.limits as SkillEvolutionOptions["historical"]
     const auditorModel = plannedModel(verified.immutable.model_resolution.researcher)
     const checkerModel = plannedModel(verified.immutable.model_resolution.checker)
@@ -1287,7 +1405,7 @@ export class HistoricalInitializer {
         if (plan.input_bytes + inputBytes > verified.immutable.hard.input_bytes) throw new Error("oversized: historical hard input-byte budget exhausted")
         let invoked: Awaited<ReturnType<ChildInvoker>> = { sessionId: "", parsed: null, error: "historical auditor was not invoked" }
         let attempts = 0
-        while (attempts < 1) {
+        while (attempts < limits.maxAttempts) {
           attempts++
           plan = revalidate()
           if (plan.cancelled || this.abort.aborted) break
@@ -1298,7 +1416,7 @@ export class HistoricalInitializer {
             const mutable = (mutableIndex.plans as PlanRecord[]).find((entry) => entry.plan_id === planIdValue)!
             const existing = mutable.checkpoints.find((entry) => entry.chunk_sha256 === item.reference.sha256 && !entry.committed_at)
             if (existing) throw new Error("historical child call already has an unknown durable outcome")
-            mutable.checkpoints.push({ chunk_sha256: item.reference.sha256, child_session_id: "", issued_at: new Date().toISOString(), attempts, model_calls: 1, input_bytes: inputBytes })
+            mutable.checkpoints.push({ key: item.reference.sha256, chunk_sha256: item.reference.sha256, child_session_id: "", issued_at: new Date().toISOString(), attempts: 1, model_calls: 1, input_bytes: inputBytes })
             mutable.model_calls++; mutable.input_bytes += inputBytes; mutable.updated_at = new Date().toISOString()
           })
           const invocationTimeout = Math.min(limits.callTimeoutMs, remainingTime())
@@ -1311,12 +1429,33 @@ export class HistoricalInitializer {
           if (this.plan(planIdValue).cancelled || this.abort.aborted) {
             return failure(action, "cancelled", "historical processing was cancelled during auditor review")
           }
-          if (!invoked.error && invoked.sessionId && HistoricalChunkOutputSchema.safeParse(invoked.parsed).success) break
+          const parsed = HistoricalChunkOutputSchema.safeParse(invoked.parsed)
+          if (!invoked.error && invoked.sessionId && parsed.success) {
+            try { validateChunkOutput(parsed.data, item.session, snapshot, item.reference, fragment); break }
+            catch (error) {
+              if (invoked.outcome !== "completed") throw error
+              const issue = this.plan(planIdValue).checkpoints.at(-1)!
+              commitRejectedAttempt({ key: item.reference.sha256, chunkSha: item.reference.sha256, role: "auditor", target: "chunk",
+                childId: invoked.sessionId, inputBytes, issuedAt: issue.issued_at, promptSha: hash(prompt),
+                reason: "output_provenance_invalid", session: item.session, snapshot, reference: item.reference, fragment })
+              continue
+            }
+          }
+          if (invoked.outcome === "completed" && !invoked.error && invoked.sessionId) {
+            const issue = this.plan(planIdValue).checkpoints.at(-1)!
+            commitRejectedAttempt({ key: item.reference.sha256, chunkSha: item.reference.sha256, role: "auditor", target: "chunk",
+              childId: invoked.sessionId, inputBytes, issuedAt: issue.issued_at, promptSha: hash(prompt),
+              reason: invoked.parsed === null ? "output_unparseable" : "output_schema_invalid",
+              session: item.session, snapshot, reference: item.reference, fragment })
+            continue
+          }
           if (this.plan(planIdValue).cancelled || this.abort.aborted) break
         }
         const chunkOutput = HistoricalChunkOutputSchema.safeParse(invoked.parsed)
         if (invoked.error || !invoked.sessionId || !chunkOutput.success) {
-          throw new Error(invoked.error ?? "historical auditor returned unsupported strict output")
+          throw new Error(invoked.error ?? (invoked.outcome === "unknown" ? "unavailable: historical auditor outcome is unknown; refusing to retry" :
+            invoked.outcome === "completed" ? "resumable: completed invalid auditor attempts reached this run's bounded retry batch; resume may continue within the same hard budgets" :
+              "historical auditor returned unsupported strict output"))
         }
         validateChunkOutput(chunkOutput.data, item.session, snapshot, item.reference, fragment)
         const supportedOutput = skillOnlyChunkOutput(chunkOutput.data)
@@ -1439,7 +1578,7 @@ export class HistoricalInitializer {
         validateCandidateProvenance(reduction.output, sealed, snapshot)
         const candidateSha = hash(canonicalJson(reduction.output))
         const reviewedSourceDigest = hash(canonicalJson(reductionSources))
-        let checker: SkillCheckerOutput
+        let checker: SkillCheckerOutput | undefined
         let checkerChildId = ""
         if (plan.checker_ref) {
           const checkerCheckpoint = plan.checkpoints.filter((entry) => entry.stage === "checker" && entry.committed_at &&
@@ -1460,18 +1599,40 @@ export class HistoricalInitializer {
           plan = revalidate()
           if (plan.cancelled || this.abort.aborted) return failure(action, "cancelled", "historical processing was cancelled before checker")
           if (plan.model_calls >= verified.immutable.hard.model_calls || plan.input_bytes + inputBytes > verified.immutable.hard.input_bytes || remainingTime() <= 0) throw new Error("oversized: historical checker exceeds hard budget")
-          updateHistoricalIndex(this.project, "checker-issue", (mutableIndex) => {
-            const mutable = (mutableIndex.plans as PlanRecord[]).find((entry) => entry.plan_id === planIdValue)!
-            mutable.checkpoints.push({ key: "final", chunk_sha256: hash(candidateCheckerPrompt), child_session_id: "", issued_at: new Date().toISOString(), attempts: 1, model_calls: 1, input_bytes: inputBytes })
-            mutable.model_calls++; mutable.input_bytes += inputBytes
-          })
-          const invocationTimeout = Math.min(limits.callTimeoutMs, remainingTime())
-          revalidateLease(invocationTimeout)
-          const invoked = await this.invoke(source, "checker", candidateCheckerPrompt, checkerModel, () => this.plan(planIdValue).cancelled || this.abort.aborted, invocationTimeout)
-          revalidateLease()
-          if (this.plan(planIdValue).cancelled || this.abort.aborted) return failure(action, "cancelled", "historical processing was cancelled during checker review")
-          if (invoked.error || !invoked.sessionId) throw new Error(invoked.error ?? "historical checker returned no child identity")
-          checker = SkillCheckerOutputSchema.parse(invoked.parsed); checkerChildId = invoked.sessionId
+          let checkerResult: Awaited<ReturnType<ChildInvoker>> = { sessionId: "", parsed: null }
+          let checkerAttempts = 0
+          while (checkerAttempts < limits.maxAttempts) {
+            checkerAttempts++
+            plan = revalidate()
+            if (plan.cancelled || this.abort.aborted) return failure(action, "cancelled", "historical processing was cancelled before checker")
+            if (plan.model_calls >= verified.immutable.hard.model_calls || plan.input_bytes + inputBytes > verified.immutable.hard.input_bytes || remainingTime() <= 0) throw new Error("oversized: historical checker exceeds hard budget")
+            const issuedAt = new Date().toISOString()
+            updateHistoricalIndex(this.project, "checker-issue", (mutableIndex) => {
+              const mutable = (mutableIndex.plans as PlanRecord[]).find((entry) => entry.plan_id === planIdValue)!
+              mutable.checkpoints.push({ key: "final", chunk_sha256: hash(candidateCheckerPrompt), child_session_id: "", issued_at: issuedAt, attempts: 1, model_calls: 1, input_bytes: inputBytes })
+              mutable.model_calls++; mutable.input_bytes += inputBytes; mutable.updated_at = new Date().toISOString()
+            })
+            const invocationTimeout = Math.min(limits.callTimeoutMs, remainingTime())
+            revalidateLease(invocationTimeout)
+            checkerResult = await this.invoke(source, "checker", candidateCheckerPrompt, checkerModel, () => this.plan(planIdValue).cancelled || this.abort.aborted, invocationTimeout)
+            revalidateLease()
+            if (this.plan(planIdValue).cancelled || this.abort.aborted) return failure(action, "cancelled", "historical processing was cancelled during checker review")
+            const checked = SkillCheckerOutputSchema.safeParse(checkerResult.parsed)
+            if (!checkerResult.error && checkerResult.sessionId && checked.success) { checker = checked.data; checkerChildId = checkerResult.sessionId; break }
+            if (checkerResult.outcome === "completed" && !checkerResult.error && checkerResult.sessionId) {
+              commitRejectedAttempt({ key: "final", chunkSha: hash(candidateCheckerPrompt), role: "checker", target: "checker",
+                childId: checkerResult.sessionId, inputBytes, issuedAt, promptSha: hash(candidateCheckerPrompt),
+                reason: checkerResult.parsed === null ? "output_unparseable" : "output_schema_invalid",
+                reductionRefSha: plan.reduction_ref!.sha256, candidateSha, reviewedSourceDigest })
+              continue
+            }
+            break
+          }
+          if (!checker) throw new Error(checkerResult.error ?? (checkerResult.outcome === "unknown"
+            ? "unavailable: historical checker outcome is unknown; refusing to retry"
+            : checkerResult.outcome === "completed"
+              ? "resumable: completed invalid checker attempts reached this run's bounded retry batch; resume may continue within the same hard budgets"
+              : "historical checker returned no child identity"))
           const checkerRef = persistHistoricalImmutable(this.project, "checkpoint", { schema_version: 1, kind: "historical_checker_output", prompt_version: 2,
             plan_confirmation: token, reduction_ref: plan.reduction_ref, candidate_sha256: candidateSha,
             reviewed_source_digest: reviewedSourceDigest, checker_prompt_sha256: hash(candidateCheckerPrompt), child_session_id: checkerChildId, output: checker }, 64 * 1024)
