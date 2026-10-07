@@ -396,6 +396,8 @@ alg_skill_evolution_rollback candidate_id="se-..." confirm="ROLLBACK:se-..."
 
 ### V1 retrospective initialization
 
+See [historical audit recovery](docs/historical-audit-recovery.md) for bounded retries of known invalid child responses, preservation of committed progress, and the distinction from unresolved calls that cannot safely be replayed.
+
 `alg_skill_evolution_historical` uses only the root V1 client supplied to the
 plugin. Discovery makes one `session.list({query:{directory}})` request; V1 has
 no list request limit, so transport is not bounded even though call time/count
@@ -527,6 +529,29 @@ Open **ALG → Browse child run sessions** or enter `/alg-runs` from a parent se
 
 ALG continues to create isolated SDK child sessions; `/alg-runs` is only a navigator and does not replace those sessions with parent task cards or copy their reasoning into the parent transcript.
 
+### Live graph progress
+
+ALG's TUI adds a live run panel and `/alg-live` for graph execution through
+`alg_run` and `alg_resume`. These views expose bounded node states, current
+attempts/retry counts, time information, and navigation into child sessions.
+`/alg-runs` remains the full attempt-history browser. Load the TUI registration
+as well as the server plugin; a server-only installation cannot render the panel.
+In `/alg-live`, use **↑/↓** to select a node and **Enter** to open its validated
+child session.
+
+Progress metadata is published after successful durable saves. Displaying it
+does not make model calls or copy child transcripts into the parent context.
+Saved state can be loaded after a restart, but a saved `running` label is not
+proof of a currently executing worker. The view distinguishes saved/stale state
+from unavailable reads and checks ownership before child navigation. Its
+**last-saved progress** label is deliberate: this is a refreshing durable-state
+view, not verified worker liveness. Attempt time stops at completion or the last
+saved observation.
+
+This is a supported ALG TUI view, not a native OpenCode `task` card, and it does
+not yet visualize historical skill-mining chunks. See
+[live-run visibility design and validation](docs/live-run-visibility.md).
+
 Project-scoped selections can be managed directly (use the returned `revision` for optional compare-and-swap):
 
 ```text
@@ -563,7 +588,11 @@ For a no-model smoke path, use `alg_plan mode=dry` then `alg_run dry=true`.
 
 `alg_plan`, `alg_run`, `alg_resume`, `alg_status`, and `alg_artifact` use `detail="compact"` by default. Full plan detail includes full goals/criteria/graph definitions plus the complete newly persisted run. Full run/resume/status detail recursively integrity-checks and hydrates every archived attempt, detail/output/failure reference, typed output, session, timing, verdict, outcome, score, shell/schema result, error, and feedback field in deterministic attempt order. It can therefore be much larger than `progress.json`; callers explicitly opt into that cost. `alg_status list=true detail="full"` fully hydrates every exactly-owned run and fails the request with the precise run ID if any one cannot be fully verified. `alg_artifact detail="full"` continues to return the complete current typed node output from integrity-checked storage. Compact run/resume/status reload one committed projected representation for every summary and `state_projection`; bounded reference verification may read complete sidecars internally, but archive/root entries are discarded rather than returned. Compact list mode returns at most 20 summaries plus total/shown/omitted metadata. Compact plans and run/status responses have a 64 KiB aggregate JSON budget: at most 24 node summaries, 32 total attempt summaries, 32 total session summaries, 24 call events, bounded UTF-8 text, and explicit omitted/truncated counts. Compact artifacts include metadata, available fields, byte size, artifact path, bounded failures, and a 2 KiB preview.
 
-An `alg_run`/`alg_resume` invocation is synchronous and cannot live-stream token or node progress into its still-running parent call. Use `max_waves` to bound a call, then `alg_status`, `/alg-runs`, and `alg_resume` for post-wave visibility and continuation.
+An `alg_run`/`alg_resume` invocation remains synchronous. While it runs, ALG
+publishes bounded progress metadata for its TUI; it does not stream child tokens
+into the parent call. Use `/alg-live` for live visibility and `/alg-runs` for
+attempt history. Use `max_waves` to bound a call, then `alg_status` and
+`alg_resume` for inspection and continuation.
 
 ### Filesystem-root safety
 

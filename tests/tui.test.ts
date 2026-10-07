@@ -414,6 +414,12 @@ describe("OpenCode 1.18.3 ALG TUI model picker", () => {
       title: "Browse child run sessions",
       slashName: "alg-runs",
     })
+    expect(mock.layers[0].commands[2]).toMatchObject({
+      name: "alg.live",
+      title: "View live ALG run progress",
+      slashName: "alg-live",
+    })
+    expect(ALG_TUI_REGISTRATION_TOKEN).toBe("OPENCODE_ALG_TUI_REGISTRATION_OK commands=/alg-models,/alg-runs")
   })
 
   test("/alg-runs accepts a canonical legacy visible row without outcome metadata and navigates exactly", async () => {

@@ -59,6 +59,8 @@ export interface ExecuteOptions {
   shellGateCmd?: string
   shellGateTimeoutMs?: number
   onEvent?: (message: string) => void
+  /** Synchronous, best-effort observer called only after a successful durable save. */
+  onProgress?: (run: RunState) => void
   sessionRunner?: (options: NodePromptOpts) => Promise<NodePromptResult>
   shellRunner?: (options: {
     cmd: string
@@ -97,6 +99,17 @@ function save(run: RunState, options: ExecuteOptions): void {
     persistRunFenced(run, options.worktree, options.activeLock)
   } catch (error) {
     throw new PersistenceBoundaryError(error)
+  }
+  try {
+    const result: unknown = (options.onProgress as ((run: RunState) => unknown) | undefined)?.(run)
+    if (result && (typeof result === "object" || typeof result === "function")) {
+      const then = (result as { then?: unknown }).then
+      if (typeof then === "function") {
+        void Promise.resolve(result).catch(() => {})
+      }
+    }
+  } catch {
+    // Observer failures, including thenable inspection, never alter durable execution.
   }
 }
 

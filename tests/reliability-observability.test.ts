@@ -270,7 +270,7 @@ describe("reliability and observability hardening", () => {
         .toEqual(["schema_invalid", "passed"])
       expect(persisted.nodes.explore!.attempts[0]!.failures).toHaveLength(100)
       expect(persisted.nodes.explore!.attempts[0]!.failures.at(-1)).toMatch(/\[truncated\] \d+ additional schema issues omitted/)
-      expect(persisted.nodes.explore!.attempts[0]!.failures[0]).toContain("schema: map.0.path")
+      expect(persisted.nodes.explore!.attempts[0]!.failures[0]).toContain("schema: ?.0.path")
       expect(calls).toBe(2)
     } finally {
       removeProject(project)

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Adds model-independent graph-run visibility through bounded durable progress
+  metadata, an ALG TUI panel, and `/alg-live`, while retaining `/alg-runs` for
+  attempt history. UI observation does not copy child transcripts into the parent
+  context or change execution, permission, retry, or persistence authority.
+  See `docs/live-run-visibility.md` for the design and synthetic-test boundary.
 - Worker prompts no longer show the JSON Schema `$schema` marker, and an echoed
   top-level `$schema` key no longer fails output validation. Live models copied it
   and lost an attempt; a node with one attempt failed the run.

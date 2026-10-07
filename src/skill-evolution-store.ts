@@ -1130,7 +1130,7 @@ const HistoricalPlanSessionSchema = z.object({
   if (new Set(entry.assistant_message_ids).size !== entry.assistant_message_ids.length) ctx.addIssue({ code: "custom", path: ["assistant_message_ids"], message: "assistant message identities must be unique" })
 })
 const HistoricalCheckpointSchema = z.object({
-  stage: z.enum(["chunk", "reduction", "checker", "final"]).optional(),
+  stage: z.enum(["chunk", "reduction", "checker", "final", "rejected"]).optional(),
   key: z.string().max(256).optional(),
   chunk_sha256: historicalSha,
   child_session_id: z.string().max(256),

@@ -26,9 +26,10 @@ import {
   parseGraph,
   parsePersistedAttemptDetail,
   parsePersistedNodeAttempt,
+  parseRunState,
   schemaForAgent,
 } from "./schemas.ts"
-import type { AttemptOutcomeCounts, GraphDef, NodeAttempt, RunDataReference } from "./types.ts"
+import type { AttemptOutcomeCounts, GraphDef, NodeAttempt, RunDataReference, RunState } from "./types.ts"
 import {
   MAX_OWNER_INDEX_BYTES,
   MAX_OWNER_INDEX_ENTRIES,
@@ -36,7 +37,8 @@ import {
   ownerIndexRelativePath,
   parseOwnerRunIndex,
 } from "./owner-index.ts"
-import { isSafeProjectRelativePath } from "./paths.ts"
+import { canonicalDirectory, isSafeProjectRelativePath } from "./paths.ts"
+import { buildRunProgress, type AlgRunProgress } from "./run-progress.ts"
 
 const MAX_RECENT_RUNS = 20
 const MAX_READ_CONCURRENCY = 8
@@ -439,7 +441,7 @@ function parseOwnedRun(value: unknown, owner: string, directoryRunId: string): T
   }
 }
 
-async function readProgress(api: TuiPluginApi, owner: string, runId: string): Promise<TuiRun | null> {
+async function readProgressDocument(api: TuiPluginApi, runId: string): Promise<unknown> {
   const response = await api.client.file.read({
     directory: projectDirectory(api),
     path: `.opencode/runs/${runId}/progress.json`,
@@ -458,7 +460,33 @@ async function readProgress(api: TuiPluginApi, owner: string, runId: string): Pr
   } catch {
     throw new Error(`Run ${runId} progress is not valid JSON`)
   }
-  return parseOwnedRun(parsed, owner, runId)
+  return parsed
+}
+
+async function readProgress(api: TuiPluginApi, owner: string, runId: string): Promise<TuiRun | null> {
+  return parseOwnedRun(await readProgressDocument(api, runId), owner, runId)
+}
+
+/** Read a durable run, validate it, then derive the bounded display projection. */
+export async function readOwnedLiveProgress(
+  api: TuiPluginApi,
+  owner: string,
+  runId: string,
+): Promise<AlgRunProgress | null> {
+  const value = await readProgressDocument(api, runId)
+  if (isRecord(value) && typeof value.owner_session_id === "string" && value.owner_session_id !== owner) return null
+  if (!isRecord(value) || value.run_id !== runId) throw new Error(`Run ${runId} live progress has a mismatched run ID`)
+  let run: RunState
+  try {
+    run = parseRunState(value)
+  } catch {
+    throw new Error(`Run ${runId} progress failed durable schema validation`)
+  }
+  if (run.owner_session_id !== owner) return null
+  if (canonicalDirectory(run.project_directory) !== canonicalDirectory(projectDirectory(api))) {
+    throw new Error(`Run ${runId} live progress belongs to another project`)
+  }
+  return buildRunProgress(run)
 }
 
 function sdkStatus(error: unknown, depth = 0): number | undefined {
@@ -513,6 +541,12 @@ async function indexedRunIds(
   } catch (error) {
     return { ids: null, issue: `Malformed owner run index: ${formatSdkError(error)}` }
   }
+}
+
+/** Bounded owner-scoped discovery shared by the archival and live TUI views. */
+export async function discoverOwnedRunIds(api: TuiPluginApi, owner: string): Promise<string[]> {
+  const index = await indexedRunIds(api, owner)
+  return index.ids ?? await legacyFallbackRunIds(api)
 }
 
 function utcDatePrefix(daysAgo: number): string {
