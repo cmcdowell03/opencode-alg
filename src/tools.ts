@@ -32,6 +32,7 @@ import { formatSdkError } from "./diagnostics.ts"
 import { serializedBytes, truncateUtf8, utf8Bytes } from "./limits.ts"
 import { executeWithMemory } from "./session-memory/attempts.ts"
 import type { SessionMemoryRuntime } from "./session-memory/runtime.ts"
+import { buildRunProgress, parseRunProgress, type AlgRunProgress } from "./run-progress.ts"
 
 type Detail = "compact" | "full"
 const PREVIEW_BYTES = 2_048
@@ -54,12 +55,30 @@ function ok(title: string, data: unknown, meta?: Record<string, unknown>) {
   }
 }
 
-function err(error: unknown) {
+function err(error: unknown, meta?: Record<string, unknown>) {
   const message = error instanceof Error ? error.message : String(error)
   return {
-    title: "alg error",
+    title: meta?.alg_progress
+      ? "alg error · durable progress observation, not verdict"
+      : "alg error",
     output: JSON.stringify({ error: message }, null, 2),
-    metadata: { alg: true, error: true },
+    metadata: { alg: true, error: true, ...meta },
+  }
+}
+
+function progressTitle(progress: AlgRunProgress): string {
+  const finished = progress.counts.done + progress.counts.failed + progress.counts.skipped
+  return `ALG progress · ${finished}/${progress.nodes_total} finished`
+}
+
+function publishProgress(snapshot: AlgRunProgress, context: ToolContext): void {
+  const result: unknown = context.metadata({
+    title: progressTitle(snapshot),
+    metadata: { alg: true, alg_progress: snapshot },
+  })
+  if (result && (typeof result === "object" || typeof result === "function")) {
+    const then = (result as { then?: unknown }).then
+    if (typeof then === "function") void Promise.resolve(result).catch(() => {})
   }
 }
 
@@ -700,7 +719,7 @@ export function createAlgTools(
     }),
 
     alg_run: tool({
-      description: "Synchronously execute ready ALG waves under an exclusive lease. Compact by default; this call does not live-stream.",
+      description: "Synchronously execute ready ALG waves under an exclusive lease and publish bounded progress metadata after durable saves. Compact by default.",
       args: {
         run_id: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/).optional(),
         dry: tool.schema.boolean().optional(),
@@ -712,6 +731,7 @@ export function createAlgTools(
         detail: tool.schema.enum(["compact", "full"]).optional(),
       },
       async execute(args, context) {
+        let latestProgress: AlgRunProgress | null = null
         try {
           const { project, directory } = roots(plugin, context)
           // loadRunForOwner may recover sidecars, reconcile mirrors, or
@@ -741,6 +761,10 @@ export function createAlgTools(
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
             operation: "run",
             onEvent: (message) => events.push(message),
+            onProgress: (savedRun) => {
+              latestProgress = buildRunProgress(savedRun)
+              publishProgress(latestProgress, context)
+            },
           })
           return ok(
             "alg run",
@@ -751,10 +775,16 @@ export function createAlgTools(
               events,
               args.detail ?? "compact",
             ),
-            { run_id: updated.run_id, status: updated.status },
+            {
+              run_id: updated.run_id,
+              status: updated.status,
+              ...(latestProgress ? { alg_progress: parseRunProgress(latestProgress, context.sessionID) } : {}),
+            },
           )
         } catch (error) {
-          return err(error)
+          return err(error, latestProgress
+            ? { alg_progress: parseRunProgress(latestProgress, context.sessionID) }
+            : undefined)
         }
       },
     }),
@@ -877,7 +907,7 @@ export function createAlgTools(
     }),
 
     alg_resume: tool({
-      description: "Synchronously resume an owned incomplete run without resetting attempt history. Compact by default.",
+      description: "Synchronously resume an owned incomplete run without resetting attempt history and publish bounded progress metadata after durable saves. Compact by default.",
       args: {
         run_id: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/).optional(),
         dry: tool.schema.boolean().optional(),
@@ -889,6 +919,7 @@ export function createAlgTools(
         detail: tool.schema.enum(["compact", "full"]).optional(),
       },
       async execute(args, context) {
+        let latestProgress: AlgRunProgress | null = null
         try {
           const { project, directory } = roots(plugin, context)
           const additionalFilesystemRoot = isAdditionalFilesystemRoot(project)
@@ -914,6 +945,10 @@ export function createAlgTools(
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
             operation: "resume",
             onEvent: (message) => events.push(message),
+            onProgress: (savedRun) => {
+              latestProgress = buildRunProgress(savedRun)
+              publishProgress(latestProgress, context)
+            },
           })
           return ok("alg resume", runResponse(
             args.detail === "full"
@@ -921,9 +956,13 @@ export function createAlgTools(
               : loadCommittedRunProjectionForOwner(project, updated.run_id, context.sessionID) ?? updated,
             events,
             args.detail ?? "compact",
-          ))
+          ), latestProgress
+            ? { alg_progress: parseRunProgress(latestProgress, context.sessionID) ?? undefined }
+            : undefined)
         } catch (error) {
-          return err(error)
+          return err(error, latestProgress
+            ? { alg_progress: parseRunProgress(latestProgress, context.sessionID) }
+            : undefined)
         }
       },
     }),

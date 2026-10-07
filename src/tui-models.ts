@@ -12,6 +12,7 @@ import {
   type GlobalConfigRead,
 } from "./global-model-config.ts"
 import { openAlgRuns } from "./tui-runs.ts"
+import { installAlgLiveSidebar, openAlgLive } from "./tui-live.ts"
 import {
   ALG_TUI_REGISTRATION_SERVICE,
   ALG_TUI_REGISTRATION_TOKEN,
@@ -250,8 +251,23 @@ export const tui: TuiPlugin = async (api) => {
           return openAlgRuns(api)
         },
       },
+      {
+        name: "alg.live",
+        title: "View live ALG run progress",
+        category: "ALG",
+        namespace: "palette",
+        slashName: "alg-live",
+        run() {
+          return openAlgLive(api)
+        },
+      },
     ],
   })
+  try {
+    await installAlgLiveSidebar(api)
+  } catch {
+    // The explicit /alg-live view remains available when sidebar slots are unsupported.
+  }
   if (liveSource) {
     await api.client.app.log({
       service: ALG_TUI_REGISTRATION_SERVICE,
