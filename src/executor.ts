@@ -560,6 +560,32 @@ export function prepareRunForResume(run: RunState): RunState {
   return run
 }
 
+/**
+ * Ends a run its owner will not continue. Every unfinished node is marked failed, or skipped when its
+ * last attempt had passed, so the run is failed and is no longer offered for recovery. Nothing that
+ * already finished is changed, and no attempt history is removed.
+ */
+export function closeRun(run: RunState, reason: string): RunState {
+  if (run.status === "done" || run.status === "failed") throw new Error(`run ${run.run_id} is already ${run.status}`)
+  // An attempt recorded as running belongs to an execution that has ended.
+  prepareRunForResume(run)
+  const note = boundDiagnosticList([safeDiagnosticText(`Run closed by its owner: ${reason}`)])
+  let failed = Object.values(run.nodes).some((state) => state.status === "failed")
+  for (const definition of run.graph.nodes) {
+    const state = run.nodes[definition.id]!
+    if (state.status === "done" || state.status === "failed" || state.status === "skipped") continue
+    const passedBefore = state.attempts.at(-1)?.status === "done"
+    state.status = passedBefore ? "skipped" : "failed"
+    state.last_failures = note
+    if (!passedBefore) failed = true
+  }
+  if (!failed) throw new Error(`run ${run.run_id} has no unfinished node that can be marked failed; resume it instead`)
+  run.status = "failed"
+  run.phase = "failed"
+  run.summary = summarize(run)
+  return run
+}
+
 /** Execute topological waves under one exclusive per-run lease. */
 export async function executeRun(run: RunState, options: ExecuteOptions): Promise<RunState> {
   const operation = options.operation ?? "run"

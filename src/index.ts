@@ -15,7 +15,7 @@ import { awaitLock } from "./filesystem-mutex.ts"
 import { ContextBudgetOptionsSchema, SessionWindows, type ContextPart } from "./context-budget.ts"
 import { configuredAgentModels, configuredModelResolutions } from "./models.ts"
 import type { AgentModelMap, ModelResolutionMap } from "./types.ts"
-import { appendAlgCompactionContext, formatCompactionContext, MAX_COMPACTION_OUTPUT_BYTES } from "./compaction.ts"
+import { appendAlgCompactionContext, formatCompactionContext, formatStaleRunNotice, isStaleRun, MAX_COMPACTION_OUTPUT_BYTES } from "./compaction.ts"
 import { formatSdkError } from "./diagnostics.ts"
 import { verifiedLiveSourceIdentity } from "./source-identity.ts"
 import { parseSkillEvolutionOptions } from "./skill-evolution-schemas.ts"
@@ -241,7 +241,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
             catch { recovery.push(`ALG ${label} recovery unavailable; consult authoritative records before resuming.`) }
           }
           // Runs before every model request of every session, so it must not scan the project's run history.
-          await collect("run", () => { const run = findLatestIncompleteRunForTurn(ctx.worktree || directory, sessionId, { sessionCreatedHere: isAlgWorkerSession(sessionId) }); return run ? formatCompactionContext(run, plan.allow("run")) : "" })
+          await collect("run", () => { const run = findLatestIncompleteRunForTurn(ctx.worktree || directory, sessionId, { sessionCreatedHere: isAlgWorkerSession(sessionId) }); return !run ? "" : isStaleRun(run) ? formatStaleRunNotice(run) : formatCompactionContext(run, plan.allow("run")) })
           await collect("evidence", () => skillEvolution.recoveryContext(sessionId))
           const recoveryBytes = textBytes(recovery.join("\n"))
           plan.spend("run", recoveryBytes)
@@ -329,7 +329,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       try {
         const run = await awaitLock(() => findLatestIncompleteRunForSession(ctx.worktree || directory, input.sessionID))
         if (run) {
-          const summary = formatCompactionContext(run, plan.allow("run"))
+          const summary = isStaleRun(run) ? formatStaleRunNotice(run) : formatCompactionContext(run, plan.allow("run"))
           owned.push(summary)
           plan.spend("run", textBytes(summary))
         } else plan.spend("run", 0)
