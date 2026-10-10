@@ -5,6 +5,7 @@ import { HistoricalToolInputSchema } from "./skill-evolution-historical.ts"
 import {
   appendSkillCandidateRevision,
   awaitSkillEvolutionLock,
+  loadSkillLedgerArchive,
   findSkillCandidate,
   loadCandidateRevision,
   loadSkillCandidates,
@@ -100,7 +101,7 @@ export function createSkillEvolutionTools(runtime: SkillEvolutionRuntime) {
           const capacity = inspectSkillCapacity(runtime.project)
           const capacityWarnings = [
             ...capacity.filter((entry) => entry.near_capacity).map((entry) => `${entry.file} is at least 80% full`),
-            ...(ledger.records.length >= 3276 ? ["ledger record capacity is at least 80% full"] : []),
+            ...(ledger.records.length >= runtime.options.maxLedgerRecords * 0.8 ? ["ledger record capacity is at least 80% full"] : []),
             ...(ledger.audit_children.length >= 800 ? ["audit child registry capacity is at least 80% full"] : []),
             ...(index.candidates.length >= 400 ? ["candidate capacity is at least 80% full"] : []),
           ]
@@ -118,7 +119,12 @@ export function createSkillEvolutionTools(runtime: SkillEvolutionRuntime) {
               running: totals.running,
               max_backlog: runtime.options.maxBacklog,
             },
-            ledger: { revision: ledger.revision, total: ledger.records.length, totals, recent_errors: errors },
+            ledger: { revision: ledger.revision, total: ledger.records.length, totals, recent_errors: errors,
+              // Settled entries that were moved out of the live ledger to keep it under its limits.
+              archived: (() => {
+                const archive = loadSkillLedgerArchive(runtime.project)
+                return { segments: archive.segments, records: archive.records.size, audit_children: archive.audit_children }
+              })() },
             candidates: {
               revision: index.revision,
               total: index.candidates.length,

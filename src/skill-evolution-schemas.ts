@@ -408,6 +408,17 @@ export const SkillEvolutionLedgerSchema = z.object({
 }).strict()
 export type SkillEvolutionLedger = z.infer<typeof SkillEvolutionLedgerSchema>
 
+/** One immutable file of settled entries moved out of the live ledger; see archiveSettledLedgerEntries. */
+export const SkillLedgerArchiveSegmentSchema = z.object({
+  schema_version: z.literal(SKILL_EVOLUTION_SCHEMA_VERSION),
+  kind: z.literal("skill_evolution_ledger_archive"),
+  sequence: z.number().int().positive().max(999_999),
+  archived_at: iso,
+  records: z.array(SkillLedgerRecordSchema).max(4_096),
+  audit_children: SkillEvolutionLedgerSchema.shape.audit_children,
+}).strict()
+export type SkillLedgerArchiveSegment = z.infer<typeof SkillLedgerArchiveSegmentSchema>
+
 export const CandidateStateSchema = z.enum(["proposed", "validated", "rejected", "promoted", "rolled_back", "superseded"])
 export type CandidateState = z.infer<typeof CandidateStateSchema>
 

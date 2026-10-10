@@ -37,6 +37,7 @@ import {
   HistoricalSnapshotReferenceSchema,
   HISTORICAL_SNAPSHOT_REFERENCE_MAX_BYTES,
   SkillEvolutionLedgerSchema,
+  SkillLedgerArchiveSegmentSchema,
   SkillEvidenceSchema,
   SkillTransactionJournalSchema,
   type AuditorOutput,
@@ -553,6 +554,125 @@ function saveLedger(project: string, ledger: SkillEvolutionLedger, expectedRevis
   return next
 }
 
+const LEDGER_ARCHIVE_DIRECTORY = "ledger-archive"
+/** Settled entries start moving out once any ledger limit is three quarters used. */
+const LEDGER_HIGH_WATER = 0.75
+/** A settled entry stays in the live ledger at least this long, so recent outcomes stay visible and retryable. */
+const LEDGER_ARCHIVE_MIN_AGE_MS = 24 * 60 * 60 * 1_000
+/** Few enough that a segment of the largest permitted entries stays under the store's JSON bound. */
+const LEDGER_ARCHIVE_SEGMENT_ENTRIES = 96
+
+export interface SkillLedgerArchive {
+  /** Archived records by ledger key. */
+  records: Map<string, SkillLedgerRecord>
+  /** Archived records by session and user message, for the one-audit-per-turn rule. */
+  turns: Map<string, SkillLedgerRecord>
+  audit_children: number
+  segments: number
+}
+
+const ledgerArchives = new Map<string, { stamp: string; archive: SkillLedgerArchive }>()
+
+function archiveSegmentNames(directory: string): string[] {
+  return existsSync(directory) ? readdirSync(directory).filter((name) => /^records-\d{6}\.json$/.test(name)).sort() : []
+}
+
+/**
+ * Settled entries that were moved out of the live ledger. The segments are immutable, so they are read
+ * once and reused until the archive directory changes. An unreadable segment throws: without it a turn
+ * could be audited twice.
+ */
+export function loadSkillLedgerArchive(projectDirectory: string): SkillLedgerArchive {
+  const directory = storePath(projectDirectory, LEDGER_ARCHIVE_DIRECTORY)
+  const names = archiveSegmentNames(directory)
+  const stamp = names.map((name) => { const stats = lstatSync(join(directory, name)); return `${name}:${stats.size}:${stats.mtimeMs}` }).join("|")
+  const known = ledgerArchives.get(directory)
+  if (known?.stamp === stamp) return known.archive
+  const archive: SkillLedgerArchive = { records: new Map(), turns: new Map(), audit_children: 0, segments: names.length }
+  for (const name of names) {
+    const segment = SkillLedgerArchiveSegmentSchema.parse(readBoundedJson(resolveContainedPath(directory, name)))
+    for (const record of segment.records) {
+      archive.records.set(record.key, record)
+      if (record.user_message_id) archive.turns.set(`${record.session_id}\0${record.user_message_id}`, record)
+    }
+    archive.audit_children += segment.audit_children.length
+  }
+  if (ledgerArchives.size >= 16) ledgerArchives.clear()
+  ledgerArchives.set(directory, { stamp, archive })
+  return archive
+}
+
+/**
+ * The live ledger has hard limits (records, audit children, bytes) and every completed turn adds to it,
+ * so without this a project stops learning after a few hundred turns. Once any limit is three quarters
+ * used, the oldest settled entries move into an immutable archive segment and leave the live ledger.
+ *
+ * Only outcomes that can no longer change are moved: "no-change" records, failed records that no later
+ * registration can revive, and finished audit children that no candidate refers to, each at least a day
+ * old. Pending, running and candidate records never move. An archived turn still counts as audited:
+ * enqueueSkillAudit answers "duplicate" for it. The segment is written before the ledger is trimmed, so
+ * a crash between the two leaves an entry in both places, which is harmless.
+ *
+ * Call with the store lock held. Returns the ledger to continue with.
+ */
+function archiveSettledLedgerEntries(
+  project: string,
+  ledger: SkillEvolutionLedger,
+  maxLedgerRecords: number | undefined,
+  now = Date.now(),
+): SkillEvolutionLedger {
+  const ledgerPath = storePath(project, LEDGER_FILE)
+  const bytes = existsSync(ledgerPath) ? lstatSync(ledgerPath).size : 0
+  const overRecords = maxLedgerRecords !== undefined && ledger.records.length >= Math.floor(maxLedgerRecords * LEDGER_HIGH_WATER)
+  const overChildren = ledger.audit_children.length >= Math.floor(MAX_CHILDREN * LEDGER_HIGH_WATER)
+  const overBytes = bytes >= SKILL_EVOLUTION_MAX_JSON_BYTES * LEDGER_HIGH_WATER
+  if (!overRecords && !overChildren && !overBytes) return ledger
+
+  const cutoff = now - LEDGER_ARCHIVE_MIN_AGE_MS
+  const referenced = new Set<string>()
+  for (const candidate of loadSkillCandidates(project).candidates) {
+    referenced.add(candidate.auditor_child_id)
+    if (candidate.checker_child_id) referenced.add(candidate.checker_child_id)
+  }
+  const settledRecords = ledger.records
+    .filter((record) => (record.status === "no-change" || (record.status === "failed" && !recoverableHistoricalBlock(record))) &&
+      Date.parse(record.updated_at) <= cutoff)
+    .sort((left, right) => left.updated_at.localeCompare(right.updated_at) || left.key.localeCompare(right.key))
+  const finishedChildren = ledger.audit_children
+    .filter((child) => (child.lifecycle === undefined || child.lifecycle === "completed" || child.lifecycle === "aborted") &&
+      Date.parse(child.registered_at) <= cutoff && !referenced.has(child.session_id))
+    .sort((left, right) => left.registered_at.localeCompare(right.registered_at) || left.session_id.localeCompare(right.session_id))
+  // Bring each exceeded limit back to half. A byte limit alone moves the older half of what can move.
+  const recordCount = overRecords ? ledger.records.length - Math.floor(maxLedgerRecords! / 2)
+    : overBytes ? Math.ceil(settledRecords.length / 2) : 0
+  const childCount = overChildren ? ledger.audit_children.length - Math.floor(MAX_CHILDREN / 2)
+    : overBytes ? Math.ceil(finishedChildren.length / 2) : 0
+  const records = settledRecords.slice(0, Math.max(0, recordCount))
+  const children = finishedChildren.slice(0, Math.max(0, childCount))
+  if (!records.length && !children.length) return ledger
+
+  const directory = storePath(project, LEDGER_ARCHIVE_DIRECTORY)
+  ensureVerifiedDirectory(canonicalDirectory(project), directory)
+  let sequence = archiveSegmentNames(directory).reduce((highest, name) => Math.max(highest, Number(name.slice(8, 14))), 0)
+  for (let offset = 0; offset < Math.max(records.length, children.length); offset += LEDGER_ARCHIVE_SEGMENT_ENTRIES) {
+    const segment = SkillLedgerArchiveSegmentSchema.parse({
+      schema_version: 1, kind: "skill_evolution_ledger_archive", sequence: ++sequence, archived_at: new Date(now).toISOString(),
+      records: records.slice(offset, offset + LEDGER_ARCHIVE_SEGMENT_ENTRIES),
+      audit_children: children.slice(offset, offset + LEDGER_ARCHIVE_SEGMENT_ENTRIES),
+    })
+    const serialized = `${JSON.stringify(segment, null, 2)}\n`
+    if (Buffer.byteLength(serialized) > SKILL_EVOLUTION_MAX_JSON_BYTES) throw new Error("skill-evolution ledger archive segment exceeds aggregate bound")
+    atomicWriteFile(resolveContainedPath(directory, `records-${String(sequence).padStart(6, "0")}.json`), serialized)
+  }
+  const movedRecords = new Set(records.map((record) => record.key))
+  const movedChildren = new Set(children.map((child) => child.session_id))
+  return saveLedger(project, {
+    ...ledger,
+    records: ledger.records.filter((record) => !movedRecords.has(record.key)),
+    audit_children: ledger.audit_children.filter((child) => !movedChildren.has(child.session_id)),
+  }, ledger.revision)
+}
+
 function saveCandidates(project: string, index: SkillCandidateIndex, expectedRevision: number): SkillCandidateIndex {
   const current = loadSkillCandidates(project)
   if (current.revision !== expectedRevision) throw new Error("skill-evolution candidate index changed concurrently")
@@ -621,11 +741,20 @@ export function enqueueSkillAudit(
   userMessageId?: string,
 ): EnqueueLedgerResult {
   return withSkillEvolutionLock(projectDirectory, "enqueue", () => {
-    const ledger = loadSkillLedger(projectDirectory)
+    const ledger = archiveSettledLedgerEntries(projectDirectory, loadSkillLedger(projectDirectory), options.maxLedgerRecords)
     const key = skillLedgerKey(sessionId, messageId)
     const existing = ledger.records.find((record) => record.key === key)
     const priorTurn = userMessageId && ledger.records.find((record) => record.session_id === sessionId && record.user_message_id === userMessageId)
     if (!existing && priorTurn) return { record: priorTurn, enqueued: false, reason: "duplicate" }
+    if (!existing) {
+      // A turn whose settled record was archived has still been audited exactly once.
+      const archive = loadSkillLedgerArchive(projectDirectory)
+      const archived = archive.records.get(key) ?? (userMessageId ? archive.turns.get(`${sessionId}\0${userMessageId}`) : undefined)
+      if (archived) {
+        if (force) throw new Error("forced audit retry is not available for an archived record")
+        return { record: archived, enqueued: false, reason: "duplicate" }
+      }
+    }
     const claims = loadReviewClaims(projectDirectory)
     const historicalOwner = claims.claims.find((claim) => claim.session_id === sessionId && claim.message_id === messageId &&
       claim.owner_kind === "historical" && claimActive(claim))
@@ -923,7 +1052,7 @@ export function registerSkillAuditChild(
   child: { session_id: string; parent_id: string; title: string; role: "auditor" | "checker" },
 ): void {
   withSkillEvolutionLock(projectDirectory, "child-register", () => {
-    const ledger = loadSkillLedger(projectDirectory)
+    const ledger = archiveSettledLedgerEntries(projectDirectory, loadSkillLedger(projectDirectory), undefined)
     const found = ledger.audit_children.find((entry) => entry.session_id === child.session_id)
     if (found) {
       if (found.parent_id !== child.parent_id || found.title !== child.title || found.role !== child.role) {

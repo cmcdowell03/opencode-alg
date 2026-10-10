@@ -116,6 +116,9 @@ function loadedSkillNames(
   return names
 }
 
+/** How a command's non-zero exit is recorded in a tool's error excerpt. */
+const FAILED_EXIT = /^exit code -?[1-9]\d*$/
+
 function scoreSignals(
   userText: string,
   assistantText: string,
@@ -137,10 +140,12 @@ function scoreSignals(
   }
   const retryParts = parts.filter((part) => part.type === "retry").length
   const errorTools = tools.filter((tool) => tool.status === "error").length
+  // The host reports a command that exited non-zero as a completed tool call, whatever it printed.
+  const failedCommands = tools.filter((tool) => FAILED_EXIT.test(tool.error.excerpt)).length
   const failureHits = all.match(/\b(?:failed|failure|error|exception|timed out|rejected)\b/gi)?.length ?? 0
   if (retryParts > 0 || errorTools > 0 || failureHits >= 2) add("repeated_failure_or_error", 2)
   if (/\b(?:tests?|pytest|bun test|npm test|cargo test|go test|command)\b[\s\S]{0,160}\b(?:failed|failure|error|exit (?:code )?[1-9])\b/i.test(all) ||
-    /\b(?:failed|failure|error)\b[\s\S]{0,160}\b(?:tests?|command)\b/i.test(all)) {
+    /\b(?:failed|failure|error)\b[\s\S]{0,160}\b(?:tests?|command)\b/i.test(all) || failedCommands > 0) {
     add("failed_tests_or_commands", 3)
   }
   const skillLoaded = tools.some((tool) => /skill/i.test(tool.name)) || /\b(?:loaded|using|invoked) (?:the )?[^\n]{0,80}skill\b/i.test(all)
@@ -216,12 +221,15 @@ export function buildSkillEvidence(
     [...rawTools.slice(0, Math.floor(maximumTools / 2)), ...rawTools.slice(-Math.ceil(maximumTools / 2))]
   let tools = selectedTools.map((part) => {
     const state = part.state && typeof part.state === "object" ? part.state : {}
+    // A shell command that fails still "completes" as a tool call; only its exit code says it failed.
+    const exit = state.metadata?.exit
+    const failedExit = state.status === "completed" && state.metadata?.error !== true && Number.isInteger(exit) && exit !== 0
     return {
       name: typeof part.tool === "string" && part.tool.trim() ? part.tool.slice(0, 256) : "unknown-tool",
       status: state.metadata?.error === true ? "error" as const : toolStatus(state.status),
       input: redactText(state.input ?? "", perField),
       result: redactText(state.status === "completed" ? { title: state.title, output: state.output } : "", part.tool === "skill" ? 2000 : perField),
-      error: redactText(state.status === "error" ? state.error : state.metadata?.error === true ? state.output : "", perField),
+      error: redactText(state.status === "error" ? state.error : state.metadata?.error === true ? state.output : failedExit ? `exit code ${exit}` : "", perField),
     }
   })
   let userText = redactText(rawUserText, Math.min(2_000, Math.floor(options.maxEvidenceBytes / 4)))
