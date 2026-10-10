@@ -2,8 +2,45 @@
 
 ## Unreleased
 
+- Worker attempts started by `alg_run` and `alg_resume` now appear in the parent
+  transcript as native OpenCode subagent cards: running, completed, and failed
+  states, parallel nodes side by side, a card per retry, and click-through to the
+  child session. The cards are a display of saved run state and cannot change an
+  outcome. A host that refuses them switches them off for that call; the new
+  `subagentCards: "off"` plugin option disables them. Each card adds one short
+  `task` call (node, attempt, agent, one-line result) to the parent model's
+  history, never the worker prompt or transcript. Builds before this option
+  reject it as an unknown key, so remove it before rolling back.
+- Cancelling `alg_run` or `alg_resume` now aborts every running child session
+  before the tool returns. Previously only the request was dropped and the
+  children kept running.
+- Worker sessions no longer receive ALG's own tools, which removes their
+  definitions from every worker request and prevents a worker from starting a
+  nested run. The four memory tools stay available to workers when session
+  memory is enabled.
+- Removes the automatic live sidebar panel. `/alg-live` and `/alg-runs` remain.
+- A node's outcome is saved as soon as it finishes instead of when its whole
+  batch settles, so a slow sibling no longer delays durability, progress, or the
+  card of a finished node. A failed attempt that will be retried is saved once,
+  already rescheduled, and an unchanged run is no longer saved again.
+- Saves are cheaper. One save inspects each directory once instead of once per
+  file, verifies each immutable object once, confirms short lock files by file
+  identity instead of reading them back, and a running run rewrites its owner
+  projection only when its status changes or another writer touched it. With
+  instant synthetic workers on the development machine, a four-node run went
+  from 18 saves in about 4.5 s to 14 saves in about 1.3 s. Real runs are
+  dominated by model time; the gain is shorter pauses of the OpenCode process.
+- The hook that runs before every model request no longer scans every run
+  directory. It reuses the last scan until the runs directory or the session's
+  owner projection changes, and skips worker sessions entirely: about 0.3 ms per
+  request regardless of history, against about 280 ms with 200 runs on disk.
+- Lock waits that could never succeed no longer block: acquiring a lock the
+  same thread already holds reports contention at once, and refreshing the
+  non-authoritative owner projection waits for other writers for at most 0.5 s
+  in total instead of up to 25 s. Waits for another process stay bounded
+  synchronous waits (0.25 s for run locks, 1 s for the skill-evolution store).
 - Adds model-independent graph-run visibility through bounded durable progress
-  metadata, an ALG TUI panel, and `/alg-live`, while retaining `/alg-runs` for
+  metadata and `/alg-live`, while retaining `/alg-runs` for
   attempt history. UI observation does not copy child transcripts into the parent
   context or change execution, permission, retry, or persistence authority.
   See `docs/live-run-visibility.md` for the design and synthetic-test boundary.

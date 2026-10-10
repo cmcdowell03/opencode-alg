@@ -527,17 +527,36 @@ Graph definitions are parsed before navigation, and graph IDs/agents must match 
 
 Open **ALG → Browse child run sessions** or enter `/alg-runs` from a parent session. The TUI uses OpenCode's public project-relative file APIs, so attached and server-backed TUIs do not assume direct access to the server's disk. Normal discovery directly reads the current parent's bounded owner projection, validates ownership again from each selected `progress.json`, sorts by the authoritative `updated_at` instant, and lists at most the 20 most recent runs. Compact discovery does not read attempt archives until a node is selected. Node rows report total, archived, and inline-visible attempts separately. Selecting an archived node performs one bounded project-relative sidecar read and validates each record through the shared authoritative persisted-attempt parser before deterministically merging archive plus tail without duplicates. Immutable schema-v2 archives receive exact full-SHA path, raw-byte size/hash, owner/run/node/kind/schema/count, and nested-reference checks. Legacy fixed archives—including genuine schema-v1 documents without `kind` or `owner_session_id`—receive exact contained run/node path, bounded read, strict schema and contained run/node identity, canonical logical-size/count, nested-reference checks, and an explicit weaker-integrity warning; their path has no SHA binding. Attempts are exposed in pages of at most 32 plus bounded previous/next controls, so every valid archived child session remains reachable without one oversized dialog. Before route navigation, a selected reference-only attempt output is read on demand through the same public API, bounded and cached for that command invocation, and checked for immutable path/hash/size, strict agent schema, score, outcome, and run/node/attempt identity. Progress/archive/output reads, node/attempt arrays, dialog option counts, and every rendered title/description/ID preview are independently bounded; one bounded warning reports discovery truncation counts. A child session display ID is only a preview. Navigation uses a separately retained exact, untruncated ID and is disabled unless that ID satisfies the SDK/session bound. Missing, corrupt, schema-invalid, or mismatched archives/outputs and unavailable session IDs produce bounded visible toasts without navigation.
 
-ALG continues to create isolated SDK child sessions; `/alg-runs` is only a navigator and does not replace those sessions with parent task cards or copy their reasoning into the parent transcript.
+ALG continues to create isolated SDK child sessions. `/alg-runs` is a navigator over them and never copies their reasoning into the parent transcript.
 
 ### Live graph progress
 
-ALG's TUI adds a live run panel and `/alg-live` for graph execution through
-`alg_run` and `alg_resume`. These views expose bounded node states, current
-attempts/retry counts, time information, and navigation into child sessions.
-`/alg-runs` remains the full attempt-history browser. Load the TUI registration
-as well as the server plugin; a server-only installation cannot render the panel.
-In `/alg-live`, use **↑/↓** to select a node and **Enter** to open its validated
-child session.
+While `alg_run` or `alg_resume` executes, each worker attempt appears in the
+parent transcript as a native OpenCode subagent card: a spinner and the child's
+current tool while it runs, its tool count and duration when it finishes, a
+failed state when it fails, and click-through into the child session. Parallel
+nodes show as parallel cards and a retry gets its own card. The cards need only
+the server plugin.
+
+The cards display saved run state. ALG still creates, runs, validates, and
+persists every attempt itself, so a card can never change an outcome. If the
+host refuses a card, cards switch off for that tool call and the run continues.
+Each card adds one short `task` call to the parent model's history (node,
+attempt, agent, and a one-line result), never the worker prompt or the child
+transcript; the `alg_run` result remains the source of the validated output.
+Set `"subagentCards": "off"` in the plugin options to disable them. Builds
+before this option reject it as an unknown key, so remove it before rolling back.
+
+Cancelling the tool call aborts every running child session before the tool
+returns. Worker sessions do not receive ALG's own tools, so a worker cannot
+start a nested run; the memory tools stay available to workers when session
+memory is enabled.
+
+`/alg-live` lists bounded node states, current attempts/retry counts, time
+information, and navigation into child sessions for the same runs.
+`/alg-runs` remains the full attempt-history browser. Both need the TUI
+registration as well as the server plugin. In `/alg-live`, use **↑/↓** to
+select a node and **Enter** to open its validated child session.
 
 Progress metadata is published after successful durable saves. Displaying it
 does not make model calls or copy child transcripts into the parent context.
@@ -548,8 +567,8 @@ from unavailable reads and checks ownership before child navigation. Its
 view, not verified worker liveness. Attempt time stops at completion or the last
 saved observation.
 
-This is a supported ALG TUI view, not a native OpenCode `task` card, and it does
-not yet visualize historical skill-mining chunks. See
+Historical skill-mining chunks are not graph nodes and get neither cards nor
+live rows. See
 [live-run visibility design and validation](docs/live-run-visibility.md).
 
 Project-scoped selections can be managed directly (use the returned `revision` for optional compare-and-swap):
