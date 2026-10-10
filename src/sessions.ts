@@ -189,6 +189,25 @@ function partsToText(parts: unknown): { text: string; textPartCount: number; ove
   return { text: oversized ? "" : chunks.join("\n"), textPartCount, oversized }
 }
 
+/**
+ * The error the host recorded on the child's reply, if the model call itself failed. The provider's own
+ * message passes through the diagnostic sanitizer, which may redact most of it, so the model that was
+ * called is named as well: that is usually enough to see an expired login or a retired model.
+ */
+function childModelFailure(data: unknown): { category: string; text: string } | undefined {
+  const info = (data as { info?: { error?: unknown; providerID?: unknown; modelID?: unknown } } | null | undefined)?.info
+  const error = info?.error
+  if (!error || typeof error !== "object") return undefined
+  const name = (error as { name?: unknown }).name
+  const id = (value: unknown) => typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(value) ? value : undefined
+  const provider = id(info?.providerID), model = id(info?.modelID)
+  const called = provider && model ? ` (${provider}/${model})` : ""
+  return {
+    category: typeof name === "string" && /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(name) ? name : "other",
+    text: formatSdkDiagnostic(`child model call failed${called}: `, error),
+  }
+}
+
 function finishReason(data: unknown): string | undefined {
   if (!data || typeof data !== "object") return undefined
   const record = data as Record<string, unknown>
@@ -285,10 +304,14 @@ ${jsonSchemaHint(opts.agent)}
       ? { value: null, reason: "oversized" as const, candidate_count: 0 }
       : extractJsonDetailed(text, opts.agent)
     const finish = finishReason(prompted.data)
+    // The host reports a failed model call (an expired login, an unknown model, a rate limit) on the
+    // returned message, not as a request error. Without it the attempt reads as an empty response.
+    const failure = extraction.value === null ? childModelFailure(prompted.data) : undefined
     const responseDiagnostic = extraction.value === null
-      ? `Response parse: ${extraction.reason ?? "no_json"}; error_category=none; parts=${partCount}; text_parts=${textPartCount}; non_text_parts=${partCount - textPartCount}${finish ? `; finish=${finish}` : ""}`
+      ? `Response parse: ${extraction.reason ?? "no_json"}; error_category=${failure?.category ?? "none"}; parts=${partCount}; text_parts=${textPartCount}; non_text_parts=${partCount - textPartCount}${finish ? `; finish=${finish}` : ""}`
       : undefined
-    return { session_id: sessionId, text, parsed: extraction.value, ...(responseDiagnostic ? { response_diagnostic: responseDiagnostic } : {}) }
+    return { session_id: sessionId, text, parsed: extraction.value, ...(failure ? { error: failure.text } : {}),
+      ...(responseDiagnostic ? { response_diagnostic: responseDiagnostic } : {}) }
   } catch (error) {
     if (callbackFailed) throw error
     return {

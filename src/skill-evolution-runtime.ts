@@ -68,6 +68,8 @@ export const LIVE_SESSION_COMPACTED_ERROR = "compacted_or_unavailable: completed
 export const NO_TOOLS_UNSUPPORTED = "skill evolution model calls are blocked: installed SDK V1 cannot declare a deny-all session permission ruleset for built-in, MCP, and custom tools"
 export const COMPACT_SESSION_TIMEOUT_MS = 2_000
 /** A store call that met another process's lock in a synchronous entry point is repeated from a timer. */
+const MAX_CAPTURE_SESSIONS = 256
+const MAX_CAPTURED_TURNS_PER_SESSION = 512
 const STORE_LOCK_RETRIES = 5
 const STORE_LOCK_RETRY_MS = 20
 const MAX_CHILD_RESPONSE_BYTES = 96 * 1024
@@ -222,6 +224,12 @@ export class SkillEvolutionRuntime {
   private readonly queued = new Set<string>()
   private readonly manualKeys = new Set<string>()
   private readonly deletedSessions = new Set<string>()
+  /**
+   * Turns whose capture is finished, per session. The host hands over the whole message window before
+   * every model call; without this each earlier turn would be registered again under the store lock,
+   * and the cost of a model call would grow with the length of the session.
+   */
+  private readonly capturedTurns = new Map<string, Set<string>>()
   private readonly snapshots = new Map<string, Promise<void>>()
   private readonly abort = new AbortController()
   private active = false
@@ -407,6 +415,7 @@ export class SkillEvolutionRuntime {
       }
       if (event.type === "session.deleted") {
         this.deletedSessions.add(event.properties.info.id)
+        this.capturedTurns.delete(event.properties.info.id)
         recordDeletedSkillSession(this.project, event.properties.info.id)
         return
       }
@@ -524,15 +533,40 @@ export class SkillEvolutionRuntime {
     assertTextBytes(JSON.stringify(envelopes), 2 * 1024 * 1024, "chat evidence")
     const messages = structuredClone(envelopes)
     await this.validateCaptureSession(sessionId, false, signal)
+    const captured = this.capturedTurnsFor(sessionId)
     for (const message of messages) {
       const info = message.info
       if (!isCompletedUserTurn(info) ||
         !info.id || !Number.isSafeInteger(info.time?.completed) || info.time.completed < 0) continue
+      if (captured.has(info.id)) continue
       const result = await awaitSkillEvolutionLock(() => enqueueSkillAudit(this.project, sessionId, info.id, this.options, false, info.parentID))
-      if (result.record.evidence_ref || !["pending", "running"].includes(result.record.status)) continue
+      if (result.record.evidence_ref || !["pending", "running"].includes(result.record.status)) {
+        // A failed record may still be revived by a later registration, so only outcomes that can no
+        // longer change, and turns whose evidence is already stored, are remembered.
+        if (result.record.evidence_ref || result.record.status === "candidate" || result.record.status === "no-change") {
+          this.rememberCapturedTurn(captured, info.id)
+        }
+        continue
+      }
       await this.snapshotEvidence(sessionId, result.record.message_id, false, messages, signal)
+      this.rememberCapturedTurn(captured, info.id)
       if (result.enqueued) this.schedule(result.record.key)
     }
+  }
+
+  private capturedTurnsFor(sessionId: string): Set<string> {
+    let captured = this.capturedTurns.get(sessionId)
+    if (!captured) {
+      if (this.capturedTurns.size >= MAX_CAPTURE_SESSIONS) this.capturedTurns.delete(this.capturedTurns.keys().next().value!)
+      captured = new Set()
+      this.capturedTurns.set(sessionId, captured)
+    }
+    return captured
+  }
+
+  private rememberCapturedTurn(captured: Set<string>, messageId: string): void {
+    if (captured.size >= MAX_CAPTURED_TURNS_PER_SESSION) captured.delete(captured.values().next().value!)
+    captured.add(messageId)
   }
 
   private async snapshotCompactSession(sessionId: string, timeoutMs: number, signal: AbortSignal): Promise<void> {
