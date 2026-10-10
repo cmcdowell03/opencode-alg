@@ -3434,7 +3434,7 @@ export function runManager(options: ManagerOptions, dependencies: ManagerDepende
   if (options.command === "doctor" && !doctorMutation) return doctorManager(options as ManagerOptions & { command: "doctor" }, paths, dependencies)
 
   createPaths(paths)
-  const mutex = acquireFilesystemMutex(paths.lockPath, { owner: `opencode-alg-manager:${options.command}`, waitMs: 250 })
+  const mutex = acquireFilesystemMutex(paths.lockPath, { owner: `opencode-alg-manager:${options.command}` })
   try {
     if (options.command === "doctor") {
       if (options.repairJournal) {

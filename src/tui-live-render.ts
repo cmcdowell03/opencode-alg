@@ -12,8 +12,6 @@ import {
 
 export type LiveSurface = { element: BaseRenderable; dispose: () => void; handleKey: (key: string) => boolean }
 
-let sidebarSubscription: (() => void) | undefined
-
 function element(tag: string, props: Record<string, unknown>, children: BaseRenderable[] = []): BaseRenderable {
   const parent = createElement(tag)
   spread(parent, props)
@@ -103,23 +101,6 @@ function makeSurface(api: TuiPluginApi, controller: LiveRunController, owner: st
     lastGeneration = generation
   })
   return { element: root, dispose: unsubscribe, handleKey }
-}
-
-export function createLiveSidebarElement(
-  api: TuiPluginApi,
-  controller: LiveRunController,
-  sessionId: string,
-): BaseRenderable {
-  sidebarSubscription?.()
-  const owner = currentTuiOwner(api)
-  if (!owner || owner !== sessionId) {
-    const placeholder = textNode("")
-    return placeholder
-  }
-  const surface = makeSurface(api, controller, owner)
-  sidebarSubscription = surface.dispose
-  if (controller.snapshot().owner !== owner) void controller.selectOwner(owner)
-  return surface.element
 }
 
 export function createLiveDialog(

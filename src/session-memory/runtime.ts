@@ -3,6 +3,7 @@ import { hintFromMessages, observedConfigSkillRoots } from "../skill-catalog.ts"
 import { loadSessionRecovery } from "../skill-evolution-store.ts"
 import { MemoryOptionsSchema, MemoryNodeSchema, OperationSchema, RunCitationSchema, SessionId, type Checkpoint, type MemoryOptions, type Operation, type RunCitation } from "./schemas.ts"
 import { MemoryStore, hashObject } from "./store.ts"
+import { awaitFirstLock } from "../filesystem-mutex.ts"
 import { SkillIndex } from "./skill-index.ts"
 import { buildContext, type ModelBudget } from "./context.ts"
 import { verifyEnvironment, localOrigin } from "./environment.ts"
@@ -238,32 +239,33 @@ export class SessionMemoryRuntime {
   async guarded<T>(owner: string, operation: Operation, execute: () => Promise<T>, classify: (result: T) => { outcome: "success" | "failure" | "indeterminate"; receipt: string; run_citation?: RunCitation }, prospectiveShellGateHash?: string): Promise<T> {
     this.requireEnabled()
     if (this.options.mode === "observe") {
-      try { this.prepare(owner); preflight(this.store, this.current(owner), operation, prospectiveShellGateHash) } catch { /* advisory only */ }
+      try { await awaitFirstLock(() => this.prepare(owner)); await awaitFirstLock(() => preflight(this.store, this.current(owner), operation, prospectiveShellGateHash)) } catch { /* advisory only */ }
       const result = await execute()
       try {
-        const observed = classify(result)
-        this.recordAttempt(owner, operation, observed.outcome, observed.receipt, new Date(Date.now() + 900000).toISOString(), observed.run_citation)
+        const observed = await awaitFirstLock(() => classify(result))
+        await awaitFirstLock(() => this.recordAttempt(owner, operation, observed.outcome, observed.receipt, new Date(Date.now() + 900000).toISOString(), observed.run_citation))
       } catch { /* observation cannot rewrite an action result */ }
       return result
     }
     let prepared: ReturnType<SessionMemoryRuntime["prepare"]> | undefined
-    try { prepared = this.prepare(owner) }
+    try { prepared = await awaitFirstLock(() => this.prepare(owner)) }
     catch { /* Optional view/receipt failures remain advisory; adapter permissions are checked below. */ }
     if (prepared?.requiredUnavailable) throw new Error(`memory preflight requires complete context: ${prepared.receipt?.reasons.at(-1) ?? "mandatory context unavailable"}`)
-    const decision = preflight(this.store, this.current(owner), operation, prospectiveShellGateHash)
-    if (decision.gap) try { this.addGap(owner, decision.gap) } catch { /* gap reporting must not veto the run */ }
+    const decision = await awaitFirstLock(() => preflight(this.store, this.current(owner), operation, prospectiveShellGateHash))
+    const gap = decision.gap
+    if (gap) try { await awaitFirstLock(() => this.addGap(owner, gap)) } catch { /* gap reporting must not veto the run */ }
     if (this.options.mode === "assist" && !decision.allowed) throw new Error(decision.reason)
-    if (this.options.mode === "assist" && decision.retry) this.update(owner, (state) => ({ ...state, used_retries: [...state.used_retries, decision.retry!] }))
+    if (this.options.mode === "assist" && decision.retry) await awaitFirstLock(() => this.update(owner, (state) => ({ ...state, used_retries: [...state.used_retries, decision.retry!] })))
     // Authorization belongs to execute's adapter, never to the memory decision.
     let result: T
     try { result = await execute() }
     catch (error) {
       // No exception text, command, secret value or its hash enters memory.
-      this.recordAttempt(owner, operation, "indeterminate", hashObject({ signature: operationSignature(operation), state: "adapter-threw" }), new Date(Date.now() + 900000).toISOString())
+      await awaitFirstLock(() => this.recordAttempt(owner, operation, "indeterminate", hashObject({ signature: operationSignature(operation), state: "adapter-threw" }), new Date(Date.now() + 900000).toISOString()))
       throw error
     }
-    const outcome = classify(result)
-    this.recordAttempt(owner, operation, outcome.outcome, outcome.receipt, new Date(Date.now() + 900000).toISOString(), outcome.run_citation)
+    const outcome = await awaitFirstLock(() => classify(result))
+    await awaitFirstLock(() => this.recordAttempt(owner, operation, outcome.outcome, outcome.receipt, new Date(Date.now() + 900000).toISOString(), outcome.run_citation))
     return result
   }
   delegate(parent: string, child: string, role: "worker" | "checker") {

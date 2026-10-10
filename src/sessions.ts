@@ -29,6 +29,47 @@ export interface NodePromptOpts {
   model?: ModelRef
   abort?: AbortSignal
   onSessionCreated?: (sessionId: string) => void | Promise<void>
+  /** Tool ids hidden from this worker: their definitions are not sent to its model and it cannot call them. */
+  disabledTools?: readonly string[]
+}
+
+/** How long cancellation waits for the host to confirm it stopped a child before the executor moves on. */
+export const CHILD_ABORT_TIMEOUT_MS = 5_000
+
+/** Worker sessions this process created. Bounded, and only used to skip work that cannot apply to them. */
+const workerSessions = new Set<string>()
+const MAX_TRACKED_WORKER_SESSIONS = 4_096
+
+export function isAlgWorkerSession(sessionId: string): boolean {
+  return workerSessions.has(sessionId)
+}
+
+function trackWorkerSession(sessionId: string): void {
+  if (workerSessions.size >= MAX_TRACKED_WORKER_SESSIONS) {
+    const oldest = workerSessions.values().next().value
+    if (oldest !== undefined) workerSessions.delete(oldest)
+  }
+  workerSessions.add(sessionId)
+}
+
+/**
+ * Cancelling the HTTP request does not stop a host session: without an explicit abort the child keeps
+ * working (and editing files) after the run was cancelled. Bounded and best effort; never throws.
+ */
+async function stopChildSession(client: Client, sessionId: string, directory: string): Promise<void> {
+  const abort = (client.session as { abort?: (input: unknown) => Promise<unknown> }).abort
+  if (!sessionId || typeof abort !== "function") return
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    await Promise.race([
+      Promise.resolve(abort.call(client.session, { path: { id: sessionId }, query: { directory }, responseStyle: "fields", throwOnError: false })).catch(() => undefined),
+      new Promise<void>((resolve) => { timer = setTimeout(resolve, CHILD_ABORT_TIMEOUT_MS) }),
+    ])
+  } catch {
+    // The attempt is already being recorded as cancelled; an unreachable host cannot be made to stop here.
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
 }
 
 export interface NodePromptResult {
@@ -148,6 +189,25 @@ function partsToText(parts: unknown): { text: string; textPartCount: number; ove
   return { text: oversized ? "" : chunks.join("\n"), textPartCount, oversized }
 }
 
+/**
+ * The error the host recorded on the child's reply, if the model call itself failed. The provider's own
+ * message passes through the diagnostic sanitizer, which may redact most of it, so the model that was
+ * called is named as well: that is usually enough to see an expired login or a retired model.
+ */
+function childModelFailure(data: unknown): { category: string; text: string } | undefined {
+  const info = (data as { info?: { error?: unknown; providerID?: unknown; modelID?: unknown } } | null | undefined)?.info
+  const error = info?.error
+  if (!error || typeof error !== "object") return undefined
+  const name = (error as { name?: unknown }).name
+  const id = (value: unknown) => typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(value) ? value : undefined
+  const provider = id(info?.providerID), model = id(info?.modelID)
+  const called = provider && model ? ` (${provider}/${model})` : ""
+  return {
+    category: typeof name === "string" && /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(name) ? name : "other",
+    text: formatSdkDiagnostic(`child model call failed${called}: `, error),
+  }
+}
+
 function finishReason(data: unknown): string | undefined {
   if (!data || typeof data !== "object") return undefined
   const record = data as Record<string, unknown>
@@ -167,6 +227,8 @@ function finishReason(data: unknown): string | undefined {
 export async function runNodeSession(opts: NodePromptOpts): Promise<NodePromptResult> {
   let sessionId = ""
   let callbackFailed = false
+  let stopping: Promise<void> | undefined
+  const stopChild = () => { stopping ??= stopChildSession(opts.client, sessionId, opts.directory) }
   try {
     if (opts.abort?.aborted) throw new Error("Execution cancelled before child launch")
     const promptLimit = opts.agent === "checker" ? MAX_CHECKER_PROMPT_BYTES : MAX_WORKER_PROMPT_BYTES
@@ -183,7 +245,8 @@ ${jsonSchemaHint(opts.agent)}
     assertTextBytes(fullPrompt, promptLimit, `${opts.agent} full prompt`)
 
     const created = await opts.client.session.create({
-      body: { parentID: opts.parentSessionId, title: `alg:${opts.title}` },
+      // The "(@agent subagent)" suffix is what OpenCode's own child-session footer reads to label a subagent.
+      body: { parentID: opts.parentSessionId, title: `alg:${opts.title} (@${opts.agent} subagent)` },
       query: { directory: opts.directory },
       responseStyle: "fields",
       throwOnError: false,
@@ -196,6 +259,7 @@ ${jsonSchemaHint(opts.agent)}
     if (!sessionId) {
       return { session_id: "", text: "", parsed: null, error: "session.create returned no session id" }
     }
+    trackWorkerSession(sessionId)
     try {
       await opts.onSessionCreated?.(sessionId)
     } catch (error) {
@@ -203,9 +267,11 @@ ${jsonSchemaHint(opts.agent)}
       throw error
     }
     if (opts.abort?.aborted) throw new Error("Execution cancelled before child prompt")
+    opts.abort?.addEventListener("abort", stopChild, { once: true })
 
     const body: PromptBodyWithVariant = {
       agent: opts.agent,
+      ...(opts.disabledTools?.length ? { tools: Object.fromEntries(opts.disabledTools.map((id) => [id, false])) } : {}),
       ...(opts.model ? {
         model: {
           providerID: opts.model.providerID,
@@ -238,10 +304,14 @@ ${jsonSchemaHint(opts.agent)}
       ? { value: null, reason: "oversized" as const, candidate_count: 0 }
       : extractJsonDetailed(text, opts.agent)
     const finish = finishReason(prompted.data)
+    // The host reports a failed model call (an expired login, an unknown model, a rate limit) on the
+    // returned message, not as a request error. Without it the attempt reads as an empty response.
+    const failure = extraction.value === null ? childModelFailure(prompted.data) : undefined
     const responseDiagnostic = extraction.value === null
-      ? `Response parse: ${extraction.reason ?? "no_json"}; error_category=none; parts=${partCount}; text_parts=${textPartCount}; non_text_parts=${partCount - textPartCount}${finish ? `; finish=${finish}` : ""}`
+      ? `Response parse: ${extraction.reason ?? "no_json"}; error_category=${failure?.category ?? "none"}; parts=${partCount}; text_parts=${textPartCount}; non_text_parts=${partCount - textPartCount}${finish ? `; finish=${finish}` : ""}`
       : undefined
-    return { session_id: sessionId, text, parsed: extraction.value, ...(responseDiagnostic ? { response_diagnostic: responseDiagnostic } : {}) }
+    return { session_id: sessionId, text, parsed: extraction.value, ...(failure ? { error: failure.text } : {}),
+      ...(responseDiagnostic ? { response_diagnostic: responseDiagnostic } : {}) }
   } catch (error) {
     if (callbackFailed) throw error
     return {
@@ -250,6 +320,11 @@ ${jsonSchemaHint(opts.agent)}
       parsed: null,
       error: formatSdkError(error),
     }
+  } finally {
+    opts.abort?.removeEventListener("abort", stopChild)
+    // A cancelled run must not return while its child may still be working.
+    if (opts.abort?.aborted && sessionId) stopChild()
+    if (stopping) await stopping
   }
 }
 

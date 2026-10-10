@@ -43,6 +43,7 @@ import {
 import {
   acquireFilesystemMutex,
   FilesystemMutexContentionError,
+  isLockContention,
   type FilesystemMutex,
 } from "./filesystem-mutex.ts"
 import {
@@ -54,7 +55,11 @@ import {
   isSafeId,
   isSafeProjectRelativePath,
   isSafeRunArtifactPath,
+  rememberInScope,
   resolveContainedPath,
+  scopedValue,
+  scopeMemo,
+  withContainmentScope,
 } from "./paths.ts"
 import {
   type AttemptHistoryDocument,
@@ -101,6 +106,8 @@ import {
 export { MAX_STATE_BYTES }
 const DEFAULT_LOCK_LEASE_MS = 60 * 60 * 1_000
 const OWNER_INDEX_UPDATE_ATTEMPTS = 5
+/** How long a run lock keeps trying to take its guard to renew or release itself, from the event loop. */
+const RUN_LOCK_GUARD_RETRY_MS = 250
 export const MAX_OWNED_RUN_DIRECTORY_SCAN = 4_096
 
 function exactPersistedString(minimum: number, maximum: number, label: string) {
@@ -116,8 +123,8 @@ export class StoreError extends Error {
 }
 
 export class RunLockedError extends StoreError {
-  constructor(runId: string, detail = "already executing") {
-    super(`run ${runId} is ${detail}`)
+  constructor(runId: string, detail = "already executing", options?: ErrorOptions) {
+    super(`run ${runId} is ${detail}`, options)
     this.name = "RunLockedError"
   }
 }
@@ -206,7 +213,6 @@ function acquireMirrorLock(projectDirectory: string, runId: string): FilesystemM
   return acquireFilesystemMutex(path, {
     owner: `mirror:${runId}`,
     leaseMs: 30_000,
-    waitMs: 250,
   })
 }
 
@@ -236,7 +242,8 @@ export function ownerIndexPath(projectDirectory: string, ownerSessionId: string)
 
 export function runDir(projectDirectory: string, runId: string): string {
   assertSafeId(runId, "run_id")
-  return resolveContainedPath(canonicalDirectory(projectDirectory), ".opencode", "runs", runId)
+  return scopeMemo(`run-directory\0${projectDirectory}\0${runId}`, () =>
+    resolveContainedPath(canonicalDirectory(projectDirectory), ".opencode", "runs", runId))
 }
 
 /** Resolve every run-local path through existing-component realpath containment. */
@@ -486,11 +493,31 @@ function readOwnerRunIndex(path: string, ownerSessionId: string): OwnerRunIndex 
   }
 }
 
+/** What stat reports for a projection or discovery path; "missing" when it cannot be inspected. */
+function pathStamp(path: string): { stamp: string; modifiedMs: number } {
+  try {
+    const stats = statSync(path, { bigint: true })
+    return { stamp: `${stats.dev}:${stats.ino}:${stats.size}:${stats.mtimeNs}`, modifiedMs: Number(stats.mtimeMs) }
+  } catch {
+    return { stamp: "missing", modifiedMs: 0 }
+  }
+}
+
+/**
+ * The owner projection as this process last wrote it, per projection path. An executing run saves many
+ * times with an unchanged status; those saves leave the projection alone while it still is exactly the
+ * file written here and the run is still its newest entry. Any status change, any other run, and any
+ * other writer make the next save rewrite it.
+ */
+const ownerIndexWrites = new Map<string, { runId: string; status: string; stamp: string }>()
+const MAX_OWNER_INDEX_WRITE_MEMO = 256
+
 function updateOwnerRunIndex(
   projectDirectory: string,
   ownerSessionId: string,
   entry: OwnerRunIndexEntry | null,
   removeRunId?: string,
+  coalesceStatus?: string,
 ): void {
   const directory = resolveContainedPath(projectRunsRoot(projectDirectory), OWNER_INDEX_DIRECTORY)
   ensureDir(directory)
@@ -499,9 +526,9 @@ function updateOwnerRunIndex(
   const lock = acquireFilesystemMutex(resolveContainedPath(directory, `${key}.lock`), {
     owner: `owner-index:${key}`,
     leaseMs: 30_000,
-    waitMs: 5_000,
   })
   try {
+    ownerIndexWrites.delete(path)
     const existing = readOwnerRunIndex(path, ownerSessionId)
     if (!existing && entry === null) return
     const byRun = new Map((existing?.runs ?? []).map((run) => [run.run_id, run]))
@@ -520,32 +547,71 @@ function updateOwnerRunIndex(
       throw new StoreError(`owner run index exceeds ${MAX_OWNER_INDEX_BYTES} bytes`)
     }
     atomicWriteFile(path, serialized)
+    if (entry && !removeRunId && coalesceStatus !== undefined && runs[0]?.run_id === entry.run_id) {
+      if (ownerIndexWrites.size >= MAX_OWNER_INDEX_WRITE_MEMO) ownerIndexWrites.clear()
+      ownerIndexWrites.set(path, { runId: entry.run_id, status: coalesceStatus, stamp: pathStamp(path).stamp })
+    }
   } finally {
     lock.release()
   }
 }
+
+function ownerIndexAlreadyCurrent(
+  projectDirectory: string,
+  ownerSessionId: string,
+  runId: string,
+  status: string,
+): boolean {
+  try {
+    const path = resolveContainedPath(projectRunsRoot(projectDirectory), OWNER_INDEX_DIRECTORY,
+      `${ownerIndexKey(ownerSessionId)}.json`)
+    const written = ownerIndexWrites.get(path)
+    return Boolean(written && written.runId === runId && written.status === status &&
+      written.stamp !== "missing" && written.stamp === pathStamp(path).stamp)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Refreshes that met another writer or a transient filesystem race and are waiting for their next try.
+ * The projection is not authoritative, so a refresh never waits in place: it tries once and, if it has
+ * to, finishes from the event loop. A newer refresh for the same run replaces a waiting one.
+ */
+const waitingOwnerIndexRefreshes = new Map<string, ReturnType<typeof setTimeout>>()
 
 function refreshOwnerRunIndex(
   projectDirectory: string,
   ownerSessionId: string,
   entry: OwnerRunIndexEntry | null,
   removeRunId?: string,
+  coalesceStatus?: string,
+  attempt = 0,
 ): void {
-  for (let attempt = 0; attempt < OWNER_INDEX_UPDATE_ATTEMPTS; attempt++) {
-    try {
-      updateOwnerRunIndex(projectDirectory, ownerSessionId, entry, removeRunId)
-      return
-    } catch (error) {
-      const code = (error as NodeJS.ErrnoException | undefined)?.code
-      const transientFilesystemRace = code === "EACCES" || code === "EPERM" || code === "EBUSY" || code === "ENOENT"
-      // Verified contention and common Windows/OneDrive replacement races are
-      // safe to retry because every attempt re-acquires the owner mutex and
-      // re-reads the complete projection. Malformed/unverifiable locks,
-      // containment failures, and other unknown errors remain fail-closed.
-      if ((!transientFilesystemRace && !(error instanceof FilesystemMutexContentionError)) ||
-        attempt === OWNER_INDEX_UPDATE_ATTEMPTS - 1) return
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10 * (2 ** attempt))
-    }
+  if (attempt === 0) forgetIncompleteRunCandidates(projectDirectory, ownerSessionId)
+  if (entry && !removeRunId && coalesceStatus !== undefined &&
+    ownerIndexAlreadyCurrent(projectDirectory, ownerSessionId, entry.run_id, coalesceStatus)) return
+  const key = `${projectDirectory}\0${ownerSessionId}\0${entry?.run_id ?? ""}\0${removeRunId ?? ""}`
+  const waiting = waitingOwnerIndexRefreshes.get(key)
+  if (waiting !== undefined) {
+    clearTimeout(waiting)
+    waitingOwnerIndexRefreshes.delete(key)
+  }
+  try {
+    updateOwnerRunIndex(projectDirectory, ownerSessionId, entry, removeRunId, coalesceStatus)
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException | undefined)?.code
+    const transientFilesystemRace = code === "EACCES" || code === "EPERM" || code === "EBUSY" || code === "ENOENT"
+    // Verified contention and common Windows/OneDrive replacement races are
+    // safe to retry because every attempt re-acquires the owner mutex and
+    // re-reads the complete projection. Malformed/unverifiable locks,
+    // containment failures, and other unknown errors remain fail-closed.
+    if ((!transientFilesystemRace && !isLockContention(error)) || attempt >= OWNER_INDEX_UPDATE_ATTEMPTS - 1) return
+    // Not unref'd: a short-lived process must finish its refresh before it exits.
+    waitingOwnerIndexRefreshes.set(key, setTimeout(() => {
+      waitingOwnerIndexRefreshes.delete(key)
+      refreshOwnerRunIndex(projectDirectory, ownerSessionId, entry, removeRunId, coalesceStatus, attempt + 1)
+    }, 10 * (2 ** attempt)))
   }
 }
 
@@ -1150,6 +1216,11 @@ function assertStateProject(state: RunState, expectedProjectDirectory: string): 
 }
 
 export interface PersistRunOptions {
+  /**
+   * Set by the executor, which saves a running run many times: the non-authoritative owner projection is
+   * then rewritten only when the run's status changes or another writer has touched it.
+   */
+  coalesceOwnerIndex?: boolean
   /** Testable fault injection point; production callers leave this unset. */
   beforeDerivedWrite?: (path: string) => void
   afterMirrorLock?: () => void
@@ -1281,6 +1352,12 @@ function localReferencePath(state: RunState, reference: RunDataReference): strin
 
 function readAndVerifyReference(state: RunState, reference: RunDataReference): unknown {
   const path = localReferencePath(state, reference)
+  // Several passes of one save check the same content-addressed object. Its bytes are read and verified
+  // once per save; each caller still receives its own parsed copy.
+  const immutableName = reference.artifact_path.endsWith(`-${reference.sha256}.json`)
+  const verifiedKey = immutableName ? `verified-reference\0${path}\0${reference.sha256}\0${reference.byte_size}` : undefined
+  const verifiedText = verifiedKey ? scopedValue<string>(verifiedKey) : undefined
+  if (verifiedText !== undefined) return JSON.parse(verifiedText)
   const maximumFileBytes = Math.min(MAX_STATE_BYTES, Math.max(reference.byte_size * 2 + 8_192, 16_384))
   let fileBytes: number
   try {
@@ -1289,19 +1366,21 @@ function readAndVerifyReference(state: RunState, reference: RunDataReference): u
     throw new StoreError(`referenced JSON file is missing or inaccessible: ${reference.artifact_path}`, { cause: error })
   }
   if (fileBytes > maximumFileBytes) throw new StoreError(`referenced JSON file is unexpectedly large: ${reference.artifact_path}`)
-  const immutableName = reference.artifact_path.endsWith(`-${reference.sha256}.json`)
   if (immutableName && fileBytes !== reference.byte_size) {
     throw new StoreError(`referenced immutable JSON size mismatch: ${reference.artifact_path}`)
   }
   let value: unknown
+  let text: string
   try {
-    value = JSON.parse(readFileSync(path, "utf8"))
+    text = readFileSync(path, "utf8")
+    value = JSON.parse(text)
   } catch (error) {
     throw new StoreError(`referenced JSON is not valid: ${reference.artifact_path}`, { cause: error })
   }
   if (serializedBytes(value) !== reference.byte_size || sha256Json(value) !== reference.sha256) {
     throw new StoreError(`referenced JSON integrity mismatch: ${reference.artifact_path}`)
   }
+  if (verifiedKey) rememberInScope(verifiedKey, text)
   return value
 }
 
@@ -2520,7 +2599,7 @@ function persistRunInternal(
     refreshOwnerRunIndex(expectedProjectDirectory, validated.owner_session_id, {
       run_id: validated.run_id,
       updated_at: validated.updated_at,
-    })
+    }, undefined, options.coalesceOwnerIndex ? validated.status : undefined)
     if (current.owner_session_id !== validated.owner_session_id) {
       refreshOwnerRunIndex(
         expectedProjectDirectory,
@@ -2535,12 +2614,19 @@ function persistRunInternal(
   }
 }
 
+/** Test seams may change the filesystem mid-save, so a save that carries one re-inspects every path. */
+function hasPersistenceSeams(options: PersistRunOptions): boolean {
+  return Boolean(options.beforeDerivedWrite || options.afterMirrorLock || options.beforeProgressCommit ||
+    options.beforeProgressCurrentRename || options.beforeProgressBackupRename || options.beforePostCommitGc)
+}
+
 export function persistRun(
   state: RunState,
   expectedProjectDirectory: string,
   options: PersistRunOptions = {},
 ): RunState {
-  return persistRunInternal(state, expectedProjectDirectory, options)
+  if (hasPersistenceSeams(options)) return persistRunInternal(state, expectedProjectDirectory, options)
+  return withContainmentScope(() => persistRunInternal(state, expectedProjectDirectory, options))
 }
 
 export function persistRunFenced(
@@ -2549,13 +2635,15 @@ export function persistRunFenced(
   lock: RunLock,
   options: PersistRunOptions = {},
 ): RunState {
-  return lock.runCommitFenced(() => persistRunInternal(state, expectedProjectDirectory, {
+  const commit = () => persistRunInternal(state, expectedProjectDirectory, {
     ...options,
     beforeProgressCommit() {
       options.beforeProgressCommit?.()
       lock.assertHeld()
     },
-  }, lock.assertHeld))
+  }, lock.assertHeld)
+  const seams = hasPersistenceSeams(options)
+  return lock.runCommitFenced(() => seams ? commit() : withContainmentScope(commit))
 }
 
 function readProjectedAuthoritativeRun(projectDirectory: string, runId: string): RunState | null {
@@ -2885,7 +2973,9 @@ export function findLatestRunForSession(
     try {
       const run = loadRunForOwner(projectDirectory, envelope.run_id, sessionId)
       if (run) return run
-    } catch {
+    } catch (error) {
+      // A run whose lock is held for an instant is not an invalid run: let the caller wait for it.
+      if (isLockContention(error)) throw error
       // Skip an invalid owned candidate without touching any other owner's run.
     }
   }
@@ -2902,7 +2992,83 @@ export function findLatestIncompleteRunForSession(
     try {
       const run = loadRunForOwner(projectDirectory, envelope.run_id, sessionId)
       if (run && active.has(run.status)) return run
-    } catch {
+    } catch (error) {
+      if (isLockContention(error)) throw error
+      // Continue to the next exact-owner candidate.
+    }
+  }
+  return null
+}
+
+/**
+ * Which incomplete runs a session owns, as found by the last full scan, with what the runs directory and
+ * the session's owner projection looked like just before that scan. Saves by this process drop the entry;
+ * saves by another process change the projection (every status change rewrites it) or the directory.
+ */
+const incompleteRunCandidates = new Map<string, { runIds: string[]; root: string; index: string; scannedAt: number }>()
+const MAX_INCOMPLETE_RUN_CANDIDATE_SESSIONS = 512
+const INCOMPLETE_RUN_CANDIDATE_MAX_AGE_MS = 5 * 60_000
+/** A path modified this recently can change again without its timestamp moving. */
+const RACY_STAMP_MS = 2_000
+
+function forgetIncompleteRunCandidates(projectDirectory: string, ownerSessionId: string): void {
+  if (incompleteRunCandidates.size === 0) return
+  try {
+    incompleteRunCandidates.delete(`${projectRunsRoot(projectDirectory)}\0${ownerSessionId}`)
+  } catch {
+    incompleteRunCandidates.clear()
+  }
+}
+
+/**
+ * findLatestIncompleteRunForSession for the per-model-call hook. That hook runs before every model request
+ * of every session, and scanning each run directory there grows with the project's whole run history. The
+ * scan result is reused while nothing that could change it has changed; the run itself is always loaded
+ * fresh. A status change made by a different process running a build without the owner projection is
+ * noticed within INCOMPLETE_RUN_CANDIDATE_MAX_AGE_MS.
+ */
+export function findLatestIncompleteRunForTurn(
+  projectDirectory: string,
+  sessionId: string,
+  options: {
+    /**
+     * The session was created by this process, so every run it can own was committed by a build that
+     * maintains the owner projection. Without a projection it owns nothing and no scan is needed.
+     */
+    sessionCreatedHere?: boolean
+    now?: () => number
+    /** Injectable full scan, so tests can count how often it runs. */
+    scan?: typeof listOwnedRunEnvelopes
+  } = {},
+): RunState | null {
+  const active = new Set<RunState["status"]>(["planning", "running", "blocked"])
+  const runsRoot = projectRunsRoot(projectDirectory)
+  const key = `${runsRoot}\0${sessionId}`
+  const root = pathStamp(runsRoot)
+  const index = pathStamp(join(runsRoot, OWNER_INDEX_DIRECTORY, `${ownerIndexKey(sessionId)}.json`))
+  if (options.sessionCreatedHere && index.stamp === "missing") return null
+  const current = (options.now ?? Date.now)()
+  const known = incompleteRunCandidates.get(key)
+  let runIds: string[]
+  if (known && known.root === root.stamp && known.index === index.stamp &&
+    current - known.scannedAt < INCOMPLETE_RUN_CANDIDATE_MAX_AGE_MS) {
+    runIds = known.runIds
+  } else {
+    incompleteRunCandidates.delete(key)
+    runIds = (options.scan ?? listOwnedRunEnvelopes)(projectDirectory, sessionId)
+      .filter((envelope) => active.has(envelope.status))
+      .map((envelope) => envelope.run_id)
+    if (current - root.modifiedMs >= RACY_STAMP_MS && current - index.modifiedMs >= RACY_STAMP_MS) {
+      if (incompleteRunCandidates.size >= MAX_INCOMPLETE_RUN_CANDIDATE_SESSIONS) incompleteRunCandidates.clear()
+      incompleteRunCandidates.set(key, { runIds, root: root.stamp, index: index.stamp, scannedAt: current })
+    }
+  }
+  for (const runId of runIds) {
+    try {
+      const run = loadRunForOwner(projectDirectory, runId, sessionId)
+      if (run && active.has(run.status)) return run
+    } catch (error) {
+      if (isLockContention(error)) throw error
       // Continue to the next exact-owner candidate.
     }
   }
@@ -2972,16 +3138,18 @@ export interface RunLockOptions {
   afterFencedPrecheck?: (observed: RunLockRecord) => void
 }
 
+/** Run locks whose release is waiting for the guard. Their files still exist for a few milliseconds. */
+const releasingRunLocks = new Set<string>()
+
 function acquireExecutionGuard(projectDirectory: string, runId: string): FilesystemMutex {
   const path = runContainedPath(projectDirectory, runId, "execution.lock.guard")
   try {
     return acquireFilesystemMutex(path, {
       owner: `execution-guard:${runId}`,
       leaseMs: 5_000,
-      waitMs: 250,
     })
   } catch (error) {
-    throw new RunLockedError(runId, error instanceof Error ? error.message : String(error))
+    throw new RunLockedError(runId, error instanceof Error ? error.message : String(error), { cause: error })
   }
 }
 
@@ -3037,6 +3205,11 @@ export function acquireRunLock(
   try {
     if (existsSync(lockPath)) {
       const observed = verifiedLock(lockPath, canonicalProject, runId)
+      if (releasingRunLocks.has(lockPath)) {
+        throw new RunLockedError(runId, "still being released by this process", {
+          cause: new FilesystemMutexContentionError("run lock release is waiting for its guard"),
+        })
+      }
       if (Date.parse(observed.expires_at) > now()) throw new RunLockedError(runId)
       options.beforeExpiredTakeover?.(structuredClone(observed))
       // Guard participants cannot renew or release between these reads. The second
@@ -3127,15 +3300,50 @@ export function acquireRunLock(
     }
   }
 
-  heartbeat = setInterval(() => {
+  // A heartbeat that finds the guard taken for an instant tries again from the event loop; only a
+  // changed token, or a guard that stays unavailable, means the lock is lost.
+  const beat = (deadline: number): void => {
+    if (released || lost) return
     try {
       renew()
-    } catch {
+    } catch (error) {
+      if (!lost && !released && isLockContention(error) && Date.now() < deadline) {
+        setTimeout(() => beat(deadline), 5).unref?.()
+        return
+      }
       lost = true
       if (heartbeat) clearInterval(heartbeat)
     }
-  }, heartbeatMs)
+  }
+  heartbeat = setInterval(() => beat(Date.now() + RUN_LOCK_GUARD_RETRY_MS), heartbeatMs)
   heartbeat.unref?.()
+
+  const remove = (deadline: number): void => {
+    let guard: FilesystemMutex
+    try {
+      guard = acquireExecutionGuard(canonicalProject, runId)
+    } catch (error) {
+      // Another process holds the guard for an instant: finish from the event loop, and until then
+      // tell a new acquisition by this process that the lock is on its way out. A crashed or
+      // unverifiable guard fails closed; never remove without serialization.
+      if (isLockContention(error) && Date.now() < deadline) {
+        releasingRunLocks.add(lockPath)
+        setTimeout(() => remove(deadline), 5)
+        return
+      }
+      releasingRunLocks.delete(lockPath)
+      return
+    }
+    try {
+      const current = verifiedLock(lockPath, canonicalProject, runId)
+      if (current.token === token) rmSync(lockPath, { force: true })
+    } catch {
+      // Never delete a lock that cannot be proven to be ours.
+    } finally {
+      releasingRunLocks.delete(lockPath)
+      guard.release()
+    }
+  }
 
   return {
     path: lockPath,
@@ -3148,21 +3356,7 @@ export function acquireRunLock(
       if (released) return
       released = true
       if (heartbeat) clearInterval(heartbeat)
-      let guard: FilesystemMutex
-      try {
-        guard = acquireExecutionGuard(canonicalProject, runId)
-      } catch {
-        // A live or crashed guard fails closed; never remove without serialization.
-        return
-      }
-      try {
-        const current = verifiedLock(lockPath, canonicalProject, runId)
-        if (current.token === token) rmSync(lockPath, { force: true })
-      } catch {
-        // Never delete a lock that cannot be proven to be ours.
-      } finally {
-        guard.release()
-      }
+      remove(Date.now() + RUN_LOCK_GUARD_RETRY_MS)
     },
   }
 }

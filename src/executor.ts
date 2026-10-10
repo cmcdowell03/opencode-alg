@@ -19,6 +19,7 @@ import {
   persistRunFenced,
   type RunLock,
 } from "./store.ts"
+import { awaitLock } from "./filesystem-mutex.ts"
 import {
   buildCheckerPrompt,
   buildWorkerPrompt,
@@ -73,14 +74,14 @@ export interface ExecuteOptions {
   afterSessionSidecar?: () => void
   /** Scoped procedure handoff must succeed before the child prompt is sent. */
   beforeChildPrompt?: (child: string, role: "worker" | "checker") => Promise<void>
+  /** Tool ids hidden from every worker session (for example ALG's own orchestration tools). */
+  workerDisabledTools?: readonly string[]
   allowFilesystemRoot?: boolean
   /** Additive test/path-policy seam; cannot disable actual-root detection. */
   treatProjectAsFilesystemRoot?: boolean
   operation?: "run" | "resume"
   /** Internal active lease; callers must not supply this. */
   activeLock?: RunLock
-  /** Internal batch durability: one fenced save follows each settled batch. */
-  deferPersistence?: boolean
 }
 
 function log(options: ExecuteOptions, message: string): void {
@@ -92,14 +93,22 @@ class PersistenceBoundaryError extends Error {
   constructor(cause: unknown) { super("Run persistence boundary failed", { cause }) }
 }
 
-function save(run: RunState, options: ExecuteOptions): void {
-  if (options.deferPersistence) return
-  if (!options.activeLock) throw new Error("execution save requires an active fenced run lock")
-  try {
-    persistRunFenced(run, options.worktree, options.activeLock)
-  } catch (error) {
-    throw new PersistenceBoundaryError(error)
-  }
+/** The run exactly as its lease last saved it. A save of an unchanged run would commit nothing new. */
+const lastSaved = new WeakMap<RunLock, string>()
+
+/** Undefined when the state cannot be serialized; the save then proceeds and reports the real problem. */
+function fingerprint(run: RunState): string | undefined {
+  try { return JSON.stringify(run) } catch { return undefined }
+}
+
+function commit(run: RunState, options: ExecuteOptions, lock: RunLock): void {
+  const unsaved = fingerprint(run)
+  if (unsaved !== undefined && lastSaved.get(lock) === unsaved) return
+  persistRunFenced(run, options.worktree, lock, { coalesceOwnerIndex: true })
+  // Saving advances the revision and normalizes the caller's state, so remember the result, not the input.
+  const saved = fingerprint(run)
+  if (saved === undefined) lastSaved.delete(lock)
+  else lastSaved.set(lock, saved)
   try {
     const result: unknown = (options.onProgress as ((run: RunState) => unknown) | undefined)?.(run)
     if (result && (typeof result === "object" || typeof result === "function")) {
@@ -110,6 +119,22 @@ function save(run: RunState, options: ExecuteOptions): void {
     }
   } catch {
     // Observer failures, including thenable inspection, never alter durable execution.
+  }
+}
+
+/**
+ * Commits the run and reports progress. The commit itself is synchronous. If another process holds one
+ * of this run's short locks, the wait for it is a timer, so the host keeps running; a save takes its
+ * locks before it writes anything, and a sibling node that saved the same state meanwhile makes the
+ * repeated attempt a no-op.
+ */
+async function save(run: RunState, options: ExecuteOptions): Promise<void> {
+  const lock = options.activeLock
+  if (!lock) throw new Error("execution save requires an active fenced run lock")
+  try {
+    await awaitLock(() => commit(run, options, lock))
+  } catch (error) {
+    throw new PersistenceBoundaryError(error)
   }
 }
 
@@ -145,17 +170,16 @@ function dryOutput(definition: NodeDef, run: RunState): unknown {
   }
 }
 
+/** Reserves the node's next attempt in memory. The caller commits a whole batch of reservations at once. */
 function reserveAttempt(
   run: RunState,
   definition: NodeDef,
-  options: ExecuteOptions,
 ): NodeAttempt | null {
   const state = run.nodes[definition.id]!
   const localLimit = definition.loop?.max_attempts ?? 1
   if (state.current_attempt >= localLimit) {
     state.status = "failed"
     state.last_failures = [`Local attempt limit reached (${localLimit})`]
-    save(run, options)
     return null
   }
   if (run.global_attempts >= run.graph.max_global_attempts) {
@@ -163,7 +187,6 @@ function reserveAttempt(
     // exhaustion blocks rescheduling; it cannot retroactively fail that attempt.
     state.status = state.attempts.at(-1)?.status === "done" ? "pending" : "failed"
     state.last_failures = [`Global attempt limit reached (${run.graph.max_global_attempts})`]
-    save(run, options)
     return null
   }
 
@@ -177,7 +200,6 @@ function reserveAttempt(
   state.attempts.push(attempt)
   state.status = "running"
   run.global_attempts += 1
-  save(run, options)
   return attempt
 }
 
@@ -185,7 +207,7 @@ async function runOneNode(
   run: RunState,
   definition: NodeDef,
   options: ExecuteOptions,
-  reservedAttempt?: NodeAttempt | null,
+  attemptRecord: NodeAttempt | null,
 ): Promise<void> {
   const state = run.nodes[definition.id]!
   const localLimit = definition.loop?.max_attempts ?? 1
@@ -194,9 +216,6 @@ async function runOneNode(
   const sessionRunner = options.sessionRunner ?? runNodeSession
   const shellRunner = options.shellRunner ?? executeShellGate
 
-  const attemptRecord = reservedAttempt === undefined
-    ? reserveAttempt(run, definition, options)
-    : reservedAttempt
   if (!attemptRecord) return
     if (options.toolContext.abort.aborted) throw new Error("Execution cancelled before child launch")
     const attempt = attemptRecord.attempt
@@ -270,12 +289,13 @@ async function runOneNode(
         directory: options.directory,
         model: run.model_snapshot[definition.agent],
         abort: options.toolContext.abort,
+        disabledTools: options.workerDisabledTools,
         onSessionCreated: async (createdSessionId) => {
           try {
             linkSession(run, options.worktree, definition.id, attempt, createdSessionId)
             options.afterSessionSidecar?.()
             attemptRecord.session_id = createdSessionId
-            save(run, { ...options, deferPersistence: false })
+            await save(run, options)
             await options.beforeChildPrompt?.(createdSessionId, checker ? "checker" : "worker")
           } catch (error) { throw new PersistenceBoundaryError(error) }
         },
@@ -283,7 +303,7 @@ async function runOneNode(
       sessionId = result.session_id || undefined
       if (sessionId && !attemptRecord.session_id) {
         attemptRecord.session_id = sessionId
-        save(run, { ...options, deferPersistence: false })
+        await save(run, options)
         try { linkSession(run, options.worktree, definition.id, attempt, sessionId) }
         catch (error) { throw new PersistenceBoundaryError(error) }
       }
@@ -415,6 +435,8 @@ async function runOneNode(
               : "gate_failure"
 
     state.output = schemaOk ? rawOutput : undefined
+    // A node's outcome is committed as soon as it is known, even inside a batch: a slow sibling must not
+    // hold back its durability or its progress update.
     if (passed) {
       state.status = "done"
       state.last_failures = []
@@ -423,34 +445,24 @@ async function runOneNode(
         run.criteria = [...criteria]
         run.criteria_locked = true
       }
-      save(run, options)
+      await save(run, options)
       log(options, `node ${definition.id} DONE`)
       return
     }
 
-    state.status = "failed"
     state.last_failures = persistedFailures
-    save(run, options)
-    log(options, `node ${definition.id} failed attempt ${attempt}: ${persistedFailures.join("; ")}`)
-
     // One attempt per topological wave keeps retry allocation in graph order,
-    // independent of parallel completion speed.
-    if (definition.agent === "checker" && definition.feedback_to) {
-      // Only a schema-valid rejection carries substantive feedback. Invalid
-      // checker output and SDK/gate failures retry this checker itself.
-      if (attemptRecord.outcome !== "substantive_rejection" && state.current_attempt < localLimit) {
-        state.status = "pending"
-        save(run, options)
-      }
-      return
-    }
-    if (state.current_attempt < localLimit) {
-      state.status = "pending"
-      save(run, options)
-    }
+    // independent of parallel completion speed. Only a schema-valid checker
+    // rejection carries substantive feedback and waits for routing; invalid
+    // checker output and SDK/gate failures retry the node itself.
+    const awaitsFeedbackRouting = definition.agent === "checker" && Boolean(definition.feedback_to) &&
+      attemptRecord.outcome === "substantive_rejection"
+    state.status = !awaitsFeedbackRouting && state.current_attempt < localLimit ? "pending" : "failed"
+    await save(run, options)
+    log(options, `node ${definition.id} failed attempt ${attempt}: ${persistedFailures.join("; ")}`)
 }
 
-function applyCheckerFeedback(run: RunState, options: ExecuteOptions): boolean {
+async function applyCheckerFeedback(run: RunState, options: ExecuteOptions): Promise<boolean> {
   for (const checker of run.graph.nodes) {
     if (checker.agent !== "checker" || !checker.feedback_to) continue
     const checkState = run.nodes[checker.id]!
@@ -475,7 +487,7 @@ function applyCheckerFeedback(run: RunState, options: ExecuteOptions): boolean {
       run.graph.max_global_attempts - run.global_attempts < 1 + invalidated.size
     ) {
       last.feedback_applied = true
-      save(run, options)
+      await save(run, options)
       continue
     }
 
@@ -488,7 +500,7 @@ function applyCheckerFeedback(run: RunState, options: ExecuteOptions): boolean {
       if (state.current_attempt < (definition.loop?.max_attempts ?? 1)) state.status = "pending"
     }
     log(options, `checker ${checker.id} routed feedback to ${targetDefinition.id}`)
-    save(run, options)
+    await save(run, options)
     return true
   }
   return false
@@ -557,7 +569,8 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     operation,
     options.treatProjectAsFilesystemRoot === true,
   )
-  const lock = acquireRunLock(options.worktree, run.run_id, options.parentSessionId)
+  // Taking the run lock needs its guard, which another process may hold for an instant.
+  const lock = await awaitLock(() => acquireRunLock(options.worktree, run.run_id, options.parentSessionId))
   options.activeLock = lock
   try {
     if (run.owner_session_id !== options.parentSessionId) {
@@ -583,7 +596,7 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     run.status = "running"
     run.phase = "execute"
     if (options.dry) run.mode = "dry"
-    save(run, options)
+    await save(run, options)
 
     const maxWaves = Math.max(1, Math.min(options.maxWaves ?? 128, 1_000))
     const concurrency = Math.max(
@@ -607,13 +620,12 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
       for (let offset = 0; offset < ready.length; offset += concurrency) {
         if (options.toolContext.abort.aborted) break
         const batch = ready.slice(offset, offset + concurrency)
-        const batchOptions = { ...options, deferPersistence: true }
-        const reservations = batch.map((definition) => reserveAttempt(run, definition, batchOptions))
+        const reservations = batch.map((definition) => reserveAttempt(run, definition))
         // Persist every bounded-batch reservation before any child sidecar can
         // be created, preserving the sidecar -> child-id progress crash fence.
-        save(run, options)
+        await save(run, options)
         const settled = await Promise.allSettled(batch.map((definition, index) =>
-          runOneNode(run, definition, batchOptions, reservations[index])))
+          runOneNode(run, definition, options, reservations[index]!)))
         settled.forEach((result, i) => {
           if (result.status === "fulfilled") return
           if (result.reason instanceof PersistenceBoundaryError) throw result.reason
@@ -636,16 +648,14 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
             throw result.reason
           }
         })
-        // The next batch's pre-child reservation fence also commits this
-        // batch's settled outcomes. Persist explicitly only for the final
-        // batch, avoiding a redundant whole-manifest verification between two
-        // adjacent fences while retaining one durable fence after each batch.
-        if (offset + concurrency >= ready.length) save(run, options)
+        // Each node committed its own outcome. This save only has work to do
+        // when an executor error was recorded above; an unchanged run is skipped.
+        await save(run, options)
       }
 
-      applyCheckerFeedback(run, options)
+      await applyCheckerFeedback(run, options)
       finishGlobalLimit(run)
-      save(run, options)
+      await save(run, options)
       if (run.global_attempts >= run.graph.max_global_attempts) break
     }
 
@@ -661,7 +671,7 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
       run.phase = "blocked"
     }
     run.summary = summarize(run)
-    save(run, options)
+    await save(run, options)
     return run
   } finally {
     options.activeLock = undefined

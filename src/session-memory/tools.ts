@@ -3,6 +3,7 @@ import { canonicalDirectory } from "../paths.ts"
 import { safeDiagnosticText } from "../diagnostics.ts"
 import { SessionMemoryRuntime } from "./runtime.ts"
 import { retrieve } from "./retrieval.ts"
+import { awaitFirstLock } from "../filesystem-mutex.ts"
 
 interface EnvironmentMemoryToolPort {
   status(owner?: string): unknown
@@ -11,7 +12,7 @@ interface EnvironmentMemoryToolPort {
 }
 
 export function createMemoryTools(runtime: SessionMemoryRuntime, authorize: (owner: string) => Promise<void>, environment?: EnvironmentMemoryToolPort,
-  deployment?: () => unknown) {
+  deployment?: () => unknown, contextBudget?: (owner: string) => unknown) {
   const run = async (context: ToolContext, action: (owner: string) => unknown, status = false) => {
     try {
       if (canonicalDirectory(context.worktree || context.directory) !== runtime.store.project) throw new Error("foreign tool project")
@@ -19,7 +20,7 @@ export function createMemoryTools(runtime: SessionMemoryRuntime, authorize: (own
       if (!runtime.enabled && !environment && !status) return { output: JSON.stringify({ mode: "off", available: false,
         reason: "Session memory is disabled by configuration; do not retry. Use normal host tools.", next: "alg_context_status" }),
         metadata: { alg: true, session_memory: true, available: false } }
-      const result = action(context.sessionID)
+      const result = await awaitFirstLock(() => action(context.sessionID))
       const output = JSON.stringify(result)
       if (Buffer.byteLength(output) > 64 * 1024) throw new Error("memory response exceeds bound; request a smaller page")
       return { output, metadata: { alg: true, session_memory: true } }
@@ -53,9 +54,13 @@ export function createMemoryTools(runtime: SessionMemoryRuntime, authorize: (own
       }),
     }),
     alg_context_status: tool({ description: "Inspect durable task bindings, coverage, context budget and the last assembly receipt without modifying memory.", args: {},
-      execute: async (_args, context) => run(context, (owner) => environment
-        ? { ...runtime.status(owner), environment_memory: environment.status(owner), ...(deployment ? { deployment: deployment() } : {}) }
-        : { ...runtime.status(owner), ...(deployment ? { deployment: deployment() } : {}) }, true),
+      execute: async (_args, context) => run(context, (owner) => ({
+        ...runtime.status(owner),
+        ...(environment ? { environment_memory: environment.status(owner) } : {}),
+        // How the last model call's allowance was sized from the model's window, and what each part used.
+        ...(contextBudget ? { context_budget: contextBudget(owner) } : {}),
+        ...(deployment ? { deployment: deployment() } : {}),
+      }), true),
     }),
     alg_memory_propose: tool({ description: availability + "Store an unverified private memory proposal. Cannot publish, bind environments, approve permissions or mark a solution verified.",
       args: { content: tool.schema.string().min(1).max(2000) },

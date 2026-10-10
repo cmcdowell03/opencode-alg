@@ -40,6 +40,90 @@ const DEFAULT_CONTAINMENT_FILESYSTEM: ContainmentFilesystemOperations = {
   realpath: (path) => realpathSync.native(path),
 }
 
+/**
+ * The run store resolves hundreds of contained paths per durable save, and realpath dominated that cost.
+ * A component's canonical path is remembered only together with the identity lstat reported for it, and is
+ * reused only while a fresh lstat reports the same non-link entry. A component replaced by a symlink or
+ * junction (or by any different entry) therefore still goes through realpath and the containment check.
+ */
+const MAX_CANONICAL_COMPONENTS = 4_096
+const canonicalComponents = new Map<string, { real: string; dev: number; ino: number; directory: boolean }>()
+
+interface EntryIdentity { isSymbolicLink(): boolean; isDirectory(): boolean; dev: number; ino: number }
+
+function isEntryIdentity(value: unknown): value is EntryIdentity {
+  const entry = value as Partial<EntryIdentity> | null
+  return Boolean(entry) && typeof entry!.isSymbolicLink === "function" && typeof entry!.isDirectory === "function" &&
+    typeof entry!.dev === "number" && typeof entry!.ino === "number"
+}
+
+/**
+ * One synchronous store operation resolves the same few directories hundreds of times. Inside a scope each
+ * existing non-link directory is inspected once, and callers may memoize their own derived values with
+ * scopeMemo. Nothing outlives the outermost scope, so every new operation starts from the filesystem again.
+ * Files, links, and missing entries are never remembered. The operation must be synchronous.
+ */
+let scopeDepth = 0
+const scopedDirectories = new Map<string, unknown>()
+const scopedValues = new Map<string, unknown>()
+
+export function withContainmentScope<T>(operation: () => T): T {
+  scopeDepth++
+  try {
+    return operation()
+  } finally {
+    if (--scopeDepth === 0) {
+      scopedDirectories.clear()
+      scopedValues.clear()
+    }
+  }
+}
+
+/** A value remembered earlier in the current containment scope, or undefined (always, outside a scope). */
+export function scopedValue<T>(key: string): T | undefined {
+  return scopeDepth > 0 ? scopedValues.get(key) as T | undefined : undefined
+}
+
+export function rememberInScope(key: string, value: unknown): void {
+  if (scopeDepth > 0) scopedValues.set(key, value)
+}
+
+/** Computes once per containment scope; outside a scope it always recomputes. Failures are not remembered. */
+export function scopeMemo<T>(key: string, compute: () => T): T {
+  const known = scopedValue<T>(key)
+  if (known !== undefined) return known
+  const value = compute()
+  rememberInScope(key, value)
+  return value
+}
+
+/** The lstat result, or null only for an explicit ENOENT/ENOTDIR; every other error fails closed. */
+function entryOrMissing(path: string, operations: Pick<ContainmentFilesystemOperations, "lstat">): unknown | null {
+  const scoped = scopeDepth > 0 && operations === DEFAULT_CONTAINMENT_FILESYSTEM
+  if (scoped) {
+    const known = scopedDirectories.get(path)
+    if (known !== undefined) return known
+  }
+  try {
+    const entry = operations.lstat(path) ?? true
+    if (scoped && isEntryIdentity(entry) && entry.isDirectory() && !entry.isSymbolicLink()) scopedDirectories.set(path, entry)
+    return entry
+  } catch (error) {
+    if (missingFilesystemCode(error)) return null
+    throw error
+  }
+}
+
+function canonicalComponent(path: string, entry: unknown, operations: ContainmentFilesystemOperations): string {
+  if (operations !== DEFAULT_CONTAINMENT_FILESYSTEM || !isEntryIdentity(entry) || entry.isSymbolicLink()) return operations.realpath(path)
+  const known = canonicalComponents.get(path)
+  if (known && known.dev === entry.dev && known.ino === entry.ino && known.directory === entry.isDirectory()) return known.real
+  const real = operations.realpath(path)
+  if (canonicalComponents.size >= MAX_CANONICAL_COMPONENTS) canonicalComponents.clear()
+  canonicalComponents.set(path, { real, dev: entry.dev, ino: entry.ino, directory: entry.isDirectory() })
+  return real
+}
+
 function missingFilesystemCode(error: unknown): boolean {
   const code = (error as NodeJS.ErrnoException | undefined)?.code
   return code === "ENOENT" || code === "ENOTDIR"
@@ -76,8 +160,10 @@ export function assertSafeId(value: string, label = "id"): string {
 
 export function canonicalDirectory(path: string): string {
   if (!isAbsolute(path)) throw new PathSafetyError("directory must be absolute")
-  if (!existsSync(path)) throw new PathSafetyError(`directory does not exist: ${path}`)
-  return realpathSync.native(path)
+  return scopeMemo(`canonical-directory\0${path}`, () => {
+    if (!existsSync(path)) throw new PathSafetyError(`directory does not exist: ${path}`)
+    return realpathSync.native(path)
+  })
 }
 
 /** Host-independent filesystem-root detection for POSIX, drive, and UNC roots. */
@@ -126,6 +212,13 @@ export function canonicalRootPath(path: string): string {
 }
 
 export function isContained(root: string, candidate: string): boolean {
+  // path.relative is the single hottest call in a save. Below an absolute root, an exact-prefix match
+  // without any ".." can only be a contained path, so answer that case directly; everything else takes
+  // the general route.
+  if (isAbsolute(root) && !candidate.includes("..")) {
+    if (candidate === root) return true
+    if (candidate.startsWith(root.endsWith(sep) ? root : root + sep)) return true
+  }
   const rel = relative(root, candidate)
   return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel))
 }
@@ -165,13 +258,15 @@ export function resolveContainedPathWithOperations(
   if (!isAbsolute(root)) throw new PathSafetyError("root path must be absolute")
   const missingRootSegments: string[] = []
   let existingRoot = root
-  while (strictlyMissingPath(existingRoot, operations)) {
+  let rootEntry = entryOrMissing(existingRoot, operations)
+  while (rootEntry === null) {
     const parent = dirname(existingRoot)
     if (parent === existingRoot) throw new PathSafetyError(`no existing ancestor for root: ${root}`)
     missingRootSegments.unshift(existingRoot.slice(parent.length).replace(/^[/\\]+/, ""))
     existingRoot = parent
+    rootEntry = entryOrMissing(existingRoot, operations)
   }
-  const canonicalRoot = resolve(operations.realpath(existingRoot), ...missingRootSegments)
+  const canonicalRoot = resolve(canonicalComponent(existingRoot, rootEntry, operations), ...missingRootSegments)
   const lexical = resolve(canonicalRoot, ...segments)
   if (!isContained(canonicalRoot, lexical) || lexical === canonicalRoot) {
     throw new PathSafetyError("derived path escaped its root")
@@ -181,14 +276,15 @@ export function resolveContainedPathWithOperations(
   let current = canonicalRoot
   for (let index = 0; index < parts.length; index++) {
     const next = resolve(current, parts[index]!)
-    if (strictlyMissingPath(next, operations)) {
+    const entry = entryOrMissing(next, operations)
+    if (entry === null) {
       const result = resolve(current, ...parts.slice(index))
       if (!isContained(canonicalRoot, result)) throw new PathSafetyError("derived path escaped its root")
       return result
     }
     let real: string
     try {
-      real = operations.realpath(next)
+      real = canonicalComponent(next, entry, operations)
     } catch (error) {
       // Another process may remove an ephemeral lock after lstat but
       // before realpath. Treat only a now-missing component like the normal

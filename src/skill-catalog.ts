@@ -1,8 +1,9 @@
-import { existsSync, lstatSync, realpathSync } from "node:fs"
+import { existsSync, lstatSync, realpathSync, statSync } from "node:fs"
 import { homedir } from "node:os"
 import { isAbsolute, join, resolve } from "node:path"
 import { utf8Bytes } from "./limits.ts"
 import { isDeletedSkillSession, loadSessionRecovery, sessionRecoveryRelativePath, updateSessionRecovery, type SessionSkillRef } from "./skill-evolution-store.ts"
+import { isLockContention } from "./filesystem-mutex.ts"
 import type { SkillEvolutionOptions, SkillTriggerLabel } from "./skill-evolution-schemas.ts"
 import { SkillIndex } from "./session-memory/skill-index.ts"
 import { mentionsSkill } from "./turn-boundary.ts"
@@ -105,6 +106,53 @@ export function observedConfigSkillRoots(): Array<{ root: string; label: string 
   return roots
 }
 
+/**
+ * Scanned skill indexes. The catalog is read before every model call, and scanning means reading and
+ * parsing every SKILL.md. An index is reused while every skill root and every SKILL.md it knows still
+ * has the same identity, size, and modification time; any difference forces a fresh scan. Selected
+ * bodies are always re-read and checked against the catalog hash, whatever this cache says.
+ */
+const scannedIndexes = new Map<string, { index: SkillIndex; files: string[]; stamps: string }>()
+const MAX_SCANNED_INDEXES = 8
+
+function diskStamps(paths: readonly string[]): string {
+  return paths.map((path) => {
+    try {
+      const stats = statSync(path)
+      return `${stats.ino}:${stats.size}:${stats.mtimeMs}`
+    } catch {
+      return "missing"
+    }
+  }).join("|")
+}
+
+function scannedIndex(
+  project: string,
+  options: SkillEvolutionOptions,
+  extraRoots: ReadonlyArray<{ root: string; label: string; managed?: boolean }>,
+): { index: SkillIndex; descriptors: ReturnType<SkillIndex["catalog"]>["skills"] } {
+  const roots = [
+    ...options.skillRoots.map((root) => ({ path: resolve(project, root), label: root })),
+    ...extraRoots.map((root) => ({ path: root.root, label: root.label })),
+  ]
+  const key = JSON.stringify([project, roots, extraRoots.map((root) => root.managed === true)])
+  const rootPaths = roots.map((root) => root.path)
+  const known = scannedIndexes.get(key)
+  const index = known?.index ?? new SkillIndex(project, options.skillRoots, [...extraRoots])
+  // Taken before the catalog is read, so a change made during a scan is seen on the next call.
+  const before = known ? diskStamps([...rootPaths, ...known.files]) : undefined
+  if (known && before !== known.stamps) index.refresh(true)
+  const descriptors = index.catalog().skills
+  const files = descriptors.map((descriptor) =>
+    join(roots.find((root) => root.label === descriptor.root)?.path ?? "", descriptor.name, "SKILL.md"))
+  const unchanged = known !== undefined && before === known.stamps && files.join("|") === known.files.join("|")
+  if (!unchanged) {
+    if (!known && scannedIndexes.size >= MAX_SCANNED_INDEXES) scannedIndexes.delete(scannedIndexes.keys().next().value!)
+    scannedIndexes.set(key, { index, files, stamps: diskStamps([...rootPaths, ...files]) })
+  }
+  return { index, descriptors }
+}
+
 export function loadSkillCatalog(
   projectDirectory: string,
   options: SkillEvolutionOptions,
@@ -113,9 +161,9 @@ export function loadSkillCatalog(
   try {
     if (!isAbsolute(projectDirectory) || !existsSync(projectDirectory)) return emptyCatalog()
     const project = realpathSync.native(projectDirectory)
-    const index = new SkillIndex(project, options.skillRoots, [...extraRoots])
+    const { index, descriptors } = scannedIndex(project, options, extraRoots)
     const skills: SkillCatalogEntry[] = []
-    for (const descriptor of index.catalog().skills) {
+    for (const descriptor of descriptors) {
       skills.push({ ...descriptor, content: "", readContent: () => {
         const loaded = index.load(descriptor.key, { source: descriptor.root, name: descriptor.name })
         if (loaded.descriptor.sha256 !== descriptor.sha256) throw new Error("skill changed during catalog selection")
@@ -197,8 +245,18 @@ function cap(value: string, maximum: number): string {
   return value.length <= maximum ? value : `${value.slice(0, Math.max(0, maximum - 1))}…`
 }
 
-export function formatSkillSystemContext(catalog: SkillCatalog, hint?: SkillTurnHint, included?: SessionSkillRef[]): string {
+/**
+ * Without maximumBytes the long-standing fixed limits apply. With an allowance (see context-budget.ts)
+ * the catalog listing gets about a third of it, and a complete body is included whenever it fits in
+ * what is left: bodies are never clipped.
+ */
+export function formatSkillSystemContext(catalog: SkillCatalog, hint?: SkillTurnHint, included?: SessionSkillRef[], maximumBytes?: number): string {
   if (!catalog.skills.length) return ""
+  const governed = maximumBytes !== undefined
+  const total = governed ? Math.max(512, Math.floor(maximumBytes)) : SKILL_SYSTEM_CONTEXT_MAX_BYTES
+  const listingBytes = governed ? Math.min(16 * 1024, Math.max(400, Math.floor(total * 0.3))) : 3500
+  const bodyBytes = governed ? Math.min(SKILL_CATALOG_MAX_FILE_BYTES, total) : SKILL_INJECT_BODY_MAX_BYTES
+  const reserve = governed ? Math.min(1800, Math.floor(total * 0.15)) : 1800
   const matched = hint ? matchSkills(catalog, hint).filter((entry) => entry.applicable) : []
   const inject = matched.filter((entry) => catalog.skills.filter((other) => other.name === entry.name).length === 1).slice(0, SKILL_INJECT_MAX_SKILLS)
   const lines = [
@@ -216,7 +274,7 @@ export function formatSkillSystemContext(catalog: SkillCatalog, hint?: SkillTurn
     const tools = entry.tools.length ? `; tools: ${entry.tools.slice(0, 6).join(", ")}` : ""
     const scope = entry.managed ? "managed" : "observed"
     const line = `- ${entry.name} [${scope}] ${cap(entry.description, 180)}${tools}`
-    if (utf8Bytes([...lines, line].join("\n")) > 3500) break
+    if (utf8Bytes([...lines, line].join("\n")) > listingBytes) break
     lines.push(line)
     listed++
   }
@@ -229,8 +287,8 @@ export function formatSkillSystemContext(catalog: SkillCatalog, hint?: SkillTurn
     const source = entry.root + "/" + entry.target
     const metadata = `name=${entry.name} source=${source.length <= 400 ? JSON.stringify(source) : "(path omitted: load by skill name)"} sha256=${entry.sha256} bytes=${utf8Bytes(content)}`
     const body = `\n### Active skill: ${entry.name} (complete body)\n${metadata}\n\n${content}`
-    if (utf8Bytes(content) <= SKILL_INJECT_BODY_MAX_BYTES &&
-      utf8Bytes([...lines, body].join("\n")) <= SKILL_SYSTEM_CONTEXT_MAX_BYTES - 1800) {
+    if (utf8Bytes(content) <= bodyBytes &&
+      utf8Bytes([...lines, body].join("\n")) <= total - reserve) {
       lines.push(body)
       included?.push({ name: entry.name, root: entry.root, target: entry.target, sha256: entry.sha256 })
     } else {
@@ -240,8 +298,10 @@ export function formatSkillSystemContext(catalog: SkillCatalog, hint?: SkillTurn
   return lines.join("\n")
 }
 
-export function formatSkillCompactionContext(catalog: SkillCatalog, active: SessionSkillRef[] = [], pointer?: string, priorOmitted = 0): string {
+export function formatSkillCompactionContext(catalog: SkillCatalog, active: SessionSkillRef[] = [], pointer?: string, priorOmitted = 0,
+  maximumBytes = SKILL_COMPACTION_CONTEXT_MAX_BYTES): string {
   if (!active.length && !pointer) return ""
+  const limit = Math.max(256, Math.floor(maximumBytes))
   const lines = [
     "## ALG skills to retain after compaction",
     "",
@@ -255,7 +315,7 @@ export function formatSkillCompactionContext(catalog: SkillCatalog, active: Sess
     const current = catalog.skills.find((skill) => skill.name === entry.name && skill.root === entry.root && skill.target === entry.target)
     const state = !current ? "missing_or_not_catalogued" : current.sha256 !== entry.sha256 ? "changed" : "reload_required"
     const line = `- ${entry.name} sha256=${entry.sha256} state=${state} source=${JSON.stringify(entry.root + "/" + entry.target)}`
-    if (utf8Bytes([...lines, line].join("\n")) > SKILL_COMPACTION_CONTEXT_MAX_BYTES - 200) break
+    if (utf8Bytes([...lines, line].join("\n")) > limit - Math.min(200, Math.floor(limit * 0.2))) break
     lines.push(line)
     visible++
   }
@@ -337,8 +397,12 @@ export class SkillGuidance {
     }
   }
 
-  private remember(sessionId: string, entries: SessionSkillRef[]): void {
+  private remember(sessionId: string, entries: SessionSkillRef[], known?: readonly SessionSkillRef[]): void {
     if (!entries.length) return
+    // Called before every model call. When the checkpoint already holds every reference there is
+    // nothing to record, and no reason to take the store lock and rewrite the file.
+    if (known && entries.every((entry) => known.some((item) =>
+      item.name === entry.name && item.root === entry.root && item.target === entry.target))) return
     updateSessionRecovery(this.project, sessionId, (current) => {
       // Historical tool calls do not prove the bytes of a revised skill were read.
       // Keep the first observed identity; drift stays visible until reviewed.
@@ -351,7 +415,8 @@ export class SkillGuidance {
     })
   }
 
-  systemContext(sessionId?: string): string {
+  /** maximumBytes is the allowance for everything returned; a quarter of it at most goes to references. */
+  systemContext(sessionId?: string, maximumBytes?: number): string {
     if (!this.options.enabled) return ""
     try {
       if (sessionId && isDeletedSkillSession(this.project, sessionId)) return ""
@@ -361,28 +426,33 @@ export class SkillGuidance {
       const eligible = { ...catalog, skills: catalog.skills.filter((skill) => !recovery?.skills.some((ref) =>
         ref.name === skill.name && (ref.root !== skill.root || ref.target !== skill.target || ref.sha256 !== skill.sha256))) }
       const included: SessionSkillRef[] = []
-      const text = formatSkillSystemContext(eligible, hint, included)
+      const references = sessionId ? this.compactionContext(sessionId, maximumBytes === undefined ? undefined : Math.floor(maximumBytes / 4)) : ""
+      const text = formatSkillSystemContext(eligible, hint, included,
+        maximumBytes === undefined ? undefined : Math.max(0, maximumBytes - utf8Bytes(references)))
       if (sessionId) {
         // A successful skill-tool observation records identity, not a retained body.
         const observed = catalog.skills.filter((skill) => hint?.loadedSkills.includes(skill.name))
-        this.remember(sessionId, [...included, ...observed.map(({ name, root, target, sha256 }) => ({ name, root, target, sha256 }))])
+        this.remember(sessionId, [...included, ...observed.map(({ name, root, target, sha256 }) => ({ name, root, target, sha256 }))], recovery?.skills)
       }
       if (sessionId && hint?.userMessageId) this.injected.set(sessionId, { userMessageId: hint.userMessageId, refs: included })
-      return [sessionId ? this.compactionContext(sessionId) : "", text].filter(Boolean).join("\n\n")
-    } catch {
+      return [references, text].filter(Boolean).join("\n\n")
+    } catch (error) {
+      // A store lock held for an instant by another process is for the caller to wait out.
+      if (isLockContention(error)) throw error
       if (sessionId) this.injected.delete(sessionId)
       return "ALG session skill checkpoint unavailable; do not assume previous skills are loaded. Reload matching skills in full."
     }
   }
 
-  compactionContext(sessionId?: string): string {
+  compactionContext(sessionId?: string, maximumBytes?: number): string {
     if (!this.options.enabled) return ""
     try {
       if (!sessionId || isDeletedSkillSession(this.project, sessionId)) return ""
       const recovery = loadSessionRecovery(this.project, sessionId)
       if (!recovery) return ""
-      return formatSkillCompactionContext(this.catalog(), recovery?.skills, sessionRecoveryRelativePath(sessionId), recovery?.skills_omitted)
-    } catch {
+      return formatSkillCompactionContext(this.catalog(), recovery?.skills, sessionRecoveryRelativePath(sessionId), recovery?.skills_omitted, maximumBytes)
+    } catch (error) {
+      if (isLockContention(error)) throw error
       return "ALG session skill checkpoint unavailable; previous skill identities could not be verified."
     }
   }

@@ -220,7 +220,8 @@ describe("architecture audit remediation", () => {
       })
       expect(updated.status).toBe("failed")
       expect(updated.nodes.work!.output).toBeUndefined()
-      expect(updated.nodes.work!.last_failures).toContain(`schema: artifact_path must belong to run ${run.run_id}`)
+      // Worker-facing diagnostics are sanitized: they name the rule, not the run id or the offending path.
+      expect(updated.nodes.work!.last_failures).toContain("schema: artifact_path: code=path_not_contained expected=current-run artifact path")
     } finally {
       removeProject(project)
     }

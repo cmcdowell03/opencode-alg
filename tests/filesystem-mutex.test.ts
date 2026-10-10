@@ -5,6 +5,7 @@ import { join } from "node:path"
 import { randomUUID } from "node:crypto"
 import {
   acquireFilesystemMutex,
+  acquireFilesystemMutexAsync,
   FilesystemMutexContentionError,
   FilesystemMutexRecordSchema,
 } from "../src/filesystem-mutex.ts"
@@ -53,7 +54,7 @@ describe("restart-safe short filesystem mutexes", () => {
     }
   }, 60_000)
 
-  test("a contended waiter does not starve the current holder's release claim", () => {
+  test("a contended waiter does not starve the current holder's release claim", async () => {
     const project = tempProject("alg-mutex-release-fairness-")
     try {
       const path = join(project, "mutex.lock")
@@ -63,7 +64,7 @@ describe("restart-safe short filesystem mutexes", () => {
         heartbeatMs: 900,
       })
       let contentionObservations = 0
-      const next = acquireFilesystemMutex(path, {
+      const next = await acquireFilesystemMutexAsync(path, {
         owner: "next-holder",
         leaseMs: 1_000,
         heartbeatMs: 900,

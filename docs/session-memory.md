@@ -16,6 +16,10 @@ Add options to the existing ALG plugin tuple, without installing a second copy:
 }
 ```
 
+In `assist` mode the memory pack is sized from the model's context window by
+the shared [context budget](context-budget.md). `fallbackTokens`,
+`contextFraction` and `maxContextTokens` apply only when the window is unknown.
+
 - `off` (default): no new store or effects.
 - `observe`: capture/diagnostics, no new context injection or action veto.
 - `assist`: restore instructions and enforce preflight in explicitly bound adapters.

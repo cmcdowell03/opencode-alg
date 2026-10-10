@@ -320,15 +320,3 @@ export async function openAlgLive(api: TuiPluginApi): Promise<void> {
     })
   }
 }
-
-export async function installAlgLiveSidebar(api: TuiPluginApi): Promise<boolean> {
-  if (!api.slots?.register) return false
-  const controller = controllerFor(api)
-  const { createLiveSidebarElement } = await import("./tui-live-render.ts")
-  api.slots.register({
-    slots: {
-      sidebar_content: (_context, props) => createLiveSidebarElement(api, controller, props.session_id) as never,
-    },
-  })
-  return true
-}

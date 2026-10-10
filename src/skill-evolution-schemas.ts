@@ -3,6 +3,7 @@ import { isSafeId, isSafeProjectRelativePath } from "./paths.ts"
 import { serializedBytes, utf8Bytes } from "./limits.ts"
 import { MemoryOptionsSchema } from "./session-memory/schemas.ts"
 import { EnvironmentMemoryOptionsSchema } from "./environment-memory/runtime.ts"
+import { ContextBudgetOptionsSchema } from "./context-budget.ts"
 
 export const SKILL_EVOLUTION_SCHEMA_VERSION = 1 as const
 export const SKILL_EVOLUTION_MAX_CONTENT_BYTES = 64 * 1024
@@ -172,6 +173,10 @@ export const AlgPluginOptionsSchema = z.object({
   skillEvolution: SkillEvolutionOptionsSchema.optional(),
   sessionMemory: MemoryOptionsSchema.optional(),
   environmentMemory: EnvironmentMemoryOptionsSchema.optional(),
+  /** "native" mirrors each ALG worker into the transcript as an OpenCode subagent card; "off" keeps the plain tool line. */
+  subagentCards: z.enum(["native", "off"]).optional(),
+  /** How much of the model's context window ALG may add to each call; see context-budget.ts. */
+  contextBudget: ContextBudgetOptionsSchema.optional(),
 }).strict()
 
 export type SkillEvolutionOptions = z.infer<typeof SkillEvolutionOptionsSchema>

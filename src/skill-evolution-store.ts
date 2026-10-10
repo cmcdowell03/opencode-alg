@@ -20,7 +20,7 @@ import {
 } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"
 import { z } from "zod"
-import { acquireFilesystemMutex, type FilesystemMutex } from "./filesystem-mutex.ts"
+import { acquireFilesystemMutex, awaitLock, type FilesystemMutex } from "./filesystem-mutex.ts"
 import { atomicWriteFile } from "./store.ts"
 import { canonicalJson, sha256Json } from "./persistence.ts"
 import { safeDiagnosticText } from "./diagnostics.ts"
@@ -563,12 +563,27 @@ function saveCandidates(project: string, index: SkillCandidateIndex, expectedRev
   return next
 }
 
+/** How long a caller that can wait keeps trying for the project's skill-evolution store lock. */
+export const SKILL_EVOLUTION_LOCK_WAIT_MS = 1_000
+
+/**
+ * Runs one synchronous store call and, if another process holds the store lock, runs it again after a
+ * timer until it succeeds or the wait is over. Every locked store function takes the lock before it
+ * changes anything, so a call that failed on the lock is safe to repeat.
+ */
+export function awaitSkillEvolutionLock<T>(operation: () => T): Promise<T> {
+  return awaitLock(operation, SKILL_EVOLUTION_LOCK_WAIT_MS)
+}
+
+/**
+ * The lock is never waited for in place: a store held by another process is reported at once as lock
+ * contention. Callers that can wait go through awaitSkillEvolutionLock.
+ */
 export function withSkillEvolutionLock<T>(projectDirectory: string, operation: string, work: () => T): T {
   const root = ensureStore(projectDirectory)
   const lock = acquireFilesystemMutex(resolveContainedPath(root, "mutation.lock"), {
     owner: `skill-evolution:${operation}`,
     leaseMs: 30_000,
-    waitMs: 1_000,
   })
   try {
     return work()
@@ -584,7 +599,6 @@ export function acquireHistoricalExecutionLease(projectDirectory: string, owner:
     owner,
     leaseMs: 30_000,
     heartbeatMs: 10_000,
-    waitMs: 100,
   })
 }
 

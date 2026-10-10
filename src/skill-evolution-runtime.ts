@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { FilesystemMutexContentionError } from "./filesystem-mutex.ts"
+import { isLockContention } from "./filesystem-mutex.ts"
 import type { Event } from "@opencode-ai/sdk"
 import type { PluginInput } from "@opencode-ai/plugin"
 import { isDeepStrictEqual } from "node:util"
@@ -54,6 +54,7 @@ import {
   recoverSkillTransactions,
   registerSkillAuditChild,
   skillLedgerKey,
+  awaitSkillEvolutionLock,
   validateProposedSkill,
 } from "./skill-evolution-store.ts"
 import { isInformativeSkillTurn, loadSkillCatalog, type SkillCatalog } from "./skill-catalog.ts"
@@ -66,6 +67,11 @@ export const LIVE_SESSION_OVERFLOW_ERROR = "overflow: live session exceeds 100 m
 export const LIVE_SESSION_COMPACTED_ERROR = "compacted_or_unavailable: completed assistant message was deleted or is unavailable"
 export const NO_TOOLS_UNSUPPORTED = "skill evolution model calls are blocked: installed SDK V1 cannot declare a deny-all session permission ruleset for built-in, MCP, and custom tools"
 export const COMPACT_SESSION_TIMEOUT_MS = 2_000
+/** A store call that met another process's lock in a synchronous entry point is repeated from a timer. */
+const MAX_CAPTURE_SESSIONS = 256
+const MAX_CAPTURED_TURNS_PER_SESSION = 512
+const STORE_LOCK_RETRIES = 5
+const STORE_LOCK_RETRY_MS = 20
 const MAX_CHILD_RESPONSE_BYTES = 96 * 1024
 const MAX_AUDITOR_PROMPT_BYTES = 64 * 1024
 const MAX_CHECKER_PROMPT_BYTES = 64 * 1024
@@ -218,6 +224,12 @@ export class SkillEvolutionRuntime {
   private readonly queued = new Set<string>()
   private readonly manualKeys = new Set<string>()
   private readonly deletedSessions = new Set<string>()
+  /**
+   * Turns whose capture is finished, per session. The host hands over the whole message window before
+   * every model call; without this each earlier turn would be registered again under the store lock,
+   * and the cost of a model call would grow with the length of the session.
+   */
+  private readonly capturedTurns = new Map<string, Set<string>>()
   private readonly snapshots = new Map<string, Promise<void>>()
   private readonly abort = new AbortController()
   private active = false
@@ -274,22 +286,30 @@ export class SkillEvolutionRuntime {
       this.abort.signal,
       () => this.childCapability(),
     )
-    if (this.options.enabled) {
-      try {
-        const transactions = recoverSkillTransactions(this.project, this.options)
-        if (transactions.file_mutations > 0) this.restartRequired = true
-        if (transactions.unresolved.length) {
-          this.log("error", `skill-evolution transaction recovery is unresolved: ${transactions.unresolved[0]}`)
-        }
-        try {
-          for (const sessionId of listDeletedSkillSessions(this.project)) this.deletedSessions.add(sessionId)
-        } catch {
-          /* exclusions file is optional */
-        }
-        this.recoverLiveQueue()
-      } catch (error) {
-        this.log("error", `skill-evolution startup recovery failed: ${formatSdkError(error)}`)
+    if (this.options.enabled) this.recoverAtStartup()
+  }
+
+  /** Safe to repeat: when another process holds the store lock, it runs again from a timer. */
+  private recoverAtStartup(attempt = 0): void {
+    if (this.disposed) return
+    try {
+      const transactions = recoverSkillTransactions(this.project, this.options)
+      if (transactions.file_mutations > 0) this.restartRequired = true
+      if (transactions.unresolved.length) {
+        this.log("error", `skill-evolution transaction recovery is unresolved: ${transactions.unresolved[0]}`)
       }
+      try {
+        for (const sessionId of listDeletedSkillSessions(this.project)) this.deletedSessions.add(sessionId)
+      } catch {
+        /* exclusions file is optional */
+      }
+      this.recoverLiveQueue()
+    } catch (error) {
+      if (isLockContention(error) && attempt < STORE_LOCK_RETRIES) {
+        setTimeout(() => this.recoverAtStartup(attempt + 1), STORE_LOCK_RETRY_MS * 2 ** attempt).unref?.()
+        return
+      }
+      this.log("error", `skill-evolution startup recovery failed: ${formatSdkError(error)}`)
     }
   }
 
@@ -309,7 +329,7 @@ export class SkillEvolutionRuntime {
     try {
       for (const record of recoverPendingSkillAudits(this.project, this.options)) this.schedule(record.key)
     } catch (error) {
-      if (error instanceof FilesystemMutexContentionError) {
+      if (isLockContention(error)) {
         const timer = setTimeout(() => this.recoverLiveQueue(), 1_000)
         timer.unref()
       } else this.log("error", `skill-evolution recovery failed: ${formatSdkError(error)}`)
@@ -356,7 +376,7 @@ export class SkillEvolutionRuntime {
             if (!this.disposed) await this.process(key, manual)
           })
         } catch (error) {
-          if (error instanceof FilesystemMutexContentionError) {
+          if (isLockContention(error)) {
             const timer = setTimeout(() => this.schedule(key, manual), 1_000)
             timer.unref()
             continue
@@ -370,8 +390,12 @@ export class SkillEvolutionRuntime {
     }
   }
 
-  /** Fire-and-forget host hook: only synchronous validation and durable enqueue happen here. */
-  handleEvent(event: Event): void {
+  /**
+   * Fire-and-forget host hook: only synchronous validation and durable enqueue happen here. Each step is
+   * safe to repeat, so when another process holds the store lock for an instant the event is handled
+   * again from a timer instead of being dropped.
+   */
+  handleEvent(event: Event, attempt = 0): void {
     try {
       if (!this.options.enabled) return
       if (event.type === "session.created") {
@@ -391,6 +415,7 @@ export class SkillEvolutionRuntime {
       }
       if (event.type === "session.deleted") {
         this.deletedSessions.add(event.properties.info.id)
+        this.capturedTurns.delete(event.properties.info.id)
         recordDeletedSkillSession(this.project, event.properties.info.id)
         return
       }
@@ -409,6 +434,10 @@ export class SkillEvolutionRuntime {
         this.schedule(result.record.key)
       }
     } catch (error) {
+      if (isLockContention(error) && attempt < STORE_LOCK_RETRIES && !this.disposed) {
+        setTimeout(() => this.handleEvent(event, attempt + 1), STORE_LOCK_RETRY_MS * 2 ** attempt).unref?.()
+        return
+      }
       this.log("error", `skill-evolution event enqueue failed: ${formatSdkError(error)}`)
     }
   }
@@ -487,7 +516,7 @@ export class SkillEvolutionRuntime {
     const parentId = [...messages].reverse().find((message: any) => message?.info?.id === messageId)?.info?.parentID
     const injected = typeof parentId === "string" ? this.injectedSkillsForTurn(sessionId, parentId) : []
     const evidence = buildSkillEvidence(messages, sessionId, messageId, this.options, manual, 2, this.catalog(), injected)
-    attachSkillEvidenceRef(this.project, key, persistSkillEvidence(this.project, evidence))
+    await awaitSkillEvolutionLock(() => attachSkillEvidenceRef(this.project, key, persistSkillEvidence(this.project, evidence)))
   }
 
   /** Capture stable host-supplied envelopes at ordinary turn boundaries, not only at compact. */
@@ -504,15 +533,40 @@ export class SkillEvolutionRuntime {
     assertTextBytes(JSON.stringify(envelopes), 2 * 1024 * 1024, "chat evidence")
     const messages = structuredClone(envelopes)
     await this.validateCaptureSession(sessionId, false, signal)
+    const captured = this.capturedTurnsFor(sessionId)
     for (const message of messages) {
       const info = message.info
       if (!isCompletedUserTurn(info) ||
         !info.id || !Number.isSafeInteger(info.time?.completed) || info.time.completed < 0) continue
-      const result = enqueueSkillAudit(this.project, sessionId, info.id, this.options, false, info.parentID)
-      if (result.record.evidence_ref || !["pending", "running"].includes(result.record.status)) continue
+      if (captured.has(info.id)) continue
+      const result = await awaitSkillEvolutionLock(() => enqueueSkillAudit(this.project, sessionId, info.id, this.options, false, info.parentID))
+      if (result.record.evidence_ref || !["pending", "running"].includes(result.record.status)) {
+        // A failed record may still be revived by a later registration, so only outcomes that can no
+        // longer change, and turns whose evidence is already stored, are remembered.
+        if (result.record.evidence_ref || result.record.status === "candidate" || result.record.status === "no-change") {
+          this.rememberCapturedTurn(captured, info.id)
+        }
+        continue
+      }
       await this.snapshotEvidence(sessionId, result.record.message_id, false, messages, signal)
+      this.rememberCapturedTurn(captured, info.id)
       if (result.enqueued) this.schedule(result.record.key)
     }
+  }
+
+  private capturedTurnsFor(sessionId: string): Set<string> {
+    let captured = this.capturedTurns.get(sessionId)
+    if (!captured) {
+      if (this.capturedTurns.size >= MAX_CAPTURE_SESSIONS) this.capturedTurns.delete(this.capturedTurns.keys().next().value!)
+      captured = new Set()
+      this.capturedTurns.set(sessionId, captured)
+    }
+    return captured
+  }
+
+  private rememberCapturedTurn(captured: Set<string>, messageId: string): void {
+    if (captured.size >= MAX_CAPTURED_TURNS_PER_SESSION) captured.delete(captured.values().next().value!)
+    captured.add(messageId)
   }
 
   private async snapshotCompactSession(sessionId: string, timeoutMs: number, signal: AbortSignal): Promise<void> {
@@ -581,9 +635,9 @@ export class SkillEvolutionRuntime {
     }
     const missing = records.filter((record) => !record.evidence_ref)
     // A durable coverage receipt is a warning, not proof of a host compaction barrier.
-    updateSessionRecovery(this.project, sessionId, (current) => ({
+    await awaitSkillEvolutionLock(() => updateSessionRecovery(this.project, sessionId, (current) => ({
       ...current, capture: { captured: records.length - missing.length, missing: missing.length, missing_keys: missing.slice(0, 16).map((record) => record.key) },
-    }))
+    })))
     return formatSkillEvolutionCompactionContext({
       pendingKeys: refreshed.pending.map((record) => record.key),
       runningKeys: refreshed.running.map((record) => record.key),
@@ -674,7 +728,7 @@ export class SkillEvolutionRuntime {
   }
 
   private async cancelOwnedChild(childId: string): Promise<boolean> {
-    markSkillAuditChild(this.project, childId, "abort-requested")
+    await awaitSkillEvolutionLock(() => markSkillAuditChild(this.project, childId, "abort-requested"))
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout> | undefined
     try {
@@ -691,10 +745,10 @@ export class SkillEvolutionRuntime {
         })(),
         new Promise<false>((resolve) => { timer = setTimeout(() => { controller.abort(); resolve(false) }, 5000) }),
       ])
-      markSkillAuditChild(this.project, childId, confirmed ? "aborted" : "uncertain")
+      await awaitSkillEvolutionLock(() => markSkillAuditChild(this.project, childId, confirmed ? "aborted" : "uncertain"))
       return confirmed
     } catch {
-      markSkillAuditChild(this.project, childId, "uncertain")
+      await awaitSkillEvolutionLock(() => markSkillAuditChild(this.project, childId, "uncertain"))
       return false
     } finally { if (timer) clearTimeout(timer) }
   }
@@ -721,7 +775,7 @@ export class SkillEvolutionRuntime {
     }
     let childId = ""
     try {
-      if (cancelled()) return { sessionId: "", parsed: null, outcome: "unknown", error: "skill-evolution review cancelled before child create" }
+      if ((await awaitSkillEvolutionLock(() => cancelled()))) return { sessionId: "", parsed: null, outcome: "unknown", error: "skill-evolution review cancelled before child create" }
       const unresolved = loadSkillLedger(this.project).audit_children.filter((child) => child.parent_id === parentId &&
         child.lifecycle && ["running", "abort-requested", "uncertain"].includes(child.lifecycle))
       if (unresolved.length > 8) throw new Error("too many unresolved audit children; operator review required")
@@ -735,7 +789,7 @@ export class SkillEvolutionRuntime {
         // A host may finish create after the transport deadline. No prompt was
         // issued, but still register and close the returned owned child.
         if (signal.aborted && result.data?.id) {
-          registerSkillAuditChild(this.project, { session_id: result.data.id, parent_id: parentId, title, role: checkerRole ? "checker" : "auditor" })
+          await awaitSkillEvolutionLock(() => registerSkillAuditChild(this.project, { session_id: result.data.id, parent_id: parentId, title, role: checkerRole ? "checker" : "auditor" }))
           await this.abortOwnedChild(result.data.id)
         }
         return result
@@ -744,11 +798,11 @@ export class SkillEvolutionRuntime {
       childId = created.data?.id ?? ""
       if (!childId) return { sessionId: "", parsed: null, outcome: "unknown", error: "session.create returned no child id" }
       // Pre-register immediately. The session.created event path handles the race where it arrived first.
-      registerSkillAuditChild(this.project, {
+      await awaitSkillEvolutionLock(() => registerSkillAuditChild(this.project, {
         session_id: childId, parent_id: parentId, title, role: checkerRole ? "checker" : "auditor",
-      })
-      markSkillAuditChild(this.project, childId, "created")
-      if (cancelled()) return { sessionId: childId, parsed: null, outcome: "unknown", error: "skill-evolution review cancelled before child prompt" }
+      }))
+      await awaitSkillEvolutionLock(() => markSkillAuditChild(this.project, childId, "created"))
+      if ((await awaitSkillEvolutionLock(() => cancelled()))) return { sessionId: childId, parsed: null, outcome: "unknown", error: "skill-evolution review cancelled before child prompt" }
       // Historical calls are bound to the immutable plan. In particular, do
       // not resolve again after session.create, where configuration can race.
       const model = historicalRole ? plannedModel : this.model(checkerRole ? "checker" : "researcher")
@@ -774,7 +828,7 @@ export class SkillEvolutionRuntime {
         },
         parts: [{ type: "text", text: prompt }],
       }
-      markSkillAuditChild(this.project, childId, "running")
+      await awaitSkillEvolutionLock(() => markSkillAuditChild(this.project, childId, "running"))
       this.activeChildren.add(childId)
       const prompted = await this.boundedChildCall(`${role} session.prompt`, (signal) => this.client.session.prompt({
         path: { id: childId }, query: { directory: this.directory }, body,
@@ -784,7 +838,7 @@ export class SkillEvolutionRuntime {
       if (prompted.data?.info?.sessionID !== childId || !isCompletedUserTurn(prompted.data?.info)) {
         throw new Error("audit child did not return a positively completed terminal turn for the created child")
       }
-      markSkillAuditChild(this.project, childId, "completed")
+      await awaitSkillEvolutionLock(() => markSkillAuditChild(this.project, childId, "completed"))
       // Completion is established by terminal SDK metadata. Output extraction is
       // deliberately separate: bad/missing output must not turn a finished child
       // into an abort or imply that replay is safe.
@@ -817,10 +871,10 @@ export class SkillEvolutionRuntime {
   }
 
   private async process(key: string, manual: boolean): Promise<void> {
-    const lease = acquireHistoricalExecutionLease(this.project, `live-executor:${process.pid}`)
+    const lease = await awaitSkillEvolutionLock(() => acquireHistoricalExecutionLease(this.project, `live-executor:${process.pid}`))
     const fencingToken = liveReviewFencingToken(randomUUID())
     try {
-      const acquisition = acquireLiveSkillAudit(this.project, key, this.options, fencingToken, lease)
+      const acquisition = await awaitSkillEvolutionLock(() => acquireLiveSkillAudit(this.project, key, this.options, fencingToken, lease))
       if (!acquisition.acquired) return
       this.reviewDeadline = Date.now() + this.options.auditTimeoutMs
       await this.processOwned(key, manual, fencingToken, acquisition.record, () => lease.assertHeld())
@@ -831,10 +885,10 @@ export class SkillEvolutionRuntime {
       if (this.disposed) return
       const text = error instanceof Error ? error.message : String(error)
       if (/session directory is outside the current project|session belongs to another project/.test(text)) {
-        markLiveSkillLedgerOutcome(this.project, key, { status: "no-change", trigger_score: 0, trigger_labels: [] }, fencingToken)
+        await awaitSkillEvolutionLock(() => markLiveSkillLedgerOutcome(this.project, key, { status: "no-change", trigger_score: 0, trigger_labels: [] }, fencingToken))
         return
       }
-      failSkillAudit(this.project, key, error, fencingToken)
+      await awaitSkillEvolutionLock(() => failSkillAudit(this.project, key, error, fencingToken))
     } finally { this.reviewDeadline = null; lease.release() }
   }
 
@@ -853,9 +907,9 @@ export class SkillEvolutionRuntime {
       if (this.disposed) throw new Error("skill-evolution live review aborted because the runtime was disposed")
       return reviewLost()
     }
-    if (stopped()) {
+    if ((await awaitSkillEvolutionLock(() => stopped()))) {
       if (isHistoricalAssistantCovered(this.project, running.session_id, running.message_id)) {
-        reconcileHistoricalCoverage(this.project, running.session_id, [running.message_id])
+        await awaitSkillEvolutionLock(() => reconcileHistoricalCoverage(this.project, running.session_id, [running.message_id]))
       }
       return
     }
@@ -866,15 +920,15 @@ export class SkillEvolutionRuntime {
     const session = await this.getSession(running.session_id)
     // session.get and session.messages are separate SDK effects. Recheck the
     // exact durable live owner/token and historical coverage between them.
-    if (stopped()) return
+    if ((await awaitSkillEvolutionLock(() => stopped()))) return
     if (privateTitle(String(session.title ?? ""))) throw new Error("private audit/check session is recursion-excluded")
     if (session.parentID && isRegisteredSkillAuditChild(this.project, session.id)) throw new Error("registered audit child is recursion-excluded")
     if (!manual && algExecutorTitle(String(session.title ?? ""))) {
-      markLiveSkillLedgerOutcome(this.project, key, { status: "no-change", trigger_score: 0, trigger_labels: [] }, fencingToken)
+      await awaitSkillEvolutionLock(() => markLiveSkillLedgerOutcome(this.project, key, { status: "no-change", trigger_score: 0, trigger_labels: [] }, fencingToken))
       return
     }
     await this.boundedChildCall("live evidence capture", () => this.ensureEvidenceSnapshot(running, manual), remaining())
-    if (stopped()) return
+    if ((await awaitSkillEvolutionLock(() => stopped()))) return
     const latest = loadSkillLedger(this.project).records.find((record) => record.key === key) ?? running
     const evidenceRef = latest.evidence_ref
     if (!evidenceRef) throw new Error("validated evidence snapshot unavailable")
@@ -887,43 +941,43 @@ export class SkillEvolutionRuntime {
       this.options.mode,
     )
     if (!manual && (this.options.mode === "triggered" || this.options.skipUninformativeAudits) && !informative) {
-      if (stopped()) return
-      markLiveSkillLedgerOutcome(this.project, key, {
+      if ((await awaitSkillEvolutionLock(() => stopped()))) return
+      await awaitSkillEvolutionLock(() => markLiveSkillLedgerOutcome(this.project, key, {
         status: "no-change", trigger_score: evidence.trigger_score, trigger_labels: evidence.trigger_labels, evidence_ref: evidenceRef,
-      }, fencingToken)
+      }, fencingToken))
       return
     }
     const prompt = auditorPrompt(evidence)
-    if (stopped()) return
+    if ((await awaitSkillEvolutionLock(() => stopped()))) return
     if (utf8Bytes(prompt) > MAX_AUDITOR_PROMPT_BYTES) throw new Error("auditor prompt exceeds bound")
     const audited = await this.child(running.session_id, "auditor", prompt, cancelled, remaining())
-    if (stopped()) return
+    if ((await awaitSkillEvolutionLock(() => stopped()))) return
     if (audited.error) throw new Error(audited.error)
     if (!audited.sessionId || audited.parsed === null) throw new Error("auditor returned malformed strict JSON")
     const output = this.validateAuditor(audited.parsed, evidence)
     if (output.decision === "no_change") {
-      markLiveSkillLedgerOutcome(this.project, key, {
+      await awaitSkillEvolutionLock(() => markLiveSkillLedgerOutcome(this.project, key, {
         status: "no-change", trigger_score: evidence.trigger_score, trigger_labels: evidence.trigger_labels, evidence_ref: evidenceRef,
-      }, fencingToken)
+      }, fencingToken))
       return
     }
 
     let checkerResult: ReturnType<typeof SkillCheckerOutputSchema.parse> | null = null
     let checkerChildId: string | null = null
     if (output.decision === "skill_candidate" || output.decision === "skill_revision") {
-      if (stopped()) return
+      if ((await awaitSkillEvolutionLock(() => stopped()))) return
       const checked = await this.child(running.session_id, "checker", checkerPrompt(output, evidence), cancelled, remaining())
-      if (stopped()) return
+      if ((await awaitSkillEvolutionLock(() => stopped()))) return
       checkerChildId = checked.sessionId || null
       if (checked.error) throw new Error(checked.error)
       if (!checkerChildId || checked.parsed === null) throw new Error("checker returned malformed strict JSON")
       checkerResult = SkillCheckerOutputSchema.parse(checked.parsed)
     }
-    if (stopped()) return
-    createSkillCandidate(
+    if ((await awaitSkillEvolutionLock(() => stopped()))) return
+    await awaitSkillEvolutionLock(() => createSkillCandidate(
       this.project, key, output, evidenceRef, audited.sessionId, checkerChildId, checkerResult, this.options,
       undefined, { session_id: running.session_id, message_id: running.message_id, trigger_score: evidence.trigger_score, trigger_labels: evidence.trigger_labels, fencing_token: fencingToken },
-    )
+    ))
   }
 
   async manualAudit(request: ManualAuditRequest): Promise<{ record: SkillLedgerRecord; enqueued: boolean; candidate?: SkillCandidateRecord }> {
@@ -943,7 +997,7 @@ export class SkillEvolutionRuntime {
       messageId = latest?.info?.id
       if (!messageId) throw new Error("no eligible completed assistant message found")
     }
-    const result = enqueueSkillAudit(this.project, sessionId, messageId, this.options, request.force === true)
+    const result = await awaitSkillEvolutionLock(() => enqueueSkillAudit(this.project, sessionId, messageId, this.options, request.force === true))
     if (result.enqueued) {
       this.beginEvidenceSnapshot(sessionId, messageId, true)
       this.schedule(result.record.key, true)
