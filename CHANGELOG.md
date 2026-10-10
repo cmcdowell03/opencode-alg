@@ -34,11 +34,18 @@
   directory. It reuses the last scan until the runs directory or the session's
   owner projection changes, and skips worker sessions entirely: about 0.3 ms per
   request regardless of history, against about 280 ms with 200 runs on disk.
-- Lock waits that could never succeed no longer block: acquiring a lock the
-  same thread already holds reports contention at once, and refreshing the
-  non-authoritative owner projection waits for other writers for at most 0.5 s
-  in total instead of up to 25 s. Waits for another process stay bounded
-  synchronous waits (0.25 s for run locks, 1 s for the skill-evolution store).
+- No lock wait stops the OpenCode process any more. Taking a lock never waits
+  in place: a lock held by another OpenCode process is reported at once, and
+  everything that can wait for it (run saves, the ALG tools, the plugin hooks,
+  session memory, and the skill-evolution audit and historical pipelines) tries
+  again from a timer, so the UI and other sessions keep running meanwhile. A
+  lock release, a lease heartbeat, or an owner-projection refresh that meets a
+  busy lock also finishes from the event loop. These used to be sleeps of the
+  whole process: up to 0.25 s per run lock, 1 s for the skill-evolution store,
+  and up to 25 s for the owner projection. Callers that cannot wait
+  (synchronous library and CLI use, including the `alg` manager) now get the
+  contention error immediately instead of after a sleep. The Windows
+  shell-gate helper clean-up likewise retries a busy file from a timer.
 - Adds model-independent graph-run visibility through bounded durable progress
   metadata and `/alg-live`, while retaining `/alg-runs` for
   attempt history. UI observation does not copy child transcripts into the parent

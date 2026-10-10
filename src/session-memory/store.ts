@@ -72,7 +72,7 @@ export class MemoryStore {
   }
   lock<T>(work: (fence: () => void) => T): T {
     const path = this.path(["writer.lock"], true)
-    const lock = acquireFilesystemMutex(path, { owner: "session-memory", waitMs: 100, leaseMs: 30000 })
+    const lock = acquireFilesystemMutex(path, { owner: "session-memory", leaseMs: 30000 })
     try { return work(() => lock.assertHeld()) } finally { lock.release() }
   }
   private immutable(bucket: string, value: unknown, maximum: number, fence: () => void): string {

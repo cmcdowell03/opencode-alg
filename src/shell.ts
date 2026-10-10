@@ -291,7 +291,8 @@ function processStartIdentity(pid: number, environment: NodeJS.ProcessEnv): { st
       if (pid === process.pid) windowsOwnerStartIdentity = identity
       return { state: "alive", identity }
     }
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50 * (attempt + 1))
+    // No pause between attempts: starting PowerShell already takes far longer than any useful backoff,
+    // and a pause here would only be more time with the thread stopped.
   }
   return { state: "ambiguous" }
 }
@@ -376,10 +377,18 @@ function exactOwnedLifecycle(value: WindowsHelperLifecycle): boolean {
   }
 }
 
+/**
+ * Deletes an owned helper directory file by file. Windows can keep a just-exited executable busy for a
+ * moment; such a file does not stop the thread. The deletion reports "not removed" now, picks up where
+ * it left off from a timer for up to three seconds, and calls onRemovedLater if it then completes.
+ * onUnfinished fires as soon as the directory may be missing some of its files.
+ */
 function deleteOwnedLifecycle(
   value: WindowsHelperLifecycle,
   beforeDelete?: (directory: string) => void,
   beforeFileDelete?: (path: string) => void,
+  onUnfinished?: () => void,
+  onRemovedLater?: () => void,
 ): boolean {
   if (!exactOwnedLifecycle(value)) return false
   beforeDelete?.(value.directory)
@@ -389,42 +398,58 @@ function deleteOwnedLifecycle(
   const remaining = [value.marker.source, value.marker.helper]
   const hooked = new Set<string>()
   let markerRemaining = true
-  while (Date.now() <= deadline) {
-    try {
-      if (!sameFileIdentity(fileIdentity(value.directory), value.directoryIdentity)) return false
-      const expectedNames = [
-        ...(markerRemaining ? [WINDOWS_HELPER_MARKER] : []),
-        ...remaining.map((record) => record.file),
-      ].sort()
-      if (JSON.stringify(readdirSync(value.directory).sort()) !== JSON.stringify(expectedNames)) return false
-      if (markerRemaining && (!sameFileIdentity(fileIdentity(value.markerPath), value.markerIdentity) || !readFileSync(value.markerPath).equals(value.markerBytes))) return false
-      if (remaining.some((record) => !exactWindowsHelperFile(value.directory, record))) return false
-      const next = remaining[0]
-      if (next) {
-        const path = join(value.directory, next.file)
-        if (!hooked.has(path)) {
-          hooked.add(path)
-          beforeFileDelete?.(path)
+  /** true: removed. false: must be preserved. undefined: something is busy; try again later. */
+  const attempt = (): boolean | undefined => {
+    while (true) {
+      try {
+        if (!sameFileIdentity(fileIdentity(value.directory), value.directoryIdentity)) return false
+        const expectedNames = [
+          ...(markerRemaining ? [WINDOWS_HELPER_MARKER] : []),
+          ...remaining.map((record) => record.file),
+        ].sort()
+        if (JSON.stringify(readdirSync(value.directory).sort()) !== JSON.stringify(expectedNames)) return false
+        if (markerRemaining && (!sameFileIdentity(fileIdentity(value.markerPath), value.markerIdentity) || !readFileSync(value.markerPath).equals(value.markerBytes))) return false
+        if (remaining.some((record) => !exactWindowsHelperFile(value.directory, record))) return false
+        const next = remaining[0]
+        if (next) {
+          const path = join(value.directory, next.file)
+          if (!hooked.has(path)) {
+            hooked.add(path)
+            beforeFileDelete?.(path)
+          }
+          if (!exactWindowsHelperFile(value.directory, next)) return false
+          unlinkSync(path)
+          remaining.shift()
+          continue
         }
-        if (!exactWindowsHelperFile(value.directory, next)) return false
-        unlinkSync(path)
-        remaining.shift()
-        continue
+        if (markerRemaining) {
+          if (!sameFileIdentity(fileIdentity(value.markerPath), value.markerIdentity) || !readFileSync(value.markerPath).equals(value.markerBytes)) return false
+          unlinkSync(value.markerPath)
+          markerRemaining = false
+          continue
+        }
+        if (!sameFileIdentity(fileIdentity(value.directory), value.directoryIdentity) || readdirSync(value.directory).length !== 0) return false
+        rmdirSync(value.directory)
+        return !existsSync(value.directory)
+      } catch {
+        return undefined
       }
-      if (markerRemaining) {
-        if (!sameFileIdentity(fileIdentity(value.markerPath), value.markerIdentity) || !readFileSync(value.markerPath).equals(value.markerBytes)) return false
-        unlinkSync(value.markerPath)
-        markerRemaining = false
-        continue
-      }
-      if (!sameFileIdentity(fileIdentity(value.directory), value.directoryIdentity) || readdirSync(value.directory).length !== 0) return false
-      rmdirSync(value.directory)
-      return !existsSync(value.directory)
-    } catch {
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, pause)
-      pause = Math.min(320, pause * 2)
     }
   }
+  const first = attempt()
+  if (first !== undefined) return first
+  // The directory may now be missing some of its files, so it must not be handed out again.
+  onUnfinished?.()
+  const retry = (): void => {
+    if (Date.now() > deadline) return
+    const outcome = attempt()
+    if (outcome === true) onRemovedLater?.()
+    else if (outcome === undefined) {
+      pause = Math.min(320, pause * 2)
+      setTimeout(retry, pause).unref?.()
+    }
+  }
+  setTimeout(retry, pause).unref?.()
   return false
 }
 
@@ -445,12 +470,15 @@ export function cleanupWindowsShellHelpers(options: WindowsShellHelperCleanupOpt
       const owner = (options.ownerProcessState ?? processStartIdentity)(value.marker.pid, environment)
       if (owner.state === "ambiguous" || owner.state === "alive" && owner.identity === value.marker.process_start_identity) { preserved.push(value.directory); continue }
     }
-    if (deleteOwnedLifecycle(value, options.beforeDelete, options.beforeFileDelete)) {
-      removed.push(value.directory)
+    const forget = (): void => {
       if (current && windowsHelperLifecycle === value || current && windowsHelperLifecycle?.directory === value.directory) {
         windowsHelperLifecycle = undefined
         windowsJobHelperPromise = undefined
       }
+    }
+    if (deleteOwnedLifecycle(value, options.beforeDelete, options.beforeFileDelete, forget, forget)) {
+      removed.push(value.directory)
+      forget()
     } else preserved.push(value.directory)
   }
   return { removed, preserved }

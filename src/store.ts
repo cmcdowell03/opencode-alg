@@ -43,6 +43,7 @@ import {
 import {
   acquireFilesystemMutex,
   FilesystemMutexContentionError,
+  isLockContention,
   type FilesystemMutex,
 } from "./filesystem-mutex.ts"
 import {
@@ -105,7 +106,8 @@ import {
 export { MAX_STATE_BYTES }
 const DEFAULT_LOCK_LEASE_MS = 60 * 60 * 1_000
 const OWNER_INDEX_UPDATE_ATTEMPTS = 5
-const OWNER_INDEX_CONTENTION_WAIT_MS = 500
+/** How long a run lock keeps trying to take its guard to renew or release itself, from the event loop. */
+const RUN_LOCK_GUARD_RETRY_MS = 250
 export const MAX_OWNED_RUN_DIRECTORY_SCAN = 4_096
 
 function exactPersistedString(minimum: number, maximum: number, label: string) {
@@ -121,8 +123,8 @@ export class StoreError extends Error {
 }
 
 export class RunLockedError extends StoreError {
-  constructor(runId: string, detail = "already executing") {
-    super(`run ${runId} is ${detail}`)
+  constructor(runId: string, detail = "already executing", options?: ErrorOptions) {
+    super(`run ${runId} is ${detail}`, options)
     this.name = "RunLockedError"
   }
 }
@@ -211,7 +213,6 @@ function acquireMirrorLock(projectDirectory: string, runId: string): FilesystemM
   return acquireFilesystemMutex(path, {
     owner: `mirror:${runId}`,
     leaseMs: 30_000,
-    waitMs: 250,
   })
 }
 
@@ -517,7 +518,6 @@ function updateOwnerRunIndex(
   entry: OwnerRunIndexEntry | null,
   removeRunId?: string,
   coalesceStatus?: string,
-  contentionWaitMs = OWNER_INDEX_CONTENTION_WAIT_MS,
 ): void {
   const directory = resolveContainedPath(projectRunsRoot(projectDirectory), OWNER_INDEX_DIRECTORY)
   ensureDir(directory)
@@ -526,7 +526,6 @@ function updateOwnerRunIndex(
   const lock = acquireFilesystemMutex(resolveContainedPath(directory, `${key}.lock`), {
     owner: `owner-index:${key}`,
     leaseMs: 30_000,
-    waitMs: contentionWaitMs,
   })
   try {
     ownerIndexWrites.delete(path)
@@ -574,36 +573,45 @@ function ownerIndexAlreadyCurrent(
   }
 }
 
+/**
+ * Refreshes that met another writer or a transient filesystem race and are waiting for their next try.
+ * The projection is not authoritative, so a refresh never waits in place: it tries once and, if it has
+ * to, finishes from the event loop. A newer refresh for the same run replaces a waiting one.
+ */
+const waitingOwnerIndexRefreshes = new Map<string, ReturnType<typeof setTimeout>>()
+
 function refreshOwnerRunIndex(
   projectDirectory: string,
   ownerSessionId: string,
   entry: OwnerRunIndexEntry | null,
   removeRunId?: string,
   coalesceStatus?: string,
+  attempt = 0,
 ): void {
-  forgetIncompleteRunCandidates(projectDirectory, ownerSessionId)
+  if (attempt === 0) forgetIncompleteRunCandidates(projectDirectory, ownerSessionId)
   if (entry && !removeRunId && coalesceStatus !== undefined &&
     ownerIndexAlreadyCurrent(projectDirectory, ownerSessionId, entry.run_id, coalesceStatus)) return
-  // Waiting for this lock is a blocking sleep and the projection is not authoritative, so the whole
-  // refresh waits for other writers for at most OWNER_INDEX_CONTENTION_WAIT_MS in total.
-  const contentionDeadline = Date.now() + OWNER_INDEX_CONTENTION_WAIT_MS
-  for (let attempt = 0; attempt < OWNER_INDEX_UPDATE_ATTEMPTS; attempt++) {
-    try {
-      updateOwnerRunIndex(projectDirectory, ownerSessionId, entry, removeRunId, coalesceStatus,
-        Math.max(0, Math.min(OWNER_INDEX_CONTENTION_WAIT_MS, contentionDeadline - Date.now())))
-      return
-    } catch (error) {
-      const code = (error as NodeJS.ErrnoException | undefined)?.code
-      const transientFilesystemRace = code === "EACCES" || code === "EPERM" || code === "EBUSY" || code === "ENOENT"
-      // Verified contention and common Windows/OneDrive replacement races are
-      // safe to retry because every attempt re-acquires the owner mutex and
-      // re-reads the complete projection. Malformed/unverifiable locks,
-      // containment failures, and other unknown errors remain fail-closed.
-      if ((!transientFilesystemRace && !(error instanceof FilesystemMutexContentionError)) ||
-        attempt === OWNER_INDEX_UPDATE_ATTEMPTS - 1) return
-      if (error instanceof FilesystemMutexContentionError && Date.now() >= contentionDeadline) return
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10 * (2 ** attempt))
-    }
+  const key = `${projectDirectory}\0${ownerSessionId}\0${entry?.run_id ?? ""}\0${removeRunId ?? ""}`
+  const waiting = waitingOwnerIndexRefreshes.get(key)
+  if (waiting !== undefined) {
+    clearTimeout(waiting)
+    waitingOwnerIndexRefreshes.delete(key)
+  }
+  try {
+    updateOwnerRunIndex(projectDirectory, ownerSessionId, entry, removeRunId, coalesceStatus)
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException | undefined)?.code
+    const transientFilesystemRace = code === "EACCES" || code === "EPERM" || code === "EBUSY" || code === "ENOENT"
+    // Verified contention and common Windows/OneDrive replacement races are
+    // safe to retry because every attempt re-acquires the owner mutex and
+    // re-reads the complete projection. Malformed/unverifiable locks,
+    // containment failures, and other unknown errors remain fail-closed.
+    if ((!transientFilesystemRace && !isLockContention(error)) || attempt >= OWNER_INDEX_UPDATE_ATTEMPTS - 1) return
+    // Not unref'd: a short-lived process must finish its refresh before it exits.
+    waitingOwnerIndexRefreshes.set(key, setTimeout(() => {
+      waitingOwnerIndexRefreshes.delete(key)
+      refreshOwnerRunIndex(projectDirectory, ownerSessionId, entry, removeRunId, coalesceStatus, attempt + 1)
+    }, 10 * (2 ** attempt)))
   }
 }
 
@@ -2965,7 +2973,9 @@ export function findLatestRunForSession(
     try {
       const run = loadRunForOwner(projectDirectory, envelope.run_id, sessionId)
       if (run) return run
-    } catch {
+    } catch (error) {
+      // A run whose lock is held for an instant is not an invalid run: let the caller wait for it.
+      if (isLockContention(error)) throw error
       // Skip an invalid owned candidate without touching any other owner's run.
     }
   }
@@ -2982,7 +2992,8 @@ export function findLatestIncompleteRunForSession(
     try {
       const run = loadRunForOwner(projectDirectory, envelope.run_id, sessionId)
       if (run && active.has(run.status)) return run
-    } catch {
+    } catch (error) {
+      if (isLockContention(error)) throw error
       // Continue to the next exact-owner candidate.
     }
   }
@@ -3056,7 +3067,8 @@ export function findLatestIncompleteRunForTurn(
     try {
       const run = loadRunForOwner(projectDirectory, runId, sessionId)
       if (run && active.has(run.status)) return run
-    } catch {
+    } catch (error) {
+      if (isLockContention(error)) throw error
       // Continue to the next exact-owner candidate.
     }
   }
@@ -3126,16 +3138,18 @@ export interface RunLockOptions {
   afterFencedPrecheck?: (observed: RunLockRecord) => void
 }
 
+/** Run locks whose release is waiting for the guard. Their files still exist for a few milliseconds. */
+const releasingRunLocks = new Set<string>()
+
 function acquireExecutionGuard(projectDirectory: string, runId: string): FilesystemMutex {
   const path = runContainedPath(projectDirectory, runId, "execution.lock.guard")
   try {
     return acquireFilesystemMutex(path, {
       owner: `execution-guard:${runId}`,
       leaseMs: 5_000,
-      waitMs: 250,
     })
   } catch (error) {
-    throw new RunLockedError(runId, error instanceof Error ? error.message : String(error))
+    throw new RunLockedError(runId, error instanceof Error ? error.message : String(error), { cause: error })
   }
 }
 
@@ -3191,6 +3205,11 @@ export function acquireRunLock(
   try {
     if (existsSync(lockPath)) {
       const observed = verifiedLock(lockPath, canonicalProject, runId)
+      if (releasingRunLocks.has(lockPath)) {
+        throw new RunLockedError(runId, "still being released by this process", {
+          cause: new FilesystemMutexContentionError("run lock release is waiting for its guard"),
+        })
+      }
       if (Date.parse(observed.expires_at) > now()) throw new RunLockedError(runId)
       options.beforeExpiredTakeover?.(structuredClone(observed))
       // Guard participants cannot renew or release between these reads. The second
@@ -3281,15 +3300,50 @@ export function acquireRunLock(
     }
   }
 
-  heartbeat = setInterval(() => {
+  // A heartbeat that finds the guard taken for an instant tries again from the event loop; only a
+  // changed token, or a guard that stays unavailable, means the lock is lost.
+  const beat = (deadline: number): void => {
+    if (released || lost) return
     try {
       renew()
-    } catch {
+    } catch (error) {
+      if (!lost && !released && isLockContention(error) && Date.now() < deadline) {
+        setTimeout(() => beat(deadline), 5).unref?.()
+        return
+      }
       lost = true
       if (heartbeat) clearInterval(heartbeat)
     }
-  }, heartbeatMs)
+  }
+  heartbeat = setInterval(() => beat(Date.now() + RUN_LOCK_GUARD_RETRY_MS), heartbeatMs)
   heartbeat.unref?.()
+
+  const remove = (deadline: number): void => {
+    let guard: FilesystemMutex
+    try {
+      guard = acquireExecutionGuard(canonicalProject, runId)
+    } catch (error) {
+      // Another process holds the guard for an instant: finish from the event loop, and until then
+      // tell a new acquisition by this process that the lock is on its way out. A crashed or
+      // unverifiable guard fails closed; never remove without serialization.
+      if (isLockContention(error) && Date.now() < deadline) {
+        releasingRunLocks.add(lockPath)
+        setTimeout(() => remove(deadline), 5)
+        return
+      }
+      releasingRunLocks.delete(lockPath)
+      return
+    }
+    try {
+      const current = verifiedLock(lockPath, canonicalProject, runId)
+      if (current.token === token) rmSync(lockPath, { force: true })
+    } catch {
+      // Never delete a lock that cannot be proven to be ours.
+    } finally {
+      releasingRunLocks.delete(lockPath)
+      guard.release()
+    }
+  }
 
   return {
     path: lockPath,
@@ -3302,21 +3356,7 @@ export function acquireRunLock(
       if (released) return
       released = true
       if (heartbeat) clearInterval(heartbeat)
-      let guard: FilesystemMutex
-      try {
-        guard = acquireExecutionGuard(canonicalProject, runId)
-      } catch {
-        // A live or crashed guard fails closed; never remove without serialization.
-        return
-      }
-      try {
-        const current = verifiedLock(lockPath, canonicalProject, runId)
-        if (current.token === token) rmSync(lockPath, { force: true })
-      } catch {
-        // Never delete a lock that cannot be proven to be ours.
-      } finally {
-        guard.release()
-      }
+      remove(Date.now() + RUN_LOCK_GUARD_RETRY_MS)
     },
   }
 }

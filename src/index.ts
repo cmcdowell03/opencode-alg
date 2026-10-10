@@ -11,6 +11,7 @@ import { ALG_PLUGIN_ID, ALG_TOOL_IDS, algServerStartupMessage } from "./types.ts
 import { createAlgTools } from "./tools.ts"
 import { findLatestIncompleteRunForSession, findLatestIncompleteRunForTurn } from "./store.ts"
 import { isAlgWorkerSession } from "./sessions.ts"
+import { awaitLock } from "./filesystem-mutex.ts"
 import { configuredAgentModels, configuredModelResolutions } from "./models.ts"
 import type { AgentModelMap, ModelResolutionMap } from "./types.ts"
 import { appendAlgCompactionContext, formatCompactionContext, MAX_COMPACTION_OUTPUT_BYTES } from "./compaction.ts"
@@ -90,7 +91,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
         if (disposed) return
         if (response.error || !Array.isArray(response.data) || response.data.length > 100 || Buffer.byteLength(JSON.stringify(response.data)) > 2 * 1024 * 1024) throw new Error("memory result capture unavailable or exceeds bound")
         await authorizeMemory(owner)
-        if (!disposed) memory.observe(response.data)
+        if (!disposed) await awaitLock(() => memory.observe(response.data))
       } finally { if (timer) clearTimeout(timer) }
     }).finally(() => { if (resultCaptures.get(owner) === work) resultCaptures.delete(owner) })
     resultCaptures.set(owner, work)
@@ -145,7 +146,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       if (memory.enabled && event.type === "session.deleted") {
         const info = event.properties.info
         try {
-          if (info.projectID === ctx.project.id && isContained(memory.store.project, canonicalDirectory(info.directory))) memory.delete(info.id)
+          if (info.projectID === ctx.project.id && isContained(memory.store.project, canonicalDirectory(info.directory))) await awaitLock(() => memory.delete(info.id))
         } catch { /* deletion event failure cannot break the host event stream */ }
       }
     },
@@ -159,14 +160,14 @@ const server: Plugin = async (ctx, pluginOptions) => {
       try {
         if (memory.enabled && output.messages.length) {
           const owner = output.messages.at(-1)?.info.sessionID
-          if (owner) { await authorizeMemory(owner); memory.observe(output.messages) }
+          if (owner) { await authorizeMemory(owner); await awaitLock(() => memory.observe(output.messages)) }
         }
       } catch (error) {
         try { Promise.resolve(client.app.log({ body: { service: ALG_PLUGIN_ID, level: "warn", message: `ALG memory capture unavailable: ${formatSdkError(error)}` } })).catch(() => {}) }
         catch { /* diagnostics must not suppress independent learning capture */ }
       }
       try {
-        if (memory.options.mode !== "assist") skillGuidance.observeChatMessages(output.messages)
+        if (memory.options.mode !== "assist") await awaitLock(() => skillGuidance.observeChatMessages(output.messages))
         await skillEvolution.captureChatMessages(output.messages)
       } catch (error) {
         try {
@@ -176,9 +177,9 @@ const server: Plugin = async (ctx, pluginOptions) => {
     },
 
     "experimental.chat.system.transform": async (input, output) => {
-      const appendRecovery = (label: string, read: () => string) => {
+      const appendRecovery = async (label: string, read: () => string) => {
         try {
-          const context = read()
+          const context = await awaitLock(read)
           if (context) output.system.push(context)
         } catch {
           output.system.push(`ALG ${label} recovery unavailable; consult authoritative records before resuming.`)
@@ -199,17 +200,17 @@ const server: Plugin = async (ctx, pluginOptions) => {
           catch { output.system.push("Environment memory unavailable; verify current identity, reachability, and permissions before acting.") }
         }
         const recovery: string[] = []
-        const collect = (label: string, read: () => string) => {
-          try { const value = read(); if (value) recovery.push(value) }
+        const collect = async (label: string, read: () => string) => {
+          try { const value = await awaitLock(read); if (value) recovery.push(value) }
           catch { recovery.push(`ALG ${label} recovery unavailable; consult authoritative records before resuming.`) }
         }
         // Runs before every model request of every session, so it must not scan the project's run history.
-        collect("run", () => { const run = findLatestIncompleteRunForTurn(ctx.worktree || directory, sessionId, { sessionCreatedHere: isAlgWorkerSession(sessionId) }); return run ? formatCompactionContext(run) : "" })
-        collect("evidence", () => skillEvolution.recoveryContext(sessionId))
+        await collect("run", () => { const run = findLatestIncompleteRunForTurn(ctx.worktree || directory, sessionId, { sessionCreatedHere: isAlgWorkerSession(sessionId) }); return run ? formatCompactionContext(run) : "" })
+        await collect("evidence", () => skillEvolution.recoveryContext(sessionId))
         if (memory.enabled) {
           try {
             await authorizeMemory(sessionId)
-            const pack = memory.prepare(sessionId, { context: input.model.limit.context, output: input.model.limit.output, existingText: output.system.join("\n"), mandatoryContext: recovery })
+            const pack = await awaitLock(() => memory.prepare(sessionId, { context: input.model.limit.context, output: input.model.limit.output, existingText: output.system.join("\n"), mandatoryContext: recovery }))
             if (pack.text) output.system.push(pack.text)
             if (memory.options.mode === "assist" && pack.receipt) { await appendEnvironmentMemory(); return }
           } catch {
@@ -217,10 +218,10 @@ const server: Plugin = async (ctx, pluginOptions) => {
           }
         }
         output.system.push(...recovery)
-        if (memory.options.mode !== "assist") appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID))
+        if (memory.options.mode !== "assist") await appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID))
         await appendEnvironmentMemory()
       }
-      if (!input.sessionID && memory.options.mode !== "assist") appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID))
+      if (!input.sessionID && memory.options.mode !== "assist") await appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID))
     },
 
     "experimental.session.compacting": async (input, output) => {
@@ -236,7 +237,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
         try {
           await captureResults(input.sessionID)
           await authorizeMemory(input.sessionID)
-          const pack = memory.prepare(input.sessionID)
+          const pack = await awaitLock(() => memory.prepare(input.sessionID))
           if (pack.text) owned.push(pack.text)
         } catch {
           owned.push("ALG working view unavailable; consult authoritative records before resuming.")
@@ -258,7 +259,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
         catch { /* observe/off capture failure stays off the context channel */ }
       }
       try {
-        const run = findLatestIncompleteRunForSession(ctx.worktree || directory, input.sessionID)
+        const run = await awaitLock(() => findLatestIncompleteRunForSession(ctx.worktree || directory, input.sessionID))
         if (run) owned.push(formatCompactionContext(run))
       } catch (error) {
         logCompactionFailure(`ALG compaction hook failed: ${formatSdkError(error)}`)
@@ -269,7 +270,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       } catch (error) {
         logCompactionFailure(`ALG skill-evolution compaction hook failed: ${formatSdkError(error)}`)
       }
-      const skills = memory.options.mode === "assist" ? "" : skillGuidance.compactionContext(input.sessionID)
+      const skills = memory.options.mode === "assist" ? "" : await awaitLock(() => skillGuidance.compactionContext(input.sessionID))
       if (skills) owned.push(skills)
       if (environmentMemory?.mode === "assist") {
         try {

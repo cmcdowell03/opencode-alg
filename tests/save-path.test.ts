@@ -14,7 +14,7 @@ import {
   persistRun,
 } from "../src/store.ts"
 import { parseOwnerRunIndex } from "../src/owner-index.ts"
-import { acquireFilesystemMutex, FilesystemMutexContentionError } from "../src/filesystem-mutex.ts"
+import { acquireFilesystemMutex } from "../src/filesystem-mutex.ts"
 import { isContained, resolveContainedPath, scopeMemo, scopedValue, withContainmentScope } from "../src/paths.ts"
 import { isAlgWorkerSession, runNodeSession } from "../src/sessions.ts"
 import type { GraphDef, RunState } from "../src/types.ts"
@@ -388,30 +388,6 @@ describe("lock ownership without reading the lock back", () => {
       expect(() => lock.assertHeld()).toThrow(/token changed or expired/)
       lock.release()
       expect(existsSync(path)).toBe(false)
-    } finally { removeProject(project) }
-  })
-
-  test("waiting for a lock this thread holds fails at once instead of freezing for the whole wait", () => {
-    const project = tempProject("alg-lock-self-")
-    try {
-      const path = join(project, "resource.lock")
-      const lock = acquireFilesystemMutex(path, { owner: "holder" })
-      const started = performance.now()
-      expect(() => acquireFilesystemMutex(path, { owner: "second", waitMs: 2_000 })).toThrow(FilesystemMutexContentionError)
-      expect(performance.now() - started).toBeLessThan(500)
-      lock.release()
-      acquireFilesystemMutex(path, { owner: "second", waitMs: 2_000 }).release()
-    } finally { removeProject(project) }
-  })
-
-  test("another live holder is still waited for, up to the limit", () => {
-    const project = tempProject("alg-lock-foreign-")
-    try {
-      const path = join(project, "resource.lock")
-      writeFileSync(path, `${JSON.stringify(foreignRecord(path), null, 2)}\n`, "utf8")
-      const started = performance.now()
-      expect(() => acquireFilesystemMutex(path, { owner: "second", waitMs: 300 })).toThrow(FilesystemMutexContentionError)
-      expect(performance.now() - started).toBeGreaterThanOrEqual(280)
     } finally { removeProject(project) }
   })
 })

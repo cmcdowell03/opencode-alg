@@ -240,8 +240,9 @@ describe("skill-evolution durable store", () => {
       const children = Array.from({ length: 6 }, (_, index) => Bun.spawn([
         process.execPath,
         "-e",
-        `import { enqueueSkillAudit } from ${JSON.stringify(storeUrl)}; ` +
-          `enqueueSkillAudit(${JSON.stringify(project)}, ${JSON.stringify(`session-${index}`)}, ${JSON.stringify(`assistant-${index}`)}, ${JSON.stringify(configured)});`,
+        // The store lock is never waited for in place; a writer that can wait does so on a timer.
+        `import { awaitSkillEvolutionLock, enqueueSkillAudit } from ${JSON.stringify(storeUrl)}; ` +
+          `await awaitSkillEvolutionLock(() => enqueueSkillAudit(${JSON.stringify(project)}, ${JSON.stringify(`session-${index}`)}, ${JSON.stringify(`assistant-${index}`)}, ${JSON.stringify(configured)}));`,
       ], { stdout: "pipe", stderr: "pipe" }))
       const results = await Promise.all(children.map(async (child) => ({
         code: await child.exited,

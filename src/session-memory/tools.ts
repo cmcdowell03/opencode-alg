@@ -3,6 +3,7 @@ import { canonicalDirectory } from "../paths.ts"
 import { safeDiagnosticText } from "../diagnostics.ts"
 import { SessionMemoryRuntime } from "./runtime.ts"
 import { retrieve } from "./retrieval.ts"
+import { awaitFirstLock } from "../filesystem-mutex.ts"
 
 interface EnvironmentMemoryToolPort {
   status(owner?: string): unknown
@@ -19,7 +20,7 @@ export function createMemoryTools(runtime: SessionMemoryRuntime, authorize: (own
       if (!runtime.enabled && !environment && !status) return { output: JSON.stringify({ mode: "off", available: false,
         reason: "Session memory is disabled by configuration; do not retry. Use normal host tools.", next: "alg_context_status" }),
         metadata: { alg: true, session_memory: true, available: false } }
-      const result = action(context.sessionID)
+      const result = await awaitFirstLock(() => action(context.sessionID))
       const output = JSON.stringify(result)
       if (Buffer.byteLength(output) > 64 * 1024) throw new Error("memory response exceeds bound; request a smaller page")
       return { output, metadata: { alg: true, session_memory: true } }

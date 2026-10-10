@@ -49,7 +49,6 @@ export function acquireModelSettingsLock(projectDirectory: string): ModelSetting
     return acquireFilesystemMutex(path, {
       owner: "alg-model-settings",
       leaseMs: 30_000,
-      waitMs: 250,
     })
   } catch (error) {
     throw new Error(`model settings are locked by another writer: ${error instanceof Error ? error.message : String(error)}`)
