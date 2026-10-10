@@ -36,6 +36,22 @@ export interface NodePromptOpts {
 /** How long cancellation waits for the host to confirm it stopped a child before the executor moves on. */
 export const CHILD_ABORT_TIMEOUT_MS = 5_000
 
+/** Worker sessions this process created. Bounded, and only used to skip work that cannot apply to them. */
+const workerSessions = new Set<string>()
+const MAX_TRACKED_WORKER_SESSIONS = 4_096
+
+export function isAlgWorkerSession(sessionId: string): boolean {
+  return workerSessions.has(sessionId)
+}
+
+function trackWorkerSession(sessionId: string): void {
+  if (workerSessions.size >= MAX_TRACKED_WORKER_SESSIONS) {
+    const oldest = workerSessions.values().next().value
+    if (oldest !== undefined) workerSessions.delete(oldest)
+  }
+  workerSessions.add(sessionId)
+}
+
 /**
  * Cancelling the HTTP request does not stop a host session: without an explicit abort the child keeps
  * working (and editing files) after the run was cancelled. Bounded and best effort; never throws.
@@ -224,6 +240,7 @@ ${jsonSchemaHint(opts.agent)}
     if (!sessionId) {
       return { session_id: "", text: "", parsed: null, error: "session.create returned no session id" }
     }
+    trackWorkerSession(sessionId)
     try {
       await opts.onSessionCreated?.(sessionId)
     } catch (error) {

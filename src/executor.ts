@@ -81,7 +81,7 @@ export interface ExecuteOptions {
   operation?: "run" | "resume"
   /** Internal active lease; callers must not supply this. */
   activeLock?: RunLock
-  /** Internal batch durability: one fenced save follows each settled batch. */
+  /** Internal: a batch reserves all of its attempts in memory and commits them with one fenced save. */
   deferPersistence?: boolean
 }
 
@@ -94,14 +94,20 @@ class PersistenceBoundaryError extends Error {
   constructor(cause: unknown) { super("Run persistence boundary failed", { cause }) }
 }
 
+/** The run exactly as its lease last saved it. A save of an unchanged run would commit nothing new. */
+const lastSaved = new WeakMap<RunLock, string>()
+
 function save(run: RunState, options: ExecuteOptions): void {
   if (options.deferPersistence) return
   if (!options.activeLock) throw new Error("execution save requires an active fenced run lock")
+  if (lastSaved.get(options.activeLock) === JSON.stringify(run)) return
   try {
-    persistRunFenced(run, options.worktree, options.activeLock)
+    persistRunFenced(run, options.worktree, options.activeLock, { coalesceOwnerIndex: true })
   } catch (error) {
     throw new PersistenceBoundaryError(error)
   }
+  // Saving advances the revision and normalizes the caller's state, so remember the result, not the input.
+  try { lastSaved.set(options.activeLock, JSON.stringify(run)) } catch { lastSaved.delete(options.activeLock) }
   try {
     const result: unknown = (options.onProgress as ((run: RunState) => unknown) | undefined)?.(run)
     if (result && (typeof result === "object" || typeof result === "function")) {
@@ -418,6 +424,9 @@ async function runOneNode(
               : "gate_failure"
 
     state.output = schemaOk ? rawOutput : undefined
+    // A node's outcome is committed as soon as it is known, even inside a batch: a slow sibling must not
+    // hold back its durability or its progress update.
+    const outcome = { ...options, deferPersistence: false }
     if (passed) {
       state.status = "done"
       state.last_failures = []
@@ -426,31 +435,21 @@ async function runOneNode(
         run.criteria = [...criteria]
         run.criteria_locked = true
       }
-      save(run, options)
+      save(run, outcome)
       log(options, `node ${definition.id} DONE`)
       return
     }
 
-    state.status = "failed"
     state.last_failures = persistedFailures
-    save(run, options)
-    log(options, `node ${definition.id} failed attempt ${attempt}: ${persistedFailures.join("; ")}`)
-
     // One attempt per topological wave keeps retry allocation in graph order,
-    // independent of parallel completion speed.
-    if (definition.agent === "checker" && definition.feedback_to) {
-      // Only a schema-valid rejection carries substantive feedback. Invalid
-      // checker output and SDK/gate failures retry this checker itself.
-      if (attemptRecord.outcome !== "substantive_rejection" && state.current_attempt < localLimit) {
-        state.status = "pending"
-        save(run, options)
-      }
-      return
-    }
-    if (state.current_attempt < localLimit) {
-      state.status = "pending"
-      save(run, options)
-    }
+    // independent of parallel completion speed. Only a schema-valid checker
+    // rejection carries substantive feedback and waits for routing; invalid
+    // checker output and SDK/gate failures retry the node itself.
+    const awaitsFeedbackRouting = definition.agent === "checker" && Boolean(definition.feedback_to) &&
+      attemptRecord.outcome === "substantive_rejection"
+    state.status = !awaitsFeedbackRouting && state.current_attempt < localLimit ? "pending" : "failed"
+    save(run, outcome)
+    log(options, `node ${definition.id} failed attempt ${attempt}: ${persistedFailures.join("; ")}`)
 }
 
 function applyCheckerFeedback(run: RunState, options: ExecuteOptions): boolean {
@@ -639,11 +638,9 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
             throw result.reason
           }
         })
-        // The next batch's pre-child reservation fence also commits this
-        // batch's settled outcomes. Persist explicitly only for the final
-        // batch, avoiding a redundant whole-manifest verification between two
-        // adjacent fences while retaining one durable fence after each batch.
-        if (offset + concurrency >= ready.length) save(run, options)
+        // Each node committed its own outcome. This save only has work to do
+        // when an executor error was recorded above; an unchanged run is skipped.
+        save(run, options)
       }
 
       applyCheckerFeedback(run, options)

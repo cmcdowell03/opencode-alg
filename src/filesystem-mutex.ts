@@ -1,11 +1,13 @@
 import {
   closeSync,
   existsSync,
+  fstatSync,
   fsyncSync,
   openSync,
   readFileSync,
   renameSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs"
 import { hostname } from "node:os"
@@ -76,8 +78,24 @@ export interface FilesystemMutexOptions {
   beforeContentionWait?: (observed: FilesystemMutexRecord) => void
 }
 
+let cachedHost: string | undefined
+function processHost(): string {
+  return cachedHost ??= hostname()
+}
+
 function sleep(milliseconds: number): void {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds)
+}
+
+/**
+ * Mutexes this thread holds, by path and token. Waiting is a blocking sleep, and only this thread can
+ * release these, so waiting for one could never succeed: it would freeze the host for the whole wait and
+ * then fail anyway. Such an acquisition reports contention at once instead.
+ */
+const heldByThisThread = new Map<string, string>()
+
+function heldHere(path: string, observed: FilesystemMutexRecord): boolean {
+  return heldByThisThread.get(path) === observed.token
 }
 
 function defaultPidAlive(pid: number): boolean | null {
@@ -102,17 +120,43 @@ function readVerified(path: string): FilesystemMutexRecord {
   }
 }
 
-function writeExclusive(path: string, record: FilesystemMutexRecord, durable = true): void {
+/**
+ * Identity of a lock file this process just created. Reading a new file back is slow where every first
+ * open is scanned, and a save takes several short locks. A path that still names the very file we created
+ * still holds our token, because participants only ever create or replace lock files, never rewrite them.
+ */
+interface CreatedFile { dev: bigint; ino: bigint; size: bigint }
+
+function writeExclusive(path: string, record: FilesystemMutexRecord, durable = true): CreatedFile | null {
   let fd: number | undefined
   try {
     fd = openSync(path, "wx", 0o600)
     writeFileSync(fd, `${JSON.stringify(record, null, 2)}\n`, "utf8")
     if (durable) fsyncSync(fd)
+    let created: CreatedFile | null = null
+    try {
+      const stats = fstatSync(fd, { bigint: true })
+      // Filesystems without stable file ids report zero; those fall back to reading the record.
+      if (stats.ino !== 0n) created = { dev: stats.dev, ino: stats.ino, size: stats.size }
+    } catch { /* identity is an optimization only */ }
     closeSync(fd)
     fd = undefined
+    return created
   } catch (error) {
     if (fd !== undefined) closeSync(fd)
     throw error
+  }
+}
+
+/** Whether path still names the file we created; null when that cannot be told without reading it. */
+function stillCreatedFile(path: string, created: CreatedFile | null): boolean | null {
+  if (!created) return null
+  try {
+    const stats = statSync(path, { bigint: true })
+    if (stats.ino === 0n) return null
+    return stats.dev === created.dev && stats.ino === created.ino && stats.size === created.size
+  } catch (error) {
+    return (error as NodeJS.ErrnoException | undefined)?.code === "ENOENT" ? false : null
   }
 }
 
@@ -165,11 +209,12 @@ function acquireTakeoverClaim(
     acquired_at: new Date(acquired).toISOString(),
     expires_at: new Date(acquired + 5_000).toISOString(),
   })
+  let created: CreatedFile | null
   while (true) {
     try {
       // This claim is an ephemeral CAS guard. Exclusive creation and token
       // verification serialize mutations; only the durable mutex is fsynced.
-      writeExclusive(path, claim, false)
+      created = writeExclusive(path, claim, false)
       break
     } catch (error) {
       if (!existsSync(path)) throw error
@@ -190,10 +235,7 @@ function acquireTakeoverClaim(
   }
   return () => {
     try {
-      const current = readVerified(path)
-      if (current.token !== token) return
-      const confirmed = readVerified(path)
-      if (confirmed.token === token) rmSync(path, { force: true })
+      if (stillCreatedFile(path, created) ?? readVerified(path).token === token) rmSync(path, { force: true })
     } catch {
       // Never remove a replaced/unverifiable claim.
     }
@@ -240,10 +282,12 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
   }
   const now = options.now ?? Date.now
   const pid = options.pid ?? process.pid
-  const host = options.host ?? hostname()
+  const host = options.host ?? processHost()
   const isPidAlive = options.isPidAlive ?? defaultPidAlive
   const token = randomUUID()
   const deadline = Date.now() + waitMs
+  let record: FilesystemMutexRecord
+  let created: CreatedFile | null
 
   while (true) {
     // A waiter only needs the mutation claim when the mutex is absent, stale,
@@ -262,7 +306,8 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
         const disposition = mutexDisposition(observed, now(), host, isPidAlive)
         if (disposition === "takeover") {
           // Serialize the stale takeover under the mutation claim below.
-        } else if (disposition === "held" && Date.now() < deadline) {
+        } else if (disposition === "held" && Date.now() < deadline &&
+          (options.beforeContentionWait || !heldHere(path, observed))) {
           options.beforeContentionWait?.(structuredClone(observed))
           sleep(5)
           continue
@@ -292,7 +337,8 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
         const observed = readVerified(path)
         const disposition = mutexDisposition(observed, now(), host, isPidAlive)
         if (disposition !== "takeover") {
-          if (disposition === "held" && Date.now() < deadline) {
+          if (disposition === "held" && Date.now() < deadline &&
+            (options.beforeContentionWait || !heldHere(path, observed))) {
             releaseClaim()
             releaseClaim = undefined
             sleep(5)
@@ -309,7 +355,7 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
         renameSync(path, `${path}.stale-${Date.now()}-${randomUUID().slice(0, 8)}`)
       }
       const acquired = now()
-      const record = FilesystemMutexRecordSchema.parse({
+      record = FilesystemMutexRecordSchema.parse({
         version: 1,
         owner: options.owner,
         token,
@@ -319,7 +365,7 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
         acquired_at: new Date(acquired).toISOString(),
         expires_at: new Date(acquired + leaseMs).toISOString(),
       })
-      writeExclusive(path, record)
+      created = writeExclusive(path, record)
       break
     } catch (error) {
       if (error instanceof FilesystemMutexError) throw error
@@ -329,16 +375,25 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
     }
   }
 
+  heldByThisThread.set(path, token)
+  const forget = () => { if (heldByThisThread.get(path) === token) heldByThisThread.delete(path) }
   let released = false
   let lost = false
+  /** The record now at path when it is still ours, otherwise null. Unverifiable content throws. */
+  const ownRecord = (): FilesystemMutexRecord | null => {
+    const same = stillCreatedFile(path, created)
+    if (same !== null) return same ? record : null
+    const current = readVerified(path)
+    return current.token === token ? current : null
+  }
   const renew = () => {
     if (released || lost) throw new FilesystemMutexError("mutex is no longer held")
     const releaseClaim = acquireMutationClaim(path, host, isPidAlive, Date.now() + 250)
     if (!releaseClaim) throw new FilesystemMutexError("mutex mutation claim was unexpectedly yielded")
     const temporary = `${path}.${token}.${randomUUID()}.renew`
     try {
-      const current = readVerified(path)
-      if (current.token !== token) {
+      const current = ownRecord()
+      if (!current) {
         lost = true
         throw new FilesystemMutexError("mutex token changed")
       }
@@ -346,14 +401,17 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
         ...current,
         expires_at: new Date(now() + leaseMs).toISOString(),
       })
-      writeExclusive(temporary, renewed)
-      options.beforeRenewCommit?.(structuredClone(current))
-      const confirmed = readVerified(path)
-      if (confirmed.token !== token) {
-        lost = true
-        throw new FilesystemMutexError("mutex token changed before renew commit")
+      const renewedFile = writeExclusive(temporary, renewed)
+      if (options.beforeRenewCommit) {
+        options.beforeRenewCommit(structuredClone(current))
+        if (readVerified(path).token !== token) {
+          lost = true
+          throw new FilesystemMutexError("mutex token changed before renew commit")
+        }
       }
       renameSync(temporary, path)
+      record = renewed
+      created = renewedFile
     } catch (error) {
       rmSync(temporary, { force: true })
       throw error
@@ -366,6 +424,7 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
       renew()
     } catch {
       lost = true
+      forget()
       clearInterval(heartbeat)
     }
   }, heartbeatMs)
@@ -376,8 +435,8 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
     token,
     assertHeld() {
       if (released || lost) throw new FilesystemMutexError("mutex is no longer held")
-      const current = readVerified(path)
-      if (current.token !== token || Date.parse(current.expires_at) <= now()) {
+      const current = ownRecord()
+      if (!current || Date.parse(current.expires_at) <= now()) {
         lost = true
         throw new FilesystemMutexError("mutex token changed or expired")
       }
@@ -386,15 +445,18 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
     release() {
       if (released) return
       released = true
+      forget()
       clearInterval(heartbeat)
       let releaseClaim: (() => void) | undefined
       try {
         releaseClaim = acquireMutationClaim(path, host, isPidAlive, Date.now() + 250) ?? undefined
-        const current = readVerified(path)
-        if (current.token !== token) return
-        options.beforeReleaseRemove?.(structuredClone(current))
-        const confirmed = readVerified(path)
-        if (confirmed.token === token) rmSync(path, { force: true })
+        const current = ownRecord()
+        if (!current) return
+        if (options.beforeReleaseRemove) {
+          options.beforeReleaseRemove(structuredClone(current))
+          if (readVerified(path).token !== token) return
+        }
+        rmSync(path, { force: true })
       } catch {
         // Never remove a mutex that cannot be proven to belong to this holder.
       } finally {

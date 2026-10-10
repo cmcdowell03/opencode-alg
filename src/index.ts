@@ -9,7 +9,8 @@
 import type { Plugin } from "@opencode-ai/plugin"
 import { ALG_PLUGIN_ID, ALG_TOOL_IDS, algServerStartupMessage } from "./types.ts"
 import { createAlgTools } from "./tools.ts"
-import { findLatestIncompleteRunForSession } from "./store.ts"
+import { findLatestIncompleteRunForSession, findLatestIncompleteRunForTurn } from "./store.ts"
+import { isAlgWorkerSession } from "./sessions.ts"
 import { configuredAgentModels, configuredModelResolutions } from "./models.ts"
 import type { AgentModelMap, ModelResolutionMap } from "./types.ts"
 import { appendAlgCompactionContext, formatCompactionContext, MAX_COMPACTION_OUTPUT_BYTES } from "./compaction.ts"
@@ -202,7 +203,8 @@ const server: Plugin = async (ctx, pluginOptions) => {
           try { const value = read(); if (value) recovery.push(value) }
           catch { recovery.push(`ALG ${label} recovery unavailable; consult authoritative records before resuming.`) }
         }
-        collect("run", () => { const run = findLatestIncompleteRunForSession(ctx.worktree || directory, sessionId); return run ? formatCompactionContext(run) : "" })
+        // Runs before every model request of every session, so it must not scan the project's run history.
+        collect("run", () => { const run = findLatestIncompleteRunForTurn(ctx.worktree || directory, sessionId, { sessionCreatedHere: isAlgWorkerSession(sessionId) }); return run ? formatCompactionContext(run) : "" })
         collect("evidence", () => skillEvolution.recoveryContext(sessionId))
         if (memory.enabled) {
           try {
