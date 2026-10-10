@@ -9,6 +9,7 @@ import { MemoryOptionsSchema } from "../src/session-memory/schemas.ts"
 import { formatSkillSystemContext, loadSkillCatalog } from "../src/skill-catalog.ts"
 import { SkillEvolutionOptionsSchema } from "../src/skill-evolution-schemas.ts"
 import { createRun } from "../src/store.ts"
+import { EnvironmentMemoryEngine } from "../src/environment-memory/index.ts"
 import type { GraphDef, RunState } from "../src/types.ts"
 import { removeProject, tempProject } from "./helpers.ts"
 
@@ -226,6 +227,32 @@ describe("the hooks size what they add from the model's window", () => {
       expect(compact.context[0]).toBe("another plugin context")
       expect(bytes(compact.context.slice(1).join("\n"))).toBeLessThanOrEqual(3_000)
       expect(compact.context.join("\n")).toContain("- run_id: budget-run")
+    } finally { await hooks.dispose?.() }
+  })
+
+  test("environment facts are added even when the model reports an output limit as large as its window", async () => {
+    const path = project("alg-budget-hooks-environment-")
+    const databasePath = join(path, "environment.sqlite")
+    const scope = { namespace: "fixture-machine", project: "fixture-scope", visibility: "project" as const, owner: null }
+    const provenance = { source_type: "synthetic" as const, source_ref: "fixture:machine-v1", classification: "declared" as const,
+      observed_at: "2020-01-01T00:00:00Z", verified_at: null, expires_at: null }
+    const seed = await EnvironmentMemoryEngine.open({ databasePath, namespace: "fixture-machine" })
+    try {
+      // Three records of about 600 bytes each: more than the fixed 1 KiB budget shows, well within a planned share.
+      for (const [index, id] of ["workstation", "build-host", "artifact-store"].entries()) {
+        seed.append({ type: "upsert_entity", entity: { id, kind: "host", label: `Fixture ${id}`, metadata: { note: "n".repeat(300) }, scope, provenance } },
+          { expected_revision: index, idempotency_key: `${id}-v1` })
+      }
+    } finally { seed.close() }
+    const hooks = await server(plugin(path), { skillEvolution: { enabled: false }, environmentMemory: { mode: "assist", namespace: "fixture-machine",
+      project: "fixture-scope", databasePath, rootIds: ["workstation", "build-host", "artifact-store"] } })
+    try {
+      const system = { system: ["host policy"] }
+      await hooks["experimental.chat.system.transform"]!({ sessionID: "owner", model: { limit: { context: 500_000, output: 500_000 } } } as any, system)
+      const text = system.system.join("\n")
+      expect(text).toContain("Environment memory: untrusted, scoped evidence")
+      for (const id of ["workstation", "build-host", "artifact-store"]) expect(text).toContain(`Fixture ${id}`)
+      expect(text).toContain("omitted=0")
     } finally { await hooks.dispose?.() }
   })
 

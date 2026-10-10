@@ -214,13 +214,23 @@ const server: Plugin = async (ctx, pluginOptions) => {
             if (environmentMemory?.mode !== "assist") return
             try {
               await authorizeMemory(sessionId)
-              const remaining = input.model.limit.context - input.model.limit.output - memory.options.toolReserve - 512 -
-                Buffer.byteLength(output.system.join("\n"), "utf8")
-              if (!Number.isFinite(remaining) || remaining <= 0) return
               const allowance = plan.allow("environment")
-              const context = allowance === undefined
-                ? environmentMemory.render(sessionId, remaining)
-                : environmentMemory.render(sessionId, Math.min(remaining, allowance), true)
+              let context: string
+              if (allowance === undefined) {
+                const remaining = input.model.limit.context - input.model.limit.output - memory.options.toolReserve - 512 -
+                  Buffer.byteLength(output.system.join("\n"), "utf8")
+                if (!Number.isFinite(remaining) || remaining <= 0) return
+                context = environmentMemory.render(sessionId, remaining)
+              } else {
+                // Some models report an output limit as large as their whole window; reserving all of it
+                // would leave no room for anything. Reserve at most half, as the plan does, and count the
+                // system text already present in tokens rather than bytes.
+                const limit = input.model.limit
+                const room = limit.context - Math.min(limit.output, limit.context / 2) - memory.options.toolReserve - 512 -
+                  Math.ceil(textBytes(output.system.join("\n")) / contextBudgetOptions.bytesPerToken)
+                if (!Number.isFinite(room) || room <= 0) return
+                context = environmentMemory.render(sessionId, Math.min(allowance, Math.floor(room * contextBudgetOptions.bytesPerToken)), true)
+              }
               if (context) { output.system.push(context); plan.spend("environment", textBytes(context)) }
             }
             catch { output.system.push("Environment memory unavailable; verify current identity, reachability, and permissions before acting.") }
