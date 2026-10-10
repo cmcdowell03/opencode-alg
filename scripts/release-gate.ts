@@ -119,6 +119,7 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "docs/model-agnostic-recovery.md", "docs/air-gapped-deployment.md", "docs/run-failure-remediation.md",
   "docs/environment-memory.md", "docs/environment-memory-design.md", "docs/environment-memory-engine-plan.md",
   "docs/environment-memory-benchmarks.md", "docs/agent-install-upgrade-runbook.md",
+  "docs/historical-audit-recovery.md", "docs/live-run-visibility.md",
   "scripts/alg.ps1", "scripts/alg.sh", "scripts/check-live.ts", "scripts/install.ps1", "scripts/install.sh",
   "scripts/installer-core.ts", "scripts/live-verify.ts", "scripts/manager-cli.ts", "scripts/manager-core.ts",
   "scripts/manager-schema.ts", "scripts/npm-invocation.ts", "scripts/release-gate.ts", "scripts/smoke.ts",
