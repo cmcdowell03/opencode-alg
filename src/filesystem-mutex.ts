@@ -395,6 +395,7 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
       const current = ownRecord()
       if (!current) {
         lost = true
+        forget()
         throw new FilesystemMutexError("mutex token changed")
       }
       const renewed = FilesystemMutexRecordSchema.parse({
@@ -438,6 +439,7 @@ export function acquireFilesystemMutex(path: string, options: FilesystemMutexOpt
       const current = ownRecord()
       if (!current || Date.parse(current.expires_at) <= now()) {
         lost = true
+        forget()
         throw new FilesystemMutexError("mutex token changed or expired")
       }
     },

@@ -97,17 +97,25 @@ class PersistenceBoundaryError extends Error {
 /** The run exactly as its lease last saved it. A save of an unchanged run would commit nothing new. */
 const lastSaved = new WeakMap<RunLock, string>()
 
+/** Undefined when the state cannot be serialized; the save then proceeds and reports the real problem. */
+function fingerprint(run: RunState): string | undefined {
+  try { return JSON.stringify(run) } catch { return undefined }
+}
+
 function save(run: RunState, options: ExecuteOptions): void {
   if (options.deferPersistence) return
   if (!options.activeLock) throw new Error("execution save requires an active fenced run lock")
-  if (lastSaved.get(options.activeLock) === JSON.stringify(run)) return
+  const unsaved = fingerprint(run)
+  if (unsaved !== undefined && lastSaved.get(options.activeLock) === unsaved) return
   try {
     persistRunFenced(run, options.worktree, options.activeLock, { coalesceOwnerIndex: true })
   } catch (error) {
     throw new PersistenceBoundaryError(error)
   }
   // Saving advances the revision and normalizes the caller's state, so remember the result, not the input.
-  try { lastSaved.set(options.activeLock, JSON.stringify(run)) } catch { lastSaved.delete(options.activeLock) }
+  const saved = fingerprint(run)
+  if (saved === undefined) lastSaved.delete(options.activeLock)
+  else lastSaved.set(options.activeLock, saved)
   try {
     const result: unknown = (options.onProgress as ((run: RunState) => unknown) | undefined)?.(run)
     if (result && (typeof result === "object" || typeof result === "function")) {
