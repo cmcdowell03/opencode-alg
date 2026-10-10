@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+- What ALG adds to a model call is now sized from that model's context window
+  instead of fixed byte limits. By default ALG may add 5% of the window per call
+  and 5% to a compaction prompt, never more than half of what is still free, and
+  never less than a floor that keeps an unfinished run's id, status and resume
+  instruction. A 32k-token model gets about 5 KB, a 200k model about 30 KB, a
+  1M model about 150 KB. The allowance is divided among the run summary, skills,
+  memory and environment facts by weight; a part that is off, or uses less,
+  passes its share on. The new `contextBudget` plugin option sets the shares,
+  and `alg_context_status` reports the last plan. The fixed limits still apply
+  when the window is unknown. In `assist` mode this replaces the 2 KB fallback
+  that capped the memory pack regardless of model, and an unfinished run is no
+  longer dropped when the pack is blocked or unavailable. Builds before this
+  option reject `contextBudget` as an unknown key. See `docs/context-budget.md`.
+- Long sessions no longer get slower per model call. With turn capture on, every
+  earlier turn in the window was registered again under the store lock before
+  each call (about 25 ms each: 0.5 s at 20 turns, 1.1 s at 45); settled turns are
+  now skipped. The skill folders are no longer re-read on every call while their
+  files are unchanged, and the per-session skill file is written only when a
+  reference is new.
+- A worker whose model call failed (an expired login, an unknown model) now
+  fails as an SDK error that names the model called, instead of "Response parse:
+  empty".
+
 - Worker attempts started by `alg_run` and `alg_resume` now appear in the parent
   transcript as native OpenCode subagent cards: running, completed, and failed
   states, parallel nodes side by side, a card per retry, and click-through to the

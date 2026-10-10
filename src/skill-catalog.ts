@@ -245,8 +245,18 @@ function cap(value: string, maximum: number): string {
   return value.length <= maximum ? value : `${value.slice(0, Math.max(0, maximum - 1))}…`
 }
 
-export function formatSkillSystemContext(catalog: SkillCatalog, hint?: SkillTurnHint, included?: SessionSkillRef[]): string {
+/**
+ * Without maximumBytes the long-standing fixed limits apply. With an allowance (see context-budget.ts)
+ * the catalog listing gets about a third of it, and a complete body is included whenever it fits in
+ * what is left: bodies are never clipped.
+ */
+export function formatSkillSystemContext(catalog: SkillCatalog, hint?: SkillTurnHint, included?: SessionSkillRef[], maximumBytes?: number): string {
   if (!catalog.skills.length) return ""
+  const governed = maximumBytes !== undefined
+  const total = governed ? Math.max(512, Math.floor(maximumBytes)) : SKILL_SYSTEM_CONTEXT_MAX_BYTES
+  const listingBytes = governed ? Math.min(16 * 1024, Math.max(400, Math.floor(total * 0.3))) : 3500
+  const bodyBytes = governed ? Math.min(SKILL_CATALOG_MAX_FILE_BYTES, total) : SKILL_INJECT_BODY_MAX_BYTES
+  const reserve = governed ? Math.min(1800, Math.floor(total * 0.15)) : 1800
   const matched = hint ? matchSkills(catalog, hint).filter((entry) => entry.applicable) : []
   const inject = matched.filter((entry) => catalog.skills.filter((other) => other.name === entry.name).length === 1).slice(0, SKILL_INJECT_MAX_SKILLS)
   const lines = [
@@ -264,7 +274,7 @@ export function formatSkillSystemContext(catalog: SkillCatalog, hint?: SkillTurn
     const tools = entry.tools.length ? `; tools: ${entry.tools.slice(0, 6).join(", ")}` : ""
     const scope = entry.managed ? "managed" : "observed"
     const line = `- ${entry.name} [${scope}] ${cap(entry.description, 180)}${tools}`
-    if (utf8Bytes([...lines, line].join("\n")) > 3500) break
+    if (utf8Bytes([...lines, line].join("\n")) > listingBytes) break
     lines.push(line)
     listed++
   }
@@ -277,8 +287,8 @@ export function formatSkillSystemContext(catalog: SkillCatalog, hint?: SkillTurn
     const source = entry.root + "/" + entry.target
     const metadata = `name=${entry.name} source=${source.length <= 400 ? JSON.stringify(source) : "(path omitted: load by skill name)"} sha256=${entry.sha256} bytes=${utf8Bytes(content)}`
     const body = `\n### Active skill: ${entry.name} (complete body)\n${metadata}\n\n${content}`
-    if (utf8Bytes(content) <= SKILL_INJECT_BODY_MAX_BYTES &&
-      utf8Bytes([...lines, body].join("\n")) <= SKILL_SYSTEM_CONTEXT_MAX_BYTES - 1800) {
+    if (utf8Bytes(content) <= bodyBytes &&
+      utf8Bytes([...lines, body].join("\n")) <= total - reserve) {
       lines.push(body)
       included?.push({ name: entry.name, root: entry.root, target: entry.target, sha256: entry.sha256 })
     } else {
@@ -288,8 +298,10 @@ export function formatSkillSystemContext(catalog: SkillCatalog, hint?: SkillTurn
   return lines.join("\n")
 }
 
-export function formatSkillCompactionContext(catalog: SkillCatalog, active: SessionSkillRef[] = [], pointer?: string, priorOmitted = 0): string {
+export function formatSkillCompactionContext(catalog: SkillCatalog, active: SessionSkillRef[] = [], pointer?: string, priorOmitted = 0,
+  maximumBytes = SKILL_COMPACTION_CONTEXT_MAX_BYTES): string {
   if (!active.length && !pointer) return ""
+  const limit = Math.max(256, Math.floor(maximumBytes))
   const lines = [
     "## ALG skills to retain after compaction",
     "",
@@ -303,7 +315,7 @@ export function formatSkillCompactionContext(catalog: SkillCatalog, active: Sess
     const current = catalog.skills.find((skill) => skill.name === entry.name && skill.root === entry.root && skill.target === entry.target)
     const state = !current ? "missing_or_not_catalogued" : current.sha256 !== entry.sha256 ? "changed" : "reload_required"
     const line = `- ${entry.name} sha256=${entry.sha256} state=${state} source=${JSON.stringify(entry.root + "/" + entry.target)}`
-    if (utf8Bytes([...lines, line].join("\n")) > SKILL_COMPACTION_CONTEXT_MAX_BYTES - 200) break
+    if (utf8Bytes([...lines, line].join("\n")) > limit - Math.min(200, Math.floor(limit * 0.2))) break
     lines.push(line)
     visible++
   }
@@ -403,7 +415,8 @@ export class SkillGuidance {
     })
   }
 
-  systemContext(sessionId?: string): string {
+  /** maximumBytes is the allowance for everything returned; a quarter of it at most goes to references. */
+  systemContext(sessionId?: string, maximumBytes?: number): string {
     if (!this.options.enabled) return ""
     try {
       if (sessionId && isDeletedSkillSession(this.project, sessionId)) return ""
@@ -413,14 +426,16 @@ export class SkillGuidance {
       const eligible = { ...catalog, skills: catalog.skills.filter((skill) => !recovery?.skills.some((ref) =>
         ref.name === skill.name && (ref.root !== skill.root || ref.target !== skill.target || ref.sha256 !== skill.sha256))) }
       const included: SessionSkillRef[] = []
-      const text = formatSkillSystemContext(eligible, hint, included)
+      const references = sessionId ? this.compactionContext(sessionId, maximumBytes === undefined ? undefined : Math.floor(maximumBytes / 4)) : ""
+      const text = formatSkillSystemContext(eligible, hint, included,
+        maximumBytes === undefined ? undefined : Math.max(0, maximumBytes - utf8Bytes(references)))
       if (sessionId) {
         // A successful skill-tool observation records identity, not a retained body.
         const observed = catalog.skills.filter((skill) => hint?.loadedSkills.includes(skill.name))
         this.remember(sessionId, [...included, ...observed.map(({ name, root, target, sha256 }) => ({ name, root, target, sha256 }))], recovery?.skills)
       }
       if (sessionId && hint?.userMessageId) this.injected.set(sessionId, { userMessageId: hint.userMessageId, refs: included })
-      return [sessionId ? this.compactionContext(sessionId) : "", text].filter(Boolean).join("\n\n")
+      return [references, text].filter(Boolean).join("\n\n")
     } catch (error) {
       // A store lock held for an instant by another process is for the caller to wait out.
       if (isLockContention(error)) throw error
@@ -429,13 +444,13 @@ export class SkillGuidance {
     }
   }
 
-  compactionContext(sessionId?: string): string {
+  compactionContext(sessionId?: string, maximumBytes?: number): string {
     if (!this.options.enabled) return ""
     try {
       if (!sessionId || isDeletedSkillSession(this.project, sessionId)) return ""
       const recovery = loadSessionRecovery(this.project, sessionId)
       if (!recovery) return ""
-      return formatSkillCompactionContext(this.catalog(), recovery?.skills, sessionRecoveryRelativePath(sessionId), recovery?.skills_omitted)
+      return formatSkillCompactionContext(this.catalog(), recovery?.skills, sessionRecoveryRelativePath(sessionId), recovery?.skills_omitted, maximumBytes)
     } catch (error) {
       if (isLockContention(error)) throw error
       return "ALG session skill checkpoint unavailable; previous skill identities could not be verified."

@@ -12,7 +12,7 @@ interface EnvironmentMemoryToolPort {
 }
 
 export function createMemoryTools(runtime: SessionMemoryRuntime, authorize: (owner: string) => Promise<void>, environment?: EnvironmentMemoryToolPort,
-  deployment?: () => unknown) {
+  deployment?: () => unknown, contextBudget?: (owner: string) => unknown) {
   const run = async (context: ToolContext, action: (owner: string) => unknown, status = false) => {
     try {
       if (canonicalDirectory(context.worktree || context.directory) !== runtime.store.project) throw new Error("foreign tool project")
@@ -54,9 +54,13 @@ export function createMemoryTools(runtime: SessionMemoryRuntime, authorize: (own
       }),
     }),
     alg_context_status: tool({ description: "Inspect durable task bindings, coverage, context budget and the last assembly receipt without modifying memory.", args: {},
-      execute: async (_args, context) => run(context, (owner) => environment
-        ? { ...runtime.status(owner), environment_memory: environment.status(owner), ...(deployment ? { deployment: deployment() } : {}) }
-        : { ...runtime.status(owner), ...(deployment ? { deployment: deployment() } : {}) }, true),
+      execute: async (_args, context) => run(context, (owner) => ({
+        ...runtime.status(owner),
+        ...(environment ? { environment_memory: environment.status(owner) } : {}),
+        // How the last model call's allowance was sized from the model's window, and what each part used.
+        ...(contextBudget ? { context_budget: contextBudget(owner) } : {}),
+        ...(deployment ? { deployment: deployment() } : {}),
+      }), true),
     }),
     alg_memory_propose: tool({ description: availability + "Store an unverified private memory proposal. Cannot publish, bind environments, approve permissions or mark a solution verified.",
       args: { content: tool.schema.string().min(1).max(2000) },

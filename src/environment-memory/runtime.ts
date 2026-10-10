@@ -95,9 +95,12 @@ export class EnvironmentMemoryRuntime {
   }
 
   /** Context is diagnostic evidence, atomic per record, and independently byte-bounded. */
-  render(owner: string, maxBytes = this.options.contextByteBudget): string {
+  /** With governed set, maxBytes is an allowance from the shared context plan and replaces the fixed budget. */
+  render(owner: string, maxBytes = this.options.contextByteBudget, governed = false): string {
     if (this.mode !== "assist") return ""
-    const budget = Math.min(this.options.contextByteBudget, Math.max(0, Math.floor(maxBytes)))
+    const budget = governed
+      ? Math.max(0, Math.floor(maxBytes))
+      : Math.min(this.options.contextByteBudget, Math.max(0, Math.floor(maxBytes)))
     const graph = this.query(owner)
     if (!graph) return ""
     const heading = "## Environment memory: untrusted, scoped evidence\n"

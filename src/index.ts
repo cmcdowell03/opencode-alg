@@ -12,6 +12,7 @@ import { createAlgTools } from "./tools.ts"
 import { findLatestIncompleteRunForSession, findLatestIncompleteRunForTurn } from "./store.ts"
 import { isAlgWorkerSession } from "./sessions.ts"
 import { awaitLock } from "./filesystem-mutex.ts"
+import { ContextBudgetOptionsSchema, SessionWindows, type ContextPart } from "./context-budget.ts"
 import { configuredAgentModels, configuredModelResolutions } from "./models.ts"
 import type { AgentModelMap, ModelResolutionMap } from "./types.ts"
 import { appendAlgCompactionContext, formatCompactionContext, MAX_COMPACTION_OUTPUT_BYTES } from "./compaction.ts"
@@ -35,6 +36,10 @@ const server: Plugin = async (ctx, pluginOptions) => {
   const resolvedConfiguration = resolvePluginConfiguration(pluginOptions)
   const pluginConfiguration = resolvedConfiguration.options
   const skillEvolutionOptions = parseSkillEvolutionOptions(pluginConfiguration)
+  const contextBudgetOptions = ContextBudgetOptionsSchema.parse(pluginConfiguration.contextBudget ?? {})
+  // What is known about each session's context window between hooks; sizes everything ALG adds.
+  const windows = new SessionWindows(contextBudgetOptions)
+  const textBytes = (text: string) => Buffer.byteLength(text, "utf8")
   let configuredModels: AgentModelMap = {}
   let modelResolutions: ModelResolutionMap = configuredModelResolutions({})
 
@@ -107,7 +112,8 @@ const server: Plugin = async (ctx, pluginOptions) => {
   const skillEvolutionTools = createSkillEvolutionTools(skillEvolution)
   const allTools = { ...tools, ...skillEvolutionTools, ...createMemoryTools(memory, authorizeMemory, environmentMemory ?? undefined,
     () => ({ ...inspectRuntimeIdentityNow(runtimeIdentityAtModuleLoad), configuration_source: resolvedConfiguration.source,
-      configuration_sidecar_present: resolvedConfiguration.sidecar_present })) }
+      configuration_sidecar_present: resolvedConfiguration.sidecar_present }),
+    (owner) => ({ options: contextBudgetOptions, last_plan: windows.last(owner) })) }
   if (JSON.stringify(Object.keys(allTools)) !== JSON.stringify(ALG_TOOL_IDS)) {
     await skillEvolution.dispose()
     environmentMemory?.close()
@@ -143,6 +149,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
         try { await captureResults(event.properties.info.sessionID) }
         catch (error) { try { await client.app.log({ body: { service: ALG_PLUGIN_ID, level: "warn", message: `ALG result capture unavailable: ${formatSdkError(error)}` } }) } catch {} }
       }
+      if (event.type === "session.deleted") windows.forget(event.properties.info.id)
       if (memory.enabled && event.type === "session.deleted") {
         const info = event.properties.info
         try {
@@ -157,6 +164,11 @@ const server: Plugin = async (ctx, pluginOptions) => {
     },
 
     "experimental.chat.messages.transform": async (_input, output) => {
+      try {
+        // The host's own token counts on these messages say how full the window is.
+        const session = output.messages.at(-1)?.info.sessionID
+        if (session) windows.observeMessages(session, output.messages)
+      } catch { /* sizing falls back to the model's limits alone */ }
       try {
         if (memory.enabled && output.messages.length) {
           const owner = output.messages.at(-1)?.info.sessionID
@@ -177,49 +189,81 @@ const server: Plugin = async (ctx, pluginOptions) => {
     },
 
     "experimental.chat.system.transform": async (input, output) => {
-      const appendRecovery = async (label: string, read: () => string) => {
+      /** Pushes the text and returns its size, so the plan knows what the part used. */
+      const appendRecovery = async (label: string, read: () => string): Promise<number> => {
         try {
           const context = await awaitLock(read)
           if (context) output.system.push(context)
+          return textBytes(context)
         } catch {
           output.system.push(`ALG ${label} recovery unavailable; consult authoritative records before resuming.`)
+          return 0
         }
       }
       if (input.sessionID) {
         const sessionId = input.sessionID
-        const appendEnvironmentMemory = async () => {
-          if (environmentMemory?.mode !== "assist") return
-          try {
-            await authorizeMemory(sessionId)
-            const remaining = input.model.limit.context - input.model.limit.output - memory.options.toolReserve - 512 -
-              Buffer.byteLength(output.system.join("\n"), "utf8")
-            if (!Number.isFinite(remaining) || remaining <= 0) return
-            const context = environmentMemory.render(sessionId, remaining)
-            if (context) output.system.push(context)
+        const assist = memory.enabled && memory.options.mode === "assist"
+        // Everything below is sized from this model's context window and from what is still free in it.
+        // Parts that are switched off are left out, so their share goes to the others.
+        windows.observeModel(sessionId, input.model?.limit)
+        const parts: ContextPart[] = ["run", ...(assist ? ["memory" as const] : skillEvolutionOptions.enabled ? ["skills" as const] : []),
+          ...(environmentMemory?.mode === "assist" ? ["environment" as const] : [])]
+        const plan = windows.plan(sessionId, "call", parts)
+        try {
+          const appendEnvironmentMemory = async () => {
+            if (environmentMemory?.mode !== "assist") return
+            try {
+              await authorizeMemory(sessionId)
+              const remaining = input.model.limit.context - input.model.limit.output - memory.options.toolReserve - 512 -
+                Buffer.byteLength(output.system.join("\n"), "utf8")
+              if (!Number.isFinite(remaining) || remaining <= 0) return
+              const allowance = plan.allow("environment")
+              const context = allowance === undefined
+                ? environmentMemory.render(sessionId, remaining)
+                : environmentMemory.render(sessionId, Math.min(remaining, allowance), true)
+              if (context) { output.system.push(context); plan.spend("environment", textBytes(context)) }
+            }
+            catch { output.system.push("Environment memory unavailable; verify current identity, reachability, and permissions before acting.") }
           }
-          catch { output.system.push("Environment memory unavailable; verify current identity, reachability, and permissions before acting.") }
-        }
-        const recovery: string[] = []
-        const collect = async (label: string, read: () => string) => {
-          try { const value = await awaitLock(read); if (value) recovery.push(value) }
-          catch { recovery.push(`ALG ${label} recovery unavailable; consult authoritative records before resuming.`) }
-        }
-        // Runs before every model request of every session, so it must not scan the project's run history.
-        await collect("run", () => { const run = findLatestIncompleteRunForTurn(ctx.worktree || directory, sessionId, { sessionCreatedHere: isAlgWorkerSession(sessionId) }); return run ? formatCompactionContext(run) : "" })
-        await collect("evidence", () => skillEvolution.recoveryContext(sessionId))
-        if (memory.enabled) {
-          try {
-            await authorizeMemory(sessionId)
-            const pack = await awaitLock(() => memory.prepare(sessionId, { context: input.model.limit.context, output: input.model.limit.output, existingText: output.system.join("\n"), mandatoryContext: recovery }))
-            if (pack.text) output.system.push(pack.text)
-            if (memory.options.mode === "assist" && pack.receipt) { await appendEnvironmentMemory(); return }
-          } catch {
-            if (memory.options.mode === "assist") { output.system.push("ALG session memory unavailable; use alg_context_status before relying on restored procedures."); return }
+          const recovery: string[] = []
+          const collect = async (label: string, read: () => string) => {
+            try { const value = await awaitLock(read); if (value) recovery.push(value) }
+            catch { recovery.push(`ALG ${label} recovery unavailable; consult authoritative records before resuming.`) }
           }
+          // Runs before every model request of every session, so it must not scan the project's run history.
+          await collect("run", () => { const run = findLatestIncompleteRunForTurn(ctx.worktree || directory, sessionId, { sessionCreatedHere: isAlgWorkerSession(sessionId) }); return run ? formatCompactionContext(run, plan.allow("run")) : "" })
+          await collect("evidence", () => skillEvolution.recoveryContext(sessionId))
+          const recoveryBytes = textBytes(recovery.join("\n"))
+          plan.spend("run", recoveryBytes)
+          if (memory.enabled) {
+            try {
+              await authorizeMemory(sessionId)
+              // The pack carries the recovery text as well; that was planned under "run", so it is added
+              // on top of the memory allowance rather than taken out of it.
+              const allowance = plan.allow("memory")
+              const pack = await awaitLock(() => memory.prepare(sessionId, { context: input.model.limit.context, output: input.model.limit.output,
+                existingText: output.system.join("\n"), mandatoryContext: recovery,
+                ...(allowance === undefined ? {} : { allowanceBytes: allowance + recoveryBytes + 64 }) }))
+              if (pack.text) { output.system.push(pack.text); plan.spend("memory", Math.max(0, textBytes(pack.text) - recoveryBytes)) }
+              if (assist && pack.receipt) {
+                // A blocked or empty pack does not contain the recovery text; never lose an unfinished run.
+                if (pack.blocked || !pack.text) output.system.push(...recovery)
+                await appendEnvironmentMemory()
+                return
+              }
+            } catch {
+              if (assist) {
+                output.system.push(...recovery, "ALG session memory unavailable; use alg_context_status before relying on restored procedures.")
+                return
+              }
+            }
+          }
+          output.system.push(...recovery)
+          if (!assist) plan.spend("skills", await appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID, plan.allow("skills"))))
+          await appendEnvironmentMemory()
+        } finally {
+          windows.record(sessionId, plan)
         }
-        output.system.push(...recovery)
-        if (memory.options.mode !== "assist") await appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID))
-        await appendEnvironmentMemory()
       }
       if (!input.sessionID && memory.options.mode !== "assist") await appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID))
     },
@@ -230,28 +274,42 @@ const server: Plugin = async (ctx, pluginOptions) => {
         try { Promise.resolve(client.app.log({ body: { service: ALG_PLUGIN_ID, level: "error", message } })).catch(() => {}) }
         catch { /* log optional */ }
       }
-      if (memory.enabled && memory.options.mode === "assist") {
+      const assist = memory.enabled && memory.options.mode === "assist"
+      // A compaction prompt carries the whole conversation, so the window is at its fullest here. The
+      // plan uses the window last seen for this session; with none known, the fixed limits apply.
+      const plan = windows.plan(input.sessionID, "compaction", [
+        ...(assist ? ["memory" as const] : ["run" as const, "skills" as const]),
+        ...(environmentMemory?.mode === "assist" ? ["environment" as const] : [])])
+      const outputLimit = plan.totalBytes ?? MAX_COMPACTION_OUTPUT_BYTES
+      const appendEnvironmentMemory = async () => {
+        if (environmentMemory?.mode !== "assist") return
+        try {
+          await authorizeMemory(input.sessionID)
+          const remaining = outputLimit - Buffer.byteLength(owned.join("\n"), "utf8") - 1
+          const allowance = plan.allow("environment")
+          const context = allowance === undefined
+            ? environmentMemory.render(input.sessionID, remaining)
+            : environmentMemory.render(input.sessionID, Math.min(remaining, allowance), true)
+          if (context) { owned.push(context); plan.spend("environment", textBytes(context)) }
+        }
+        catch { owned.push("Environment memory unavailable; verify current identity, reachability, and permissions before acting.") }
+      }
+      if (assist) {
         // The learning snapshot is a durable write, not merely another context paragraph.
         try { await skillEvolution.compactSession(input.sessionID) }
         catch (error) { logCompactionFailure(`ALG skill-evolution compaction hook failed: ${formatSdkError(error)}`) }
         try {
           await captureResults(input.sessionID)
           await authorizeMemory(input.sessionID)
-          const pack = await awaitLock(() => memory.prepare(input.sessionID))
-          if (pack.text) owned.push(pack.text)
+          const allowance = plan.allow("memory")
+          const pack = await awaitLock(() => memory.prepare(input.sessionID, allowance === undefined ? {} : { allowanceBytes: allowance }))
+          if (pack.text) { owned.push(pack.text); plan.spend("memory", textBytes(pack.text)) }
         } catch {
           owned.push("ALG working view unavailable; consult authoritative records before resuming.")
         }
-        if (environmentMemory?.mode === "assist") {
-          try {
-            await authorizeMemory(input.sessionID)
-            const remaining = MAX_COMPACTION_OUTPUT_BYTES - Buffer.byteLength(owned.join("\n"), "utf8") - 1
-            const context = environmentMemory.render(input.sessionID, remaining)
-            if (context) owned.push(context)
-          }
-          catch { owned.push("Environment memory unavailable; verify current identity, reachability, and permissions before acting.") }
-        }
-        appendAlgCompactionContext(output.context, owned)
+        await appendEnvironmentMemory()
+        appendAlgCompactionContext(output.context, owned, outputLimit)
+        windows.record(input.sessionID, plan)
         return
       }
       if (memory.enabled) {
@@ -260,28 +318,25 @@ const server: Plugin = async (ctx, pluginOptions) => {
       }
       try {
         const run = await awaitLock(() => findLatestIncompleteRunForSession(ctx.worktree || directory, input.sessionID))
-        if (run) owned.push(formatCompactionContext(run))
+        if (run) {
+          const summary = formatCompactionContext(run, plan.allow("run"))
+          owned.push(summary)
+          plan.spend("run", textBytes(summary))
+        } else plan.spend("run", 0)
       } catch (error) {
         logCompactionFailure(`ALG compaction hook failed: ${formatSdkError(error)}`)
       }
       try {
         const context = await skillEvolution.compactSession(input.sessionID)
-        if (context) owned.push(context)
+        if (context) { owned.push(context); plan.spend("skills", textBytes(context)) }
       } catch (error) {
         logCompactionFailure(`ALG skill-evolution compaction hook failed: ${formatSdkError(error)}`)
       }
-      const skills = memory.options.mode === "assist" ? "" : await awaitLock(() => skillGuidance.compactionContext(input.sessionID))
-      if (skills) owned.push(skills)
-      if (environmentMemory?.mode === "assist") {
-        try {
-          await authorizeMemory(input.sessionID)
-          const remaining = MAX_COMPACTION_OUTPUT_BYTES - Buffer.byteLength(owned.join("\n"), "utf8") - 1
-          const context = environmentMemory.render(input.sessionID, remaining)
-          if (context) owned.push(context)
-        }
-        catch { owned.push("Environment memory unavailable; verify current identity, reachability, and permissions before acting.") }
-      }
-      appendAlgCompactionContext(output.context, owned)
+      const skills = await awaitLock(() => skillGuidance.compactionContext(input.sessionID, plan.allow("skills")))
+      if (skills) { owned.push(skills); plan.spend("skills", textBytes(skills)) }
+      await appendEnvironmentMemory()
+      appendAlgCompactionContext(output.context, owned, outputLimit)
+      windows.record(input.sessionID, plan)
     },
   }
 }

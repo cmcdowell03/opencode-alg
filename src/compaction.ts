@@ -24,7 +24,69 @@ function cap(value: string, maximum: number): string {
   return value.length <= maximum ? value : `${value.slice(0, Math.max(0, maximum - 1))}…`
 }
 
-export function formatCompactionContext(run: RunState): string {
+interface RunSummaryDetail {
+  goalChars: number
+  criteria: number
+  criterionChars: number
+  nodes: number
+  failures: number
+  failureChars: number
+}
+
+/** From most to least detail. With an allowance, the first that fits is used. */
+const RUN_SUMMARY_DETAIL: readonly RunSummaryDetail[] = [
+  { goalChars: 4_000, criteria: 64, criterionChars: 1_000, nodes: 128, failures: 5, failureChars: 600 },
+  { goalChars: COMPACTION_GOAL_CHARS, criteria: COMPACTION_CRITERIA_COUNT, criterionChars: COMPACTION_CRITERION_CHARS,
+    nodes: COMPACTION_NODE_COUNT, failures: COMPACTION_FAILURE_COUNT, failureChars: COMPACTION_FAILURE_CHARS },
+  { goalChars: 400, criteria: 8, criterionChars: 160, nodes: 32, failures: 1, failureChars: 120 },
+  { goalChars: 160, criteria: 0, criterionChars: 0, nodes: 12, failures: 0, failureChars: 0 },
+]
+
+/** What must survive any allowance comes first: which run, its state, and how to continue it. */
+function renderRunSummary(run: RunState, detail: RunSummaryDetail): string {
+  const lines = [
+    "## ALG active run state (bounded durable summary)",
+    "",
+    `- run_id: ${run.run_id}`,
+    `- status: ${run.status} / phase: ${cap(run.phase, 80)}`,
+    "- continue with alg_resume; alg_status and alg_artifact hold the authoritative details.",
+    `- path: .opencode/runs/${run.run_id}/`,
+    "",
+    "### Nodes",
+  ]
+  const definitions = run.graph.nodes.filter((definition) => run.nodes[definition.id])
+  for (const definition of definitions.slice(0, detail.nodes)) {
+    const node = run.nodes[definition.id]!
+    const failures = node.last_failures.slice(0, detail.failures).map((failure) => cap(failure, detail.failureChars))
+    lines.push(`- ${node.id} [${node.agent}] ${node.status} attempts=${node.current_attempt}` +
+      (failures.length ? ` failures=${failures.join(" | ")}` : ""))
+  }
+  if (definitions.length > detail.nodes) lines.push(`- (${definitions.length - detail.nodes} more nodes not shown)`)
+  lines.push("", `- goal: ${cap(run.goal, detail.goalChars)}`, `- criteria_locked: ${run.criteria_locked}`)
+  if (!run.criteria.length) lines.push("- criteria: (none)")
+  else if (!detail.criteria) lines.push(`- criteria: ${run.criteria.length} not shown`)
+  else {
+    lines.push("- criteria:", ...run.criteria.slice(0, detail.criteria).map((criterion) => `  - ${cap(criterion, detail.criterionChars)}`))
+    if (run.criteria.length > detail.criteria) lines.push(`  - (${run.criteria.length - detail.criteria} more not shown)`)
+  }
+  lines.push("", "ALG creates fresh child sessions and does not explicitly forward worker transcripts to checkers.")
+  return lines.join("\n")
+}
+
+/**
+ * Without an allowance this is the long-standing fixed summary. With one (see context-budget.ts) the
+ * summary shows as much detail as fits, and what identifies and continues the run is never cut.
+ */
+export function formatCompactionContext(run: RunState, maximumBytes?: number): string {
+  if (maximumBytes !== undefined) {
+    const limit = Math.max(256, Math.floor(maximumBytes))
+    for (const detail of RUN_SUMMARY_DETAIL) {
+      const summary = renderRunSummary(run, detail)
+      if (utf8Bytes(summary) <= limit) return summary
+    }
+    const suffix = "\n[ALG compaction summary truncated]"
+    return `${truncateUtf8(renderRunSummary(run, RUN_SUMMARY_DETAIL.at(-1)!), Math.max(0, limit - utf8Bytes(suffix)))}${suffix}`
+  }
   const lines = [
     "## ALG active run state (bounded durable summary)",
     "",
@@ -119,7 +181,7 @@ export function capCompactionOutputContext(
   context.push(text)
 }
 
-export function appendAlgCompactionContext(shared: string[], owned: string[]): void {
-  capCompactionOutputContext(owned)
+export function appendAlgCompactionContext(shared: string[], owned: string[], maximumBytes = MAX_COMPACTION_OUTPUT_BYTES): void {
+  capCompactionOutputContext(owned, maximumBytes)
   shared.push(...owned)
 }

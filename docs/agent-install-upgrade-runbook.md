@@ -208,6 +208,8 @@ After the new build has run, check what it wrote with
 - **`environmentMemory` in the plugin options.** Builds without environment memory
   reject the option (even `{"mode":"off"}`) and ALG fails to load. Remove the
   key when rolling back.
+- **`contextBudget` in the plugin options.** Builds without dynamic context budgets
+  reject the option and ALG fails to load. Remove the key when rolling back.
 - **`subagentCards` in the plugin options.** Builds without native subagent cards
   reject the option and ALG fails to load. Remove the key when rolling back. The
   cards themselves need no rollback step: they are ordinary `task` parts in the

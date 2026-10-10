@@ -3,6 +3,9 @@
 New opt-in [environment-aware session memory](docs/session-memory.md) restores exact
 procedures after compaction, with bounded context and scoped repeat-work guards.
 
+What ALG adds to each model call is sized as a share of that model's context
+window; see [context budget](docs/context-budget.md).
+
 The separate, default-off [environment memory engine](docs/environment-memory.md)
 stores reviewed, scoped environment facts in local SQLite and supports immutable
 snapshot/journal replication. It performs no automatic discovery and adds no tool
