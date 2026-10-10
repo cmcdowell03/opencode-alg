@@ -29,6 +29,31 @@ export interface NodePromptOpts {
   model?: ModelRef
   abort?: AbortSignal
   onSessionCreated?: (sessionId: string) => void | Promise<void>
+  /** Tool ids hidden from this worker: their definitions are not sent to its model and it cannot call them. */
+  disabledTools?: readonly string[]
+}
+
+/** How long cancellation waits for the host to confirm it stopped a child before the executor moves on. */
+export const CHILD_ABORT_TIMEOUT_MS = 5_000
+
+/**
+ * Cancelling the HTTP request does not stop a host session: without an explicit abort the child keeps
+ * working (and editing files) after the run was cancelled. Bounded and best effort; never throws.
+ */
+async function stopChildSession(client: Client, sessionId: string, directory: string): Promise<void> {
+  const abort = (client.session as { abort?: (input: unknown) => Promise<unknown> }).abort
+  if (!sessionId || typeof abort !== "function") return
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    await Promise.race([
+      Promise.resolve(abort.call(client.session, { path: { id: sessionId }, query: { directory }, responseStyle: "fields", throwOnError: false })).catch(() => undefined),
+      new Promise<void>((resolve) => { timer = setTimeout(resolve, CHILD_ABORT_TIMEOUT_MS) }),
+    ])
+  } catch {
+    // The attempt is already being recorded as cancelled; an unreachable host cannot be made to stop here.
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
 }
 
 export interface NodePromptResult {
@@ -167,6 +192,8 @@ function finishReason(data: unknown): string | undefined {
 export async function runNodeSession(opts: NodePromptOpts): Promise<NodePromptResult> {
   let sessionId = ""
   let callbackFailed = false
+  let stopping: Promise<void> | undefined
+  const stopChild = () => { stopping ??= stopChildSession(opts.client, sessionId, opts.directory) }
   try {
     if (opts.abort?.aborted) throw new Error("Execution cancelled before child launch")
     const promptLimit = opts.agent === "checker" ? MAX_CHECKER_PROMPT_BYTES : MAX_WORKER_PROMPT_BYTES
@@ -183,7 +210,8 @@ ${jsonSchemaHint(opts.agent)}
     assertTextBytes(fullPrompt, promptLimit, `${opts.agent} full prompt`)
 
     const created = await opts.client.session.create({
-      body: { parentID: opts.parentSessionId, title: `alg:${opts.title}` },
+      // The "(@agent subagent)" suffix is what OpenCode's own child-session footer reads to label a subagent.
+      body: { parentID: opts.parentSessionId, title: `alg:${opts.title} (@${opts.agent} subagent)` },
       query: { directory: opts.directory },
       responseStyle: "fields",
       throwOnError: false,
@@ -203,9 +231,11 @@ ${jsonSchemaHint(opts.agent)}
       throw error
     }
     if (opts.abort?.aborted) throw new Error("Execution cancelled before child prompt")
+    opts.abort?.addEventListener("abort", stopChild, { once: true })
 
     const body: PromptBodyWithVariant = {
       agent: opts.agent,
+      ...(opts.disabledTools?.length ? { tools: Object.fromEntries(opts.disabledTools.map((id) => [id, false])) } : {}),
       ...(opts.model ? {
         model: {
           providerID: opts.model.providerID,
@@ -250,6 +280,11 @@ ${jsonSchemaHint(opts.agent)}
       parsed: null,
       error: formatSdkError(error),
     }
+  } finally {
+    opts.abort?.removeEventListener("abort", stopChild)
+    // A cancelled run must not return while its child may still be working.
+    if (opts.abort?.aborted && sessionId) stopChild()
+    if (stopping) await stopping
   }
 }
 

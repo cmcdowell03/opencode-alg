@@ -131,14 +131,16 @@ export function resolvePluginConfiguration(
   const env = environment.env ?? process.env
   const selected = chooseSidecar(root, env)
   const sidecar = selected.path ? parseSidecar(readSidecar(selected.path)) : {}
-  const sdkSections = [sdk.skillEvolution, sdk.sessionMemory, sdk.environmentMemory].filter((section) => section !== undefined).length
+  const sdkSections = [sdk.skillEvolution, sdk.sessionMemory, sdk.environmentMemory, sdk.subagentCards].filter((section) => section !== undefined).length
   const sidecarSectionsUsed = (sdk.skillEvolution === undefined && sidecar.skillEvolution !== undefined) ||
     (sdk.sessionMemory === undefined && sidecar.sessionMemory !== undefined) ||
-    (sdk.environmentMemory === undefined && sidecar.environmentMemory !== undefined)
+    (sdk.environmentMemory === undefined && sidecar.environmentMemory !== undefined) ||
+    (sdk.subagentCards === undefined && sidecar.subagentCards !== undefined)
   const merged = {
     skillEvolution: sdk.skillEvolution ?? sidecar.skillEvolution,
     sessionMemory: sdk.sessionMemory ?? sidecar.sessionMemory,
     environmentMemory: sdk.environmentMemory ?? sidecar.environmentMemory,
+    subagentCards: sdk.subagentCards ?? sidecar.subagentCards,
   }
   return {
     options: AlgPluginOptionsSchema.parse(merged),

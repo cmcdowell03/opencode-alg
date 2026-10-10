@@ -172,6 +172,8 @@ export const AlgPluginOptionsSchema = z.object({
   skillEvolution: SkillEvolutionOptionsSchema.optional(),
   sessionMemory: MemoryOptionsSchema.optional(),
   environmentMemory: EnvironmentMemoryOptionsSchema.optional(),
+  /** "native" mirrors each ALG worker into the transcript as an OpenCode subagent card; "off" keeps the plain tool line. */
+  subagentCards: z.enum(["native", "off"]).optional(),
 }).strict()
 
 export type SkillEvolutionOptions = z.infer<typeof SkillEvolutionOptionsSchema>

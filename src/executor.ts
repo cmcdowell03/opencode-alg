@@ -73,6 +73,8 @@ export interface ExecuteOptions {
   afterSessionSidecar?: () => void
   /** Scoped procedure handoff must succeed before the child prompt is sent. */
   beforeChildPrompt?: (child: string, role: "worker" | "checker") => Promise<void>
+  /** Tool ids hidden from every worker session (for example ALG's own orchestration tools). */
+  workerDisabledTools?: readonly string[]
   allowFilesystemRoot?: boolean
   /** Additive test/path-policy seam; cannot disable actual-root detection. */
   treatProjectAsFilesystemRoot?: boolean
@@ -270,6 +272,7 @@ async function runOneNode(
         directory: options.directory,
         model: run.model_snapshot[definition.agent],
         abort: options.toolContext.abort,
+        disabledTools: options.workerDisabledTools,
         onSessionCreated: async (createdSessionId) => {
           try {
             linkSession(run, options.worktree, definition.id, attempt, createdSessionId)

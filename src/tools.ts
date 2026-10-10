@@ -12,6 +12,7 @@ import {
 } from "./store.ts"
 import { getTemplate, listTemplates } from "./templates.ts"
 import type { AgentModelMap, GraphDef, ModelResolutionMap, RunState } from "./types.ts"
+import { ALG_TOOL_IDS } from "./types.ts"
 import { mutateOwnedRun, resolveOwnedRun, transferRunOwnership } from "./ownership.ts"
 import {
   loadModelSettings,
@@ -33,6 +34,7 @@ import { serializedBytes, truncateUtf8, utf8Bytes } from "./limits.ts"
 import { executeWithMemory } from "./session-memory/attempts.ts"
 import type { SessionMemoryRuntime } from "./session-memory/runtime.ts"
 import { buildRunProgress, parseRunProgress, type AlgRunProgress } from "./run-progress.ts"
+import { createRunCardProjector, type RunCardProjector, type SubagentCardMode } from "./run-cards.ts"
 
 type Detail = "compact" | "full"
 const PREVIEW_BYTES = 2_048
@@ -116,6 +118,8 @@ function rootAuthorization(run: RunState, detail: Detail = "compact") {
 
 export interface AlgToolRuntime {
   sessionMemory?: SessionMemoryRuntime
+  /** "native" (default) mirrors worker attempts into the transcript as OpenCode subagent cards. */
+  subagentCards?: SubagentCardMode
   /** Additive root classification for isolated tool-path tests; cannot unmark a real root. */
   additionalFilesystemRoot?: (projectDirectory: string) => boolean
 }
@@ -511,6 +515,18 @@ export function createAlgTools(
   const { client } = plugin
   const isAdditionalFilesystemRoot = (project: string): boolean =>
     runtime.additionalFilesystemRoot?.(project) === true
+  // Workers never orchestrate: hiding ALG's own tools saves their definitions on every worker request and
+  // makes nested runs impossible. Memory tools stay available when session memory hands procedures to workers.
+  const memoryTools = new Set<string>(["alg_memory_search", "alg_memory_read", "alg_context_status", "alg_memory_propose"])
+  const workerDisabledTools = ALG_TOOL_IDS.filter((id) => !(runtime.sessionMemory?.enabled && memoryTools.has(id)))
+  const runCards = (run: RunState, project: string, context: ToolContext): RunCardProjector | null => {
+    const cards = createRunCardProjector(runtime.subagentCards, client, {
+      project, directory: context.directory, runId: run.run_id, parentSessionId: context.sessionID, messageId: context.messageID,
+      log: (message) => { try { void Promise.resolve(client.app.log({ body: { service: "opencode-alg", level: "warn", message } })).catch(() => {}) } catch { /* optional */ } },
+    })
+    cards?.prime(run)
+    return cards
+  }
   return {
     alg_templates: tool({
       description: "List built-in ALG graph templates.",
@@ -732,6 +748,7 @@ export function createAlgTools(
       },
       async execute(args, context) {
         let latestProgress: AlgRunProgress | null = null
+        let cards: RunCardProjector | null = null
         try {
           const { project, directory } = roots(plugin, context)
           // loadRunForOwner may recover sidecars, reconcile mirrors, or
@@ -745,6 +762,7 @@ export function createAlgTools(
           } else if (args.shell_timeout_ms !== undefined) {
             throw new Error("shell_timeout_ms requires shell_gate")
           }
+          cards = runCards(run, project, context)
           const events: string[] = []
           const updated = await executeWithMemory(runtime.sessionMemory, run, {
             client,
@@ -760,8 +778,10 @@ export function createAlgTools(
             allowFilesystemRoot: args.allow_filesystem_root,
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
             operation: "run",
+            workerDisabledTools,
             onEvent: (message) => events.push(message),
             onProgress: (savedRun) => {
+              cards?.observe(savedRun)
               latestProgress = buildRunProgress(savedRun)
               publishProgress(latestProgress, context)
             },
@@ -785,6 +805,9 @@ export function createAlgTools(
           return err(error, latestProgress
             ? { alg_progress: parseRunProgress(latestProgress, context.sessionID) }
             : undefined)
+        } finally {
+          // Cards are display only: close any still shown as running, and never let this affect the result.
+          await cards?.settle()
         }
       },
     }),
@@ -920,6 +943,7 @@ export function createAlgTools(
       },
       async execute(args, context) {
         let latestProgress: AlgRunProgress | null = null
+        let cards: RunCardProjector | null = null
         try {
           const { project, directory } = roots(plugin, context)
           const additionalFilesystemRoot = isAdditionalFilesystemRoot(project)
@@ -929,6 +953,7 @@ export function createAlgTools(
           if (args.shell_gate) run.graph = withShellGate(run.graph, args.shell_gate, args.shell_timeout_ms)
           else if (args.shell_timeout_ms !== undefined) throw new Error("shell_timeout_ms requires shell_gate")
           prepareRunForResume(run)
+          cards = runCards(run, project, context)
           const events: string[] = []
           const updated = await executeWithMemory(runtime.sessionMemory, run, {
             client,
@@ -944,8 +969,10 @@ export function createAlgTools(
             allowFilesystemRoot: args.allow_filesystem_root,
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
             operation: "resume",
+            workerDisabledTools,
             onEvent: (message) => events.push(message),
             onProgress: (savedRun) => {
+              cards?.observe(savedRun)
               latestProgress = buildRunProgress(savedRun)
               publishProgress(latestProgress, context)
             },
@@ -963,6 +990,9 @@ export function createAlgTools(
           return err(error, latestProgress
             ? { alg_progress: parseRunProgress(latestProgress, context.sessionID) }
             : undefined)
+        } finally {
+          // Cards are display only: close any still shown as running, and never let this affect the result.
+          await cards?.settle()
         }
       },
     }),
