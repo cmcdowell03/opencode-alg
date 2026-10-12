@@ -177,7 +177,10 @@ project so ALG writes its state there, give it a small failing test, and run:
 opencode run --dir <project> -m <provider/model> "Fix the bug so 'node test.js' passes. Use alg_plan with the coding-diamond template, then alg_run until done, failed, or blocked, then report alg_status."
 ```
 
-Expect the run to finish `done` and the test to pass. Then start
+Expect the run to finish `done` and the test to pass. In the terminal UI, each
+worker should show as a subagent card under the `alg_run` call while it runs;
+if the cards are unwanted, set `"subagentCards": "off"` in the plugin options
+and restart OpenCode. Then start
 `opencode serve` in that project once, request
 `/experimental/tool/ids?directory=<project>`, and confirm that any skill audit
 left `running` by the previous exit completes (skill evolution only).
@@ -205,6 +208,12 @@ After the new build has run, check what it wrote with
 - **`environmentMemory` in the plugin options.** Builds without environment memory
   reject the option (even `{"mode":"off"}`) and ALG fails to load. Remove the
   key when rolling back.
+- **`contextBudget` in the plugin options.** Builds without dynamic context budgets
+  reject the option and ALG fails to load. Remove the key when rolling back.
+- **`subagentCards` in the plugin options.** Builds without native subagent cards
+  reject the option and ALG fails to load. Remove the key when rolling back. The
+  cards themselves need no rollback step: they are ordinary `task` parts in the
+  parent transcript and an older build ignores them.
 - **Session memory**, if it was enabled: an older build cannot read checkpoints a
   newer one wrote and reports recovery as blocked. Restore the backup's
   `session-memory` store.

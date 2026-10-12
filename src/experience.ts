@@ -111,7 +111,7 @@ export function appendExperience(project: string, raw: unknown): Experience {
   // Reject caller-owned identity fields and malformed values before redaction or I/O.
   const input = ExperienceInputSchema.parse(raw)
   const root = directory(project, [], true)
-  const lock = acquireFilesystemMutex(join(root, "writer.lock"), { owner: "experience:append", waitMs: 100 })
+  const lock = acquireFilesystemMutex(join(root, "writer.lock"), { owner: "experience:append" })
   try {
     const body = ExperienceSchema.omit({ id: true }).parse({
       ...input, schema_version: 1, project: experienceProject(project), privacy: "project-private",
@@ -192,7 +192,7 @@ export function importRunExperience(project: string, runId: string, owner: strin
 
 export function withExperienceOperation<T>(project: string, operation: string, work: (assertHeld: () => void) => T): T {
   if (!isSafeId(operation)) throw new Error("invalid experience operation")
-  const lock = acquireFilesystemMutex(join(directory(project, [], true), `${operation}.lock`), { owner: `experience:${operation}`, waitMs: 100 })
+  const lock = acquireFilesystemMutex(join(directory(project, [], true), `${operation}.lock`), { owner: `experience:${operation}` })
   try { lock.assertHeld(); return work(() => lock.assertHeld()) } finally { lock.release() }
 }
 

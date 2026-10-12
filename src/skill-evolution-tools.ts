@@ -4,6 +4,7 @@ import type { SkillEvolutionRuntime } from "./skill-evolution-runtime.ts"
 import { HistoricalToolInputSchema } from "./skill-evolution-historical.ts"
 import {
   appendSkillCandidateRevision,
+  awaitSkillEvolutionLock,
   findSkillCandidate,
   loadCandidateRevision,
   loadSkillCandidates,
@@ -196,7 +197,7 @@ export function createSkillEvolutionTools(runtime: SkillEvolutionRuntime) {
       async execute(args, context) {
         try {
           requireEnabled(runtime)
-          const recovery = recoverSkillTransactions(runtime.project, runtime.options)
+          const recovery = await awaitSkillEvolutionLock(() => recoverSkillTransactions(runtime.project, runtime.options))
           if (recovery.unresolved.length) throw new Error(`transaction recovery is unresolved: ${recovery.unresolved[0]}`)
           const candidate = findSkillCandidate(runtime.project, args.candidate_id)
           if (!candidate) throw new Error("skill-evolution candidate not found")
@@ -213,13 +214,13 @@ export function createSkillEvolutionTools(runtime: SkillEvolutionRuntime) {
               initial.checker_output.findings.length === 0 && candidate.checker_findings.length === 0
             next = immutableApproval ? "validated" : "proposed"
           }
-          const updated = appendSkillCandidateRevision(runtime.project, candidate.candidate_id, candidate.current_revision, {
+          const updated = await awaitSkillEvolutionLock(() => appendSkillCandidateRevision(runtime.project, candidate.candidate_id, candidate.current_revision, {
             state: next,
             event: args.action === "reject" ? "review_rejected" : "review_restored",
             actorSessionId: actor(context),
             reason: args.reason,
             update() {},
-          })
+          }))
           return ok("alg skill evolution review", { candidate: updated, approval_bypassed_checker: false })
         } catch (error) {
           return err(error)
@@ -237,7 +238,7 @@ export function createSkillEvolutionTools(runtime: SkillEvolutionRuntime) {
         try {
           requireEnabled(runtime)
           confirmation(args.confirm, "PROMOTE", args.candidate_id)
-          const result = promoteSkillCandidate(runtime.project, args.candidate_id, actor(context), runtime.options)
+          const result = await awaitSkillEvolutionLock(() => promoteSkillCandidate(runtime.project, args.candidate_id, actor(context), runtime.options))
           runtime.markRestartRequired()
           return ok("alg skill evolution promote", {
             ...result,
@@ -261,7 +262,7 @@ export function createSkillEvolutionTools(runtime: SkillEvolutionRuntime) {
         try {
           requireEnabled(runtime)
           confirmation(args.confirm, "ROLLBACK", args.candidate_id)
-          const result = rollbackSkillCandidate(runtime.project, args.candidate_id, actor(context), runtime.options)
+          const result = await awaitSkillEvolutionLock(() => rollbackSkillCandidate(runtime.project, args.candidate_id, actor(context), runtime.options))
           runtime.markRestartRequired()
           return ok("alg skill evolution rollback", {
             ...result,

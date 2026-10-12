@@ -12,7 +12,9 @@ import {
 } from "./store.ts"
 import { getTemplate, listTemplates } from "./templates.ts"
 import type { AgentModelMap, GraphDef, ModelResolutionMap, RunState } from "./types.ts"
-import { mutateOwnedRun, resolveOwnedRun, transferRunOwnership } from "./ownership.ts"
+import { ALG_TOOL_IDS } from "./types.ts"
+import { mutateOwnedRunAsync, resolveOwnedRun, transferRunOwnershipAsync } from "./ownership.ts"
+import { awaitLock } from "./filesystem-mutex.ts"
 import {
   loadModelSettings,
   setAgentModel,
@@ -33,6 +35,7 @@ import { serializedBytes, truncateUtf8, utf8Bytes } from "./limits.ts"
 import { executeWithMemory } from "./session-memory/attempts.ts"
 import type { SessionMemoryRuntime } from "./session-memory/runtime.ts"
 import { buildRunProgress, parseRunProgress, type AlgRunProgress } from "./run-progress.ts"
+import { createRunCardProjector, type RunCardProjector, type SubagentCardMode } from "./run-cards.ts"
 
 type Detail = "compact" | "full"
 const PREVIEW_BYTES = 2_048
@@ -116,6 +119,8 @@ function rootAuthorization(run: RunState, detail: Detail = "compact") {
 
 export interface AlgToolRuntime {
   sessionMemory?: SessionMemoryRuntime
+  /** "native" (default) mirrors worker attempts into the transcript as OpenCode subagent cards. */
+  subagentCards?: SubagentCardMode
   /** Additive root classification for isolated tool-path tests; cannot unmark a real root. */
   additionalFilesystemRoot?: (projectDirectory: string) => boolean
 }
@@ -511,6 +516,18 @@ export function createAlgTools(
   const { client } = plugin
   const isAdditionalFilesystemRoot = (project: string): boolean =>
     runtime.additionalFilesystemRoot?.(project) === true
+  // Workers never orchestrate: hiding ALG's own tools saves their definitions on every worker request and
+  // makes nested runs impossible. Memory tools stay available when session memory hands procedures to workers.
+  const memoryTools = new Set<string>(["alg_memory_search", "alg_memory_read", "alg_context_status", "alg_memory_propose"])
+  const workerDisabledTools = ALG_TOOL_IDS.filter((id) => !(runtime.sessionMemory?.enabled && memoryTools.has(id)))
+  const runCards = (run: RunState, project: string, context: ToolContext): RunCardProjector | null => {
+    const cards = createRunCardProjector(runtime.subagentCards, client, {
+      project, directory: context.directory, runId: run.run_id, parentSessionId: context.sessionID, messageId: context.messageID,
+      log: (message) => { try { void Promise.resolve(client.app.log({ body: { service: "opencode-alg", level: "warn", message } })).catch(() => {}) } catch { /* optional */ } },
+    })
+    cards?.prime(run)
+    return cards
+  }
   return {
     alg_templates: tool({
       description: "List built-in ALG graph templates.",
@@ -543,11 +560,12 @@ export function createAlgTools(
             }
             return ok("alg models", loadModelSettings(project))
           }
+          const agent = args.agent
           if (args.clear) {
             if (hasProvider || hasModel || hasVariant || args.clear_variant) {
               throw new Error("clear cannot be combined with provider_id, model_id, variant, or clear_variant")
             }
-            return ok("alg models", setAgentModel(project, args.agent, null, args.revision))
+            return ok("alg models", await awaitLock(() => setAgentModel(project, agent, null, args.revision)))
           }
           if (args.clear_variant) {
             if (hasProvider || hasModel || hasVariant) {
@@ -555,14 +573,14 @@ export function createAlgTools(
             }
             return ok(
               "alg models",
-              setAgentModelVariant(project, args.agent, null, args.revision),
+              await awaitLock(() => setAgentModelVariant(project, agent, null, args.revision)),
             )
           }
           if (hasProvider !== hasModel) throw new Error("provider_id and model_id are both required")
           if (!hasProvider && hasVariant) {
             return ok(
               "alg models",
-              setAgentModelVariant(project, args.agent, args.variant!, args.revision),
+              await awaitLock(() => setAgentModelVariant(project, agent, args.variant!, args.revision)),
             )
           }
           if (!hasProvider) {
@@ -570,16 +588,16 @@ export function createAlgTools(
           }
           return ok(
             "alg models",
-            setAgentModel(
+            await awaitLock(() => setAgentModel(
               project,
-              args.agent,
+              agent,
               {
                 providerID: args.provider_id!,
                 modelID: args.model_id!,
                 ...(hasVariant ? { variant: args.variant } : {}),
               },
               args.revision,
-            ),
+            )),
           )
         } catch (error) {
           return err(error)
@@ -597,13 +615,13 @@ export function createAlgTools(
       async execute(args, context) {
         try {
           const { project } = roots(plugin, context)
-          let run = ownedRun(project, context.sessionID, args.run_id)
+          let run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned planned run found. Call alg_plan first and pass criteria directly to alg_plan when possible.")
           if (run.status !== "planning") throw new Error("Criteria can only be changed while the run is planning")
           if (run.criteria_locked && run.criteria.length && args.lock !== false) {
             throw new Error(`Criteria are locked on run ${run.run_id}; pass lock=false to replace and leave unlocked.`)
           }
-          run = mutateOwnedRun(project, run.run_id, context.sessionID, (fresh) => {
+          run = await mutateOwnedRunAsync(project, run.run_id, context.sessionID, (fresh) => {
             if (fresh.status !== "planning") throw new Error("Criteria can only be changed while the run is planning")
             if (fresh.criteria_locked && fresh.criteria.length && args.lock !== false) {
               throw new Error(`Criteria are locked on run ${fresh.run_id}; pass lock=false to replace and leave unlocked.`)
@@ -732,19 +750,21 @@ export function createAlgTools(
       },
       async execute(args, context) {
         let latestProgress: AlgRunProgress | null = null
+        let cards: RunCardProjector | null = null
         try {
           const { project, directory } = roots(plugin, context)
           // loadRunForOwner may recover sidecars, reconcile mirrors, or
           // quarantine corruption, so root authorization must happen first.
           const additionalFilesystemRoot = isAdditionalFilesystemRoot(project)
           assertFilesystemRootAuthorized(project, args.allow_filesystem_root, "run", additionalFilesystemRoot)
-          const run = ownedRun(project, context.sessionID, args.run_id)
+          const run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned run found. Call alg_plan first.")
           if (args.shell_gate) {
             run.graph = withShellGate(run.graph, args.shell_gate, args.shell_timeout_ms)
           } else if (args.shell_timeout_ms !== undefined) {
             throw new Error("shell_timeout_ms requires shell_gate")
           }
+          cards = runCards(run, project, context)
           const events: string[] = []
           const updated = await executeWithMemory(runtime.sessionMemory, run, {
             client,
@@ -760,21 +780,23 @@ export function createAlgTools(
             allowFilesystemRoot: args.allow_filesystem_root,
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
             operation: "run",
+            workerDisabledTools,
             onEvent: (message) => events.push(message),
             onProgress: (savedRun) => {
+              cards?.observe(savedRun)
               latestProgress = buildRunProgress(savedRun)
               publishProgress(latestProgress, context)
             },
           })
           return ok(
             "alg run",
-            runResponse(
+            await awaitLock(() => runResponse(
               args.detail === "full"
                 ? ownedRun(project, context.sessionID, updated.run_id) ?? updated
                 : loadCommittedRunProjectionForOwner(project, updated.run_id, context.sessionID) ?? updated,
               events,
               args.detail ?? "compact",
-            ),
+            )),
             {
               run_id: updated.run_id,
               status: updated.status,
@@ -785,6 +807,9 @@ export function createAlgTools(
           return err(error, latestProgress
             ? { alg_progress: parseRunProgress(latestProgress, context.sessionID) }
             : undefined)
+        } finally {
+          // Cards are display only: close any still shown as running, and never let this affect the result.
+          await cards?.settle()
         }
       },
     }),
@@ -815,7 +840,7 @@ export function createAlgTools(
               ? 0
               : visible.filter((run) => run.goal.length > COMPACT_LIST_GOAL_CHARS).length
             const runs = full
-              ? visible.map((envelope) => {
+              ? await awaitLock(() => visible.map((envelope) => {
                   try {
                     const loaded = ownedRun(project, context.sessionID, envelope.run_id)
                     if (!loaded) throw new Error("run disappeared during full status list")
@@ -824,9 +849,10 @@ export function createAlgTools(
                   } catch (error) {
                     throw new Error(
                       `full status list failed for run ${envelope.run_id}: ${error instanceof Error ? error.message : String(error)}`,
+                      { cause: error },
                     )
                   }
-                })
+                }))
               : visible.map((run) => ({
                   run_id: run.run_id,
                   status: run.status,
@@ -854,11 +880,11 @@ export function createAlgTools(
               truncated: omitted > 0 || goalsTruncated > 0 || listing.scan_truncated,
             })
           }
-          const loaded = ownedRun(project, context.sessionID, args.run_id)
+          const loaded = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!loaded) throw new Error("No owned run found.")
           const run = args.detail === "full"
             ? loaded
-            : loadCommittedRunProjectionForOwner(project, loaded.run_id, context.sessionID) ?? loaded
+            : (await awaitLock(() => loadCommittedRunProjectionForOwner(project, loaded.run_id, context.sessionID))) ?? loaded
           const compacted = compactNodes(run)
           const compact = finalizeCompact({
             run_id: run.run_id,
@@ -892,7 +918,7 @@ export function createAlgTools(
               retry_routing: routingSummary(full),
               root_authorization: rootAuthorization(full, "full"),
               failure_verification: failureVerification(
-                loadCommittedRunProjectionForOwner(project, full.run_id, context.sessionID) ?? run,
+                (await awaitLock(() => loadCommittedRunProjectionForOwner(project, full.run_id, context.sessionID))) ?? run,
               ),
               model_resolution: compactModels(full),
               path: runDir(project, full.run_id),
@@ -920,15 +946,17 @@ export function createAlgTools(
       },
       async execute(args, context) {
         let latestProgress: AlgRunProgress | null = null
+        let cards: RunCardProjector | null = null
         try {
           const { project, directory } = roots(plugin, context)
           const additionalFilesystemRoot = isAdditionalFilesystemRoot(project)
           assertFilesystemRootAuthorized(project, args.allow_filesystem_root, "resume", additionalFilesystemRoot)
-          const run = ownedRun(project, context.sessionID, args.run_id)
+          const run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned run found to resume.")
           if (args.shell_gate) run.graph = withShellGate(run.graph, args.shell_gate, args.shell_timeout_ms)
           else if (args.shell_timeout_ms !== undefined) throw new Error("shell_timeout_ms requires shell_gate")
           prepareRunForResume(run)
+          cards = runCards(run, project, context)
           const events: string[] = []
           const updated = await executeWithMemory(runtime.sessionMemory, run, {
             client,
@@ -944,25 +972,30 @@ export function createAlgTools(
             allowFilesystemRoot: args.allow_filesystem_root,
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
             operation: "resume",
+            workerDisabledTools,
             onEvent: (message) => events.push(message),
             onProgress: (savedRun) => {
+              cards?.observe(savedRun)
               latestProgress = buildRunProgress(savedRun)
               publishProgress(latestProgress, context)
             },
           })
-          return ok("alg resume", runResponse(
+          return ok("alg resume", await awaitLock(() => runResponse(
             args.detail === "full"
               ? ownedRun(project, context.sessionID, updated.run_id) ?? updated
               : loadCommittedRunProjectionForOwner(project, updated.run_id, context.sessionID) ?? updated,
             events,
             args.detail ?? "compact",
-          ), latestProgress
+          )), latestProgress
             ? { alg_progress: parseRunProgress(latestProgress, context.sessionID) ?? undefined }
             : undefined)
         } catch (error) {
           return err(error, latestProgress
             ? { alg_progress: parseRunProgress(latestProgress, context.sessionID) }
             : undefined)
+        } finally {
+          // Cards are display only: close any still shown as running, and never let this affect the result.
+          await cards?.settle()
         }
       },
     }),
@@ -977,7 +1010,7 @@ export function createAlgTools(
       async execute(args, context) {
         try {
           const { project } = roots(plugin, context)
-          const run = ownedRun(project, context.sessionID, args.run_id)
+          const run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned run found.")
           const node = run.nodes[args.node_id]
           if (!node) throw new Error(`Unknown node ${args.node_id}`)
@@ -1027,7 +1060,7 @@ export function createAlgTools(
       async execute(args, context) {
         try {
           const { project, directory } = roots(plugin, context)
-          const owned = ownedRun(project, context.sessionID, args.run_id)
+          const owned = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!owned) throw new Error("No owned run found to transfer.")
           await validateTransferTarget(
             plugin,
@@ -1036,7 +1069,7 @@ export function createAlgTools(
             directory,
             args.new_owner_session_id,
           )
-          const transferred = transferRunOwnership(
+          const transferred = await transferRunOwnershipAsync(
             project,
             args.run_id,
             context.sessionID,

@@ -7,7 +7,7 @@ import { serializedBytes, utf8Bytes } from "./limits.ts"
 import { safeDiagnosticText } from "./diagnostics.ts"
 import { buildSkillEvidence } from "./skill-evolution-evidence.ts"
 import type { ModelRef, ModelResolution, ModelResolutionMap } from "./types.ts"
-import { FilesystemMutexContentionError } from "./filesystem-mutex.ts"
+import { awaitLock, isLockContention } from "./filesystem-mutex.ts"
 import { SkillEvolutionOptionsSchema, type SkillEvolutionOptions } from "./skill-evolution-schemas.ts"
 import {
   AuditorOutputSchema,
@@ -43,6 +43,7 @@ import {
   updateHistoricalIndex,
   validateHistoricalReviewClaims,
   type HistoricalImmutableReference,
+  awaitSkillEvolutionLock,
 } from "./skill-evolution-store.ts"
 
 export const ALG_SKILL_HISTORICAL_TITLE_PREFIX = "alg-private-skill-evolution-historical:"
@@ -748,7 +749,7 @@ export class HistoricalInitializer {
     for (const sessionId of sessionIds) {
       const sealed = await this.seal(sessionId)
       let indexed = sealed
-      updateHistoricalIndex(this.project, "preview-sealed-session", (index) => {
+      await awaitSkillEvolutionLock(() => updateHistoricalIndex(this.project, "preview-sealed-session", (index) => {
         const known = index.snapshots.find((entry) => entry.session_id === sessionId && entry.commitment === sealed.commitment)
         const predecessor = known?.predecessor_commitment ?? [...index.snapshots].reverse()
           .find((entry) => entry.session_id === sessionId && entry.commitment !== sealed.commitment)?.commitment
@@ -757,7 +758,7 @@ export class HistoricalInitializer {
         // existing commitment, so a later selected-session failure cannot hide
         // that this snapshot participated in the failed preview.
         transitionSnapshots(index, [indexed], previewId, "previewed")
-      })
+      }))
       sessions.push(indexed)
     }
     const chunks = sessions.reduce((sum, session) => sum + session.chunk_refs.length, 0)
@@ -784,7 +785,7 @@ export class HistoricalInitializer {
     if (token !== planRef.sha256) throw new Error("historical plan commitment mismatch")
     const planId = `hist-${token.slice(0, 32)}`
     const now = new Date().toISOString()
-    updateHistoricalIndex(this.project, "preview", (index) => {
+    await awaitSkillEvolutionLock(() => updateHistoricalIndex(this.project, "preview", (index) => {
       const existing = (index.plans as PlanRecord[]).find((plan) => plan.plan_id === planId)
       if (!existing) index.plans.push({ plan_id: planId, plan_ref: planRef, confirmation: token, state: "previewed", selected_session_ids: [...sessionIds], sessions,
         next_chunk: 0, model_calls: 0, input_bytes: 0, cancelled: false, disposition: "previewed", checkpoints: [], created_at: now, updated_at: now })
@@ -795,7 +796,7 @@ export class HistoricalInitializer {
         for (const state of snapshot.state_history) if (state.plan_id === previewId) state.plan_id = planId
       }
       transitionSnapshots(index, sessions, planId, existing ? (existing.disposition as SnapshotDisposition) : "previewed")
-    })
+    }))
     const persisted = this.plan(planId)
     return success("preview", persisted.disposition, { plan_id: planId, confirmation: token, completeness: HISTORICAL_COMPLETENESS, immutable_plan_ref: planRef,
       sessions, estimated: immutablePlan.estimated, hard, model_calls: 0, explicit_confirmation_required: true, automatic_promotion: false })
@@ -1215,9 +1216,10 @@ export class HistoricalInitializer {
   private async run(action: "run" | "resume", planIdValue: string, token: string): Promise<HistoricalToolResult> {
     let lease
     try {
-      lease = acquireHistoricalExecutionLease(this.project, `historical-executor:${process.pid}`)
+      // Another executor may hold the project lease for a whole plan; wait only briefly, on a timer.
+      lease = await awaitLock(() => acquireHistoricalExecutionLease(this.project, `historical-executor:${process.pid}`), 100)
     } catch (error) {
-      if (error instanceof FilesystemMutexContentionError) return failure(action, "resumable", "another historical executor holds the project lease; retry resume")
+      if (isLockContention(error)) return failure(action, "resumable", "another historical executor holds the project lease; retry resume")
       throw error
     }
     try {
@@ -1244,16 +1246,16 @@ export class HistoricalInitializer {
       session.assistant_message_ids.map((message_id) => ({ session_id: session.session_id, message_id })))
     let reservation: ReturnType<typeof reserveHistoricalReviewClaims>
     try {
-      reservation = reserveHistoricalReviewClaims(this.project, planIdValue, token, claimedIdentities)
+      reservation = await awaitSkillEvolutionLock(() => reserveHistoricalReviewClaims(this.project, planIdValue, token, claimedIdentities))
     } catch (error) {
       throw new Error(`inconsistent: historical/live review coordination is unverifiable: ${safeDiagnosticText(error instanceof Error ? error.message : String(error))}`)
     }
     if (!reservation.reserved) {
-      updateHistoricalIndex(this.project, "claim-blocked", (index) => {
+      await awaitSkillEvolutionLock(() => updateHistoricalIndex(this.project, "claim-blocked", (index) => {
         const mutable = (index.plans as PlanRecord[]).find((entry) => entry.plan_id === planIdValue)!
         mutable.state = "resumable"; mutable.disposition = "resumable"; mutable.updated_at = new Date().toISOString()
         transitionSnapshots(index, mutable.sessions, mutable.plan_id, "resumable")
-      })
+      }))
       return failure(action, "resumable", `historical review is blocked by live owner ${reservation.blocked_by ?? "unknown"}`)
     }
     // Validate every terminal live-candidate claim before creating any child.
@@ -1262,7 +1264,7 @@ export class HistoricalInitializer {
     for (const identity of claimedIdentities) {
       liveLedgerReviewCoverage(this.project, identity.session_id, identity.message_id)
     }
-    updateHistoricalIndex(this.project, "run-start", (index) => {
+    await awaitSkillEvolutionLock(() => updateHistoricalIndex(this.project, "run-start", (index) => {
       const mutable = (index.plans as PlanRecord[]).find((entry) => entry.plan_id === planIdValue)!
       if (!mutable.execution_epoch_ref) {
         if (currentBeforeStart.execution_epoch_ref || !["previewed", "resumable"].includes(mutable.state) || mutable.next_chunk !== 0 || mutable.checkpoints.length !== 0 ||
@@ -1279,7 +1281,7 @@ export class HistoricalInitializer {
       mutable.state = "running"; mutable.disposition = "running"; mutable.updated_at = new Date().toISOString()
       transitionSnapshots(index, mutable.sessions, mutable.plan_id, "queued")
       transitionSnapshots(index, mutable.sessions, mutable.plan_id, "running")
-    })
+    }))
     verified = this.verifiedPlan(planIdValue, token)
     plan = verified.plan
     const epochReference = plan.execution_epoch_ref!
@@ -1386,7 +1388,7 @@ export class HistoricalInitializer {
              source: "live_ledger",
              output: { findings: [] },
           }, 16 * 1024)
-          updateHistoricalIndex(this.project, "live-ledger-checkpoint", (mutableIndex) => {
+          await awaitSkillEvolutionLock(() => updateHistoricalIndex(this.project, "live-ledger-checkpoint", (mutableIndex) => {
             const mutable = (mutableIndex.plans as PlanRecord[]).find((entry) => entry.plan_id === planIdValue)!
             if (mutable.next_chunk !== index) throw new Error("historical checkpoint changed concurrently")
             mutable.next_chunk = index + 1
@@ -1395,7 +1397,7 @@ export class HistoricalInitializer {
               issued_at: new Date().toISOString(), committed_at: new Date().toISOString(), attempts: 0, model_calls: 0, input_bytes: 0, output_ref: outputRef,
             })
             mutable.updated_at = new Date().toISOString()
-          })
+          }))
           continue
         }
         const prompt = historicalAuditorPrompt({ ...fragment, session_id: item.session.session_id, sealed_session_commitment: item.session.commitment, transcript_commitment: snapshot.transcript_commitment,
@@ -1407,25 +1409,25 @@ export class HistoricalInitializer {
         let attempts = 0
         while (attempts < limits.maxAttempts) {
           attempts++
-          plan = revalidate()
+          plan = await awaitSkillEvolutionLock(() => revalidate())
           if (plan.cancelled || this.abort.aborted) break
           if (plan.model_calls >= verified.immutable.hard.model_calls || plan.input_bytes + inputBytes > verified.immutable.hard.input_bytes || remainingTime() <= 0) {
             throw new Error("oversized: historical hard model-call/input/time budget exhausted")
           }
-          updateHistoricalIndex(this.project, "issue", (mutableIndex) => {
+          await awaitSkillEvolutionLock(() => updateHistoricalIndex(this.project, "issue", (mutableIndex) => {
             const mutable = (mutableIndex.plans as PlanRecord[]).find((entry) => entry.plan_id === planIdValue)!
             const existing = mutable.checkpoints.find((entry) => entry.chunk_sha256 === item.reference.sha256 && !entry.committed_at)
             if (existing) throw new Error("historical child call already has an unknown durable outcome")
             mutable.checkpoints.push({ key: item.reference.sha256, chunk_sha256: item.reference.sha256, child_session_id: "", issued_at: new Date().toISOString(), attempts: 1, model_calls: 1, input_bytes: inputBytes })
             mutable.model_calls++; mutable.input_bytes += inputBytes; mutable.updated_at = new Date().toISOString()
-          })
+          }))
           const invocationTimeout = Math.min(limits.callTimeoutMs, remainingTime())
-          revalidateLease(invocationTimeout)
+          await awaitSkillEvolutionLock(() => revalidateLease(invocationTimeout))
           invoked = await this.invoke(item.session.session_id, "auditor", prompt, auditorModel, () => {
             const current = this.plan(planIdValue)
             return current.cancelled || this.abort.aborted
           }, invocationTimeout)
-          revalidateLease()
+          await awaitSkillEvolutionLock(() => revalidateLease())
           if (this.plan(planIdValue).cancelled || this.abort.aborted) {
             return failure(action, "cancelled", "historical processing was cancelled during auditor review")
           }
@@ -1464,7 +1466,7 @@ export class HistoricalInitializer {
           chunk_sha256: item.reference.sha256, source_digest: hash(canonicalJson(expectedFindingSource(item.session, snapshot, item.reference, fragment))),
           child_session_id: invoked.sessionId,
           output: supportedOutput }, 16 * 1024)
-        updateHistoricalIndex(this.project, "checkpoint", (mutableIndex) => {
+        await awaitSkillEvolutionLock(() => updateHistoricalIndex(this.project, "checkpoint", (mutableIndex) => {
           const mutable = (mutableIndex.plans as PlanRecord[]).find((entry) => entry.plan_id === planIdValue)!
           if (mutable.cancelled || this.abort.aborted) throw new Error("cancelled: historical processing was cancelled before auditor checkpoint publication")
           if (mutable.next_chunk !== index) throw new Error("historical checkpoint changed concurrently")
@@ -1472,7 +1474,7 @@ export class HistoricalInitializer {
           const issued = [...mutable.checkpoints].reverse().find((entry) => entry.chunk_sha256 === item.reference.sha256 && !entry.committed_at)!
           issued.stage = "chunk"; issued.key = item.reference.sha256; issued.child_session_id = invoked.sessionId; issued.output_ref = outputRef; issued.committed_at = new Date().toISOString()
           mutable.updated_at = new Date().toISOString()
-        })
+        }))
       }
 
       // Stage boundary: prove the complete ordered chunk prefix before any
@@ -1528,7 +1530,7 @@ export class HistoricalInitializer {
         }
       } else {
         const findings = committedBindings.flatMap((entry) => entry.output.findings)
-        plan = revalidate()
+        plan = await awaitSkillEvolutionLock(() => revalidate())
         if (plan.cancelled || this.abort.aborted) return failure(action, "cancelled", "historical processing was cancelled before reduction")
         reduction = reduceFindings(findings)
         if (reduction.decision === "candidate" && reduction.output.decision === "memory_candidate") {
@@ -1551,12 +1553,12 @@ export class HistoricalInitializer {
           plan_confirmation: token, sources: reductionSources, child_session_id: reducerChildId,
           candidate_sha256: candidateSha, source_checkpoint_ref: sourceCheckpoint?.entry.output_ref ?? null,
           source_checkpoint_sha256: sourceCheckpoint?.entry.output_ref?.sha256 ?? null, output: reduction }, 128 * 1024)
-        updateHistoricalIndex(this.project, "reduction-checkpoint", (mutableIndex) => {
+        await awaitSkillEvolutionLock(() => updateHistoricalIndex(this.project, "reduction-checkpoint", (mutableIndex) => {
           const mutable = (mutableIndex.plans as PlanRecord[]).find((entry) => entry.plan_id === planIdValue)!
           mutable.reduction_ref = reductionRef
           mutable.checkpoints.push({ stage: "reduction", key: "final", chunk_sha256: hash(reductionBytes), child_session_id: reducerChildId,
             issued_at: new Date().toISOString(), committed_at: new Date().toISOString(), attempts: 0, model_calls: 0, input_bytes: 0, output_ref: reductionRef })
-        })
+        }))
       }
 
       // Complete fragment review is published only after reduction has also
@@ -1596,26 +1598,26 @@ export class HistoricalInitializer {
         } else {
           const candidateCheckerPrompt = this.sourceCheckerPrompt(reduction.output, verified.immutable.sessions, verified.immutable.runtime_options)
           const inputBytes = utf8Bytes(candidateCheckerPrompt)
-          plan = revalidate()
+          plan = await awaitSkillEvolutionLock(() => revalidate())
           if (plan.cancelled || this.abort.aborted) return failure(action, "cancelled", "historical processing was cancelled before checker")
           if (plan.model_calls >= verified.immutable.hard.model_calls || plan.input_bytes + inputBytes > verified.immutable.hard.input_bytes || remainingTime() <= 0) throw new Error("oversized: historical checker exceeds hard budget")
           let checkerResult: Awaited<ReturnType<ChildInvoker>> = { sessionId: "", parsed: null }
           let checkerAttempts = 0
           while (checkerAttempts < limits.maxAttempts) {
             checkerAttempts++
-            plan = revalidate()
+            plan = await awaitSkillEvolutionLock(() => revalidate())
             if (plan.cancelled || this.abort.aborted) return failure(action, "cancelled", "historical processing was cancelled before checker")
             if (plan.model_calls >= verified.immutable.hard.model_calls || plan.input_bytes + inputBytes > verified.immutable.hard.input_bytes || remainingTime() <= 0) throw new Error("oversized: historical checker exceeds hard budget")
             const issuedAt = new Date().toISOString()
-            updateHistoricalIndex(this.project, "checker-issue", (mutableIndex) => {
+            await awaitSkillEvolutionLock(() => updateHistoricalIndex(this.project, "checker-issue", (mutableIndex) => {
               const mutable = (mutableIndex.plans as PlanRecord[]).find((entry) => entry.plan_id === planIdValue)!
               mutable.checkpoints.push({ key: "final", chunk_sha256: hash(candidateCheckerPrompt), child_session_id: "", issued_at: issuedAt, attempts: 1, model_calls: 1, input_bytes: inputBytes })
               mutable.model_calls++; mutable.input_bytes += inputBytes; mutable.updated_at = new Date().toISOString()
-            })
+            }))
             const invocationTimeout = Math.min(limits.callTimeoutMs, remainingTime())
-            revalidateLease(invocationTimeout)
+            await awaitSkillEvolutionLock(() => revalidateLease(invocationTimeout))
             checkerResult = await this.invoke(source, "checker", candidateCheckerPrompt, checkerModel, () => this.plan(planIdValue).cancelled || this.abort.aborted, invocationTimeout)
-            revalidateLease()
+            await awaitSkillEvolutionLock(() => revalidateLease())
             if (this.plan(planIdValue).cancelled || this.abort.aborted) return failure(action, "cancelled", "historical processing was cancelled during checker review")
             const checked = SkillCheckerOutputSchema.safeParse(checkerResult.parsed)
             if (!checkerResult.error && checkerResult.sessionId && checked.success) { checker = checked.data; checkerChildId = checkerResult.sessionId; break }
@@ -1636,15 +1638,15 @@ export class HistoricalInitializer {
           const checkerRef = persistHistoricalImmutable(this.project, "checkpoint", { schema_version: 1, kind: "historical_checker_output", prompt_version: 2,
             plan_confirmation: token, reduction_ref: plan.reduction_ref, candidate_sha256: candidateSha,
             reviewed_source_digest: reviewedSourceDigest, checker_prompt_sha256: hash(candidateCheckerPrompt), child_session_id: checkerChildId, output: checker }, 64 * 1024)
-          updateHistoricalIndex(this.project, "checker-checkpoint", (mutableIndex) => {
+          await awaitSkillEvolutionLock(() => updateHistoricalIndex(this.project, "checker-checkpoint", (mutableIndex) => {
             const mutable = (mutableIndex.plans as PlanRecord[]).find((entry) => entry.plan_id === planIdValue)!
             if (mutable.cancelled || this.abort.aborted) throw new Error("cancelled: historical processing was cancelled before checker checkpoint publication")
             mutable.checker_ref = checkerRef
             const issued = [...mutable.checkpoints].reverse().find((entry) => !entry.stage && !entry.committed_at && entry.key === "final")!
             issued.stage = "checker"; issued.child_session_id = checkerChildId; issued.output_ref = checkerRef; issued.committed_at = new Date().toISOString()
-          })
+          }))
         }
-        plan = revalidate()
+        plan = await awaitSkillEvolutionLock(() => revalidate())
         if (plan.cancelled || this.abort.aborted) return failure(action, "cancelled", "historical processing was cancelled before candidate publication")
         validateCandidateProvenance(reduction.output, sealed, snapshot)
         const binding: HistoricalCandidateBinding = {
@@ -1698,7 +1700,7 @@ export class HistoricalInitializer {
         candidate_integrity: finalCandidateIntegrity,
       }
       const finalRef = persistHistoricalImmutable(this.project, "checkpoint", finalPayload, 256 * 1024)
-      updateHistoricalIndex(this.project, "complete", (index) => {
+      await awaitSkillEvolutionLock(() => updateHistoricalIndex(this.project, "complete", (index) => {
         const mutable = (index.plans as PlanRecord[]).find((entry) => entry.plan_id === planIdValue)!
         if (mutable.cancelled || this.abort.aborted) throw new Error("cancelled: historical processing was cancelled before final checkpoint publication")
         mutable.final_ref = finalRef
@@ -1706,30 +1708,30 @@ export class HistoricalInitializer {
           issued_at: new Date().toISOString(), committed_at: new Date().toISOString(), attempts: 0, model_calls: 0, input_bytes: 0, output_ref: finalRef })
         mutable.state = "completed"; mutable.disposition = "completed"; mutable.candidate_id = candidateId; mutable.updated_at = new Date().toISOString()
         transitionSnapshots(index, mutable.sessions, mutable.plan_id, "completed")
-      })
+      }))
       // Completion is returned only through the same verifier used by status
       // and idempotent run/resume.
       this.verifiedPlan(planIdValue, token)
-      validateHistoricalReviewClaims(this.project, planIdValue, token, claimedIdentities, true)
+      await awaitSkillEvolutionLock(() => validateHistoricalReviewClaims(this.project, planIdValue, token, claimedIdentities, true))
       this.publishReviewedCoverage(this.plan(planIdValue))
       return success(action, "completed", { plan_id: planIdValue, completeness: HISTORICAL_COMPLETENESS, reviewed_all_chunks: true, reduction: reduction.decision, ...(candidateId ? { candidate_id: candidateId } : {}), automatic_promotion: false })
     } catch (error) {
-      failHistoricalReviewClaims(this.project, planIdValue, token)
-      updateHistoricalIndex(this.project, "interrupt", (index) => {
+      await awaitSkillEvolutionLock(() => failHistoricalReviewClaims(this.project, planIdValue, token))
+      await awaitSkillEvolutionLock(() => updateHistoricalIndex(this.project, "interrupt", (index) => {
         const mutable = (index.plans as PlanRecord[]).find((entry) => entry.plan_id === planIdValue)!
         if (!mutable.cancelled) {
           transitionSnapshots(index, mutable.sessions, mutable.plan_id, "failed")
           mutable.state = "resumable"; mutable.disposition = "resumable"; mutable.updated_at = new Date().toISOString()
           transitionSnapshots(index, mutable.sessions, mutable.plan_id, "resumable")
         }
-      })
+      }))
       throw error
     }
     } finally {
       // Every non-completed exit (including cancellation returns) makes the
       // identities immediately recoverable instead of waiting for lease
       // expiry. Completed claims are deliberately unaffected.
-      try { failHistoricalReviewClaims(this.project, planIdValue, token) } catch {}
+      try { await awaitSkillEvolutionLock(() => failHistoricalReviewClaims(this.project, planIdValue, token)) } catch {}
       lease.release()
     }
   }

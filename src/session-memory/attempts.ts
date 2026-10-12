@@ -2,6 +2,7 @@ import type { ExecuteOptions } from "../executor.ts"
 import { executeRun } from "../executor.ts"
 import { canonicalDirectory } from "../paths.ts"
 import { loadRunForOwner } from "../store.ts"
+import { awaitFirstLock } from "../filesystem-mutex.ts"
 import type { RunState } from "../types.ts"
 import { hashObject } from "./store.ts"
 import { prospectiveShellGateHash } from "./preflight.ts"
@@ -27,7 +28,7 @@ export async function executeWithMemory(memory: SessionMemoryRuntime | undefined
   }
   // Delegation happens at the actual SDK create->prompt boundary, not in an event observer.
   const delegated: ExecuteOptions = { ...options, beforeChildPrompt: async (child, role) => {
-    if (memory.options.mode === "assist") memory.delegate(owner, child, role)
+    if (memory.options.mode === "assist") await awaitFirstLock(() => memory.delegate(owner, child, role))
     await options.beforeChildPrompt?.(child, role)
   } }
   if (!candidates.length) return executeRun(run, delegated)

@@ -4,7 +4,15 @@ import { SkillIndex } from "./skill-index.ts"
 import { verifyEnvironment } from "./environment.ts"
 import { retrieve } from "./retrieval.ts"
 
-export interface ModelBudget { context?: number; output?: number; existingText?: string; knownInputTokens?: number; mandatoryContext?: string[] }
+export interface ModelBudget {
+  context?: number; output?: number; existingText?: string; knownInputTokens?: number; mandatoryContext?: string[]
+  /**
+   * An allowance in bytes from the shared context plan (see ../context-budget.ts). When given, it is the
+   * budget: it was already sized from the model's window and from what is still free in it, so the
+   * fixed token options below do not apply.
+   */
+  allowanceBytes?: number
+}
 // Deliberately conservative accounting units. Not a claim about every provider tokenizer.
 export const estimateTokens = (text: string) => Buffer.byteLength(text, "utf8")
 export interface WorkingViewSelection {
@@ -46,6 +54,7 @@ export function selectWorkingView(store: MemoryStore, index: SkillIndex, checkpo
 
 export function contextBudget(options: MemoryOptions, model: ModelBudget = {}) {
   const finite = (value: number | undefined): value is number => value !== undefined && Number.isFinite(value) && value >= 0
+  if (finite(model.allowanceBytes)) return { budget: Math.floor(model.allowanceBytes), known: true }
   const known = finite(model.context) && model.context > 0 && finite(model.knownInputTokens)
   let budget = Math.min(options.maxContextTokens, options.fallbackTokens)
   if (finite(model.context) && model.context > 0) {
