@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- The learning record no longer fills up. Once it is three-quarters full, settled
+  records older than a day move to `.opencode/skill-evolution/ledger-archive/`;
+  an archived turn still counts as reviewed and is never audited twice.
+- A shell command that exits non-zero now counts as a failed command when a turn
+  is scored for review, whatever it printed. Before, a turn that failed and was
+  then fixed was usually skipped.
+- `alg_resume close=true` ends a run that will not be continued. A run nobody has
+  touched for a week is offered as a three-line notice instead of a full summary.
+- Historical review asked the model for field names that differed from the ones
+  it was given, so every finding was rejected. New plans use a corrected prompt
+  that also says which message a finding may name, what a candidate is, and the
+  provenance it must carry. Plans made by earlier builds keep their prompt. The
+  longer prompt lowers the largest allowed `historical.maxChunkBytes` from
+  44,328 to 38,841; the default of 32,768 is unaffected.
+- Sessions deliberately left out of capture are logged at debug, not warn, and a
+  failed worker card says how the attempt ended instead of an internal code.
+
 - What ALG adds to a model call is now sized from that model's context window
   instead of fixed byte limits. By default ALG may add 5% of the window per call
   and 5% to a compaction prompt, never more than half of what is still free, and

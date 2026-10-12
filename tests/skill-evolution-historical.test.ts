@@ -87,12 +87,12 @@ class HistoricalSdk {
               })
             : this.candidate && fragment?.message_id === "message-1"
                 ? JSON.stringify({ findings: [{ session_id: "selected", assistant_message_id: "message-1", finding: "A reusable bounded review procedure.", source: {
-                  session_id: fragment.session_id, session_commitment: fragment.sealed_session_commitment,
+                  session_id: fragment.session_id, session_commitment: fragment.session_commitment,
                   transcript_commitment: fragment.transcript_commitment, chunk_sha256: fragment.chunk_sha256,
                   message_index: fragment.message_index, message_id: fragment.message_id, part_index: fragment.part_index,
                   part_id: fragment.part_id, part_type: fragment.part_type, fragment_index: fragment.fragment_index,
                   fragment_count: fragment.fragment_count, byte_offset: fragment.byte_offset, byte_length: fragment.byte_length,
-                  fragment_sha256: fragment.sha256,
+                  fragment_sha256: fragment.fragment_sha256,
                 }, candidate: this.memoryCandidate ? memoryCandidateOutput() : candidateOutput() }] }).replace(
                   this.forgeSource ? `\"fragment_index\":${fragment.fragment_index}` : "__never__",
                   `\"fragment_index\":${fragment.fragment_index + 1}`,
@@ -472,6 +472,9 @@ describe("V1-only historical skill evolution", () => {
       session_commitment: "f".repeat(64), message_index: 1_999, message_id: "\0".repeat(256), part_index: 9_999_999,
       part_id: "\0".repeat(262), part_type: "step-finish", fragment_index: 511, fragment_count: 512,
       byte_offset: 16 * 1024 * 1024, byte_length: 16 * 1024 * 1024, sha256: "f".repeat(64),
+      assistant_message_id: "\0".repeat(256), candidate_provenance: { session_id: "\0".repeat(256), user_message_id: "\0".repeat(256),
+        assistant_message_id: "\0".repeat(256), user_created_at: Number.MAX_SAFE_INTEGER, assistant_created_at: Number.MAX_SAFE_INTEGER,
+        assistant_completed_at: Number.MAX_SAFE_INTEGER, finish: "\0".repeat(64) },
       data_base64: Buffer.alloc(HISTORICAL_MAX_CHUNK_BYTES).toString("base64"),
     })
     expect(Buffer.byteLength(worst)).toBe(historicalAuditorPromptByteUpperBound(HISTORICAL_MAX_CHUNK_BYTES))

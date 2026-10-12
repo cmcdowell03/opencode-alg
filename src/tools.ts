@@ -1,7 +1,7 @@
 import { tool } from "@opencode-ai/plugin"
 import type { PluginInput, ToolContext } from "@opencode-ai/plugin"
 import { validateGraph } from "./graph.ts"
-import { prepareRunForResume } from "./executor.ts"
+import { closeRun, prepareRunForResume } from "./executor.ts"
 import {
   createRun,
   hydrateRunFully,
@@ -933,9 +933,11 @@ export function createAlgTools(
     }),
 
     alg_resume: tool({
-      description: "Synchronously resume an owned incomplete run without resetting attempt history and publish bounded progress metadata after durable saves. Compact by default.",
+      description: "Synchronously resume an owned incomplete run without resetting attempt history and publish bounded progress metadata after durable saves. Compact by default. Pass close=true to end a run that will not be continued instead of resuming it.",
       args: {
         run_id: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/).optional(),
+        close: tool.schema.boolean().optional().describe("End the run instead of resuming it: unfinished nodes are marked failed and it is no longer offered for recovery."),
+        close_reason: tool.schema.string().trim().min(1).max(500).optional(),
         dry: tool.schema.boolean().optional(),
         shell_gate: tool.schema.string().min(1).max(8_192).optional(),
         shell_timeout_ms: tool.schema.number().int().min(100).max(600_000).optional(),
@@ -953,6 +955,21 @@ export function createAlgTools(
           assertFilesystemRootAuthorized(project, args.allow_filesystem_root, "resume", additionalFilesystemRoot)
           const run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned run found to resume.")
+          if (args.close_reason !== undefined && !args.close) throw new Error("close_reason requires close=true")
+          if (args.close) {
+            const closed = await mutateOwnedRunAsync(project, run.run_id, context.sessionID, (fresh) => {
+              closeRun(fresh, args.close_reason ?? "it will not be continued")
+            })
+            const states = Object.values(closed.nodes).map((node) => node.status)
+            return ok("alg resume", {
+              run_id: closed.run_id,
+              closed: true,
+              status: closed.status,
+              nodes: { done: states.filter((state) => state === "done").length, failed: states.filter((state) => state === "failed").length,
+                skipped: states.filter((state) => state === "skipped").length },
+              next: "The run is ended. Plan a new run with alg_plan if the work is still needed.",
+            })
+          }
           if (args.shell_gate) run.graph = withShellGate(run.graph, args.shell_gate, args.shell_timeout_ms)
           else if (args.shell_timeout_ms !== undefined) throw new Error("shell_timeout_ms requires shell_gate")
           prepareRunForResume(run)

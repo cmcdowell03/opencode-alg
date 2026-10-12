@@ -15,7 +15,7 @@ import { awaitLock } from "./filesystem-mutex.ts"
 import { ContextBudgetOptionsSchema, SessionWindows, type ContextPart } from "./context-budget.ts"
 import { configuredAgentModels, configuredModelResolutions } from "./models.ts"
 import type { AgentModelMap, ModelResolutionMap } from "./types.ts"
-import { appendAlgCompactionContext, formatCompactionContext, MAX_COMPACTION_OUTPUT_BYTES } from "./compaction.ts"
+import { appendAlgCompactionContext, formatCompactionContext, formatStaleRunNotice, isStaleRun, MAX_COMPACTION_OUTPUT_BYTES } from "./compaction.ts"
 import { formatSdkError } from "./diagnostics.ts"
 import { verifiedLiveSourceIdentity } from "./source-identity.ts"
 import { parseSkillEvolutionOptions } from "./skill-evolution-schemas.ts"
@@ -30,6 +30,11 @@ import { canonicalDirectory, isContained } from "./paths.ts"
 import { isCompletedUserTurn } from "./turn-boundary.ts"
 
 const runtimeIdentityAtModuleLoad = captureRuntimeIdentityAtModuleLoad()
+
+/** Sessions that are left out of capture on purpose are not worth a warning each turn. */
+function expectedSkip(error: unknown): boolean {
+  return error instanceof Error && /excluded$/.test(error.message)
+}
 
 const server: Plugin = async (ctx, pluginOptions) => {
   const { client, directory } = ctx
@@ -175,7 +180,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
           if (owner) { await authorizeMemory(owner); await awaitLock(() => memory.observe(output.messages)) }
         }
       } catch (error) {
-        try { Promise.resolve(client.app.log({ body: { service: ALG_PLUGIN_ID, level: "warn", message: `ALG memory capture unavailable: ${formatSdkError(error)}` } })).catch(() => {}) }
+        try { Promise.resolve(client.app.log({ body: { service: ALG_PLUGIN_ID, level: expectedSkip(error) ? "debug" : "warn", message: `ALG memory capture unavailable: ${formatSdkError(error)}` } })).catch(() => {}) }
         catch { /* diagnostics must not suppress independent learning capture */ }
       }
       try {
@@ -183,7 +188,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
         await skillEvolution.captureChatMessages(output.messages)
       } catch (error) {
         try {
-          Promise.resolve(client.app.log({ body: { service: ALG_PLUGIN_ID, level: "warn", message: `ALG ordinary-turn capture unavailable: ${formatSdkError(error)}` } })).catch(() => {})
+          Promise.resolve(client.app.log({ body: { service: ALG_PLUGIN_ID, level: expectedSkip(error) ? "debug" : "warn", message: `ALG ordinary-turn capture unavailable: ${formatSdkError(error)}` } })).catch(() => {})
         } catch { /* optional logging */ }
       }
     },
@@ -241,7 +246,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
             catch { recovery.push(`ALG ${label} recovery unavailable; consult authoritative records before resuming.`) }
           }
           // Runs before every model request of every session, so it must not scan the project's run history.
-          await collect("run", () => { const run = findLatestIncompleteRunForTurn(ctx.worktree || directory, sessionId, { sessionCreatedHere: isAlgWorkerSession(sessionId) }); return run ? formatCompactionContext(run, plan.allow("run")) : "" })
+          await collect("run", () => { const run = findLatestIncompleteRunForTurn(ctx.worktree || directory, sessionId, { sessionCreatedHere: isAlgWorkerSession(sessionId) }); return !run ? "" : isStaleRun(run) ? formatStaleRunNotice(run) : formatCompactionContext(run, plan.allow("run")) })
           await collect("evidence", () => skillEvolution.recoveryContext(sessionId))
           const recoveryBytes = textBytes(recovery.join("\n"))
           plan.spend("run", recoveryBytes)
@@ -329,7 +334,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       try {
         const run = await awaitLock(() => findLatestIncompleteRunForSession(ctx.worktree || directory, input.sessionID))
         if (run) {
-          const summary = formatCompactionContext(run, plan.allow("run"))
+          const summary = isStaleRun(run) ? formatStaleRunNotice(run) : formatCompactionContext(run, plan.allow("run"))
           owned.push(summary)
           plan.spend("run", textBytes(summary))
         } else plan.spend("run", 0)

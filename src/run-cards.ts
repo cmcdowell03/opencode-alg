@@ -110,6 +110,19 @@ export interface RunCardProjectorOptions {
   log?: (message: string) => void
 }
 
+const ATTEMPT_ENDINGS: Record<string, string> = {
+  sdk_error: "failed: the worker's model call did not complete",
+  schema_invalid: "failed: the worker's reply was not in the required form",
+  substantive_rejection: "was rejected by the checker",
+  incomplete: "ended without finishing the work",
+  gate_failure: "failed its shell check",
+}
+/** Plain words for how an attempt ended; a cancelled run is not reported as a failure of the worker. */
+function attemptEnding(attempt: { outcome?: string; error?: unknown }): string {
+  if (/abort|cancel/i.test(typeof attempt.error === "string" ? attempt.error : JSON.stringify(attempt.error ?? ""))) return "was cancelled"
+  return ATTEMPT_ENDINGS[attempt.outcome ?? ""] ?? "failed"
+}
+
 export class RunCardProjector {
   private readonly cards = new Map<string, Card>()
   private readonly baseline = new Map<string, number>()
@@ -168,7 +181,7 @@ export class RunCardProjector {
                 output: `ALG node ${definition.id} attempt ${attempt.attempt}: passed. The alg tool result has the validated output.` }
             : attempt.status === "failed"
               ? { status: "error", input, metadata, time: { start, end: end() },
-                  error: `ALG node ${definition.id} attempt ${attempt.attempt} failed (${attempt.outcome ?? "failed"}). The alg tool result has the details.` }
+                  error: `ALG node ${definition.id} attempt ${attempt.attempt} ${attemptEnding(attempt)}. The alg tool result has the details.` }
               : { status: "running", input, title: description, metadata, time: { start } }
           if (existing && existing.part.state.status === state.status) continue
           if (existing && existing.part.state.status !== "running") continue

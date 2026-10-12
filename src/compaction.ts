@@ -125,6 +125,28 @@ export function formatCompactionContext(run: RunState, maximumBytes?: number): s
   return `${truncateUtf8(context, MAX_COMPACTION_CONTEXT_BYTES - utf8Bytes(suffix))}${suffix}`
 }
 
+/** A run nobody has touched for this long is mentioned in one short notice instead of a full summary. */
+export const STALE_RUN_AGE_MS = 7 * 24 * 60 * 60 * 1_000
+
+export function isStaleRun(run: RunState, now = Date.now()): boolean {
+  const updated = Date.parse(run.updated_at)
+  return Number.isFinite(updated) && now - updated > STALE_RUN_AGE_MS
+}
+
+/**
+ * An unfinished run is offered to its session before every model call. One that was abandoned would be
+ * described in full forever, so after a week it shrinks to what is needed to pick it up or end it.
+ */
+export function formatStaleRunNotice(run: RunState): string {
+  return [
+    "## ALG unfinished run (not updated recently)",
+    "",
+    `- run_id: ${run.run_id}`,
+    `- status: ${run.status}; last updated ${run.updated_at.slice(0, 10)}`,
+    "- Continue it with alg_resume, or end it with alg_resume close=true if it will not be continued.",
+  ].join("\n")
+}
+
 export interface SkillEvolutionCompactionInput {
   pendingKeys: string[]
   runningKeys: string[]
