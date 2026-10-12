@@ -31,6 +31,11 @@ import { isCompletedUserTurn } from "./turn-boundary.ts"
 
 const runtimeIdentityAtModuleLoad = captureRuntimeIdentityAtModuleLoad()
 
+/** Sessions that are left out of capture on purpose are not worth a warning each turn. */
+function expectedSkip(error: unknown): boolean {
+  return error instanceof Error && /excluded$/.test(error.message)
+}
+
 const server: Plugin = async (ctx, pluginOptions) => {
   const { client, directory } = ctx
   const resolvedConfiguration = resolvePluginConfiguration(pluginOptions)
@@ -175,7 +180,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
           if (owner) { await authorizeMemory(owner); await awaitLock(() => memory.observe(output.messages)) }
         }
       } catch (error) {
-        try { Promise.resolve(client.app.log({ body: { service: ALG_PLUGIN_ID, level: "warn", message: `ALG memory capture unavailable: ${formatSdkError(error)}` } })).catch(() => {}) }
+        try { Promise.resolve(client.app.log({ body: { service: ALG_PLUGIN_ID, level: expectedSkip(error) ? "debug" : "warn", message: `ALG memory capture unavailable: ${formatSdkError(error)}` } })).catch(() => {}) }
         catch { /* diagnostics must not suppress independent learning capture */ }
       }
       try {
@@ -183,7 +188,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
         await skillEvolution.captureChatMessages(output.messages)
       } catch (error) {
         try {
-          Promise.resolve(client.app.log({ body: { service: ALG_PLUGIN_ID, level: "warn", message: `ALG ordinary-turn capture unavailable: ${formatSdkError(error)}` } })).catch(() => {})
+          Promise.resolve(client.app.log({ body: { service: ALG_PLUGIN_ID, level: expectedSkip(error) ? "debug" : "warn", message: `ALG ordinary-turn capture unavailable: ${formatSdkError(error)}` } })).catch(() => {})
         } catch { /* optional logging */ }
       }
     },

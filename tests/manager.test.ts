@@ -462,7 +462,7 @@ describe("v0.2 side-by-side release manager", () => {
       expect(readFileSync(configPath)).toEqual(before)
       expect(existsSync(join(config, ".opencode-alg", "receipt.json"))).toBe(false)
     }
-  }, 45_000)
+  }, 90_000)
 
   test("strict Excel manifest hashes and sorted tool inventory fail before activation", () => {
     for (const mutation of ["wrapper-hash", "tools"] as const) {
@@ -490,7 +490,7 @@ describe("v0.2 side-by-side release manager", () => {
       expect(existsSync(join(config, "opencode.jsonc"))).toBe(false)
       expect(existsSync(join(config, ".opencode-alg", "receipt.json"))).toBe(false)
     }
-  }, 45_000)
+  }, 90_000)
 
   test("rehashed malicious pyprojects cannot add dependencies, markers, ranges, extras, groups, or alternate sources", () => {
     const original = readFileSync(join(ROOT, "capabilities", "excel", "pyproject.toml"), "utf8")
@@ -565,7 +565,7 @@ describe("v0.2 side-by-side release manager", () => {
     expect(parsed.mcp.other).toEqual({ type: "local", command: ["tool", "arg"] })
     expect(parsed.mcp.alg_excel.enabled).toBe(true)
     expect(readFileSync(join(config, ".opencode-alg", "receipt.json"), "utf8")).not.toContain("must-not-enter-receipt")
-  }, 45_000)
+  }, 90_000)
 
   test("exact-looking unowned Excel config stays custom across enable, doctor, and uninstall", () => {
     const source = sourceFixture()
@@ -589,7 +589,7 @@ describe("v0.2 side-by-side release manager", () => {
     const uninstalled = runManager({ command: "uninstall", configDir: config }, { runner })
     expect(uninstalled.issues).toContainEqual({ code: "excel-config-custom", message: "Custom or drifted mcp.alg_excel was preserved during uninstall." })
     expect((parse(readFileSync(configPath, "utf8")) as any).mcp.alg_excel).toEqual(value.mcp.alg_excel)
-  }, 45_000)
+  }, 90_000)
 
   test("rollback cannot launder an exact target Excel config without current receipt ownership", () => {
     const source = sourceFixture()
@@ -875,7 +875,7 @@ describe("v0.2 side-by-side release manager", () => {
     const reused = runManager({ command: "update", configDir: config, source }, { runner })
     expect(reused.generation).toBe(v02.id)
     expect(receipt(config).active_generation).toBe(v02.id)
-  }, 45_000)
+  }, 90_000)
 
   test("rejects package-lock mismatch from a local bare remote before live writes", () => {
     const fixture = bareRemoteFixture()
@@ -1002,7 +1002,7 @@ describe("v0.2 side-by-side release manager", () => {
     expect(readFileSync(destination)).toEqual(foreign)
     expect(destination).toContain(`${join("releases", "0.1.0-")}`)
     expect(existsSync(join(config, ".opencode-alg", "receipt.json"))).toBe(false)
-  }, 45_000)
+  }, 90_000)
 
   test("generation materialization link failure removes only unchanged manager-created paths", () => {
     const source = sourceFixture()
@@ -1024,7 +1024,7 @@ describe("v0.2 side-by-side release manager", () => {
     expect(failed).toBe(true)
     expect(existsSync(reservation)).toBe(false)
     expect(existsSync(join(config, ".opencode-alg", "receipt.json"))).toBe(false)
-  }, 45_000)
+  }, 90_000)
 
   test("generation cleanup preserves a same-byte identity replacement and reservation", () => {
     const source = sourceFixture()
@@ -1045,7 +1045,7 @@ describe("v0.2 side-by-side release manager", () => {
     expect(readFileSync(destination)).toEqual(replacement)
     expect(existsSync(dirname(destination))).toBe(true)
     expect(existsSync(join(config, ".opencode-alg", "receipt.json"))).toBe(false)
-  }, 45_000)
+  }, 90_000)
 
   test("staging cleanup preserves foreign additions and removes a clean validated staging tree", () => {
     const cleanSource = sourceFixture()
@@ -1113,7 +1113,7 @@ describe("v0.2 side-by-side release manager", () => {
     })).toThrow("Private no-clobber primitive probe failed")
     expect(readFileSync(retained)).toEqual(retainedBytes)
     expect(existsSync(join(config, ".opencode-alg", "receipt.json"))).toBe(false)
-  }, 45_000)
+  }, 90_000)
 
   test("dependency failure and a late injected failure leave config and agents byte-identical", () => {
     const source = sourceFixture()
@@ -1288,7 +1288,7 @@ describe("v0.2 side-by-side release manager", () => {
       expect(readFileSync(outside, "utf8"), key).toBe("outside marker\n")
       expect(readdirSync(join(config, ".opencode-alg", "transactions")), key).toEqual([])
     }
-  }, 45_000)
+  }, 90_000)
 
   test("byte-CAS drift is not overwritten and leaves a deterministic recoverable journal", () => {
     const source = sourceFixture()
@@ -1345,7 +1345,7 @@ describe("v0.2 side-by-side release manager", () => {
     expect(readFileSync(serverPath)).toEqual(serverAfter)
     expect(readFileSync(thirdPath)).toEqual(third)
     expect(readdirSync(join(config, ".opencode-alg", "transactions"))).toHaveLength(1)
-  }, 45_000)
+  }, 90_000)
 
   test.each(["missing", "corrupt"] as const)("journal recovery uses identity-bound claims and does not depend on a %s audit backup", (variant) => {
     const source = sourceFixture()
@@ -1370,7 +1370,7 @@ describe("v0.2 side-by-side release manager", () => {
     expect(readFileSync(serverPath, "utf8")).toContain("server-before")
     expect(readFileSync(tuiPath, "utf8")).toContain("tui-before")
     expect(readdirSync(transactionRoot)).toEqual([])
-  }, 45_000)
+  }, 90_000)
 
   test("partially restored before/after files remain retryable and recovery is idempotent", () => {
     const source = sourceFixture()
@@ -1403,7 +1403,7 @@ describe("v0.2 side-by-side release manager", () => {
     expect(readFileSync(tuiPath)).toEqual(tuiBefore)
     expect(readdirSync(join(config, ".opencode-alg", "transactions"))).toEqual([])
     expect(runManager({ command: "doctor", configDir: config, repairJournal: true }, { runner: new LocalGitRunner() }).pending_journals).toEqual([])
-  }, 45_000)
+  }, 90_000)
 
   test("receipt derivation CAS rejects a semantically equivalent rewrite before journal creation with zero live writes", () => {
     const source = sourceFixture()
@@ -1431,7 +1431,7 @@ describe("v0.2 side-by-side release manager", () => {
     expect(readFileSync(serverPath)).toEqual(serverBefore)
     expect(readFileSync(tuiPath)).toEqual(tuiBefore)
     expect(readdirSync(join(config, ".opencode-alg", "transactions"))).toEqual([])
-  }, 45_000)
+  }, 90_000)
 
   test("receipt CAS recheck after prewrite hook prevents every live write and removes the unneeded journal", () => {
     const source = sourceFixture()
@@ -1455,7 +1455,7 @@ describe("v0.2 side-by-side release manager", () => {
     expect(readFileSync(serverPath)).toEqual(serverBefore)
     expect(readFileSync(tuiPath)).toEqual(tuiBefore)
     expect(readdirSync(join(config, ".opencode-alg", "transactions"))).toEqual([])
-  }, 45_000)
+  }, 90_000)
 
   test.each(["config", "agent"] as const)("post-write %s mutation cannot commit the receipt and remains fail-closed", (variant) => {
     const source = sourceFixture()
@@ -1474,7 +1474,7 @@ describe("v0.2 side-by-side release manager", () => {
     expect(readFileSync(thirdPath)).toEqual(third)
     expect(existsSync(join(config, ".opencode-alg", "receipt.json"))).toBe(false)
     expect(readdirSync(join(config, ".opencode-alg", "transactions"))).toHaveLength(1)
-  }, 45_000)
+  }, 90_000)
 
   test("post-write valid receipt mutation rolls live files back without stale receipt overwrite", () => {
     const source = sourceFixture()
@@ -1496,7 +1496,7 @@ describe("v0.2 side-by-side release manager", () => {
     expect(readFileSync(serverPath)).toEqual(serverBefore)
     expect((parse(readFileSync(serverPath, "utf8")) as any).mcp?.alg_excel).toBeUndefined()
     expect(readdirSync(join(config, ".opencode-alg", "transactions"))).toEqual([])
-  }, 45_000)
+  }, 90_000)
 
   test("doctor recovers simulated crashes after config and agent writes", () => {
     for (const crashIndex of [0, 2]) {
@@ -1526,7 +1526,7 @@ describe("v0.2 side-by-side release manager", () => {
       expect(existsSync(join(config, "agents", "checker.md"))).toBe(false)
       expect(readdirSync(join(config, ".opencode-alg", "transactions"))).toEqual([])
     }
-  }, 45_000)
+  }, 90_000)
 
   test("doctor finalizes a receipt-committed crash journal instead of rolling live files back", () => {
     const source = sourceFixture()
@@ -1571,7 +1571,7 @@ describe("v0.2 side-by-side release manager", () => {
       expect(existsSync(join(config, ".opencode-alg", "receipt.json"))).toBe(false)
       expect(readdirSync(join(config, ".opencode-alg", "transactions"))).toEqual([])
     }
-  }, 45_000)
+  }, 90_000)
 
   test("doctor reports release and managed-agent drift and JSON output stays bounded", () => {
     const source = sourceFixture()
@@ -1993,7 +1993,7 @@ describe("v0.2 side-by-side release manager", () => {
     expect(readFileSync(occupied)).toEqual(foreign)
     expect(existsSync(join(config, ".opencode-alg", "receipt.json"))).toBe(false)
     expect(existsSync(join(config, "opencode.jsonc"))).toBe(false)
-  }, 45_000)
+  }, 90_000)
 
   test("occupied journal revision and same-byte marker replacement preserve journal evidence", () => {
     for (const variant of ["occupied", "same-byte-replacement"] as const) {

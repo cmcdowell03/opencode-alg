@@ -182,6 +182,33 @@ function assertTerminalAssistant(info: Record<string, any>, sessionId: string, m
   if (info.error !== undefined) throw new Error("error-only assistant messages are ineligible")
 }
 
+/**
+ * The provenance of one completed user turn, by the same rules evidence building applies. Throws when the
+ * message is not the final assistant message of a completed turn.
+ */
+export function skillTurnProvenance(messagesValue: unknown, sessionId: string, messageId: string): SkillEvidence["provenance"] {
+  if (!Array.isArray(messagesValue)) throw new Error("session messages response is not an array")
+  const messages = messagesValue.filter(isEnvelope)
+  const assistant = [...messages].reverse().find((message) => message.info.role === "assistant" && message.info.id === messageId)
+  if (!assistant) throw new Error("completed assistant message was deleted or is unavailable")
+  assertTerminalAssistant(assistant.info, sessionId, messageId)
+  completedTurn(messages, sessionId, messageId, true)
+  const user = [...messages].reverse().find((message) => message.info.role === "user" && message.info.id === assistant.info.parentID)
+  if (!user) throw new Error("assistant parent user message is unavailable")
+  if (user.info.sessionID !== sessionId || !Number.isSafeInteger(user.info.time?.created)) {
+    throw new Error("authoritative parent user identity mismatch")
+  }
+  return {
+    session_id: sessionId,
+    user_message_id: String(user.info.id),
+    assistant_message_id: messageId,
+    user_created_at: Number(user.info.time.created),
+    assistant_created_at: Number(assistant.info.time?.created),
+    assistant_completed_at: Number(assistant.info.time.completed),
+    ...(typeof assistant.info.finish === "string" && assistant.info.finish.trim() ? { finish: String(assistant.info.finish).slice(0, 64) } : {}),
+  }
+}
+
 export function buildSkillEvidence(
   messagesValue: unknown,
   sessionId: string,
@@ -244,15 +271,7 @@ export function buildSkillEvidence(
   }
   let catalogField = catalog ? catalogEvidenceField(catalog, hint) : undefined
 
-  const provenance = {
-    session_id: sessionId,
-    user_message_id: String(user.info.id),
-    assistant_message_id: messageId,
-    user_created_at: Number(user.info.time.created),
-    assistant_created_at: Number(assistant.info.time?.created),
-    assistant_completed_at: Number(assistant.info.time.completed),
-    ...(typeof assistant.info.finish === "string" && assistant.info.finish.trim() ? { finish: String(assistant.info.finish).slice(0, 64) } : {}),
-  }
+  const provenance = skillTurnProvenance(messages, sessionId, messageId)
   const totalParts = user.parts.length + turn.parts.length
   const retainedParts = user.parts.filter((part) => part.type === "text" && part.ignored !== true).length +
     assistant.parts.filter((part) => part.type === "text" && part.ignored !== true).length
