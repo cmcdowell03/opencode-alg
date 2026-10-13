@@ -10,8 +10,9 @@
   findings. Strict validation, attempt budgets, and feedback routing are unchanged.
   Custom-rule failures now include code-owned repair hints (completion/blocker
   consistency, checker verdicts, path rules, whitespace, and aggregate UTF-8 byte
-  limits). Synthetic SDK-response/restart tests and a Windows PR check cover the
-  complete retry path without model credentials.
+  limits). Synthetic SDK-response/restart tests cover the complete retry path
+  without model credentials. Validation runs locally; no GitHub-hosted test
+  workflow is included.
 
 - The learning record no longer fills up. Once it is three-quarters full, settled
   records older than a day move to `.opencode/skill-evolution/ledger-archive/`;
