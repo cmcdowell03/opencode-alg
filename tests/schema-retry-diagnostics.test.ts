@@ -1,10 +1,11 @@
 import { describe, expect, test } from "bun:test"
 import { MAX_PERSISTED_FAILURES } from "../src/diagnostics.ts"
 import { executeRun, prepareRunForResume } from "../src/executor.ts"
+import { AGENT_OUTPUT_BYTE_LIMITS } from "../src/limits.ts"
 import { parseAndValidate, PersistedFailureListSchema } from "../src/schemas.ts"
 import { buildCheckerPrompt, buildWorkerPrompt } from "../src/sessions.ts"
 import { createRun, hydrateRunFully, loadRun } from "../src/store.ts"
-import type { AttemptOutcome, GraphDef } from "../src/types.ts"
+import type { AlgAgent, AttemptOutcome, GraphDef } from "../src/types.ts"
 import { executeContext, removeProject, tempProject } from "./helpers.ts"
 
 const explorer = { query: "inspect", map: [{ path: "src/app.ts", role: "entry" }] }
@@ -89,6 +90,61 @@ describe("schema-owned retry diagnostics", () => {
     }
     expect(parseAndValidate("implementer", { ...implementer, done: false }).ok).toBe(false)
     expect(parseAndValidate("implementer", { ...implementer, blockers: ["unfinished"] }).ok).toBe(false)
+  })
+
+  for (const [agent, raw, rule, hint] of [
+    ["implementer", { ...implementer, done: false }, "blockers_required_when_incomplete", "non-empty blockers array"],
+    ["implementer", { ...implementer, blockers: ["PRIVATE_BLOCKER_CANARY"] }, "blockers_forbidden_when_done", "done=true requires no blockers"],
+    ["implementer", { ...implementer, artifact_path: "../PRIVATE_PATH_CANARY" }, "run_artifact_path", "<current-run-id>/artifacts/"],
+    ["implementer", { ...implementer, files_touched: ["../PRIVATE_PATH_CANARY"] }, "project_relative_path", "no traversal"],
+    ["explorer", { ...explorer, query: " PRIVATE_TEXT_CANARY " }, "text_trimmed", "Remove surrounding whitespace"],
+    ["checker", { ...checker, failures: ["PRIVATE_FAILURE_CANARY"] }, "failures_empty_when_passed", "passed=true requires failures=[]"],
+    ["checker", { ...checker, passed: false, score: 2 }, "failures_required_when_rejected", "at least one specific failure"],
+    ["checker", { ...checker, score: 2 }, "score_matches_verdict", "passed must equal (score >= 7)"],
+    ["shell", { ...shell, timed_out: true }, "shell_ok_matches_execution", "!timed_out"],
+  ] as const) {
+    test(`custom rule ${rule} has fixed actionable guidance`, () => {
+      const result = parseAndValidate(agent, raw)
+      expect(result.ok).toBe(false)
+      if (result.ok) return
+      const diagnostic = result.failures.join("\n")
+      expect(diagnostic).toContain(`code=custom rule=${rule}`)
+      expect(diagnostic).toContain(hint)
+      expect(diagnostic).not.toContain("PRIVATE_")
+      expect(PersistedFailureListSchema.safeParse(result.failures).success).toBe(true)
+    })
+  }
+
+  const oversized: Record<AlgAgent, unknown> = {
+    explorer: { ...explorer, map: Array.from({ length: 300 }, () => ({ path: "x".repeat(1000), role: "entry" })) },
+    researcher: { ...researcher, evidence: Array.from({ length: 300 }, () => ({ path: "src", finding: "x".repeat(1000) })) },
+    implementer: { ...implementer, summary: Array(100).fill("界".repeat(1000)) },
+    checker: { passed: false, score: 2, failures: Array(60).fill("界".repeat(400)) },
+    shell: { ...shell, stdout_tail: "界".repeat(6000), stderr_tail: "界".repeat(6000) },
+  }
+  for (const agent of Object.keys(oversized) as AlgAgent[]) {
+    test(`${agent} aggregate limit names local UTF-8 byte policy`, () => {
+      const result = parseAndValidate(agent, oversized[agent])
+      expect(result.ok).toBe(false)
+      if (result.ok) return
+      expect(result.failures).toHaveLength(1)
+      expect(result.failures[0]).toContain(`(root): code=custom rule=output_byte_limit max_bytes=${AGENT_OUTPUT_BYTE_LIMITS[agent]}`)
+      expect(result.failures[0]).toContain("serialized UTF-8 JSON")
+      expect(result.failures[0]).not.toContain("界")
+    })
+  }
+
+  test("child cannot inject a custom rule or override the byte limit through output keys", () => {
+    const result = parseAndValidate("implementer", { ...implementer, done: false,
+      params: { alg_output_rule: "PRIVATE_RULE_CANARY", max_bytes: 987654321 },
+      alg_output_rule: "PRIVATE_OTHER_RULE_CANARY", message: "PRIVATE_MESSAGE_CANARY" })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    const diagnostic = result.failures.join("\n")
+    // Unknown keys reject the object before its custom refinements run.
+    expect(diagnostic).not.toContain("rule=")
+    expect(diagnostic).toContain("code=unrecognized_keys")
+    expect(diagnostic).not.toMatch(/PRIVATE_|987654321/)
   })
 
   test.each([

@@ -33,9 +33,31 @@ import {
 import { boundDiagnosticList, safeDiagnosticText } from "./diagnostics.ts"
 import { failureListCommitment } from "./persistence.ts"
 
+// Code-owned vocabulary only. Never use an issue's raw message or submitted
+// values as retry guidance, even for a custom refinement.
+const OUTPUT_RULE_HINTS = {
+  text_trimmed: "Remove surrounding whitespace from this string.",
+  project_relative_path: "Use a normalized project-relative path with forward slashes and no traversal.",
+  run_artifact_path: "Use .opencode/runs/<current-run-id>/artifacts/<file>; omit artifact_path if no artifact was created.",
+  blockers_forbidden_when_done: "done=true requires no blockers. If work is unfinished, report done=false with explicit blockers.",
+  blockers_required_when_incomplete: "done=false requires a non-empty blockers array describing unfinished work.",
+  failures_empty_when_passed: "passed=true requires failures=[]. If criteria are unmet, report passed=false and specific failures.",
+  failures_required_when_rejected: "passed=false requires at least one specific failure.",
+  score_matches_verdict: "passed must equal (score >= 7); use score 0-6 for rejection and 7-10 for a pass, reflecting the actual assessment.",
+  shell_ok_matches_execution: "ok must equal (exit_code === 0 && !timed_out && !cancelled && !termination_failed).",
+  output_byte_limit: "Reduce the complete serialized UTF-8 JSON output to the stated byte limit without changing facts.",
+  json_serializable: "Return a JSON-serializable object.",
+} as const
+
+function outputRuleParams(rule: keyof typeof OUTPUT_RULE_HINTS) {
+  return { alg_output_rule: rule }
+}
+
 function exactString(minimum: number, maximum: number, label = "value") {
   return z.string().min(minimum).max(maximum)
-    .refine((value) => value === value.trim(), `${label} must not have surrounding whitespace`)
+    .refine((value) => value === value.trim(), {
+      message: `${label} must not have surrounding whitespace`, params: outputRuleParams("text_trimmed"),
+    })
 }
 
 const shortText = exactString(1, 2_000, "text")
@@ -263,10 +285,12 @@ function enforceOutputBytes(agent: AlgAgent) {
       const size = serializedBytes(value)
       const maximum = AGENT_OUTPUT_BYTE_LIMITS[agent]
       if (size > maximum) {
-        ctx.addIssue({ code: "custom", message: `${agent} output exceeds ${maximum} serialized bytes` })
+        ctx.addIssue({ code: "custom", message: `${agent} output exceeds ${maximum} serialized bytes`,
+          params: outputRuleParams("output_byte_limit") })
       }
     } catch (error) {
-      ctx.addIssue({ code: "custom", message: error instanceof Error ? error.message : String(error) })
+      ctx.addIssue({ code: "custom", message: error instanceof Error ? error.message : String(error),
+        params: outputRuleParams("json_serializable") })
     }
   }
 }
@@ -300,7 +324,9 @@ export const ImplementOut = z
   .object({
     summary: boundedStrings.min(1),
     files_touched: z
-      .array(z.string().min(1).max(1_024).refine(isSafeProjectRelativePath, "must be a normalized safe project-relative path"))
+      .array(z.string().min(1).max(1_024).refine(isSafeProjectRelativePath, {
+        message: "must be a normalized safe project-relative path", params: outputRuleParams("project_relative_path"),
+      }))
       .max(1_000)
       .default([]),
     commands_run: z
@@ -314,16 +340,20 @@ export const ImplementOut = z
       .string()
       .min(1)
       .max(1_024)
-      .refine(isSafeRunArtifactPath, "must be under .opencode/runs/<run_id>/artifacts/")
+      .refine(isSafeRunArtifactPath, {
+        message: "must be under .opencode/runs/<run_id>/artifacts/", params: outputRuleParams("run_artifact_path"),
+      })
       .optional(),
   })
   .strict()
   .superRefine((value, ctx) => {
     if (value.done && (value.blockers?.length ?? 0) > 0) {
-      ctx.addIssue({ code: "custom", path: ["blockers"], message: "done=true cannot include blockers" })
+      ctx.addIssue({ code: "custom", path: ["blockers"], message: "done=true cannot include blockers",
+        params: outputRuleParams("blockers_forbidden_when_done") })
     }
     if (!value.done && !value.blockers?.length) {
-      ctx.addIssue({ code: "custom", path: ["blockers"], message: "done=false requires explicit blockers" })
+      ctx.addIssue({ code: "custom", path: ["blockers"], message: "done=false requires explicit blockers",
+        params: outputRuleParams("blockers_required_when_incomplete") })
     }
   })
   .superRefine(enforceOutputBytes("implementer"))
@@ -338,13 +368,16 @@ export const CheckOut = z
   .strict()
   .superRefine((value, ctx) => {
     if (value.passed && value.failures.length !== 0) {
-      ctx.addIssue({ code: "custom", path: ["failures"], message: "passed=true requires no failures" })
+      ctx.addIssue({ code: "custom", path: ["failures"], message: "passed=true requires no failures",
+        params: outputRuleParams("failures_empty_when_passed") })
     }
     if (!value.passed && value.failures.length === 0) {
-      ctx.addIssue({ code: "custom", path: ["failures"], message: "passed=false requires at least one failure" })
+      ctx.addIssue({ code: "custom", path: ["failures"], message: "passed=false requires at least one failure",
+        params: outputRuleParams("failures_required_when_rejected") })
     }
     if (value.passed !== (value.score >= 7)) {
-      ctx.addIssue({ code: "custom", path: ["score"], message: "passed must equal score >= 7" })
+      ctx.addIssue({ code: "custom", path: ["score"], message: "passed must equal score >= 7",
+        params: outputRuleParams("score_matches_verdict") })
     }
   })
   .superRefine(enforceOutputBytes("checker"))
@@ -363,7 +396,8 @@ export const ShellOut = z
   .strict()
   .superRefine((value, ctx) => {
     if (value.ok !== (value.exit_code === 0 && !value.timed_out && !value.cancelled && !value.termination_failed)) {
-      ctx.addIssue({ code: "custom", path: ["ok"], message: "ok must reflect exit_code/timeout/cancellation" })
+      ctx.addIssue({ code: "custom", path: ["ok"], message: "ok must reflect exit_code/timeout/cancellation",
+        params: outputRuleParams("shell_ok_matches_execution") })
     }
   })
   .superRefine(enforceOutputBytes("shell"))
@@ -1273,7 +1307,15 @@ export function parseAndValidate(
     const expected = typeof details.expected === "string" ? ` expected=${details.expected}` : ""
     const minimum = typeof details.minimum === "number" ? ` min=${details.minimum}` : ""
     const maximum = typeof details.maximum === "number" ? ` max=${details.maximum}` : ""
-    return safeDiagnosticText(`${path}: code=${issue.code}${expected}${minimum}${maximum}`)
+    const rule = issue.code === "custom" ? issue.params?.alg_output_rule : undefined
+    let guidance = ""
+    if (typeof rule === "string" && Object.hasOwn(OUTPUT_RULE_HINTS, rule)) {
+      // schemaForAgent already established the role. The byte limit comes from
+      // local policy, never an issue parameter or model-supplied number.
+      const bytes = rule === "output_byte_limit" ? ` max_bytes=${AGENT_OUTPUT_BYTE_LIMITS[agent as AlgAgent]}` : ""
+      guidance = ` rule=${rule}${bytes}; ${OUTPUT_RULE_HINTS[rule as keyof typeof OUTPUT_RULE_HINTS]}`
+    }
+    return safeDiagnosticText(`${path}: code=${issue.code}${expected}${minimum}${maximum}${guidance}`)
   })
   return {
     ok: false,
