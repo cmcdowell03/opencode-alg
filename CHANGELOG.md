@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- A stray `{` or `[` mentioned in prose no longer hides a later complete JSON
+  output fence when the intervening text can safely be treated as prose.
+  Recovery is bounded by the existing response and candidate limits; JSON-like
+  prefixes, unfinished containers, and truncated trailing JSON still fail closed.
+  Ambiguity checks and strict role validation are unchanged. Unfenced or uncertain
+  cases remain rejected rather than salvaging a nested verdict.
+
 - Child-output diagnostics now derive safe field paths from each role's schema,
   so fields such as `query`, `key_hits.0.note`, and `artifact_path` no longer
   appear as `?`. Unknown keys and submitted values remain excluded. Retries
