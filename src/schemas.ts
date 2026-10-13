@@ -1236,6 +1236,25 @@ export function jsonSchemaHint(agent: string): string {
   }
 }
 
+/** Resolve paths against the role's schema, never against child-supplied keys. */
+function outputIssuePath(schema: z.ZodType, path: PropertyKey[]): string {
+  let current: unknown = schema
+  return path.map((part) => {
+    while (current instanceof z.ZodDefault || current instanceof z.ZodOptional) current = current.unwrap()
+    if (current instanceof z.ZodObject && typeof part === "string" && Object.hasOwn(current.shape, part)) {
+      current = current.shape[part]
+      return part
+    }
+    if (current instanceof z.ZodArray && typeof part === "number" && Number.isSafeInteger(part) && part >= 0) {
+      current = current.element
+      return String(part)
+    }
+    // Unsupported schema constructs and unknown segments fail closed, including their descendants.
+    current = undefined
+    return "?"
+  }).join(".") || "(root)"
+}
+
 export function parseAndValidate(
   agent: string,
   raw: unknown,
@@ -1248,15 +1267,8 @@ export function parseAndValidate(
   }
   const result = schema.safeParse(withoutSchemaMarker(raw))
   if (result.success) return { ok: true, data: result.data }
-  const knownOutputFields = new Set([
-    "summary", "files_touched", "commands_run", "cmd", "outcome", "risks", "done", "blockers",
-    "answer", "evidence", "path", "finding", "constraints", "options", "name", "pros", "cons",
-    "acceptance_criteria", "passed", "failures", "score", "notes",
-  ])
   const converted = result.error.issues.map((issue) => {
-    const path = issue.path.map((part) => typeof part === "number" && Number.isSafeInteger(part) && part >= 0
-      ? String(part)
-      : typeof part === "string" && knownOutputFields.has(part) ? part : "?").join(".") || "(root)"
+    const path = outputIssuePath(schema, issue.path)
     const details = issue as typeof issue & { expected?: unknown; minimum?: unknown; maximum?: unknown }
     const expected = typeof details.expected === "string" ? ` expected=${details.expected}` : ""
     const minimum = typeof details.minimum === "number" ? ` min=${details.minimum}` : ""

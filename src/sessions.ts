@@ -1,6 +1,6 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 import { jsonSchemaHint, parseAndValidate } from "./schemas.ts"
-import type { AlgAgent, ModelRef } from "./types.ts"
+import type { AlgAgent, AttemptOutcome, ModelRef } from "./types.ts"
 import {
   MAX_AGENT_RESPONSE_TEXT_BYTES,
   MAX_CHECKER_PROMPT_BYTES,
@@ -328,6 +328,23 @@ ${jsonSchemaHint(opts.agent)}
   }
 }
 
+/** Classification comes from durable runtime outcomes, not strings in child feedback. */
+function retryGuidance(failures: string[] | undefined, outcome: AttemptOutcome | undefined): string[] {
+  if (!failures?.length) return []
+  const guidance = outcome === "schema_invalid"
+    ? [
+        "PRIOR OUTPUT CONTRACT FAILURES:",
+        "The previous response did not satisfy the output contract. These diagnostics are not new acceptance criteria or a substantive verdict on the work.",
+        "Return one JSON object matching the supplied schema: use the required fields and JSON types, omit unsupported keys, and satisfy field constraints. Do not change facts or claim success just to pass validation.",
+      ]
+    : outcome === "sdk_error"
+      ? ["PRIOR EXECUTION/TRANSPORT FAILURE (not a checker verdict):"]
+      : outcome === "gate_failure"
+        ? ["PRIOR GATE FAILURE (not necessarily an output-format problem):"]
+        : ["PRIOR ATTEMPT OR CHECKER FEEDBACK (address against the original criteria):"]
+  return [...guidance, ...failures.map((failure) => `- ${failure}`)]
+}
+
 export function buildWorkerPrompt(options: {
   goal: string
   runId?: string
@@ -335,6 +352,7 @@ export function buildWorkerPrompt(options: {
   agent: AlgAgent
   inputs: Record<string, unknown>
   priorFailures: string[]
+  priorOutcome?: AttemptOutcome
   description?: string
 }): string {
   const lines = [
@@ -360,13 +378,7 @@ export function buildWorkerPrompt(options: {
       "If you did not create an artifact, omit artifact_path.",
     )
   }
-  if (options.priorFailures.length) {
-    lines.push(
-      "",
-      "PRIOR VALIDATED CHECKER/GATE FAILURES (address these):",
-      ...options.priorFailures.map((failure) => `- ${failure}`),
-    )
-  }
+  lines.push(...retryGuidance(options.priorFailures, options.priorOutcome))
   lines.push("", "Do the work with your tools, then return the JSON output contract.", "Do not launch nested orchestration graphs.")
   const prompt = lines.filter(Boolean).join("\n")
   assertTextBytes(prompt, MAX_WORKER_PROMPT_BYTES, "worker prompt")
@@ -374,7 +386,12 @@ export function buildWorkerPrompt(options: {
 }
 
 /** The checker prompt excludes worker chat/reasoning; SDK/project policy remains active. */
-export function buildCheckerPrompt(options: { criteria: string[]; claimed: unknown; priorFailures?: string[] }): string {
+export function buildCheckerPrompt(options: {
+  criteria: string[]
+  claimed: unknown
+  priorFailures?: string[]
+  priorOutcome?: AttemptOutcome
+}): string {
   const prompt = [
     "You are a checker in a fresh child session.",
     "ALG's explicit task payload contains bounded claimed output and original hard criteria.",
@@ -391,10 +408,7 @@ export function buildCheckerPrompt(options: { criteria: string[]; claimed: unkno
     "",
     "Return only the CheckOut JSON verdict.",
     "score is an integer 0–10; passed must equal (score >= 7). Pass only when every hard criterion is met, with failures=[]. Otherwise score 0–6 and provide specific failures.",
-    ...(options.priorFailures?.length ? [
-      "PRIOR ATTEMPT VALIDATION/GATE FAILURES (correct the verdict contract; these are not new acceptance criteria):",
-      ...options.priorFailures.map((failure) => `- ${failure}`),
-    ] : []),
+    ...retryGuidance(options.priorFailures, options.priorOutcome),
   ].join("\n")
   assertTextBytes(prompt, MAX_CHECKER_PROMPT_BYTES, "checker prompt")
   return prompt
