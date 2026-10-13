@@ -90,6 +90,54 @@ export interface JsonExtraction {
 const MAX_JSON_CANDIDATES = 8
 const MAX_JSON_CANDIDATE_BYTES = MAX_AGENT_RESPONSE_TEXT_BYTES
 
+/** Find a complete explicit JSON fence without treating backticks in a JSON string as its close. */
+function nextJsonFence(text: string, from: number): { opener: number; body: number } | undefined {
+  const pattern = /```(?:json)?[ \t]*(?:\r?\n|(?=[{\[]))/gi
+  pattern.lastIndex = from
+  const match = pattern.exec(text)
+  if (!match) return undefined
+  const body = pattern.lastIndex
+  // Do not interpret a closing fence or a prose/code block as an output opener.
+  if (!/^[ \t\r\n]*[{\[]/.test(text.slice(body))) return undefined
+  let inString = false
+  let escaped = false
+  for (let index = body; index < text.length; index++) {
+    const char = text[index]!
+    if (inString) {
+      if (escaped) escaped = false
+      else if (char === "\\") escaped = true
+      else if (char === '"') inString = false
+    } else if (char === '"') inString = true
+    else if (text.startsWith("```", index)) return { opener: match.index, body }
+  }
+  return undefined
+}
+
+/**
+ * A narrow recovery boundary for an opener mentioned in prose before a closed
+ * JSON fence. Never restart at arbitrary nested braces. A container starting a
+ * line, a key/value separator, or a JSON-looking continuation is not prose we
+ * can safely discard. Unfenced/uncertain cases retain the original rejection.
+ */
+function proseFenceRecovery(text: string, start: number, budget: number):
+  { body: number; skipped: number } | "too_many" | undefined {
+  const fence = nextJsonFence(text, start + 1)
+  if (!fence) return undefined
+  const lineStart = text.lastIndexOf("\n", start - 1) + 1
+  if (!text.slice(lineStart, start).trim()) return undefined
+  const prefix = text.slice(start, fence.opener)
+  if (prefix.includes(":")) return undefined
+  let skipped = 0
+  for (let index = 0; index < prefix.length; index++) {
+    if (prefix[index] !== "{" && prefix[index] !== "[") continue
+    // The first opener was already charged by the outer scanner.
+    if (index > 0 && ++skipped > budget) return "too_many"
+    const continuation = prefix.slice(index + 1).trimStart()
+    if (!continuation || /^(?:["{}\[\]\d-]|true\b|false\b|null\b)/.test(continuation)) return undefined
+  }
+  return { body: fence.body, skipped }
+}
+
 function jsonObjectCandidates(text: string): { candidates: unknown[]; reason?: JsonExtractionReason } {
   if (!text.trim()) return { candidates: [], reason: "empty" }
   if (Buffer.byteLength(text, "utf8") > MAX_JSON_CANDIDATE_BYTES) return { candidates: [], reason: "oversized" }
@@ -121,7 +169,15 @@ function jsonObjectCandidates(text: string): { candidates: unknown[]; reason?: J
       }
     }
     if (stack.length > 0 || inString) {
-      reason ??= "truncated"
+      const recovery = proseFenceRecovery(text, start, MAX_JSON_CANDIDATES - scannedCandidates)
+      if (recovery === "too_many") return { candidates, reason: "too_many" }
+      if (recovery) {
+        scannedCandidates += recovery.skipped
+        start = recovery.body
+        continue
+      }
+      // True truncation remains fatal, even after an earlier invalid span.
+      reason = "truncated"
       break
     }
     const source = text.slice(start, end)

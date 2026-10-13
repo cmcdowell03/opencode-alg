@@ -7,12 +7,15 @@ import { executeContext, removeProject, tempProject } from "./helpers.ts"
 
 const implemented = { summary: ["complete"], done: true }
 const explored = { query: "inspect", map: [{ path: "src", role: "entry" }] }
+const checked = { passed: true, failures: [], score: 9 }
+const recoveredVerdict = ["Here is the { opener gate it uses. All checks done.", "```json", JSON.stringify(checked), "```"].join("\n")
 const cases: {
   name: string
   agent: Exclude<AlgAgent, "shell">
   parts: unknown[]
   diagnostic: string
   valid: unknown
+  retryParts?: unknown[]
 }[] = [
   { name: "custom-rule rejection", agent: "implementer",
     parts: [{ type: "text", text: JSON.stringify({ summary: ["PRIVATE_SUMMARY_CANARY"], done: false }) }],
@@ -28,6 +31,10 @@ const cases: {
   { name: "tool-only reply", agent: "implementer",
     parts: [{ type: "tool", output: "PRIVATE_TOOL_CANARY" }],
     diagnostic: "Response parse: empty", valid: implemented },
+  { name: "truncated verdict resumes with prose-opener recovery", agent: "checker",
+    parts: [{ type: "text", text: '{"passed":true' }],
+    diagnostic: "Response parse: truncated", valid: checked,
+    retryParts: [{ type: "text", text: recoveredVerdict }] },
 ]
 
 for (const scenario of cases) {
@@ -47,7 +54,7 @@ for (const scenario of cases) {
         prompt: async (request: { path: { id: string }; body: { parts: { type: string; text: string }[] } }) => {
           expect(request.path.id).toBe(childIds.at(-1)!)
           prompts.push(request.body.parts[0]!.text)
-          return { data: { parts: prompts.length === 1 ? scenario.parts : [
+          return { data: { parts: prompts.length === 1 ? scenario.parts : scenario.retryParts ?? [
             { type: "text", text: JSON.stringify(scenario.valid) },
           ] }, error: undefined }
         },
@@ -74,6 +81,38 @@ for (const scenario of cases) {
       expect(prompts[1]).toContain(scenario.diagnostic)
       expect(prompts[1]).toContain("OUTPUT CONTRACT (mandatory)")
       expect(prompts[1]).not.toContain("PRIVATE_")
+    } finally { removeProject(project) }
+  }, 120_000)
+}
+
+for (const scenario of [
+  { name: "prose opener recovers on the first attempt", text: recoveredVerdict, outcome: "passed" },
+  { name: "unfinished outer object cannot supply a nested verdict", text: '{"wrapper":' + JSON.stringify(checked), outcome: "schema_invalid" },
+  { name: "recovered verdict still requires a boolean", text: recoveredVerdict.replace('"passed":true', '"passed":"true"'), outcome: "schema_invalid" },
+] as const) {
+  test(`SDK response -> durable outcome: ${scenario.name}`, async () => {
+    const project = tempProject()
+    try {
+      const run = createRun({ goal: "synthetic fence recovery", criteria: ["complete"], ownerSessionId: "session-owner",
+        projectDirectory: project, graph: { name: "fence-recovery", max_global_attempts: 1, max_concurrency: 1,
+          nodes: [{ id: "check", agent: "checker", depends_on: [], loop: { max_attempts: 1, gate: "schema" } }] } })
+      let calls = 0
+      const client = { session: {
+        create: async () => ({ data: { id: "fence-child" }, error: undefined }),
+        prompt: async () => {
+          calls++
+          return { data: { parts: [{ type: "tool", output: "PRIVATE_TOOL_CANARY" },
+            { type: "text", text: scenario.text }] }, error: undefined }
+        },
+      } } as unknown as Client
+      await executeRun(run, { ...executeContext(project), client })
+      const persisted = hydrateRunFully(loadRun(project, run.run_id)!)
+      expect(calls).toBe(1)
+      expect(persisted.global_attempts).toBe(1)
+      expect(persisted.nodes.check!.attempts[0]!.outcome).toBe(scenario.outcome)
+      expect(persisted.nodes.check!.attempts[0]!.output).toEqual(scenario.outcome === "passed" ? checked : undefined)
+      expect(persisted.status).toBe(scenario.outcome === "passed" ? "done" : "failed")
+      expect(JSON.stringify(persisted)).not.toContain("PRIVATE_")
     } finally { removeProject(project) }
   }, 120_000)
 }
