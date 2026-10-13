@@ -265,11 +265,20 @@ async function runOneNode(
       }
     } else {
       const checker = definition.agent === "checker"
+      const previousAttempt = state.attempts.at(-2)
+      // Routed checker feedback can replace last_failures. Classify only feedback
+      // that still matches this node's durable prior attempt; legacy/routed data
+      // receives neutral guidance instead of being guessed from diagnostic text.
+      const priorOutcome = previousAttempt &&
+        previousAttempt.failures.length === state.last_failures.length &&
+        previousAttempt.failures.every((failure, index) => failure === state.last_failures[index])
+        ? previousAttempt.outcome : undefined
       const prompt = checker
         ? buildCheckerPrompt({
             criteria: run.criteria.length ? run.criteria : ["Output must be complete and match the goal."],
             claimed: inputs.claimed ?? inputs,
             priorFailures: state.attempts.at(-2)?.outcome === "substantive_rejection" ? [] : state.last_failures,
+            priorOutcome,
           })
         : buildWorkerPrompt({
             goal: run.goal,
@@ -278,6 +287,7 @@ async function runOneNode(
             agent: definition.agent,
             inputs,
             priorFailures: state.last_failures,
+            priorOutcome,
             description: definition.description,
           })
       const result = await sessionRunner({

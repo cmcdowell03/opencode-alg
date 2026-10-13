@@ -140,6 +140,8 @@ describe("executor semantics", () => {
       expect(updated.nodes["audit-any-name"]!.attempts).toHaveLength(2)
       expect(updated.nodes["audit-any-name"]!.attempts[0]!.feedback_applied).toBe(true)
       expect(prompts.filter((prompt) => prompt.includes("fix generic issue"))).toHaveLength(1)
+      expect(prompts[2]).toContain("PRIOR ATTEMPT OR CHECKER FEEDBACK")
+      expect(prompts[2]).not.toContain("PRIOR OUTPUT CONTRACT FAILURES")
       expect(updated.global_attempts).toBe(4)
     } finally {
       removeProject(project)
@@ -186,6 +188,10 @@ describe("executor semantics", () => {
             return { session_id: `worker-${workers}`, text: "", parsed: { summary: ["done"], files_touched: [], commands_run: [], risks: [], done: true } }
           }
           checkers++
+          if (checkers === 2) {
+            expect(options.userPrompt).toContain("PRIOR GATE FAILURE")
+            expect(options.userPrompt).not.toContain("PRIOR OUTPUT CONTRACT FAILURES")
+          }
           return { session_id: `checker-${checkers}`, text: "", parsed: { passed: true, failures: [], score: 10 } }
         },
         shellRunner: async () => {

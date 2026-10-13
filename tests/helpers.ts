@@ -1,10 +1,12 @@
-import { mkdtempSync, rmSync } from "node:fs"
+import { mkdtempSync, realpathSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import type { GraphDef } from "../src/types.ts"
 
 export function tempProject(label = "alg-test-"): string {
-  return mkdtempSync(join(tmpdir(), label))
+  // Hosted Windows runners may expose TEMP via an 8.3 alias (RUNNER~1).
+  // Fixtures compare paths with the runtime's canonical filesystem identity.
+  return realpathSync.native(mkdtempSync(join(tmpdir(), label)))
 }
 
 export function removeProject(path: string): void {

@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Child-output diagnostics now derive safe field paths from each role's schema,
+  so fields such as `query`, `key_hits.0.note`, and `artifact_path` no longer
+  appear as `?`. Unknown keys and submitted values remain excluded. Retries
+  distinguish output-contract, SDK, and gate failures using saved outcomes;
+  contract failures are not presented as new criteria or substantive checker
+  findings. Strict validation, attempt budgets, and feedback routing are unchanged.
+  Custom-rule failures now include code-owned repair hints (completion/blocker
+  consistency, checker verdicts, path rules, whitespace, and aggregate UTF-8 byte
+  limits). Synthetic SDK-response/restart tests cover the complete retry path
+  without model credentials. Validation runs locally; no GitHub-hosted test
+  workflow is included.
+
 - The learning record no longer fills up. Once it is three-quarters full, settled
   records older than a day move to `.opencode/skill-evolution/ledger-archive/`;
   an archived turn still counts as reviewed and is never audited twice.

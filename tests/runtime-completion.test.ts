@@ -96,7 +96,7 @@ test("checker retries receive schema failure context and explicit score contract
       prompts.push(opts.userPrompt)
       return { session_id: "", text: "", parsed: { passed: true, score: prompts.length === 1 ? 2 : 8, failures: [] } }
     } })
-    expect(prompts[1]).toContain("PRIOR ATTEMPT VALIDATION/GATE FAILURES")
+    expect(prompts[1]).toContain("PRIOR OUTPUT CONTRACT FAILURES")
     expect(prompts[1]).toContain("schema:")
     expect(prompts[1]).toContain("passed must equal (score >= 7)")
     expect(disk(project, run.run_id).status).toBe("done")
@@ -173,7 +173,9 @@ test("rejected workers retry; observer exceptions cannot rewrite DONE", async ()
     const run = newRun(project)
     let calls = 0
     await executeRun(run, { ...executeContext(project), onEvent: () => { throw new Error("observer") },
-      sessionRunner: async () => { if (++calls === 1) throw new Error("synthetic SDK error\n")
+      sessionRunner: async (opts) => { if (++calls === 1) throw new Error("synthetic SDK error\n")
+        expect(opts.userPrompt).toContain("PRIOR EXECUTION/TRANSPORT FAILURE")
+        expect(opts.userPrompt).not.toContain("PRIOR OUTPUT CONTRACT FAILURES")
         return { session_id: "", text: "", parsed: output } },
     })
     const restored = disk(project, run.run_id)
