@@ -25,10 +25,16 @@ For multi-file changes, research with acceptance criteria, or any high-stakes ta
 
 1. **`alg_plan`** — create a validated graph (`coding-diamond` default, or `research-diamond`) and pass user criteria directly in `criteria`.
    - Pass `shell_gate` when tests exist (e.g. `npm test`, `pytest`, `go test ./...`).
+   - Gate strings are executable validation commands, never prose or tool inventories. Put tool permissions and acceptance descriptions in `criteria`.
+   - Windows gates use `cmd.exe`, not the interactive PowerShell shell. Do not assume POSIX tools such as `tail` exist; use a reviewed cross-platform validation script for complex checks.
+   - For a nested repository, pass `shell_cwd="relative/repo"` alongside `shell_gate="python -m pytest tests/unit"`. It must exist inside the project and resolves against the pinned execution directory, including on resume. Custom graphs use `shell_gate.cwd` per node.
+   - Read `shell_gate_preflight` in the plan: review the shell, resolved cwd and warnings before running. Preflight never executes the gate, proves test correctness, or checks files the implementation has yet to create.
 2. **`alg_run`** — execute ready-set waves (parallel nodes, loops, schema/shell/checker gates).
 3. **`alg_status` / `alg_artifact` / `alg_resume`** — inspect or continue. Responses are compact by default and keep bounded tails plus integrity/truncation metadata. Explicit full status/run/resume recursively verifies and hydrates all archived attempt/detail/output/failure data and may be large; `alg_artifact detail="full"` returns complete typed current-node output.
 
 `alg_run` and `alg_resume` are synchronous bounded-wave calls, not live streams. Use `max_waves`, status, resume, and `/alg-runs` between calls. Filesystem roots are rejected unless `allow_filesystem_root=true` is explicit on that individual plan/run/resume call; never assume a prior root approval carries forward.
+
+If shell preflight rejects a plan/run, fix the command or directory before retrying. `alg_run` / `alg_resume` accept corrected `shell_gate` and `shell_cwd` for the first implementer only. Preflight also rechecks before each batch and after checker feedback; rejection reserves no attempts for that batch and preserves prior work and budgets. Exhausted/unreachable branches do not veto independent work. Do not increase attempt limits to compensate for a deterministic gate-authoring error. Already exhausted attempts are not refunded. An ordinary test failure still needs implementation repair, and `schema_ok=true` alone never proves the work is correct.
 
 SHA-256 run references detect stale, partial, mismatched, or accidentally corrupted local content and fail closed during hydration. They do not authenticate a manifest against an actor able to coherently rewrite `progress.json`, all sidecars, hashes, and counts. Authenticity would require an external trusted signing key or append-only ledger and is outside ALG's scope; never call local run state tamper-proof or cryptographically authentic.
 

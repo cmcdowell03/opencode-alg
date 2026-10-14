@@ -15,13 +15,14 @@ export function shellGateHash(run: RunState): string {
 }
 
 /** Gate the implementer will run. Matches executor shellDefinition, including a command not yet persisted. */
-export function prospectiveShellGateHash(run: RunState, options: { shellGateCmd?: string; shellGateTimeoutMs?: number } = {}): string {
+export function prospectiveShellGateHash(run: RunState, options: { shellGateCmd?: string; shellGateTimeoutMs?: number; shellGateCwd?: string } = {}): string {
   const definition = run.graph.nodes.find((node) => node.agent === "implementer")
   const gate = definition && options.shellGateCmd
     ? {
         ...definition.shell_gate,
         cmd: options.shellGateCmd,
         ...(options.shellGateTimeoutMs !== undefined ? { timeout_ms: options.shellGateTimeoutMs } : {}),
+        ...(options.shellGateCwd !== undefined ? { cwd: options.shellGateCwd } : {}),
       }
     : definition?.shell_gate ?? null
   return hashObject(gate)

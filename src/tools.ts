@@ -2,6 +2,7 @@ import { tool } from "@opencode-ai/plugin"
 import type { PluginInput, ToolContext } from "@opencode-ai/plugin"
 import { validateGraph } from "./graph.ts"
 import { closeRun, prepareRunForResume } from "./executor.ts"
+import { preflightShellGates, type GatePreflightReport } from "./shell-preflight.ts"
 import {
   createRun,
   hydrateRunFully,
@@ -465,6 +466,7 @@ export function withShellGate(
   graph: GraphDef,
   command: string,
   timeoutMs?: number,
+  cwd?: string,
 ): GraphDef {
   const clone = structuredClone(graph)
   const implementer = clone.nodes.find((node) => node.agent === "implementer")
@@ -473,12 +475,26 @@ export function withShellGate(
     ...implementer.shell_gate,
     cmd: command,
     ...(timeoutMs !== undefined ? { timeout_ms: timeoutMs } : {}),
+    ...(cwd !== undefined ? { cwd } : {}),
   }
   implementer.loop = {
     max_attempts: implementer.loop?.max_attempts ?? 1,
     gate: "all",
   }
   return validateGraph(clone)
+}
+
+function compactGatePreflight(reports: GatePreflightReport[]) {
+  return {
+    gates: reports.slice(0, COMPACT_NODE_COUNT).map((report) => ({
+      ...report,
+      cwd: cap(report.cwd),
+      diagnostics: report.diagnostics.slice(0, 8),
+      omitted_diagnostics: Math.max(0, report.diagnostics.length - 8),
+    })),
+    omitted_gates: Math.max(0, reports.length - COMPACT_NODE_COUNT),
+    scope: "Read-only lint, not command execution or a guarantee that tests pass.",
+  }
 }
 
 async function validateTransferTarget(
@@ -647,7 +663,8 @@ export function createAlgTools(
         goal: tool.schema.string().min(1).max(20_000),
         template: tool.schema.enum(["coding-diamond", "research-diamond"]).optional(),
         criteria: tool.schema.array(tool.schema.string().min(1).max(2_000)).max(100).optional(),
-        shell_gate: tool.schema.string().min(1).max(8_192).optional(),
+        shell_gate: tool.schema.string().min(1).max(8_192).optional().describe("Executable validation command, not prose or tool permissions. Windows uses cmd.exe, not PowerShell."),
+        shell_cwd: tool.schema.string().trim().min(1).max(1_024).optional().describe("Existing gate directory inside the project, relative to the pinned execution directory. Requires shell_gate."),
         shell_timeout_ms: tool.schema.number().int().min(100).max(600_000).optional(),
         mode: tool.schema.enum(["live", "dry"]).optional(),
         graph_json: tool.schema.string().min(2).max(200_000).optional(),
@@ -668,7 +685,10 @@ export function createAlgTools(
           if (args.shell_timeout_ms !== undefined && !args.shell_gate) {
             throw new Error("shell_timeout_ms requires shell_gate")
           }
-          if (args.shell_gate) graph = withShellGate(graph, args.shell_gate, args.shell_timeout_ms)
+          if (args.shell_cwd !== undefined && !args.shell_gate) throw new Error("shell_cwd requires shell_gate")
+          if (args.shell_gate) graph = withShellGate(graph, args.shell_gate, args.shell_timeout_ms, args.shell_cwd)
+          const gatePreflight = preflightShellGates(graph, { worktree: project, directory,
+            phase: "plan", checkExecutables: args.mode !== "dry" })
           const modelResolution = snapshotModelResolutions(
             project,
             configuredResolutions(),
@@ -699,6 +719,7 @@ export function createAlgTools(
             project_scope: run.project_directory,
             execution_directory: run.execution_directory,
             shell_gate_base: run.execution_directory,
+            shell_gate_preflight: compactGatePreflight(gatePreflight),
             root_authorization: rootAuthorization(run),
             model_resolution: compactModels(run),
             nodes: compactedNodes.nodes,
@@ -717,6 +738,7 @@ export function createAlgTools(
               project_scope: run.project_directory,
               execution_directory: run.execution_directory,
               shell_gate_base: run.execution_directory,
+              shell_gate_preflight: { gates: gatePreflight },
               root_authorization: rootAuthorization(run, "full"),
               model_resolution: compactModels(run),
               goal: run.goal,
@@ -741,7 +763,8 @@ export function createAlgTools(
       args: {
         run_id: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/).optional(),
         dry: tool.schema.boolean().optional(),
-        shell_gate: tool.schema.string().min(1).max(8_192).optional(),
+        shell_gate: tool.schema.string().min(1).max(8_192).optional().describe("Executable validation command; Windows uses cmd.exe. Also accepts a corrected gate after a preflight error."),
+        shell_cwd: tool.schema.string().trim().min(1).max(1_024).optional().describe("Existing gate directory inside the project, relative to the pinned execution directory. Requires shell_gate."),
         shell_timeout_ms: tool.schema.number().int().min(100).max(600_000).optional(),
         max_waves: tool.schema.number().int().positive().max(1_000).optional(),
         max_concurrency: tool.schema.number().int().positive().max(8).optional(),
@@ -759,8 +782,9 @@ export function createAlgTools(
           assertFilesystemRootAuthorized(project, args.allow_filesystem_root, "run", additionalFilesystemRoot)
           const run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned run found. Call alg_plan first.")
+          if (args.shell_cwd !== undefined && !args.shell_gate) throw new Error("shell_cwd requires shell_gate")
           if (args.shell_gate) {
-            run.graph = withShellGate(run.graph, args.shell_gate, args.shell_timeout_ms)
+            run.graph = withShellGate(run.graph, args.shell_gate, args.shell_timeout_ms, args.shell_cwd)
           } else if (args.shell_timeout_ms !== undefined) {
             throw new Error("shell_timeout_ms requires shell_gate")
           }
@@ -775,6 +799,7 @@ export function createAlgTools(
             dry: args.dry === true || run.mode === "dry",
             shellGateCmd: args.shell_gate,
             shellGateTimeoutMs: args.shell_timeout_ms,
+            shellGateCwd: args.shell_cwd,
             maxWaves: args.max_waves,
             maxConcurrency: args.max_concurrency,
             allowFilesystemRoot: args.allow_filesystem_root,
@@ -939,7 +964,8 @@ export function createAlgTools(
         close: tool.schema.boolean().optional().describe("End the run instead of resuming it: unfinished nodes are marked failed and it is no longer offered for recovery."),
         close_reason: tool.schema.string().trim().min(1).max(500).optional(),
         dry: tool.schema.boolean().optional(),
-        shell_gate: tool.schema.string().min(1).max(8_192).optional(),
+        shell_gate: tool.schema.string().min(1).max(8_192).optional().describe("Executable validation command; Windows uses cmd.exe. Supply a corrected command when resuming after a preflight error."),
+        shell_cwd: tool.schema.string().trim().min(1).max(1_024).optional().describe("Existing gate directory inside the project, relative to the pinned execution directory. Requires shell_gate."),
         shell_timeout_ms: tool.schema.number().int().min(100).max(600_000).optional(),
         max_waves: tool.schema.number().int().positive().max(1_000).optional(),
         max_concurrency: tool.schema.number().int().positive().max(8).optional(),
@@ -970,7 +996,8 @@ export function createAlgTools(
               next: "The run is ended. Plan a new run with alg_plan if the work is still needed.",
             })
           }
-          if (args.shell_gate) run.graph = withShellGate(run.graph, args.shell_gate, args.shell_timeout_ms)
+          if (args.shell_cwd !== undefined && !args.shell_gate) throw new Error("shell_cwd requires shell_gate")
+          if (args.shell_gate) run.graph = withShellGate(run.graph, args.shell_gate, args.shell_timeout_ms, args.shell_cwd)
           else if (args.shell_timeout_ms !== undefined) throw new Error("shell_timeout_ms requires shell_gate")
           prepareRunForResume(run)
           cards = runCards(run, project, context)
@@ -984,6 +1011,7 @@ export function createAlgTools(
             dry: args.dry === true || run.mode === "dry",
             shellGateCmd: args.shell_gate,
             shellGateTimeoutMs: args.shell_timeout_ms,
+            shellGateCwd: args.shell_cwd,
             maxWaves: args.max_waves,
             maxConcurrency: args.max_concurrency,
             allowFilesystemRoot: args.allow_filesystem_root,
