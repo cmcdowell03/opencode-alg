@@ -38,6 +38,7 @@ export function inspectGateCommand(cmd: string, options: {
   const issues: GateDiagnostic[] = []
   const complex = (): GateDiagnostic[] => [{ code: "complex_command_review", severity: "warning" }]
   const segments: string[][] = [[]]
+  const operators: string[] = []
   let word = "", started = false, quote = ""
   let hasFallback = false
   const flush = () => { if (started) segments.at(-1)!.push(word); word = ""; started = false }
@@ -57,11 +58,13 @@ export function inspectGateCommand(cmd: string, options: {
     if ((windows && /[%!^]/.test(char)) || (!windows && /[$`\\#]/.test(char)) || /[()<>\r\n]/.test(char)) return complex()
     if (/\s/.test(char)) { flush(); continue }
     if (char === "|" || char === "&" || (!windows && char === ";")) {
+      if (!windows && char === "|" && text[i + 1] === "&") return complex() // bash/zsh stderr pipe
       flush()
       if (!segments.at(-1)!.length) return [{ code: "missing_pipeline_command", severity: "error" }]
       const operator = text[i + 1] === char && char !== ";" ? char + text[++i] : char
       if (operator === "||") hasFallback = true
       if (i === text.length - 1 && (operator === "&" || operator === ";")) break
+      operators.push(operator)
       segments.push([])
       if (segments.length > 64) return complex()
       continue
@@ -75,6 +78,12 @@ export function inspectGateCommand(cmd: string, options: {
   const builtins = windows ? CMD_BUILTINS : SH_BUILTINS
   let lookupSafe = true
   for (const [index, words] of segments.entries()) {
+    if (index > 0 && operators[index - 1] !== "|") {
+      // An earlier command may install/generate a later command. Checking it
+      // against the pre-execution filesystem would reject a valid setup chain.
+      issues.push({ code: "complex_command_review", severity: "warning", command: index + 1 })
+      lookupSafe = false
+    }
     const head = words[0]!.replace(/^@/, "")
     const normalized = windows ? head.toLowerCase() : head
     if (["cd", "chdir", "pushd", "popd"].includes(normalized)) {
@@ -137,8 +146,10 @@ export function preflightShellGates(graph: GraphDef, options: {
   phase: "plan" | "execute"
   /** Dry execution and injected shell runners do not use the host's executables. */
   checkExecutables: boolean
-  skipNodeIds?: ReadonlySet<string>
 }): GatePreflightReport[] {
+  const nodes = graph.nodes.filter((node) => node.shell_gate &&
+    (node.agent === "shell" || node.loop?.gate === "shell" || node.loop?.gate === "all"))
+  if (!nodes.length) return []
   const environment = options.checkExecutables ? controlledShellEnvironment() : undefined
   // DAGs often repeat the same gate. Cache only within this read-only check;
   // the next run/resume must observe PATH/filesystem changes afresh.
@@ -149,10 +160,8 @@ export function preflightShellGates(graph: GraphDef, options: {
     return available.get(key)!
   }
   const reports: GatePreflightReport[] = []
-  for (const node of graph.nodes) {
-    if (options.skipNodeIds?.has(node.id) || !node.shell_gate ||
-      (node.agent !== "shell" && node.loop?.gate !== "shell" && node.loop?.gate !== "all")) continue
-    const gate: ShellGateDef = node.shell_gate
+  for (const node of nodes) {
+    const gate: ShellGateDef = node.shell_gate!
     let cwd: string
     try {
       cwd = canonicalContainedDirectory(options.worktree, gate.cwd ? resolve(options.directory, gate.cwd) : options.directory)
@@ -165,7 +174,7 @@ export function preflightShellGates(graph: GraphDef, options: {
     const report: GatePreflightReport = { node_id: node.id, shell: process.platform === "win32" ? "cmd.exe" : "posix-shell", cwd, diagnostics }
     const errors = diagnostics.filter((issue) => issue.severity === "error")
     if (errors.length) {
-      throw new Error(safeDiagnosticText(`Shell gate preflight: node ${node.id}; shell=${report.shell}; cwd=${cwd}; ${errors.map((issue) => `${issue.code}${issue.command ? ` at command ${issue.command}` : ""}`).join(", ")}. No new child attempts started. Supply an executable validation command, not prose or a tool inventory; check the shell, PATH and shell_cwd. For complex validation use a reviewed script.`))
+      throw new Error(safeDiagnosticText(`Shell gate preflight: node ${node.id}; shell=${report.shell}; cwd=${cwd}; ${errors.map((issue) => `${issue.code}${issue.command ? ` at command ${issue.command}` : ""}`).join(", ")}. Correct this gate before starting more child attempts. Supply an executable validation command, not prose or a tool inventory; check the shell, PATH and shell_cwd. For complex validation use a reviewed script.`))
     }
     reports.push(report)
   }

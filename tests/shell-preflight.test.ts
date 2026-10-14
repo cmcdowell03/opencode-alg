@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { spawnSync } from "node:child_process"
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync, rmdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { gateCommandExists, inspectGateCommand, preflightShellGates } from "../src/shell-preflight.ts"
 import { createAlgTools, withShellGate } from "../src/tools.ts"
@@ -64,6 +64,10 @@ describe("read-only shell command preflight", () => {
     expect(inspect("echo ok # comment | missing", "linux", false)[0]!.code).toBe("complex_command_review")
     expect(errors(". setup.sh && custom", "linux", false)).toEqual([])
     expect(errors("source setup.sh && custom", "linux", false)).toEqual([])
+    expect(inspectGateCommand("npm install -g custom && custom test", {
+      platform: "win32", phase: "execute", commandExists: (command) => command === "npm",
+    }).some((issue) => issue.severity === "error")).toBe(false)
+    expect(errors("echo ok |& tail -n 1", "linux", true)).toEqual([])
   })
 
   test("executable lookup reads files only, honors PATHEXT, and never invokes a command", () => {
@@ -174,6 +178,111 @@ test("corrected gate resumes with completed sibling intact and no budget reset",
     expect(run.status).toBe("done")
     expect(run.global_attempts).toBe(before + 1)
     expect(JSON.parse(JSON.stringify(run.nodes.explore))).toEqual(explored)
+  } finally { removeProject(project) }
+}, 60_000)
+
+test("unreachable exhausted gates cannot block independent work on resume", async () => {
+  const project = tempProject()
+  try {
+    const graph: GraphDef = { name: "failed-branch", max_global_attempts: 3, max_concurrency: 2, nodes: [
+      { id: "bad", agent: "shell", depends_on: [], shell_gate: { cmd: "echo test" } },
+      { id: "bad-child", agent: "shell", depends_on: ["bad"], shell_gate: { cmd: "echo test" } },
+      { id: "good", agent: "implementer", depends_on: [] },
+      { id: "later", agent: "implementer", depends_on: ["good"] },
+    ] }
+    const run = createRun({ goal: "legacy partial failure", criteria: [], graph, projectDirectory: project, ownerSessionId: "session-owner" })
+    await executeRun(run, { ...executeContext(project), maxWaves: 1,
+      sessionRunner: async () => ({ session_id: "", text: "", parsed: implemented }),
+      shellRunner: async () => ({ ok: false, exit_code: 1, cwd: project, stdout_tail: "", stderr_tail: "synthetic failure" }),
+    })
+    expect(run.nodes.bad!.status).toBe("failed")
+    expect(run.nodes.later!.current_attempt).toBe(0)
+    // Model a legacy plan or changed environment. Neither gate can ever run:
+    // the parent has no attempts left and its descendant cannot be scheduled.
+    run.graph.nodes[0]!.shell_gate!.cmd = "Allowed tools: bash | edit"
+    run.graph.nodes[1]!.shell_gate!.cwd = "missing-directory"
+    persistRun(run, project)
+    const failedHistory = JSON.parse(JSON.stringify(hydrateRunFully(loadRun(project, run.run_id)!).nodes.bad))
+    let children = 0
+    await executeRun(prepareRunForResume(run), { ...executeContext(project), sessionRunner: async (options) => {
+      children++; expect(options.title).toContain("/later/")
+      return { session_id: "", text: "", parsed: implemented }
+    } })
+    expect(children).toBe(1)
+    expect(run.status).toBe("failed") // The failed branch is not erased or relabeled successful.
+    expect(run.nodes.later!.status).toBe("done")
+    expect(run.nodes["bad-child"]!.status).toBe("skipped")
+    expect(run.global_attempts).toBe(3)
+    expect(JSON.parse(JSON.stringify(hydrateRunFully(loadRun(project, run.run_id)!).nodes.bad))).toEqual(failedHistory)
+    // An exhausted terminal run can still finalize without trying dead gates.
+    await executeRun(prepareRunForResume(run), executeContext(project))
+    expect(run.global_attempts).toBe(3)
+  } finally { removeProject(project) }
+}, 60_000)
+
+test("command and cwd overrides affect only the persisted target implementer", async () => {
+  const project = tempProject()
+  try {
+    mkdirSync(join(project, "first")); mkdirSync(join(project, "second"))
+    const graph: GraphDef = { name: "two-implementers", max_global_attempts: 2, max_concurrency: 1,
+      nodes: ["one", "two"].map((id) => ({ id, agent: "implementer", depends_on: [],
+        loop: { gate: "all", max_attempts: 1 }, shell_gate: { cmd: "echo original", cwd: "second" } })) }
+    const run = createRun({ goal: "scoped override", criteria: [], graph: withShellGate(graph, "echo override", 1_000, "first"),
+      projectDirectory: project, ownerSessionId: "session-owner" })
+    const gates: { cmd: string; cwd?: string; timeoutMs?: number }[] = []
+    await executeRun(run, { ...executeContext(project), shellGateCmd: "echo override", shellGateTimeoutMs: 1_000, shellGateCwd: "first",
+      sessionRunner: async () => ({ session_id: "", text: "", parsed: implemented }),
+      shellRunner: async ({ cmd, cwd, timeoutMs }) => {
+        gates.push({ cmd, cwd, timeoutMs })
+        return { ok: true, exit_code: 0, cwd: project, stdout_tail: "", stderr_tail: "" }
+      },
+    })
+    expect(run.status).toBe("done")
+    expect(gates).toEqual([
+      { cmd: "echo override", cwd: "first", timeoutMs: 1_000 },
+      { cmd: "echo original", cwd: "second", timeoutMs: undefined },
+    ])
+  } finally { removeProject(project) }
+}, 60_000)
+
+test("checker-reopened work is rechecked before another attempt and durably blocked until repaired", async () => {
+  const project = tempProject()
+  try {
+    const gateDirectory = join(project, "repo")
+    mkdirSync(gateDirectory)
+    const graph: GraphDef = { name: "reopened-gate", max_global_attempts: 4, max_concurrency: 1, nodes: [
+      { id: "work", agent: "implementer", depends_on: [], shell_gate: { cmd: "echo test", cwd: "repo" }, loop: { gate: "all", max_attempts: 2 } },
+      { id: "check", agent: "checker", depends_on: ["work"], feedback_to: "work", loop: { gate: "schema", max_attempts: 2 } },
+    ] }
+    const run = createRun({ goal: "changed environment", criteria: ["done"], graph, projectDirectory: project, ownerSessionId: "session-owner" })
+    const shellRunner = async () => ({ ok: true, exit_code: 0, cwd: gateDirectory, stdout_tail: "", stderr_tail: "" })
+    await executeRun(run, { ...executeContext(project), maxWaves: 1, shellRunner,
+      sessionRunner: async () => ({ session_id: "", text: "", parsed: implemented }),
+    })
+    expect(run.nodes.work!.status).toBe("done")
+    rmdirSync(gateDirectory) // Remove only this empty, test-owned directory.
+    let children = 0
+    await expect(executeRun(run, { ...executeContext(project), shellRunner,
+      sessionRunner: async (options) => {
+        children++; expect(options.agent).toBe("checker")
+        return { session_id: "", text: "", parsed: { passed: false, score: 2, failures: ["missing requirement"] } }
+      },
+    })).rejects.toThrow("invalid_cwd")
+    const blocked = hydrateRunFully(loadRun(project, run.run_id)!)
+    expect(children).toBe(1)
+    expect(blocked.status).toBe("blocked")
+    expect(blocked.phase).toBe("blocked")
+    expect(blocked.nodes.work!.current_attempt).toBe(1)
+    expect(blocked.nodes.work!.attempts[0]!.status).toBe("done")
+    expect(blocked.nodes.check!.attempts[0]!.feedback_applied).toBe(true)
+    expect(blocked.global_attempts).toBe(2)
+    mkdirSync(gateDirectory)
+    await executeRun(prepareRunForResume(blocked), { ...executeContext(project), shellRunner,
+      sessionRunner: async (options) => ({ session_id: "", text: "", parsed: options.agent === "checker"
+        ? { passed: true, score: 8, failures: [] } : implemented }),
+    })
+    expect(blocked.status).toBe("done")
+    expect(blocked.global_attempts).toBe(4)
   } finally { removeProject(project) }
 }, 60_000)
 

@@ -153,12 +153,41 @@ function shellFailure(result: ShellExecutionResult): string {
   return safeDiagnosticText(`shell gate failed (exit ${result.exit_code}): [category=${category}; shell=${process.platform === "win32" ? "cmd.exe" : "posix-shell"}; cwd=${safeDiagnosticText(result.cwd, 256)}; output=${channel}] ${safeDetail}`)
 }
 
-function effectiveShellGate(definition: NodeDef, options: ExecuteOptions): ShellGateDef | undefined {
-  return definition.agent === "implementer" && options.shellGateCmd
+function effectiveShellGate(run: RunState, definition: NodeDef, options: ExecuteOptions): ShellGateDef | undefined {
+  // Match withShellGate and prospectiveShellGateHash: a public override targets
+  // the first implementer, never every implementer in a custom DAG.
+  return definition.agent === "implementer" && options.shellGateCmd &&
+    definition.id === run.graph.nodes.find((node) => node.agent === "implementer")?.id
     ? { ...definition.shell_gate, cmd: options.shellGateCmd,
         ...(options.shellGateTimeoutMs !== undefined ? { timeout_ms: options.shellGateTimeoutMs } : {}),
         ...(options.shellGateCwd !== undefined ? { cwd: options.shellGateCwd } : {}) }
     : definition.shell_gate
+}
+
+function preflightExecutableNodes(run: RunState, options: ExecuteOptions, batch?: readonly NodeDef[]): void {
+  if (run.global_attempts >= run.graph.max_global_attempts) return
+  const reachable = new Set<string>()
+  const candidates: NodeDef[] = []
+  // Graph definitions are topologically ordered. Failed/exhausted branches
+  // cannot become ready in this invocation and must not veto independent work.
+  for (const node of run.graph.nodes) {
+    const state = run.nodes[node.id]!
+    if (state.status === "done") { reachable.add(node.id); continue }
+    if ((state.status !== "pending" && state.status !== "ready") ||
+      state.current_attempt >= (node.loop?.max_attempts ?? 1) ||
+      !node.depends_on.every((id) => reachable.has(id))) continue
+    reachable.add(node.id)
+    if (!batch || batch.some((member) => member.id === node.id)) candidates.push(node)
+  }
+  if (!candidates.length) return
+  const reports = preflightShellGates({ ...run.graph, nodes: candidates.map((node) => ({
+    ...node, shell_gate: effectiveShellGate(run, node, options),
+  })) }, { worktree: options.worktree, directory: options.directory, phase: "execute",
+    checkExecutables: !(options.dry || run.mode === "dry" || options.shellRunner),
+  })
+  for (const report of reports) {
+    if (report.diagnostics.length) log(options, `shell gate preflight ${report.node_id}: ${report.diagnostics.slice(0, 8).map((issue) => issue.code).join(", ")}`)
+  }
 }
 
 function dryOutput(definition: NodeDef, run: RunState): unknown {
@@ -384,7 +413,7 @@ async function runOneNode(
     }
     if (error) failures.push(error)
 
-    const shellDefinition = effectiveShellGate(definition, options)
+    const shellDefinition = effectiveShellGate(run, definition, options)
     if (
       !dry &&
       definition.agent !== "shell" &&
@@ -629,18 +658,10 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     run.execution_directory = canonicalContainedDirectory(options.worktree,
       run.execution_directory ?? run.project_directory)
     options.directory = run.execution_directory
-    // Validate every unfinished executable gate before reserving any model work.
+    // Validate every reachable executable gate before reserving any model work.
     // Errors leave the committed plan/history/counters untouched so the caller can
     // correct the gate and resume. Dry/injected runners still receive structural checks.
-    const gatePreflight = preflightShellGates({ ...run.graph, nodes: run.graph.nodes.map((node) => ({
-      ...node, shell_gate: effectiveShellGate(node, options),
-    })) }, { worktree: options.worktree, directory: options.directory, phase: "execute",
-      checkExecutables: !(options.dry || run.mode === "dry" || options.shellRunner),
-      skipNodeIds: new Set(Object.values(run.nodes).filter((node) => node.status === "done").map((node) => node.id)),
-    })
-    for (const report of gatePreflight) {
-      if (report.diagnostics.length) log(options, `shell gate preflight ${report.node_id}: ${report.diagnostics.slice(0, 8).map((issue) => issue.code).join(", ")}`)
-    }
+    preflightExecutableNodes(run, options)
     if (filesystemRoot) {
       ;(run.filesystem_root_authorizations ??= []).push({
         operation,
@@ -678,6 +699,17 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
       for (let offset = 0; offset < ready.length; offset += concurrency) {
         if (options.toolContext.abort.aborted) break
         const batch = ready.slice(offset, offset + concurrency)
+        try {
+          // Earlier workers may change the environment, or checker feedback may
+          // reopen a node that was done at startup. Recheck before reserving it.
+          preflightExecutableNodes(run, options, batch)
+        } catch (error) {
+          run.status = "blocked"
+          run.phase = "blocked"
+          run.summary = summarize(run)
+          await save(run, options)
+          throw error
+        }
         const reservations = batch.map((definition) => reserveAttempt(run, definition))
         // Persist every bounded-batch reservation before any child sidecar can
         // be created, preserving the sidecar -> child-id progress crash fence.
