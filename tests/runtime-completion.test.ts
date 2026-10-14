@@ -159,7 +159,9 @@ test("shell failure survives save/load/resume with canonical stderr diagnostics"
     }) })
     const restored = disk(project, run.run_id)
     expect(restored.nodes.gate!.attempts[0]!.outcome).toBe("gate_failure")
-    expect(restored.nodes.gate!.attempts[0]!.failures[0]).toBe("shell gate failed (exit 1): synthetic failure")
+    expect(restored.nodes.gate!.attempts[0]!.failures[0]).toContain("shell gate failed (exit 1):")
+    expect(restored.nodes.gate!.attempts[0]!.failures[0]).toContain("synthetic failure")
+    expect(restored.nodes.gate!.attempts[0]!.failures[0]).toContain("output=stderr")
     await executeRun(prepareRunForResume(restored), { ...executeContext(project), shellRunner: async () => ({
       cwd: project, exit_code: 0, ok: true, stdout_tail: "", stderr_tail: "",
     }) })

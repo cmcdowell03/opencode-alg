@@ -40,6 +40,7 @@ import {
   safeDiagnosticText,
 } from "./diagnostics.ts"
 import { truncateUtf8, utf8Bytes } from "./limits.ts"
+import { preflightShellGates } from "./shell-preflight.ts"
 
 export const MAX_RUN_SUMMARY_CHARS = 40_000
 const MAX_RUN_SUMMARY_BYTES = 40_000
@@ -59,6 +60,7 @@ export interface ExecuteOptions {
   dry?: boolean
   shellGateCmd?: string
   shellGateTimeoutMs?: number
+  shellGateCwd?: string
   onEvent?: (message: string) => void
   /** Synchronous, best-effort observer called only after a successful durable save. */
   onProgress?: (run: RunState) => void
@@ -138,8 +140,25 @@ async function save(run: RunState, options: ExecuteOptions): Promise<void> {
   }
 }
 
-function shellFailure(exitCode: number, stderr: string): string {
-  return safeDiagnosticText(`shell gate failed (exit ${exitCode}): ${stderr.slice(-500)}`)
+function shellFailure(result: ShellExecutionResult): string {
+  const category = result.termination_failed ? "termination_unverified" : result.cancelled ? "cancelled"
+    : result.timed_out ? "timeout" : "nonzero_exit"
+  // Test frameworks often report only on stdout. Empty stderr is not an empty diagnostic.
+  // Exit codes alone never establish a planner defect or prove implementation correctness.
+  const channel = result.stderr_tail.trim() ? "stderr" : result.stdout_tail.trim() ? "stdout" : "none"
+  const detail = channel === "stderr" ? result.stderr_tail : channel === "stdout" ? result.stdout_tail : "No output captured; inspect the gate command, shell and cwd."
+  // Redact before further clipping: slicing a long credential value first can
+  // remove its identifying key and leave an unrecognizable secret fragment.
+  const safeDetail = safeDiagnosticText(detail, 500)
+  return safeDiagnosticText(`shell gate failed (exit ${result.exit_code}): [category=${category}; shell=${process.platform === "win32" ? "cmd.exe" : "posix-shell"}; cwd=${safeDiagnosticText(result.cwd, 256)}; output=${channel}] ${safeDetail}`)
+}
+
+function effectiveShellGate(definition: NodeDef, options: ExecuteOptions): ShellGateDef | undefined {
+  return definition.agent === "implementer" && options.shellGateCmd
+    ? { ...definition.shell_gate, cmd: options.shellGateCmd,
+        ...(options.shellGateTimeoutMs !== undefined ? { timeout_ms: options.shellGateTimeoutMs } : {}),
+        ...(options.shellGateCwd !== undefined ? { cwd: options.shellGateCwd } : {}) }
+    : definition.shell_gate
 }
 
 function dryOutput(definition: NodeDef, run: RunState): unknown {
@@ -259,7 +278,7 @@ async function runOneNode(
       }
       shellOk = result.ok
       if (!result.ok) {
-        const failure = shellFailure(result.exit_code, result.stderr_tail)
+        const failure = shellFailure(result)
         failures.push(failure)
         retainedFailures.push(failure)
       }
@@ -365,16 +384,7 @@ async function runOneNode(
     }
     if (error) failures.push(error)
 
-    const shellDefinition: ShellGateDef | undefined =
-      definition.agent === "implementer" && options.shellGateCmd
-        ? {
-            ...definition.shell_gate,
-            cmd: options.shellGateCmd,
-            ...(options.shellGateTimeoutMs !== undefined
-              ? { timeout_ms: options.shellGateTimeoutMs }
-              : {}),
-          }
-        : definition.shell_gate
+    const shellDefinition = effectiveShellGate(definition, options)
     if (
       !dry &&
       definition.agent !== "shell" &&
@@ -396,7 +406,7 @@ async function runOneNode(
       })
       shellOk = result.ok
       if (!result.ok) {
-        const failure = shellFailure(result.exit_code, result.stderr_tail)
+        const failure = shellFailure(result)
         failures.push(failure)
         retainedFailures.push(failure)
       }
@@ -619,6 +629,18 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     run.execution_directory = canonicalContainedDirectory(options.worktree,
       run.execution_directory ?? run.project_directory)
     options.directory = run.execution_directory
+    // Validate every unfinished executable gate before reserving any model work.
+    // Errors leave the committed plan/history/counters untouched so the caller can
+    // correct the gate and resume. Dry/injected runners still receive structural checks.
+    const gatePreflight = preflightShellGates({ ...run.graph, nodes: run.graph.nodes.map((node) => ({
+      ...node, shell_gate: effectiveShellGate(node, options),
+    })) }, { worktree: options.worktree, directory: options.directory, phase: "execute",
+      checkExecutables: !(options.dry || run.mode === "dry" || options.shellRunner),
+      skipNodeIds: new Set(Object.values(run.nodes).filter((node) => node.status === "done").map((node) => node.id)),
+    })
+    for (const report of gatePreflight) {
+      if (report.diagnostics.length) log(options, `shell gate preflight ${report.node_id}: ${report.diagnostics.slice(0, 8).map((issue) => issue.code).join(", ")}`)
+    }
     if (filesystemRoot) {
       ;(run.filesystem_root_authorizations ??= []).push({
         operation,

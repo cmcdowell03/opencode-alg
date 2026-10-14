@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Shell gates now receive read-only preflight at planning and before execution:
+  malformed pipelines, obvious tool inventories/prose, unavailable Windows
+  POSIX utilities, and invalid working directories are caught before new child
+  attempts. Missing literal commands warn during planning and block live runs;
+  complex scripts receive review warnings, not guessed shell interpretations.
+  `shell_cwd` selects an explicit contained directory on plan/run/resume and
+  participates in memory retry identity. Preflight errors preserve committed
+  history, successful siblings, and attempt budgets. Gate failures include
+  shell/cwd context and redacted stdout fallback instead of empty-stderr-only
+  diagnostics. Existing test-failure retry, permission, and containment policies
+  remain unchanged; validation is local only, with no GitHub runner workflow.
+
 - A stray `{` or `[` mentioned in prose no longer hides a later complete JSON
   output fence when the intervening text can safely be treated as prose.
   Recovery is bounded by the existing response and candidate limits; JSON-like
