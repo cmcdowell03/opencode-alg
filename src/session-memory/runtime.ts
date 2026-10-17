@@ -194,7 +194,10 @@ export class SessionMemoryRuntime {
         checkpoint: delivery.value.checkpoint, current_checkpoint: checkpoint !== null && hashObject(checkpoint) === delivery.value.checkpoint,
         context_hash: delivery.value.context.context_hash, context_state: delivery.value.context.state,
         host_confirmation: "NOT_ATTESTED" as const } : null,
-      coverage: { host_prompt_delivery: "NOT_ATTESTED", universal_tool_interception: false, supported_adapters: ["alg_run", "alg_resume"],
+      coverage: { host_prompt_delivery: "NOT_ATTESTED",
+        source_approval: "NOT_ATTESTED", source_identity: "EXACT_CONTENT_AND_CONFIGURED_LOCATION",
+        approval_boundary: "NO_INDEPENDENT_OPERATOR_BOUNDARY", mandatory_rule_authority: false,
+        universal_tool_interception: false, supported_adapters: ["alg_run", "alg_resume"],
         adapter_activation: "one active skill declaring alg_execute plus reviewed environment", remote_permissions: "REVALIDATE_AT_ACTION", message_replay: "BEST_EFFORT" } }
   }
   propose(owner: string, content: string) {

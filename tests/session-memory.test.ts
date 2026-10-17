@@ -51,6 +51,19 @@ const expiry = () => new Date(Date.now() + 600000).toISOString()
 const budget = { context: 128000, output: 4096, knownInputTokens: 1000 }
 
 describe("durable session memory", () => {
+  test("configured roots, exact bindings and successful restoration do not attest operator approval", () => {
+    const path = project(), memory = bound(path)
+    const before = memory.current("owner")
+    expect(memory.prepare("owner", budget).text).toContain("Use the reviewed route.")
+    const restarted = runtime(path)
+    expect(restarted.status("owner")).toMatchObject({ coverage: {
+      source_approval: "NOT_ATTESTED", source_identity: "EXACT_CONTENT_AND_CONFIGURED_LOCATION",
+      approval_boundary: "NO_INDEPENDENT_OPERATOR_BOUNDARY", mandatory_rule_authority: false,
+    } })
+    expect(restarted.current("owner")).toEqual(before)
+    expect(restarted.status("owner").coverage).not.toHaveProperty("approved", true)
+  })
+
   test("larger mandatory allowance does not expand optional evidence or clip required bodies", () => {
     const path = project(), source = skill(path, "required-procedure", "Complete required step.\n".repeat(150))
     const memory = runtime(path)
