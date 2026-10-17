@@ -7,6 +7,7 @@ import type { ContextReceipt } from "./schemas.ts"
 import { hashObject, hashText } from "./store.ts"
 
 type Prepare = (receipt: ContextReceipt, text: string) => Promise<void>
+type Limit = (bytes: number | undefined) => void
 
 /** Evidence of this plugin's hook publication, never of the final provider request. */
 export class ContextDelivery {
@@ -14,8 +15,14 @@ export class ContextDelivery {
   constructor(private readonly memory: SessionMemoryRuntime) {}
 
   async replace(owner: string | undefined, hook: "system" | "compaction", target: string[],
-    render: (working: string[], prepare: Prepare) => Promise<void>): Promise<void> {
+    render: (working: string[], prepare: Prepare, limit: Limit) => Promise<void>): Promise<void> {
     const pending: Array<{ request: string; ref: string; text: string }> = []
+    let ceiling: number | undefined
+    const limit: Limit = (bytes) => {
+      if (bytes === undefined) return
+      if (!Number.isSafeInteger(bytes) || bytes < 0) throw new Error("ALG invalid context ceiling")
+      ceiling = Math.min(ceiling ?? bytes, bytes)
+    }
     let preparationFailed = false, published = false
     const prepare: Prepare = async (receipt, text) => {
       if (!owner || this.memory.options.mode !== "assist") return
@@ -32,10 +39,16 @@ export class ContextDelivery {
     try {
       await this.owned.replace(target, async (working) => {
         const foreignLength = working.length
-        await render(working, prepare)
+        await render(working, prepare, limit)
         // Hook fallback handling cannot silently turn a failed preparation into
         // an unrecorded emission of trusted instructions.
         if (preparationFailed) throw new Error("ALG delivery preparation unavailable")
+        // Count separators and fallback diagnostics too. Foreign contributions
+        // remain untouched; their usage belongs to the host capacity estimate.
+        const contribution = working.slice(foreignLength).join("\n")
+        if (ceiling !== undefined && Buffer.byteLength(contribution, "utf8") > ceiling) {
+          throw new Error("ALG needs_context: final contribution exceeds context ceiling")
+        }
         const item = pending[0]
         if (!item || !owner) return
         if (item.text && !working.slice(foreignLength).includes(item.text)) throw new Error("ALG prepared context was not published intact")

@@ -59,17 +59,24 @@ export class MemoryStore {
   private census(bucket: string, maxCount: number, maxBytes: number): void {
     const path = this.path([bucket])
     if (!existsSync(path)) return
+    const before = lstatSync(path)
     const directory = opendirSync(path)
     let count = 0, bytes = 0
     try {
       for (let entry = directory.readSync(); entry; entry = directory.readSync()) {
-        const item = this.path([bucket, entry.name])
+        // The bucket ancestry was checked above. Rewalking it for every file
+        // makes immutable receipt publication increasingly expensive. Still
+        // validate each leaf and verify the same directory again after the scan.
+        if (!isSafeId(entry.name) && !/^[a-f0-9]{64}\.(json|txt)$/.test(entry.name)) throw new Error("unsafe memory path")
+        const item = join(path, entry.name)
         const stat = lstatSync(item)
-        if (!stat.isFile()) throw new Error("unexpected memory directory entry")
+        if (!stat.isFile() || stat.isSymbolicLink() || relative(item, realpathSync.native(item)) !== "") throw new Error("unexpected memory directory entry")
         count++; bytes += stat.size
         if (count >= maxCount || bytes >= maxBytes) throw new Error("memory capacity reached; nothing evicted")
       }
     } finally { directory.closeSync() }
+    const after = lstatSync(this.path([bucket]))
+    if (!after.isDirectory() || before.dev !== after.dev || before.ino !== after.ino) throw new Error("memory directory changed during census")
   }
   lock<T>(work: (fence: () => void) => T): T {
     const path = this.path(["writer.lock"], true)

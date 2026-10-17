@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "bun:test"
-import { readFileSync, writeFileSync, unlinkSync } from "node:fs"
+import { mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
+import { join } from "node:path"
 import { SessionMemoryRuntime } from "../src/session-memory/runtime.ts"
 import { MemoryStore, hashObject } from "../src/session-memory/store.ts"
 import { DeliveryReceiptSchema } from "../src/session-memory/delivery-schema.ts"
@@ -134,4 +135,68 @@ test("post-publication receipt failures remain unknown rather than pretending no
   })).rejects.toThrow("receipt write failure")
   expect(target).toEqual(["host policy", text])
   expect(store.delivery("owner")!.value).toMatchObject({ state: "unknown", reason: "emission_unconfirmed" })
+})
+
+test("growing receipt history does not repeat full ancestry validation for every census leaf", () => {
+  const { store, context } = fixture()
+  for (let index = 0; index < 20; index++) {
+    const request = `history-${index}`
+    const prepared = store.prepareDelivery("owner", request, "system", context)
+    store.settleDelivery("owner", request, prepared, { state: "emitted" })
+  }
+  let receiptPaths = 0
+  const path = store.path.bind(store)
+  store.path = (parts, createParents) => {
+    if (parts[0] === "deliveries" && parts.length === 2) receiptPaths++
+    return path(parts, createParents)
+  }
+  store.prepareDelivery("owner", "next", "system", context)
+  expect(receiptPaths).toBe(1)
+})
+
+test("unexpected census entries fail without advancing delivery heads", () => {
+  for (const kind of ["unsafe-name", "directory"] as const) {
+    const { store, context } = fixture()
+    const first = store.prepareDelivery("owner", "first", "system", context)
+    const bucket = store.path(["deliveries"])
+    if (kind === "unsafe-name") writeFileSync(join(bucket, "unsafe name.txt"), "not a receipt")
+    else mkdirSync(join(bucket, "unexpected-directory"))
+    expect(() => store.prepareDelivery("owner", "second", "system", context)).toThrow()
+    expect(store.delivery("owner")!.id).toBe(first)
+    expect(store.delivery("owner", "second")).toBeNull()
+  }
+})
+
+test("final publication ceiling counts UTF-8 separators and diagnostics, not foreign text", async () => {
+  const { memory } = fixture()
+  const delivery = new ContextDelivery(memory), target = ["foreign".repeat(100)]
+  await delivery.replace("owner", "system", target, async (working, _prepare, limit) => {
+    limit(4)
+    working.push("é", "x") // two bytes, newline, one byte
+  })
+  const before = [...target]
+  await expect(delivery.replace("owner", "system", target, async (working, _prepare, limit) => {
+    limit(3)
+    working.push("é", "x")
+  })).rejects.toThrow("needs_context")
+  expect(target).toEqual(before)
+  await expect(delivery.replace("owner", "system", target, async (working, _prepare, limit) => {
+    limit(0)
+    working.push("fallback unavailable")
+  })).rejects.toThrow("needs_context")
+  expect(target).toEqual(before)
+  await delivery.replace("owner", "system", target, async (_working, _prepare, limit) => { limit(0) })
+  expect(target).toEqual([before[0]!])
+})
+
+test("over-ceiling prepared context is not clipped or recorded as emitted", async () => {
+  const { memory, store, context, text } = fixture()
+  const target = ["host policy"]
+  await expect(new ContextDelivery(memory).replace("owner", "compaction", target, async (working, prepare, limit) => {
+    limit(Buffer.byteLength(text, "utf8"))
+    await prepare(context, text)
+    working.push(text, "extra diagnostic")
+  })).rejects.toThrow("needs_context")
+  expect(target).toEqual(["host policy"])
+  expect(store.delivery("owner")!.value).toMatchObject({ state: "unknown", reason: "hook_failed" })
 })

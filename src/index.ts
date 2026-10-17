@@ -195,7 +195,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       }
     },
 
-    "experimental.chat.system.transform": async (input, sharedOutput) => delivery.replace(input.sessionID, "system", sharedOutput.system, async (system, prepareDelivery) => {
+    "experimental.chat.system.transform": async (input, sharedOutput) => delivery.replace(input.sessionID, "system", sharedOutput.system, async (system, prepareDelivery, limitDelivery) => {
       const output = { system }
       /** Pushes the text and returns its size, so the plan knows what the part used. */
       const appendRecovery = async (label: string, read: () => string): Promise<number> => {
@@ -217,6 +217,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
         const parts: ContextPart[] = ["run", ...(assist ? ["memory" as const] : skillEvolutionOptions.enabled ? ["skills" as const] : []),
           ...(environmentMemory?.mode === "assist" ? ["environment" as const] : [])]
         const plan = windows.plan(sessionId, "call", parts)
+        limitDelivery(plan.totalBytes)
         try {
           const appendEnvironmentMemory = async () => {
             if (environmentMemory?.mode !== "assist") return
@@ -289,7 +290,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       if (!input.sessionID && memory.options.mode !== "assist") await appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID))
     }),
 
-    "experimental.session.compacting": async (input, sharedOutput) => delivery.replace(input.sessionID, "compaction", sharedOutput.context, async (context, prepareDelivery) => {
+    "experimental.session.compacting": async (input, sharedOutput) => delivery.replace(input.sessionID, "compaction", sharedOutput.context, async (context, prepareDelivery, limitDelivery) => {
       const output = { context }
       const owned: string[] = []
       const logCompactionFailure = (message: string) => {
@@ -303,6 +304,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
         ...(assist ? ["memory" as const] : ["run" as const, "skills" as const]),
         ...(environmentMemory?.mode === "assist" ? ["environment" as const] : [])])
       const outputLimit = plan.totalBytes ?? MAX_COMPACTION_OUTPUT_BYTES
+      limitDelivery(outputLimit)
       const appendEnvironmentMemory = async () => {
         if (environmentMemory?.mode !== "assist") return
         try {
