@@ -111,6 +111,27 @@ test("checkpoint changes during preparation prevent stale publication", async ()
   expect(store.delivery("owner")!.value.state).toBe("unknown")
 })
 
+test("revocation after preparation is rechecked even when the checkpoint revision is unchanged", async () => {
+  const { path } = fixture()
+  const directory = join(path, ".opencode", "skills", "revocable")
+  mkdirSync(directory, { recursive: true })
+  writeFileSync(join(directory, "SKILL.md"), "---\nname: revocable\ndescription: Synthetic revocation fixture\n---\nVerify the current route.\n")
+  const memory = new SessionMemoryRuntime(path, { mode: "assist" }, [".opencode/skills"], [])
+  memory.bindSkill("owner", memory.index.search("revocable").skills[0]!.key)
+  const store = memory.store, pack = memory.prepare("owner", { allowanceBytes: 4096 })
+  const context = pack.receipt!, text = pack.text
+  const checkpoint = memory.current("owner")
+  const target = ["host policy"]
+  await expect(new ContextDelivery(memory).replace("owner", "system", target, async (working, prepare) => {
+    await prepare(context, text)
+    store.revoke(checkpoint.skills[0]!.id)
+    expect(memory.current("owner")).toEqual(checkpoint)
+    working.push(text)
+  })).rejects.toThrow("revoked")
+  expect(target).toEqual(["host policy"])
+  expect(store.delivery("owner")!.value.state).toBe("unknown")
+})
+
 test("swallowed preparation failures cannot emit unrecorded instructions", async () => {
   const { memory, store, context, text } = fixture()
   const target = ["host policy"]

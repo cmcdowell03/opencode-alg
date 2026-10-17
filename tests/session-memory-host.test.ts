@@ -1,6 +1,6 @@
 /** Deterministic SDK fixtures, NOT an attestation of the OpenCode final provider prompt. */
 import { afterEach, describe, expect, test } from "bun:test"
-import { existsSync, mkdirSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, writeFileSync, unlinkSync } from "node:fs"
 import { join } from "node:path"
 import server from "../src/index.ts"
 import { SessionMemoryRuntime } from "../src/session-memory/runtime.ts"
@@ -39,6 +39,41 @@ function context(path: string, owner = "owner") { return { sessionID: owner, mes
 const input = (owner = "owner") => ({ sessionID: owner, model: { limit: { context: 128000, output: 4096 } } }) as any
 
 describe("session memory SDK-boundary conformance", () => {
+  test("revoked or missing procedures replace stale owned context and remain unavailable after restart", async () => {
+    for (const failure of ["revoked", "missing"] as const) {
+      const { path, body } = fixture()
+      const options = { sessionMemory: { mode: "assist" }, skillEvolution: { enabled: false } }
+      let hooks = await server(plugin(path), options)
+      try {
+        await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+          { info: { id: "opening", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "Use fixture-procedure" }] },
+        ] } as any)
+        const output = { system: ["foreign policy"] }
+        await hooks["experimental.chat.system.transform"]!(input(), output)
+        expect(output.system.join("\n")).toContain(body)
+        const memory = new SessionMemoryRuntime(path, { mode: "assist" })
+        if (failure === "revoked") memory.store.revoke(memory.current("owner").skills[0]!.id)
+        else unlinkSync(join(path, ".opencode", "skills", "fixture-procedure", "SKILL.md"))
+        await hooks["experimental.chat.system.transform"]!(input(), output)
+        expect(output.system[0]).toBe("foreign policy")
+        expect(output.system.join("\n")).not.toContain(body)
+        expect(output.system.join("\n")).toContain("ALG recovery blocked")
+        await hooks.dispose?.()
+        hooks = await server(plugin(path), options)
+        await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+          { info: { id: "continue", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "continue" }] },
+        ] } as any)
+        const restarted = { system: ["foreign policy"] }
+        await hooks["experimental.chat.system.transform"]!(input(), restarted)
+        expect(restarted.system.join("\n")).not.toContain(body)
+        const status = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
+        expect(status.receipt.state).toBe("blocked")
+        expect(status.receipt.selected).toEqual([])
+        expect(status.delivery).toMatchObject({ state: "emitted", context_state: "blocked" })
+      } finally { await hooks.dispose?.() }
+    }
+  })
+
   test("twenty compacted turns retain exact prerequisites without duplicate injection or skill reminders", async () => {
     const { path, body } = fixture()
     const directory = join(path, ".opencode", "skills", "fixture-procedure")
