@@ -187,7 +187,13 @@ export class SessionMemoryRuntime {
   status(owner: string) {
     if (!this.enabled) return { mode: "off", initialized: false }
     const checkpoint = this.store.checkpoint(owner)
+    const delivery = this.store.delivery(owner)
     return { mode: this.options.mode, initialized: checkpoint !== null, checkpoint, receipt: this.store.contextReceipt(owner), origin: localOrigin(),
+      delivery: delivery ? { id: delivery.id, request_id: delivery.value.request_id, hook: delivery.value.hook,
+        state: delivery.value.state, request_correlation: delivery.value.request_correlation,
+        checkpoint: delivery.value.checkpoint, current_checkpoint: checkpoint !== null && hashObject(checkpoint) === delivery.value.checkpoint,
+        context_hash: delivery.value.context.context_hash, context_state: delivery.value.context.state,
+        host_confirmation: "NOT_ATTESTED" as const } : null,
       coverage: { host_prompt_delivery: "NOT_ATTESTED", universal_tool_interception: false, supported_adapters: ["alg_run", "alg_resume"],
         adapter_activation: "one active skill declaring alg_execute plus reviewed environment", remote_permissions: "REVALIDATE_AT_ACTION", message_replay: "BEST_EFFORT" } }
   }
