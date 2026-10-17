@@ -9,10 +9,16 @@ import { tempProject, removeProject } from "./helpers.ts"
 
 const paths: string[] = []
 afterEach(() => { for (const path of paths.splice(0)) removeProject(path) })
-function fixture() {
+function fixture(withSkill = false) {
   const path = tempProject("alg-delivery-"); paths.push(path)
-  const memory = new SessionMemoryRuntime(path, { mode: "assist" }, [], [])
+  if (withSkill) {
+    const directory = join(path, ".opencode", "skills", "revocable")
+    mkdirSync(directory, { recursive: true })
+    writeFileSync(join(directory, "SKILL.md"), "---\nname: revocable\ndescription: Synthetic revocation fixture\n---\nVerify the current route.\n")
+  }
+  const memory = new SessionMemoryRuntime(path, { mode: "assist" }, withSkill ? [".opencode/skills"] : [], [])
   memory.beginTask("owner", "Keep the approved task scope")
+  if (withSkill) memory.bindSkill("owner", memory.index.search("revocable").skills[0]!.key)
   const pack = memory.prepare("owner", { allowanceBytes: 4096 })
   return { path, memory, store: memory.store, context: pack.receipt!, text: pack.text }
 }
@@ -112,14 +118,7 @@ test("checkpoint changes during preparation prevent stale publication", async ()
 })
 
 test("revocation after preparation is rechecked even when the checkpoint revision is unchanged", async () => {
-  const { path } = fixture()
-  const directory = join(path, ".opencode", "skills", "revocable")
-  mkdirSync(directory, { recursive: true })
-  writeFileSync(join(directory, "SKILL.md"), "---\nname: revocable\ndescription: Synthetic revocation fixture\n---\nVerify the current route.\n")
-  const memory = new SessionMemoryRuntime(path, { mode: "assist" }, [".opencode/skills"], [])
-  memory.bindSkill("owner", memory.index.search("revocable").skills[0]!.key)
-  const store = memory.store, pack = memory.prepare("owner", { allowanceBytes: 4096 })
-  const context = pack.receipt!, text = pack.text
+  const { memory, store, context, text } = fixture(true)
   const checkpoint = memory.current("owner")
   const target = ["host policy"]
   await expect(new ContextDelivery(memory).replace("owner", "system", target, async (working, prepare) => {
@@ -187,6 +186,26 @@ test("unexpected census entries fail without advancing delivery heads", () => {
     expect(store.delivery("owner", "second")).toBeNull()
   }
 })
+
+test("request capacity exhaustion preserves existing delivery evidence and bindings", () => {
+  const { memory, store, context } = fixture(true)
+  const original = store.prepareDelivery("owner", "first", "system", context)
+  const checkpoint = memory.current("owner")
+  expect(checkpoint.skills).toHaveLength(1)
+  const bucket = store.path(["delivery-requests"])
+  // Populate count-census fixtures directly; this tests the real 10,000-entry
+  // limit, not the throughput or integrity of 10,000 production transactions.
+  for (let index = 1; index < 10_000; index++) {
+    const request = `capacity-${index}`
+    writeFileSync(join(bucket, `${hashObject(["owner", request])}.json`), JSON.stringify({
+      schema_version: 1, project: store.projectId, owner: "owner", request_id: request, receipt: original,
+    }))
+  }
+  expect(() => store.prepareDelivery("owner", "over-limit", "system", context)).toThrow("capacity reached; nothing evicted")
+  expect(store.delivery("owner")!.id).toBe(original)
+  expect(store.delivery("owner", "over-limit")).toBeNull()
+  expect(memory.current("owner")).toEqual(checkpoint)
+}, 60_000)
 
 test("final publication ceiling counts UTF-8 separators and diagnostics, not foreign text", async () => {
   const { memory } = fixture()
