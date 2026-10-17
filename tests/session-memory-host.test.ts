@@ -7,7 +7,7 @@ import { SessionMemoryRuntime } from "../src/session-memory/runtime.ts"
 import { createMemoryTools } from "../src/session-memory/tools.ts"
 import { executeWithMemory } from "../src/session-memory/attempts.ts"
 import { localOrigin, publishEnvironment } from "../src/session-memory/environment.ts"
-import { hashObject } from "../src/session-memory/store.ts"
+import { hashObject, hashText } from "../src/session-memory/store.ts"
 import { runNodeSession } from "../src/sessions.ts"
 import { createRun, loadRun } from "../src/store.ts"
 import { SkillEvolutionOptionsSchema } from "../src/skill-evolution-schemas.ts"
@@ -39,6 +39,58 @@ function context(path: string, owner = "owner") { return { sessionID: owner, mes
 const input = (owner = "owner") => ({ sessionID: owner, model: { limit: { context: 128000, output: 4096 } } }) as any
 
 describe("session memory SDK-boundary conformance", () => {
+  test("twenty compacted turns retain exact prerequisites without duplicate injection or skill reminders", async () => {
+    const { path, body } = fixture()
+    const directory = join(path, ".opencode", "skills", "fixture-procedure")
+    const prerequisite = "Verify the selected synthetic dataset timezone before comparing totals.\n"
+    writeFileSync(join(directory, "procedure.txt"), prerequisite)
+    writeFileSync(join(directory, "ALG.json"), JSON.stringify({ schema_version: 1,
+      requires: [{ path: "procedure.txt", sha256: hashText(prerequisite) }] }))
+    const options = { sessionMemory: { mode: "assist" }, skillEvolution: { enabled: false } }
+    let hooks = await server(plugin(path), options)
+    let compact = { context: ["foreign compaction context"] }
+    try {
+      await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+        { info: { id: "opening", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "Use fixture-procedure" }] },
+      ] } as any)
+      for (let index = 0; index < 20; index++) {
+        if (index === 10) {
+          await hooks.dispose?.()
+          hooks = await server(plugin(path), options)
+          compact = { context: ["foreign compaction context"] }
+          // No compaction callback before this restart. No instruction-bearing
+          // message survives; only the durable binding can restore the procedure.
+        }
+        const output = { system: ["host policy"] }
+        await hooks["experimental.chat.system.transform"]!(input(), output)
+        output.system.push(`foreign appended ${index}`)
+        await hooks["experimental.chat.system.transform"]!(input(), output)
+        const text = output.system.join("\n")
+        expect(text.split(body).length - 1).toBe(1)
+        expect(text.split(prerequisite).length - 1).toBe(1)
+        expect(output.system[0]).toBe("host policy")
+        expect(output.system).toContain(`foreign appended ${index}`)
+        await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+        await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+        expect(compact.context[0]).toBe("foreign compaction context")
+        expect(compact.context.join("\n").split(body).length - 1).toBe(1)
+        expect(compact.context.join("\n").split(prerequisite).length - 1).toBe(1)
+        await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+          { info: { id: `continue-${index}`, role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "continue" }] },
+        ] } as any)
+      }
+      // A new source revision is not silently substituted into the old binding.
+      writeFileSync(join(directory, "procedure.txt"), "Changed prerequisite\n")
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+      expect(compact.context.join("\n")).not.toContain(body)
+      expect(compact.context.join("\n")).not.toContain(prerequisite)
+      expect(compact.context[0]).toBe("foreign compaction context")
+      const status = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
+      expect(status.receipt.state).toBe("blocked")
+      expect(status.coverage.host_prompt_delivery).toBe("NOT_ATTESTED")
+    } finally { await hooks.dispose?.() }
+  })
+
   test("learning-off hooks restore full procedures after compact/restart and preserve other plugins", async () => {
     const { path, body } = fixture(), options = { sessionMemory: { mode: "assist", fallbackTokens: 4096 }, skillEvolution: { enabled: false } }
     let hooks = await server(plugin(path), options)

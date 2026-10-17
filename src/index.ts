@@ -28,6 +28,7 @@ import { SessionMemoryRuntime } from "./session-memory/runtime.ts"
 import { createMemoryTools } from "./session-memory/tools.ts"
 import { canonicalDirectory, isContained } from "./paths.ts"
 import { isCompletedUserTurn } from "./turn-boundary.ts"
+import { OwnedContext } from "./owned-context.ts"
 
 const runtimeIdentityAtModuleLoad = captureRuntimeIdentityAtModuleLoad()
 
@@ -44,6 +45,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
   const contextBudgetOptions = ContextBudgetOptionsSchema.parse(pluginConfiguration.contextBudget ?? {})
   // What is known about each session's context window between hooks; sizes everything ALG adds.
   const windows = new SessionWindows(contextBudgetOptions)
+  const ownedContext = new OwnedContext()
   const textBytes = (text: string) => Buffer.byteLength(text, "utf8")
   let configuredModels: AgentModelMap = {}
   let modelResolutions: ModelResolutionMap = configuredModelResolutions({})
@@ -193,7 +195,8 @@ const server: Plugin = async (ctx, pluginOptions) => {
       }
     },
 
-    "experimental.chat.system.transform": async (input, output) => {
+    "experimental.chat.system.transform": async (input, sharedOutput) => ownedContext.replace(sharedOutput.system, async (system) => {
+      const output = { system }
       /** Pushes the text and returns its size, so the plan knows what the part used. */
       const appendRecovery = async (label: string, read: () => string): Promise<number> => {
         try {
@@ -283,9 +286,10 @@ const server: Plugin = async (ctx, pluginOptions) => {
         }
       }
       if (!input.sessionID && memory.options.mode !== "assist") await appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID))
-    },
+    }),
 
-    "experimental.session.compacting": async (input, output) => {
+    "experimental.session.compacting": async (input, sharedOutput) => ownedContext.replace(sharedOutput.context, async (context) => {
+      const output = { context }
       const owned: string[] = []
       const logCompactionFailure = (message: string) => {
         try { Promise.resolve(client.app.log({ body: { service: ALG_PLUGIN_ID, level: "error", message } })).catch(() => {}) }
@@ -358,7 +362,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       await appendEnvironmentMemory()
       appendAlgCompactionContext(output.context, owned, outputLimit)
       windows.record(input.sessionID, plan)
-    },
+    }),
   }
 }
 
