@@ -433,6 +433,42 @@ outside Phase 1; their contracts remain part of the umbrella roadmap.
 
 ## Delivery increments
 
+### Phase 1 implementation handoff
+
+The first release is a vertical V1 continuity slice across the existing stores and
+hooks, not four parallel subsystem rewrites. Use the following scope when assigning
+implementation work; the broader contracts remain the destination architecture.
+
+| Contract | Required in Phase 1 | Deferred from Phase 1 |
+| --- | --- | --- |
+| Execution and recovery | Read existing work identity and state; preserve current replay and permission boundaries | New continuation, replacement, effect reconciliation and task decomposition |
+| Knowledge and environment | Exact skill/prerequisite revisions, scoped durable bindings, validated existing trust and drift/revocation checks | General environment import, new graph infrastructure, compilation and promotion |
+| Context and decisions | One V1 delivery owner, complete restoration, final byte accounting, request-scoped receipts and visible gaps | Proactive applicability routing, broad decision-impact traversal and new action enforcement |
+| Coordination and improvement | Preserve existing parent/child isolation and expose continuity diagnostics | New sharing, observers, watcher admission and automatic replanning |
+
+Implement in dependency order: validate binding/trust inputs; persist bindings at
+change boundaries; assemble complete bounded packs; publish through the V1 hook;
+record the actual delivery outcome; then exercise restart and fault fixtures.
+Keep host-hook wiring thin and the selection/accounting logic independently testable.
+Do not introduce a generic graph framework or host-port rewrite merely to prepare
+for V2. A minimal shared interface is justified only by a current V1 caller.
+
+The acceptance report must map every Phase 1 requirement to a local test or an
+explicit remaining gap. Record the source build, enabled configuration, host or
+synthetic adapter identity, trust-policy boundary, delivery evidence level and
+storage limits. Include sustained repeated-hook cost and quota exhaustion; a
+twenty-compaction pass alone does not establish multi-day operating reliability.
+Never silently evict active bindings or report an uncertain write as delivered.
+
+Complete the slice only after its required fixtures pass and unresolved trust,
+capacity or delivery gaps are either fixed or explicitly excluded from the
+declared supported scope. Synthetic tests establish harness behavior, not actual
+model adherence. Package and link checks stay local, including the ZIP deployment
+path; no GitHub runner, paid-model run or installed-host probe is implicit.
+
+Phase 1 completion does not authorize the next increment. V2 remains design-only,
+including its runtime probes, dependencies, packaging changes and migrations.
+
 Historical mixed-version failure data informs fixtures, not a current causal
 ranking. Start with a pinned-build baseline that separates extraction, schema,
 gate-authoring, quality rejection, confirmed step exhaustion and unknown outcomes.

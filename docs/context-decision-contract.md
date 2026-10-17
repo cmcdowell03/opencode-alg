@@ -29,6 +29,13 @@ complete dependency closure, and context hash. `host_confirmed` is available onl
 when an instrumented host actually confirms the final request; plugin emission
 alone is weaker evidence. Neither proves understanding or compliance.
 
+When V1 exposes only a plugin-hook invocation, label its generated identifier as
+plugin-local correlation. Do not fabricate a host request ID or context generation.
+Record unavailable host evidence explicitly. Repeated hooks replace only the
+context owned by ALG, preserve foreign contributions, and cannot settle an older
+request as proof of delivery for a newer one. Interrupted publication or receipt
+persistence remains prepared/unknown until supported evidence resolves it.
+
 After compaction/restart, previous delivery receipts cannot authorize reuse in a
 new request. Reconstruct required procedures from durable bindings and reverify
 sources. A successful tool event naming a skill is weaker than a receipt of exact
@@ -248,6 +255,14 @@ forcing the floor into an already full prompt.
 Bytes-per-token is an estimate, not tokenization proof. Unknown/stale usage carries
 an explicit confidence/gap and conservative reserve. Provider-specific counting
 belongs in capability-tested adapters, not model-name branches in policy.
+
+Enforce the ceiling against the final serialized ALG contribution, including
+separators, orientation, recovery text and fallback diagnostics, not merely the
+sum of individual section allowances. Check this after assembly and before
+publication. Do not clip a complete required procedure to make the check pass.
+If even a diagnostic cannot fit, surface the gap through status/tool metadata;
+zero capacity must not trigger an unbudgeted fallback injection. Foreign context
+is not ALG-owned text, but its measured usage still reduces safe request capacity.
 
 ### Context pack and delivery evidence
 
