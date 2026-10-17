@@ -9,6 +9,7 @@ import { acquireFilesystemMutex } from "../filesystem-mutex.ts"
 import { redactEvolutionText } from "../skill-evolution-redaction.ts"
 import { createHash } from "node:crypto"
 import { CheckpointSchema, ContextReceiptSchema, Hash, MemoryNodeSchema, SessionId, type Checkpoint, type ContextReceipt, type MemoryNode, type StoredNode } from "./schemas.ts"
+import { DeliveryLatestSchema, DeliveryReceiptSchema, DeliveryRequestHeadSchema, type DeliveryReceipt } from "./delivery-schema.ts"
 
 export const hashText = (value: string) => createHash("sha256").update(value).digest("hex")
 export const hashObject = sha256Json
@@ -58,17 +59,24 @@ export class MemoryStore {
   private census(bucket: string, maxCount: number, maxBytes: number): void {
     const path = this.path([bucket])
     if (!existsSync(path)) return
+    const before = lstatSync(path)
     const directory = opendirSync(path)
     let count = 0, bytes = 0
     try {
       for (let entry = directory.readSync(); entry; entry = directory.readSync()) {
-        const item = this.path([bucket, entry.name])
+        // The bucket ancestry was checked above. Rewalking it for every file
+        // makes immutable receipt publication increasingly expensive. Still
+        // validate each leaf and verify the same directory again after the scan.
+        if (!isSafeId(entry.name) && !/^[a-f0-9]{64}\.(json|txt)$/.test(entry.name)) throw new Error("unsafe memory path")
+        const item = join(path, entry.name)
         const stat = lstatSync(item)
-        if (!stat.isFile()) throw new Error("unexpected memory directory entry")
+        if (!stat.isFile() || stat.isSymbolicLink() || relative(item, realpathSync.native(item)) !== "") throw new Error("unexpected memory directory entry")
         count++; bytes += stat.size
         if (count >= maxCount || bytes >= maxBytes) throw new Error("memory capacity reached; nothing evicted")
       }
     } finally { directory.closeSync() }
+    const after = lstatSync(this.path([bucket]))
+    if (!after.isDirectory() || before.dev !== after.dev || before.ino !== after.ino) throw new Error("memory directory changed during census")
   }
   lock<T>(work: (fence: () => void) => T): T {
     const path = this.path(["writer.lock"], true)
@@ -205,5 +213,72 @@ export class MemoryStore {
     const value = ContextReceiptSchema.parse(JSON.parse(this.read(parts, 65536)))
     if (value.owner !== owner) throw new Error("receipt owner mismatch")
     return value
+  }
+
+  /** Additive storage: legacy context receipts and checkpoint bytes are unchanged. */
+  prepareDelivery(owner: string, requestId: string, hook: "system" | "compaction", context: ContextReceipt): string {
+    return this.lock((fence) => {
+      const checkpoint = this.checkpoint(owner)
+      if (!checkpoint || checkpoint.deleted || context.owner !== owner || context.revision !== checkpoint.revision || context.generation !== checkpoint.generation) {
+        throw new Error("delivery checkpoint conflict")
+      }
+      const value = DeliveryReceiptSchema.parse({ schema_version: 1, kind: "alg-context-delivery", project: this.projectId,
+        owner, request_id: requestId, request_correlation: "plugin_hook_only", hook,
+        checkpoint: sha256Json(checkpoint), task_epoch: checkpoint.task_epoch, context,
+        created_at: new Date().toISOString(), state: "prepared", prepared_ref: null })
+      const requestPath = this.path(["delivery-requests", `${sha256Json([owner, requestId])}.json`], true)
+      if (existsSync(requestPath)) throw new Error("delivery request already exists")
+      this.census("delivery-requests", 10000, 32 * 1024 * 1024)
+      const receipt = this.immutable("deliveries", value, 65536, fence)
+      const head = { schema_version: 1, project: this.projectId, owner, request_id: requestId, receipt }
+      atomicWriteFile(requestPath, canonicalJson(head), false, { commitBoundaryFence: fence })
+      const latestPath = this.path(["delivery-latest", `${sha256Json(owner)}.json`], true)
+      if (!existsSync(latestPath)) this.census("delivery-latest", 4096, 4 * 1024 * 1024)
+      atomicWriteFile(latestPath, canonicalJson(DeliveryLatestSchema.parse({ schema_version: 1, project: this.projectId, owner, request_id: requestId })), false,
+        { commitBoundaryFence: fence })
+      return receipt
+    })
+  }
+
+  delivery(owner: string, requestId?: string): { id: string; value: DeliveryReceipt } | null {
+    SessionId.parse(owner)
+    if (requestId === undefined) {
+      const parts = ["delivery-latest", `${sha256Json(owner)}.json`]
+      if (!existsSync(this.path(parts))) return null
+      const latest = DeliveryLatestSchema.parse(JSON.parse(this.read(parts, 4096)))
+      if (latest.owner !== owner || latest.project !== this.projectId) throw new Error("foreign delivery index")
+      requestId = latest.request_id
+    }
+    const parts = ["delivery-requests", `${sha256Json([owner, requestId])}.json`]
+    if (!existsSync(this.path(parts))) return null
+    const head = DeliveryRequestHeadSchema.parse(JSON.parse(this.read(parts, 4096)))
+    if (head.owner !== owner || head.project !== this.projectId || head.request_id !== requestId) throw new Error("foreign delivery request")
+    const value = DeliveryReceiptSchema.parse(JSON.parse(this.read(["deliveries", `${head.receipt}.json`], 65536)))
+    if (sha256Json(value) !== head.receipt || value.owner !== owner || value.project !== this.projectId || value.request_id !== requestId) {
+      throw new Error("delivery integrity mismatch")
+    }
+    if (value.state !== "prepared") {
+      const prepared = DeliveryReceiptSchema.parse(JSON.parse(this.read(["deliveries", `${value.prepared_ref}.json`], 65536)))
+      if (sha256Json(prepared) !== value.prepared_ref || prepared.state !== "prepared" ||
+        prepared.owner !== owner || prepared.project !== this.projectId || prepared.request_id !== requestId ||
+        prepared.hook !== value.hook || prepared.checkpoint !== value.checkpoint || prepared.task_epoch !== value.task_epoch ||
+        sha256Json(prepared.context) !== sha256Json(value.context)) throw new Error("delivery preparation mismatch")
+    }
+    return { id: head.receipt, value }
+  }
+
+  settleDelivery(owner: string, requestId: string, preparedRef: string,
+    outcome: { state: "emitted" } | { state: "unknown"; reason: "hook_failed" | "publication_conflict" | "emission_unconfirmed" }): string {
+    return this.lock((fence) => {
+      const prior = this.delivery(owner, requestId)
+      if (!prior || prior.id !== preparedRef || prior.value.state !== "prepared") throw new Error("delivery transition conflict")
+      const value = DeliveryReceiptSchema.parse({ ...prior.value, ...outcome, prepared_ref: preparedRef, created_at: new Date().toISOString() })
+      const receipt = this.immutable("deliveries", value, 65536, fence)
+      const path = this.path(["delivery-requests", `${sha256Json([owner, requestId])}.json`], true)
+      atomicWriteFile(path, canonicalJson({ schema_version: 1, project: this.projectId, owner, request_id: requestId, receipt }), false,
+        { commitBoundaryFence: fence })
+      // Do not move the latest-request pointer when an older hook completes late.
+      return receipt
+    })
   }
 }

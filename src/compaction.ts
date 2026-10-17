@@ -79,7 +79,8 @@ function renderRunSummary(run: RunState, detail: RunSummaryDetail): string {
  */
 export function formatCompactionContext(run: RunState, maximumBytes?: number): string {
   if (maximumBytes !== undefined) {
-    const limit = Math.max(256, Math.floor(maximumBytes))
+    const limit = Number.isFinite(maximumBytes) ? Math.max(0, Math.floor(maximumBytes)) : 0
+    if (limit < 256) return ""
     for (const detail of RUN_SUMMARY_DETAIL) {
       const summary = renderRunSummary(run, detail)
       if (utf8Bytes(summary) <= limit) return summary
@@ -195,11 +196,13 @@ export function capCompactionOutputContext(
   context: string[],
   maximumBytes = MAX_COMPACTION_OUTPUT_BYTES,
 ): void {
+  const limit = Number.isFinite(maximumBytes) ? Math.max(0, Math.floor(maximumBytes)) : 0
   const joined = context.join("\n")
-  if (utf8Bytes(joined) <= maximumBytes) return
+  if (utf8Bytes(joined) <= limit) return
   const suffix = "\n[ALG compaction context truncated]"
-  const text = `${truncateUtf8(joined, Math.max(0, maximumBytes - utf8Bytes(suffix)))}${suffix}`
   context.length = 0
+  if (limit < utf8Bytes(suffix)) return
+  const text = `${truncateUtf8(joined, limit - utf8Bytes(suffix))}${suffix}`
   context.push(text)
 }
 
