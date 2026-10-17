@@ -200,3 +200,45 @@ test("over-ceiling prepared context is not clipped or recorded as emitted", asyn
   expect(target).toEqual(["host policy"])
   expect(store.delivery("owner")!.value).toMatchObject({ state: "unknown", reason: "hook_failed" })
 })
+
+test("publication accounting runs only after successful replacement with exact contributed bytes", async () => {
+  const { memory } = fixture()
+  const delivery = new ContextDelivery(memory), target = ["foreign policy"]
+  const counts: number[] = []
+  await delivery.replace("owner", "system", target, async (working, _prepare, limit, onPublished) => {
+    limit(4)
+    onPublished((bytes) => { expect(target).toEqual(["foreign policy", "é", "x"]); counts.push(bytes) })
+    working.push("é", "x")
+    expect(counts).toEqual([])
+  })
+  expect(counts).toEqual([4])
+  await expect(delivery.replace("owner", "system", target, async (working, _prepare, limit, onPublished) => {
+    onPublished((bytes) => counts.push(bytes))
+    limit(0); working.push("overflow")
+  })).rejects.toThrow("needs_context")
+  expect(counts).toEqual([4])
+  await expect(delivery.replace("owner", "system", target, async (working, _prepare, _limit, onPublished) => {
+    onPublished((bytes) => counts.push(bytes))
+    target[0] = "concurrent foreign edit"
+    working.push("replacement")
+  })).rejects.toThrow("foreign context changed")
+  expect(counts).toEqual([4])
+})
+
+test("receipt failure after publication still accounts for the actual text", async () => {
+  const { memory, store, context, text } = fixture()
+  const target: string[] = [], counts: number[] = []
+  const settle = store.settleDelivery.bind(store)
+  store.settleDelivery = (owner, request, ref, outcome) => {
+    if (outcome.state === "emitted") throw new Error("injected settlement failure")
+    return settle(owner, request, ref, outcome)
+  }
+  await expect(new ContextDelivery(memory).replace("owner", "system", target, async (working, prepare, _limit, onPublished) => {
+    onPublished((bytes) => counts.push(bytes))
+    await prepare(context, text)
+    working.push(text)
+  })).rejects.toThrow("settlement failure")
+  expect(target).toEqual([text])
+  expect(counts).toEqual([Buffer.byteLength(text, "utf8")])
+  expect(store.delivery("owner")!.value.state).toBe("unknown")
+})

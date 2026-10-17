@@ -8,6 +8,7 @@ import { hashObject, hashText } from "./store.ts"
 
 type Prepare = (receipt: ContextReceipt, text: string) => Promise<void>
 type Limit = (bytes: number | undefined) => void
+type Published = (record: (bytes: number) => void) => void
 
 /** Evidence of this plugin's hook publication, never of the final provider request. */
 export class ContextDelivery {
@@ -15,8 +16,14 @@ export class ContextDelivery {
   constructor(private readonly memory: SessionMemoryRuntime) {}
 
   async replace(owner: string | undefined, hook: "system" | "compaction", target: string[],
-    render: (working: string[], prepare: Prepare, limit: Limit) => Promise<void>): Promise<void> {
+    render: (working: string[], prepare: Prepare, limit: Limit, onPublished: Published) => Promise<void>): Promise<void> {
     const pending: Array<{ request: string; ref: string; text: string }> = []
+    let recordPublication: ((bytes: number) => void) | undefined
+    let publishedBytes = 0
+    const onPublished: Published = (record) => {
+      if (recordPublication) throw new Error("ALG duplicate publication accounting")
+      recordPublication = record
+    }
     let ceiling: number | undefined
     const limit: Limit = (bytes) => {
       if (bytes === undefined) return
@@ -39,14 +46,15 @@ export class ContextDelivery {
     try {
       await this.owned.replace(target, async (working) => {
         const foreignLength = working.length
-        await render(working, prepare, limit)
+        await render(working, prepare, limit, onPublished)
         // Hook fallback handling cannot silently turn a failed preparation into
         // an unrecorded emission of trusted instructions.
         if (preparationFailed) throw new Error("ALG delivery preparation unavailable")
         // Count separators and fallback diagnostics too. Foreign contributions
         // remain untouched; their usage belongs to the host capacity estimate.
         const contribution = working.slice(foreignLength).join("\n")
-        if (ceiling !== undefined && Buffer.byteLength(contribution, "utf8") > ceiling) {
+        publishedBytes = Buffer.byteLength(contribution, "utf8")
+        if (ceiling !== undefined && publishedBytes > ceiling) {
           throw new Error("ALG needs_context: final contribution exceeds context ceiling")
         }
         const item = pending[0]
@@ -64,6 +72,8 @@ export class ContextDelivery {
         })
       })
       published = true
+      // Publication is real even if the subsequent durable receipt write fails.
+      recordPublication?.(publishedBytes)
       const item = pending[0]
       if (item && owner) await awaitLock(() => this.memory.store.settleDelivery(owner, item.request, item.ref, { state: "emitted" }))
     } catch (error) {

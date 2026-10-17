@@ -246,11 +246,11 @@ export class SessionWindows {
     return planContext(this.options, this.window(sessionId), kind, parts)
   }
 
-  /** After a model call's context is assembled: remember what was added and how it was planned. */
-  record(sessionId: string, plan: ContextPlan): void {
+  /** After hook publication: remember actual bytes and the separate allocation plan. */
+  record(sessionId: string, plan: ContextPlan, publishedBytes = plan.spentBytes()): void {
     const entry = this.entry(sessionId)
     const summary = plan.describe()
-    if (summary.kind === "call") entry.addedBytes = plan.spentBytes()
+    if (summary.kind === "call") entry.addedBytes = publishedBytes
     entry.last = summary
   }
 

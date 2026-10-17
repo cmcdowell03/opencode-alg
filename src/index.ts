@@ -195,7 +195,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       }
     },
 
-    "experimental.chat.system.transform": async (input, sharedOutput) => delivery.replace(input.sessionID, "system", sharedOutput.system, async (system, prepareDelivery, limitDelivery) => {
+    "experimental.chat.system.transform": async (input, sharedOutput) => delivery.replace(input.sessionID, "system", sharedOutput.system, async (system, prepareDelivery, limitDelivery, onPublished) => {
       const output = { system }
       /** Pushes the text and returns its size, so the plan knows what the part used. */
       const appendRecovery = async (label: string, read: () => string): Promise<number> => {
@@ -218,7 +218,8 @@ const server: Plugin = async (ctx, pluginOptions) => {
           ...(environmentMemory?.mode === "assist" ? ["environment" as const] : [])]
         const plan = windows.plan(sessionId, "call", parts)
         limitDelivery(plan.totalBytes)
-        try {
+        onPublished((bytes) => windows.record(sessionId, plan, bytes))
+        {
           const appendEnvironmentMemory = async () => {
             if (environmentMemory?.mode !== "assist") return
             try {
@@ -283,14 +284,12 @@ const server: Plugin = async (ctx, pluginOptions) => {
           output.system.push(...recovery)
           if (!assist) plan.spend("skills", await appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID, plan.allow("skills"))))
           await appendEnvironmentMemory()
-        } finally {
-          windows.record(sessionId, plan)
         }
       }
       if (!input.sessionID && memory.options.mode !== "assist") await appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID))
     }),
 
-    "experimental.session.compacting": async (input, sharedOutput) => delivery.replace(input.sessionID, "compaction", sharedOutput.context, async (context, prepareDelivery, limitDelivery) => {
+    "experimental.session.compacting": async (input, sharedOutput) => delivery.replace(input.sessionID, "compaction", sharedOutput.context, async (context, prepareDelivery, limitDelivery, onPublished) => {
       const output = { context }
       const owned: string[] = []
       const logCompactionFailure = (message: string) => {
@@ -305,6 +304,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
         ...(environmentMemory?.mode === "assist" ? ["environment" as const] : [])])
       const outputLimit = plan.totalBytes ?? MAX_COMPACTION_OUTPUT_BYTES
       limitDelivery(outputLimit)
+      onPublished((bytes) => windows.record(input.sessionID, plan, bytes))
       const appendEnvironmentMemory = async () => {
         if (environmentMemory?.mode !== "assist") return
         try {
@@ -338,7 +338,6 @@ const server: Plugin = async (ctx, pluginOptions) => {
         }
         await appendEnvironmentMemory()
         appendAlgCompactionContext(output.context, owned, outputLimit)
-        windows.record(input.sessionID, plan)
         return
       }
       if (memory.enabled) {
@@ -365,7 +364,6 @@ const server: Plugin = async (ctx, pluginOptions) => {
       if (skills) { owned.push(skills); plan.spend("skills", textBytes(skills)) }
       await appendEnvironmentMemory()
       appendAlgCompactionContext(output.context, owned, outputLimit)
-      windows.record(input.sessionID, plan)
     }),
   }
 }

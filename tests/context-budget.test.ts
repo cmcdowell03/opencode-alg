@@ -139,6 +139,19 @@ describe("how full the window is", () => {
     windows.forget("s")
     expect(windows.window("s")).toEqual({})
   })
+
+  test("headroom uses published bytes rather than section spending estimates", () => {
+    const windows = new SessionWindows(defaults)
+    windows.observeModel("s", { context: 200_000, output: 8_000 })
+    const plan = windows.plan("s", "call", ["run", "skills"])
+    plan.spend("skills", 300)
+    windows.record("s", plan, 600)
+    windows.observeMessages("s", [assistant({ input: 100_000, output: 0 })])
+    expect(windows.window("s").usedTokens).toBe(99_800)
+    windows.record("s", plan, 0)
+    windows.observeMessages("s", [assistant({ input: 100_000, output: 0 })])
+    expect(windows.window("s").usedTokens).toBe(100_000)
+  })
 })
 
 describe("what each part does with its allowance", () => {
