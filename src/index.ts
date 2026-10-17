@@ -262,7 +262,9 @@ const server: Plugin = async (ctx, pluginOptions) => {
               // on top of the memory allowance rather than taken out of it.
               const optionalAllowance = plan.allow("memory")
               const allowance = assist ? plan.allowRequired("memory") : optionalAllowance
+              const capacity = plan.describe()
               const pack = await awaitLock(() => memory.prepare(sessionId, { context: input.model.limit.context, output: input.model.limit.output,
+                ...(capacity.used_tokens === null ? {} : { knownInputTokens: capacity.used_tokens }),
                 existingText: output.system.join("\n"), mandatoryContext: recovery,
                 ...(allowance === undefined ? {} : { allowanceBytes: allowance + recoveryBytes }),
                 ...(optionalAllowance === undefined ? {} : { optionalAllowanceBytes: optionalAllowance + recoveryBytes }) }))
@@ -327,7 +329,10 @@ const server: Plugin = async (ctx, pluginOptions) => {
           await authorizeMemory(input.sessionID)
           const allowance = plan.allowRequired("memory")
           const optionalAllowance = plan.allow("memory")
+          const capacity = plan.describe()
           const pack = await awaitLock(() => memory.prepare(input.sessionID, {
+            ...(capacity.context_tokens === null ? {} : { context: capacity.context_tokens }),
+            ...(capacity.used_tokens === null ? {} : { knownInputTokens: capacity.used_tokens }),
             ...(allowance === undefined ? {} : { allowanceBytes: allowance }),
             ...(optionalAllowance === undefined ? {} : { optionalAllowanceBytes: optionalAllowance }),
           }))

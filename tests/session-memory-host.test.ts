@@ -157,6 +157,11 @@ describe("session memory SDK-boundary conformance", () => {
     expect(output.system.join("\n")).toContain(body)
     const status = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
     expect(status.receipt.state).toBe("prepared")
+    expect(status.receipt.total_headroom_known).toBe(false)
+    const restartedCompact = { context: ["foreign context"] }
+    await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, restartedCompact)
+    const compactStatus = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
+    expect(compactStatus.receipt.total_headroom_known).toBe(false)
     expect(status.coverage.host_prompt_delivery).toBe("NOT_ATTESTED")
     expect(hooks["experimental.compaction.autocontinue"]).toBeUndefined()
     await hooks.dispose?.()

@@ -211,7 +211,10 @@ describe("what each part does with its allowance", () => {
   test("the memory pack takes the planned allowance instead of its fixed fallback", () => {
     const options = MemoryOptionsSchema.parse({ mode: "assist" })
     expect(contextBudget(options, { context: 200_000, output: 8_000 })).toEqual({ budget: 2_048, known: false })
-    expect(contextBudget(options, { context: 200_000, output: 8_000, allowanceBytes: 19_000 })).toEqual({ budget: 19_000, known: true })
+    expect(contextBudget(options, { context: 200_000, output: 8_000, allowanceBytes: 19_000 })).toEqual({ budget: 19_000, known: false })
+    expect(contextBudget(options, { context: 200_000, knownInputTokens: 0, allowanceBytes: 19_000 })).toEqual({ budget: 19_000, known: true })
+    expect(contextBudget(options, { knownInputTokens: 100, allowanceBytes: 19_000 })).toEqual({ budget: 19_000, known: false })
+    expect(contextBudget(options, { context: 200_000, knownInputTokens: NaN, allowanceBytes: 0 })).toEqual({ budget: 0, known: false })
   })
 })
 

@@ -56,8 +56,9 @@ export function selectWorkingView(store: MemoryStore, index: SkillIndex, checkpo
 
 export function contextBudget(options: MemoryOptions, model: ModelBudget = {}) {
   const finite = (value: number | undefined): value is number => value !== undefined && Number.isFinite(value) && value >= 0
-  if (finite(model.allowanceBytes)) return { budget: Math.floor(model.allowanceBytes), known: true }
   const known = finite(model.context) && model.context > 0 && finite(model.knownInputTokens)
+  // A configured allowance is a ceiling, not evidence of current host usage.
+  if (finite(model.allowanceBytes)) return { budget: Math.floor(model.allowanceBytes), known }
   let budget = Math.min(options.maxContextTokens, options.fallbackTokens)
   if (finite(model.context) && model.context > 0) {
     budget = Math.min(options.maxContextTokens, Math.floor(model.context * options.contextFraction))
