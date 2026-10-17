@@ -19,8 +19,9 @@ For each model call:
 2. If the size of the conversation is known, take no more than `ofAvailable` of
    the window that is still free after reserving room for the reply.
 3. Convert tokens to bytes with `bytesPerToken`.
-4. Never go below `floorBytes`, so what identifies an unfinished run and how to
-   resume it still fits in a nearly full window.
+4. Keep that computed ceiling even when it is below `floorBytes`. The floor is an
+   orientation target, not permission to exceed a configured cap or free capacity.
+   A full window has zero allowance; required content that cannot fit needs recovery.
 
 The allowance is then divided among the parts that are in use, by the weights in
 `shares`. A part that is switched off is left out, so its share goes to the
@@ -56,7 +57,7 @@ Add `contextBudget` to the ALG plugin options. Every field is optional.
 | `ofAvailable` | 0.5 | Never plan to use more than this share of the window still free. |
 | `shares` | 0.2 / 0.35 / 0.35 / 0.1 | Weights for run, skills, memory, environment. |
 | `bytesPerToken` | 3 | Estimated bytes of text per model token. |
-| `floorBytes` | 1536 | The least ALG plans for. |
+| `floorBytes` | 1536 | Legacy orientation target retained for configuration compatibility; cannot raise the computed allowance. |
 
 Builds before this option reject `contextBudget` as an unknown key. Remove it
 before rolling back.
@@ -90,7 +91,7 @@ run summary, 12 KiB for skills, 32 KiB in total for a compaction.
 
 `alg_context_status` reports `context_budget`: the options in effect and the
 last plan for the session, with the window size, the tokens in use, what limited
-the allowance (`share`, `available`, `floor`, or `fixed`), and what each part was
+the allowance (`share`, `available`, or `fixed`; older reports may say `floor`), and what each part was
 allowed and used.
 
 ## Limits of this design

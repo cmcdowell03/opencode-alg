@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import server from "../src/index.ts"
-import { formatCompactionContext, MAX_COMPACTION_CONTEXT_BYTES } from "../src/compaction.ts"
+import { appendAlgCompactionContext, formatCompactionContext, MAX_COMPACTION_CONTEXT_BYTES } from "../src/compaction.ts"
 import { ContextBudgetOptionsSchema, estimateUsedTokens, planContext, SessionWindows } from "../src/context-budget.ts"
 import { contextBudget } from "../src/session-memory/context.ts"
 import { MemoryOptionsSchema } from "../src/session-memory/schemas.ts"
@@ -46,12 +46,24 @@ describe("context plan", () => {
     expect(planContext(ContextBudgetOptionsSchema.parse({ compaction: 0.02 }), { context: 200_000 }, "compaction").totalBytes).toBe(12_000)
   })
 
-  test("it shrinks as the window fills, down to a floor for the essentials", () => {
+  test("it shrinks as the window fills without forcing the floor into a full window", () => {
     const window = { context: 200_000, output: 8_000 }
     expect(planContext(defaults, { ...window, usedTokens: 20_000 }, "call").describe()).toMatchObject({ total_bytes: 30_000, limited_by: "share" })
     // 4,000 tokens are free; half of that, at three bytes a token.
     expect(planContext(defaults, { ...window, usedTokens: 188_000 }, "call").describe()).toMatchObject({ total_bytes: 6_000, limited_by: "available", available_tokens: 4_000 })
-    expect(planContext(defaults, { ...window, usedTokens: 195_000 }, "call").describe()).toMatchObject({ total_bytes: defaults.floorBytes, limited_by: "floor" })
+    expect(planContext(defaults, { ...window, usedTokens: 195_000 }, "call").describe()).toMatchObject({ total_bytes: 0, limited_by: "available" })
+    expect(planContext(defaults, { ...window, usedTokens: 191_900 }, "call").describe()).toMatchObject({ total_bytes: 150, limited_by: "available" })
+  })
+
+  test("the orientation floor cannot override a low configured cap on calls or compactions", () => {
+    const options = ContextBudgetOptionsSchema.parse({ perCall: 0.005, compaction: 0.01, floorBytes: 65_536 })
+    expect(planContext(options, { context: 1_000 }, "call").totalBytes).toBe(15)
+    expect(planContext(options, { context: 1_000 }, "compaction").totalBytes).toBe(30)
+    for (const kind of ["call", "compaction"] as const) {
+      const plan = planContext(options, { context: 1_000, usedTokens: 1_000 }, kind)
+      expect(plan.totalBytes).toBe(0)
+      for (const part of ["run", "skills", "memory", "environment"] as const) expect(plan.allow(part)).toBe(0)
+    }
   })
 
   test("parts split the allowance by weight, leave out what is off, and pass on what they do not use", () => {
@@ -97,18 +109,36 @@ describe("how full the window is", () => {
   test("what ALG added last time is not counted against it again", () => {
     const windows = new SessionWindows(defaults)
     windows.observeModel("s", { context: 200_000, output: 8_000 })
-    windows.observeMessages("s", [assistant({ input: 100_000, output: 0 })])
     const first = windows.plan("s", "call", ["run", "skills"])
     first.spend("skills", 30_000)
     windows.record("s", first)
+    windows.observeMessages("s", [assistant({ input: 100_000, output: 0 })])
     expect(windows.window("s")).toEqual({ context: 200_000, output: 8_000, usedTokens: 90_000 })
     expect(windows.last("s")).toMatchObject({ dynamic: true, total_bytes: 30_000 })
+    // A smaller new pack is not part of the older host measurement. Its assembly
+    // must not change the measured free space used by an immediate compaction.
+    const next = windows.plan("s", "call", ["run", "skills"])
+    next.spend("skills", 300)
+    windows.record("s", next)
+    expect(windows.window("s").usedTokens).toBe(90_000)
+    windows.observeMessages("s", [assistant({ input: 100_000, output: 0 })])
+    expect(windows.window("s").usedTokens).toBe(99_900)
     windows.forget("s")
     expect(windows.window("s")).toEqual({})
   })
 })
 
 describe("what each part does with its allowance", () => {
+  test("tiny and zero allowances never force summaries or truncation markers into context", () => {
+    const run = largeRun(project("alg-budget-zero-"))
+    for (const allowance of [0, 1, 16, 32, 64, 128, 255]) {
+      expect(bytes(formatCompactionContext(run, allowance))).toBeLessThanOrEqual(allowance)
+      const shared = ["another plugin context"]
+      appendAlgCompactionContext(shared, ["large ALG text ".repeat(100)], allowance)
+      expect(shared[0]).toBe("another plugin context")
+      expect(bytes(shared.slice(1).join("\n"))).toBeLessThanOrEqual(allowance)
+    }
+  })
   test("the run summary keeps what identifies and continues the run at any size", () => {
     const run = largeRun(project("alg-budget-run-"))
     const legacy = formatCompactionContext(run)
