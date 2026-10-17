@@ -11,6 +11,29 @@ stores reviewed, scoped environment facts in local SQLite and supports immutable
 snapshot/journal replication. It performs no automatic discovery and adds no tool
 IDs; the existing read-only memory tools expose its bounded results when enabled.
 
+Draft architecture: [durable operational context and execution](docs/skill-knowledge-graph-design.md)
+connects work, environment knowledge, skills, authority, effects and verification
+across compaction and restart. Four component contracts cover
+[execution and recovery](docs/execution-recovery-contract.md),
+[knowledge and environment](docs/knowledge-environment-contract.md),
+[context and decisions](docs/context-decision-contract.md), and
+[coordination and improvement](docs/coordination-improvement-contract.md).
+Reconciled [OpenCode V2](docs/opencode-v2-design.md) and
+[incident watcher](docs/incident-watcher-design.md) drafts use these shared
+contracts. Delivery increments and local acceptance gates are proposals, not
+implemented capabilities.
+
+The delivery target for this design is OpenCode V1. V2 remains unfinished design
+work: shared interfaces may anticipate it, but its runtime implementation and
+probes are deferred and do not gate V1 delivery.
+
+The proposed [first V1 phase](docs/skill-knowledge-graph-design.md#first-v1-implementation-phase)
+focuses on restoring already-approved, exact-revision skills and prerequisites
+through compaction/restart, with bounded context and visible gaps. Proactive routing
+follows separately; broader environment knowledge, recovery hardening, coordination
+and optional learning remain in the umbrella roadmap. This is a plan, not a claim
+that the new phase is implemented.
+
 Optional capabilities: [policy-bounded DuckDB developer query plane](docs/duckdb-query-plane.md). It is project-local, separately prepared, disabled by default, and is not an ALG core tool.
 
 New explicit workflows: [experience records, troubleshooting, paired skill evaluation, and pinned local data science](docs/experience-and-data-science.md); [synthetic connector preparation](docs/connectors.md). These are default-off and do not imply live deployment validation.
