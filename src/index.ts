@@ -28,7 +28,7 @@ import { SessionMemoryRuntime } from "./session-memory/runtime.ts"
 import { createMemoryTools } from "./session-memory/tools.ts"
 import { canonicalDirectory, isContained } from "./paths.ts"
 import { isCompletedUserTurn } from "./turn-boundary.ts"
-import { OwnedContext } from "./owned-context.ts"
+import { ContextDelivery } from "./session-memory/delivery.ts"
 
 const runtimeIdentityAtModuleLoad = captureRuntimeIdentityAtModuleLoad()
 
@@ -45,7 +45,6 @@ const server: Plugin = async (ctx, pluginOptions) => {
   const contextBudgetOptions = ContextBudgetOptionsSchema.parse(pluginConfiguration.contextBudget ?? {})
   // What is known about each session's context window between hooks; sizes everything ALG adds.
   const windows = new SessionWindows(contextBudgetOptions)
-  const ownedContext = new OwnedContext()
   const textBytes = (text: string) => Buffer.byteLength(text, "utf8")
   let configuredModels: AgentModelMap = {}
   let modelResolutions: ModelResolutionMap = configuredModelResolutions({})
@@ -64,6 +63,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
   const extraSkillRoots = observedConfigSkillRoots()
   const memory = new SessionMemoryRuntime(ctx.worktree || directory, pluginConfiguration.sessionMemory,
     skillEvolutionOptions.skillRoots, extraSkillRoots)
+  const delivery = new ContextDelivery(memory)
   const environmentMemory = pluginConfiguration.environmentMemory && pluginConfiguration.environmentMemory.mode !== "off"
     ? await (await import("./environment-memory/runtime.ts")).EnvironmentMemoryRuntime.open({
       ...pluginConfiguration.environmentMemory,
@@ -195,7 +195,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       }
     },
 
-    "experimental.chat.system.transform": async (input, sharedOutput) => ownedContext.replace(sharedOutput.system, async (system) => {
+    "experimental.chat.system.transform": async (input, sharedOutput) => delivery.replace(input.sessionID, "system", sharedOutput.system, async (system, prepareDelivery) => {
       const output = { system }
       /** Pushes the text and returns its size, so the plan knows what the part used. */
       const appendRecovery = async (label: string, read: () => string): Promise<number> => {
@@ -264,6 +264,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
                 existingText: output.system.join("\n"), mandatoryContext: recovery,
                 ...(allowance === undefined ? {} : { allowanceBytes: allowance + recoveryBytes }),
                 ...(optionalAllowance === undefined ? {} : { optionalAllowanceBytes: optionalAllowance + recoveryBytes }) }))
+              if (pack.receipt) await prepareDelivery(pack.receipt, pack.text)
               if (pack.text) { output.system.push(pack.text); plan.spend("memory", Math.max(0, textBytes(pack.text) - recoveryBytes)) }
               if (assist && pack.receipt) {
                 // A blocked or empty pack does not contain the recovery text; never lose an unfinished run.
@@ -288,7 +289,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       if (!input.sessionID && memory.options.mode !== "assist") await appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID))
     }),
 
-    "experimental.session.compacting": async (input, sharedOutput) => ownedContext.replace(sharedOutput.context, async (context) => {
+    "experimental.session.compacting": async (input, sharedOutput) => delivery.replace(input.sessionID, "compaction", sharedOutput.context, async (context, prepareDelivery) => {
       const output = { context }
       const owned: string[] = []
       const logCompactionFailure = (message: string) => {
@@ -328,6 +329,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
             ...(allowance === undefined ? {} : { allowanceBytes: allowance }),
             ...(optionalAllowance === undefined ? {} : { optionalAllowanceBytes: optionalAllowance }),
           }))
+          if (pack.receipt) await prepareDelivery(pack.receipt, pack.text)
           if (pack.text) { owned.push(pack.text); plan.spend("memory", textBytes(pack.text)) }
         } catch {
           owned.push("ALG working view unavailable; consult authoritative records before resuming.")

@@ -87,9 +87,10 @@ describe("session memory SDK-boundary conformance", () => {
       expect(compact.context[0]).toBe("foreign compaction context")
       const status = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
       expect(status.receipt.state).toBe("blocked")
+      expect(status.delivery).toMatchObject({ state: "emitted", hook: "compaction", context_state: "blocked", host_confirmation: "NOT_ATTESTED" })
       expect(status.coverage.host_prompt_delivery).toBe("NOT_ATTESTED")
     } finally { await hooks.dispose?.() }
-  })
+  }, 60_000)
 
   test("learning-off hooks restore full procedures after compact/restart and preserve other plugins", async () => {
     const { path, body } = fixture(), options = { sessionMemory: { mode: "assist", fallbackTokens: 4096 }, skillEvolution: { enabled: false } }
@@ -98,9 +99,12 @@ describe("session memory SDK-boundary conformance", () => {
     const system = { system: ["host policy"] }
     await hooks["experimental.chat.system.transform"]!(input(), system)
     const afterSystem = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
+    expect(afterSystem.delivery).toMatchObject({ state: "emitted", hook: "system", current_checkpoint: true, host_confirmation: "NOT_ATTESTED" })
     const compact = { context: ["another plugin context"] }
     await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
     const afterCompact = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
+    expect(afterCompact.delivery.request_id).not.toBe(afterSystem.delivery.request_id)
+    expect(afterCompact.delivery).toMatchObject({ state: "emitted", hook: "compaction" })
     expect(compact.context[0]).toBe("another plugin context")
     expect(afterCompact.receipt.selected).toEqual(afterSystem.receipt.selected)
     expect(afterCompact.receipt.omitted).toBe(afterSystem.receipt.omitted)
