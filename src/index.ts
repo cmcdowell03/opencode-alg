@@ -255,10 +255,12 @@ const server: Plugin = async (ctx, pluginOptions) => {
               await authorizeMemory(sessionId)
               // The pack carries the recovery text as well; that was planned under "run", so it is added
               // on top of the memory allowance rather than taken out of it.
-              const allowance = plan.allow("memory")
+              const optionalAllowance = plan.allow("memory")
+              const allowance = assist ? plan.allowRequired("memory") : optionalAllowance
               const pack = await awaitLock(() => memory.prepare(sessionId, { context: input.model.limit.context, output: input.model.limit.output,
                 existingText: output.system.join("\n"), mandatoryContext: recovery,
-                ...(allowance === undefined ? {} : { allowanceBytes: allowance + recoveryBytes + 64 }) }))
+                ...(allowance === undefined ? {} : { allowanceBytes: allowance + recoveryBytes }),
+                ...(optionalAllowance === undefined ? {} : { optionalAllowanceBytes: optionalAllowance + recoveryBytes }) }))
               if (pack.text) { output.system.push(pack.text); plan.spend("memory", Math.max(0, textBytes(pack.text) - recoveryBytes)) }
               if (assist && pack.receipt) {
                 // A blocked or empty pack does not contain the recovery text; never lose an unfinished run.
@@ -316,8 +318,12 @@ const server: Plugin = async (ctx, pluginOptions) => {
         try {
           await captureResults(input.sessionID)
           await authorizeMemory(input.sessionID)
-          const allowance = plan.allow("memory")
-          const pack = await awaitLock(() => memory.prepare(input.sessionID, allowance === undefined ? {} : { allowanceBytes: allowance }))
+          const allowance = plan.allowRequired("memory")
+          const optionalAllowance = plan.allow("memory")
+          const pack = await awaitLock(() => memory.prepare(input.sessionID, {
+            ...(allowance === undefined ? {} : { allowanceBytes: allowance }),
+            ...(optionalAllowance === undefined ? {} : { optionalAllowanceBytes: optionalAllowance }),
+          }))
           if (pack.text) { owned.push(pack.text); plan.spend("memory", textBytes(pack.text)) }
         } catch {
           owned.push("ALG working view unavailable; consult authoritative records before resuming.")

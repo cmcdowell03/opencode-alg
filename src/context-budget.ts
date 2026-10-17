@@ -57,6 +57,7 @@ export interface ContextPlanSummary {
   used_tokens: number | null
   available_tokens: number | null
   total_bytes: number | null
+  normal_bytes: number | null
   limited_by: "share" | "available" | "floor" | "fixed"
   parts: Partial<Record<ContextPart, { allowed_bytes: number; spent_bytes: number }>>
 }
@@ -71,6 +72,8 @@ export interface ContextPlan {
    * Undefined when the plan is not dynamic or the part is not in use.
    */
   allow(part: ContextPart): number | undefined
+  /** Remaining hard ceiling for complete required content, after earlier spending. */
+  allowRequired(part: ContextPart): number | undefined
   /** Records what a part used, releasing the rest of its share to the parts after it. */
   spend(part: ContextPart, bytes: number): void
   spentBytes(): number
@@ -96,9 +99,10 @@ export function planContext(
       dynamic: false,
       totalBytes: undefined,
       allow: () => undefined,
+      allowRequired: () => undefined,
       spend(part, bytes) { spent.set(part, (spent.get(part) ?? 0) + Math.max(0, bytes)) },
       spentBytes: () => [...spent.values()].reduce((sum, bytes) => sum + bytes, 0),
-      describe: () => ({ dynamic: false, kind, context_tokens: null, used_tokens: null, available_tokens: null, total_bytes: null,
+      describe: () => ({ dynamic: false, kind, context_tokens: null, used_tokens: null, available_tokens: null, total_bytes: null, normal_bytes: null,
         limited_by: "fixed", parts: Object.fromEntries([...spent].map(([part, bytes]) => [part, { allowed_bytes: 0, spent_bytes: bytes }])) }),
     }
   }
@@ -118,11 +122,16 @@ export function planContext(
   // A floor is a presentation target, not authority to exceed either hard limit.
   // In particular, a full window has zero allowance, not a forced orientation pack.
   const totalBytes = Math.floor(tokens * options.bytesPerToken)
+  // In memory-assist mode an explicitly raised ceiling is for mandatory content,
+  // not a reason to inflate optional evidence. Legacy guidance keeps its policy.
+  const normalBytes = active.includes("memory")
+    ? Math.min(totalBytes, Math.floor(context * 0.05 * options.bytesPerToken)) : totalBytes
+  const spentBytes = () => [...spent.values()].reduce((sum, bytes) => sum + bytes, 0)
 
   const weight = (part: ContextPart) => options.shares[part]
   const weights = active.reduce((sum, part) => sum + weight(part), 0)
   const base = new Map<ContextPart, number>(active.map((part) =>
-    [part, Math.floor(totalBytes * (weights > 0 ? weight(part) / weights : 1 / Math.max(1, active.length)))]))
+    [part, Math.floor(normalBytes * (weights > 0 ? weight(part) / weights : 1 / Math.max(1, active.length)))]))
   const allow = (part: ContextPart): number | undefined => {
     const index = active.indexOf(part)
     if (index < 0) return undefined
@@ -140,11 +149,12 @@ export function planContext(
     dynamic: true,
     totalBytes,
     allow,
+    allowRequired: (part) => active.includes(part) ? Math.max(0, totalBytes - spentBytes()) : undefined,
     spend(part, bytes) { spent.set(part, (spent.get(part) ?? 0) + Math.max(0, bytes)) },
-    spentBytes: () => [...spent.values()].reduce((sum, bytes) => sum + bytes, 0),
+    spentBytes,
     describe: () => ({
       dynamic: true, kind, context_tokens: context, used_tokens: used, available_tokens: available === null ? null : Math.floor(available),
-      total_bytes: totalBytes, limited_by: limitedBy,
+      total_bytes: totalBytes, normal_bytes: normalBytes, limited_by: limitedBy,
       parts: Object.fromEntries(active.map((part) => [part, { allowed_bytes: base.get(part)!, spent_bytes: spent.get(part) ?? 0 }])),
     }),
   }

@@ -87,6 +87,19 @@ describe("context plan", () => {
     tight.spend("run", 12_909)
     expect(tight.allow("skills")).toBe(17_090)
   })
+
+  test("required memory may borrow optional shares but never exceeds the hard ceiling", () => {
+    const plan = planContext(ContextBudgetOptionsSchema.parse({ perCall: 0.1 }), { context: 100_000 }, "call", ["run", "memory", "environment"])
+    expect(plan.describe()).toMatchObject({ total_bytes: 30_000, normal_bytes: 15_000 })
+    plan.spend("run", 1_000)
+    expect(plan.allowRequired("memory")).toBe(29_000)
+    expect(plan.allow("memory")!).toBeLessThan(15_000)
+    plan.spend("memory", 20_000)
+    expect(plan.allow("environment")).toBe(0)
+    expect(plan.allowRequired("environment")).toBe(9_000)
+    expect(plan.allowRequired("skills")).toBeUndefined()
+    expect(planContext(ContextBudgetOptionsSchema.parse({ perCall: 0.1 }), { context: 100_000 }, "compaction", ["memory"]).totalBytes).toBe(15_000)
+  })
 })
 
 describe("how full the window is", () => {
@@ -202,6 +215,53 @@ describe("the hooks size what they add from the model's window", () => {
   }
   const toolContext = (path: string) => ({ sessionID: "owner", messageID: "m1", agent: "orchestrator", directory: path, worktree: path, abort: new AbortController().signal, ask: async () => {}, metadata: () => {} }) as any
   const added = (system: { system: string[] }) => bytes(system.system.slice(1).join("\n"))
+
+  test("assist restores complete required instructions before reserving optional environment shares", async () => {
+    const path = project("alg-budget-required-")
+    const directory = join(path, ".opencode", "skills", "required-procedure")
+    mkdirSync(directory, { recursive: true })
+    const body = `---\nname: required-procedure\ndescription: Synthetic required procedure\n---\n${"p".repeat(12_500)}\n`
+    writeFileSync(join(directory, "SKILL.md"), body)
+    const hooks = await server(plugin(path), { skillEvolution: { enabled: false }, sessionMemory: { mode: "assist" },
+      environmentMemory: { mode: "assist", namespace: "fixture", databasePath: join(path, "environment.sqlite"), rootIds: ["fixture-root"] } })
+    try {
+      await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+        { info: { id: "u1", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "Use required-procedure" }] },
+      ] } as any)
+      const system = { system: ["host policy"] }
+      await hooks["experimental.chat.system.transform"]!({ sessionID: "owner", model: { limit: { context: 100_000, output: 4_096 } } } as any, system)
+      expect(system.system.join("\n")).toContain(body)
+      expect(added(system)).toBeLessThanOrEqual(15_000)
+      const status = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, toolContext(path)) as any).output)
+      expect(status.receipt.state).toBe("prepared")
+      expect(status.context_budget.last_plan).toMatchObject({ normal_bytes: 15_000, total_bytes: 15_000 })
+    } finally { await hooks.dispose?.() }
+  })
+
+  test("an explicitly raised call ceiling admits required procedures without raising the compaction cap", async () => {
+    const path = project("alg-budget-required-raised-")
+    const directory = join(path, ".opencode", "skills", "required-procedure")
+    mkdirSync(directory, { recursive: true })
+    const body = `---\nname: required-procedure\ndescription: Synthetic required procedure\n---\n${"p".repeat(20_000)}\n`
+    writeFileSync(join(directory, "SKILL.md"), body)
+    const hooks = await server(plugin(path), { skillEvolution: { enabled: false }, sessionMemory: { mode: "assist" }, contextBudget: { perCall: 0.1 } })
+    try {
+      await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+        { info: { id: "u1", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "Use required-procedure" }] },
+      ] } as any)
+      const system = { system: ["host policy"] }
+      await hooks["experimental.chat.system.transform"]!({ sessionID: "owner", model: { limit: { context: 100_000, output: 4_096 } } } as any, system)
+      expect(system.system.join("\n")).toContain(body)
+      expect(added(system)).toBeGreaterThan(15_000)
+      expect(added(system)).toBeLessThanOrEqual(30_000)
+      const compact = { context: ["foreign context"] }
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+      expect(compact.context[0]).toBe("foreign context")
+      expect(compact.context.join("\n")).toContain("needs_context")
+      expect(compact.context.join("\n")).not.toContain(body)
+      expect(bytes(compact.context.slice(1).join("\n"))).toBeLessThanOrEqual(15_000)
+    } finally { await hooks.dispose?.() }
+  })
 
   test("a small window gets a short run summary, a large one gets the detail, and neither exceeds its share", async () => {
     const path = project("alg-budget-hooks-")

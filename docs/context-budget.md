@@ -23,10 +23,17 @@ For each model call:
    orientation target, not permission to exceed a configured cap or free capacity.
    A full window has zero allowance; required content that cannot fit needs recovery.
 
-The allowance is then divided among the parts that are in use, by the weights in
-`shares`. A part that is switched off is left out, so its share goes to the
-others. A part that uses less than its share passes the rest to the parts after
-it, in this order: run, skills, memory, environment.
+In session-memory `assist` mode, the normal target is at most 5% of the window,
+bounded by the computed ceiling. `shares` divides that target between active
+parts. Complete required memory instructions can borrow unused room up to the
+overall ceiling before optional environment facts are rendered. An operator-raised
+`perCall` permits a larger required closure; it does not enlarge optional evidence
+or the separately configured compaction cap. Without memory assistance, the legacy
+weighted allowance policy remains in use.
+
+A part that is switched off is left out, so its share goes to the others. Unused
+shares pass forward in this order: run, skills, memory, environment. Spending beyond
+a share on required instructions reduces the room available to later optional parts.
 
 The size of the conversation comes from the host's own token counts on the last
 assistant reply, plus an estimate for anything sent after it. What ALG itself
@@ -74,7 +81,10 @@ before rolling back.
 - **Memory pack** (session memory in `assist` mode). The allowance replaces the
   `fallbackTokens`, `contextFraction` and `maxContextTokens` options, which still
   apply when the window is unknown. The run summary travels inside the pack but
-  is planned under "run", so it does not reduce what memory may use. If the pack
+  is charged once under "run". Orientation, complete skill bodies and prerequisites
+  may use the remaining hard ceiling; optional evidence stays within the normal
+  weighted allowance. Required content that exceeds the ceiling reports
+  `needs_context` instead of being clipped. If the pack
   is blocked or unavailable, the run summary is still added on its own.
 - **Environment memory** (in `assist` mode). The allowance replaces
   `contextByteBudget`.
@@ -90,9 +100,11 @@ run summary, 12 KiB for skills, 32 KiB in total for a compaction.
 ## Seeing it
 
 `alg_context_status` reports `context_budget`: the options in effect and the
-last plan for the session, with the window size, the tokens in use, what limited
-the allowance (`share`, `available`, or `fixed`; older reports may say `floor`), and what each part was
-allowed and used.
+last plan for the session, with the window size, tokens in use, normal target
+(`normal_bytes`), hard ceiling (`total_bytes`), what limited the allowance (`share`,
+`available`, or `fixed`; older reports may say `floor`), and what each part was
+allowed and used. A required pack may exceed its part's normal weighted allowance,
+but never gains permission to exceed the overall ceiling.
 
 ## Limits of this design
 
