@@ -19,11 +19,11 @@ For each model call:
 2. If the size of the conversation is known, take no more than `ofAvailable` of
    the window that is still free after reserving room for the reply.
 3. Convert tokens to bytes with `bytesPerToken`.
-4. Keep that computed ceiling even when it is below `floorBytes`. The floor is an
-   orientation target, not permission to exceed a configured cap or free capacity.
-   A full window has zero allowance; required content that cannot fit needs recovery.
+4. Reserve up to `floorBytes` for recovery. This may borrow from the reply reservation,
+   but never exceeds the configured share or the space between measured input and
+   the actual context limit. A genuinely full window still has zero allowance.
 
-In session-memory `assist` mode, the normal target is at most 5% of the window,
+In session-memory `assist` mode, the `normal` target defaults to 5% of the window,
 bounded by the computed ceiling. `shares` divides that target between active
 parts. Complete required memory instructions can borrow unused room up to the
 overall ceiling before optional environment facts are rendered. An operator-raised
@@ -49,6 +49,7 @@ Add `contextBudget` to the ALG plugin options. Every field is optional.
   "contextBudget": {
     "perCall": 0.05,
     "compaction": 0.05,
+    "normal": 0.05,
     "ofAvailable": 0.5,
     "shares": { "run": 0.2, "skills": 0.35, "memory": 0.35, "environment": 0.1 },
     "bytesPerToken": 3,
@@ -61,10 +62,11 @@ Add `contextBudget` to the ALG plugin options. Every field is optional.
 |---|---|---|
 | `perCall` | 0.05 | Share of the context window ALG may add to one model call (0.005 to 0.5). |
 | `compaction` | 0.05 | Share ALG may add to a compaction prompt. |
+| `normal` | 0.05 | Optional-context target in assist mode; cannot enlarge the hard ceiling. |
 | `ofAvailable` | 0.5 | Never plan to use more than this share of the window still free. |
 | `shares` | 0.2 / 0.35 / 0.35 / 0.1 | Weights for run, skills, memory, environment. |
 | `bytesPerToken` | 3 | Estimated bytes of text per model token. |
-| `floorBytes` | 1536 | Legacy orientation target retained for configuration compatibility; cannot raise the computed allowance. |
+| `floorBytes` | 1536 | Recovery reserve bounded by actual input headroom and configured share; may reduce reserved reply space. |
 
 Builds before this option reject `contextBudget` as an unknown key. Remove it
 before rolling back.

@@ -29,17 +29,62 @@ test("public tool authorizes every operation and keeps approval separate from lo
     abort: new AbortController().signal, ask: async () => {}, metadata: () => {} }
   let calls = 0
   const tools = createMemoryTools(memory, async () => { calls++ })
-  const call = async (action: "preview" | "approve" | "load", id: string) => JSON.parse((await tools.alg_skill.execute({ action, id }, context) as any).output)
+  const call = async (action: "preview" | "approve" | "load", id: string) => JSON.parse((await tools.alg_skill.execute({ action, ...(action === "load" ? { receipt_id: id } : { skill_key: id }) }, context) as any).output)
   expect((await call("preview", f.key)).state).toBe("candidate")
   const approved = await call("approve", f.key)
   expect(approved.loaded).toBe(false)
   expect(memory.current("owner").skills).toEqual([])
-  expect((await call("load", approved.id)).complete_instructions).toContain("Complete prerequisite instructions.")
+  const loaded = await call("load", approved.receipt_id)
+  expect(loaded.loaded).toBe(true)
+  expect(loaded).not.toHaveProperty("complete_instructions")
+  expect(memory.prepare("owner", budget).text).toContain("Complete prerequisite instructions.")
   expect(calls).toBe(3)
+  for (const args of [
+    { action: "load" as const, skill_key: f.key },
+    { action: "approve" as const, receipt_id: approved.receipt_id },
+    { action: "preview" as const, skill_key: f.key, receipt_id: approved.receipt_id },
+  ]) expect((await tools.alg_skill.execute(args, context) as any).metadata.error).toBe(true)
   const denied = createMemoryTools(memory, async () => { throw new Error("denied") })
   for (const action of ["preview", "approve", "load"] as const) {
-    expect((await denied.alg_skill.execute({ action, id: f.key }, context) as any).metadata.error).toBe(true)
+    expect((await denied.alg_skill.execute({ action, skill_key: f.key }, context) as any).metadata.error).toBe(true)
   }
+})
+
+test("source policy admits new revisions without editing config; unrelated rules do not invalidate receipts", () => {
+  const f = fixture()
+  const rule = { id: "local-procedures", revision: "1", source: f.legacy.index.source(f.key), skills: ["procedure"], environments: ["*"], operations: ["*"] }
+  const policy = { schema_version: 2, project: f.policy.project, rules: [rule] }
+  const memory = f.runtime(policy), first = memory.approveSkill("owner", f.key)
+  memory.loadSkill("owner", first)
+  const unrelated = { ...rule, id: "another", source: "a".repeat(64) }
+  expect(() => f.runtime({ ...policy, rules: [unrelated, rule] }).loadSkill("owner", first)).not.toThrow()
+  expect(() => f.runtime({ ...policy, rules: [{ ...rule, revision: "2" }] }).loadSkill("owner", first)).toThrow("stale")
+  writeFileSync(join(f.dir, "SKILL.md"), "---\nname: procedure\ndescription: Test procedure\n---\nNew source revision.\n")
+  expect(() => memory.loadSkill("owner", first)).toThrow("changed")
+  const second = memory.approveSkill("owner", f.key)
+  expect(second).not.toBe(first)
+  expect(() => memory.loadSkill("owner", second)).toThrow("repin")
+  memory.loadSkill("owner", second, true)
+  expect(memory.prepare("owner", budget).text).toContain("New source revision.")
+})
+
+test("source, names and scopes are policy bounds, not grants inferred from skill prose", () => {
+  const f = fixture()
+  const rule = { id: "bounded", revision: "1", source: f.legacy.index.source(f.key), skills: ["procedure"], environments: ["*"], operations: ["*"] }
+  for (const changed of [{ source: "b".repeat(64) }, { skills: ["other"] }, { environments: ["dev"] }, { operations: ["read"] }]) {
+    expect(() => f.runtime({ schema_version: 2, project: f.policy.project, rules: [{ ...rule, ...changed }] }).approveSkill("owner", f.key)).toThrow("outside")
+  }
+  expect(() => f.runtime({ schema_version: 2, project: f.policy.project, rules: [rule, rule] })).toThrow()
+  writeFileSync(join(f.dir, "ALG.json"), JSON.stringify({ schema_version: 1,
+    environments: ["development"], operations: ["read"] }))
+  const bounded = { ...rule, environments: ["development"], operations: ["read"] }
+  const memory = f.runtime({ schema_version: 2, project: f.policy.project, rules: [bounded] })
+  const approved = memory.approveSkill("owner", f.key)
+  // Approval admits the revision, not access to an unselected environment.
+  expect(() => memory.loadSkill("owner", approved)).toThrow("matching reviewed environment")
+  writeFileSync(join(f.dir, "ALG.json"), JSON.stringify({ schema_version: 1,
+    environments: ["development"], operations: ["read", "write"] }))
+  expect(() => memory.approveSkill("owner", f.key)).toThrow("outside")
 })
 
 test("preview is read-only; approval is separate from activation and survives restart", () => {

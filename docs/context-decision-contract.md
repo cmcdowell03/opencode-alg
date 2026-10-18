@@ -36,6 +36,15 @@ context owned by ALG, preserve foreign contributions, and cannot settle an older
 request as proof of delivery for a newer one. Interrupted publication or receipt
 persistence remains prepared/unknown until supported evidence resolves it.
 
+V1 retains only eight recent observations in one atomic journal per session.
+Pruned observations are unavailable, never implied successful; late settlements
+cannot replace newer observations. Legacy per-request files remain read-only.
+Receipt failure must not fail ordinary conversation: withdraw verifiably owned
+procedure text, retain bounded run recovery and report degraded delivery. If
+foreign edits make ownership ambiguous, leave those entries untouched and report
+the gap. Integrated actions requiring procedure delivery remain blocked until a
+successful delivery restores coverage. No generic shell/MCP interception is claimed.
+
 After compaction/restart, previous delivery receipts cannot authorize reuse in a
 new request. Reconstruct required procedures from durable bindings and reverify
 sources. A successful tool event naming a skill is weaker than a receipt of exact
@@ -248,9 +257,10 @@ If the mandatory closure exceeds the effective ceiling, return `needs_context` f
 the dependent operation. Use smaller tasks, separately authored complete modules,
 or compaction followed by remeasurement; never loop compaction when the unchanged
 closure still exceeds the hard cap. An operator can choose a larger cap explicitly.
-A byte floor is an orientation target, never permission to exceed safe request
-capacity. Report insufficient capacity through status/tool metadata rather than
-forcing the floor into an already full prompt.
+The byte floor reserves a minimal recovery pointer, not full procedure bodies.
+It may borrow from the normal reply reserve, but never exceed estimated physical
+input headroom or the configured hook share. Report insufficient capacity through
+status/tool metadata rather than forcing the floor into an already full prompt.
 
 Bytes-per-token is an estimate, not tokenization proof. Unknown/stale usage carries
 an explicit confidence/gap and conservative reserve. Provider-specific counting

@@ -10,7 +10,7 @@ import { atomicWriteFile } from "../src/store.ts"
 import { hashText } from "../src/session-memory/store.ts"
 
 const root = fileURLToPath(new URL("..", import.meta.url))
-export async function runSessionMemoryGate(directory: string) {
+export async function runSessionMemoryGate(directory: string, full = false) {
   if (!isAbsolute(directory) || !existsSync(directory)) throw new Error("provide an absolute existing external evidence directory")
   const output = realpathSync.native(directory)
   if (isContained(realpathSync.native(root), output) || isFilesystemRoot(output)) throw new Error("evidence must be outside package and not a drive root")
@@ -26,13 +26,17 @@ export async function runSessionMemoryGate(directory: string) {
   }
   try {
     await step("typecheck", "typecheck", process.execPath, ["run", "typecheck"])
-    await step("affected-regressions", "bun_test", process.execPath, ["test", "tests/model-agnostic-recovery.test.ts", "tests/session-memory.test.ts", "tests/session-memory-host.test.ts",
+    if (full) {
+      await step("full-offline-suite", "bun_test", process.execPath, ["test", "--timeout", "60000"])
+    } else {
+      await step("affected-regressions", "bun_test", process.execPath, ["test", "tests/model-agnostic-recovery.test.ts", "tests/session-memory.test.ts", "tests/session-memory-host.test.ts",
       "tests/context-budget.test.ts", "tests/context-delivery.test.ts", "tests/owned-context.test.ts", "tests/skill-approval.test.ts", "tests/worker-launch.test.ts",
       "tests/skill-catalog.test.ts", "tests/architecture-audit.test.ts", "tests/skill-evolution-runtime.test.ts", "tests/skill-evolution-evidence-schema.test.ts",
       "tests/skill-evolution-store.test.ts", "tests/experience.test.ts", "tests/models-sessions-plugin.test.ts", "tests/duckdb-capability.test.ts",
       "tests/live-verify.test.ts", "tests/release-gate.test.ts", "tests/executor.test.ts", "--timeout", "60000"])
     await step("historical-and-promotion-regressions", "bun_test", process.execPath, ["test", "tests/skill-evolution-historical.test.ts",
       "tests/skill-evolution-foundations.test.ts", "tests/skill-evolution-tools-promotion.test.ts", "--timeout", "60000"])
+    }
     const measured = await step("synthetic-performance", "smoke", process.execPath, ["run", "scripts/session-memory-benchmark.ts"])
     benchmark = JSON.parse(measured.stdout)
     const npm = resolveNpmInvocation()
@@ -50,8 +54,10 @@ export async function runSessionMemoryGate(directory: string) {
 }
 if (import.meta.main) {
   try {
-    if (process.argv.length !== 3) throw new Error("usage: check:session-memory <absolute-existing-external-evidence-directory>")
-    const result = await runSessionMemoryGate(process.argv[2]!)
+    if (process.argv.length < 3 || process.argv.length > 4 || (process.argv[3] !== undefined && process.argv[3] !== "--full")) {
+      throw new Error("usage: check:session-memory <absolute-existing-external-evidence-directory> [--full]")
+    }
+    const result = await runSessionMemoryGate(process.argv[2]!, process.argv[3] === "--full")
     console.log(JSON.stringify(result))
     if (!result.passed) process.exitCode = 1
   } catch (error) { console.error(error instanceof Error ? error.message : "session memory gate failed"); process.exitCode = 1 }

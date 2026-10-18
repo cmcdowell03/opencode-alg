@@ -39,6 +39,27 @@ function context(path: string, owner = "owner") { return { sessionID: owner, mes
 const input = (owner = "owner") => ({ sessionID: owner, model: { limit: { context: 128000, output: 4096 } } }) as any
 
 describe("session memory SDK-boundary conformance", () => {
+  test("corrupt delivery telemetry does not fail host hooks or retain stale procedures", async () => {
+    const { path, body } = fixture()
+    const hooks = await server(plugin(path), { sessionMemory: { mode: "assist" }, skillEvolution: { enabled: false } })
+    try {
+      await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+        { info: { id: "u", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "Use fixture-procedure" }] },
+      ] } as any)
+      const output = { system: ["foreign"] }
+      await hooks["experimental.chat.system.transform"]!(input(), output)
+      expect(output.system.join("\n")).toContain(body)
+      writeFileSync(join(path, ".opencode/session-memory/delivery-journals", `${hashObject("owner")}.json`), "corrupt")
+      await hooks["experimental.chat.system.transform"]!(input(), output)
+      expect(output.system[0]).toBe("foreign")
+      expect(output.system.join("\n")).not.toContain(body)
+      const compact = { context: ["foreign"] }
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+      expect(compact.context.join("\n")).not.toContain(body)
+      const status = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
+      expect(status.delivery_error).toBe("unavailable")
+    } finally { await hooks.dispose?.() }
+  })
   test("revoked or missing procedures replace stale owned context and remain unavailable after restart", async () => {
     for (const failure of ["revoked", "missing"] as const) {
       const { path, body } = fixture()
@@ -83,8 +104,9 @@ describe("session memory SDK-boundary conformance", () => {
       requires: [{ path: "procedure.txt", sha256: hashText(prerequisite) }] }))
     const discovery = new SessionMemoryRuntime(path, { mode: "assist" }, [".opencode/skills"], [])
     const key = discovery.index.search("fixture-procedure").skills[0]!.key
-    const options = { sessionMemory: { mode: "assist", approvalPolicy: { schema_version: 1, revision: "fixture-v1",
-      project: discovery.store.projectId, rules: [discovery.index.preview(key)] } }, skillEvolution: { enabled: false } }
+    const options = { sessionMemory: { mode: "assist", approvalPolicy: { schema_version: 2,
+      project: discovery.store.projectId, rules: [{ id: "fixture", revision: "1", source: discovery.index.source(key),
+        skills: ["fixture-procedure"], environments: ["*"], operations: ["*"] }] } }, skillEvolution: { enabled: false } }
     let hooks = await server(plugin(path), options)
     let compact = { context: ["foreign compaction context"] }
     try {
@@ -290,6 +312,10 @@ describe("session memory SDK-boundary conformance", () => {
       expect(memory.current(child).skills).toHaveLength(1)
       return { session_id: child, text: "", parsed: null, error: "synthetic failure" }
     } }
+    memory.deliveryUnavailable.add(owner)
+    await expect(executeWithMemory(memory, run, options)).rejects.toThrow("needs_context")
+    expect(children).toBe(0)
+    memory.deliveryUnavailable.delete(owner)
     const failed = await executeWithMemory(memory, run, options)
     expect(failed.status).toBe("failed")
     prepareRunForResume(failed)

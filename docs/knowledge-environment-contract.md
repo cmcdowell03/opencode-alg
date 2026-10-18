@@ -69,30 +69,36 @@ access nor permission to export data. Its expiry is an example, not a universal 
 ## Review and approval records
 
 V1 uses an **application-level delegated policy boundary**. The operator configures
-the exact revisions and scopes the harness may approve. The harness can issue a
+trusted sources and scopes the harness may approve. The harness can issue a
 `policy-approved` receipt and separately load that revision without asking the
 operator on every use. It cannot use this tool to expand policy or claim human
 review. This replaces the earlier Phase 1 requirement for an independently
 protected operator service or authenticated confirmation UI.
 
-`sessionMemory.approvalPolicy` contains schema version 1, an explicit revision,
-the canonical project identity, and at most 256 exact rules. Each rule binds a
-source-specific skill key, the hash of its complete ordered file closure, and
-exact environment and operation lists. The closure includes `SKILL.md`, `ALG.json`
-when present, and every declared prerequisite. Empty scope lists retain the skill
-manifest's unrestricted applicability; they are not a restricted-scope wildcard.
-There is no model-specific behavior or semantic trust classifier.
+`sessionMemory.approvalPolicy` schema 2 contains the canonical project identity and
+at most 256 rules with unique IDs and per-rule revisions. Each rule binds a configured
+source-root identity, allowed skill names, environments and operations. `*` is an
+explicit wildcard; restricted scopes reject unrestricted/empty manifest scopes.
+The source is trusted to author instructions: scope matching is not a semantic
+proof of their behavior. Complete file closures include `SKILL.md`, `ALG.json`
+when present and all declared prerequisites. Exact hashes belong in approval
+receipts, not the operator's rule. No model-specific classifier is involved.
 
-`alg_skill preview` returns a candidate rule without changing bindings or approval.
-The operator authorizes that rule in configuration and restarts the plugin.
+`alg_skill preview` returns source identity and a candidate revision without changing
+bindings or approval. The operator authorizes a source/scope rule once and restarts.
 `alg_skill approve` evaluates current bytes against policy and stores an immutable
 skill node containing the receipt, without activating it. `alg_skill load` takes
 that node ID, rechecks policy, revocation, scope and bytes, then binds it to the
-session. Existing explicit-name/observed-load activation uses the same policy
+session. Load returns metadata only; complete instructions arrive in the context
+hook instead of also entering the transcript. Existing explicit-name/observed-load activation uses the same policy
 check when policy is enabled. Discovery by similarity never activates a skill.
 
-Receipts bind the complete policy hash, policy revision, project and exact rule.
-They have no expiry in this first slice; remove the rule/change policy revision and
+Receipts bind the matching rule ID/digest, project and exact file closure/scope.
+Unrelated rule changes cannot invalidate them. New eligible revisions can be
+approved by the harness without config changes; active bindings still require
+explicit repinning. Legacy schema-1 hash allowlists retain their old semantics
+until explicitly migrated and reapproved. Policy schema 2 is a V1 plugin feature,
+not OpenCode V2 support. Receipts have no expiry; remove or revise the matching rule and
 restart all controllers to withdraw policy, or revoke the stored node immediately.
 Node revocation is session-scoped; delegated copies have distinct IDs and require
 their own revocations for immediate withdrawal. Repeated approval

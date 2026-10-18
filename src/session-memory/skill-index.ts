@@ -143,8 +143,19 @@ export class SkillIndex {
     const files = loaded.files.map(({ path, sha256, bytes }) => ({ path, sha256, bytes }))
     return { key, closure: hashObject(files), environments: loaded.manifest.environments, operations: loaded.manifest.operations }
   }
-  private approval(project: string, rule: ReturnType<SkillIndex["preview"]>) {
-    if (!this.policy || this.policy.project !== project || !this.policy.rules.some((entry) => hashObject(entry) === hashObject(rule))) {
+  source(key: string) { return this.load(key).descriptor.rootId }
+  private approval(project: string, rule: ReturnType<SkillIndex["preview"]>, source: string, name: string, ruleId?: string) {
+    if (this.policy?.schema_version === 2 && this.policy.project === project) {
+      const within = (actual: string[], allowed: string[]) => allowed.includes("*") || (actual.length > 0 && actual.every((item) => allowed.includes(item)))
+      const eligible = this.policy.rules.filter((entry) => (!ruleId || entry.id === ruleId) && entry.source === source &&
+        (entry.skills.includes("*") || entry.skills.includes(name)) && within(rule.environments, entry.environments) && within(rule.operations, entry.operations))
+        .sort((a, b) => a.id.localeCompare(b.id))
+      const matched = eligible[0]
+      if (!matched) throw new Error("skill source or scope is outside the configured approval policy")
+      return { schema_version: 2 as const, basis: "policy-approved" as const, project,
+        rule_id: matched.id, rule_hash: hashObject(matched), ...rule }
+    }
+    if (!this.policy || this.policy.schema_version !== 1 || this.policy.project !== project || !this.policy.rules.some((entry) => hashObject(entry) === hashObject(rule))) {
       throw new Error("skill revision or scope is outside the configured approval policy")
     }
     return { basis: "policy-approved" as const, policy: hashObject(this.policy), revision: this.policy.revision, project, rule }
@@ -155,7 +166,7 @@ export class SkillIndex {
     // the approval identity and the persisted artifacts (no preview/load race).
     const rule = { key, closure: hashObject(loaded.files.map(({ path, sha256, bytes }) => ({ path, sha256, bytes }))),
       environments: loaded.manifest.environments, operations: loaded.manifest.operations }
-    const approval = this.policy || requireApproval ? this.approval(store.projectId, rule) : undefined
+    const approval = this.policy || requireApproval ? this.approval(store.projectId, rule, loaded.descriptor.rootId, loaded.descriptor.name) : undefined
     const files = loaded.files.map((file) => ({ path: file.path, sha256: store.artifact(file.body), bytes: file.bytes }))
     const payload = SkillPayloadSchema.parse({ key, name: loaded.descriptor.name, source: loaded.descriptor.root,
       files, environments: loaded.manifest.environments, operations: loaded.manifest.operations, ...(approval ? { approval } : {}) })
@@ -164,12 +175,14 @@ export class SkillIndex {
   }
   verifiedBodies(node: MemoryNode): string[] {
     if (node.kind !== "skill") throw new Error("not a skill binding")
+    const loaded = this.load(node.payload.key, node.payload)
     if (this.policy || node.payload.approval) {
       const rule = { key: node.payload.key, closure: hashObject(node.payload.files), environments: node.payload.environments, operations: node.payload.operations }
-      const expected = this.approval(node.project, rule)
+      const receipt = node.payload.approval
+      const expected = this.approval(node.project, rule, loaded.descriptor.rootId, loaded.descriptor.name,
+        receipt && "rule_id" in receipt ? receipt.rule_id : undefined)
       if (!node.payload.approval || hashObject(node.payload.approval) !== hashObject(expected)) throw new Error("skill approval is missing or stale")
     }
-    const loaded = this.load(node.payload.key, node.payload)
     const current = loaded.files.map(({ path, sha256, bytes }) => ({ path, sha256, bytes }))
     if (JSON.stringify(current) !== JSON.stringify(node.payload.files)) throw new Error(`skill ${node.payload.name} changed; reviewed repin required`)
     return loaded.files.filter((file) => file.path !== "ALG.json").map((file) => file.body)

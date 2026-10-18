@@ -15,7 +15,7 @@ import { awaitLock } from "./filesystem-mutex.ts"
 import { ContextBudgetOptionsSchema, SessionWindows, type ContextPart } from "./context-budget.ts"
 import { configuredAgentModels, configuredModelResolutions } from "./models.ts"
 import type { AgentModelMap, ModelResolutionMap } from "./types.ts"
-import { appendAlgCompactionContext, formatCompactionContext, formatStaleRunNotice, isStaleRun, MAX_COMPACTION_OUTPUT_BYTES } from "./compaction.ts"
+import { appendAlgCompactionContext, formatCompactionContext, formatRunPointer, formatStaleRunNotice, isStaleRun, MAX_COMPACTION_OUTPUT_BYTES } from "./compaction.ts"
 import { formatSdkError } from "./diagnostics.ts"
 import { verifiedLiveSourceIdentity } from "./source-identity.ts"
 import { parseSkillEvolutionOptions } from "./skill-evolution-schemas.ts"
@@ -195,7 +195,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       }
     },
 
-    "experimental.chat.system.transform": async (input, sharedOutput) => delivery.replace(input.sessionID, "system", sharedOutput.system, async (system, prepareDelivery, limitDelivery, onPublished) => {
+    "experimental.chat.system.transform": async (input, sharedOutput) => delivery.replace(input.sessionID, "system", sharedOutput.system, async (system, prepareDelivery, limitDelivery, onPublished, recover) => {
       const output = { system }
       /** Pushes the text and returns its size, so the plan knows what the part used. */
       const appendRecovery = async (label: string, read: () => string): Promise<number> => {
@@ -251,7 +251,15 @@ const server: Plugin = async (ctx, pluginOptions) => {
             catch { recovery.push(`ALG ${label} recovery unavailable; consult authoritative records before resuming.`) }
           }
           // Runs before every model request of every session, so it must not scan the project's run history.
-          await collect("run", () => { const run = findLatestIncompleteRunForTurn(ctx.worktree || directory, sessionId, { sessionCreatedHere: isAlgWorkerSession(sessionId) }); return !run ? "" : isStaleRun(run) ? formatStaleRunNotice(run) : formatCompactionContext(run, plan.allow("run")) })
+          await collect("run", () => {
+            const run = findLatestIncompleteRunForTurn(ctx.worktree || directory, sessionId, { sessionCreatedHere: isAlgWorkerSession(sessionId) })
+            if (!run) return ""
+            const pointer = formatRunPointer(run)
+            recover(pointer)
+            const summary = isStaleRun(run) ? formatStaleRunNotice(run) : formatCompactionContext(run, plan.allow("run"))
+            if (summary && textBytes(summary) <= (plan.totalBytes ?? Infinity)) return summary
+            return textBytes(pointer) <= (plan.recoveryBytes ?? Infinity) ? pointer : ""
+          })
           await collect("evidence", () => skillEvolution.recoveryContext(sessionId))
           const recoveryBytes = textBytes(recovery.join("\n"))
           plan.spend("run", recoveryBytes)
@@ -291,7 +299,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       if (!input.sessionID && memory.options.mode !== "assist") await appendRecovery("skill", () => skillGuidance.systemContext(input.sessionID))
     }),
 
-    "experimental.session.compacting": async (input, sharedOutput) => delivery.replace(input.sessionID, "compaction", sharedOutput.context, async (context, prepareDelivery, limitDelivery, onPublished) => {
+    "experimental.session.compacting": async (input, sharedOutput) => delivery.replace(input.sessionID, "compaction", sharedOutput.context, async (context, prepareDelivery, limitDelivery, onPublished, recover) => {
       const output = { context }
       const owned: string[] = []
       const logCompactionFailure = (message: string) => {
@@ -302,11 +310,21 @@ const server: Plugin = async (ctx, pluginOptions) => {
       // A compaction prompt carries the whole conversation, so the window is at its fullest here. The
       // plan uses the window last seen for this session; with none known, the fixed limits apply.
       const plan = windows.plan(input.sessionID, "compaction", [
-        ...(assist ? ["memory" as const] : ["run" as const, "skills" as const]),
+        "run", ...(assist ? ["memory" as const] : ["skills" as const]),
         ...(environmentMemory?.mode === "assist" ? ["environment" as const] : [])])
       const outputLimit = plan.totalBytes ?? MAX_COMPACTION_OUTPUT_BYTES
       limitDelivery(outputLimit)
       onPublished((bytes) => windows.record(input.sessionID, plan, bytes))
+      try {
+        const run = await awaitLock(() => findLatestIncompleteRunForSession(ctx.worktree || directory, input.sessionID))
+        if (run) {
+          const pointer = formatRunPointer(run)
+          recover(pointer)
+          const summary = isStaleRun(run) ? formatStaleRunNotice(run) : formatCompactionContext(run, plan.allow("run"))
+          const recovery = summary && textBytes(summary) <= (plan.totalBytes ?? Infinity) ? summary : pointer
+          if (textBytes(recovery) <= (plan.totalBytes ?? Infinity)) { owned.push(recovery); plan.spend("run", textBytes(recovery)) }
+        }
+      } catch { logCompactionFailure("ALG run pointer unavailable") }
       const appendEnvironmentMemory = async () => {
         if (environmentMemory?.mode !== "assist") return
         try {
@@ -330,14 +348,17 @@ const server: Plugin = async (ctx, pluginOptions) => {
           const allowance = plan.allowRequired("memory")
           const optionalAllowance = plan.allow("memory")
           const capacity = plan.describe()
+          const recoveryBytes = textBytes(owned.join("\n"))
           const pack = await awaitLock(() => memory.prepare(input.sessionID, {
+            mandatoryContext: [...owned],
             ...(capacity.context_tokens === null ? {} : { context: capacity.context_tokens }),
             ...(capacity.used_tokens === null ? {} : { knownInputTokens: capacity.used_tokens }),
-            ...(allowance === undefined ? {} : { allowanceBytes: allowance }),
-            ...(optionalAllowance === undefined ? {} : { optionalAllowanceBytes: optionalAllowance }),
+            ...(allowance === undefined ? {} : { allowanceBytes: allowance + recoveryBytes }),
+            ...(optionalAllowance === undefined ? {} : { optionalAllowanceBytes: optionalAllowance + recoveryBytes }),
           }))
           if (pack.receipt) await prepareDelivery(pack.receipt, pack.text)
-          if (pack.text) { owned.push(pack.text); plan.spend("memory", textBytes(pack.text)) }
+          if (pack.text && !pack.blocked) { owned.length = 0; owned.push(pack.text); plan.spend("memory", Math.max(0, textBytes(pack.text) - recoveryBytes)) }
+          else if (pack.text) { owned.push(pack.text); plan.spend("memory", textBytes(pack.text)) }
         } catch {
           owned.push("ALG working view unavailable; consult authoritative records before resuming.")
         }
@@ -351,7 +372,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       }
       try {
         const run = await awaitLock(() => findLatestIncompleteRunForSession(ctx.worktree || directory, input.sessionID))
-        if (run) {
+        if (run && owned.length === 0) {
           const summary = isStaleRun(run) ? formatStaleRunNotice(run) : formatCompactionContext(run, plan.allow("run"))
           owned.push(summary)
           plan.spend("run", textBytes(summary))

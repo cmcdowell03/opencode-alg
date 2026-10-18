@@ -16,10 +16,11 @@ export class ContextDelivery {
   constructor(private readonly memory: SessionMemoryRuntime) {}
 
   async replace(owner: string | undefined, hook: "system" | "compaction", target: string[],
-    render: (working: string[], prepare: Prepare, limit: Limit, onPublished: Published) => Promise<void>): Promise<void> {
+    render: (working: string[], prepare: Prepare, limit: Limit, onPublished: Published, recovery: (text: string) => void) => Promise<void>): Promise<void> {
     const pending: Array<{ request: string; ref: string; text: string }> = []
     let recordPublication: ((bytes: number) => void) | undefined
     let publishedBytes = 0
+    let recoveryText = ""
     const onPublished: Published = (record) => {
       if (recordPublication) throw new Error("ALG duplicate publication accounting")
       recordPublication = record
@@ -46,7 +47,7 @@ export class ContextDelivery {
     try {
       await this.owned.replace(target, async (working) => {
         const foreignLength = working.length
-        await render(working, prepare, limit, onPublished)
+        await render(working, prepare, limit, onPublished, (text) => { recoveryText = text })
         // Hook fallback handling cannot silently turn a failed preparation into
         // an unrecorded emission of trusted instructions.
         if (preparationFailed) throw new Error("ALG delivery preparation unavailable")
@@ -76,6 +77,7 @@ export class ContextDelivery {
       recordPublication?.(publishedBytes)
       const item = pending[0]
       if (item && owner) await awaitLock(() => this.memory.store.settleDelivery(owner, item.request, item.ref, { state: "emitted" }))
+      if (owner) this.memory.deliveryUnavailable.delete(owner)
     } catch (error) {
       const item = pending[0]
       if (item && owner) {
@@ -84,7 +86,21 @@ export class ContextDelivery {
             { state: "unknown", reason: published ? "emission_unconfirmed" : "hook_failed" }))
         } catch { /* A prepared record remains uncertainty, never successful delivery. */ }
       }
-      throw error
+      // Delivery telemetry must not disable ordinary host conversation. Remove
+      // our old instructions transactionally and retain only bounded recovery.
+      if (owner) {
+        if (this.memory.deliveryUnavailable.size >= 4096) this.memory.deliveryUnavailable.clear()
+        this.memory.deliveryUnavailable.add(owner)
+      }
+      try {
+        const diagnostic = "ALG context unavailable; use alg_context_status. Required procedures must be revalidated before acting."
+        let fallback = recoveryText
+        if (Buffer.byteLength(fallback) > (ceiling ?? 65536)) fallback = ""
+        const combined = [fallback, diagnostic].filter(Boolean).join("\n")
+        if (Buffer.byteLength(combined) <= (ceiling ?? 65536)) fallback = combined
+        await this.owned.replace(target, async (working) => { if (fallback) working.push(fallback) })
+        recordPublication?.(Buffer.byteLength(fallback))
+      } catch { /* Concurrent foreign edits remain untouched; never fail the host request for telemetry. */ }
     }
   }
 }

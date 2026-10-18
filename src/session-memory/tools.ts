@@ -29,16 +29,21 @@ export function createMemoryTools(runtime: SessionMemoryRuntime, authorize: (own
   const availability = runtime.enabled ? "" : "DISABLED by configuration: do not call this tool. "
   return {
     alg_skill: tool({ description: availability + "Preview an exact skill revision, approve it under configured policy, or load an approved receipt. Approval does not load instructions or grant permissions. Outside-policy candidates require operator policy changes; this tool cannot edit policy.",
-      args: { action: tool.schema.enum(["preview", "approve", "load"]), id: tool.schema.string().regex(/^[a-f0-9]{64}$/), repin: tool.schema.boolean().optional() },
+      args: { action: tool.schema.enum(["preview", "approve", "load"]), skill_key: tool.schema.string().regex(/^[a-f0-9]{64}$/).optional(), receipt_id: tool.schema.string().regex(/^[a-f0-9]{64}$/).optional(), repin: tool.schema.boolean().optional() },
       execute: async (args, context) => run(context, (owner) => {
         if (!runtime.enabled) throw new Error("session memory is disabled")
         if (runtime.current(owner).delegation) throw new Error("delegated children use scoped handoffs, not skill approval tools")
-        if (args.action === "preview") return { project: runtime.store.projectId, rule: runtime.index.preview(args.id), state: "candidate", loaded: false }
-        if (args.action === "approve") return { id: runtime.approveSkill(owner, args.id), basis: "policy-approved", loaded: false }
-        const node = runtime.store.node(args.id, owner)
+        if (args.action !== "load") {
+          if (!args.skill_key || args.receipt_id || args.repin !== undefined) throw new Error("preview/approve require skill_key only")
+          if (args.action === "preview") return { project: runtime.store.projectId, source: runtime.index.source(args.skill_key), revision: runtime.index.preview(args.skill_key), state: "candidate", loaded: false }
+          return { receipt_id: runtime.approveSkill(owner, args.skill_key), basis: "policy-approved", loaded: false }
+        }
+        if (!args.receipt_id || args.skill_key) throw new Error("load requires receipt_id, not skill_key")
+        if (runtime.options.mode !== "assist") throw new Error("load requires assist mode for context delivery")
+        const node = runtime.store.node(args.receipt_id, owner)
         if (node.kind !== "skill" || !node.payload.approval) throw new Error("policy approval receipt required")
-        const checkpoint = runtime.loadSkill(owner, args.id, args.repin)
-        return { checkpoint, complete_instructions: runtime.index.verifiedBodies(node), basis: "policy-approved" }
+        const checkpoint = runtime.loadSkill(owner, args.receipt_id, args.repin)
+        return { revision: checkpoint.revision, receipt_id: args.receipt_id, loaded: true, delivery: "next_context_hook", basis: "policy-approved" }
       }),
     }),
     alg_memory_search: tool({ description: availability + "Read-only bounded skill and session evidence lookup. Incomplete discovery is explicit; results are not loaded instructions.",

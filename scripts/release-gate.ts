@@ -120,9 +120,6 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "docs/environment-memory.md", "docs/environment-memory-design.md", "docs/environment-memory-engine-plan.md",
   "docs/environment-memory-benchmarks.md", "docs/agent-install-upgrade-runbook.md",
   "docs/historical-audit-recovery.md", "docs/live-run-visibility.md", "docs/context-budget.md",
-  "docs/skill-knowledge-graph-design.md", "docs/execution-recovery-contract.md",
-  "docs/knowledge-environment-contract.md", "docs/context-decision-contract.md",
-  "docs/coordination-improvement-contract.md", "docs/opencode-v2-design.md", "docs/incident-watcher-design.md",
   "scripts/alg.ps1", "scripts/alg.sh", "scripts/check-live.ts", "scripts/install.ps1", "scripts/install.sh",
   "scripts/installer-core.ts", "scripts/live-verify.ts", "scripts/manager-cli.ts", "scripts/manager-core.ts",
   "scripts/manager-schema.ts", "scripts/npm-invocation.ts", "scripts/release-gate.ts", "scripts/smoke.ts",
@@ -136,6 +133,9 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
 ] as const
 
 const RELEASE_CONTROL_PATHS = [
+  "docs/skill-knowledge-graph-design.md", "docs/execution-recovery-contract.md",
+  "docs/knowledge-environment-contract.md", "docs/context-decision-contract.md",
+  "docs/coordination-improvement-contract.md", "docs/opencode-v2-design.md", "docs/incident-watcher-design.md",
   ".gitattributes", ".gitignore", ".npmignore", "bun.lock", "package-lock.json", "tsconfig.json",
 ] as const
 

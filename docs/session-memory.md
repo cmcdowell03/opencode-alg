@@ -36,20 +36,23 @@ skill revisions. None approves permissions. Registration now has 20 tools.
 ### Delegated skill approval in V1
 
 Enable `sessionMemory.mode: "assist"` to restore instructions. Search with
-`alg_memory_search`, then call `alg_skill` with `{"action":"preview","id":"<skill-key>"}`.
-Preview returns a canonical project hash and an exact rule; it loads no instructions
-and grants no trust. Review the full source and declared prerequisites before
-authorizing the rule in the existing ALG options:
+`alg_memory_search`, then call `alg_skill` with `{"action":"preview","skill_key":"<skill-key>"}`.
+Preview returns the canonical project identity, source-root identity and exact
+candidate revision. Authorize a trusted source and bounded scope once. The harness
+can then approve new eligible revisions without editing configuration:
 
 ```json
 {
   "sessionMemory": {
     "mode": "assist",
     "approvalPolicy": {
-      "schema_version": 1,
-      "revision": "approved-procedures-1",
+      "schema_version": 2,
       "project": "<preview.project>",
-      "rules": ["<replace with the complete preview.rule object>"]
+      "rules": [{
+        "id": "local-procedures", "revision": "1",
+        "source": "<preview.source>", "skills": ["connect-lake"],
+        "environments": ["development"], "operations": ["read"]
+      }]
     }
   }
 }
@@ -60,26 +63,56 @@ configuration. Preserve other plugin options. Use the existing sidecar options
 path if the installed host cannot accept plugin tuples. Restart OpenCode to load
 policy changes. No tool modifies this policy or the host permission configuration.
 
-The harness may now call `alg_skill` with `action: "approve"` and the skill key.
-It receives a receipt node ID but no active binding. Call `action: "load"` with
-that ID to activate and read the complete instructions. Future compactions and
+Rules match configured source-root identity and exact skill names, environment
+names and operation names. `"*"` explicitly permits any value; a restricted list
+does not accept an unrestricted/empty manifest scope. Scope is a declared
+applicability constraint, not static proof of what instructions will do. Trusting
+a writable source delegates approval to its authors within these application checks.
+
+The harness may now call `alg_skill` with `action: "approve"` and `skill_key`.
+It receives a `receipt_id` but no active binding. Call `action: "load"` with
+`receipt_id` to activate in assist mode. The response contains metadata only;
+complete instructions arrive through the next context hook, avoiding an extra
+copy in the transcript. Future compactions and
 restarts restore the same closure without another approval request. Use
 `repin: true` only to explicitly replace an active revision after new approval.
 ALG workers cannot call this approval tool; they receive scoped parent handoffs.
 
-Receipts say `policy-approved`, not human-reviewed. Policy matches exact source,
-project, closure and scope. Removing/changing rules requires restart and invalidates
-old receipts. For immediate revocation use the existing `memory revoke` command
+Receipts say `policy-approved`, not human-reviewed, and bind exact closure hashes
+to the matching rule ID and digest. Unrelated rule changes preserve receipts;
+removing/changing the matching rule requires restart and invalidates its receipts.
+For immediate revocation use the existing `memory revoke` command
 with the receipt ID. Revocation is node-scoped; revoke each delegated copy for
 immediate withdrawal across existing children, or withdraw policy and restart all
 controllers. Reapproving identical inputs does not undo revocation.
+Schema-version-1 hash allowlists remain readable with their original semantics;
+they are not silently broadened. Move to policy schema 2 explicitly and reapprove
+bindings once. Policy schema 2 is a V1 ALG feature, not OpenCode V2 support.
 No-policy legacy mode remains unattested; enabling policy requires new approvals
 for old pins. Approval grants no tools, network access or credentials.
 
 This is an application boundary, not protection against an unrestricted agent
 rewriting its own config or plugin under the same OS account. There is no new
 service, model dependency or V2 implementation. See the
-[approval contract](knowledge-environment-contract.md#review-and-approval-records).
+[approval contract](https://github.com/cmcdowell03/opencode-alg/blob/main/docs/knowledge-environment-contract.md#review-and-approval-records).
+
+### Bounded delivery observations
+
+Delivery evidence retains the latest eight preparations/outcomes in one atomic
+file per session. Late settlements cannot replace newer observations; a settlement
+outside that retained window is unavailable, not successful. This is a bounded
+diagnostic window, not a permanent per-request audit log. New writes do not scan
+or grow legacy delivery buckets. Existing evidence is left untouched; no automatic
+deletion of legacy data occurs.
+
+Each observation is capped at 64 KiB, the journal at 2 MiB and admission at 4,096
+session journals. After a failed record write, ALG attempts to withdraw its owned
+procedure text and emit a bounded recovery notice when room allows. Ambiguous
+concurrent edits remain untouched; foreign context is preserved. The host
+conversation remains usable. `alg_context_status` reports delivery failure; the
+in-process error flag is not durable evidence. Required-procedure preflight still
+applies to integrated ALG actions. Other immutable memory stores retain their
+existing quotas; this change does not claim unlimited project storage.
 
 ## Explicit operator workflow
 

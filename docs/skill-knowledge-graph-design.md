@@ -410,7 +410,7 @@ to complete all of 1 or recovery increment 0a before shipping Phase 1.
    existing context status. Preserve current permissions and recovery behavior;
    this phase enables no new worker replacement or automatic continuation.
 
-The first approval workflow is the knowledge contract's exact-revision policy and
+The first approval workflow is the knowledge contract's source-and-scope policy and
 `alg_skill` preview/approve/load tool, not a new UI or protected service. The
 operator configures allowed rules once; the harness approves and loads within
 them. Outside-policy revisions remain candidates. Legacy no-policy mode stays
@@ -472,6 +472,14 @@ Phase 1 completion does not authorize the next increment. V2 remains design-only
 including its runtime probes, dependencies, packaging changes and migrations.
 
 ### V1 local acceptance
+
+The initial gate below is historical evidence, not acceptance of the review fixes.
+The 2026-10-18 review found per-call delivery growth, lost near-full-window recovery
+and an overly manual approval workflow despite green tests. The revised V1 contract
+uses an eight-request atomic journal per session, graceful telemetry failure,
+accounted recovery reservation and per-rule source approval. Acceptance must cross
+the old 5,000-call storage boundary and exercise 196k/199k usage in a 200k window.
+Draft component/V2/watcher specs remain in Git, not the published runtime package.
 
 Implementation `cd09119f28a40e9da2687ebc9a44bae93843cd3b` passed the five-stage
 offline gate on 2026-10-17: type checking, 311 affected regressions, 72 historical
@@ -576,7 +584,7 @@ remediation. Before implementation of each affected increment, settle:
 | --- | --- | --- |
 | Initial source inventory | Explicit trusted roots and selected repository/config imports | Actual skill/resource inventory on each machine; do not extrapolate from this workstation |
 | Applicability packaging | Namespaced skill frontmatter compiled to one manifest; sidecar if V1 rejects it | Supported V1 parser check and conflict fixture; a V2 check belongs to the deferred V2 work |
-| Approval boundary | Application-level exact-revision policy; harness approval and separate loading | Check project, source closure, scope, policy revision and revocation; unrestricted same-user writes are not isolated |
+| Approval boundary | Application-level trusted-source/scope policy; harness approval and separate loading | Bind exact closures to matching rules; unrelated changes preserve receipts; unrestricted same-user writes are not isolated |
 | Runtime coverage | Enable only verified capabilities required by that feature | Exact adapter/host/source conformance receipt |
 | Recovery evidence | Enforced resource/effect scope; explicit unavailable epoch evidence | No role-only replay permission, no fabricated host epoch; allow demonstrably non-conflicting work within budget |
 | Budget and workload ceilings | Normal context target plus an explicit hard ceiling; one cumulative spend lineage | Existing configurable caps suffice for Phase 1; no automatic ceiling increase or inference of spend authority from a spec |

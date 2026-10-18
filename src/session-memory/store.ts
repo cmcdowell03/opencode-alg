@@ -9,7 +9,7 @@ import { acquireFilesystemMutex } from "../filesystem-mutex.ts"
 import { redactEvolutionText } from "../skill-evolution-redaction.ts"
 import { createHash } from "node:crypto"
 import { CheckpointSchema, ContextReceiptSchema, Hash, MemoryNodeSchema, SessionId, type Checkpoint, type ContextReceipt, type MemoryNode, type StoredNode } from "./schemas.ts"
-import { DeliveryLatestSchema, DeliveryReceiptSchema, DeliveryRequestHeadSchema, type DeliveryReceipt } from "./delivery-schema.ts"
+import { DeliveryJournalSchema, DeliveryLatestSchema, DeliveryReceiptSchema, DeliveryRequestHeadSchema, type DeliveryReceipt } from "./delivery-schema.ts"
 
 export const hashText = (value: string) => createHash("sha256").update(value).digest("hex")
 export const hashObject = sha256Json
@@ -215,7 +215,29 @@ export class MemoryStore {
     return value
   }
 
-  /** Additive storage: legacy context receipts and checkpoint bytes are unchanged. */
+  private deliveryJournal(owner: string) {
+    SessionId.parse(owner)
+    const parts = ["delivery-journals", `${sha256Json(owner)}.json`]
+    if (!existsSync(this.path(parts))) return null
+    const journal = DeliveryJournalSchema.parse(JSON.parse(this.read(parts, 2 * 1024 * 1024)))
+    if (journal.owner !== owner || journal.project !== this.projectId) throw new Error("foreign delivery journal")
+    for (const { prepared, current } of journal.entries) {
+      const expected = { ...prepared, state: current.state, prepared_ref: current.prepared_ref, created_at: current.created_at,
+        ...(current.state === "unknown" ? { reason: current.reason } : {}) }
+      if (sha256Json(expected) !== sha256Json(current) || (current.state === "prepared"
+        ? sha256Json(prepared) !== sha256Json(current) : current.prepared_ref !== sha256Json(prepared))) throw new Error("delivery preparation mismatch")
+    }
+    return journal
+  }
+  private writeDeliveryJournal(owner: string, journal: z.infer<typeof DeliveryJournalSchema>, fence: () => void) {
+    const path = this.path(["delivery-journals", `${sha256Json(owner)}.json`], true)
+    // Admission census only for a new session, never once per model call.
+    if (!existsSync(path)) this.census("delivery-journals", 4096, 512 * 1024 * 1024)
+    const bytes = canonicalJson(DeliveryJournalSchema.parse(journal))
+    if (Buffer.byteLength(bytes) > 2 * 1024 * 1024) throw new Error("delivery journal capacity reached")
+    atomicWriteFile(path, bytes, false, { commitBoundaryFence: fence })
+  }
+  /** New writes are bounded per session. Legacy immutable receipts remain read-only. */
   prepareDelivery(owner: string, requestId: string, hook: "system" | "compaction", context: ContextReceipt): string {
     return this.lock((fence) => {
       const checkpoint = this.checkpoint(owner)
@@ -226,21 +248,24 @@ export class MemoryStore {
         owner, request_id: requestId, request_correlation: "plugin_hook_only", hook,
         checkpoint: sha256Json(checkpoint), task_epoch: checkpoint.task_epoch, context,
         created_at: new Date().toISOString(), state: "prepared", prepared_ref: null })
-      const requestPath = this.path(["delivery-requests", `${sha256Json([owner, requestId])}.json`], true)
-      if (existsSync(requestPath)) throw new Error("delivery request already exists")
-      this.census("delivery-requests", 10000, 32 * 1024 * 1024)
-      const receipt = this.immutable("deliveries", value, 65536, fence)
-      const head = { schema_version: 1, project: this.projectId, owner, request_id: requestId, receipt }
-      atomicWriteFile(requestPath, canonicalJson(head), false, { commitBoundaryFence: fence })
-      const latestPath = this.path(["delivery-latest", `${sha256Json(owner)}.json`], true)
-      if (!existsSync(latestPath)) this.census("delivery-latest", 4096, 4 * 1024 * 1024)
-      atomicWriteFile(latestPath, canonicalJson(DeliveryLatestSchema.parse({ schema_version: 1, project: this.projectId, owner, request_id: requestId })), false,
-        { commitBoundaryFence: fence })
-      return receipt
+      if (Buffer.byteLength(canonicalJson(value)) > 65536) throw new Error("delivery observation exceeds bound")
+      const journal = this.deliveryJournal(owner) ?? { schema_version: 2 as const, project: this.projectId, owner, entries: [] }
+      if (journal.entries.some((entry) => entry.prepared.request_id === requestId)) throw new Error("delivery request already exists")
+      journal.entries = [...journal.entries.slice(-7), { prepared: value, current: value }]
+      this.writeDeliveryJournal(owner, journal, fence)
+      return sha256Json(value)
     })
   }
 
   delivery(owner: string, requestId?: string): { id: string; value: DeliveryReceipt } | null {
+    const journal = this.deliveryJournal(owner)
+    if (journal) {
+      const entry = requestId === undefined ? journal.entries.at(-1) : journal.entries.find((entry) => entry.prepared.request_id === requestId)
+      return entry ? { id: sha256Json(entry.current), value: entry.current } : null
+    }
+    return this.legacyDelivery(owner, requestId)
+  }
+  private legacyDelivery(owner: string, requestId?: string): { id: string; value: DeliveryReceipt } | null {
     SessionId.parse(owner)
     if (requestId === undefined) {
       const parts = ["delivery-latest", `${sha256Json(owner)}.json`]
@@ -273,12 +298,13 @@ export class MemoryStore {
       const prior = this.delivery(owner, requestId)
       if (!prior || prior.id !== preparedRef || prior.value.state !== "prepared") throw new Error("delivery transition conflict")
       const value = DeliveryReceiptSchema.parse({ ...prior.value, ...outcome, prepared_ref: preparedRef, created_at: new Date().toISOString() })
-      const receipt = this.immutable("deliveries", value, 65536, fence)
-      const path = this.path(["delivery-requests", `${sha256Json([owner, requestId])}.json`], true)
-      atomicWriteFile(path, canonicalJson({ schema_version: 1, project: this.projectId, owner, request_id: requestId, receipt }), false,
-        { commitBoundaryFence: fence })
-      // Do not move the latest-request pointer when an older hook completes late.
-      return receipt
+      const journal = this.deliveryJournal(owner)
+      const entry = journal?.entries.find((entry) => entry.prepared.request_id === requestId)
+      if (!journal || !entry) throw new Error("delivery transition outside retained window")
+      entry.current = value
+      this.writeDeliveryJournal(owner, journal, fence)
+      // Array order is preparation order, not completion order.
+      return sha256Json(value)
     })
   }
 }

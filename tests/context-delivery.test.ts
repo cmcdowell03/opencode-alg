@@ -1,284 +1,208 @@
 import { afterEach, expect, test } from "bun:test"
-import { mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
+import { mkdirSync, readFileSync, writeFileSync, readdirSync, unlinkSync } from "node:fs"
 import { join } from "node:path"
 import { SessionMemoryRuntime } from "../src/session-memory/runtime.ts"
 import { MemoryStore, hashObject } from "../src/session-memory/store.ts"
-import { DeliveryReceiptSchema } from "../src/session-memory/delivery-schema.ts"
 import { ContextDelivery } from "../src/session-memory/delivery.ts"
 import { tempProject, removeProject } from "./helpers.ts"
 
 const paths: string[] = []
 afterEach(() => { for (const path of paths.splice(0)) removeProject(path) })
-function fixture(withSkill = false) {
+function fixture() {
   const path = tempProject("alg-delivery-"); paths.push(path)
-  if (withSkill) {
-    const directory = join(path, ".opencode", "skills", "revocable")
-    mkdirSync(directory, { recursive: true })
-    writeFileSync(join(directory, "SKILL.md"), "---\nname: revocable\ndescription: Synthetic revocation fixture\n---\nVerify the current route.\n")
-  }
-  const memory = new SessionMemoryRuntime(path, { mode: "assist" }, withSkill ? [".opencode/skills"] : [], [])
-  memory.beginTask("owner", "Keep the approved task scope")
-  if (withSkill) memory.bindSkill("owner", memory.index.search("revocable").skills[0]!.key)
+  const directory = join(path, ".opencode/skills/procedure")
+  mkdirSync(directory, { recursive: true })
+  writeFileSync(join(directory, "SKILL.md"), "---\nname: procedure\ndescription: Test\n---\nExact required instructions.\n")
+  const memory = new SessionMemoryRuntime(path, { mode: "assist" }, [".opencode/skills"], [])
+  memory.beginTask("owner", "Test continuity")
+  memory.bindSkill("owner", memory.index.search("procedure").skills[0]!.key)
   const pack = memory.prepare("owner", { allowanceBytes: 4096 })
   return { path, memory, store: memory.store, context: pack.receipt!, text: pack.text }
 }
 
-test("delivery records survive restart without rewriting legacy context receipts or checkpoints", () => {
+test("journal survives restart without rewriting checkpoints or legacy context receipts", () => {
   const { path, memory, store, context } = fixture()
-  const checkpoint = memory.current("owner")
-  const legacyPath = store.path(["receipts", `${hashObject("owner")}.json`])
-  const legacy = readFileSync(legacyPath, "utf8")
-  const prepared = store.prepareDelivery("owner", "request-one", "system", context)
-  expect(new MemoryStore(path).delivery("owner")).toMatchObject({ id: prepared, value: {
-    state: "prepared", request_correlation: "plugin_hook_only", request_id: "request-one",
-    checkpoint: hashObject(checkpoint), task_epoch: checkpoint.task_epoch, context,
-  } })
-  const emitted = store.settleDelivery("owner", "request-one", prepared, { state: "emitted" })
+  const checkpoint = memory.current("owner"), legacy = store.contextReceipt("owner")
+  const prepared = store.prepareDelivery("owner", "one", "system", context)
+  expect(new MemoryStore(path).delivery("owner")!.id).toBe(prepared)
+  const emitted = store.settleDelivery("owner", "one", prepared, { state: "emitted" })
   expect(new MemoryStore(path).delivery("owner")).toMatchObject({ id: emitted, value: { state: "emitted", prepared_ref: prepared } })
-  expect(readFileSync(legacyPath, "utf8")).toBe(legacy)
+  expect(store.contextReceipt("owner")).toEqual(legacy)
   expect(memory.current("owner")).toEqual(checkpoint)
-  expect(memory.status("owner")).toMatchObject({ delivery: { state: "emitted", current_checkpoint: true, host_confirmation: "NOT_ATTESTED" } })
-  expect(() => DeliveryReceiptSchema.parse({ ...store.delivery("owner")!.value, state: "host_confirmed" })).toThrow()
-  memory.beginTask("owner", "Changed task scope")
-  expect(memory.status("owner")).toMatchObject({ delivery: { current_checkpoint: false } })
+  expect(memory.status("owner").delivery?.host_confirmation).toBe("NOT_ATTESTED")
 })
 
-test("out of order completion cannot overwrite a newer request and terminal transitions are fenced", () => {
+test("out-of-order settlement cannot replace latest; evicted preparations cannot settle", () => {
   const { store, context } = fixture()
   const first = store.prepareDelivery("owner", "first", "system", context)
-  const second = store.prepareDelivery("owner", "second", "compaction", context)
+  const second = store.prepareDelivery("owner", "second", "system", context)
   store.settleDelivery("owner", "first", first, { state: "emitted" })
   expect(store.delivery("owner")!.id).toBe(second)
-  expect(store.delivery("owner", "first")!.value.state).toBe("emitted")
-  store.settleDelivery("owner", "second", second, { state: "unknown", reason: "publication_conflict" })
-  expect(store.delivery("owner")!.value).toMatchObject({ state: "unknown", reason: "publication_conflict" })
-  expect(() => store.settleDelivery("owner", "second", second, { state: "emitted" })).toThrow("transition conflict")
-  expect(() => store.prepareDelivery("owner", "second", "system", context)).toThrow("already exists")
-  expect(store.delivery("other-owner", "first")).toBeNull()
-  expect(() => store.settleDelivery("other-owner", "first", first, { state: "emitted" })).toThrow("transition conflict")
+  expect(() => store.settleDelivery("owner", "first", first, { state: "emitted" })).toThrow()
+  expect(() => store.prepareDelivery("owner", "second", "system", context)).toThrow()
+  for (let i = 0; i < 8; i++) store.prepareDelivery("owner", `later-${i}`, "system", context)
+  expect(store.delivery("owner", "second")).toBeNull()
+  expect(() => store.settleDelivery("owner", "second", second, { state: "emitted" })).toThrow()
+  expect(store.delivery("other", "first")).toBeNull()
 })
 
-test("stale and observational packs cannot become request delivery preparations", () => {
+test("stale, observational and corrupt records fail visibly", () => {
   const { memory, store, context } = fixture()
   expect(() => store.prepareDelivery("owner", "observe", "system", { ...context, state: "observed" })).toThrow()
-  expect(store.delivery("owner")).toBeNull()
-  memory.beginTask("owner", "A different task")
-  expect(() => store.prepareDelivery("owner", "stale", "system", context)).toThrow("checkpoint conflict")
-  expect(store.delivery("owner")).toBeNull()
-})
-
-test("missing or tampered immutable preparation evidence fails visibly", () => {
-  const { store, context } = fixture()
-  const prepared = store.prepareDelivery("owner", "request", "system", context)
-  store.settleDelivery("owner", "request", prepared, { state: "emitted" })
-  const path = store.path(["deliveries", `${prepared}.json`])
-  const original = readFileSync(path, "utf8")
-  writeFileSync(path, JSON.stringify({ ...JSON.parse(original), task_epoch: 999 }))
-  expect(() => store.delivery("owner")).toThrow("preparation mismatch")
-  writeFileSync(path, original)
-  expect(store.delivery("owner")!.value.state).toBe("emitted")
-  unlinkSync(path)
+  store.prepareDelivery("owner", "one", "system", context)
+  const path = store.path(["delivery-journals", `${hashObject("owner")}.json`])
+  const original = readFileSync(path, "utf8"), record = JSON.parse(original)
+  record.entries[0].current.request_id = "tampered"
+  writeFileSync(path, JSON.stringify(record))
   expect(() => store.delivery("owner")).toThrow()
+  expect(memory.status("owner").delivery_error).toBe("unavailable")
+  writeFileSync(path, original)
+  memory.beginTask("owner", "changed")
+  expect(() => store.prepareDelivery("owner", "stale", "system", context)).toThrow("checkpoint conflict")
 })
 
-test("hook publication records preparation first and emission only after the exact pack is appended", async () => {
-  const { memory, store, context, text } = fixture()
-  const delivery = new ContextDelivery(memory), target = ["host policy"]
-  await delivery.replace("owner", "system", target, async (working, prepare) => {
-    await prepare(context, text)
-    expect(store.delivery("owner")!.value.state).toBe("prepared")
-    expect(target).toEqual(["host policy"])
+test("legacy delivery buckets are not scanned or changed by new writes", () => {
+  const { store, context } = fixture()
+  const bucket = store.path(["deliveries", "fixture.json"], true)
+  writeFileSync(bucket, "old evidence")
+  const calls: string[] = [], census = (store as any).census.bind(store)
+  ;(store as any).census = (name: string, ...args: unknown[]) => { calls.push(name); return census(name, ...args) }
+  for (let i = 0; i < 20; i++) {
+    const ref = store.prepareDelivery("owner", `request-${i}`, "system", context)
+    store.settleDelivery("owner", `request-${i}`, ref, { state: "emitted" })
+  }
+  expect(calls).toEqual(["delivery-journals"])
+  expect(readFileSync(bucket, "utf8")).toBe("old evidence")
+  expect(readdirSync(store.path(["delivery-journals"]))).toHaveLength(1)
+})
+
+test("legacy receipts remain readable and immutable during journal migration", () => {
+  const { store, context } = fixture()
+  const preparedRef = store.prepareDelivery("owner", "legacy", "system", context)
+  const prepared = store.delivery("owner")!.value
+  const emittedRef = store.settleDelivery("owner", "legacy", preparedRef, { state: "emitted" })
+  const emitted = store.delivery("owner")!.value
+  const legacy = [
+    [store.path(["deliveries", `${preparedRef}.json`], true), JSON.stringify(prepared)],
+    [store.path(["deliveries", `${emittedRef}.json`], true), JSON.stringify(emitted)],
+    [store.path(["delivery-requests", `${hashObject(["owner", "legacy"])}.json`], true), JSON.stringify({
+      schema_version: 1, project: store.projectId, owner: "owner", request_id: "legacy", receipt: emittedRef })],
+    [store.path(["delivery-latest", `${hashObject("owner")}.json`], true), JSON.stringify({
+      schema_version: 1, project: store.projectId, owner: "owner", request_id: "legacy" })],
+  ] as const
+  for (const [path, bytes] of legacy) writeFileSync(path, bytes)
+  unlinkSync(store.path(["delivery-journals", `${hashObject("owner")}.json`]))
+  expect(store.delivery("owner")).toEqual({ id: emittedRef, value: emitted })
+  expect(store.delivery("owner", "legacy")).toEqual({ id: emittedRef, value: emitted })
+  store.prepareDelivery("owner", "current", "system", context)
+  expect(store.delivery("owner")!.value.request_id).toBe("current")
+  expect(store.delivery("owner", "legacy")).toBeNull()
+  for (const [path, bytes] of legacy) expect(readFileSync(path, "utf8")).toBe(bytes)
+})
+
+test("5100 real delivery transactions stay bounded across restart", () => {
+  const { path, context, store: original } = fixture()
+  let store = original
+  const early: number[] = [], late: number[] = []
+  for (let i = 0; i < 5100; i++) {
+    if (i === 2500) store = new MemoryStore(path)
+    const started = performance.now()
+    const request = `turn-${i}`, ref = store.prepareDelivery("owner", request, "system", context)
+    store.settleDelivery("owner", request, ref, { state: "emitted" })
+    if (i >= 10 && i < 30) early.push(performance.now() - started)
+    if (i >= 5080) late.push(performance.now() - started)
+  }
+  expect(store.delivery("owner")!.value.request_id).toBe("turn-5099")
+  expect(store.delivery("owner", "turn-0")).toBeNull()
+  const bucket = store.path(["delivery-journals"])
+  expect(readdirSync(bucket)).toHaveLength(1)
+  const bytes = readFileSync(join(bucket, `${hashObject("owner")}.json`))
+  expect(JSON.parse(bytes.toString()).entries).toHaveLength(8)
+  expect(bytes.byteLength).toBeLessThan(100000)
+  const percentile = (values: number[], fraction: number) => values.sort((a, b) => a - b)[Math.ceil(values.length * fraction) - 1]
+  console.log(JSON.stringify({ benchmark: "delivery-journal-5100", transactions: 5100, journal_bytes: bytes.byteLength,
+    early_median_ms: percentile(early, 0.5), early_p95_ms: percentile(early, 0.95),
+    late_median_ms: percentile(late, 0.5), late_p95_ms: percentile(late, 0.95) }))
+}, 600_000)
+
+test("publication prepares then emits and repeated hooks replace only owned context", async () => {
+  const { memory, store, context, text } = fixture(), target = ["foreign"]
+  const delivery = new ContextDelivery(memory)
+  for (let i = 0; i < 3; i++) {
+    await delivery.replace("owner", "system", target, async (working, prepare) => {
+      await prepare(context, text); expect(store.delivery("owner")!.value.state).toBe("prepared"); working.push(text)
+    })
+    expect(target).toEqual(["foreign", text])
+    expect(store.delivery("owner")!.value.state).toBe("emitted")
+  }
+})
+
+test("preparation failure removes stale instructions without failing conversation", async () => {
+  const { memory, store, context, text } = fixture(), target = ["foreign"]
+  const delivery = new ContextDelivery(memory)
+  await delivery.replace("owner", "system", target, async (working, prepare) => { await prepare(context, text); working.push(text) })
+  store.prepareDelivery = () => { throw new Error("capacity") }
+  await delivery.replace("owner", "system", target, async (working, prepare, limit, _published, recover) => {
+    limit(512); recover("ALG run test; use alg_resume")
+    try { await prepare(context, text) } catch { /* hook swallowed the failure */ }
     working.push(text)
   })
-  expect(target).toEqual(["host policy", text])
-  expect(store.delivery("owner")!.value.state).toBe("emitted")
-  expect(memory.status("owner")).toMatchObject({ delivery: { request_correlation: "plugin_hook_only", host_confirmation: "NOT_ATTESTED" } })
+  expect(target[0]).toBe("foreign")
+  expect(target.join("\n")).not.toContain("Exact required instructions.")
+  expect(target.join("\n")).toContain("alg_resume")
+  expect(memory.status("owner").delivery_error).toBe("unavailable")
 })
 
-test("identical foreign text cannot prove that ALG emitted its prepared pack", async () => {
-  const { memory, store, context, text } = fixture()
-  const delivery = new ContextDelivery(memory), target = [text]
-  await expect(delivery.replace("owner", "system", target, async (_working, prepare) => {
+test("revocation, changed checkpoint and missing pack prevent procedure publication", async () => {
+  for (const failure of ["revoked", "checkpoint", "missing-pack"]) {
+    const { memory, store, context, text } = fixture(), target = ["foreign"]
+    await new ContextDelivery(memory).replace("owner", "system", target, async (working, prepare) => {
+      await prepare(context, text)
+      if (failure === "revoked") store.revoke(memory.current("owner").skills[0]!.id)
+      if (failure === "checkpoint") memory.beginTask("owner", "new")
+      if (failure !== "missing-pack") working.push(text)
+    })
+    expect(target[0]).toBe("foreign")
+    expect(target.join("\n")).not.toContain("Exact required instructions.")
+    expect(store.delivery("owner")!.value.state).toBe("unknown")
+  }
+})
+
+test("identical foreign content cannot attest ALG publication", async () => {
+  const { memory, store, context, text } = fixture(), target = [text]
+  await new ContextDelivery(memory).replace("owner", "system", target, async (_working, prepare) => {
     await prepare(context, text)
-  })).rejects.toThrow("not published intact")
-  expect(target).toEqual([text])
+  })
+  expect(target[0]).toBe(text)
   expect(store.delivery("owner")!.value).toMatchObject({ state: "unknown", reason: "hook_failed" })
+  expect(memory.status("owner").delivery_error).toBe("unavailable")
 })
 
-test("checkpoint changes during preparation prevent stale publication", async () => {
-  const { memory, store, context, text } = fixture()
-  const target = ["host policy"]
-  await expect(new ContextDelivery(memory).replace("owner", "system", target, async (working, prepare) => {
-    await prepare(context, text)
-    memory.beginTask("owner", "New task")
-    working.push(text)
-  })).rejects.toThrow("checkpoint changed")
-  expect(target).toEqual(["host policy"])
-  expect(store.delivery("owner")!.value.state).toBe("unknown")
-})
-
-test("revocation after preparation is rechecked even when the checkpoint revision is unchanged", async () => {
-  const { memory, store, context, text } = fixture(true)
-  const checkpoint = memory.current("owner")
-  const target = ["host policy"]
-  await expect(new ContextDelivery(memory).replace("owner", "system", target, async (working, prepare) => {
-    await prepare(context, text)
-    store.revoke(checkpoint.skills[0]!.id)
-    expect(memory.current("owner")).toEqual(checkpoint)
-    working.push(text)
-  })).rejects.toThrow("revoked")
-  expect(target).toEqual(["host policy"])
-  expect(store.delivery("owner")!.value.state).toBe("unknown")
-})
-
-test("swallowed preparation failures cannot emit unrecorded instructions", async () => {
-  const { memory, store, context, text } = fixture()
-  const target = ["host policy"]
-  await expect(new ContextDelivery(memory).replace("owner", "system", target, async (working, prepare) => {
-    try { await prepare(context, "not the prepared bytes") } catch { /* simulate hook fallback */ }
-    working.push(text)
-  })).rejects.toThrow("preparation unavailable")
-  expect(target).toEqual(["host policy"])
-  expect(store.delivery("owner")).toBeNull()
-})
-
-test("post-publication receipt failures remain unknown rather than pretending no text was emitted", async () => {
-  const { memory, store, context, text } = fixture()
+test("settlement failure is unknown and accounting reflects the fallback", async () => {
+  const { memory, store, context, text } = fixture(), target: string[] = [], counts: number[] = []
   const settle = store.settleDelivery.bind(store)
   store.settleDelivery = (owner, request, ref, outcome) => {
-    if (outcome.state === "emitted") throw new Error("injected receipt write failure")
+    if (outcome.state === "emitted") throw new Error("disk failure")
     return settle(owner, request, ref, outcome)
   }
-  const target = ["host policy"]
-  await expect(new ContextDelivery(memory).replace("owner", "system", target, async (working, prepare) => {
-    await prepare(context, text); working.push(text)
-  })).rejects.toThrow("receipt write failure")
-  expect(target).toEqual(["host policy", text])
+  await new ContextDelivery(memory).replace("owner", "system", target, async (working, prepare, _limit, published) => {
+    published((bytes) => counts.push(bytes)); await prepare(context, text); working.push(text)
+  })
+  expect(target.join("\n")).not.toContain("Exact required instructions.")
+  expect(counts.at(-1)).toBe(Buffer.byteLength(target.join("\n")))
   expect(store.delivery("owner")!.value).toMatchObject({ state: "unknown", reason: "emission_unconfirmed" })
 })
 
-test("growing receipt history does not repeat full ancestry validation for every census leaf", () => {
-  const { store, context } = fixture()
-  for (let index = 0; index < 20; index++) {
-    const request = `history-${index}`
-    const prepared = store.prepareDelivery("owner", request, "system", context)
-    store.settleDelivery("owner", request, prepared, { state: "emitted" })
-  }
-  let receiptPaths = 0
-  const path = store.path.bind(store)
-  store.path = (parts, createParents) => {
-    if (parts[0] === "deliveries" && parts.length === 2) receiptPaths++
-    return path(parts, createParents)
-  }
-  store.prepareDelivery("owner", "next", "system", context)
-  expect(receiptPaths).toBe(1)
-})
-
-test("unexpected census entries fail without advancing delivery heads", () => {
-  for (const kind of ["unsafe-name", "directory"] as const) {
-    const { store, context } = fixture()
-    const first = store.prepareDelivery("owner", "first", "system", context)
-    const bucket = store.path(["deliveries"])
-    if (kind === "unsafe-name") writeFileSync(join(bucket, "unsafe name.txt"), "not a receipt")
-    else mkdirSync(join(bucket, "unexpected-directory"))
-    expect(() => store.prepareDelivery("owner", "second", "system", context)).toThrow()
-    expect(store.delivery("owner")!.id).toBe(first)
-    expect(store.delivery("owner", "second")).toBeNull()
-  }
-})
-
-test("request capacity exhaustion preserves existing delivery evidence and bindings", () => {
-  const { memory, store, context } = fixture(true)
-  const original = store.prepareDelivery("owner", "first", "system", context)
-  const checkpoint = memory.current("owner")
-  expect(checkpoint.skills).toHaveLength(1)
-  const bucket = store.path(["delivery-requests"])
-  // Populate count-census fixtures directly; this tests the real 10,000-entry
-  // limit, not the throughput or integrity of 10,000 production transactions.
-  for (let index = 1; index < 10_000; index++) {
-    const request = `capacity-${index}`
-    writeFileSync(join(bucket, `${hashObject(["owner", request])}.json`), JSON.stringify({
-      schema_version: 1, project: store.projectId, owner: "owner", request_id: request, receipt: original,
-    }))
-  }
-  expect(() => store.prepareDelivery("owner", "over-limit", "system", context)).toThrow("capacity reached; nothing evicted")
-  expect(store.delivery("owner")!.id).toBe(original)
-  expect(store.delivery("owner", "over-limit")).toBeNull()
-  expect(memory.current("owner")).toEqual(checkpoint)
-}, 60_000)
-
-test("final publication ceiling counts UTF-8 separators and diagnostics, not foreign text", async () => {
-  const { memory } = fixture()
-  const delivery = new ContextDelivery(memory), target = ["foreign".repeat(100)]
-  await delivery.replace("owner", "system", target, async (working, _prepare, limit) => {
-    limit(4)
-    working.push("é", "x") // two bytes, newline, one byte
-  })
-  const before = [...target]
-  await expect(delivery.replace("owner", "system", target, async (working, _prepare, limit) => {
-    limit(3)
-    working.push("é", "x")
-  })).rejects.toThrow("needs_context")
-  expect(target).toEqual(before)
-  await expect(delivery.replace("owner", "system", target, async (working, _prepare, limit) => {
-    limit(0)
-    working.push("fallback unavailable")
-  })).rejects.toThrow("needs_context")
-  expect(target).toEqual(before)
-  await delivery.replace("owner", "system", target, async (_working, _prepare, limit) => { limit(0) })
-  expect(target).toEqual([before[0]!])
-})
-
-test("over-ceiling prepared context is not clipped or recorded as emitted", async () => {
-  const { memory, store, context, text } = fixture()
-  const target = ["host policy"]
-  await expect(new ContextDelivery(memory).replace("owner", "compaction", target, async (working, prepare, limit) => {
-    limit(Buffer.byteLength(text, "utf8"))
-    await prepare(context, text)
-    working.push(text, "extra diagnostic")
-  })).rejects.toThrow("needs_context")
-  expect(target).toEqual(["host policy"])
-  expect(store.delivery("owner")!.value).toMatchObject({ state: "unknown", reason: "hook_failed" })
-})
-
-test("publication accounting runs only after successful replacement with exact contributed bytes", async () => {
-  const { memory } = fixture()
-  const delivery = new ContextDelivery(memory), target = ["foreign policy"]
-  const counts: number[] = []
-  await delivery.replace("owner", "system", target, async (working, _prepare, limit, onPublished) => {
-    limit(4)
-    onPublished((bytes) => { expect(target).toEqual(["foreign policy", "é", "x"]); counts.push(bytes) })
-    working.push("é", "x")
-    expect(counts).toEqual([])
+test("UTF8 separators and fallback obey zero and tiny ceilings", async () => {
+  const { memory } = fixture(), target = ["foreign"], counts: number[] = [], delivery = new ContextDelivery(memory)
+  await delivery.replace("owner", "system", target, async (working, _prepare, limit, published) => {
+    limit(4); published((bytes) => counts.push(bytes)); working.push("é", "x")
   })
   expect(counts).toEqual([4])
-  await expect(delivery.replace("owner", "system", target, async (working, _prepare, limit, onPublished) => {
-    onPublished((bytes) => counts.push(bytes))
-    limit(0); working.push("overflow")
-  })).rejects.toThrow("needs_context")
-  expect(counts).toEqual([4])
-  await expect(delivery.replace("owner", "system", target, async (working, _prepare, _limit, onPublished) => {
-    onPublished((bytes) => counts.push(bytes))
-    target[0] = "concurrent foreign edit"
-    working.push("replacement")
-  })).rejects.toThrow("foreign context changed")
-  expect(counts).toEqual([4])
-})
-
-test("receipt failure after publication still accounts for the actual text", async () => {
-  const { memory, store, context, text } = fixture()
-  const target: string[] = [], counts: number[] = []
-  const settle = store.settleDelivery.bind(store)
-  store.settleDelivery = (owner, request, ref, outcome) => {
-    if (outcome.state === "emitted") throw new Error("injected settlement failure")
-    return settle(owner, request, ref, outcome)
+  for (const cap of [3, 0]) {
+    await delivery.replace("owner", "system", target, async (working, _prepare, limit, published) => {
+      limit(cap); published((bytes) => counts.push(bytes)); working.push("é", "x")
+    })
+    expect(target).toEqual(["foreign"]); expect(counts.at(-1)).toBe(0)
   }
-  await expect(new ContextDelivery(memory).replace("owner", "system", target, async (working, prepare, _limit, onPublished) => {
-    onPublished((bytes) => counts.push(bytes))
-    await prepare(context, text)
-    working.push(text)
-  })).rejects.toThrow("settlement failure")
-  expect(target).toEqual([text])
-  expect(counts).toEqual([Buffer.byteLength(text, "utf8")])
-  expect(store.delivery("owner")!.value.state).toBe("unknown")
 })

@@ -51,8 +51,9 @@ describe("context plan", () => {
     expect(planContext(defaults, { ...window, usedTokens: 20_000 }, "call").describe()).toMatchObject({ total_bytes: 30_000, limited_by: "share" })
     // 4,000 tokens are free; half of that, at three bytes a token.
     expect(planContext(defaults, { ...window, usedTokens: 188_000 }, "call").describe()).toMatchObject({ total_bytes: 6_000, limited_by: "available", available_tokens: 4_000 })
-    expect(planContext(defaults, { ...window, usedTokens: 195_000 }, "call").describe()).toMatchObject({ total_bytes: 0, limited_by: "available" })
-    expect(planContext(defaults, { ...window, usedTokens: 191_900 }, "call").describe()).toMatchObject({ total_bytes: 150, limited_by: "available" })
+    expect(planContext(defaults, { ...window, usedTokens: 195_000 }, "call").describe()).toMatchObject({ total_bytes: 1536, normal_bytes: 0, limited_by: "available" })
+    expect(planContext(defaults, { ...window, usedTokens: 191_900 }, "call").describe()).toMatchObject({ total_bytes: 1536, normal_bytes: 150, limited_by: "available" })
+    expect(planContext(defaults, { ...window, usedTokens: 200_000 }, "call").totalBytes).toBe(0)
   })
 
   test("the orientation floor cannot override a low configured cap on calls or compactions", () => {
@@ -99,6 +100,13 @@ describe("context plan", () => {
     expect(plan.allowRequired("environment")).toBe(9_000)
     expect(plan.allowRequired("skills")).toBeUndefined()
     expect(planContext(ContextBudgetOptionsSchema.parse({ perCall: 0.1 }), { context: 100_000 }, "compaction", ["memory"]).totalBytes).toBe(15_000)
+  })
+
+  test("normal optional target is configurable and recovery reservation is physically bounded", () => {
+    const options = ContextBudgetOptionsSchema.parse({ normal: 0.02, perCall: 0.1, floorBytes: 512 })
+    expect(planContext(options, { context: 100000 }, "call", ["run", "memory"]).describe().normal_bytes).toBe(6000)
+    expect(planContext(options, { context: 200000, output: 8000, usedTokens: 199900 }, "call").totalBytes).toBe(300)
+    expect(planContext(options, { context: 200000, output: 8000, usedTokens: 200000 }, "call").totalBytes).toBe(0)
   })
 })
 
@@ -231,6 +239,30 @@ describe("the hooks size what they add from the model's window", () => {
   }
   const toolContext = (path: string) => ({ sessionID: "owner", messageID: "m1", agent: "orchestrator", directory: path, worktree: path, abort: new AbortController().signal, ask: async () => {}, metadata: () => {} }) as any
   const added = (system: { system: string[] }) => bytes(system.system.slice(1).join("\n"))
+
+  test("run pointer survives 196k and 199k usage in both hooks, with and without assist", async () => {
+    for (const used of [196000, 199000]) for (const mode of ["off", "assist"]) {
+      const path = project("alg-pointer-")
+      largeRun(path)
+      const hooks = await server(plugin(path), { skillEvolution: { enabled: false }, sessionMemory: { mode } })
+      try {
+        await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+          { info: { id: "u1", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "continue" }] },
+          { info: { id: "a1", role: "assistant", sessionID: "owner", tokens: { input: used, output: 0 } }, parts: [] },
+        ] } as any)
+        const output = { system: ["foreign"] }
+        await hooks["experimental.chat.system.transform"]!({ sessionID: "owner", model: { limit: { context: 200000, output: 8000 } } } as any, output)
+        expect(output.system.join("\n")).toContain("budget-run")
+        expect(output.system.join("\n")).toContain("alg_resume")
+        expect(added(output)).toBeLessThanOrEqual(1536)
+        const compact = { context: ["foreign"] }
+        await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+        expect(compact.context.join("\n")).toContain("budget-run")
+        expect(compact.context.join("\n")).toContain("alg_resume")
+        expect(bytes(compact.context.slice(1).join("\n"))).toBeLessThanOrEqual(1536)
+      } finally { await hooks.dispose?.() }
+    }
+  })
 
   test("assist restores complete required instructions before reserving optional environment shares", async () => {
     const path = project("alg-budget-required-")

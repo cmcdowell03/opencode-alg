@@ -14,6 +14,7 @@ import { redactEvidenceText } from "../skill-evolution-evidence.ts"
 import { truncateUtf8 } from "../limits.ts"
 
 export class SessionMemoryRuntime {
+  readonly deliveryUnavailable = new Set<string>()
   readonly options: MemoryOptions
   readonly store: MemoryStore
   readonly index: SkillIndex
@@ -200,8 +201,11 @@ export class SessionMemoryRuntime {
   status(owner: string) {
     if (!this.enabled) return { mode: "off", initialized: false }
     const checkpoint = this.store.checkpoint(owner)
-    const delivery = this.store.delivery(owner)
+    let delivery: ReturnType<MemoryStore["delivery"]> = null
+    let deliveryError = this.deliveryUnavailable.has(owner)
+    try { delivery = this.store.delivery(owner) } catch { deliveryError = true }
     return { mode: this.options.mode, initialized: checkpoint !== null, checkpoint, receipt: this.store.contextReceipt(owner), origin: localOrigin(),
+      delivery_error: deliveryError ? "unavailable" : null,
       delivery: delivery ? { id: delivery.id, request_id: delivery.value.request_id, hook: delivery.value.hook,
         state: delivery.value.state, request_correlation: delivery.value.request_correlation,
         checkpoint: delivery.value.checkpoint, current_checkpoint: checkpoint !== null && hashObject(checkpoint) === delivery.value.checkpoint,

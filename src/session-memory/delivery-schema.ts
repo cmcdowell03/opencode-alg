@@ -28,3 +28,18 @@ export const DeliveryRequestHeadSchema = z.object({
   request_id: Id, receipt: Hash,
 }).strict()
 export const DeliveryLatestSchema = DeliveryRequestHeadSchema.omit({ receipt: true })
+
+/** A bounded observation window, not an append-only audit log. */
+export const DeliveryJournalSchema = z.object({
+  schema_version: z.literal(2), project: Hash, owner: SessionId,
+  entries: z.array(z.object({ prepared: DeliveryReceiptSchema, current: DeliveryReceiptSchema }).strict()).max(8),
+}).strict().superRefine((journal, ctx) => {
+  const ids = new Set<string>()
+  for (const { prepared, current } of journal.entries) {
+    if (prepared.state !== "prepared" || prepared.owner !== journal.owner || prepared.project !== journal.project ||
+      current.owner !== journal.owner || current.project !== journal.project || ids.has(prepared.request_id)) {
+      ctx.addIssue({ code: "custom", message: "invalid delivery journal ownership or preparation" })
+    }
+    ids.add(prepared.request_id)
+  }
+})

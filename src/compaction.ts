@@ -77,6 +77,10 @@ function renderRunSummary(run: RunState, detail: RunSummaryDetail): string {
  * Without an allowance this is the long-standing fixed summary. With one (see context-budget.ts) the
  * summary shows as much detail as fits, and what identifies and continues the run is never cut.
  */
+export function formatRunPointer(run: RunState): string {
+  return `ALG unfinished run ${run.run_id}. Use alg_status, then alg_resume to continue; revalidate permissions and required procedures.`
+}
+
 export function formatCompactionContext(run: RunState, maximumBytes?: number): string {
   if (maximumBytes !== undefined) {
     const limit = Number.isFinite(maximumBytes) ? Math.max(0, Math.floor(maximumBytes)) : 0

@@ -21,6 +21,8 @@ export const ContextBudgetOptionsSchema = z.object({
   perCall: z.number().min(0.005).max(0.5).default(0.05),
   /** Share of the window ALG may add to a compaction prompt. */
   compaction: z.number().min(0.005).max(0.5).default(0.05),
+  /** Normal optional-context target, independently bounded by the hard ceiling. */
+  normal: z.number().min(0).max(0.5).default(0.05),
   /** ALG never plans to use more than this share of the window that is still free. */
   ofAvailable: z.number().min(0.05).max(1).default(0.5),
   /**
@@ -35,7 +37,7 @@ export const ContextBudgetOptionsSchema = z.object({
   }).strict().default({ run: 0.2, skills: 0.35, memory: 0.35, environment: 0.1 }),
   /** Estimated bytes of text per model token, used to turn a token share into a byte allowance. */
   bytesPerToken: z.number().min(1).max(8).default(3),
-  /** Desired orientation size. Never overrides the configured share or available capacity. */
+  /** Recovery reserve; may borrow output reservation, never actual input space or the configured share. */
   floorBytes: z.number().int().min(256).max(65_536).default(1_536),
 }).strict()
 
@@ -67,6 +69,7 @@ export interface ContextPlan {
   readonly dynamic: boolean
   /** Everything ALG may add under this plan, in bytes. Undefined when the plan is not dynamic. */
   readonly totalBytes: number | undefined
+  readonly recoveryBytes: number | undefined
   /**
    * Bytes the part may use now: its own share plus whatever the parts before it left unused.
    * Undefined when the plan is not dynamic or the part is not in use.
@@ -98,6 +101,7 @@ export function planContext(
     return {
       dynamic: false,
       totalBytes: undefined,
+      recoveryBytes: undefined,
       allow: () => undefined,
       allowRequired: () => undefined,
       spend(part, bytes) { spent.set(part, (spent.get(part) ?? 0) + Math.max(0, bytes)) },
@@ -119,13 +123,17 @@ export function planContext(
     const fromAvailable = available * options.ofAvailable
     if (fromAvailable < tokens) { tokens = fromAvailable; limitedBy = "available" }
   }
-  // A floor is a presentation target, not authority to exceed either hard limit.
-  // In particular, a full window has zero allowance, not a forced orientation pack.
-  const totalBytes = Math.floor(tokens * options.bytesPerToken)
+  // Recovery may borrow the reply reserve, but not the configured share or
+  // physical input headroom. A completely full window still has zero allowance.
+  const ordinaryBytes = Math.floor(tokens * options.bytesPerToken)
+  const physicalBytes = Math.floor(Math.max(0, context - (used ?? context)) * options.bytesPerToken)
+  const recoveryBytes = Math.min(options.floorBytes, physicalBytes,
+    Math.floor(context * (kind === "compaction" ? options.compaction : options.perCall) * options.bytesPerToken))
+  const totalBytes = Math.max(ordinaryBytes, recoveryBytes)
   // In memory-assist mode an explicitly raised ceiling is for mandatory content,
   // not a reason to inflate optional evidence. Legacy guidance keeps its policy.
   const normalBytes = active.includes("memory")
-    ? Math.min(totalBytes, Math.floor(context * 0.05 * options.bytesPerToken)) : totalBytes
+    ? Math.min(ordinaryBytes, Math.floor(context * options.normal * options.bytesPerToken)) : ordinaryBytes
   const spentBytes = () => [...spent.values()].reduce((sum, bytes) => sum + bytes, 0)
 
   const weight = (part: ContextPart) => options.shares[part]
@@ -148,6 +156,7 @@ export function planContext(
   return {
     dynamic: true,
     totalBytes,
+    recoveryBytes,
     allow,
     allowRequired: (part) => active.includes(part) ? Math.max(0, totalBytes - spentBytes()) : undefined,
     spend(part, bytes) { spent.set(part, (spent.get(part) ?? 0) + Math.max(0, bytes)) },
