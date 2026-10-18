@@ -93,7 +93,9 @@ check when policy is enabled. Discovery by similarity never activates a skill.
 
 Receipts bind the complete policy hash, policy revision, project and exact rule.
 They have no expiry in this first slice; remove the rule/change policy revision and
-restart to withdraw policy, or revoke the stored node immediately. Repeated approval
+restart all controllers to withdraw policy, or revoke the stored node immediately.
+Node revocation is session-scoped; delegated copies have distinct IDs and require
+their own revocations for immediate withdrawal. Repeated approval
 of unchanged inputs is idempotent, not a new confirmation. A revoked node stays
 revoked. Changing files or policy requires fresh approval and an explicit repin
 when replacing an active revision. Restoration cannot upgrade a legacy pin into

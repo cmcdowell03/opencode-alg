@@ -444,7 +444,7 @@ implementation work; the broader contracts remain the destination architecture.
 | Contract | Required in Phase 1 | Deferred from Phase 1 |
 | --- | --- | --- |
 | Execution and recovery | Read existing work identity and state; preserve current replay and permission boundaries | New continuation, replacement, effect reconciliation and task decomposition |
-| Knowledge and environment | Exact skill/prerequisite revisions, scoped durable bindings, validated existing trust and drift/revocation checks | General environment import, new graph infrastructure, compilation and promotion |
+| Knowledge and environment | Exact skill/prerequisite revisions, scoped durable bindings, delegated application-policy approval and drift/revocation checks | General environment import, new graph infrastructure, compilation and promotion |
 | Context and decisions | One V1 delivery owner, complete restoration, final byte accounting, request-scoped receipts and visible gaps | Proactive applicability routing, broad decision-impact traversal and new action enforcement |
 | Coordination and improvement | Preserve existing parent/child isolation and expose continuity diagnostics | New sharing, observers, watcher admission and automatic replanning |
 
@@ -470,6 +470,42 @@ path; no GitHub runner, paid-model run or installed-host probe is implicit.
 
 Phase 1 completion does not authorize the next increment. V2 remains design-only,
 including its runtime probes, dependencies, packaging changes and migrations.
+
+### V1 local acceptance
+
+Implementation `cd09119f28a40e9da2687ebc9a44bae93843cd3b` passed the five-stage
+offline gate on 2026-10-17: type checking, 311 affected regressions, 72 historical
+and promotion regressions, synthetic performance, and npm package inventory.
+The scoped suite totals 383 tests and 2,757 assertions, with zero failures.
+No GitHub runners, model calls or real services were used. Subsequent handoff
+documentation changes do not change the tested runtime or tests.
+
+| Phase 1 requirement | Local acceptance coverage |
+| --- | --- |
+| Delegated approval and distinct loading | `tests/skill-approval.test.ts`: preview, policy matching, public tool authorization, inactive approval, scoped loading, stale/missing policy, legacy pins and revocation |
+| Continuity without repeated reminders | `tests/session-memory-host.test.ts`: policy-approved complete closure across twenty compactions, restart, missed callback and repeated hooks with learning disabled |
+| Exact bytes and task isolation | `tests/session-memory.test.ts` and `tests/skill-approval.test.ts`: source/prerequisite drift, environments, private sessions, worker handoffs and checker exclusion |
+| Bounded complete context | `tests/context-budget.test.ts`: low/raised caps, complete mandatory procedures, bounded optional evidence, unknown headroom and actual publication accounting |
+| Honest delivery and interrupted writes | `tests/context-delivery.test.ts` and `tests/owned-context.test.ts`: preparation/publication fencing, concurrent changes, revocation, failed settlement and preservation of foreign context |
+| Bounded storage and compatibility | Delivery quota exhaustion retains existing bindings; legacy receipts and disabled/observe behavior remain covered; worker tool restrictions and package inventory pass |
+
+The source inventory hash is
+`06ef711530869dfca76f2b496923bc53d8fdd3e7395abbd9ba017e2d74ed42f6`
+(247 files, 4,785,800 bytes). The local evidence receipt hash is
+`a6000a18ccbecf85648eef3009cad7b0b861c5f22f14c5ba5db326ac1fe0bec8`.
+The receipt is retained outside the package and its location is recorded on PR #13.
+
+Warm/cold synthetic p95 was 116.4/76.7 ms. Both meet the current 500 ms ceilings;
+the original 100 ms warm target remains missed. The performance fixture measures
+the existing memory path, not a separate policy-enabled latency benchmark. This
+is bounded synthetic continuity evidence, not multi-day endurance or model adherence.
+Final host/provider prompt delivery remains `NOT_ATTESTED`; receipts attest plugin
+hook emission only. No deployment or installed-host validation is implied.
+
+The supported approval boundary is application policy, not adversarial same-user
+isolation. Policy changes require restart; node revocation is scoped to its stored
+copy. Proactive unnamed-skill routing, mandatory-rule enforcement, compiler,
+watcher, broad environment import and all V2 implementation remain deferred.
 
 Historical mixed-version failure data informs fixtures, not a current causal
 ranking. Start with a pinned-build baseline that separates extraction, schema,
