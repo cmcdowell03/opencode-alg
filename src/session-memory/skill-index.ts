@@ -7,7 +7,7 @@ import { parseSkillMarkdown, extractToolHints, scoreSkill } from "../skill-metad
 import { mentionsSkill } from "../turn-boundary.ts"
 import type { SkillCatalogEntry, SkillTurnHint } from "../skill-catalog.ts"
 import { hashObject, hashText, assertNoSecrets, MemoryStore } from "./store.ts"
-import { Hash, Id, SkillPayloadSchema, type MemoryNode } from "./schemas.ts"
+import { Hash, Id, SkillPayloadSchema, SkillApprovalPolicySchema, type SkillApprovalPolicy, type MemoryNode } from "./schemas.ts"
 
 export type Descriptor = Omit<SkillCatalogEntry, "content"> & { key: string; rootId: string }
 const Manifest = z.object({ schema_version: z.literal(1),
@@ -19,13 +19,15 @@ const EMPTY_HINT: SkillTurnHint = { userText: "", assistantText: "", tools: [], 
 
 /** Metadata is cached; selected instruction bytes are always re-read and verified. */
 export class SkillIndex {
+  private readonly policy?: SkillApprovalPolicy
   private roots: Root[]
   private entries: Descriptor[] = []
   private signatures: string[] = []
   private refreshed = 0
   complete = false
   rejected = 0
-  constructor(readonly project: string, roots: string[], extra: Array<{ root: string; label: string; managed?: boolean }> = []) {
+  constructor(readonly project: string, roots: string[], extra: Array<{ root: string; label: string; managed?: boolean }> = [], policy?: SkillApprovalPolicy) {
+    this.policy = policy ? SkillApprovalPolicySchema.parse(policy) : undefined
     const canonical = canonicalDirectory(project)
     this.roots = [
       ...roots.map((path) => {
@@ -136,16 +138,37 @@ export class SkillIndex {
       target: `${name}/SKILL.md`, relative: `${root.label}/${name}/SKILL.md`, root: root.label, managed: root.managed, sha256: hashText(body), tools: extractToolHints(body) }
     return { descriptor, files, manifest }
   }
-  bind(store: MemoryStore, owner: string, key: string): string {
+  preview(key: string) {
     const loaded = this.load(key)
+    const files = loaded.files.map(({ path, sha256, bytes }) => ({ path, sha256, bytes }))
+    return { key, closure: hashObject(files), environments: loaded.manifest.environments, operations: loaded.manifest.operations }
+  }
+  private approval(project: string, rule: ReturnType<SkillIndex["preview"]>) {
+    if (!this.policy || this.policy.project !== project || !this.policy.rules.some((entry) => hashObject(entry) === hashObject(rule))) {
+      throw new Error("skill revision or scope is outside the configured approval policy")
+    }
+    return { basis: "policy-approved" as const, policy: hashObject(this.policy), revision: this.policy.revision, project, rule }
+  }
+  bind(store: MemoryStore, owner: string, key: string, requireApproval = false): string {
+    const loaded = this.load(key)
+    // Evaluate policy before writing anything. The same loaded bytes supply both
+    // the approval identity and the persisted artifacts (no preview/load race).
+    const rule = { key, closure: hashObject(loaded.files.map(({ path, sha256, bytes }) => ({ path, sha256, bytes }))),
+      environments: loaded.manifest.environments, operations: loaded.manifest.operations }
+    const approval = this.policy || requireApproval ? this.approval(store.projectId, rule) : undefined
     const files = loaded.files.map((file) => ({ path: file.path, sha256: store.artifact(file.body), bytes: file.bytes }))
     const payload = SkillPayloadSchema.parse({ key, name: loaded.descriptor.name, source: loaded.descriptor.root,
-      files, environments: loaded.manifest.environments, operations: loaded.manifest.operations })
+      files, environments: loaded.manifest.environments, operations: loaded.manifest.operations, ...(approval ? { approval } : {}) })
     return store.putNode({ schema_version: 1, project: store.projectId, owner, visibility: "session",
       created_at: new Date(0).toISOString(), kind: "skill", relations: [], summary: `Complete skill ${payload.name}`, payload })
   }
   verifiedBodies(node: MemoryNode): string[] {
     if (node.kind !== "skill") throw new Error("not a skill binding")
+    if (this.policy || node.payload.approval) {
+      const rule = { key: node.payload.key, closure: hashObject(node.payload.files), environments: node.payload.environments, operations: node.payload.operations }
+      const expected = this.approval(node.project, rule)
+      if (!node.payload.approval || hashObject(node.payload.approval) !== hashObject(expected)) throw new Error("skill approval is missing or stale")
+    }
     const loaded = this.load(node.payload.key, node.payload)
     const current = loaded.files.map(({ path, sha256, bytes }) => ({ path, sha256, bytes }))
     if (JSON.stringify(current) !== JSON.stringify(node.payload.files)) throw new Error(`skill ${node.payload.name} changed; reviewed repin required`)

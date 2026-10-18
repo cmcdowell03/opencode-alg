@@ -28,6 +28,19 @@ export function createMemoryTools(runtime: SessionMemoryRuntime, authorize: (own
   }
   const availability = runtime.enabled ? "" : "DISABLED by configuration: do not call this tool. "
   return {
+    alg_skill: tool({ description: availability + "Preview an exact skill revision, approve it under configured policy, or load an approved receipt. Approval does not load instructions or grant permissions. Outside-policy candidates require operator policy changes; this tool cannot edit policy.",
+      args: { action: tool.schema.enum(["preview", "approve", "load"]), id: tool.schema.string().regex(/^[a-f0-9]{64}$/), repin: tool.schema.boolean().optional() },
+      execute: async (args, context) => run(context, (owner) => {
+        if (!runtime.enabled) throw new Error("session memory is disabled")
+        if (runtime.current(owner).delegation) throw new Error("delegated children use scoped handoffs, not skill approval tools")
+        if (args.action === "preview") return { project: runtime.store.projectId, rule: runtime.index.preview(args.id), state: "candidate", loaded: false }
+        if (args.action === "approve") return { id: runtime.approveSkill(owner, args.id), basis: "policy-approved", loaded: false }
+        const node = runtime.store.node(args.id, owner)
+        if (node.kind !== "skill" || !node.payload.approval) throw new Error("policy approval receipt required")
+        const checkpoint = runtime.loadSkill(owner, args.id, args.repin)
+        return { checkpoint, complete_instructions: runtime.index.verifiedBodies(node), basis: "policy-approved" }
+      }),
+    }),
     alg_memory_search: tool({ description: availability + "Read-only bounded skill and session evidence lookup. Incomplete discovery is explicit; results are not loaded instructions.",
       args: { query: tool.schema.string().max(2000), cursor: tool.schema.number().int().min(0).max(10000).optional(), limit: tool.schema.number().int().min(1).max(64).optional(), refresh: tool.schema.boolean().optional() },
       execute: async (args, context) => run(context, (owner) => {

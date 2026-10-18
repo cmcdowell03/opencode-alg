@@ -103,7 +103,7 @@ describe("worker launch", () => {
       // The "alg:" prefix keeps skill-evolution and memory exclusions working; the suffix is what OpenCode's footer reads.
       expect(creates[0].body).toEqual({ parentID: "owner", title: "alg:worker-tools/work/a1 (@implementer subagent)" })
       expect(prompts[0].body.tools).toEqual(Object.fromEntries(ALG_TOOL_IDS.map((id) => [id, false])))
-      expect(Object.keys(prompts[0].body.tools)).toHaveLength(19)
+      expect(Object.keys(prompts[0].body.tools)).toHaveLength(20)
     } finally { removeProject(project) }
   })
 
@@ -125,7 +125,8 @@ describe("worker launch", () => {
       expect(hidden).toContain("alg_run")
       expect(hidden).toContain("alg_skill_evolution_promote")
       for (const id of ["alg_memory_search", "alg_memory_read", "alg_context_status", "alg_memory_propose"]) expect(hidden).not.toContain(id)
-      expect(hidden).toHaveLength(15)
+      expect(hidden).toContain("alg_skill")
+      expect(hidden).toHaveLength(16)
     } finally { removeProject(project) }
   })
 })

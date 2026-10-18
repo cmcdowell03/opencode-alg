@@ -383,7 +383,7 @@ actual pinned V1 hook boundary before making an installed-host delivery claim.
 The phase adds no inferred mandatory rules, autonomous learning/compiler calls,
 new sharing scope, automatic worker replacement, generic shell/MCP enforcement,
 watcher, or V2 code/probes. It needs only the knowledge contract's minimal identity
-and existing-approval checks, not all of its import/compiler machinery or the
+and application-policy approval checks, not all of its import/compiler machinery or the
 execution contract's full recovery implementation. New assistance remains opt-in;
 disabled behavior stays compatible, with any necessary safety delta documented.
 
@@ -393,7 +393,8 @@ Add deterministic routing over approved manifests after continuity passes. Local
 fixtures then add unnamed-skill selection, changed operation, conflicting rules,
 unapproved proposals, exact resource predicates and explicit coverage gaps.
 Advisory discovery can run without authority to create new mandatory rules; such
-rules require the separately verified approval boundary. Compiler, watcher and
+rules require their separately specified approval contract; Phase 1 policy approval
+alone does not implement mandatory routing. Compiler, watcher and
 V2 readiness are not prerequisites for either phase.
 
 Add a locally retained, sanitized corpus of past turns where the user had to name

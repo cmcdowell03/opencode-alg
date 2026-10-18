@@ -68,52 +68,51 @@ access nor permission to export data. Its expiry is an example, not a universal 
 
 ## Review and approval records
 
-A review is a typed transition by an authorized actor, not an adjective in a
-manifest. Store a receipt binding actor/authority reference, exact content digest,
-review type, allowed project/environment/operation scope, time, expiry when
-applicable, and revocation/supersession references.
+V1 uses an **application-level delegated policy boundary**. The operator configures
+the exact revisions and scopes the harness may approve. The harness can issue a
+`policy-approved` receipt and separately load that revision without asking the
+operator on every use. It cannot use this tool to expand policy or claim human
+review. This replaces the earlier Phase 1 requirement for an independently
+protected operator service or authenticated confirmation UI.
 
-Separate approvals for source trust, applicability policy, skill promotion, run
-sharing and action/remediation. None implies the others. A model can propose each
-payload but cannot approve itself or write its own authority reference.
+`sessionMemory.approvalPolicy` contains schema version 1, an explicit revision,
+the canonical project identity, and at most 256 exact rules. Each rule binds a
+source-specific skill key, the hash of its complete ordered file closure, and
+exact environment and operation lists. The closure includes `SKILL.md`, `ALG.json`
+when present, and every declared prerequisite. Empty scope lists retain the skill
+manifest's unrestricted applicability; they are not a restricted-scope wildcard.
+There is no model-specific behavior or semantic trust classifier.
 
-The first local approval workflow previews the exact digest and scope, accepts an
-operator confirmation through an authenticated host/CLI boundary, and commits a
-revision-fenced receipt. The deployment must state how that boundary distinguishes
-operator action from an agent invoking the same CLI; if it cannot, approval remains
-unverified and cannot authorize a mandatory rule or expanded access.
+`alg_skill preview` returns a candidate rule without changing bindings or approval.
+The operator authorizes that rule in configuration and restarts the plugin.
+`alg_skill approve` evaluates current bytes against policy and stores an immutable
+skill node containing the receipt, without activating it. `alg_skill load` takes
+that node ID, rechecks policy, revocation, scope and bytes, then binds it to the
+session. Existing explicit-name/observed-load activation uses the same policy
+check when policy is enabled. Discovery by similarity never activates a skill.
 
-A V1 TUI command with a confirmation dialog is the preferred interactive workflow,
-not proof of a human boundary by itself. The installed SDK exposes session-command,
-TUI-command and permission-response APIs; their existence does not prove a specific
-dialog is remotely controllable, but rules out assuming every UI action is human.
-Before enabling approval, test all relevant UI/SDK/CLI and local-write paths.
+Receipts bind the complete policy hash, policy revision, project and exact rule.
+They have no expiry in this first slice; remove the rule/change policy revision and
+restart to withdraw policy, or revoke the stored node immediately. Repeated approval
+of unchanged inputs is idempotent, not a new confirmation. A revoked node stays
+revoked. Changing files or policy requires fresh approval and an explicit repin
+when replacing an active revision. Restoration cannot upgrade a legacy pin into
+an approval. Removing policy cannot downgrade an approved binding to legacy trust.
 
-Bind confirmation to a one-use request, exact content/dependency digest, review
-type, project/environment/operation scope, actor and policy revision. Recheck those
-bindings at commit; mutation, expiry, replay or a changed policy requires a new
-confirmation. Opening a dialog, returning a tool result or setting `approved: true`
-is not confirmation. Store the receipt through a boundary the model cannot use to
-approve or rewrite its own proposal under the declared deployment threat model.
+Configuration is a startup snapshot, not a hot-reloaded control plane. Policy
+administration remains an operator responsibility; no ALG tool writes policy.
+Same-user unrestricted shell or filesystem access can alter config, plugin code
+or receipts. Hashes and local checks detect accidental drift, not coherent hostile
+rewrites by that actor. Status therefore reports `APPLICATION_POLICY`, never OS
+isolation, authenticated human confirmation or universal prompt enforcement.
+Deployments needing adversarial isolation require a separately protected boundary.
 
-Headless use requires an already-approved, operator-controlled policy or an
-out-of-band operator workflow with equivalent provenance. A writable CLI/config
-file is not an authenticated fallback. A deployment granting the agent unrestricted
-same-user filesystem/host-API control cannot claim stronger approval isolation
-without a separate protected boundary; report that limit explicitly.
-
-The new workflow gates creation or expansion of approvals, not every use of
-knowledge. V1 Phase 1 may reuse a valid existing approval/trust policy and scoped
-binding after verifying exact sources and current revocation. Preserve legacy
-provenance; never manufacture an approval receipt from a pin or successful skill
-load. Unverifiable sources cannot become mandatory instructions. Their missing
-authority does not block other valid bindings, status reads or advisory discovery.
-
-Git may hold portable reviewed artifacts. A commit or signature alone is not an
-approval: a trusted repository policy must bind the approving principal, exact
-digest and review scope. Record manual import provenance when no such policy
-exists. Local hashes detect drift, not an actor capable of coherently rewriting
-the local stores.
+Without policy, existing memory behavior remains available and explicitly
+`NOT_ATTESTED`; the new approve/load tool cannot call that state approved. Skill
+approval grants no shell, network, credential, sharing, promotion or remediation
+permission. Host permissions continue to govern actions. Git commits, model
+reviews and successful skill loads are evidence, not authority to expand policy.
+Mandatory routing rules and broad knowledge import remain later V1 work.
 
 ## Record contracts
 
@@ -572,11 +571,11 @@ captured observation, contradictory/expired facts, revoked approval, explicit
 alias mapping, and a dependency change that invalidates only affected work.
 It requires neither a large pre-existing skill corpus nor embeddings.
 
-Approval acceptance includes model-invoked UI/SDK/CLI attempts, a forged writable
-receipt, replayed confirmation, changed digest/scope, revocation before commit,
-and protected headless policy. A test must prove the relevant boundary, not merely
-mock an `isHuman` flag. No verified boundary means no new mandatory-rule approval;
-existing independently valid approvals remain usable within their original scope.
+V1 approval acceptance covers read-only preview, approval without activation,
+foreign project/session, changed digest/scope/policy, revocation, legacy migration,
+policy removal, and restart continuity. Tests exercise real local records, not an
+`isHuman` flag. They attest application checks only; hostile same-user store or code
+rewrites are outside this boundary. No mandatory-rule engine is introduced here.
 
 Later compiler acceptance adds duplicate intake, malformed but terminal output,
 unknown dispatch, crash after head publication, private evidence closure,

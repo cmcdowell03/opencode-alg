@@ -360,7 +360,7 @@ describe("live verifier reviewed-checkout binding", () => {
     const exact = structuredServerStartup()
     const [first, second] = ALG_TOOL_IDS
     const mutations = [
-      exact.replace("tools=19", "tools=18"),
+      exact.replace(`tools=${ALG_TOOL_IDS.length}`, `tools=${ALG_TOOL_IDS.length - 1}`),
       exact.replace(`${first},`, ""),
       exact.replace(first, "alg_replacement"),
       exact.replace(`${first},${second}`, `${second},${first}`),

@@ -20,7 +20,7 @@ export class SessionMemoryRuntime {
   constructor(project: string, options: unknown = {}, roots = [".opencode/skills"], extra = observedConfigSkillRoots()) {
     this.options = MemoryOptionsSchema.parse(options)
     this.store = new MemoryStore(project, this.options.artifactQuotaBytes)
-    this.index = new SkillIndex(this.store.project, roots, extra)
+    this.index = new SkillIndex(this.store.project, roots, extra, this.options.approvalPolicy)
   }
   get enabled() { return this.options.mode !== "off" }
   current(owner: string): Checkpoint { return this.store.checkpoint(owner) ?? this.store.empty(owner) }
@@ -52,10 +52,23 @@ export class SessionMemoryRuntime {
   }
   bindSkill(owner: string, key: string, repin = false) {
     this.requireEnabled()
-    const current = this.current(owner)
     const id = this.index.bind(this.store, owner, key)
+    return this.loadSkill(owner, id, repin)
+  }
+  approveSkill(owner: string, key: string) {
+    this.requireEnabled()
+    if (this.current(owner).delegation) throw new Error("delegated children cannot approve skills")
+    const id = this.index.bind(this.store, owner, key, true)
+    this.store.node(id, owner) // A repeated request must not resurrect a revoked receipt.
+    return id
+  }
+  loadSkill(owner: string, id: string, repin = false) {
+    this.requireEnabled()
+    const current = this.current(owner)
     const node = this.store.node(id, owner)
     if (node.kind !== "skill") throw new Error("not a skill")
+    this.index.verifiedBodies(node)
+    const key = node.payload.key
     const environment = verifyEnvironment(this.store, current)
     if (node.payload.environments.length && (!environment || !node.payload.environments.includes(environment.payload.name))) throw new Error("skill requires a matching reviewed environment")
     const prior = current.skills.find((binding) => binding.key === key)
@@ -195,8 +208,8 @@ export class SessionMemoryRuntime {
         context_hash: delivery.value.context.context_hash, context_state: delivery.value.context.state,
         host_confirmation: "NOT_ATTESTED" as const } : null,
       coverage: { host_prompt_delivery: "NOT_ATTESTED",
-        source_approval: "NOT_ATTESTED", source_identity: "EXACT_CONTENT_AND_CONFIGURED_LOCATION",
-        approval_boundary: "NO_INDEPENDENT_OPERATOR_BOUNDARY", mandatory_rule_authority: false,
+        source_approval: this.options.approvalPolicy ? "POLICY_CHECKED_PER_BINDING" : "NOT_ATTESTED", source_identity: "EXACT_CONTENT_AND_CONFIGURED_LOCATION",
+        approval_boundary: this.options.approvalPolicy ? "APPLICATION_POLICY" : "NO_INDEPENDENT_OPERATOR_BOUNDARY", mandatory_rule_authority: false,
         universal_tool_interception: false, supported_adapters: ["alg_run", "alg_resume"],
         adapter_activation: "one active skill declaring alg_execute plus reviewed environment", remote_permissions: "REVALIDATE_AT_ACTION", message_replay: "BEST_EFFORT" } }
   }

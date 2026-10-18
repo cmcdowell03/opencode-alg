@@ -166,7 +166,7 @@ its last lines. Compare with `baseline.json`:
 during the upgrade; report it.
 
 Finally, ask the user to start OpenCode normally. The server log line
-`alg plugin loaded skill_evolution=… tools=19 …` confirms the plugin loaded.
+`alg plugin loaded skill_evolution=… tools=20 …` confirms the plugin loaded.
 
 ### Optional live smoke test (uses model calls)
 

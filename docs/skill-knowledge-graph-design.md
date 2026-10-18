@@ -115,7 +115,7 @@ a replay.
 | Stop or restart | Shared execution contract applies on V1 and V2. Termination and effect settlement are separate. |
 | Successful siblings | Existing done outputs are already durable. Add dependency-checked selective continuation, not a second persistence system. |
 | Step exhaustion | Use confirmed host evidence and bounded task sizing; do not classify every empty response as a step limit. |
-| Approval | Actor, digest, scope and revocation receipt; neither a Git commit nor a TUI command alone proves operator confirmation. Restore existing valid approvals without inventing new ones. |
+| Approval | V1 application policy delegates exact-revision approval to the harness; separate approval from loading and human review. Bind policy, project, closure and scope; recheck revocation. |
 | Recovery scope | Derive conflict and replay safety from enforced capabilities and resource effects, not an agent role, a stop request or `git status`. |
 | Host identity | Record verified, unverified or unavailable epoch evidence. An ALG store ID is not proof of host database continuity. |
 | Context allowance | Complete mandatory content precedes optional weights; an explicit hard ceiling bounds any increase above the normal target, and no byte floor exceeds safe request capacity. |
@@ -398,7 +398,8 @@ to complete all of 1 or recovery increment 0a before shipping Phase 1.
    trust and task scope can be validated under the deployment's operator policy.
    Persist only the minimal versioned binding and delivery records needed here;
    do not require broad environment import or a graph migration. A legacy pin is
-   not new approval, and agent-writable configuration alone is not a trust anchor.
+   not new approval. Explicit configuration delegates application-level approval,
+   without claiming protection against unrestricted same-user writes.
 3. Restore the task-scoped working set before each covered model request through
    one V1 delivery owner. Persist bindings when they change, not just on compaction;
    missed compaction callbacks and process restart must not lose the binding.
@@ -409,10 +410,11 @@ to complete all of 1 or recovery increment 0a before shipping Phase 1.
    existing context status. Preserve current permissions and recovery behavior;
    this phase enables no new worker replacement or automatic continuation.
 
-The new approval UI is not a prerequisite when valid existing approval evidence
-is available. A deployment without a valid trusted source needs a minimal
-operator-controlled bootstrap before restoring that source. Other valid bindings
-and status inspection remain usable; advisory discovery does not grant authority.
+The first approval workflow is the knowledge contract's exact-revision policy and
+`alg_skill` preview/approve/load tool, not a new UI or protected service. The
+operator configures allowed rules once; the harness approves and loads within
+them. Outside-policy revisions remain candidates. Legacy no-policy mode stays
+unattested. This boundary changes no host permissions and does not enable V2.
 
 The local Phase 1 gate uses a preapproved synthetic skill and prerequisite, twenty
 forced compactions, a controller restart, a missed callback and a plain "continue"
@@ -538,7 +540,7 @@ remediation. Before implementation of each affected increment, settle:
 | --- | --- | --- |
 | Initial source inventory | Explicit trusted roots and selected repository/config imports | Actual skill/resource inventory on each machine; do not extrapolate from this workstation |
 | Applicability packaging | Namespaced skill frontmatter compiled to one manifest; sidecar if V1 rejects it | Supported V1 parser check and conflict fixture; a V2 check belongs to the deferred V2 work |
-| Approval boundary | Digest/scope-bound TUI confirmation where independently verified; protected operator policy for headless use | Check UI, SDK, CLI and writable-store paths for self-approval; existing valid approvals can support Phase 1 without the new UI |
+| Approval boundary | Application-level exact-revision policy; harness approval and separate loading | Check project, source closure, scope, policy revision and revocation; unrestricted same-user writes are not isolated |
 | Runtime coverage | Enable only verified capabilities required by that feature | Exact adapter/host/source conformance receipt |
 | Recovery evidence | Enforced resource/effect scope; explicit unavailable epoch evidence | No role-only replay permission, no fabricated host epoch; allow demonstrably non-conflicting work within budget |
 | Budget and workload ceilings | Normal context target plus an explicit hard ceiling; one cumulative spend lineage | Existing configurable caps suffice for Phase 1; no automatic ceiling increase or inference of spend authority from a spec |

@@ -27,7 +27,7 @@ export async function runSessionMemoryGate(directory: string) {
   try {
     await step("typecheck", "typecheck", process.execPath, ["run", "typecheck"])
     await step("affected-regressions", "bun_test", process.execPath, ["test", "tests/model-agnostic-recovery.test.ts", "tests/session-memory.test.ts", "tests/session-memory-host.test.ts",
-      "tests/context-budget.test.ts", "tests/context-delivery.test.ts", "tests/owned-context.test.ts",
+      "tests/context-budget.test.ts", "tests/context-delivery.test.ts", "tests/owned-context.test.ts", "tests/skill-approval.test.ts", "tests/worker-launch.test.ts",
       "tests/skill-catalog.test.ts", "tests/architecture-audit.test.ts", "tests/skill-evolution-runtime.test.ts", "tests/skill-evolution-evidence-schema.test.ts",
       "tests/skill-evolution-store.test.ts", "tests/experience.test.ts", "tests/models-sessions-plugin.test.ts", "tests/duckdb-capability.test.ts",
       "tests/live-verify.test.ts", "tests/release-gate.test.ts", "tests/executor.test.ts", "--timeout", "60000"])

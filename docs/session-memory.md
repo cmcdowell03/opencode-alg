@@ -30,7 +30,56 @@ are unchanged. Assist mode replaces duplicate legacy skill injection.
 `alg_context_status` reports bindings, next step, selection, omissions, budget and
 coverage. `alg_memory_search` finds metadata; `alg_memory_read` expands an owned
 object (complete instructions for skills); `alg_memory_propose` stores unverified,
-private, unpinned proposals. None approves permissions. Registration now has 19 tools.
+private, unpinned proposals. `alg_skill` previews, policy-approves and loads exact
+skill revisions. None approves permissions. Registration now has 20 tools.
+
+### Delegated skill approval in V1
+
+Enable `sessionMemory.mode: "assist"` to restore instructions. Search with
+`alg_memory_search`, then call `alg_skill` with `{"action":"preview","id":"<skill-key>"}`.
+Preview returns a canonical project hash and an exact rule; it loads no instructions
+and grants no trust. Review the full source and declared prerequisites before
+authorizing the rule in the existing ALG options:
+
+```json
+{
+  "sessionMemory": {
+    "mode": "assist",
+    "approvalPolicy": {
+      "schema_version": 1,
+      "revision": "approved-procedures-1",
+      "project": "<preview.project>",
+      "rules": ["<replace with the complete preview.rule object>"]
+    }
+  }
+}
+```
+
+Replace placeholders with actual preview values; the example is not executable
+configuration. Preserve other plugin options. Use the existing sidecar options
+path if the installed host cannot accept plugin tuples. Restart OpenCode to load
+policy changes. No tool modifies this policy or the host permission configuration.
+
+The harness may now call `alg_skill` with `action: "approve"` and the skill key.
+It receives a receipt node ID but no active binding. Call `action: "load"` with
+that ID to activate and read the complete instructions. Future compactions and
+restarts restore the same closure without another approval request. Use
+`repin: true` only to explicitly replace an active revision after new approval.
+ALG workers cannot call this approval tool; they receive scoped parent handoffs.
+
+Receipts say `policy-approved`, not human-reviewed. Policy matches exact source,
+project, closure and scope. Removing/changing rules requires restart and invalidates
+old receipts. For immediate revocation use the existing `memory revoke` command
+with the receipt ID. Revocation is node-scoped; revoke each delegated copy for
+immediate withdrawal across existing children, or withdraw policy and restart all
+controllers. Reapproving identical inputs does not undo revocation.
+No-policy legacy mode remains unattested; enabling policy requires new approvals
+for old pins. Approval grants no tools, network access or credentials.
+
+This is an application boundary, not protection against an unrestricted agent
+rewriting its own config or plugin under the same OS account. There is no new
+service, model dependency or V2 implementation. See the
+[approval contract](knowledge-environment-contract.md#review-and-approval-records).
 
 ## Explicit operator workflow
 

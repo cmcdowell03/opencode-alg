@@ -81,7 +81,10 @@ describe("session memory SDK-boundary conformance", () => {
     writeFileSync(join(directory, "procedure.txt"), prerequisite)
     writeFileSync(join(directory, "ALG.json"), JSON.stringify({ schema_version: 1,
       requires: [{ path: "procedure.txt", sha256: hashText(prerequisite) }] }))
-    const options = { sessionMemory: { mode: "assist" }, skillEvolution: { enabled: false } }
+    const discovery = new SessionMemoryRuntime(path, { mode: "assist" }, [".opencode/skills"], [])
+    const key = discovery.index.search("fixture-procedure").skills[0]!.key
+    const options = { sessionMemory: { mode: "assist", approvalPolicy: { schema_version: 1, revision: "fixture-v1",
+      project: discovery.store.projectId, rules: [discovery.index.preview(key)] } }, skillEvolution: { enabled: false } }
     let hooks = await server(plugin(path), options)
     let compact = { context: ["foreign compaction context"] }
     try {
