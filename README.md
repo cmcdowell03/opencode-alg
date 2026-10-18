@@ -75,9 +75,11 @@ These are the 15 base public server tool IDs, in registration order. The six
 remain inspectable, but skill evolution is disabled by default and its audit or
 mutation operations fail closed until explicitly enabled.
 
-Four session-memory tools are also registered, keeping the full public tool
-registry at 19 IDs. Environment memory expands the existing read-only search,
-read, and status results rather than adding tools.
+Five session-memory tools are also registered, bringing the full public tool
+registry to 20 IDs: `alg_context_status`, `alg_memory_search`, `alg_memory_read`,
+`alg_memory_propose`, and `alg_skill`. See the [session-memory workflow](docs/session-memory.md)
+for delegated approval and loading. Environment memory expands the existing
+read-only search, read, and status results rather than adding tools.
 
 Historical review has a second, independent opt-in:
 `{"skillEvolution":{"enabled":true,"allowBuiltinToolMap":true,"historical":{"enabled":true}}}`. Merely
