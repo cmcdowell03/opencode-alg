@@ -21,13 +21,13 @@ export async function runSessionMemoryGate(directory: string, full = false) {
     console.error(`session-memory gate: ${id}`)
     const result = await runReleaseCommand(kind, executable, args, root)
     steps.push({ id, result })
-    if (result.evidence.exit_code !== 0) throw new Error(`synthetic gate failed: ${id}`)
+    if (result.evidence.exit_code !== 0 || result.supervision.output_exceeded) throw new Error(`synthetic gate failed or exceeded output bound: ${id}`)
     return result
   }
   try {
     await step("typecheck", "typecheck", process.execPath, ["run", "typecheck"])
     if (full) {
-      await step("full-offline-suite", "bun_test", process.execPath, ["test", "--timeout", "60000"])
+      await step("full-offline-suite", "bun_test", process.execPath, ["test", "--timeout", "60000", "--dots"])
     } else {
       await step("affected-regressions", "bun_test", process.execPath, ["test", "tests/model-agnostic-recovery.test.ts", "tests/session-memory.test.ts", "tests/session-memory-host.test.ts",
       "tests/context-budget.test.ts", "tests/context-delivery.test.ts", "tests/owned-context.test.ts", "tests/skill-approval.test.ts", "tests/worker-launch.test.ts",

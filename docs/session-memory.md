@@ -252,6 +252,7 @@ MCPs are outside enforcement coverage. Replay is best-effort, not lossless archi
 
 Run `bun run check:session-memory <absolute-existing-evidence-directory>` for the
 source-bound synthetic/type/package gate. No production services or paid models run.
+Add `--full` to run the entire local Bun suite instead of the affected-test subsets.
 The benchmark includes verified reads and receipt writes with 100 skills/1,000
 unrelated nodes. Initial Windows warm/cold p95 was 653/1,752 ms; direct-address
 restoration reduced it to 313/116 ms. The proposed 100 ms warm target was not met.
