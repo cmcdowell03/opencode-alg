@@ -6,7 +6,7 @@ import { isDeepStrictEqual } from "node:util"
 import { extractJsonDetailed } from "./sessions.ts"
 import { formatSkillEvolutionCompactionContext } from "./compaction.ts"
 import { formatSdkDiagnostic, formatSdkError, safeDiagnosticText } from "./diagnostics.ts"
-import { canonicalDirectory, isContained } from "./paths.ts"
+import { canonicalDirectory, hostProjectDirectory, isContained } from "./paths.ts"
 import type { AgentModelMap, ModelResolutionMap, ModelRef } from "./types.ts"
 import { snapshotModelResolutions } from "./models.ts"
 import { assertTextBytes, utf8Bytes } from "./limits.ts"
@@ -243,7 +243,7 @@ export class SkillEvolutionRuntime {
   constructor(plugin: PluginInput, config: SkillEvolutionRuntimeConfig) {
     this.plugin = plugin
     this.client = plugin.client
-    this.project = canonicalDirectory(plugin.worktree || plugin.directory)
+    this.project = canonicalDirectory(hostProjectDirectory(plugin.worktree, plugin.directory))
     this.directory = canonicalDirectory(plugin.directory)
     this.options = config.options
     this.configuredModels = config.configuredModels ?? (() => ({}))

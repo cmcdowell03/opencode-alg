@@ -5,6 +5,12 @@ It keeps owner-bound task checkpoints and exact procedure versions outside the
 conversation, then rebuilds a bounded working view after compaction or restart.
 No graph database, embedding service, new MCP, port scan or learning model is needed.
 
+Non-Git folders are supported: OpenCode's `/` worktree sentinel resolves to the
+actual working directory, not the filesystem root. Git worktrees retain their
+repository scope. Prior builds may have placed non-Git state at a drive/root
+`.opencode` directory. That state is left untouched and is not silently imported
+into a different project identity; review and explicitly rebind local procedures.
+
 ## Enablement and tools
 
 Add options to the existing ALG plugin tuple, without installing a second copy:

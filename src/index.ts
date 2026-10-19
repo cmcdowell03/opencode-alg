@@ -26,7 +26,7 @@ import { createSkillEvolutionTools } from "./skill-evolution-tools.ts"
 import { observedConfigSkillRoots, SkillGuidance } from "./skill-catalog.ts"
 import { SessionMemoryRuntime } from "./session-memory/runtime.ts"
 import { createMemoryTools } from "./session-memory/tools.ts"
-import { canonicalDirectory, isContained } from "./paths.ts"
+import { canonicalDirectory, hostProjectDirectory, isContained } from "./paths.ts"
 import { isCompletedUserTurn } from "./turn-boundary.ts"
 import { ContextDelivery } from "./session-memory/delivery.ts"
 
@@ -39,6 +39,7 @@ function expectedSkip(error: unknown): boolean {
 
 const server: Plugin = async (ctx, pluginOptions) => {
   const { client, directory } = ctx
+  const projectDirectory = hostProjectDirectory(ctx.worktree, directory)
   const resolvedConfiguration = resolvePluginConfiguration(pluginOptions)
   const pluginConfiguration = resolvedConfiguration.options
   const skillEvolutionOptions = parseSkillEvolutionOptions(pluginConfiguration)
@@ -61,7 +62,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
   }
 
   const extraSkillRoots = observedConfigSkillRoots()
-  const memory = new SessionMemoryRuntime(ctx.worktree || directory, pluginConfiguration.sessionMemory,
+  const memory = new SessionMemoryRuntime(projectDirectory, pluginConfiguration.sessionMemory,
     skillEvolutionOptions.skillRoots, extraSkillRoots)
   const delivery = new ContextDelivery(memory)
   const environmentMemory = pluginConfiguration.environmentMemory && pluginConfiguration.environmentMemory.mode !== "off"
@@ -85,7 +86,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       if (String(session.title).startsWith("alg-private-")) throw new Error("private learning session is memory-excluded")
     } finally { if (timer) clearTimeout(timer) }
   }
-  const skillGuidance = new SkillGuidance(ctx.worktree || directory, skillEvolutionOptions, extraSkillRoots)
+  const skillGuidance = new SkillGuidance(projectDirectory, skillEvolutionOptions, extraSkillRoots)
   let disposed = false
   const resultCaptures = new Map<string, Promise<void>>()
   const captureResults = (owner: string) => {
@@ -252,7 +253,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
           }
           // Runs before every model request of every session, so it must not scan the project's run history.
           await collect("run", () => {
-            const run = findLatestIncompleteRunForTurn(ctx.worktree || directory, sessionId, { sessionCreatedHere: isAlgWorkerSession(sessionId) })
+            const run = findLatestIncompleteRunForTurn(projectDirectory, sessionId, { sessionCreatedHere: isAlgWorkerSession(sessionId) })
             if (!run) return ""
             const pointer = formatRunPointer(run)
             recover(pointer)
@@ -316,7 +317,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       limitDelivery(outputLimit)
       onPublished((bytes) => windows.record(input.sessionID, plan, bytes))
       try {
-        const run = await awaitLock(() => findLatestIncompleteRunForSession(ctx.worktree || directory, input.sessionID))
+        const run = await awaitLock(() => findLatestIncompleteRunForSession(projectDirectory, input.sessionID))
         if (run) {
           const pointer = formatRunPointer(run)
           recover(pointer)
@@ -371,7 +372,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
         catch { /* observe/off capture failure stays off the context channel */ }
       }
       try {
-        const run = await awaitLock(() => findLatestIncompleteRunForSession(ctx.worktree || directory, input.sessionID))
+        const run = await awaitLock(() => findLatestIncompleteRunForSession(projectDirectory, input.sessionID))
         if (run && owned.length === 0) {
           const summary = isStaleRun(run) ? formatStaleRunNotice(run) : formatCompactionContext(run, plan.allow("run"))
           owned.push(summary)

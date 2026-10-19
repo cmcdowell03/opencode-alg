@@ -37,7 +37,7 @@ import {
   ownerIndexRelativePath,
   parseOwnerRunIndex,
 } from "./owner-index.ts"
-import { canonicalDirectory, isSafeProjectRelativePath } from "./paths.ts"
+import { canonicalDirectory, hostProjectDirectory, isSafeProjectRelativePath } from "./paths.ts"
 import { buildRunProgress, type AlgRunProgress } from "./run-progress.ts"
 
 const MAX_RECENT_RUNS = 20
@@ -167,7 +167,7 @@ function currentParentSession(api: TuiPluginApi): string | null {
 }
 
 function projectDirectory(api: TuiPluginApi): string {
-  return api.state.path.worktree || api.state.path.directory
+  return hostProjectDirectory(api.state.path.worktree, api.state.path.directory)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -197,6 +197,41 @@ describe("manager launchers and parser", () => {
     expect(calls[1]).toContain("run scripts/installer-core.ts --config-dir")
   })
 
+  powershellTest("explicit npm selection bypasses Bun and fails before configuration on dependency error", () => {
+    for (const fail of [false, true]) {
+      const shimRoot = sandbox("alg explicit npm shim-"), capture = join(shimRoot, "capture.txt")
+      for (const command of ["bun", "npm", "npx"]) writeFileSync(join(shimRoot, `${command}.cmd`),
+        `@echo off\r\necho ${command} %*>>"%ALG_LAUNCH_CAPTURE%"\r\nexit /b ${command === "bun" ? 99 : command === "npm" && fail ? 7 : 0}\r\n`)
+      const config = join(sandbox("alg npm selection config-"), "config with spaces")
+      const result = spawnSync("pwsh", ["-NoProfile", "-File", join(ROOT, "scripts/install.ps1"), "-ConfigDir", config, "-PackageManager", "npm", "-SkipAgents"], {
+        cwd: ROOT, env: environmentWithPath([shimRoot], { ALG_LAUNCH_CAPTURE: capture }), encoding: "utf8", shell: false, windowsHide: true,
+      })
+      const calls = readFileSync(capture, "utf8").trim().split(/\r?\n/)
+      expect(calls[0]).toBe("npm ci --ignore-scripts --no-audit --no-fund")
+      expect(calls.join("\n")).not.toContain("bun ")
+      if (fail) { expect(result.status).not.toBe(0); expect(calls).toHaveLength(1); expect(existsSync(config)).toBe(false) }
+      else { expect(result.status).toBe(0); expect(calls).toHaveLength(2); expect(calls[1]).toContain("npx --no-install tsx scripts/installer-core.ts --config-dir") }
+    }
+  })
+
+  posixTest("POSIX explicitly selects npm despite Bun on PATH", () => {
+    const sh = POSIX_SHELL!, shimRoot = sandbox("alg explicit npm posix-"), capture = join(shimRoot, "capture.txt")
+    for (const command of ["bun", "npm", "npx"]) {
+      const path = join(shimRoot, command)
+      writeFileSync(path, `#!/bin/sh\nprintf '%s\\n' "${command} $*" >> "$ALG_LAUNCH_CAPTURE"\nexit ${command === "bun" ? 99 : 0}\n`)
+      chmodSync(path, 0o755)
+    }
+    const config = join(sandbox("alg npm posix config-"), "config with spaces")
+    const tools = process.platform === "win32" ? [dirname(sh), resolve(dirname(sh), "..", "usr", "bin"), resolve(dirname(sh), "..", "mingw64", "bin")] : []
+    const result = spawnSync(sh, [join(ROOT,"scripts/install.sh"), config, "--skip-agents"], { cwd:ROOT,
+      env:environmentWithPath([shimRoot,...tools],{ALG_LAUNCH_CAPTURE:capture,ALG_INSTALL_PACKAGE_MANAGER:"npm"}),encoding:"utf8",shell:false,windowsHide:true })
+    expect({status:result.status,stderr:result.stderr}).toEqual({status:0,stderr:""})
+    const calls = readFileSync(capture,"utf8").trim().split(/\r?\n/)
+    expect(calls).toHaveLength(2)
+    expect(calls[0]).toBe("npm ci --ignore-scripts --no-audit --no-fund")
+    expect(calls[1]).toContain("npx --no-install tsx scripts/installer-core.ts --config-dir")
+  })
+
   test("CLI parser forwards spaced roots and all manager policies without shell parsing", () => {
     const config = resolve("fixture with spaces", "config")
     const install = resolve("fixture with spaces", "managed install")

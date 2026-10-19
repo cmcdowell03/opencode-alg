@@ -1,5 +1,5 @@
 import { tool, type ToolContext } from "@opencode-ai/plugin"
-import { canonicalDirectory } from "../paths.ts"
+import { canonicalDirectory, hostProjectDirectory } from "../paths.ts"
 import { safeDiagnosticText } from "../diagnostics.ts"
 import { SessionMemoryRuntime } from "./runtime.ts"
 import { retrieve } from "./retrieval.ts"
@@ -15,7 +15,7 @@ export function createMemoryTools(runtime: SessionMemoryRuntime, authorize: (own
   deployment?: () => unknown, contextBudget?: (owner: string) => unknown) {
   const run = async (context: ToolContext, action: (owner: string) => unknown, status = false) => {
     try {
-      if (canonicalDirectory(context.worktree || context.directory) !== runtime.store.project) throw new Error("foreign tool project")
+      if (canonicalDirectory(hostProjectDirectory(context.worktree, context.directory)) !== runtime.store.project) throw new Error("foreign tool project")
       await authorize(context.sessionID)
       if (!runtime.enabled && !environment && !status) return { output: JSON.stringify({ mode: "off", available: false,
         reason: "Session memory is disabled by configuration; do not retry. Use normal host tools.", next: "alg_context_status" }),

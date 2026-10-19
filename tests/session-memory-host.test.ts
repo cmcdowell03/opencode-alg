@@ -39,6 +39,35 @@ function context(path: string, owner = "owner") { return { sessionID: owner, mes
 const input = (owner = "owner") => ({ sessionID: owner, model: { limit: { context: 128000, output: 4096 } } }) as any
 
 describe("session memory SDK-boundary conformance", () => {
+  test("non-Git host sentinel keeps skills, approvals and compaction inside the working directory", async () => {
+    const { path, body } = fixture()
+    const discovery = new SessionMemoryRuntime(path, { mode: "assist" }, [".opencode/skills"], [])
+    const key = discovery.index.search("fixture-procedure").skills[0]!.key
+    const base = plugin(path)
+    base.worktree = "/"
+    const options = { skillEvolution: { enabled: false }, sessionMemory: { mode: "assist", approvalPolicy: {
+      schema_version: 2, project: discovery.store.projectId, rules: [{ id: "fixture", revision: "1",
+        source: discovery.index.source(key), skills: ["fixture-procedure"], environments: ["*"], operations: ["*"] }],
+    } } }
+    const hooks = await server(base, options)
+    const toolContext = { ...context(path), worktree: "/" }
+    try {
+      const approved = JSON.parse((await hooks.tool!.alg_skill!.execute({ action: "approve", skill_key: key }, toolContext) as any).output)
+      expect(approved.receipt_id).toMatch(/^[a-f0-9]{64}$/)
+      const loaded = JSON.parse((await hooks.tool!.alg_skill!.execute({ action: "load", receipt_id: approved.receipt_id }, toolContext) as any).output)
+      expect(loaded.loaded).toBe(true)
+      const output = { system: ["foreign context"] }
+      await hooks["experimental.chat.system.transform"]!(input(), output)
+      expect(output.system.join("\n")).toContain(body)
+      const compact = { context: ["foreign compaction"] }
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+      expect(compact.context.join("\n")).toContain(body)
+      expect(discovery.store.checkpoint("owner")).not.toBeNull()
+      const foreign = fixture().path
+      const denied = JSON.parse((await hooks.tool!.alg_skill!.execute({ action: "preview", skill_key: key }, { ...toolContext, directory: foreign }) as any).output)
+      expect(denied.error).toContain("foreign tool project")
+    } finally { await hooks.dispose?.() }
+  })
   test("corrupt delivery telemetry does not fail host hooks or retain stale procedures", async () => {
     const { path, body } = fixture()
     const hooks = await server(plugin(path), { sessionMemory: { mode: "assist" }, skillEvolution: { enabled: false } })

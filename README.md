@@ -279,6 +279,8 @@ Put the whole package at any stable location (commonly `~/.config/opencode/plugi
 .\scripts\install.ps1
 # alternate config root and explicit bundled-agent update:
 .\scripts\install.ps1 -ConfigDir D:\sandbox\opencode -UpdateAgents
+# Explicit npm selection if the installed Bun cannot complete a frozen install:
+.\scripts\install.ps1 -ConfigDir D:\sandbox\opencode -PackageManager npm
 ```
 
 ```sh
