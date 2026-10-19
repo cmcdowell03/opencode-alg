@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import server from "../src/index.ts"
-import { formatCompactionContext, MAX_COMPACTION_CONTEXT_BYTES } from "../src/compaction.ts"
+import { appendAlgCompactionContext, formatCompactionContext, MAX_COMPACTION_CONTEXT_BYTES } from "../src/compaction.ts"
 import { ContextBudgetOptionsSchema, estimateUsedTokens, planContext, SessionWindows } from "../src/context-budget.ts"
 import { contextBudget } from "../src/session-memory/context.ts"
 import { MemoryOptionsSchema } from "../src/session-memory/schemas.ts"
@@ -46,12 +46,25 @@ describe("context plan", () => {
     expect(planContext(ContextBudgetOptionsSchema.parse({ compaction: 0.02 }), { context: 200_000 }, "compaction").totalBytes).toBe(12_000)
   })
 
-  test("it shrinks as the window fills, down to a floor for the essentials", () => {
+  test("it shrinks as the window fills without forcing the floor into a full window", () => {
     const window = { context: 200_000, output: 8_000 }
     expect(planContext(defaults, { ...window, usedTokens: 20_000 }, "call").describe()).toMatchObject({ total_bytes: 30_000, limited_by: "share" })
     // 4,000 tokens are free; half of that, at three bytes a token.
     expect(planContext(defaults, { ...window, usedTokens: 188_000 }, "call").describe()).toMatchObject({ total_bytes: 6_000, limited_by: "available", available_tokens: 4_000 })
-    expect(planContext(defaults, { ...window, usedTokens: 195_000 }, "call").describe()).toMatchObject({ total_bytes: defaults.floorBytes, limited_by: "floor" })
+    expect(planContext(defaults, { ...window, usedTokens: 195_000 }, "call").describe()).toMatchObject({ total_bytes: 1536, normal_bytes: 0, limited_by: "available" })
+    expect(planContext(defaults, { ...window, usedTokens: 191_900 }, "call").describe()).toMatchObject({ total_bytes: 1536, normal_bytes: 150, limited_by: "available" })
+    expect(planContext(defaults, { ...window, usedTokens: 200_000 }, "call").totalBytes).toBe(0)
+  })
+
+  test("the orientation floor cannot override a low configured cap on calls or compactions", () => {
+    const options = ContextBudgetOptionsSchema.parse({ perCall: 0.005, compaction: 0.01, floorBytes: 65_536 })
+    expect(planContext(options, { context: 1_000 }, "call").totalBytes).toBe(15)
+    expect(planContext(options, { context: 1_000 }, "compaction").totalBytes).toBe(30)
+    for (const kind of ["call", "compaction"] as const) {
+      const plan = planContext(options, { context: 1_000, usedTokens: 1_000 }, kind)
+      expect(plan.totalBytes).toBe(0)
+      for (const part of ["run", "skills", "memory", "environment"] as const) expect(plan.allow(part)).toBe(0)
+    }
   })
 
   test("parts split the allowance by weight, leave out what is off, and pass on what they do not use", () => {
@@ -75,6 +88,26 @@ describe("context plan", () => {
     tight.spend("run", 12_909)
     expect(tight.allow("skills")).toBe(17_090)
   })
+
+  test("required memory may borrow optional shares but never exceeds the hard ceiling", () => {
+    const plan = planContext(ContextBudgetOptionsSchema.parse({ perCall: 0.1 }), { context: 100_000 }, "call", ["run", "memory", "environment"])
+    expect(plan.describe()).toMatchObject({ total_bytes: 30_000, normal_bytes: 15_000 })
+    plan.spend("run", 1_000)
+    expect(plan.allowRequired("memory")).toBe(29_000)
+    expect(plan.allow("memory")!).toBeLessThan(15_000)
+    plan.spend("memory", 20_000)
+    expect(plan.allow("environment")).toBe(0)
+    expect(plan.allowRequired("environment")).toBe(9_000)
+    expect(plan.allowRequired("skills")).toBeUndefined()
+    expect(planContext(ContextBudgetOptionsSchema.parse({ perCall: 0.1 }), { context: 100_000 }, "compaction", ["memory"]).totalBytes).toBe(15_000)
+  })
+
+  test("normal optional target is configurable and recovery reservation is physically bounded", () => {
+    const options = ContextBudgetOptionsSchema.parse({ normal: 0.02, perCall: 0.1, floorBytes: 512 })
+    expect(planContext(options, { context: 100000 }, "call", ["run", "memory"]).describe().normal_bytes).toBe(6000)
+    expect(planContext(options, { context: 200000, output: 8000, usedTokens: 199900 }, "call").totalBytes).toBe(300)
+    expect(planContext(options, { context: 200000, output: 8000, usedTokens: 200000 }, "call").totalBytes).toBe(0)
+  })
 })
 
 describe("how full the window is", () => {
@@ -97,18 +130,49 @@ describe("how full the window is", () => {
   test("what ALG added last time is not counted against it again", () => {
     const windows = new SessionWindows(defaults)
     windows.observeModel("s", { context: 200_000, output: 8_000 })
-    windows.observeMessages("s", [assistant({ input: 100_000, output: 0 })])
     const first = windows.plan("s", "call", ["run", "skills"])
     first.spend("skills", 30_000)
     windows.record("s", first)
+    windows.observeMessages("s", [assistant({ input: 100_000, output: 0 })])
     expect(windows.window("s")).toEqual({ context: 200_000, output: 8_000, usedTokens: 90_000 })
     expect(windows.last("s")).toMatchObject({ dynamic: true, total_bytes: 30_000 })
+    // A smaller new pack is not part of the older host measurement. Its assembly
+    // must not change the measured free space used by an immediate compaction.
+    const next = windows.plan("s", "call", ["run", "skills"])
+    next.spend("skills", 300)
+    windows.record("s", next)
+    expect(windows.window("s").usedTokens).toBe(90_000)
+    windows.observeMessages("s", [assistant({ input: 100_000, output: 0 })])
+    expect(windows.window("s").usedTokens).toBe(99_900)
     windows.forget("s")
     expect(windows.window("s")).toEqual({})
+  })
+
+  test("headroom uses published bytes rather than section spending estimates", () => {
+    const windows = new SessionWindows(defaults)
+    windows.observeModel("s", { context: 200_000, output: 8_000 })
+    const plan = windows.plan("s", "call", ["run", "skills"])
+    plan.spend("skills", 300)
+    windows.record("s", plan, 600)
+    windows.observeMessages("s", [assistant({ input: 100_000, output: 0 })])
+    expect(windows.window("s").usedTokens).toBe(99_800)
+    windows.record("s", plan, 0)
+    windows.observeMessages("s", [assistant({ input: 100_000, output: 0 })])
+    expect(windows.window("s").usedTokens).toBe(100_000)
   })
 })
 
 describe("what each part does with its allowance", () => {
+  test("tiny and zero allowances never force summaries or truncation markers into context", () => {
+    const run = largeRun(project("alg-budget-zero-"))
+    for (const allowance of [0, 1, 16, 32, 64, 128, 255]) {
+      expect(bytes(formatCompactionContext(run, allowance))).toBeLessThanOrEqual(allowance)
+      const shared = ["another plugin context"]
+      appendAlgCompactionContext(shared, ["large ALG text ".repeat(100)], allowance)
+      expect(shared[0]).toBe("another plugin context")
+      expect(bytes(shared.slice(1).join("\n"))).toBeLessThanOrEqual(allowance)
+    }
+  })
   test("the run summary keeps what identifies and continues the run at any size", () => {
     const run = largeRun(project("alg-budget-run-"))
     const legacy = formatCompactionContext(run)
@@ -155,7 +219,10 @@ describe("what each part does with its allowance", () => {
   test("the memory pack takes the planned allowance instead of its fixed fallback", () => {
     const options = MemoryOptionsSchema.parse({ mode: "assist" })
     expect(contextBudget(options, { context: 200_000, output: 8_000 })).toEqual({ budget: 2_048, known: false })
-    expect(contextBudget(options, { context: 200_000, output: 8_000, allowanceBytes: 19_000 })).toEqual({ budget: 19_000, known: true })
+    expect(contextBudget(options, { context: 200_000, output: 8_000, allowanceBytes: 19_000 })).toEqual({ budget: 19_000, known: false })
+    expect(contextBudget(options, { context: 200_000, knownInputTokens: 0, allowanceBytes: 19_000 })).toEqual({ budget: 19_000, known: true })
+    expect(contextBudget(options, { knownInputTokens: 100, allowanceBytes: 19_000 })).toEqual({ budget: 19_000, known: false })
+    expect(contextBudget(options, { context: 200_000, knownInputTokens: NaN, allowanceBytes: 0 })).toEqual({ budget: 0, known: false })
   })
 })
 
@@ -172,6 +239,77 @@ describe("the hooks size what they add from the model's window", () => {
   }
   const toolContext = (path: string) => ({ sessionID: "owner", messageID: "m1", agent: "orchestrator", directory: path, worktree: path, abort: new AbortController().signal, ask: async () => {}, metadata: () => {} }) as any
   const added = (system: { system: string[] }) => bytes(system.system.slice(1).join("\n"))
+
+  test("run pointer survives 196k and 199k usage in both hooks, with and without assist", async () => {
+    for (const used of [196000, 199000]) for (const mode of ["off", "assist"]) {
+      const path = project("alg-pointer-")
+      largeRun(path)
+      const hooks = await server(plugin(path), { skillEvolution: { enabled: false }, sessionMemory: { mode } })
+      try {
+        await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+          { info: { id: "u1", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "continue" }] },
+          { info: { id: "a1", role: "assistant", sessionID: "owner", tokens: { input: used, output: 0 } }, parts: [] },
+        ] } as any)
+        const output = { system: ["foreign"] }
+        await hooks["experimental.chat.system.transform"]!({ sessionID: "owner", model: { limit: { context: 200000, output: 8000 } } } as any, output)
+        expect(output.system.join("\n")).toContain("budget-run")
+        expect(output.system.join("\n")).toContain("alg_resume")
+        expect(added(output)).toBeLessThanOrEqual(1536)
+        const compact = { context: ["foreign"] }
+        await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+        expect(compact.context.join("\n")).toContain("budget-run")
+        expect(compact.context.join("\n")).toContain("alg_resume")
+        expect(bytes(compact.context.slice(1).join("\n"))).toBeLessThanOrEqual(1536)
+      } finally { await hooks.dispose?.() }
+    }
+  })
+
+  test("assist restores complete required instructions before reserving optional environment shares", async () => {
+    const path = project("alg-budget-required-")
+    const directory = join(path, ".opencode", "skills", "required-procedure")
+    mkdirSync(directory, { recursive: true })
+    const body = `---\nname: required-procedure\ndescription: Synthetic required procedure\n---\n${"p".repeat(12_500)}\n`
+    writeFileSync(join(directory, "SKILL.md"), body)
+    const hooks = await server(plugin(path), { skillEvolution: { enabled: false }, sessionMemory: { mode: "assist" },
+      environmentMemory: { mode: "assist", namespace: "fixture", databasePath: join(path, "environment.sqlite"), rootIds: ["fixture-root"] } })
+    try {
+      await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+        { info: { id: "u1", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "Use required-procedure" }] },
+      ] } as any)
+      const system = { system: ["host policy"] }
+      await hooks["experimental.chat.system.transform"]!({ sessionID: "owner", model: { limit: { context: 100_000, output: 4_096 } } } as any, system)
+      expect(system.system.join("\n")).toContain(body)
+      expect(added(system)).toBeLessThanOrEqual(15_000)
+      const status = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, toolContext(path)) as any).output)
+      expect(status.receipt.state).toBe("prepared")
+      expect(status.context_budget.last_plan).toMatchObject({ normal_bytes: 15_000, total_bytes: 15_000 })
+    } finally { await hooks.dispose?.() }
+  })
+
+  test("an explicitly raised call ceiling admits required procedures without raising the compaction cap", async () => {
+    const path = project("alg-budget-required-raised-")
+    const directory = join(path, ".opencode", "skills", "required-procedure")
+    mkdirSync(directory, { recursive: true })
+    const body = `---\nname: required-procedure\ndescription: Synthetic required procedure\n---\n${"p".repeat(20_000)}\n`
+    writeFileSync(join(directory, "SKILL.md"), body)
+    const hooks = await server(plugin(path), { skillEvolution: { enabled: false }, sessionMemory: { mode: "assist" }, contextBudget: { perCall: 0.1 } })
+    try {
+      await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+        { info: { id: "u1", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "Use required-procedure" }] },
+      ] } as any)
+      const system = { system: ["host policy"] }
+      await hooks["experimental.chat.system.transform"]!({ sessionID: "owner", model: { limit: { context: 100_000, output: 4_096 } } } as any, system)
+      expect(system.system.join("\n")).toContain(body)
+      expect(added(system)).toBeGreaterThan(15_000)
+      expect(added(system)).toBeLessThanOrEqual(30_000)
+      const compact = { context: ["foreign context"] }
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+      expect(compact.context[0]).toBe("foreign context")
+      expect(compact.context.join("\n")).toContain("needs_context")
+      expect(compact.context.join("\n")).not.toContain(body)
+      expect(bytes(compact.context.slice(1).join("\n"))).toBeLessThanOrEqual(15_000)
+    } finally { await hooks.dispose?.() }
+  })
 
   test("a small window gets a short run summary, a large one gets the detail, and neither exceeds its share", async () => {
     const path = project("alg-budget-hooks-")

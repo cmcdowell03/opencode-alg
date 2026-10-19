@@ -51,6 +51,38 @@ const expiry = () => new Date(Date.now() + 600000).toISOString()
 const budget = { context: 128000, output: 4096, knownInputTokens: 1000 }
 
 describe("durable session memory", () => {
+  test("configured roots, exact bindings and successful restoration do not attest operator approval", () => {
+    const path = project(), memory = bound(path)
+    const before = memory.current("owner")
+    expect(memory.prepare("owner", budget).text).toContain("Use the reviewed route.")
+    const restarted = runtime(path)
+    expect(restarted.status("owner")).toMatchObject({ coverage: {
+      source_approval: "NOT_ATTESTED", source_identity: "EXACT_CONTENT_AND_CONFIGURED_LOCATION",
+      approval_boundary: "NO_INDEPENDENT_OPERATOR_BOUNDARY", mandatory_rule_authority: false,
+    } })
+    expect(restarted.current("owner")).toEqual(before)
+    expect(restarted.status("owner").coverage).not.toHaveProperty("approved", true)
+  })
+
+  test("larger mandatory allowance does not expand optional evidence or clip required bodies", () => {
+    const path = project(), source = skill(path, "required-procedure", "Complete required step.\n".repeat(150))
+    const memory = runtime(path)
+    memory.beginTask("owner", "Follow the approved procedure")
+    memory.bindSkill("owner", memory.index.search("required-procedure").skills[0]!.key)
+    memory.pin("owner", memory.propose("owner", "OPTIONAL EVIDENCE MUST NOT DISPLACE INSTRUCTIONS"))
+    const first = memory.prepare("owner", { allowanceBytes: 10_000, optionalAllowanceBytes: 2_000 })
+    const larger = memory.prepare("owner", { allowanceBytes: 20_000, optionalAllowanceBytes: 2_000 })
+    expect(first.blocked).toBe(false)
+    expect(first.text).toContain(source.full)
+    expect(first.text).not.toContain("OPTIONAL EVIDENCE MUST NOT DISPLACE INSTRUCTIONS")
+    expect(larger.text).toBe(first.text)
+    expect(first.receipt!.budget_omitted).toBeGreaterThan(0)
+    const insufficient = memory.prepare("owner", { allowanceBytes: 1_000, optionalAllowanceBytes: 2_000 })
+    expect(insufficient.blocked).toBe(true)
+    expect(insufficient.text).not.toContain(source.full)
+    expect(insufficient.receipt!.reasons.join(" ")).toContain("needs_context")
+  })
+
   test("off and read-only status do not initialize storage", () => {
     const path = project(), memory = new SessionMemoryRuntime(path)
     memory.observe([{ info: { sessionID: "owner", role: "user" }, parts: [{ type: "text", text: "continue" }] }])

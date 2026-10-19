@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto"
 import type { PluginInput } from "@opencode-ai/plugin"
 import { z } from "zod"
 import { canonicalJson } from "./persistence.ts"
-import { canonicalDirectory, isContained } from "./paths.ts"
+import { canonicalDirectory, hostProjectDirectory, isContained } from "./paths.ts"
 import { serializedBytes, utf8Bytes } from "./limits.ts"
 import { safeDiagnosticText } from "./diagnostics.ts"
 import { buildSkillEvidence, skillTurnProvenance } from "./skill-evolution-evidence.ts"
@@ -669,7 +669,7 @@ export class HistoricalInitializer {
 
   constructor(input: PluginInput, options: SkillEvolutionOptions, modelSnapshot: () => ModelResolutionMap | undefined, invoke: ChildInvoker, finalizeCandidate: CandidateFinalizer, abort: AbortSignal, childCapability: ChildCapability) {
     this.client = input.client
-    this.project = canonicalDirectory(input.worktree || input.directory)
+    this.project = canonicalDirectory(hostProjectDirectory(input.worktree, input.directory))
     this.directory = canonicalDirectory(input.directory)
     this.projectId = input.project?.id
     this.runtimeOptions = structuredClone(options)

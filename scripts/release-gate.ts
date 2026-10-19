@@ -133,7 +133,10 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
 ] as const
 
 const RELEASE_CONTROL_PATHS = [
-  ".gitattributes", ".gitignore", ".npmignore", "bun.lock", "package-lock.json", "tsconfig.json",
+  "docs/skill-knowledge-graph-design.md", "docs/execution-recovery-contract.md",
+  "docs/knowledge-environment-contract.md", "docs/context-decision-contract.md",
+  "docs/coordination-improvement-contract.md", "docs/opencode-v2-design.md", "docs/incident-watcher-design.md",
+  ".gitattributes", ".gitignore", ".npmignore", "docs/.npmignore", "bun.lock", "package-lock.json", "tsconfig.json",
 ] as const
 
 export function expectedPackedPaths(root = ROOT): string[] {

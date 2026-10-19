@@ -25,6 +25,8 @@ import { loadModelSettings, modelSettingsPath } from "../src/models.ts"
 import {
   isContained,
   canonicalDirectory,
+  hostProjectDirectory,
+  isFilesystemRoot,
   resolveContainedPath,
   resolveContainedPathWithOperations,
   type ContainmentFilesystemOperations,
@@ -33,6 +35,16 @@ import { runInstaller } from "../scripts/installer-core.ts"
 import { executeContext, removeProject, tempProject } from "./helpers.ts"
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+
+test("host root sentinels never broaden a scoped directory; real roots retain root gates", () => {
+  for (const root of ["/", "C:\\", "\\\\server\\share\\"]) {
+    expect(hostProjectDirectory(root, "/scoped/project")).toBe("/scoped/project")
+    expect(isFilesystemRoot(hostProjectDirectory(root, root))).toBe(true)
+  }
+  expect(hostProjectDirectory(undefined, "/scoped/project")).toBe("/scoped/project")
+  expect(hostProjectDirectory("", "/scoped/project")).toBe("/scoped/project")
+  expect(hostProjectDirectory("/git/worktree", "/git/worktree/nested")).toBe("/git/worktree")
+})
 
 function unavailable(error: unknown): boolean {
   const code = (error as NodeJS.ErrnoException)?.code

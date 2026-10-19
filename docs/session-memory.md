@@ -5,6 +5,12 @@ It keeps owner-bound task checkpoints and exact procedure versions outside the
 conversation, then rebuilds a bounded working view after compaction or restart.
 No graph database, embedding service, new MCP, port scan or learning model is needed.
 
+Non-Git folders are supported: OpenCode's `/` worktree sentinel resolves to the
+actual working directory, not the filesystem root. Git worktrees retain their
+repository scope. Prior builds may have placed non-Git state at a drive/root
+`.opencode` directory. That state is left untouched and is not silently imported
+into a different project identity; review and explicitly rebind local procedures.
+
 ## Enablement and tools
 
 Add options to the existing ALG plugin tuple, without installing a second copy:
@@ -30,7 +36,89 @@ are unchanged. Assist mode replaces duplicate legacy skill injection.
 `alg_context_status` reports bindings, next step, selection, omissions, budget and
 coverage. `alg_memory_search` finds metadata; `alg_memory_read` expands an owned
 object (complete instructions for skills); `alg_memory_propose` stores unverified,
-private, unpinned proposals. None approves permissions. Registration now has 19 tools.
+private, unpinned proposals. `alg_skill` previews, policy-approves and loads exact
+skill revisions. None approves permissions. Registration now has 20 tools.
+
+### Delegated skill approval in V1
+
+Enable `sessionMemory.mode: "assist"` to restore instructions. Search with
+`alg_memory_search`, then call `alg_skill` with `{"action":"preview","skill_key":"<skill-key>"}`.
+Preview returns the canonical project identity, source-root identity and exact
+candidate revision. Authorize a trusted source and bounded scope once. The harness
+can then approve new eligible revisions without editing configuration:
+
+```json
+{
+  "sessionMemory": {
+    "mode": "assist",
+    "approvalPolicy": {
+      "schema_version": 2,
+      "project": "<preview.project>",
+      "rules": [{
+        "id": "local-procedures", "revision": "1",
+        "source": "<preview.source>", "skills": ["connect-lake"],
+        "environments": ["development"], "operations": ["read"]
+      }]
+    }
+  }
+}
+```
+
+Replace placeholders with actual preview values; the example is not executable
+configuration. Preserve other plugin options. Use the existing sidecar options
+path if the installed host cannot accept plugin tuples. Restart OpenCode to load
+policy changes. No tool modifies this policy or the host permission configuration.
+
+Rules match configured source-root identity and exact skill names, environment
+names and operation names. `"*"` explicitly permits any value; a restricted list
+does not accept an unrestricted/empty manifest scope. Scope is a declared
+applicability constraint, not static proof of what instructions will do. Trusting
+a writable source delegates approval to its authors within these application checks.
+
+The harness may now call `alg_skill` with `action: "approve"` and `skill_key`.
+It receives a `receipt_id` but no active binding. Call `action: "load"` with
+`receipt_id` to activate in assist mode. The response contains metadata only;
+complete instructions arrive through the next context hook, avoiding an extra
+copy in the transcript. Future compactions and
+restarts restore the same closure without another approval request. Use
+`repin: true` only to explicitly replace an active revision after new approval.
+ALG workers cannot call this approval tool; they receive scoped parent handoffs.
+
+Receipts say `policy-approved`, not human-reviewed, and bind exact closure hashes
+to the matching rule ID and digest. Unrelated rule changes preserve receipts;
+removing/changing the matching rule requires restart and invalidates its receipts.
+For immediate revocation use the existing `memory revoke` command
+with the receipt ID. Revocation is node-scoped; revoke each delegated copy for
+immediate withdrawal across existing children, or withdraw policy and restart all
+controllers. Reapproving identical inputs does not undo revocation.
+Schema-version-1 hash allowlists remain readable with their original semantics;
+they are not silently broadened. Move to policy schema 2 explicitly and reapprove
+bindings once. Policy schema 2 is a V1 ALG feature, not OpenCode V2 support.
+No-policy legacy mode remains unattested; enabling policy requires new approvals
+for old pins. Approval grants no tools, network access or credentials.
+
+This is an application boundary, not protection against an unrestricted agent
+rewriting its own config or plugin under the same OS account. There is no new
+service, model dependency or V2 implementation. See the
+[approval contract](https://github.com/cmcdowell03/opencode-alg/blob/main/docs/knowledge-environment-contract.md#review-and-approval-records).
+
+### Bounded delivery observations
+
+Delivery evidence retains the latest eight preparations/outcomes in one atomic
+file per session. Late settlements cannot replace newer observations; a settlement
+outside that retained window is unavailable, not successful. This is a bounded
+diagnostic window, not a permanent per-request audit log. New writes do not scan
+or grow legacy delivery buckets. Existing evidence is left untouched; no automatic
+deletion of legacy data occurs.
+
+Each observation is capped at 64 KiB, the journal at 2 MiB and admission at 4,096
+session journals. After a failed record write, ALG attempts to withdraw its owned
+procedure text and emit a bounded recovery notice when room allows. Ambiguous
+concurrent edits remain untouched; foreign context is preserved. The host
+conversation remains usable. `alg_context_status` reports delivery failure; the
+in-process error flag is not durable evidence. Required-procedure preflight still
+applies to integrated ALG actions. Other immutable memory stores retain their
+existing quotas; this change does not claim unlimited project storage.
 
 ## Explicit operator workflow
 
@@ -170,6 +258,7 @@ MCPs are outside enforcement coverage. Replay is best-effort, not lossless archi
 
 Run `bun run check:session-memory <absolute-existing-evidence-directory>` for the
 source-bound synthetic/type/package gate. No production services or paid models run.
+Add `--full` to run the entire local Bun suite instead of the affected-test subsets.
 The benchmark includes verified reads and receipt writes with 100 skills/1,000
 unrelated nodes. Initial Windows warm/cold p95 was 653/1,752 ms; direct-address
 restoration reduced it to 313/116 ms. The proposed 100 ms warm target was not met.

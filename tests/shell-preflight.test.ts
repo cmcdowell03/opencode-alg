@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { spawnSync } from "node:child_process"
+import { runReleaseCommand } from "../scripts/release-gate.ts"
 import { existsSync, mkdirSync, readFileSync, rmdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { gateCommandExists, inspectGateCommand, preflightShellGates } from "../src/shell-preflight.ts"
@@ -364,9 +364,12 @@ test("actual local gate runs in an explicit repository directory with spaces", a
       await executeRun(run, executeContext(project));
       if (run.status !== "done") throw new Error(JSON.stringify(run.nodes.gate.last_failures));
     `
-    const child = spawnSync(process.execPath, ["-e", script], { cwd: project, encoding: "utf8", timeout: 30_000, windowsHide: true })
+    // Use the bounded async supervisor: this Windows Bun build can report a
+    // spawnSync ETIMEDOUT long before its deadline after earlier subprocess tests.
+    const child = await runReleaseCommand("smoke", process.execPath, ["-e", script], project, undefined, undefined, 30_000)
+    expect(child.supervision).toMatchObject({ timed_out: false, error: null, cleanup_error: null, signal: null })
     expect(child.stderr).toBe("")
-    expect(child.status).toBe(0)
+    expect(child.evidence.exit_code).toBe(0)
     const completed = hydrateRunFully(loadRun(project, run.run_id)!)
     expect(completed.nodes.gate!.last_failures).toEqual([])
     expect(completed.status).toBe("done")

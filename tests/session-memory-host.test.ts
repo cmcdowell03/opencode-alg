@@ -1,13 +1,13 @@
 /** Deterministic SDK fixtures, NOT an attestation of the OpenCode final provider prompt. */
 import { afterEach, describe, expect, test } from "bun:test"
-import { existsSync, mkdirSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, writeFileSync, unlinkSync } from "node:fs"
 import { join } from "node:path"
 import server from "../src/index.ts"
 import { SessionMemoryRuntime } from "../src/session-memory/runtime.ts"
 import { createMemoryTools } from "../src/session-memory/tools.ts"
 import { executeWithMemory } from "../src/session-memory/attempts.ts"
 import { localOrigin, publishEnvironment } from "../src/session-memory/environment.ts"
-import { hashObject } from "../src/session-memory/store.ts"
+import { hashObject, hashText } from "../src/session-memory/store.ts"
 import { runNodeSession } from "../src/sessions.ts"
 import { createRun, loadRun } from "../src/store.ts"
 import { SkillEvolutionOptionsSchema } from "../src/skill-evolution-schemas.ts"
@@ -39,6 +39,148 @@ function context(path: string, owner = "owner") { return { sessionID: owner, mes
 const input = (owner = "owner") => ({ sessionID: owner, model: { limit: { context: 128000, output: 4096 } } }) as any
 
 describe("session memory SDK-boundary conformance", () => {
+  test("non-Git host sentinel keeps skills, approvals and compaction inside the working directory", async () => {
+    const { path, body } = fixture()
+    const discovery = new SessionMemoryRuntime(path, { mode: "assist" }, [".opencode/skills"], [])
+    const key = discovery.index.search("fixture-procedure").skills[0]!.key
+    const base = plugin(path)
+    base.worktree = "/"
+    const options = { skillEvolution: { enabled: false }, sessionMemory: { mode: "assist", approvalPolicy: {
+      schema_version: 2, project: discovery.store.projectId, rules: [{ id: "fixture", revision: "1",
+        source: discovery.index.source(key), skills: ["fixture-procedure"], environments: ["*"], operations: ["*"] }],
+    } } }
+    const hooks = await server(base, options)
+    const toolContext = { ...context(path), worktree: "/" }
+    try {
+      const approved = JSON.parse((await hooks.tool!.alg_skill!.execute({ action: "approve", skill_key: key }, toolContext) as any).output)
+      expect(approved.receipt_id).toMatch(/^[a-f0-9]{64}$/)
+      const loaded = JSON.parse((await hooks.tool!.alg_skill!.execute({ action: "load", receipt_id: approved.receipt_id }, toolContext) as any).output)
+      expect(loaded.loaded).toBe(true)
+      const output = { system: ["foreign context"] }
+      await hooks["experimental.chat.system.transform"]!(input(), output)
+      expect(output.system.join("\n")).toContain(body)
+      const compact = { context: ["foreign compaction"] }
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+      expect(compact.context.join("\n")).toContain(body)
+      expect(discovery.store.checkpoint("owner")).not.toBeNull()
+      const foreign = fixture().path
+      const denied = JSON.parse((await hooks.tool!.alg_skill!.execute({ action: "preview", skill_key: key }, { ...toolContext, directory: foreign }) as any).output)
+      expect(denied.error).toContain("foreign tool project")
+    } finally { await hooks.dispose?.() }
+  })
+  test("corrupt delivery telemetry does not fail host hooks or retain stale procedures", async () => {
+    const { path, body } = fixture()
+    const hooks = await server(plugin(path), { sessionMemory: { mode: "assist" }, skillEvolution: { enabled: false } })
+    try {
+      await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+        { info: { id: "u", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "Use fixture-procedure" }] },
+      ] } as any)
+      const output = { system: ["foreign"] }
+      await hooks["experimental.chat.system.transform"]!(input(), output)
+      expect(output.system.join("\n")).toContain(body)
+      writeFileSync(join(path, ".opencode/session-memory/delivery-journals", `${hashObject("owner")}.json`), "corrupt")
+      await hooks["experimental.chat.system.transform"]!(input(), output)
+      expect(output.system[0]).toBe("foreign")
+      expect(output.system.join("\n")).not.toContain(body)
+      const compact = { context: ["foreign"] }
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+      expect(compact.context.join("\n")).not.toContain(body)
+      const status = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
+      expect(status.delivery_error).toBe("unavailable")
+    } finally { await hooks.dispose?.() }
+  })
+  test("revoked or missing procedures replace stale owned context and remain unavailable after restart", async () => {
+    for (const failure of ["revoked", "missing"] as const) {
+      const { path, body } = fixture()
+      const options = { sessionMemory: { mode: "assist" }, skillEvolution: { enabled: false } }
+      let hooks = await server(plugin(path), options)
+      try {
+        await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+          { info: { id: "opening", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "Use fixture-procedure" }] },
+        ] } as any)
+        const output = { system: ["foreign policy"] }
+        await hooks["experimental.chat.system.transform"]!(input(), output)
+        expect(output.system.join("\n")).toContain(body)
+        const memory = new SessionMemoryRuntime(path, { mode: "assist" })
+        if (failure === "revoked") memory.store.revoke(memory.current("owner").skills[0]!.id)
+        else unlinkSync(join(path, ".opencode", "skills", "fixture-procedure", "SKILL.md"))
+        await hooks["experimental.chat.system.transform"]!(input(), output)
+        expect(output.system[0]).toBe("foreign policy")
+        expect(output.system.join("\n")).not.toContain(body)
+        expect(output.system.join("\n")).toContain("ALG recovery blocked")
+        await hooks.dispose?.()
+        hooks = await server(plugin(path), options)
+        await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+          { info: { id: "continue", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "continue" }] },
+        ] } as any)
+        const restarted = { system: ["foreign policy"] }
+        await hooks["experimental.chat.system.transform"]!(input(), restarted)
+        expect(restarted.system.join("\n")).not.toContain(body)
+        const status = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
+        expect(status.receipt.state).toBe("blocked")
+        expect(status.receipt.selected).toEqual([])
+        expect(status.delivery).toMatchObject({ state: "emitted", context_state: "blocked" })
+      } finally { await hooks.dispose?.() }
+    }
+  })
+
+  test("twenty compacted turns retain exact prerequisites without duplicate injection or skill reminders", async () => {
+    const { path, body } = fixture()
+    const directory = join(path, ".opencode", "skills", "fixture-procedure")
+    const prerequisite = "Verify the selected synthetic dataset timezone before comparing totals.\n"
+    writeFileSync(join(directory, "procedure.txt"), prerequisite)
+    writeFileSync(join(directory, "ALG.json"), JSON.stringify({ schema_version: 1,
+      requires: [{ path: "procedure.txt", sha256: hashText(prerequisite) }] }))
+    const discovery = new SessionMemoryRuntime(path, { mode: "assist" }, [".opencode/skills"], [])
+    const key = discovery.index.search("fixture-procedure").skills[0]!.key
+    const options = { sessionMemory: { mode: "assist", approvalPolicy: { schema_version: 2,
+      project: discovery.store.projectId, rules: [{ id: "fixture", revision: "1", source: discovery.index.source(key),
+        skills: ["fixture-procedure"], environments: ["*"], operations: ["*"] }] } }, skillEvolution: { enabled: false } }
+    let hooks = await server(plugin(path), options)
+    let compact = { context: ["foreign compaction context"] }
+    try {
+      await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+        { info: { id: "opening", role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "Use fixture-procedure" }] },
+      ] } as any)
+      for (let index = 0; index < 20; index++) {
+        if (index === 10) {
+          await hooks.dispose?.()
+          hooks = await server(plugin(path), options)
+          compact = { context: ["foreign compaction context"] }
+          // No compaction callback before this restart. No instruction-bearing
+          // message survives; only the durable binding can restore the procedure.
+        }
+        const output = { system: ["host policy"] }
+        await hooks["experimental.chat.system.transform"]!(input(), output)
+        output.system.push(`foreign appended ${index}`)
+        await hooks["experimental.chat.system.transform"]!(input(), output)
+        const text = output.system.join("\n")
+        expect(text.split(body).length - 1).toBe(1)
+        expect(text.split(prerequisite).length - 1).toBe(1)
+        expect(output.system[0]).toBe("host policy")
+        expect(output.system).toContain(`foreign appended ${index}`)
+        await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+        await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+        expect(compact.context[0]).toBe("foreign compaction context")
+        expect(compact.context.join("\n").split(body).length - 1).toBe(1)
+        expect(compact.context.join("\n").split(prerequisite).length - 1).toBe(1)
+        await hooks["experimental.chat.messages.transform"]!({}, { messages: [
+          { info: { id: `continue-${index}`, role: "user", sessionID: "owner" }, parts: [{ type: "text", text: "continue" }] },
+        ] } as any)
+      }
+      // A new source revision is not silently substituted into the old binding.
+      writeFileSync(join(directory, "procedure.txt"), "Changed prerequisite\n")
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
+      expect(compact.context.join("\n")).not.toContain(body)
+      expect(compact.context.join("\n")).not.toContain(prerequisite)
+      expect(compact.context[0]).toBe("foreign compaction context")
+      const status = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
+      expect(status.receipt.state).toBe("blocked")
+      expect(status.delivery).toMatchObject({ state: "emitted", hook: "compaction", context_state: "blocked", host_confirmation: "NOT_ATTESTED" })
+      expect(status.coverage.host_prompt_delivery).toBe("NOT_ATTESTED")
+    } finally { await hooks.dispose?.() }
+  }, 60_000)
+
   test("learning-off hooks restore full procedures after compact/restart and preserve other plugins", async () => {
     const { path, body } = fixture(), options = { sessionMemory: { mode: "assist", fallbackTokens: 4096 }, skillEvolution: { enabled: false } }
     let hooks = await server(plugin(path), options)
@@ -46,9 +188,12 @@ describe("session memory SDK-boundary conformance", () => {
     const system = { system: ["host policy"] }
     await hooks["experimental.chat.system.transform"]!(input(), system)
     const afterSystem = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
+    expect(afterSystem.delivery).toMatchObject({ state: "emitted", hook: "system", current_checkpoint: true, host_confirmation: "NOT_ATTESTED" })
     const compact = { context: ["another plugin context"] }
     await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compact)
     const afterCompact = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
+    expect(afterCompact.delivery.request_id).not.toBe(afterSystem.delivery.request_id)
+    expect(afterCompact.delivery).toMatchObject({ state: "emitted", hook: "compaction" })
     expect(compact.context[0]).toBe("another plugin context")
     expect(afterCompact.receipt.selected).toEqual(afterSystem.receipt.selected)
     expect(afterCompact.receipt.omitted).toBe(afterSystem.receipt.omitted)
@@ -66,6 +211,11 @@ describe("session memory SDK-boundary conformance", () => {
     expect(output.system.join("\n")).toContain(body)
     const status = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
     expect(status.receipt.state).toBe("prepared")
+    expect(status.receipt.total_headroom_known).toBe(false)
+    const restartedCompact = { context: ["foreign context"] }
+    await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, restartedCompact)
+    const compactStatus = JSON.parse((await hooks.tool!.alg_context_status!.execute({}, context(path)) as any).output)
+    expect(compactStatus.receipt.total_headroom_known).toBe(false)
     expect(status.coverage.host_prompt_delivery).toBe("NOT_ATTESTED")
     expect(hooks["experimental.compaction.autocontinue"]).toBeUndefined()
     await hooks.dispose?.()
@@ -191,6 +341,10 @@ describe("session memory SDK-boundary conformance", () => {
       expect(memory.current(child).skills).toHaveLength(1)
       return { session_id: child, text: "", parsed: null, error: "synthetic failure" }
     } }
+    memory.deliveryUnavailable.add(owner)
+    await expect(executeWithMemory(memory, run, options)).rejects.toThrow("needs_context")
+    expect(children).toBe(0)
+    memory.deliveryUnavailable.delete(owner)
     const failed = await executeWithMemory(memory, run, options)
     expect(failed.status).toBe("failed")
     prepareRunForResume(failed)

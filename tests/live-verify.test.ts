@@ -4,6 +4,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -46,6 +47,7 @@ import {
 } from "../src/tui-registration.ts"
 import { computeAlgSourceIdentity, sourceIdentityMessage } from "../src/source-identity.ts"
 import { ALG_PLUGIN_ID, algServerStartupMessage } from "../src/types.ts"
+import { captureRuntimeIdentityAtModuleLoad, runtimeIdentityStartupMessage } from "../src/runtime-identity.ts"
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 
@@ -360,7 +362,7 @@ describe("live verifier reviewed-checkout binding", () => {
     const exact = structuredServerStartup()
     const [first, second] = ALG_TOOL_IDS
     const mutations = [
-      exact.replace("tools=19", "tools=18"),
+      exact.replace(`tools=${ALG_TOOL_IDS.length}`, `tools=${ALG_TOOL_IDS.length - 1}`),
       exact.replace(`${first},`, ""),
       exact.replace(first, "alg_replacement"),
       exact.replace(`${first},${second}`, `${second},${first}`),
@@ -384,6 +386,21 @@ describe("live verifier reviewed-checkout binding", () => {
       `${exact}${"x".repeat(4_097)}`,
     ]
     for (const mutation of mutations) expect(findServerStartupLine(mutation, false), mutation).toBeUndefined()
+  })
+
+  test("recognizes current deployment-identity startup without accepting contradictory metadata", () => {
+    const identity = captureRuntimeIdentityAtModuleLoad(ROOT)
+    const digest = identity.source_manifest_at_module_load
+    const message = `${algServerStartupMessage(false)} ${runtimeIdentityStartupMessage(identity)} configuration_source=defaults`
+    const actual = structuredServerStartup().replace(JSON.stringify(algServerStartupMessage(false)), JSON.stringify(message)) +
+      ` configuration_source=defaults configuration_sidecar_present=false deployment_identity_protocol=${identity.protocol} deployment_build=${identity.build} source_manifest_at_module_load=${digest}`
+    expect(findServerStartupLine(actual, false, digest)).toBe(actual)
+    expect(findServerStartupLine(actual, false, "0".repeat(64))).toBeUndefined()
+    for (const invalid of [actual.replace("configuration_sidecar_present=false", "configuration_sidecar_present=true"),
+      actual.replace("deployment_build=", "deployment_build=wrong-"), actual.replace("skill_evolution_enabled=false", "skill_evolution_enabled=true"),
+      actual + " unexpected=true", actual.replace(`source_manifest_at_module_load=${digest}`, `source_manifest_at_module_load=${"f".repeat(64)}`)]) {
+      expect(findServerStartupLine(invalid, false, digest)).toBeUndefined()
+    }
   })
 })
 
@@ -492,6 +509,19 @@ describe("server tool registration readiness", () => {
 })
 
 describe("retained live evidence destination confinement", () => {
+  test("extracted packages without Git keep their source boundary and permit external evidence", () => {
+    const directory = mkdtempSync(join(tmpdir(), "alg-extracted-live-"))
+    try {
+      const packageRoot = join(directory, "package"), evidenceRoot = join(directory, "external")
+      mkdirSync(packageRoot)
+      const options = { pluginRoot: packageRoot, tempEvidenceRoot: evidenceRoot, approvedEvidenceRoot: null }
+      const output = join(evidenceRoot, "live.json")
+      const prepared = prepareLiveEvidenceDestination(output, options)
+      expect(prepared.repository_root).toBe(realpathSync.native(packageRoot))
+      expect(prepared.path).toBe(resolve(output))
+      expect(() => prepareLiveEvidenceDestination(join(packageRoot, "live.json"), options)).toThrow(/outside the entire containing repository/)
+    } finally { rmSync(directory, { recursive: true, force: true }) }
+  })
   function destinationFixture(): {
     base: string
     repository: string

@@ -11,6 +11,29 @@ stores reviewed, scoped environment facts in local SQLite and supports immutable
 snapshot/journal replication. It performs no automatic discovery and adds no tool
 IDs; the existing read-only memory tools expose its bounded results when enabled.
 
+Draft architecture: [durable operational context and execution](docs/skill-knowledge-graph-design.md)
+connects work, environment knowledge, skills, authority, effects and verification
+across compaction and restart. Four component contracts cover
+[execution and recovery](docs/execution-recovery-contract.md),
+[knowledge and environment](docs/knowledge-environment-contract.md),
+[context and decisions](docs/context-decision-contract.md), and
+[coordination and improvement](docs/coordination-improvement-contract.md).
+Reconciled [OpenCode V2](docs/opencode-v2-design.md) and
+[incident watcher](docs/incident-watcher-design.md) drafts use these shared
+contracts. Delivery increments and local acceptance gates are proposals, not
+implemented capabilities.
+
+The delivery target for this design is OpenCode V1. V2 remains unfinished design
+work: shared interfaces may anticipate it, but its runtime implementation and
+probes are deferred and do not gate V1 delivery.
+
+The proposed [first V1 phase](docs/skill-knowledge-graph-design.md#first-v1-implementation-phase)
+focuses on restoring already-approved, exact-revision skills and prerequisites
+through compaction/restart, with bounded context and visible gaps. Proactive routing
+follows separately; broader environment knowledge, recovery hardening, coordination
+and optional learning remain in the umbrella roadmap. This is a plan, not a claim
+that the new phase is implemented.
+
 Optional capabilities: [policy-bounded DuckDB developer query plane](docs/duckdb-query-plane.md). It is project-local, separately prepared, disabled by default, and is not an ALG core tool.
 
 New explicit workflows: [experience records, troubleshooting, paired skill evaluation, and pinned local data science](docs/experience-and-data-science.md); [synthetic connector preparation](docs/connectors.md). These are default-off and do not imply live deployment validation.
@@ -52,9 +75,11 @@ These are the 15 base public server tool IDs, in registration order. The six
 remain inspectable, but skill evolution is disabled by default and its audit or
 mutation operations fail closed until explicitly enabled.
 
-Four session-memory tools are also registered, keeping the full public tool
-registry at 19 IDs. Environment memory expands the existing read-only search,
-read, and status results rather than adding tools.
+Five session-memory tools are also registered, bringing the full public tool
+registry to 20 IDs: `alg_context_status`, `alg_memory_search`, `alg_memory_read`,
+`alg_memory_propose`, and `alg_skill`. See the [session-memory workflow](docs/session-memory.md)
+for delegated approval and loading. Environment memory expands the existing
+read-only search, read, and status results rather than adding tools.
 
 Historical review has a second, independent opt-in:
 `{"skillEvolution":{"enabled":true,"allowBuiltinToolMap":true,"historical":{"enabled":true}}}`. Merely
@@ -254,6 +279,8 @@ Put the whole package at any stable location (commonly `~/.config/opencode/plugi
 .\scripts\install.ps1
 # alternate config root and explicit bundled-agent update:
 .\scripts\install.ps1 -ConfigDir D:\sandbox\opencode -UpdateAgents
+# Explicit npm selection if the installed Bun cannot complete a frozen install:
+.\scripts\install.ps1 -ConfigDir D:\sandbox\opencode -PackageManager npm
 ```
 
 ```sh

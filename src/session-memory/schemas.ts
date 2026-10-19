@@ -6,7 +6,30 @@ export const Id = z.string().refine(isSafeId)
 export const SessionId = z.string().min(1).max(256)
 const Text = z.string().min(1).max(2000)
 const Time = z.iso.datetime({ offset: true })
+export const SkillApprovalRuleSchema = z.object({ key: Hash, closure: Hash,
+  environments: z.array(Id).max(32), operations: z.array(Id).max(32),
+}).strict()
+const LegacySkillApprovalPolicySchema = z.object({ schema_version: z.literal(1),
+  revision: Id, project: Hash, rules: z.array(SkillApprovalRuleSchema).max(256),
+}).strict()
+const Scope = z.array(z.union([Id, z.literal("*")])).min(1).max(32)
+export const SourceApprovalRuleSchema = z.object({ id: Id, revision: Id, source: Hash,
+  skills: z.array(z.union([Id, z.literal("*")])).min(1).max(128),
+  environments: Scope, operations: Scope,
+}).strict()
+export const SkillApprovalPolicySchema = z.union([LegacySkillApprovalPolicySchema,
+  z.object({ schema_version: z.literal(2), project: Hash, rules: z.array(SourceApprovalRuleSchema).max(256)
+    .refine((rules) => new Set(rules.map((rule) => rule.id)).size === rules.length, "duplicate approval rule id") }).strict(),
+])
+export const SkillApprovalSchema = z.union([z.object({ basis: z.literal("policy-approved"),
+  policy: Hash, revision: Id, project: Hash, rule: SkillApprovalRuleSchema,
+}).strict(), z.object({ schema_version: z.literal(2), basis: z.literal("policy-approved"), project: Hash,
+  rule_id: Id, rule_hash: Hash, key: Hash, closure: Hash,
+  environments: z.array(Id).max(32), operations: z.array(Id).max(32),
+}).strict()])
+export type SkillApprovalPolicy = z.infer<typeof SkillApprovalPolicySchema>
 export const MemoryOptionsSchema = z.object({
+  approvalPolicy: SkillApprovalPolicySchema.optional(),
   mode: z.enum(["off", "observe", "assist"]).default("off"),
   maxContextTokens: z.number().int().min(512).max(32768).default(8192),
   contextFraction: z.number().min(0.01).max(0.25).default(0.1),
@@ -21,6 +44,7 @@ export const FileRefSchema = z.object({
   bytes: z.number().int().min(1).max(65536),
 }).strict()
 export const SkillPayloadSchema = z.object({
+  approval: SkillApprovalSchema.optional(),
   key: Hash, name: Id, source: z.string().min(1).max(512),
   files: z.array(FileRefSchema).min(1).max(10),
   environments: z.array(Id).max(32), operations: z.array(Id).max(32),

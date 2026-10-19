@@ -28,6 +28,7 @@ import {
   assertFilesystemRootAuthorized,
   canonicalContainedDirectory,
   canonicalDirectory,
+  hostProjectDirectory,
   isContained,
   isFilesystemRoot,
 } from "./paths.ts"
@@ -449,7 +450,7 @@ function runResponse(run: RunState, events: string[], detail: Detail) {
 }
 
 function roots(plugin: PluginInput, context: ToolContext): { project: string; directory: string } {
-  const project = canonicalDirectory(context.worktree || plugin.worktree || context.directory || plugin.directory)
+  const project = canonicalDirectory(hostProjectDirectory(context.worktree || plugin.worktree, context.directory || plugin.directory))
   const directory = canonicalContainedDirectory(project, context.directory || plugin.directory || project)
   return { project, directory }
 }

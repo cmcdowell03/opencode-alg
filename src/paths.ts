@@ -177,6 +177,14 @@ export function isFilesystemRoot(path: string): boolean {
   return posix.isAbsolute(path) && portable === posix.parse(portable).root
 }
 
+/** OpenCode uses `/` as a no-repository worktree sentinel. Never broaden a
+ * scoped working directory to that sentinel (or a drive/share root).
+ * An actual root working directory remains a root and retains its explicit gates.
+ */
+export function hostProjectDirectory(worktree: string | undefined, directory: string): string {
+  return worktree && !isFilesystemRoot(worktree) ? worktree : directory
+}
+
 export function assertFilesystemRootAuthorized(
   projectDirectory: string,
   allowed: boolean | undefined,

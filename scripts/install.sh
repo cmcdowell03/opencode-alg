@@ -9,9 +9,12 @@ if [[ $# -gt 0 && "$1" != -* ]]; then
 fi
 
 cd "$ROOT"
-if command -v bun >/dev/null 2>&1; then
+PACKAGE_MANAGER="${ALG_INSTALL_PACKAGE_MANAGER:-auto}"
+case "$PACKAGE_MANAGER" in auto|bun|npm) ;; *) echo "ALG_INSTALL_PACKAGE_MANAGER must be auto, bun, or npm" >&2; exit 1 ;; esac
+if [[ "$PACKAGE_MANAGER" == bun ]] || { [[ "$PACKAGE_MANAGER" == auto ]] && command -v bun >/dev/null 2>&1; }; then
+  command -v bun >/dev/null 2>&1 || { echo "Selected package manager bun is unavailable" >&2; exit 1; }
   [[ -f "$ROOT/bun.lock" ]] || { echo "bun.lock is required for frozen dependency installation" >&2; exit 1; }
-  bun install --frozen-lockfile --ignore-scripts
+  bun install --frozen-lockfile --ignore-scripts || { echo "Frozen Bun install failed; configuration was not changed. Retry explicitly with ALG_INSTALL_PACKAGE_MANAGER=npm to use the npm lockfile." >&2; exit 1; }
   exec bun run scripts/installer-core.ts --config-dir "$CONFIG_DIR" "$@"
 fi
 if command -v npm >/dev/null 2>&1; then

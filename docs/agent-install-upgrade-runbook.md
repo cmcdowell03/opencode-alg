@@ -29,6 +29,22 @@ existing data.
 
 ## Prerequisites
 
+For a **new direct installation** (not an existing snapshot registration), select
+the package manager explicitly when necessary. Bun 1.3.14 on Windows has been
+observed failing a frozen install with `msgpackr-extract: ENOENT`, even with
+scripts disabled. `scripts/install.ps1 -PackageManager npm -ConfigDir <directory>`
+uses the shipped npm lockfile even when Bun is on PATH. The POSIX equivalent is
+`ALG_INSTALL_PACKAGE_MANAGER=npm bash scripts/install.sh <directory>`. Dependency
+failure never falls through to registration or silently switches lockfiles.
+
+A source ZIP alone is not an air-gapped installation bundle. Prepare dependencies
+on a connected machine matching the target OS/architecture, transfer the package
+and its dependency tree together, then run `bun --no-install run
+scripts/offline-diagnostics.ts` on the destination before registration. Invoke
+`bun --no-install run scripts/installer-core.ts --config-dir <directory>` only
+for a new direct registration. Avoid the dependency-installing launchers offline;
+existing snapshot registrations must follow the backup/repoint steps below.
+
 `git`, `bun` (1.3+), `npm`, and `opencode` on PATH, and a checkout of the ALG
 repository at the target commit with dependencies installed:
 
@@ -166,7 +182,7 @@ its last lines. Compare with `baseline.json`:
 during the upgrade; report it.
 
 Finally, ask the user to start OpenCode normally. The server log line
-`alg plugin loaded skill_evolution=… tools=19 …` confirms the plugin loaded.
+`alg plugin loaded skill_evolution=… tools=20 …` confirms the plugin loaded.
 
 ### Optional live smoke test (uses model calls)
 

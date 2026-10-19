@@ -9,6 +9,7 @@ import { acquireFilesystemMutex } from "../filesystem-mutex.ts"
 import { redactEvolutionText } from "../skill-evolution-redaction.ts"
 import { createHash } from "node:crypto"
 import { CheckpointSchema, ContextReceiptSchema, Hash, MemoryNodeSchema, SessionId, type Checkpoint, type ContextReceipt, type MemoryNode, type StoredNode } from "./schemas.ts"
+import { DeliveryJournalSchema, DeliveryLatestSchema, DeliveryReceiptSchema, DeliveryRequestHeadSchema, type DeliveryReceipt } from "./delivery-schema.ts"
 
 export const hashText = (value: string) => createHash("sha256").update(value).digest("hex")
 export const hashObject = sha256Json
@@ -58,17 +59,24 @@ export class MemoryStore {
   private census(bucket: string, maxCount: number, maxBytes: number): void {
     const path = this.path([bucket])
     if (!existsSync(path)) return
+    const before = lstatSync(path)
     const directory = opendirSync(path)
     let count = 0, bytes = 0
     try {
       for (let entry = directory.readSync(); entry; entry = directory.readSync()) {
-        const item = this.path([bucket, entry.name])
+        // The bucket ancestry was checked above. Rewalking it for every file
+        // makes immutable receipt publication increasingly expensive. Still
+        // validate each leaf and verify the same directory again after the scan.
+        if (!isSafeId(entry.name) && !/^[a-f0-9]{64}\.(json|txt)$/.test(entry.name)) throw new Error("unsafe memory path")
+        const item = join(path, entry.name)
         const stat = lstatSync(item)
-        if (!stat.isFile()) throw new Error("unexpected memory directory entry")
+        if (!stat.isFile() || stat.isSymbolicLink() || relative(item, realpathSync.native(item)) !== "") throw new Error("unexpected memory directory entry")
         count++; bytes += stat.size
         if (count >= maxCount || bytes >= maxBytes) throw new Error("memory capacity reached; nothing evicted")
       }
     } finally { directory.closeSync() }
+    const after = lstatSync(this.path([bucket]))
+    if (!after.isDirectory() || before.dev !== after.dev || before.ino !== after.ino) throw new Error("memory directory changed during census")
   }
   lock<T>(work: (fence: () => void) => T): T {
     const path = this.path(["writer.lock"], true)
@@ -205,5 +213,98 @@ export class MemoryStore {
     const value = ContextReceiptSchema.parse(JSON.parse(this.read(parts, 65536)))
     if (value.owner !== owner) throw new Error("receipt owner mismatch")
     return value
+  }
+
+  private deliveryJournal(owner: string) {
+    SessionId.parse(owner)
+    const parts = ["delivery-journals", `${sha256Json(owner)}.json`]
+    if (!existsSync(this.path(parts))) return null
+    const journal = DeliveryJournalSchema.parse(JSON.parse(this.read(parts, 2 * 1024 * 1024)))
+    if (journal.owner !== owner || journal.project !== this.projectId) throw new Error("foreign delivery journal")
+    for (const { prepared, current } of journal.entries) {
+      const expected = { ...prepared, state: current.state, prepared_ref: current.prepared_ref, created_at: current.created_at,
+        ...(current.state === "unknown" ? { reason: current.reason } : {}) }
+      if (sha256Json(expected) !== sha256Json(current) || (current.state === "prepared"
+        ? sha256Json(prepared) !== sha256Json(current) : current.prepared_ref !== sha256Json(prepared))) throw new Error("delivery preparation mismatch")
+    }
+    return journal
+  }
+  private writeDeliveryJournal(owner: string, journal: z.infer<typeof DeliveryJournalSchema>, fence: () => void) {
+    const path = this.path(["delivery-journals", `${sha256Json(owner)}.json`], true)
+    // Admission census only for a new session, never once per model call.
+    if (!existsSync(path)) this.census("delivery-journals", 4096, 512 * 1024 * 1024)
+    const bytes = canonicalJson(DeliveryJournalSchema.parse(journal))
+    if (Buffer.byteLength(bytes) > 2 * 1024 * 1024) throw new Error("delivery journal capacity reached")
+    atomicWriteFile(path, bytes, false, { commitBoundaryFence: fence })
+  }
+  /** New writes are bounded per session. Legacy immutable receipts remain read-only. */
+  prepareDelivery(owner: string, requestId: string, hook: "system" | "compaction", context: ContextReceipt): string {
+    return this.lock((fence) => {
+      const checkpoint = this.checkpoint(owner)
+      if (!checkpoint || checkpoint.deleted || context.owner !== owner || context.revision !== checkpoint.revision || context.generation !== checkpoint.generation) {
+        throw new Error("delivery checkpoint conflict")
+      }
+      const value = DeliveryReceiptSchema.parse({ schema_version: 1, kind: "alg-context-delivery", project: this.projectId,
+        owner, request_id: requestId, request_correlation: "plugin_hook_only", hook,
+        checkpoint: sha256Json(checkpoint), task_epoch: checkpoint.task_epoch, context,
+        created_at: new Date().toISOString(), state: "prepared", prepared_ref: null })
+      if (Buffer.byteLength(canonicalJson(value)) > 65536) throw new Error("delivery observation exceeds bound")
+      const journal = this.deliveryJournal(owner) ?? { schema_version: 2 as const, project: this.projectId, owner, entries: [] }
+      if (journal.entries.some((entry) => entry.prepared.request_id === requestId)) throw new Error("delivery request already exists")
+      journal.entries = [...journal.entries.slice(-7), { prepared: value, current: value }]
+      this.writeDeliveryJournal(owner, journal, fence)
+      return sha256Json(value)
+    })
+  }
+
+  delivery(owner: string, requestId?: string): { id: string; value: DeliveryReceipt } | null {
+    const journal = this.deliveryJournal(owner)
+    if (journal) {
+      const entry = requestId === undefined ? journal.entries.at(-1) : journal.entries.find((entry) => entry.prepared.request_id === requestId)
+      return entry ? { id: sha256Json(entry.current), value: entry.current } : null
+    }
+    return this.legacyDelivery(owner, requestId)
+  }
+  private legacyDelivery(owner: string, requestId?: string): { id: string; value: DeliveryReceipt } | null {
+    SessionId.parse(owner)
+    if (requestId === undefined) {
+      const parts = ["delivery-latest", `${sha256Json(owner)}.json`]
+      if (!existsSync(this.path(parts))) return null
+      const latest = DeliveryLatestSchema.parse(JSON.parse(this.read(parts, 4096)))
+      if (latest.owner !== owner || latest.project !== this.projectId) throw new Error("foreign delivery index")
+      requestId = latest.request_id
+    }
+    const parts = ["delivery-requests", `${sha256Json([owner, requestId])}.json`]
+    if (!existsSync(this.path(parts))) return null
+    const head = DeliveryRequestHeadSchema.parse(JSON.parse(this.read(parts, 4096)))
+    if (head.owner !== owner || head.project !== this.projectId || head.request_id !== requestId) throw new Error("foreign delivery request")
+    const value = DeliveryReceiptSchema.parse(JSON.parse(this.read(["deliveries", `${head.receipt}.json`], 65536)))
+    if (sha256Json(value) !== head.receipt || value.owner !== owner || value.project !== this.projectId || value.request_id !== requestId) {
+      throw new Error("delivery integrity mismatch")
+    }
+    if (value.state !== "prepared") {
+      const prepared = DeliveryReceiptSchema.parse(JSON.parse(this.read(["deliveries", `${value.prepared_ref}.json`], 65536)))
+      if (sha256Json(prepared) !== value.prepared_ref || prepared.state !== "prepared" ||
+        prepared.owner !== owner || prepared.project !== this.projectId || prepared.request_id !== requestId ||
+        prepared.hook !== value.hook || prepared.checkpoint !== value.checkpoint || prepared.task_epoch !== value.task_epoch ||
+        sha256Json(prepared.context) !== sha256Json(value.context)) throw new Error("delivery preparation mismatch")
+    }
+    return { id: head.receipt, value }
+  }
+
+  settleDelivery(owner: string, requestId: string, preparedRef: string,
+    outcome: { state: "emitted" } | { state: "unknown"; reason: "hook_failed" | "publication_conflict" | "emission_unconfirmed" }): string {
+    return this.lock((fence) => {
+      const prior = this.delivery(owner, requestId)
+      if (!prior || prior.id !== preparedRef || prior.value.state !== "prepared") throw new Error("delivery transition conflict")
+      const value = DeliveryReceiptSchema.parse({ ...prior.value, ...outcome, prepared_ref: preparedRef, created_at: new Date().toISOString() })
+      const journal = this.deliveryJournal(owner)
+      const entry = journal?.entries.find((entry) => entry.prepared.request_id === requestId)
+      if (!journal || !entry) throw new Error("delivery transition outside retained window")
+      entry.current = value
+      this.writeDeliveryJournal(owner, journal, fence)
+      // Array order is preparation order, not completion order.
+      return sha256Json(value)
+    })
   }
 }

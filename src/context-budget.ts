@@ -21,6 +21,8 @@ export const ContextBudgetOptionsSchema = z.object({
   perCall: z.number().min(0.005).max(0.5).default(0.05),
   /** Share of the window ALG may add to a compaction prompt. */
   compaction: z.number().min(0.005).max(0.5).default(0.05),
+  /** Normal optional-context target, independently bounded by the hard ceiling. */
+  normal: z.number().min(0).max(0.5).default(0.05),
   /** ALG never plans to use more than this share of the window that is still free. */
   ofAvailable: z.number().min(0.05).max(1).default(0.5),
   /**
@@ -35,7 +37,7 @@ export const ContextBudgetOptionsSchema = z.object({
   }).strict().default({ run: 0.2, skills: 0.35, memory: 0.35, environment: 0.1 }),
   /** Estimated bytes of text per model token, used to turn a token share into a byte allowance. */
   bytesPerToken: z.number().min(1).max(8).default(3),
-  /** The least ALG plans for, so the essentials still fit when the window is nearly full. */
+  /** Recovery reserve; may borrow output reservation, never actual input space or the configured share. */
   floorBytes: z.number().int().min(256).max(65_536).default(1_536),
 }).strict()
 
@@ -57,6 +59,7 @@ export interface ContextPlanSummary {
   used_tokens: number | null
   available_tokens: number | null
   total_bytes: number | null
+  normal_bytes: number | null
   limited_by: "share" | "available" | "floor" | "fixed"
   parts: Partial<Record<ContextPart, { allowed_bytes: number; spent_bytes: number }>>
 }
@@ -66,11 +69,14 @@ export interface ContextPlan {
   readonly dynamic: boolean
   /** Everything ALG may add under this plan, in bytes. Undefined when the plan is not dynamic. */
   readonly totalBytes: number | undefined
+  readonly recoveryBytes: number | undefined
   /**
    * Bytes the part may use now: its own share plus whatever the parts before it left unused.
    * Undefined when the plan is not dynamic or the part is not in use.
    */
   allow(part: ContextPart): number | undefined
+  /** Remaining hard ceiling for complete required content, after earlier spending. */
+  allowRequired(part: ContextPart): number | undefined
   /** Records what a part used, releasing the rest of its share to the parts after it. */
   spend(part: ContextPart, bytes: number): void
   spentBytes(): number
@@ -95,10 +101,12 @@ export function planContext(
     return {
       dynamic: false,
       totalBytes: undefined,
+      recoveryBytes: undefined,
       allow: () => undefined,
+      allowRequired: () => undefined,
       spend(part, bytes) { spent.set(part, (spent.get(part) ?? 0) + Math.max(0, bytes)) },
       spentBytes: () => [...spent.values()].reduce((sum, bytes) => sum + bytes, 0),
-      describe: () => ({ dynamic: false, kind, context_tokens: null, used_tokens: null, available_tokens: null, total_bytes: null,
+      describe: () => ({ dynamic: false, kind, context_tokens: null, used_tokens: null, available_tokens: null, total_bytes: null, normal_bytes: null,
         limited_by: "fixed", parts: Object.fromEntries([...spent].map(([part, bytes]) => [part, { allowed_bytes: 0, spent_bytes: bytes }])) }),
     }
   }
@@ -115,13 +123,23 @@ export function planContext(
     const fromAvailable = available * options.ofAvailable
     if (fromAvailable < tokens) { tokens = fromAvailable; limitedBy = "available" }
   }
-  let totalBytes = Math.floor(tokens * options.bytesPerToken)
-  if (totalBytes < options.floorBytes) { totalBytes = options.floorBytes; limitedBy = "floor" }
+  // Recovery may borrow the reply reserve, but not the configured share or
+  // physical input headroom. A completely full window still has zero allowance.
+  const ordinaryBytes = Math.floor(tokens * options.bytesPerToken)
+  const physicalBytes = Math.floor(Math.max(0, context - (used ?? context)) * options.bytesPerToken)
+  const recoveryBytes = Math.min(options.floorBytes, physicalBytes,
+    Math.floor(context * (kind === "compaction" ? options.compaction : options.perCall) * options.bytesPerToken))
+  const totalBytes = Math.max(ordinaryBytes, recoveryBytes)
+  // In memory-assist mode an explicitly raised ceiling is for mandatory content,
+  // not a reason to inflate optional evidence. Legacy guidance keeps its policy.
+  const normalBytes = active.includes("memory")
+    ? Math.min(ordinaryBytes, Math.floor(context * options.normal * options.bytesPerToken)) : ordinaryBytes
+  const spentBytes = () => [...spent.values()].reduce((sum, bytes) => sum + bytes, 0)
 
   const weight = (part: ContextPart) => options.shares[part]
   const weights = active.reduce((sum, part) => sum + weight(part), 0)
   const base = new Map<ContextPart, number>(active.map((part) =>
-    [part, Math.floor(totalBytes * (weights > 0 ? weight(part) / weights : 1 / Math.max(1, active.length)))]))
+    [part, Math.floor(normalBytes * (weights > 0 ? weight(part) / weights : 1 / Math.max(1, active.length)))]))
   const allow = (part: ContextPart): number | undefined => {
     const index = active.indexOf(part)
     if (index < 0) return undefined
@@ -138,12 +156,14 @@ export function planContext(
   return {
     dynamic: true,
     totalBytes,
+    recoveryBytes,
     allow,
+    allowRequired: (part) => active.includes(part) ? Math.max(0, totalBytes - spentBytes()) : undefined,
     spend(part, bytes) { spent.set(part, (spent.get(part) ?? 0) + Math.max(0, bytes)) },
-    spentBytes: () => [...spent.values()].reduce((sum, bytes) => sum + bytes, 0),
+    spentBytes,
     describe: () => ({
       dynamic: true, kind, context_tokens: context, used_tokens: used, available_tokens: available === null ? null : Math.floor(available),
-      total_bytes: totalBytes, limited_by: limitedBy,
+      total_bytes: totalBytes, normal_bytes: normalBytes, limited_by: limitedBy,
       parts: Object.fromEntries(active.map((part) => [part, { allowed_bytes: base.get(part)!, spent_bytes: spent.get(part) ?? 0 }])),
     }),
   }
@@ -188,7 +208,7 @@ export function estimateUsedTokens(messages: readonly UsageMessage[], bytesPerTo
  * the host's measurement includes and the plan must not count twice.
  */
 export class SessionWindows {
-  private readonly windows = new Map<string, { context?: number; output?: number; conversationTokens?: number; addedBytes?: number; last?: ContextPlanSummary }>()
+  private readonly windows = new Map<string, { context?: number; output?: number; conversationTokens?: number; measuredAddedBytes?: number; addedBytes?: number; last?: ContextPlanSummary }>()
   constructor(private readonly options: ContextBudgetOptions, private readonly maximum = 512) {}
 
   private entry(sessionId: string) {
@@ -204,7 +224,12 @@ export class SessionWindows {
   /** From the message hook: the whole window about to be sent. */
   observeMessages(sessionId: string, messages: readonly UsageMessage[]): void {
     const used = estimateUsedTokens(messages, this.options.bytesPerToken)
-    if (used !== undefined) this.entry(sessionId).conversationTokens = used
+    if (used !== undefined) {
+      const entry = this.entry(sessionId)
+      entry.conversationTokens = used
+      // Bind the subtraction to this observation, not a later, differently sized pack.
+      entry.measuredAddedBytes = entry.addedBytes ?? 0
+    }
   }
 
   /** From the system prompt hook: the limits of the model about to be called. */
@@ -218,7 +243,7 @@ export class SessionWindows {
   window(sessionId: string): ModelWindow {
     const entry = this.windows.get(sessionId)
     if (!entry) return {}
-    const added = Math.ceil((entry.addedBytes ?? 0) / Math.max(1, this.options.bytesPerToken))
+    const added = Math.ceil((entry.measuredAddedBytes ?? 0) / Math.max(1, this.options.bytesPerToken))
     return {
       context: entry.context,
       output: entry.output,
@@ -230,11 +255,11 @@ export class SessionWindows {
     return planContext(this.options, this.window(sessionId), kind, parts)
   }
 
-  /** After a model call's context is assembled: remember what was added and how it was planned. */
-  record(sessionId: string, plan: ContextPlan): void {
+  /** After hook publication: remember actual bytes and the separate allocation plan. */
+  record(sessionId: string, plan: ContextPlan, publishedBytes = plan.spentBytes()): void {
     const entry = this.entry(sessionId)
     const summary = plan.describe()
-    if (summary.kind === "call") entry.addedBytes = plan.spentBytes()
+    if (summary.kind === "call") entry.addedBytes = publishedBytes
     entry.last = summary
   }
 

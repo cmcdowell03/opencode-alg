@@ -32,6 +32,9 @@ export async function executeWithMemory(memory: SessionMemoryRuntime | undefined
     await options.beforeChildPrompt?.(child, role)
   } }
   if (!candidates.length) return executeRun(run, delegated)
+  if (memory.options.mode === "assist" && memory.deliveryUnavailable.has(owner)) {
+    throw new Error("needs_context: procedure delivery is unavailable; restore context before this ALG action")
+  }
   if (candidates.length !== 1 || !state.environment) {
     if (memory.options.mode === "observe") return executeRun(run, options)
     throw new Error("alg_execute requires exactly one applicable procedure and a reviewed environment")

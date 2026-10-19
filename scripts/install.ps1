@@ -2,6 +2,8 @@
 [CmdletBinding()]
 param(
   [string]$ConfigDir = "",
+  [ValidateSet("auto", "bun", "npm")]
+  [string]$PackageManager = "auto",
   [switch]$SkipAgents,
   [switch]$ForceAgents,
   [switch]$UpdateAgents,
@@ -23,10 +25,11 @@ if ($RemoveAgents) { $coreArgs += "--remove-agents" }
 
 Push-Location $root
 try {
-  if (Get-Command bun -ErrorAction SilentlyContinue) {
+  if ($PackageManager -eq "bun" -or ($PackageManager -eq "auto" -and (Get-Command bun -ErrorAction SilentlyContinue))) {
+    if (-not (Get-Command bun -ErrorAction SilentlyContinue)) { throw "Selected package manager bun is unavailable" }
     if (-not (Test-Path -LiteralPath (Join-Path $root "bun.lock"))) { throw "bun.lock is required for frozen dependency installation" }
     & bun install --frozen-lockfile --ignore-scripts
-    if ($LASTEXITCODE -ne 0) { throw "frozen Bun install failed ($LASTEXITCODE)" }
+    if ($LASTEXITCODE -ne 0) { throw "frozen Bun install failed ($LASTEXITCODE); configuration was not changed. Retry explicitly with -PackageManager npm to use the npm lockfile." }
     & bun run "scripts/installer-core.ts" @coreArgs
     if ($LASTEXITCODE -ne 0) { throw "ALG installer failed ($LASTEXITCODE)" }
   } elseif (Get-Command npm -ErrorAction SilentlyContinue) {
