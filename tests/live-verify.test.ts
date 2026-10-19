@@ -4,6 +4,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -492,6 +493,19 @@ describe("server tool registration readiness", () => {
 })
 
 describe("retained live evidence destination confinement", () => {
+  test("extracted packages without Git keep their source boundary and permit external evidence", () => {
+    const directory = mkdtempSync(join(tmpdir(), "alg-extracted-live-"))
+    try {
+      const packageRoot = join(directory, "package"), evidenceRoot = join(directory, "external")
+      mkdirSync(packageRoot)
+      const options = { pluginRoot: packageRoot, tempEvidenceRoot: evidenceRoot, approvedEvidenceRoot: null }
+      const output = join(evidenceRoot, "live.json")
+      const prepared = prepareLiveEvidenceDestination(output, options)
+      expect(prepared.repository_root).toBe(realpathSync.native(packageRoot))
+      expect(prepared.path).toBe(resolve(output))
+      expect(() => prepareLiveEvidenceDestination(join(packageRoot, "live.json"), options)).toThrow(/outside the entire containing repository/)
+    } finally { rmSync(directory, { recursive: true, force: true }) }
+  })
   function destinationFixture(): {
     base: string
     repository: string

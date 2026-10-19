@@ -274,8 +274,9 @@ function createVerifiedDirectory(path: string): string {
   return realpathSync.native(absolute)
 }
 
-export function findContainingRepositoryRoot(start = PLUGIN_ROOT): string {
-  let current = realpathSync.native(resolve(start))
+export function findContainingRepositoryRoot(start = PLUGIN_ROOT, allowExtractedPackage = false): string {
+  const sourceRoot = realpathSync.native(resolve(start))
+  let current = sourceRoot
   while (true) {
     const marker = join(current, ".git")
     if (existsSync(marker)) {
@@ -285,7 +286,12 @@ export function findContainingRepositoryRoot(start = PLUGIN_ROOT): string {
       return current
     }
     const parent = dirname(current)
-    if (parent === current) throw new Error(`no containing repository found for live evidence source: ${start}`)
+    if (parent === current) {
+      // An extracted distribution has no Git metadata. Its package directory
+      // is still a protected source boundary; all external-root/link checks apply.
+      if (allowExtractedPackage) return sourceRoot
+      throw new Error(`no containing repository found for live evidence source: ${start}`)
+    }
     current = parent
   }
 }
@@ -301,7 +307,7 @@ export function prepareLiveEvidenceDestination(
   if (!isAbsolute(outputPath)) throw new Error("live verification output path must be absolute")
   const destination = resolve(outputPath)
   const repositoryRoot = realpathSync.native(resolve(
-    options.repositoryRoot ?? findContainingRepositoryRoot(options.pluginRoot ?? PLUGIN_ROOT),
+    options.repositoryRoot ?? findContainingRepositoryRoot(options.pluginRoot ?? PLUGIN_ROOT, true),
   ))
   if (pathWithin(repositoryRoot, destination)) {
     throw new Error("live verification evidence must remain outside the entire containing repository")
