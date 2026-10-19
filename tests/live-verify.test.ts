@@ -47,6 +47,7 @@ import {
 } from "../src/tui-registration.ts"
 import { computeAlgSourceIdentity, sourceIdentityMessage } from "../src/source-identity.ts"
 import { ALG_PLUGIN_ID, algServerStartupMessage } from "../src/types.ts"
+import { captureRuntimeIdentityAtModuleLoad, runtimeIdentityStartupMessage } from "../src/runtime-identity.ts"
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 
@@ -385,6 +386,21 @@ describe("live verifier reviewed-checkout binding", () => {
       `${exact}${"x".repeat(4_097)}`,
     ]
     for (const mutation of mutations) expect(findServerStartupLine(mutation, false), mutation).toBeUndefined()
+  })
+
+  test("recognizes current deployment-identity startup without accepting contradictory metadata", () => {
+    const identity = captureRuntimeIdentityAtModuleLoad(ROOT)
+    const digest = identity.source_manifest_at_module_load
+    const message = `${algServerStartupMessage(false)} ${runtimeIdentityStartupMessage(identity)} configuration_source=defaults`
+    const actual = structuredServerStartup().replace(JSON.stringify(algServerStartupMessage(false)), JSON.stringify(message)) +
+      ` configuration_source=defaults configuration_sidecar_present=false deployment_identity_protocol=${identity.protocol} deployment_build=${identity.build} source_manifest_at_module_load=${digest}`
+    expect(findServerStartupLine(actual, false, digest)).toBe(actual)
+    expect(findServerStartupLine(actual, false, "0".repeat(64))).toBeUndefined()
+    for (const invalid of [actual.replace("configuration_sidecar_present=false", "configuration_sidecar_present=true"),
+      actual.replace("deployment_build=", "deployment_build=wrong-"), actual.replace("skill_evolution_enabled=false", "skill_evolution_enabled=true"),
+      actual + " unexpected=true", actual.replace(`source_manifest_at_module_load=${digest}`, `source_manifest_at_module_load=${"f".repeat(64)}`)]) {
+      expect(findServerStartupLine(invalid, false, digest)).toBeUndefined()
+    }
   })
 })
 
