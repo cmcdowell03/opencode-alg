@@ -1272,7 +1272,11 @@ export async function executeShellGate(options: {
     }
   }
 
-  const windows = process.platform === "win32"
+  // An injected child may simulate another OS. Keep launch-side proof and
+  // termination on the same platform; real spawns always use the host OS.
+  const windows = options.spawnProcess && options.processControl?.terminationPlatform
+    ? options.processControl.terminationPlatform === "win32"
+    : process.platform === "win32"
   const environment = controlledShellEnvironment()
   let windowsJobHelper: string | undefined
   let releaseWindowsHelper: (() => void) | undefined
