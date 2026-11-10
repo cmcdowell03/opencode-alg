@@ -121,6 +121,11 @@ export const CheckpointSchema = z.object({
   /** Crash-replayable local ledger detachment after a new task clears the active pointer. */
   investigation_detach_pending: z.object({ schema_version: z.literal(1), project_id: Hash,
     owner_id: SessionId, run_id: Id }).strict().optional(),
+  /** One investigation admission per task epoch, retained through explicit detach. */
+  investigation_plan: z.object({
+    reference: z.object({ schema_version: z.literal(1), project_id: Hash, owner_id: SessionId, run_id: Id }).strict(),
+    request_sha256: Hash,
+  }).strict().optional(),
   investigation_node: Id.optional(),
   delegation: z.object({ parent_owner: SessionId, parent_checkpoint: Hash, role: z.enum(["worker", "checker"]) }).strict().nullable(),
 }).strict()

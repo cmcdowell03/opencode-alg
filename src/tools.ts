@@ -337,7 +337,8 @@ function routingSummary(run: RunState) {
 function nextAction(run: RunState): string {
   if (run.status === "planning") return `Call alg_run with run_id=${run.run_id}; filesystem-root approval, if needed, must be explicit again.`
   if (run.status === "blocked" || run.status === "running") return `Call alg_resume with run_id=${run.run_id} for another bounded synchronous wave set.`
-  if (run.status === "done") return "Inspect compact artifacts or request detail=full for complete typed output."
+  if (run.status === "done") return "The run is complete. Report its existing outcome and stop; do not plan or execute the same task again. Use alg_status/detail=full only if its recorded evidence is needed."
+  if (run.investigation) return "Inspect this investigation and its failure artifacts. Do not replace it to reset attempts or budget; an intentional repeat requires an explicit new task."
   return "Inspect alg_status/detail=full and failure artifacts; attempt limits require a new run when exhausted."
 }
 
@@ -384,6 +385,8 @@ function finalizeCompact(data: Record<string, unknown>): Record<string, unknown>
     mode: candidate.mode,
     template: candidate.template,
     criteria_locked: candidate.criteria_locked,
+    plan_reused: candidate.plan_reused,
+    investigation_attached: candidate.investigation_attached,
     criteria_count: candidate.criteria_count,
     global_attempts: candidate.global_attempts,
     project_scope: typeof candidate.project_scope === "string" ? cap(candidate.project_scope, 2_048) : undefined,
@@ -666,7 +669,7 @@ export function createAlgTools(
     }),
 
     alg_plan: tool({
-      description: "Create and persist an owned ALG DAG. Compact by default; detail=full includes full criteria and node definitions.",
+      description: "Create an owned ALG DAG. Identical investigation plans reuse the existing run, including completed runs; changing an attached investigation requires an explicit new task. Compact by default.",
       args: {
         goal: tool.schema.string().min(1).max(20_000),
         template: tool.schema.enum(["coding-diamond", "research-diamond", "data-investigation"]).optional(),
@@ -716,7 +719,8 @@ export function createAlgTools(
           const operation = graphPolicy(graph)?.operation ?? args.operation ?? detectWorkspaceOperation("shell", { command: args.shell_gate })
           if (operation) await runtime.operations?.plan(context.sessionID, operation)
           if (investigation && (!runtime.operations?.options.enabled || runtime.sessionMemory?.options.mode !== "assist")) throw new Error("data investigations require enabled configuration and session memory assist mode")
-          let run = createRun({
+          const create = (runId?: string) => createRun({
+            ...(runId ? { runId } : {}),
             goal: args.goal,
             criteria: args.criteria ?? [],
             graph,
@@ -729,13 +733,24 @@ export function createAlgTools(
             allowFilesystemRoot: args.allow_filesystem_root,
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
           })
-          if (investigation) run = await runtime.operations!.begin(run)
+          const planned = investigation
+            ? await runtime.operations!.planInvestigation(context.sessionID, { goal: args.goal, criteria: args.criteria ?? [],
+                graph, directory, mode: args.mode ?? "live" }, create)
+            : { run: create(), reused: false }
+          const { run } = planned
+          const investigationAttached = "attached" in planned ? planned.attached : undefined
+          const planNext = investigation && investigationAttached === false && !["done", "failed"].includes(run.status)
+            ? `This investigation is detached. Call alg_investigation with request={action:"attach",run_id:"${run.run_id}"} before alg_run or alg_resume; do not create another plan.`
+            : nextAction(run)
           const detail = args.detail ?? "compact"
           const fullRun = detail === "full" ? hydrateRunFully(run) : undefined
           const compactedNodes = compactPlanNodes(run)
           const compact = finalizeCompact({
             run_id: run.run_id,
             template: graph.name,
+            plan_reused: planned.reused,
+            investigation_attached: investigationAttached,
+            status: run.status,
             mode: run.mode,
             criteria_locked: run.criteria_locked,
             criteria_count: run.criteria.length,
@@ -749,13 +764,16 @@ export function createAlgTools(
             nodes: compactedNodes.nodes,
             truncation: compactedNodes.truncation,
             path: runDir(project, run.run_id),
-            next: nextAction(run),
+            next: planNext,
           })
           return ok(
             "alg plan",
             detail === "full" ? {
               run_id: run.run_id,
               template: graph.name,
+              plan_reused: planned.reused,
+              investigation_attached: investigationAttached,
+              status: run.status,
               mode: run.mode,
               criteria_locked: run.criteria_locked,
               criteria_count: run.criteria.length,
@@ -772,7 +790,7 @@ export function createAlgTools(
               nodes: graph.nodes,
               run: fullRun,
               path: runDir(project, run.run_id),
-              next: nextAction(run),
+              next: planNext,
             } : compact,
             { run_id: run.run_id },
           )

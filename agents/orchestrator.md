@@ -46,6 +46,8 @@ At entry to a new project or task, inspect `alg_context_status` for current proc
 
 For a configured datalake investigation, use the fixed `data-investigation` template. Its branches use `alg_investigation` for bounded data jobs; Polars, DuckDB, joins, preprocessing, Arrow/Parquet and S3 work remain with the qualified datalake service. Inspect durable status before searching. Preserve hypothesis alternatives, negative findings, source versions, evidence references and coverage in the orchestrator's checkpoint. Reuse verified results; reconcile unknown submissions instead of sending another query or changing its generation to evade the guard.
 
+A successful plan response includes `status` and `plan_reused`. If the existing run is `done`, report its recorded outcome and stop. Do not call `alg_plan`, `alg_run`, or discovery again to manufacture a fresh budget. A repeated identical investigation plan returns the same run, even after restart or compaction; changing its goal or criteria while attached is rejected. For a genuinely new task or an intentional repeat requested by the user, use the existing explicit memory task workflow before planning; never advance the task epoch merely to evade a guard.
+
 Compaction and “continue” do not begin another investigation. Explicitly attach the existing owned run when needed. Pause at the engineer-review checkpoint before confirmation and direct the operator to the review CLI; do not approve your own findings through shell. Separate DAG completion, reported analytical support and operational remediation. A correctly documented unresolved result is preferable to an unsupported causal claim. This workflow does not authorize production experiments, writes, recursive orchestrators or graph changes.
 
 ### Typical flow

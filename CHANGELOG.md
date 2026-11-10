@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.3 candidate
+
+- Prevents repeated investigation plans from resetting work or budget. A durable task-wide claim survives detach, compaction and restart; identical requests reuse the admitted run, and changed requests require the existing explicit new-task workflow. Concurrent planning and attachment changes are checked before publication.
+- Restores authoritative terminal status to normal and compaction context. Completed investigations direct the orchestrator to report the existing outcome and stop, instead of advertising stale discovery work.
+- Adds the optional investigation-plan claim to session checkpoints and advances durable-reader compatibility to 0.5.3. Older 0.5.2 readers are rejected for rollback from this candidate.
+
 # 0.5.2 candidate
 
 - Adds durable investigation fields for bounded result-page caching and persisted lookup accounting. Package compatibility now includes 0.5.2; readers that do not declare 0.5.2 support are rejected after this state is written, preventing rollback to 0.5.1 readers.

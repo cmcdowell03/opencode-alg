@@ -46,7 +46,7 @@ export class SessionMemoryRuntime {
   beginTask(owner: string, goal: string, constraints: string[] = [], resultAfter = Date.now()) {
     this.update(owner, (value) => ({ ...value, task_epoch: value.task_epoch + 1, generation: value.generation + 1,
       goal, constraints, skills: [], pins: [], used_retries: [], completed: [], next_step: "", gaps: [], source_cursor: null, result_after: resultAfter,
-      workspace_operation: undefined, investigation: undefined, investigation_node: undefined,
+      workspace_operation: undefined, investigation: undefined, investigation_node: undefined, investigation_plan: undefined,
       investigation_detach_pending: value.investigation?.owner_id === owner ? value.investigation : undefined }))
     return this.current(owner)
   }

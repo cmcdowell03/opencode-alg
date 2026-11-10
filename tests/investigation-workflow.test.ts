@@ -4,14 +4,17 @@ import { join } from "node:path"
 import { createRun, loadRunForOwner, readNodeArtifactOutput } from "../src/store.ts"
 import { executeRun, prepareRunForResume } from "../src/executor.ts"
 import { OperationalRuntime } from "../src/operational-runtime.ts"
+import { createAlgTools } from "../src/tools.ts"
+import server from "../src/index.ts"
 import { recordInvestigationReview, requireInvestigationReview } from "../src/investigation-review.ts"
 import { InvestigationStore, type InvestigationMcpPort, type InvestigationWorkInput } from "../src/investigation/index.ts"
 import { SessionMemoryRuntime } from "../src/session-memory/runtime.ts"
 import { getTemplate } from "../src/templates.ts"
 import type { NodePromptOpts } from "../src/sessions.ts"
 import { readSyntheticCatalogPage, syntheticFrontier, syntheticInvestigationCatalog } from "./fixtures/investigation-catalog.ts"
-import { executeContext, removeProject } from "./helpers.ts"
+import { executeContext, inertClient, removeProject } from "./helpers.ts"
 
+function toolOutput(value: unknown): any { return JSON.parse(typeof value === "string" ? value : (value as { output: string }).output) }
 const projects: string[] = []
 afterEach(() => { for (const path of projects.splice(0)) removeProject(path) })
 function project() { const path = realpathSync.native(mkdtempSync(join(import.meta.dir, ".investigation-acceptance-"))); projects.push(path); return path }
@@ -177,6 +180,42 @@ describe("V1 Phase One synthetic investigation acceptance", () => {
     expect(outputs).toHaveProperty("check")
     expect(synthetic.calls.submit).toBe(1)
     expect(synthetic.calls.lookup).toBe(0)
+    // Replaying the observed redundant-plan sequence must not create a new run or spend.
+    const tools = createAlgTools({ directory: path, worktree: path, client: inertClient() } as any,
+      () => ({}), () => undefined, { sessionMemory: runtime.memory, operations: runtime })
+    const context = { sessionID: "owner", messageID: "after-compaction", agent: "orchestrator", directory: path, worktree: path,
+      abort: new AbortController().signal, metadata: () => {}, ask: async () => {} } as any
+    for (let i = 0; i < 3; i++) {
+      const planned = toolOutput(await tools.alg_plan.execute({ goal: run.goal, criteria: run.criteria, template: "data-investigation" }, context))
+      expect(planned).toMatchObject({ run_id: run.run_id, plan_reused: true, status: "done" })
+      expect(planned.next).toContain("stop")
+      const repeated = toolOutput(await tools.alg_run.execute({ run_id: planned.run_id }, context))
+      expect(repeated.status).toBe("done")
+    }
+    expect(loadRunForOwner(path, run.run_id, "owner")!.global_attempts).toBe(completed.global_attempts)
+    expect(childSequence).toBe(7)
+    expect(synthetic.calls.submit).toBe(1)
+    expect(runtime.status("owner")).toMatchObject({ execution_status: "done", terminal: true })
+    expect(runtime.render("owner")).toContain("execution_status=done")
+    expect(runtime.render("owner")).toContain("Report the existing outcome and stop")
+    expect(runtime.render("owner")).not.toContain("discover metadata and establish coverage")
+    const hooks = await server({ directory: path, worktree: path, project: { id: "fixture-project" }, client: {
+      app: { log: async () => ({ data: true }) }, session: {
+        get: async (request: any) => ({ data: { id: request.path.id, projectID: "fixture-project", directory: path, title: "fixture" } }),
+        messages: async () => ({ data: [] }),
+      },
+    } } as any, { sessionMemory: { mode: "assist" }, investigation: options, skillEvolution: { enabled: false } } as any)
+    try {
+      const normal = { system: [] as string[] }
+      await hooks["experimental.chat.system.transform"]!({ sessionID: "owner", model: { limit: { context: 16_000, output: 2_000 } } } as any, normal)
+      const compacted = { context: [] as string[] }
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compacted)
+      for (const text of [normal.system.join("\n"), compacted.context.join("\n")]) {
+        expect(text).toContain("execution_status=done")
+        expect(text).toContain("Report the existing outcome and stop")
+        expect(text).not.toContain("discover metadata and establish coverage")
+      }
+    } finally { await hooks.dispose?.() }
   }, 120_000)
 
   test("four incident families preserve evidence provenance and represent missing evidence as uncertainty", () => {

@@ -24,7 +24,7 @@ Before using a real deployment, exercise duplicate submission, accepted-request/
 
 ## Start and resume
 
-Call `alg_plan` with `template: "data-investigation"`, a bounded goal and explicit evidence criteria. The fixed graph discovers metadata, fans out into three bounded analysis branches, reconciles their findings, pauses for engineer review, performs confirmation and runs an independent checker. No recursive orchestrator spawning or model-authored graph is admitted to this managed path. Reuse the existing run and attached investigation when continuing the same work. Explicitly creating a new plan creates a separate investigation; ALG does not infer global equivalence between goals or prevent every redundant plan a model may request.
+Call `alg_plan` with `template: "data-investigation"`, a bounded goal and explicit evidence criteria. The fixed graph discovers metadata, fans out into three bounded analysis branches, reconciles their findings, pauses for engineer review, performs confirmation and runs an independent checker. No recursive orchestrator spawning or model-authored graph is admitted to this managed path. Reuse the existing run and attached investigation when continuing the same work. Identical managed plan requests return the same durable run, including terminal runs, without resetting its ledger or budget. Planning responses include `status` and `plan_reused`; a completed run directs the orchestrator to report the outcome and stop. Changing goal, criteria, execution directory or mode within the same admitted task is rejected, including after detach. Normal and compaction context use authoritative run status instead of a stale discovery checkpoint.
 
 The orchestrator and its active, scoped children use `alg_investigation`:
 
@@ -65,6 +65,25 @@ bun run scripts/investigation-cli.ts --project "/path/to/project" --owner "sessi
 
 Then use `alg_resume`. The receipt binds the reviewed graph, criteria and completed initial findings; changed findings require a new review. Engineer contributions are labelled reported knowledge, not automatically verified causal evidence. The CLI is an application-level approval boundary. A same-account agent with unrestricted shell/filesystem access is not isolated by an OS security boundary; deployments requiring that separation must restrict those permissions externally.
 
+
+### Intentional new tasks
+
+A managed plan is scoped to project, owner, execution directory, normalized goal/criteria, fixed graph, mode and the existing durable task epoch. Model selection and transient message IDs do not change that identity. Concurrent calls serialize before creation. The checkpoint retains a typed admission claim through detach; detach cannot authorize changed criteria or a fresh budget. Use an explicit attach to resume a detached initialized run. Legacy random-ID investigations acquire the same claim when planned, attached or detached after upgrading.
+
+For a genuinely new task or a user-requested repeat, the existing application-level operator workflow advances the task epoch. Create a reviewed JSON request containing the new goal and constraints, then run:
+
+~~~sh
+bun run scripts/memory-cli.ts task /absolute/project owner-session-id /absolute/new-task.json
+~~~
+
+For example, the request is:
+
+~~~json
+{"goal":"Repeat the approved fixture after a source change","constraints":["Keep the prior evidence"]}
+~~~
+
+This preserves the prior investigation and outstanding remote work; it does not cancel or refund it. The harness may perform this workflow within its existing permissions when the user has requested a new task, not as an automatic retry escape. It also resets task-specific skill bindings as the existing task workflow specifies. Cross-session/global semantic goal equivalence remains outside this guarantee.
+
 ## What survives context loss
 
 The normal request hook and compaction hook reconstruct a bounded view from disk: the investigation reference, current budget, recent job identities/status, hypothesis and contradiction summaries, coverage and the next action. Full ledgers, data and evidence stay outside the prompt. Approved skills retain their existing complete-instruction and delivery checks. Managed query dispatch and run/resume recheck durable authority even when a hook is missed.
@@ -99,3 +118,7 @@ Add recipes alongside the existing qualified adapter in plugin options:
 This fragment is not a complete or qualified service profile. Replace fixture identities with reviewed service definitions. The orchestrator calls `recipe` to inspect parameter declarations, then `admit_recipe` with the operation, version, parameters and assigned node IDs. Equivalent timezone-qualified timestamps normalize to one instant. No parameter coercion, unrestricted SQL rewriting or model-selected refresh generation occurs.
 
 A native tool binding maps named inputs from `request` or host-owned scope and maps outputs from the native `response`. Use response discriminators for distinct running/result/failure states; unrecognized states stay uncertain. Validation must derive access and freshness from actual service checks. Do not map a constant `valid: true` to substitute for those checks. Likewise, ordinary “job not found” must not be mapped to proof of nonacceptance unless the service's measured retention/idempotency contract guarantees that conclusion.
+
+### Upgrading detached legacy sessions
+
+A legacy investigation detached before upgrading has no attachment or durable plan claim to recover automatically. Reattach that existing run with `alg_investigation` before planning in the same task. The plugin does not infer identity from unrelated historical goals. Claims are retained for new plans and for legacy plans attached or detached after upgrading.
