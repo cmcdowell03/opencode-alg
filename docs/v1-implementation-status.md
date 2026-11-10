@@ -1,8 +1,8 @@
 # V1 Phase One implementation status
 
-PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current candidate is 0.5.2 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier 0.5.1 receipts and statements below remain historical evidence for their named commits and are not relabeled as 0.5.2 acceptance.
+PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current candidate is 0.5.3 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier 0.5.1/0.5.2 receipts and statements below remain historical evidence for their named commits and are not relabeled as 0.5.3 acceptance.
 
-**Current disposition, 10 November 2026:** the earlier 80% estimate remains withdrawn. The confirmed ledger defects and the missing local workflow contracts are implemented. Native MCP translation is configurable and tested against fixtures, not verified against the real air-gapped datalake-mcp. The PR remains draft: local engineering results do not establish production service qualification, scientific usefulness or reliable autonomous session termination.
+**Current disposition, 10 November 2026:** the earlier 80% estimate remains withdrawn. The confirmed ledger defects and the missing local workflow contracts are implemented. Native MCP translation is configurable and tested against fixtures, not verified against the real air-gapped datalake-mcp. The PR remains draft: the loop fix now has one successful bounded local-model session, while production service qualification, scientific usefulness and general long-session reliability remain unestablished.
 
 ## Delivered contracts
 
@@ -28,9 +28,55 @@ The single Bash deployment command uses an already prepared bundle and a separat
 bash "/path/to/opencode-alg/scripts/alg.sh" deploy --offline --trust-bundle <reviewed-manifest-sha256>
 ```
 
-Use isolated --config-dir and --install-root overrides when evaluating a candidate. A successful deployment means installed on disk; an existing OpenCode process must restart before it loads the new generation. The new candidate writes state older 0.5.1 and 0.5.0 readers do not understand, so rollback to those versions is rejected.
+Use isolated --config-dir and --install-root overrides when evaluating a candidate. A successful deployment means installed on disk; an existing OpenCode process must restart before it loads the new generation. The new candidate writes an investigation-plan claim that 0.5.2 and older readers do not understand, so rollback to those versions is rejected.
 
-## Current 0.5.2 acceptance — 10 November 2026
+## Current 0.5.3 loop and deployment follow-up — 10 November 2026
+
+Plan recovery commit: `6cf3c087186bfe4685705e76a96ff3217c9fb49f`. Final deployment/package implementation: `ca175aa0d1637325c76a733620aedb47a3bc876f`. Later acceptance documentation does not change these tested package identities.
+
+The host admits one investigation per project/owner/task epoch and persists its original normalized request. Identical plans reuse its run, ledger and budget; changed requests cannot reset them, including after detach. Explicit new-task advancement is the existing application-level boundary. Normal and compaction context now report authoritative completion and stop guidance. Legacy runs detached before upgrading need explicit reattachment to recover their identity; there is no cross-session semantic goal matching.
+
+Offline redeployment verifies the approved bundle and retained installation, then skips staging/copy/cleanup when that exact generation is active and no policy or capability change was requested. Fresh installation removes duplicate tree hashing but retains final identity/content validation before activation.
+
+| Check | Result |
+| --- | --- |
+| Native Ubuntu changed-component regressions at ca175aa | 210 passed, 6 platform skips, zero failures; 2,101 assertions across 11 files, 101.94 seconds; includes the full manager test file |
+| Windows plan/recovery/hooks/release checks | 54 passed, 1 skip, zero failures; 482 assertions. Separate memory regression set: 46 passed, zero failures, 712 assertions. Sets overlap and are not added |
+| Windows deployment regressions | 5 passed, zero failures, 37 assertions; rejects changed approved input and changed installed content; verifies no staging cleanup on unchanged deployment |
+| Windows manager follow-up | Earlier full-file invocation was interrupted after one 30-second timeout. The exact timed-out rollback/drift test passed alone in 28.30 seconds with the model stopped and a D-drive temporary root; 1 test, 5 assertions. The interrupted file is not a pass |
+| Type checking | Passed on Windows and native Ubuntu |
+| Real local-model session | One Gemma 4 8B Q4_K_M run, 7 nodes / 7 attempts, exact review checkpoint and continuation, one plan and no second graph; both OpenCode invocations exited 0 |
+| Native Ubuntu installed package | Passed offline deploy/redeploy, independently verified installed inventory, one actual compaction, two restarts, retained work/result, server/TUI loading, cleanup and preserved custom/global configuration |
+| Windows installed package | Passed offline deploy/redeploy, independently verified installed inventory, one actual compaction, two restarts, retained work/result, server/TUI loading, cleanup and preserved custom/global configuration |
+
+The local-model fixture deliberately has no factory data, qualified service or causal evidence. Its success proves bounded workflow completion in that case, not scientific accuracy, arbitrary-model reliability or a long soak. The earlier duplicate-plan timeout remains a separate failed receipt. Root-process exit proofs and a later independent root/direct-child process census passed; neither is represented as a general Windows descendant-containment guarantee.
+
+The model used the frozen Windows Git archive of 6cf3c08, runtime SHA `2806346f07f2728ebf890868ed51e4a6dffdedd0bd8e17bfe98245697aabc3aa`. Its 122 runtime inputs differ from the prepared package only in CRLF/LF representation (91 files); LF-normalizing the archive reproduces the package runtime SHA `cf961a1a5b2d03cc6c5fc3f2d64b0ff00077600e0af31e11bd7f9de47f63d8ad`. The raw identities remain distinct. The subsequent ca175aa change affects deployment support, its tests and documentation, not plugin runtime or agents.
+
+### Timings and exact package evidence
+
+An early Windows no-op profile against the same existing 11,602-entry bundle took 263.543 seconds versus the prior 408.911-second observation, with zero staging-cleanup calls. The input and retained installation were still fully validated. Final Windows preparation/deploy/no-op took 303.263 / 538.404 / 12.317 seconds. Compared with the prior D-drive acceptance, deployment decreased from 808.768 seconds (33.4%) and no-op redeployment from 408.911 seconds (97.0%). Fresh installation still takes about nine minutes on this host. These are local observations, not an isolated benchmark: code, paths, cache state and concurrent workload were not controlled, and the earlier 263.543-second profile remains a distinct receipt. Native Ubuntu ca175aa package preparation/deploy/no-op took 6.889 / 6.562 / 2.393 seconds.
+
+Linux manifest: `e1bf6167e45438c4149d1899c315f9d37f7c00a0c796707559d3352dc2eeabe6`; artifact: `f224c0b958375499e78c7466dfcfddb9cf8cc2019c1549ba4611ad36e567adcf`. The installed inventory matches all 11,568 entries, including 10,052 dependency files / 126,621,871 bytes. Prepared/relocated inputs were verified by deploy/redeploy; an independent full installed-tree verification used that same approved manifest.
+
+
+Windows manifest: `5c8da7e5962cb033ea18227b9fcfc9b42682b8c5976490f681a82ff5aaaa1db1`; artifact: `b95fc184aecd947d79a0febf051af5acdbb0feeac0c087fe497a7a6c95ec6183`. The installed inventory matches all 11,602 entries, including 10,104 dependency files / 126,814,922 bytes. Windows and Linux installed runtime SHA values are identical (`cf961a1a5b2d03cc6c5fc3f2d64b0ff00077600e0af31e11bd7f9de47f63d8ad`). Each headless session accepted exactly one synthetic remote job and made one remote result-page read across compaction and two restarts; six fresh validations retained access/freshness checks.
+
+| Preserved receipt | SHA-256 |
+| --- | --- |
+| Windows aggregate package acceptance | `379e0ba8b715ee7f2e938df0baf1a6343aedf35350790a34f10e76575f2dc8f6` |
+| Windows installed headless | `64b6c0b692463c6e9554c1e026ca99229e43e79e1893342be77a66a3af3fd289` |
+| Windows installed server/TUI | `01d3df55d85d86545c4f831a22dc756aa2a0732aa938b1820cf329b813bec9fe` |
+| Linux aggregate package acceptance | `766351a2b3ebb40e80bf2353d4e7cf6bfb90e250bec6533711c64a9a11e5beb6` |
+| Linux installed headless | `e2ec4736c094a5d2e7bd3d30e3871fec332cc38900c714371585af1c87982532` |
+| Linux installed server/TUI | `f88c13afd5947de52b0b2c5b9364b87b53fd37bf40dd2b0cd3b1372a5a9f7ce4` |
+| Successful local-model session | `c122e83dccf4456b6ce58526dcd8ed006a5c73e5102e42b2eb50dc4fa5ce8ef7` |
+| Independent model-process census | `244f9696abc4aca98ca39dd3db6fd37011749f1a67c067743fe16d04ff3d2632` |
+| Source line-ending comparison | `161fa6250cf63477d5d63ea6cb5ffbc35cf424cde203bfb36f996b5c0a720c72` |
+
+All follow-up tests ran locally. No GitHub runners, hosted-model calls, user-global configuration edits, V2 work or merge were performed. The real air-gapped datalake-mcp remains unqualified.
+
+## Historical 0.5.2 acceptance — 10 November 2026
 
 Runtime implementation and prepared packages: `d62812065e1d3b60cadce35385e1e620cb26f3a0`. The final follow-up changes documentation and moves isolated verification bootstrap inside its cleanup boundary; it changes no plugin runtime, agents or host permission policy. Packages are identified by their actual preparation commit, not by the follow-up commit.
 
@@ -50,7 +96,7 @@ Full-suite execution predates d628120 by the focused mutex/bootstrap delta; it i
 
 One bounded final local Gemma 4 8B Q4_K_M probe completed all seven fixed investigation nodes in seven attempts, including the exact engineer-review checkpoint and resume. The fixture contained no production data, qualified service or causal evidence. After that graph reached `done`, the model created a second graph despite instructions to stop, then the enclosing continuation hit its 240-second limit. **The overall session result remains failed.** This establishes a completed graph, not dependable session termination, scientific accuracy or a long-session soak. Completed run: `assess-the-input-completeness-of-20261110090422-825de10b8c9a`; the second run remains a preserved interrupted record. No further model attempts were spent to manufacture a pass.
 
-This also bounds the duplicate-work claim: managed reuse protects work within the attached investigation. A model that explicitly creates a new independent plan can create a new investigation and budget; this PR does not deduplicate equivalent goals globally or guarantee that an orchestrator stops after completion.
+At 0.5.2, managed reuse protected only work within the attached investigation: an explicitly created independent plan could create a new investigation and budget. The 0.5.3 task claim above closes that same-task reset path. Global semantic goal deduplication and guaranteed termination for arbitrary model sessions remain outside the claim.
 
 The original model-test receipt reported incomplete cleanup. A separately timestamped escalated process census subsequently found all three owned parent IDs and their direct children absent; the original receipt remains unchanged. Global configuration snapshots matched.
 
