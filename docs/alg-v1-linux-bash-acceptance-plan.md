@@ -4,7 +4,7 @@ Draft dated 9 November 2026. Required Phase One portability coverage for the Ope
 
 ## Current status and scope
 
-Machine inspection found WSL 3.0.3.0, kernel 6.18.54.1-1, with default WSL generation 2. The only registered distribution was docker-desktop, stopped. The WSL catalog offers Ubuntu-24.04. No dedicated ALG Linux environment has been provisioned, and no Linux plugin tests have run.
+Initial inspection found only docker-desktop. The implementation work has now provisioned a separate ALG-V1-Ubuntu distribution on WSL 2, Ubuntu 24.04.5 LTS x86_64/glibc 2.39, with non-root user algtest. Linux-native Bun 1.3.14, Node 22.23.4, OpenCode 1.18.35, Bash 5.2.21 and Git 2.43.0 are installed in scoped test paths. Docker Desktop and the default distribution were preserved. Provisioning is complete; qualification still requires the retained acceptance receipts for the implementation revision.
 
 Use a separate Ubuntu-24.04 WSL 2 distribution named ALG-V1-Ubuntu as the first Linux/Bash target. Windows/PowerShell remains a required regression lane. Both use the same ALG source revision, fixture definitions and acceptance assertions, with explicit platform expectations. Only the exact tested OpenCode 1 patch and runtime/dependency versions are qualified. Pin an additional minimum supported V1 patch only if the release makes that compatibility claim; never resolve an unqualified latest host that might install OpenCode 2.
 
@@ -12,7 +12,7 @@ WSL results qualify the named Linux distribution under WSL. They do not establis
 
 ## Environment setup deliverable — Phase 1a
 
-1. Create the dedicated distribution without altering Docker Desktop, the default distribution or global WSL settings. Keep its virtual disk in a task-owned location such as D:/alg-test-env/wsl/ALG-V1-Ubuntu after checking available storage and name/path collisions. The installed WSL supports named distributions and explicit locations. An installation example for this machine, not executed by this document, is:
+1. Create the dedicated distribution without altering Docker Desktop, the default distribution or global WSL settings. Keep its virtual disk in a task-owned location such as D:/alg-test-env/wsl/ALG-V1-Ubuntu after checking available storage and name/path collisions. The installed WSL supports named distributions and explicit locations. The implementation used this dedicated installation command:
 
    ```powershell
    wsl --install -d Ubuntu-24.04 --name ALG-V1-Ubuntu --location D:\alg-test-env\wsl\ALG-V1-Ubuntu --version 2 --no-launch

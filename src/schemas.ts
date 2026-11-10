@@ -695,6 +695,7 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
     filesystem_root_authorizations_ref: FilesystemRootAuthorizationReferenceSchema.optional(),
     filesystem_root_authorizations_omitted: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).optional(),
     session_isolation: z.literal("sdk-child-session"),
+    investigation: z.object({ schema_version: z.literal(1), project_id: z.string().regex(/^[a-f0-9]{64}$/), owner_id: sessionId, run_id: safeId }).strict().optional(),
     summary: z.string().max(50_000).optional(),
     state_projection: StateProjectionMetadataSchema.optional(),
   })

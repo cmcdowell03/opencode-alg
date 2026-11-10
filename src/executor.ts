@@ -7,8 +7,11 @@ import {
   descendantsOf,
   readyNodes,
   skipFailedDescendants,
+  validateGraph,
   wireInputs,
 } from "./graph.ts"
+import { canonicalJson } from "./persistence.ts"
+import { getTemplate } from "./templates.ts"
 import { parseAndValidate } from "./schemas.ts"
 import {
   acquireRunLock,
@@ -75,7 +78,9 @@ export interface ExecuteOptions {
   /** Test-only fault barrier after atomic sidecar write and before progress fencing. */
   afterSessionSidecar?: () => void
   /** Scoped procedure handoff must succeed before the child prompt is sent. */
-  beforeChildPrompt?: (child: string, role: "worker" | "checker") => Promise<void>
+  beforeChildPrompt?: (child: string, role: "worker" | "checker", node: NodeDef) => Promise<void>
+  /** Admission/checkpoint guard before attempt reservation; failure consumes no model attempt. */
+  beforeBatch?: (run: RunState, nodes: readonly NodeDef[]) => Promise<void>
   /** Tool ids hidden from every worker session (for example ALG's own orchestration tools). */
   workerDisabledTools?: readonly string[]
   allowFilesystemRoot?: boolean
@@ -354,7 +359,7 @@ async function runOneNode(
             options.afterSessionSidecar?.()
             attemptRecord.session_id = createdSessionId
             await save(run, options)
-            await options.beforeChildPrompt?.(createdSessionId, checker ? "checker" : "worker")
+            await options.beforeChildPrompt?.(createdSessionId, checker ? "checker" : "worker", definition)
           } catch (error) { throw new PersistenceBoundaryError(error) }
         },
       })
@@ -651,6 +656,13 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     if (run.owner_session_id !== options.parentSessionId) {
       throw new Error(`session does not own run ${run.run_id}`)
     }
+    if (run.graph.name === "data-investigation" || run.investigation) {
+      if (!run.investigation) throw new Error("data-investigation plan has no managed investigation reference")
+      if (canonicalJson(run.graph) !== canonicalJson(validateGraph(getTemplate("data-investigation")))) {
+        throw new Error("managed investigation graph differs from the fixed Phase 1 template")
+      }
+      if (!options.beforeBatch) throw new Error("managed investigation requires a reconciliation guard before attempt reservation")
+    }
     const hydrated = hydrateRunForExecution(run)
     // Preserve the caller-visible RunState object identity used by existing
     // integrations while replacing its nested state with safely hydrated data.
@@ -703,6 +715,7 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
           // Earlier workers may change the environment, or checker feedback may
           // reopen a node that was done at startup. Recheck before reserving it.
           preflightExecutableNodes(run, options, batch)
+          await options.beforeBatch?.(run, batch)
         } catch (error) {
           run.status = "blocked"
           run.phase = "blocked"

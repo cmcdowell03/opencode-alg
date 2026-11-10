@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test"
-import { mkdtempSync, rmSync } from "node:fs"
+import { mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { InvestigationStore, investigationPortIsQualified, type InvestigationMcpPort, type InvestigationSubmission } from "../src/investigation/index.ts"
 
@@ -21,6 +21,30 @@ function fakePort(submit: (request: { submission_id: string; work_key: string; o
 }
 
 describe("durable investigation core", () => {
+  test("oversized persisted metadata is rejected before parsing", () => {
+    const location = scope(root())
+    InvestigationStore.open(location, { create: true, costLimit: 10 })
+    const headPath = join(location.project_directory, ".opencode", "runs", location.run_id, "investigation", "head.json")
+    const original = readFileSync(headPath)
+    writeFileSync(headPath, Buffer.alloc(8193, 32))
+    expect(() => InvestigationStore.open(location)).toThrow("head exceeds size limit")
+    writeFileSync(headPath, original)
+    writeFileSync(JSON.parse(original.toString()).snapshot_ref, Buffer.alloc(2_000_001, 32))
+    expect(() => InvestigationStore.open(location)).toThrow("snapshot exceeds size limit")
+  })
+
+  test("source dependency order does not repeat work, but changed source versions do", async () => {
+    const store = InvestigationStore.open(scope(root()), { create: true, costLimit: 100 })
+    const first = await store.admit({ ...workInput, source_dependencies: ["source-a:1", "source-b:1"] }, capabilities)
+    const repeated = await store.admit({ ...workInput, source_dependencies: ["source-b:1", "source-a:1", "source-a:1"] }, capabilities)
+    expect(repeated.submission_id).toBe(first.submission_id)
+    expect(repeated.validity_key).toBe(first.validity_key)
+    const changed = await store.admit({ ...workInput, source_dependencies: ["source-a:2", "source-b:1"] }, capabilities)
+    expect(changed.work_key).not.toBe(first.work_key)
+    expect(store.snapshot.work).toHaveLength(2)
+    expect(store.snapshot.reserved_cost).toBe(20)
+  })
+
   test("survives twenty compaction-style reconstructions and two independent stores", async () => {
     const directory = root(), s = scope(directory)
     let store = InvestigationStore.open(s, { create: true, costLimit: 100 })

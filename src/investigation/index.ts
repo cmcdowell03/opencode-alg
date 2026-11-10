@@ -79,6 +79,7 @@ export interface InvestigationCheckpoint {
   objective: string; scope: Record<string, unknown>; hypotheses: InvestigationHypothesis[]
   contradictions: string[]; completed_tests: string[]; coverage: Record<string, unknown>
   next_action: string; evidence_refs: string[]; engineer_contributions: EngineerContribution[]
+  analytical_result?: { status: "supported" | "contradicted" | "unresolved" | "blocked"; claim: string; evidence_refs: string[]; authority: "reported_analysis" }
 }
 export interface InvestigationWork {
   work_key: string; submission_id: string; operation: string; status: InvestigationStatus
@@ -146,7 +147,9 @@ const RemoteProfileSchema = z.object({ server_id: z.string().min(1).max(512), se
   principal_id: z.string().min(1).max(512), project_id: z.string().min(1).max(512) }).strict()
 const CheckpointSchema = z.object({ objective: z.string().max(4_000), scope: JsonObjectSchema, hypotheses: z.array(HypothesisSchema).max(64),
   contradictions: z.array(z.string().max(2_000)).max(128), completed_tests: z.array(z.string().max(2_000)).max(128), coverage: JsonObjectSchema,
-  next_action: z.string().max(2_000), evidence_refs: z.array(z.string().max(2_048)).max(256), engineer_contributions: z.array(EngineerSchema).max(128) }).strict()
+  next_action: z.string().max(2_000), evidence_refs: z.array(z.string().max(2_048)).max(256), engineer_contributions: z.array(EngineerSchema).max(128),
+  analytical_result: z.object({ status: z.enum(["supported", "contradicted", "unresolved", "blocked"]), claim: z.string().max(4_000),
+    evidence_refs: z.array(z.string().max(2_048)).max(128), authority: z.literal("reported_analysis") }).strict().optional() }).strict()
 const InvestigationLedgerSchema = z.object({ schema_version: z.literal(1), revision: z.number().int().nonnegative(),
   scope: z.object({ project_id: z.string().min(1).max(512), owner_id: z.string().min(1).max(512), run_id: z.string().min(1).max(512) }).strict(),
   remote_profile: RemoteProfileSchema.optional(),
@@ -203,10 +206,10 @@ function workIdentity(scope: InvestigationLedger["scope"], port: InvestigationMc
   const semantics = { project_id: scope.project_id, principal_id: port.principal_id, server_id: port.server_id,
     server_revision: port.server_revision, tool_id: port.tool_id, tool_schema_revision: port.tool_schema_revision,
     operation: input.operation, recipe_version: input.recipe_version, parameters: input.parameters,
-    cohort: input.cohort ?? null, as_of: input.as_of ?? null, source_dependencies: input.source_dependencies,
+    cohort: input.cohort ?? null, as_of: input.as_of ?? null, source_dependencies: [...new Set(input.source_dependencies)].sort(),
     preprocessing_revision: input.preprocessing_revision ?? null, purpose: input.purpose, generation: input.generation,
     query: input.query }
-  const validity = digest(safeJson({ dependencies: input.source_dependencies, cohort: input.cohort ?? null, as_of: input.as_of ?? null }))
+  const validity = digest(safeJson({ dependencies: [...new Set(input.source_dependencies)].sort(), cohort: input.cohort ?? null, as_of: input.as_of ?? null }))
   return { key: digest(safeJson({ version: 1, ...semantics })), validity }
 }
 function blank(scope: InvestigationScope, costLimit: number, now: string, maxAdmissions = DEFAULT_MAX_ADMISSIONS): InvestigationLedger {
@@ -266,10 +269,12 @@ export class InvestigationStore {
     if (safeJson(ledger.scope) !== safeJson(scopeOnly(this.scope))) throw new Error("investigation owner/project/run mismatch")
   }
   private readLedger(): InvestigationLedger {
+    if (statSync(this.paths.head).size > 8192) throw new Error("investigation head exceeds size limit")
     const head = HeadSchema.parse(JSON.parse(readFileSync(this.paths.head, "utf8")))
     const file = this.paths.snapshot(head.sha256)
     if (head.snapshot_ref !== file) throw new Error("investigation head references a path outside its contained ledger")
     if (!existsSync(file)) throw new Error("investigation head snapshot missing")
+    if (statSync(file).size > 2_000_000) throw new Error("investigation snapshot exceeds size limit")
     const body = readFileSync(file, "utf8")
     if (digest(body) !== head.sha256) throw new Error("investigation snapshot integrity failure")
     const value = InvestigationLedgerSchema.parse(JSON.parse(body))
@@ -283,26 +288,27 @@ export class InvestigationStore {
     const held = await acquireFilesystemMutexAsync(this.paths.lock, {
       owner: `investigation:${this.scope.run_id}`, leaseMs: 10_000, waitMs: this.lockWaitMs,
     })
-    try {
-      const current = existsSync(this.paths.head) ? this.readLedger() : structuredClone(this.ledger)
-      this.assertScope(current)
-      const next = structuredClone(current)
-      const result = fn(next)
-      next.revision = current.revision + 1
-      next.updated_at = this.now().toISOString()
-      next.history = [...next.history, { revision: next.revision, at: next.updated_at, kind }].slice(-MAX_HISTORY)
-      InvestigationLedgerSchema.parse(next)
-      assertTerminalSpace(next)
-      const body = safeJson(next), hash = digest(body), file = this.paths.snapshot(hash)
-      // A crash may leave an unreferenced snapshot; reclaim it before quota admission.
-      this.collectOldSnapshots(HeadSchema.parse(JSON.parse(readFileSync(this.paths.head, "utf8"))).sha256)
-      this.ensureDiskBudget(Buffer.byteLength(body))
-      if (!existsSync(file)) atomicWriteFile(file, body)
-      atomicWriteFile(this.paths.head, safeJson({ schema_version: 1, revision: next.revision, snapshot_ref: file, sha256: hash } satisfies Head))
-      this.ledger = next
-      this.collectOldSnapshots(hash)
-      return result
-    } finally { held.release() }
+    try { return this.commitMutation(kind, fn) } finally { held.release() }
+  }
+  private commitMutation<T>(kind: string, fn: (ledger: InvestigationLedger) => T): T {
+    const current = existsSync(this.paths.head) ? this.readLedger() : structuredClone(this.ledger)
+    this.assertScope(current)
+    const next = structuredClone(current)
+    const result = fn(next)
+    next.revision = current.revision + 1
+    next.updated_at = this.now().toISOString()
+    next.history = [...next.history, { revision: next.revision, at: next.updated_at, kind }].slice(-MAX_HISTORY)
+    InvestigationLedgerSchema.parse(next)
+    assertTerminalSpace(next)
+    const body = safeJson(next), hash = digest(body), file = this.paths.snapshot(hash)
+    // A crash may leave an unreferenced snapshot; reclaim it before quota admission.
+    this.collectOldSnapshots(HeadSchema.parse(JSON.parse(readFileSync(this.paths.head, "utf8"))).sha256)
+    this.ensureDiskBudget(Buffer.byteLength(body))
+    if (!existsSync(file)) atomicWriteFile(file, body)
+    atomicWriteFile(this.paths.head, safeJson({ schema_version: 1, revision: next.revision, snapshot_ref: file, sha256: hash } satisfies Head))
+    this.ledger = next
+    this.collectOldSnapshots(hash)
+    return result
   }
   private ensureDiskBudget(nextBytes: number): void {
     const files = readdirSync(this.paths.root).filter((name) => name.startsWith("ledger-") && name.endsWith(".json"))
@@ -327,6 +333,19 @@ export class InvestigationStore {
     return this.reference
   }
   async detach(sessionId: string): Promise<void> { await this.mutate("detached", (l) => { l.attachments = l.attachments.filter((a) => a.session_id !== sessionId) }) }
+  /** Idempotent, local-only detachment for SessionMemoryRuntime.beginTask. No job or budget transition. */
+  detachSync(sessionId: string): void {
+    if (!sessionId || sessionId.length > 256 || sessionId !== this.scope.owner_id) throw new Error("invalid investigation detachment owner")
+    // The memory checkpoint is already committed. A repeated replay must not add a
+    // second ledger event when the process died after detaching but before clearing intent.
+    const held = acquireFilesystemMutex(this.paths.lock, {
+      owner: `investigation:${this.scope.run_id}:task-detach`, leaseMs: 10_000,
+    })
+    try {
+      if (!this.refresh().attachments.some((a) => a.session_id === sessionId)) return
+      this.commitMutation("detached", (l) => { l.attachments = l.attachments.filter((a) => a.session_id !== sessionId) })
+    } finally { held.release() }
+  }
 
   async updateCheckpoint(patch: Partial<InvestigationCheckpoint>): Promise<InvestigationCheckpoint> {
     await this.mutate("checkpoint", (l) => {

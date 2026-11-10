@@ -48,6 +48,7 @@ export const ALG_TOOL_IDS = [
   "alg_memory_read",
   "alg_context_status",
   "alg_memory_propose",
+  "alg_investigation",
 ] as const
 
 export function algServerStartupMessage(skillEvolutionEnabled: boolean): string {
@@ -311,6 +312,7 @@ export interface RunState {
   filesystem_root_authorizations_omitted?: number
   /** SDK child sessions isolate history, not project/system policy or filesystem access. */
   session_isolation: "sdk-child-session"
+  investigation?: { schema_version: 1; project_id: string; owner_id: string; run_id: string }
   summary?: string
   /** Truthful aggregate metadata for bounded progress-state projection. */
   state_projection?: StateProjectionMetadata

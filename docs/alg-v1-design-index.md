@@ -48,3 +48,7 @@ Do not reward faster unsupported causal claims, silence about missing procedures
 ## Canonical documentation
 
 This repository copy is the canonical implementation design. Earlier local artifacts remain historical drafts. This index owns the current phase order; the existing owner contracts retain semantic authority. The implementation PR tracks progress and local evidence without treating draft features as shipped.
+
+## Implementation tracking
+
+The Phase 1 candidate is tracked in draft PR #14. See [V1 operator usage](v1-investigations.md) and [prepared deployment](deployment.md) for the implemented surfaces. The design remains broader than this first delivery: measured promotion, template improvement, recursive delegation, shared cross-user knowledge and OpenCode V2 are not activated by this PR. Local acceptance results are recorded against exact commits; draft design status does not count as a shipped or validated feature.

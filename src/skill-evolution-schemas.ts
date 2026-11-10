@@ -1,3 +1,4 @@
+import { WorkspaceOptionsSchema, InvestigationOptionsSchema } from "./operational-options.ts"
 import { z } from "zod"
 import { isSafeId, isSafeProjectRelativePath } from "./paths.ts"
 import { serializedBytes, utf8Bytes } from "./limits.ts"
@@ -192,6 +193,8 @@ export const SkillEvolutionOptionsSchema = z.object({
 })
 
 export const AlgPluginOptionsSchema = z.object({
+  workspace: WorkspaceOptionsSchema.optional(),
+  investigation: InvestigationOptionsSchema.optional(),
   skillEvolution: SkillEvolutionOptionsSchema.optional(),
   sessionMemory: MemoryOptionsSchema.optional(),
   environmentMemory: EnvironmentMemoryOptionsSchema.optional(),

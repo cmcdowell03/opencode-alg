@@ -17,7 +17,7 @@ describe("data-investigation fixed V1 template", () => {
     expect(readyNodes(run).map(({ id }) => id)).toEqual(["discover"])
     const discoverInputs = wireInputs(DATA_INVESTIGATION.nodes[0]!, run)
     expect(discoverInputs.goal).toBe("Explain the excursion")
-    expect(String(discoverInputs.investigation_policy)).toContain("alg_investigation actions query, status, note, and hypothesis")
+    expect(String(discoverInputs.investigation_policy)).toContain("alg_investigation actions query, status, and reconcile")
     run.nodes.discover!.output = { answer: "Scoped sources", evidence: [], constraints: [], options: [], acceptance_criteria: ["Pin source versions"], risks: [] }
     const processInputs = wireInputs(DATA_INVESTIGATION.nodes[1]!, run)
     expect(processInputs.discovery).toEqual(run.nodes.discover!.output)
@@ -52,7 +52,7 @@ describe("data-investigation fixed V1 template", () => {
     expect(graph.nodes.some(({ agent }) => agent.includes("orchestrator"))).toBe(false)
 
     const instructions = JSON.stringify(graph).toLowerCase()
-    for (const action of ["alg_investigation", "query", "status", "note", "hypothesis"]) expect(instructions).toContain(action)
+    for (const action of ["alg_investigation", "query", "status", "reconcile"]) expect(instructions).toContain(action)
     for (const evidenceTerm of ["source versions", "coverage", "negative findings", "unknowns", "evidence references"]) {
       expect(instructions).toContain(evidenceTerm)
     }

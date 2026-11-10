@@ -23,7 +23,7 @@ Project `SKILL.md` files are the durable procedures for this workspace. When ski
 
 For multi-file changes, research with acceptance criteria, or any high-stakes task, **do not hand-schedule the diamond in prompts**. Use:
 
-1. **`alg_plan`** — create a validated graph (`coding-diamond` default, or `research-diamond`) and pass user criteria directly in `criteria`.
+1. **`alg_plan`** — create a validated graph (`coding-diamond` default, `research-diamond`, or the configured `data-investigation` workflow) and pass user criteria directly in `criteria`.
    - Pass `shell_gate` when tests exist (e.g. `npm test`, `pytest`, `go test ./...`).
    - Gate strings are executable validation commands, never prose or tool inventories. Put tool permissions and acceptance descriptions in `criteria`.
    - Windows gates use `cmd.exe`, not the interactive PowerShell shell. Do not assume POSIX tools such as `tail` exist; use a reviewed cross-platform validation script for complex checks.
@@ -39,6 +39,14 @@ If shell preflight rejects a plan/run, fix the command or directory before retry
 SHA-256 run references detect stale, partial, mismatched, or accidentally corrupted local content and fail closed during hydration. They do not authenticate a manifest against an actor able to coherently rewrite `progress.json`, all sidecars, hashes, and counts. Authenticity would require an external trusted signing key or append-only ledger and is outside ALG's scope; never call local run state tamper-proof or cryptographically authentic.
 
 Use **`alg_criteria`** only to adjust an owned run that is still planning. It never creates a staging run; replacing locked criteria requires `lock=false` and leaves them unlocked.
+
+### Workspace readiness and data investigations
+
+At entry to a new project or task, inspect `alg_context_status` for current procedures, workspace coverage and attached investigation state. Unknown team standards or environmental facts are discovery needs, not permission to invent conventions. Use its operation-specific readiness view when choosing a covered workflow. When a guard returns `needs_context`, read the newly restored procedure in the next planning step before retrying; do not loop on the same blocked action.
+
+For a configured datalake investigation, use the fixed `data-investigation` template. Its branches use `alg_investigation` for bounded data jobs; Polars, DuckDB, joins, preprocessing, Arrow/Parquet and S3 work remain with the qualified datalake service. Inspect durable status before searching. Preserve hypothesis alternatives, negative findings, source versions, evidence references and coverage in the orchestrator's checkpoint. Reuse verified results; reconcile unknown submissions instead of sending another query or changing its generation to evade the guard.
+
+Compaction and “continue” do not begin another investigation. Explicitly attach the existing owned run when needed. Pause at the engineer-review checkpoint before confirmation and direct the operator to the review CLI; do not approve your own findings through shell. Separate DAG completion, reported analytical support and operational remediation. A correctly documented unresolved result is preferable to an unsupported causal claim. This workflow does not authorize production experiments, writes, recursive orchestrators or graph changes.
 
 ### Typical flow
 

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url"
 import { computeAlgSourceIdentity, type AlgSourceIdentity } from "./source-identity.ts"
 
 export const ALG_RUNTIME_IDENTITY_PROTOCOL = "alg-runtime-identity-v1" as const
-export const ALG_RUNTIME_BUILD_ID = "opencode-alg@0.4.1" as const
+export const ALG_RUNTIME_BUILD_ID = "opencode-alg@0.5.0" as const
 
 export interface AlgRuntimeIdentityAtLoad {
   protocol: typeof ALG_RUNTIME_IDENTITY_PROTOCOL

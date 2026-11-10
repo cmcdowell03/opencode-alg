@@ -28,6 +28,8 @@ import { SessionMemoryRuntime } from "./session-memory/runtime.ts"
 import { createMemoryTools } from "./session-memory/tools.ts"
 import { canonicalDirectory, hostProjectDirectory, isContained } from "./paths.ts"
 import { isCompletedUserTurn } from "./turn-boundary.ts"
+import { OperationalRuntime } from "./operational-runtime.ts"
+import { createOperationalTools } from "./operational-tools.ts"
 import { ContextDelivery } from "./session-memory/delivery.ts"
 
 const runtimeIdentityAtModuleLoad = captureRuntimeIdentityAtModuleLoad()
@@ -65,13 +67,20 @@ const server: Plugin = async (ctx, pluginOptions) => {
   const memory = new SessionMemoryRuntime(projectDirectory, pluginConfiguration.sessionMemory,
     skillEvolutionOptions.skillRoots, extraSkillRoots)
   const delivery = new ContextDelivery(memory)
+  const operations = new OperationalRuntime(memory, pluginConfiguration.workspace, pluginConfiguration.investigation)
+  const investigationPointer = (owner: string): string => {
+    const ref = memory.current(owner).investigation
+    if (!ref) return ""
+    operations.status(owner) // Validate the attachment and any delegated child's active attempt.
+    return `ALG investigation run ${ref.run_id}; use alg_investigation status and reconcile before alg_resume or new work.`
+  }
   const environmentMemory = pluginConfiguration.environmentMemory && pluginConfiguration.environmentMemory.mode !== "off"
     ? await (await import("./environment-memory/runtime.ts")).EnvironmentMemoryRuntime.open({
       ...pluginConfiguration.environmentMemory,
       project: pluginConfiguration.environmentMemory.project ?? ctx.project.id,
     })
     : null
-  const tools = createAlgTools(ctx, () => structuredClone(configuredModels), () => structuredClone(modelResolutions), { sessionMemory: memory, subagentCards: pluginConfiguration.subagentCards })
+  const tools = createAlgTools(ctx, () => structuredClone(configuredModels), () => structuredClone(modelResolutions), { sessionMemory: memory, operations, subagentCards: pluginConfiguration.subagentCards })
   const authorizeMemory = async (owner: string) => {
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -121,7 +130,9 @@ const server: Plugin = async (ctx, pluginOptions) => {
   const allTools = { ...tools, ...skillEvolutionTools, ...createMemoryTools(memory, authorizeMemory, environmentMemory ?? undefined,
     () => ({ ...inspectRuntimeIdentityNow(runtimeIdentityAtModuleLoad), configuration_source: resolvedConfiguration.source,
       configuration_sidecar_present: resolvedConfiguration.sidecar_present }),
-    (owner) => ({ options: contextBudgetOptions, last_plan: windows.last(owner) })) }
+    (owner) => ({ options: contextBudgetOptions, last_plan: windows.last(owner) }),
+    (owner, operation) => ({ workspace: operations.workspace.status(owner, operation), investigation: operations.status(owner) })),
+    ...createOperationalTools(operations, authorizeMemory) }
   if (JSON.stringify(Object.keys(allTools)) !== JSON.stringify(ALG_TOOL_IDS)) {
     await skillEvolution.dispose()
     environmentMemory?.close()
@@ -247,21 +258,34 @@ const server: Plugin = async (ctx, pluginOptions) => {
             catch { output.system.push("Environment memory unavailable; verify current identity, reachability, and permissions before acting.") }
           }
           const recovery: string[] = []
+          let requiredInvestigation = ""
           const collect = async (label: string, read: () => string) => {
             try { const value = await awaitLock(read); if (value) recovery.push(value) }
             catch { recovery.push(`ALG ${label} recovery unavailable; consult authoritative records before resuming.`) }
+          }
+          if (memory.current(sessionId).investigation) {
+            await authorizeMemory(sessionId)
+            requiredInvestigation = investigationPointer(sessionId)
+            if (textBytes(requiredInvestigation) > (plan.totalBytes ?? Infinity)) throw new Error("ALG needs_context: investigation pointer exceeds context ceiling")
+            recovery.push(requiredInvestigation)
+            recover(requiredInvestigation)
           }
           // Runs before every model request of every session, so it must not scan the project's run history.
           await collect("run", () => {
             const run = findLatestIncompleteRunForTurn(projectDirectory, sessionId, { sessionCreatedHere: isAlgWorkerSession(sessionId) })
             if (!run) return ""
             const pointer = formatRunPointer(run)
-            recover(pointer)
+            if (!requiredInvestigation) recover(pointer)
             const summary = isStaleRun(run) ? formatStaleRunNotice(run) : formatCompactionContext(run, plan.allow("run"))
-            if (summary && textBytes(summary) <= (plan.totalBytes ?? Infinity)) return summary
-            return textBytes(pointer) <= (plan.recoveryBytes ?? Infinity) ? pointer : ""
+            const remaining = Math.max(0, (plan.totalBytes ?? Infinity) - textBytes(recovery.join("\n")) - (recovery.length ? 1 : 0))
+            if (summary && textBytes(summary) <= remaining) return summary
+            return textBytes(pointer) <= remaining ? pointer : ""
           })
           await collect("evidence", () => skillEvolution.recoveryContext(sessionId))
+          if (operations.workspace.enabled || operations.options.enabled) await collect("operational", () => {
+            const remaining = Math.max(0, Math.min(4096, (plan.allow("run") ?? 16384) - textBytes(recovery.join("\n"))))
+            return operations.render(sessionId, remaining)
+          })
           const recoveryBytes = textBytes(recovery.join("\n"))
           plan.spend("run", recoveryBytes)
           if (memory.enabled) {
@@ -278,6 +302,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
                 ...(allowance === undefined ? {} : { allowanceBytes: allowance + recoveryBytes }),
                 ...(optionalAllowance === undefined ? {} : { optionalAllowanceBytes: optionalAllowance + recoveryBytes }) }))
               if (pack.receipt) await prepareDelivery(pack.receipt, pack.text)
+              if (requiredInvestigation && !pack.blocked && !pack.text.includes(requiredInvestigation)) throw new Error("ALG needs_context: investigation pointer missing from prepared context")
               if (pack.text) { output.system.push(pack.text); plan.spend("memory", Math.max(0, textBytes(pack.text) - recoveryBytes)) }
               if (assist && pack.receipt) {
                 // A blocked or empty pack does not contain the recovery text; never lose an unfinished run.
@@ -303,6 +328,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
     "experimental.session.compacting": async (input, sharedOutput) => delivery.replace(input.sessionID, "compaction", sharedOutput.context, async (context, prepareDelivery, limitDelivery, onPublished, recover) => {
       const output = { context }
       const owned: string[] = []
+      let requiredInvestigation = ""
       const logCompactionFailure = (message: string) => {
         try { Promise.resolve(client.app.log({ body: { service: ALG_PLUGIN_ID, level: "error", message } })).catch(() => {}) }
         catch { /* log optional */ }
@@ -316,16 +342,38 @@ const server: Plugin = async (ctx, pluginOptions) => {
       const outputLimit = plan.totalBytes ?? MAX_COMPACTION_OUTPUT_BYTES
       limitDelivery(outputLimit)
       onPublished((bytes) => windows.record(input.sessionID, plan, bytes))
+      if (memory.current(input.sessionID).investigation) {
+        try {
+          await authorizeMemory(input.sessionID)
+          const pointer = investigationPointer(input.sessionID)
+          if (textBytes(pointer) > outputLimit) throw new Error("ALG needs_context: investigation pointer exceeds compaction ceiling")
+          requiredInvestigation = pointer
+          owned.push(pointer)
+          recover(pointer)
+          plan.spend("run", textBytes(pointer))
+        } catch (error) {
+          if (error instanceof Error && error.message.includes("exceeds compaction ceiling")) throw error
+          logCompactionFailure(`ALG investigation pointer unavailable: ${formatSdkError(error)}`)
+          owned.push("ALG investigation recovery unavailable; use alg_context_status before resuming.")
+        }
+      }
       try {
         const run = await awaitLock(() => findLatestIncompleteRunForSession(projectDirectory, input.sessionID))
         if (run) {
           const pointer = formatRunPointer(run)
-          recover(pointer)
+          if (!memory.current(input.sessionID).investigation) recover(pointer)
           const summary = isStaleRun(run) ? formatStaleRunNotice(run) : formatCompactionContext(run, plan.allow("run"))
           const recovery = summary && textBytes(summary) <= (plan.totalBytes ?? Infinity) ? summary : pointer
-          if (textBytes(recovery) <= (plan.totalBytes ?? Infinity)) { owned.push(recovery); plan.spend("run", textBytes(recovery)) }
+          if (textBytes(recovery) <= Math.max(0, outputLimit - textBytes(owned.join("\n")) - (owned.length ? 1 : 0))) { owned.push(recovery); plan.spend("run", textBytes(recovery)) }
         }
       } catch { logCompactionFailure("ALG run pointer unavailable") }
+      if (operations.workspace.enabled || operations.options.enabled) {
+        try {
+          await authorizeMemory(input.sessionID)
+          const value = operations.render(input.sessionID, Math.max(0, Math.min(4096, outputLimit - textBytes(owned.join("\n")) - 1)))
+          if (value) { owned.push(value); plan.spend("run", textBytes(value)) }
+        } catch { logCompactionFailure("ALG operational context unavailable") }
+      }
       const appendEnvironmentMemory = async () => {
         if (environmentMemory?.mode !== "assist") return
         try {
@@ -358,6 +406,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
             ...(optionalAllowance === undefined ? {} : { optionalAllowanceBytes: optionalAllowance + recoveryBytes }),
           }))
           if (pack.receipt) await prepareDelivery(pack.receipt, pack.text)
+          if (requiredInvestigation && !pack.blocked && !pack.text.includes(requiredInvestigation)) throw new Error("ALG needs_context: investigation pointer missing from prepared compaction")
           if (pack.text && !pack.blocked) { owned.length = 0; owned.push(pack.text); plan.spend("memory", Math.max(0, textBytes(pack.text) - recoveryBytes)) }
           else if (pack.text) { owned.push(pack.text); plan.spend("memory", textBytes(pack.text)) }
         } catch {
