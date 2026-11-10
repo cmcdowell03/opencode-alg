@@ -6,7 +6,7 @@ This is an experimental, partial implementation of the first phase of the [V1 de
 
 Use the existing plugin options or deployment sidecar. Session memory must be in `assist` mode for investigations; set `investigation.enabled: true`. Set `workspace.mode` to `observe` for diagnostics or `assist` for procedural context and configured enforcement. All new behavior defaults off. Do not place credentials in repository JSON, skills, checkpoints or model arguments. The remote adapter accepts an environment-variable name for its credential reference.
 
-Put project requirements in `.opencode/ALG.workspace.json` using `WorkspaceRegistrySchema` in `src/workspace/schema.ts`. An operation lists its phases, roles, environments, resource IDs and skill/document/fact requirements. A missing registry, missing facts, conflicting evidence or incompatible scope stays visible through `alg_context_status`; it is not assumed ready. The host resolves only requested facts from bounded local sources, including repository identity/remotes, the declared `package.json` test script, platform, and bounded document hashes. Unsupported or unavailable facts remain unknown; the registry cannot assert its own truth. Simple tool-command detection is advisory and does not intercept commands or grant authority.
+Put project requirements in `.opencode/ALG.workspace.json` using `WorkspaceRegistrySchema` in `src/workspace/schema.ts`. An operation lists its phases, roles, environments, resource IDs and skill/document/fact requirements. A missing registry, missing facts, conflicting evidence or incompatible scope stays visible through `alg_context_status`; it is not assumed ready. The host resolves only requested facts from bounded local sources, including repository identity/remotes, the declared `package.json` test script, platform, and bounded document hashes. Unsupported or unavailable facts remain unknown; the registry cannot assert its own truth. The before-tool hook recognizes only explicit simple Git/test commands and records their operation; it does not infer compound commands or grant execution authority. Readiness for ordinary commands remains advisory.
 
 The registry describes requirements but cannot grant permissions. To require a procedure at the managed investigation boundary, operator configuration pins the exact registry byte SHA-256 in `workspace.trustedRegistryHash` and includes `data.investigate.read` in `workspace.mandatoryOperations`. The corresponding operation must declare qualified coverage and the `alg_investigation` boundary. Use the `execute` phase for this boundary. Use input_validator: investigation-work-v1 and resource_resolver: investigation-project-v1, the implemented adapter identifiers. The managed path accepts read/discovery/submission effects, not writes.
 
@@ -16,7 +16,7 @@ Skill selection uses exact names and the existing skill approval policy. Approve
 
 `investigation.adapter` describes one operator-qualified MCP service contract. It pins the server revision, authenticated principal, allowed operations, exact input/output schema hashes, profile expiry and evidence reference. Record verifierId, evidenceSha256 and verifiedAt from the actual operator qualification receipt; the workspace operation must name that verifier in verifier_ids. The transport uses the official MCP client over Streamable HTTP. HTTPS is required except for local loopback tests. Redirects, changed schemas, expired profiles, oversized responses and unexpected output envelopes fail closed. A capability profile records the operator's verified contract; schema matching alone does not prove server behavior.
 
-The transport accepts trusted, operator-configured declarative mappings from the internal request to native MCP arguments and from native responses into the internal envelope. Mappings support bounded JSON pointers into request/host values, nested output fields, explicit constants, and up to eight response cases selected by a reviewed discriminator. The mapping is local trusted configuration; model requests cannot supply or change it. Fixed reviewed recipes bind operation/version and bounded typed parameters; use `admit_recipe`, which constructs the normalized executable query on the host. Arbitrary model-authored queries are not admitted.
+The transport accepts trusted, operator-configured declarative mappings from the internal request to native MCP arguments and from native responses into the internal envelope. Mappings support bounded JSON pointers into request/host values, nested output fields, explicit constants, and up to eight response cases selected by a reviewed discriminator. The mapping is local trusted configuration; model requests cannot supply or change it. Fixed reviewed recipes bind operation/version and bounded typed parameters; use `admit_recipe`, which constructs the normalized executable query on the host. When `investigation.recipes` is nonempty, admission rejects queries that do not exactly match a configured recipe and its normalized parameters. An empty recipe list retains the earlier explicit `admit` interface for qualified bounded service operations; it does not provide semantic deduplication of arbitrary queries. Configure reviewed recipes for the intended production investigation path.
 
 The real datalake-mcp service still needs qualification. The separately supplied operator qualification CLI can inventory or probe a service when reachable, but it does not itself establish a profile, and a real air-gapped MCP remains **UNQUALIFIED** until its service-specific behavior is independently evidenced. Required guarantees include stable submission idempotency, lookup by submission identity, result validity/access checks, and optionally cancellation. The profile pins MCP initialization identity and tool schema hashes, read-only operations, server-enforced project scope, and maximum duration, scan bytes, result bytes and cost. ALG reserves that configured maximum per admitted job. The service enforces job limits independently of the client connection. Responses contain job IDs or bounded manifests, not bulk Arrow data or Parquet contents. Keep Polars, DuckDB, joins, preprocessing and S3 materialization in datalake-mcp.
 
@@ -74,3 +74,28 @@ Generic run ownership transfer is intentionally rejected for investigations in t
 ## Acceptance and deployment
 
 Use the [prepared offline deployment](deployment.md) command for a bundle built for the destination platform. The [Linux/Bash acceptance plan](alg-v1-linux-bash-acceptance-plan.md) defines the matching local Linux and PowerShell lanes. Test receipts identify the exact commit, runtime and dependencies. A server/tool registration check proves loading; synthetic MCP/provider tests prove deterministic integration; neither establishes analytical quality against production data or arbitrary models.
+
+## Reviewed recipe example
+
+Add recipes alongside the existing qualified adapter in plugin options:
+
+```json
+{
+  "investigation": {
+    "enabled": true,
+    "recipes": [{
+      "operation": "particle-window",
+      "version": "v1",
+      "base_query": { "recipe": "approved-particle-window" },
+      "parameters": [
+        { "name": "tool", "type": "enum", "values": ["fixture-tool-a", "fixture-tool-b"], "required": true },
+        { "name": "at", "type": "iso_timestamp", "required": true }
+      ]
+    }]
+  }
+}
+```
+
+This fragment is not a complete or qualified service profile. Replace fixture identities with reviewed service definitions. The orchestrator calls `recipe` to inspect parameter declarations, then `admit_recipe` with the operation, version, parameters and assigned node IDs. Equivalent timezone-qualified timestamps normalize to one instant. No parameter coercion, unrestricted SQL rewriting or model-selected refresh generation occurs.
+
+A native tool binding maps named inputs from `request` or host-owned scope and maps outputs from the native `response`. Use response discriminators for distinct running/result/failure states; unrecognized states stay uncertain. Validation must derive access and freshness from actual service checks. Do not map a constant `valid: true` to substitute for those checks. Likewise, ordinary “job not found” must not be mapped to proof of nonacceptance unless the service's measured retention/idempotency contract guarantees that conclusion.

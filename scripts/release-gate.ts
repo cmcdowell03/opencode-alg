@@ -132,7 +132,7 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "scripts/memory-cli.ts", "scripts/session-memory-gate.ts", "scripts/session-memory-benchmark.ts",
   "scripts/environment-memory-cli.ts", "scripts/environment-memory-benchmark.ts", "scripts/snapshot-upgrade.ts",
   "scripts/offline-diagnostics.ts", "scripts/deployment.ts", "scripts/prepare-deployment.ts",
-  "scripts/investigation-cli.ts", "scripts/qualify-investigation.ts", "scripts/test-v1-headless.ts",
+  "scripts/investigation-cli.ts", "scripts/qualify-investigation.ts", "scripts/verification-host-dependencies.ts", "scripts/test-v1-headless.ts",
   "docs/datalake-mcp-qualification.md",
 ] as const
 

@@ -210,3 +210,21 @@ describe("restart-safe short filesystem mutexes", () => {
     }
   })
 })
+
+
+test("long workspace paths preserve bounded mutation owner labels through acquire, renew and takeover", () => {
+  const project = tempProject("alg-long-mutex-")
+  try {
+    const directory = join(project, "a".repeat(110), "b".repeat(110))
+    mkdirSync(directory, { recursive: true })
+    const path = join(directory, "workspace.lock")
+    expect(path.length).toBeGreaterThan(256)
+    const held = acquireFilesystemMutex(path, { owner: "long-path-owner", leaseMs: 30000 })
+    held.renew(); held.release()
+    expect(existsSync(path)).toBe(false)
+    writeFileSync(path, JSON.stringify(record(path, 99999999, -1000)))
+    const recovered = acquireFilesystemMutex(path, { owner: "recovered", isPidAlive: () => false })
+    recovered.release()
+    expect(existsSync(path)).toBe(false)
+  } finally { removeProject(project) }
+})

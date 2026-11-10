@@ -41,3 +41,7 @@ Legacy direct installs or unrelated plugin registrations are not silently adopte
 ## Limitations
 
 The bundle target is one OS/architecture/runtime target, not a universal archive. Prepare and test separately for Linux/Bash and Windows/PowerShell. Native optional capabilities such as the Excel Python environment are not installed by this V1 offline bundle path; bundles carry the declared package's production Node dependencies only. Connected exact-version deploy is not included in V1.
+
+### OpenCode host bootstrap prerequisite
+
+The offline bundle supplies ALG and its production dependencies; the OpenCode host must already be installed and initialized, including its configuration-directory dependencies. OpenCode 1.18.35 may try to install its own `@opencode-ai/plugin` dependency before loading any configured plugin in a fresh configuration directory. Prepare and transfer the host environment separately for air-gapped deployments. The local acceptance harness seeds only its isolated test directories from the tested pinned dependencies; it never edits your global configuration. A successful ALG deploy alone does not prove a fresh OpenCode host can bootstrap without network access.

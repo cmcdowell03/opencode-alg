@@ -1,3 +1,4 @@
+import { seedVerificationHostDependencies } from "./verification-host-dependencies.ts"
 import { resolveOpenCodeExecutable } from "./host-executable.ts"
 import { spawn, type ChildProcess } from "node:child_process"
 import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto"
@@ -1436,6 +1437,7 @@ export async function runLiveVerification(outputPath: string): Promise<{ path: s
     join(isolatedHome, "AppData", "Roaming"),
     join(isolatedHome, "AppData", "Local"),
   ]) mkdirSync(directory, { recursive: true })
+  seedVerificationHostDependencies(configDirectory, pluginConfiguration.source.root)
   writeFileSync(serverConfigPath, `${JSON.stringify(pluginConfiguration.server_config, null, 2)}\n`, "utf8")
   writeFileSync(tuiConfigPath, `${JSON.stringify(pluginConfiguration.tui_config, null, 2)}\n`, "utf8")
   const processEnvironment: NodeJS.ProcessEnv = {

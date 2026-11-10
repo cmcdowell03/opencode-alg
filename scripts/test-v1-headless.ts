@@ -25,6 +25,7 @@ import {
 import { MemoryStore } from "../src/session-memory/store.ts"
 import { terminateProcessTree } from "../src/shell.ts"
 import { ALG_LIVE_SOURCE_DIGEST_ENV } from "../src/source-identity.ts"
+import { seedVerificationHostDependencies } from "./verification-host-dependencies.ts"
 import { hashObject } from "../src/session-memory/store.ts"
 import { Server as McpServer } from "@modelcontextprotocol/sdk/server/index.js"
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js"
@@ -520,6 +521,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
   let followupSawRef = false
   try {
     for (const directory of [project, home, configHome, join(temporaryRoot, "xdg-data"), join(temporaryRoot, "xdg-cache"), join(temporaryRoot, "tmp"), join(temporaryRoot, "appdata"), join(temporaryRoot, "localappdata")]) mkdirSync(directory, { recursive: true, mode: 0o700 })
+    seedVerificationHostDependencies(join(configHome, "opencode"), checkoutPlugin.source.root)
     const projectRoot = realpathSync.native(project)
     mcpService.bindProject(new MemoryStore(projectRoot).projectId)
     mkdirSync(runtimeSourceRoot, { recursive: true, mode: 0o700 })
@@ -535,6 +537,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     if (plugin.source.digest !== checkoutPlugin.source.digest) throw new Error("runtime source changed while the immutable host snapshot was prepared")
     writeFileSync(join(projectRoot, "README.md"), "Synthetic headless host acceptance fixture.\n", { flag: "wx" })
     mkdirSync(join(projectRoot, ".opencode"), { recursive: true, mode: 0o700 })
+    seedVerificationHostDependencies(join(projectRoot, ".opencode"), checkoutPlugin.source.root)
     writeFileSync(join(projectRoot, ".opencode", "ALG.workspace.json"), JSON.stringify({ schema_version: 1, operations: [
       { id: "headless-smoke", requirements: [{ id: "fixture-readme", kind: "document", ref: "README.md", intent: "required" }] },
       { id: "data.investigate.read", coverage: "advisory", boundary: "alg_investigation", effects: ["read"], requirements: [] },

@@ -11,7 +11,7 @@ import {
   writeFileSync,
 } from "node:fs"
 import { hostname } from "node:os"
-import { randomUUID } from "node:crypto"
+import { createHash, randomUUID } from "node:crypto"
 import { z } from "zod"
 
 const MIN_LEASE_MS = 100
@@ -232,7 +232,7 @@ function acquireTakeoverClaim(
   const acquired = Date.now()
   const claim = FilesystemMutexRecordSchema.parse({
     version: 1,
-    owner: `stale-takeover:${mutexPath}`,
+    owner: `stale-takeover:${createHash("sha256").update(mutexPath).digest("hex")}`,
     token,
     pid: process.pid,
     host: currentHost,

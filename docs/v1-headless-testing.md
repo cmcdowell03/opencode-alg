@@ -45,3 +45,5 @@ Workspace runs in optional `observe` mode; this does not claim mandatory-operati
 The package runtime files are copied into the harness-owned temporary root and their source digest is recomputed before launch. OpenCode loads that immutable snapshot for all three server processes, so a concurrent checkout edit cannot change the loaded code after source identity is recorded. The temporary source snapshot and project are removed only after evidence is persisted.
 
 The configured model package uses OpenCode’s OpenAI-compatible provider support. See the [OpenCode server API](https://docs.opencode.ai/server/) and [provider configuration](https://opencode.ai/docs/providers/) for host API and provider behavior.
+
+The isolated configuration and project dependency directories are seeded from the exact tested package and lockfile before host startup. OpenCode otherwise attempts its own npm dependency installation before loading configured plugins. This setup preserves the installed SDK version and avoids treating a package-registry timeout as a plugin failure. The directories are unique to each test and removed after evidence is retained.

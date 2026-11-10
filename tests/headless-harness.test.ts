@@ -40,3 +40,20 @@ describe("headless synthetic provider contract", () => {
     expect(recovered.text).toBe(`Recovered ${PERSISTED_REFERENCE} ${PERSISTED_RESULT}`)
   })
 })
+
+
+test("isolated host dependency setup uses the pinned SDK and refuses an existing target", async () => {
+  const { seedVerificationHostDependencies } = await import("../scripts/verification-host-dependencies.ts")
+  const { tempProject, removeProject } = await import("./helpers.ts")
+  const { existsSync, readFileSync } = await import("node:fs")
+  const { join } = await import("node:path")
+  const root = tempProject("alg-host-deps-")
+  try {
+    const { fileURLToPath } = await import("node:url")
+    seedVerificationHostDependencies(root, fileURLToPath(new URL("..", import.meta.url)))
+    expect(existsSync(join(root, "node_modules", "@opencode-ai", "plugin", "package.json"))).toBe(true)
+    const saved = readFileSync(join(root,"package.json"), "utf8")
+    expect(() => seedVerificationHostDependencies(root, root)).toThrow("fresh")
+    expect(readFileSync(join(root,"package.json"), "utf8")).toBe(saved)
+  } finally { removeProject(root) }
+})
