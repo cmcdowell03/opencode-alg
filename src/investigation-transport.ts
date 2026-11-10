@@ -3,7 +3,8 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { z } from "zod"
 import { InvestigationAdapterSchema, type InvestigationAdapter } from "./operational-options.ts"
 import { hashObject, assertNoSecrets } from "./session-memory/store.ts"
-import { InvestigationResultSchema, InvestigationTransportError, type InvestigationMcpPort, type InvestigationMcpCapabilities,
+import { applyInputBinding, applyOutputBinding } from "./investigation-protocol.ts"
+import { InvestigationResultSchema, InvestigationResultPageSchema, InvestigationTransportError, type InvestigationMcpPort, type InvestigationMcpCapabilities,
   type InvestigationReconciliation, type InvestigationSubmission, type InvestigationResult, type InvestigationWork } from "./investigation/index.ts"
 
 const SubmissionSchema = z.discriminatedUnion("kind", [
@@ -26,7 +27,10 @@ export class InvestigationHttpPort implements InvestigationMcpPort {
     this.profile = InvestigationAdapterSchema.parse(profile)
     this.capabilities = {
       server_id: this.profile.serverId, server_revision: this.profile.serverRevision,
-      tool_id: this.profile.submit.name, tool_schema_revision: this.profile.submit.schemaHash,
+      tool_id: this.profile.submit.name, tool_schema_revision:
+        [this.profile.submit, this.profile.lookup, this.profile.validateResult, this.profile.cancel, this.profile.readResult].some((tool) => tool?.binding)
+          ? hashObject({ submit: this.profile.submit, lookup: this.profile.lookup, validate: this.profile.validateResult,
+            cancel: this.profile.cancel ?? null, read: this.profile.readResult ?? null }) : this.profile.submit.schemaHash,
       principal_id: this.profile.principalId, project_id: projectId, effects: ["read"],
       idempotent_submit: true, lookup_by_submission_id: true, response_limit_bytes: this.profile.responseLimitBytes, qualified: true,
     }
@@ -69,7 +73,7 @@ export class InvestigationHttpPort implements InvestigationMcpPort {
       // Bound discovery rather than walking an unbounded tool catalog; an unseen schema is unqualified.
       const listed = await client.listTools({}, { timeout: this.profile.timeoutMs })
       if (listed.nextCursor || listed.tools.length > 128) throw new Error("MCP tool qualification coverage is incomplete")
-      for (const required of [this.profile.submit, this.profile.lookup, this.profile.validateResult, this.profile.cancel].filter((value) => value !== undefined)) {
+      for (const required of [this.profile.submit, this.profile.lookup, this.profile.validateResult, this.profile.cancel, this.profile.readResult].filter((value) => value !== undefined)) {
         const matches = listed.tools.filter((tool) => tool.name === required.name)
         if (matches.length !== 1 || hashObject({ inputSchema: matches[0]!.inputSchema, outputSchema: matches[0]!.outputSchema ?? null }) !== required.schemaHash) {
           throw new Error("MCP tool schema differs from qualified profile")
@@ -90,14 +94,19 @@ export class InvestigationHttpPort implements InvestigationMcpPort {
     return parsed.data
   }
   private async call(name: string, args: Record<string, unknown>): Promise<unknown> {
+    const tool = [this.profile.submit, this.profile.lookup, this.profile.validateResult, this.profile.cancel, this.profile.readResult].find((tool) => tool?.name === name)
+    if (!tool) throw new InvestigationTransportError("operation_not_allowed", "not_submitted")
+    let nativeArgs: Record<string, unknown>
     try {
-      const body = JSON.stringify(args)
+      nativeArgs = applyInputBinding({ request: args, host: { project_id: this.capabilities.project_id,
+        principal_id: this.capabilities.principal_id, execution_limits: this.profile.executionLimits } }, tool.binding)
+      const body = JSON.stringify(nativeArgs)
       if (Buffer.byteLength(body) > 32_768) throw new Error("request bound")
       assertNoSecrets(body)
     } catch { throw new InvestigationTransportError("request_invalid", "not_submitted") }
     return this.connection(async (client, beforeCall) => {
       beforeCall()
-      const response = await client.callTool({ name, arguments: args }, undefined, { timeout: this.profile.timeoutMs })
+      const response = await client.callTool({ name, arguments: nativeArgs }, undefined, { timeout: this.profile.timeoutMs })
       if (response.isError) throw new Error("MCP tool error")
       let value: unknown = response.structuredContent
       if (value === undefined) {
@@ -110,7 +119,7 @@ export class InvestigationHttpPort implements InvestigationMcpPort {
       const encoded = JSON.stringify(value)
       if (!encoded || Buffer.byteLength(encoded) > this.profile.responseLimitBytes) throw new Error("MCP result exceeds bound")
       assertNoSecrets(encoded)
-      return value
+      return applyOutputBinding(value, tool.binding, args)
     })
   }
   async submit(request: Parameters<InvestigationMcpPort["submit"]>[0]): Promise<InvestigationSubmission> {
@@ -133,6 +142,12 @@ export class InvestigationHttpPort implements InvestigationMcpPort {
     return this.parse(ValiditySchema, await this.call(this.profile.validateResult.name, {
       manifest_ref: result.manifest_ref, digest: result.digest, work_key: work.work_key,
       validity_key: work.validity_key, source_dependencies: work.source_dependencies,
+    }))
+  }
+  async readResult(result: InvestigationResult, request: { cursor: string | null; max_rows: number }) {
+    if (!this.profile.readResult) throw new InvestigationTransportError("operation_not_allowed", "not_submitted")
+    return this.parse(InvestigationResultPageSchema, await this.call(this.profile.readResult.name, {
+      manifest_ref: result.manifest_ref, digest: result.digest, access_scope: result.access_scope, ...request,
     }))
   }
   async cancel(jobId: string): Promise<void> {

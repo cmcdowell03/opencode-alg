@@ -11,7 +11,7 @@ import {
   wireInputs,
 } from "./graph.ts"
 import { canonicalJson } from "./persistence.ts"
-import { getTemplate } from "./templates.ts"
+import { assertManagedGraph } from "./graph-policy.ts"
 import { parseAndValidate } from "./schemas.ts"
 import {
   acquireRunLock,
@@ -656,13 +656,8 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     if (run.owner_session_id !== options.parentSessionId) {
       throw new Error(`session does not own run ${run.run_id}`)
     }
-    if (run.graph.name === "data-investigation" || run.investigation) {
-      if (!run.investigation) throw new Error("data-investigation plan has no managed investigation reference")
-      if (canonicalJson(run.graph) !== canonicalJson(validateGraph(getTemplate("data-investigation")))) {
-        throw new Error("managed investigation graph differs from the fixed Phase 1 template")
-      }
-      if (!options.beforeBatch) throw new Error("managed investigation requires a reconciliation guard before attempt reservation")
-    }
+    if (assertManagedGraph(run) && !options.beforeBatch)
+      throw new Error("managed investigation requires a reconciliation guard before attempt reservation")
     const hydrated = hydrateRunForExecution(run)
     // Preserve the caller-visible RunState object identity used by existing
     // integrations while replacing its nested state with safely hydrated data.

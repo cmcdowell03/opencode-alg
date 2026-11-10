@@ -80,6 +80,14 @@ export const InvestigationResultSchema = z.object({
   access_scope: z.string().min(1).max(512).refine((v) => !hasCredentialMaterial(v)),
 }).strict()
 export type InvestigationResult = z.infer<typeof InvestigationResultSchema>
+export const InvestigationResultPageSchema = z.object({
+  manifest_ref: z.string().min(1).max(2048), digest: z.string().regex(/^[a-f0-9]{64}$/i),
+  access_scope: z.string().min(1).max(512), cursor: z.string().max(1024).nullable(),
+  next_cursor: z.string().max(1024).nullable(), rows: z.array(JsonObjectSchema).max(100),
+  coverage: JsonObjectSchema,
+}).strict().refine((value) => Buffer.byteLength(JSON.stringify(value)) <= 16_384 && !hasCredentialMaterial(value),
+  "result page exceeds safe bounded content")
+export type InvestigationResultPage = z.infer<typeof InvestigationResultPageSchema>
 
 export const InvestigationWorkInputSchema = z.object({
   operation: z.string().min(1).max(128),
@@ -123,6 +131,8 @@ export interface InvestigationWork {
   actual_cost?: number; external_job_id?: string; result?: InvestigationResult; failure?: string
   nonacceptance_proven?: boolean
   authorized_nodes?: string[]
+  result_pages?: Array<{ key: string; page: InvestigationResultPage }>
+  lookup_count?: number
   source_dependencies: string[]; validity_key: string; created_at: string; updated_at: string
   lease_fence: number; purpose: InvestigationWorkInput["purpose"]; generation: number
 }
@@ -167,6 +177,7 @@ export interface InvestigationMcpPort {
   submit(request: { submission_id: string; work_key: string; operation: string; query: Record<string, unknown> }): Promise<InvestigationSubmission>
   lookup(submission_id: string): Promise<InvestigationReconciliation>
   validateResult?(result: InvestigationResult, work: InvestigationWork): Promise<{ valid: boolean; validity_key: string; access_scope: string; reason?: string }>
+  readResult?(result: InvestigationResult, request: { cursor: string | null; max_rows: number }): Promise<InvestigationResultPage>
   cancel?(external_job_id: string): Promise<void>
 }
 
@@ -182,6 +193,8 @@ const WorkSchema = z.object({ work_key: z.string().regex(/^[a-f0-9]{64}$/), subm
   actual_cost: z.number().finite().nonnegative().optional(), external_job_id: z.string().max(1_024).optional(),
   nonacceptance_proven: z.boolean().optional(),
   authorized_nodes: z.array(z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/)).max(16).optional(),
+  result_pages: z.array(z.object({ key: z.string().regex(/^[a-f0-9]{64}$/), page: InvestigationResultPageSchema }).strict()).max(8).optional(),
+  lookup_count: z.number().int().nonnegative().max(1000).optional(),
   result: InvestigationResultSchema.optional(), failure: z.string().max(2_000).optional(), source_dependencies: z.array(z.string().max(512)).max(128),
   validity_key: z.string().regex(/^[a-f0-9]{64}$/), created_at: IsoDate, updated_at: IsoDate, lease_fence: z.number().int().nonnegative(),
   purpose: z.enum(["analysis", "independent_verification", "refresh", "recomputation"]), generation: z.number().int().nonnegative() }).strict()
@@ -541,6 +554,39 @@ export class InvestigationStore {
       }
     }, expectedFence)
   }
+  async readResultPage(workKey: string, port: InvestigationMcpPort, cursor: string | null = null, maxRows = 50): Promise<InvestigationResultPage> {
+    if (!Number.isSafeInteger(maxRows) || maxRows < 1 || maxRows > 100 ||
+      cursor !== null && (typeof cursor !== "string" || cursor.length > 1024)) throw new Error("invalid bounded result request")
+    const work = await this.markReusable(workKey, port)
+    if (!work.result) throw new Error("result unavailable")
+    const key = digest(safeJson({ manifest_ref: work.result.manifest_ref, digest: work.result.digest,
+      access_scope: work.result.access_scope, cursor, maxRows }))
+    const cached = work.result_pages?.find((entry) => entry.key === key)
+    if (cached) return structuredClone(cached.page)
+    if ((work.result_pages?.length ?? 0) >= 8) throw new Error("bounded result-page cache is full; narrow the admitted recipe")
+    if (!port.readResult) throw new Error("bounded result reading is not qualified")
+    const page = InvestigationResultPageSchema.parse(await port.readResult(work.result, { cursor, max_rows: maxRows }))
+    if (page.manifest_ref !== work.result.manifest_ref || page.digest !== work.result.digest ||
+      page.access_scope !== work.result.access_scope || page.cursor !== cursor || page.rows.length > maxRows ||
+      page.next_cursor !== null && page.next_cursor === cursor) throw new Error("result page identity, scope or cursor mismatch")
+    if (Buffer.byteLength(safeJson(page)) > port.capabilities.response_limit_bytes) throw new Error("result page exceeds qualified response bound")
+    let published = page
+    await this.updateWork(workKey, "result_page_recorded", (ledger, fresh) => {
+      this.assertPinnedProfile(ledger, port.capabilities)
+      if (fresh.status !== "reusable" || !fresh.result ||
+        fresh.result.manifest_ref !== page.manifest_ref || fresh.result.digest !== page.digest ||
+        fresh.result.access_scope !== page.access_scope) throw new Error("result changed before page publication")
+      const existing = fresh.result_pages?.find((entry) => entry.key === key)
+      if (existing) {
+        if (canonicalJson(existing.page) !== canonicalJson(page)) throw new Error("result page changed for an immutable cursor")
+        published = existing.page
+      } else {
+        if ((fresh.result_pages?.length ?? 0) >= 8) throw new Error("bounded result-page cache is full; narrow the admitted recipe")
+        ;(fresh.result_pages ??= []).push({ key, page })
+      }
+    })
+    return structuredClone(published)
+  }
   async reconcile(workKey: string, port: InvestigationMcpPort): Promise<InvestigationWork> {
     this.assertCapabilities(port.capabilities)
     const ledger = this.refresh()
@@ -548,6 +594,11 @@ export class InvestigationStore {
     const w = ledger.work.find((x) => x.work_key === workKey)
     if (!w) throw new Error("unknown work key")
     if (!["submitting", "outcome_unknown", "running", "cancel_requested"].includes(w.status)) return w
+    // Persist lookup usage before the remote call; restart cannot reset this bound.
+    const polling = await this.updateWork(workKey, "lookup_intent", (_ledger, fresh) => {
+      if ((fresh.lookup_count ?? 0) >= 1000) throw new Error("investigation lookup budget exhausted; operator review required")
+      fresh.lookup_count = (fresh.lookup_count ?? 0) + 1
+    }, w.lease_fence)
     let receipt: InvestigationReconciliation
     try {
       receipt = await port.lookup(w.submission_id)
@@ -557,9 +608,9 @@ export class InvestigationStore {
         this.assertPinnedProfile(l, port.capabilities)
         if (x.status !== "cancel_requested") x.status = "outcome_unknown"
         x.failure = safeError(error)
-      }, w.lease_fence)
+      }, polling.lease_fence)
     }
-    return await this.recordSubmissionOutcome(workKey, receipt, w.lease_fence)
+    return await this.recordSubmissionOutcome(workKey, receipt, polling.lease_fence)
   }
   async reconcileBeforeResume(port: InvestigationMcpPort): Promise<{ ready: boolean; blocked: Array<{ work_key: string; status: InvestigationStatus }> }> {
     const current = this.refresh()
@@ -581,6 +632,7 @@ export class InvestigationStore {
       if (!w.result || !validation.valid || w.validity_key !== validation.validity_key || w.result.access_scope !== validation.access_scope ||
         (w.result.expires_at && Date.parse(w.result.expires_at) <= this.now().getTime())) {
         w.status = "stale"
+        w.result_pages = []
         return
       }
       w.status = "reusable"
@@ -599,6 +651,37 @@ export class InvestigationStore {
   }
   requestCancel(workKey: string): Promise<InvestigationWork> {
     return this.updateWork(workKey, "cancel_requested", (_l, w) => { if (w.status !== "running") throw new Error("only running work can be cancelled"); w.status = "cancel_requested" })
+  }
+  /** Explicit operator transition; never transfers an uncertain job to a new service contract. */
+  async migrateProfile(port: InvestigationMcpPort, operator: { engineer_ref: string; statement: string }) {
+    this.assertCapabilities(port.capabilities)
+    const before = this.refresh(), old = before.remote_profile, next = remoteProfile(port.capabilities)
+    if (!old || before.identity_version !== 2) throw new Error("migration requires a versioned existing profile")
+    if (old.server_id !== next.server_id || old.principal_id !== next.principal_id || old.project_id !== next.project_id)
+      throw new Error("migration cannot change service, principal or project authority")
+    if (before.work.some((work) => ["reserved", "submitting", "running", "outcome_unknown", "cancel_requested"].includes(work.status)))
+      throw new Error("resolve or abandon all unsubmitted/active work before service migration")
+    if (!port.validateResult) throw new Error("migration requires result validation")
+    const validations = new Map<string, boolean>()
+    for (const work of before.work) if (work.result) {
+      const receipt = await port.validateResult(work.result, work)
+      validations.set(work.work_key, receipt.valid && receipt.validity_key === work.validity_key &&
+        receipt.access_scope === work.result.access_scope &&
+        (!work.result.expires_at || Date.parse(work.result.expires_at) > this.now().getTime()))
+    }
+    const contribution = EngineerSchema.parse({ ...operator, id: randomUUID(), scope: "service-profile-migration",
+      classification: "reported_knowledge", received_at: this.now().toISOString() })
+    await this.mutate("operator_profile_migration", (ledger) => {
+      if (ledger.revision !== before.revision || canonicalJson(ledger.remote_profile) !== canonicalJson(old))
+        throw new Error("investigation changed during migration; review again")
+      ledger.remote_profile = next
+      ledger.checkpoint.engineer_contributions.push(contribution)
+      for (const work of ledger.work) if (work.result) {
+        work.result_pages = []
+        if (work.status !== "abandoned") work.status = work.status !== "stale" && validations.get(work.work_key) ? "reusable" : "stale"
+      }
+    })
+    return this.status()
   }
   /** Operator-only local disposition. Uncertain live compute still needs a remote terminal proof. */
   retryUnaccepted(workKey: string, reservation: number, operator: { engineer_ref: string; statement: string }): Promise<InvestigationWork> {

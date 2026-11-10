@@ -1,3 +1,10 @@
+
+export function completedReadOutputs(messages: any[]): any[] {
+  return messages.flatMap((message) => (message.parts ?? []).filter((part: any) => part?.type === "tool" &&
+    part.tool === "alg_investigation" && part.state?.status === "completed" && part.state?.input?.request?.action === "read_result")
+    .map((part: any) => { try { return JSON.parse(part.state.output)?.page ?? {} } catch { return {} } }))
+}
+
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http"
 import { spawn, type ChildProcess } from "node:child_process"
 import { createHash, createHmac, randomUUID } from "node:crypto"
@@ -40,7 +47,7 @@ const EvidenceSchema = z.object({
   isolation: z.object({ temporary_root: z.string(), project: z.string(), config_home: z.string(), config_path: z.string(), sidecar_path: z.string(), provider_endpoint: z.string(), server_bind_host: z.literal("127.0.0.1"), credentials_inherited: z.boolean(), real_user_config_unchanged: z.boolean(), config_before_sha256: z.string().regex(/^[a-f0-9]{64}$/), config_after_sha256: z.string().regex(/^[a-f0-9]{64}$/) }).strict(),
   session: z.object({ id: z.string().nullable(), persisted_same_id: z.boolean(), initial_tool_calls: z.array(z.string()).max(8), followup_tool_calls: z.array(z.string()).max(8), tool_registry_ids: z.array(z.string().max(128)).max(64), registry_exact: z.boolean(), plugin_startup_proofs: z.array(z.boolean()).max(3), initial_memory_checkpoint: z.object({ revision: z.number().int().nonnegative(), generation: z.number().int().nonnegative(), result_pins: z.array(z.string().regex(/^[a-f0-9]{64}$/)).max(16), result_persisted: z.boolean() }).nullable(), compacted_memory_checkpoint: z.object({ revision: z.number().int().nonnegative(), generation: z.number().int().nonnegative(), same_result_pin: z.boolean() }).nullable(), recovered_compaction_message: z.boolean(), recovered_reference_and_result: z.boolean(), final_memory_checkpoint: z.object({ revision: z.number().int().nonnegative(), generation: z.number().int().nonnegative(), result_persisted: z.boolean() }).nullable() }).strict(),
   synthetic_provider: z.object({ endpoint: z.string(), received_requests: z.number().int().nonnegative(), non_loopback_requests: z.number().int().nonnegative(), phases: z.array(z.string().max(32)).max(32), context_status_seen: z.boolean(), plan_tool_seen: z.boolean(), investigation_query_tool_seen: z.boolean(), query_result_observed_by_model: z.boolean(), compaction_saw_initial_result: z.boolean(), followup_saw_persisted_reference: z.boolean(), no_non_loopback_requests: z.boolean() }).strict(),
-  investigation: z.object({ enabled: z.boolean(), mcp_server_name: z.string(), mcp_server_version: z.string(), profile_schema_hashes: z.record(z.string(), z.string().regex(/^[a-f0-9]{64}$/)), submit_calls: z.number().int().nonnegative(), accepted_remote_jobs: z.number().int().nonnegative(), validation_calls: z.number().int().nonnegative(), query_tool_calls: z.number().int().nonnegative(), same_work_key: z.boolean(), same_result_reference: z.boolean(), result_revalidated_after_restarts: z.boolean(), actual_tool_results: z.array(z.object({ status: z.string(), work_key: z.string().nullable(), manifest_ref: z.string().nullable(), digest: z.string().nullable() }).strict()).max(4) }).strict(),
+  investigation: z.object({ enabled: z.boolean(), mcp_server_name: z.string(), mcp_server_version: z.string(), profile_schema_hashes: z.record(z.string(), z.string().regex(/^[a-f0-9]{64}$/)), submit_calls: z.number().int().nonnegative(), accepted_remote_jobs: z.number().int().nonnegative(), validation_calls: z.number().int().nonnegative(), read_calls: z.number().int().nonnegative(), lookup_calls: z.number().int().nonnegative(), read_result_tool_calls: z.number().int().nonnegative(), query_tool_calls: z.number().int().nonnegative(), same_work_key: z.boolean(), same_result_reference: z.boolean(), result_revalidated_after_restarts: z.boolean(), actual_tool_results: z.array(z.object({ status: z.string(), work_key: z.string().nullable(), manifest_ref: z.string().nullable(), digest: z.string().nullable() }).strict()).max(4) }).strict(),
   cleanup: z.object({ host_processes_stopped: z.boolean(), provider_stopped: z.boolean(), mcp_service_stopped: z.boolean(), temporary_environment_removed: z.boolean(), evidence_persisted_before_environment_removal: z.boolean() }).strict(),
 }).strict()
 export type HeadlessAcceptanceEvidence = z.infer<typeof EvidenceSchema>
@@ -109,6 +116,8 @@ export function chooseSyntheticResponse(phase: HostRequestPhase, toolStep: numbe
   if (phase === "initial" && toolStep === 1) return { kind: "tool", name: "alg_plan", args: { goal: "Run bounded synthetic data investigation acceptance", template: "data-investigation", criteria: ["Use only deterministic local fixture data"], detail: "compact" }, receipt }
   if (phase === "initial" && toolStep === 2) return { kind: "tool", name: "alg_investigation", args: { request: { action: "admit", input: queryPayload(), node_ids: [] } }, receipt }
   if (phase === "initial" && toolStep === 3) return { kind: "tool", name: "alg_investigation", args: { request: { action: "query", work_key: workKey ?? "0".repeat(64) } }, receipt }
+  if (phase === "initial" && toolStep === 4 || phase === "followup" && toolStep === 1)
+    return { kind: "tool", name: "alg_investigation", args: { request: { action: "read_result", work_key: workKey ?? "0".repeat(64), max_rows: 5 } }, receipt }
   if (phase === "initial") return { kind: "text", text: receipt.saw_query_output ? `Initial host query completed. ${PERSISTED_REFERENCE} ${PERSISTED_RESULT}${keyMarker}` : "INITIAL_HOST_QUERY_RESULT_NOT_OBSERVED", receipt }
   if (phase === "compaction") {
     const ok = receipt.saw_initial_reference && receipt.saw_initial_result
@@ -156,9 +165,10 @@ const MCP_SCHEMAS = {
   submit: { type: "object", properties: { submission_id: { type: "string" }, work_key: { type: "string" }, operation: { type: "string" }, query: { type: "object" }, project_id: { type: "string" }, principal_id: { type: "string" }, execution_limits: { type: "object", properties: { max_duration_ms: { type: "integer" }, max_bytes_scanned: { type: "integer" }, max_result_bytes: { type: "integer" }, max_cost: { type: "number" } }, required: ["max_duration_ms", "max_bytes_scanned", "max_result_bytes", "max_cost"], additionalProperties: false } }, required: ["submission_id", "work_key", "operation", "query", "project_id", "principal_id", "execution_limits"], additionalProperties: false },
   lookup: { type: "object", properties: { submission_id: { type: "string" } }, required: ["submission_id"], additionalProperties: false },
   validate: { type: "object", properties: { manifest_ref: { type: "string" }, digest: { type: "string" }, work_key: { type: "string" }, validity_key: { type: "string" }, source_dependencies: { type: "array", items: { type: "string" } } }, required: ["manifest_ref", "digest", "work_key", "validity_key", "source_dependencies"], additionalProperties: false },
+  read: { type: "object", properties: { manifest_ref: { type: "string" }, digest: { type: "string" }, access_scope: { type: "string" }, cursor: { type: ["string", "null"] }, max_rows: { type: "integer" } }, required: ["manifest_ref", "digest", "access_scope", "cursor", "max_rows"], additionalProperties: false },
   cancel: { type: "object", properties: { external_job_id: { type: "string" } }, required: ["external_job_id"], additionalProperties: false },
 } as const
-const MCP_NAMES = { submit: "submit", lookup: "lookup", validate: "validate_result", cancel: "cancel" } as const
+const MCP_NAMES = { submit: "submit", lookup: "lookup", validate: "validate_result", cancel: "cancel", read: "read_result" } as const
 
 interface SyntheticJob { submission_id: string; work_key: string; result: Record<string, unknown> }
 interface SyntheticMcpService {
@@ -169,7 +179,7 @@ interface SyntheticMcpService {
   schemas: Record<string, string>
   submitted: SyntheticJob[]
   bindProject(projectId: string): void
-  counters: { submitCalls: number; acceptedRemoteJobs: number; validationCalls: number; lookupCalls: number; nonLoopbackRequests: number }
+  counters: { submitCalls: number; acceptedRemoteJobs: number; validationCalls: number; lookupCalls: number; readCalls: number; nonLoopbackRequests: number }
   close(): Promise<void>
 }
 
@@ -177,7 +187,7 @@ function createSyntheticMcpService(): SyntheticMcpService {
   const serverName = "alg-headless-synthetic"
   const serverVersion = "1.32.2-fixture.1"
   const schemas = Object.fromEntries(Object.entries(MCP_SCHEMAS).map(([key, inputSchema]) => [key, hashObject({ inputSchema, outputSchema: null })]))
-  const counters = { submitCalls: 0, acceptedRemoteJobs: 0, validationCalls: 0, lookupCalls: 0, nonLoopbackRequests: 0 }
+  const counters = { submitCalls: 0, acceptedRemoteJobs: 0, validationCalls: 0, lookupCalls: 0, readCalls: 0, nonLoopbackRequests: 0 }
   const submitted: SyntheticJob[] = []
   let expectedProjectId = ""
   const servers = new Set<McpServer>()
@@ -210,16 +220,22 @@ function createSyntheticMcpService(): SyntheticMcpService {
             observed_at: new Date().toISOString(), expires_at: new Date(Date.now() + 25 * 60_000).toISOString(), access_scope: "synthetic-reader",
           } })
         }
-        value = { kind: "result", result: submitted.find((item) => item.submission_id === args.submission_id)!.result, actual_cost: 0.25 }
+        value = { kind: "running", external_job_id: "synthetic-job-1" }
       } else if (name === MCP_NAMES.lookup) {
         counters.lookupCalls++
         const job = submitted.find((item) => item.submission_id === args.submission_id)
-        value = job ? { kind: "result", result: job.result, actual_cost: 0.25 } : { kind: "not_found", proves_not_accepted: true }
+        value = job ? counters.lookupCalls === 1 ? { kind: "running", external_job_id: "synthetic-job-1" } : { kind: "result", result: job.result, actual_cost: 0.25 } : { kind: "not_found", proves_not_accepted: true }
       } else if (name === MCP_NAMES.validate) {
         counters.validationCalls++
         const job = submitted.find((item) => item.work_key === args.work_key)
         const valid = Boolean(job && args.manifest_ref === PERSISTED_REFERENCE && args.digest === PERSISTED_RESULT && args.validity_key)
         value = { valid, validity_key: String(args.validity_key ?? ""), access_scope: valid ? "synthetic-reader" : "revoked" }
+      } else if (name === MCP_NAMES.read) {
+        if (args.manifest_ref !== PERSISTED_REFERENCE || args.digest !== PERSISTED_RESULT || args.access_scope !== "synthetic-reader" ||
+          args.cursor !== null || args.max_rows < 1 || args.max_rows > 5) throw new Error("invalid bounded page request")
+        counters.readCalls++
+        value = { manifest_ref: PERSISTED_REFERENCE, digest: PERSISTED_RESULT, access_scope: "synthetic-reader",
+          cursor: null, next_cursor: null, rows: [{ evidence: "synthetic-observation", particles: 7 }], coverage: { synthetic: true, complete: true } }
       } else if (name === MCP_NAMES.cancel) value = { cancelled: true }
       else return { content: [{ type: "text", text: "unknown synthetic tool" }], isError: true }
       return { content: [{ type: "text", text: JSON.stringify(value) }] }
@@ -240,6 +256,7 @@ function createSyntheticMcpService(): SyntheticMcpService {
     executionLimits: { maxDurationMs: 5000, maxBytesScanned: 65536, maxResultBytes: 4096, maxCost: 2 },
     idempotentSubmit: true, lookupBySubmissionId: true,
     submit: { name: MCP_NAMES.submit, schemaHash: schemas.submit }, lookup: { name: MCP_NAMES.lookup, schemaHash: schemas.lookup },
+    readResult: { name: MCP_NAMES.read, schemaHash: schemas.read },
     validateResult: { name: MCP_NAMES.validate, schemaHash: schemas.validate }, cancel: { name: MCP_NAMES.cancel, schemaHash: schemas.cancel },
     timeoutMs: 5000, responseLimitBytes: 8192,
   }
@@ -493,6 +510,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
   let configAfterSha = before.sha256
   let providerPort = 0
   const actualInvestigationResults: Array<{ status: string; work_key: string | null; manifest_ref: string | null; digest: string | null }> = []
+  const actualReadResults: any[] = []
   let sameInvestigationWorkKey = false, sameInvestigationResult = false, investigationRevalidatedAfterRestarts = false
   let investigationQueryToolCalls = 0, planToolSeen = false, queryToolSeen = false
   let validationCountAfterInitial = 0
@@ -576,6 +594,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     queryToolSeen = initialToolCalls.includes("alg_investigation")
     investigationQueryToolCalls += initialToolCalls.filter((name) => name === "alg_investigation").length
     actualInvestigationResults.push(...completedInvestigationOutputs(initialMessages))
+    actualReadResults.push(...completedReadOutputs(initialMessages))
     await wait(350)
     const initialState = resultCheckpoint(projectRoot, sessionId)
     initialCheckpoint = { revision: initialState.revision, generation: initialState.generation, result_pins: initialState.result_pins, result_persisted: initialState.result_persisted }
@@ -628,6 +647,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
       followupToolCalls = [...followupToolCalls, ...calls]
       const outputs = completedInvestigationOutputs(newMessages)
       actualInvestigationResults.push(...outputs)
+      actualReadResults.push(...completedReadOutputs(newMessages))
       investigationQueryToolCalls += calls.filter((name) => name === "alg_investigation").length
       const last = outputs.at(-1)
       const transcript = JSON.stringify(allMessages)
@@ -654,6 +674,9 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     sameInvestigationWorkKey = actualInvestigationResults.length === 3 && actualInvestigationResults.every((item) => item.work_key === firstQueryResult.work_key)
     sameInvestigationResult = actualInvestigationResults.length === 3 && actualInvestigationResults.every((item) => item.manifest_ref === PERSISTED_REFERENCE && item.digest === PERSISTED_RESULT)
     investigationRevalidatedAfterRestarts &&= mcpService.counters.validationCalls >= validationCountAfterInitial + 2
+    if (actualReadResults.length !== 3 || actualReadResults.some((page) => page.digest !== PERSISTED_RESULT ||
+      page.rows?.[0]?.evidence !== "synthetic-observation") || mcpService.counters.readCalls !== 1 || mcpService.counters.lookupCalls !== 2)
+      throw new Error("Host evidence reads or asynchronous job reuse failed")
     if (mcpService.counters.acceptedRemoteJobs !== 1 || mcpService.counters.submitCalls !== 1 || mcpService.counters.validationCalls < 3 ||
       !sameInvestigationWorkKey || !sameInvestigationResult || !investigationRevalidatedAfterRestarts) {
       throw new Error("Synthetic MCP evidence did not show one accepted job and repeated validation of the same result")
@@ -670,7 +693,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
       ids.length === ALG_TOOL_IDS.length && ALG_TOOL_IDS.every((id) => ids.includes(id)) && initialToolCalls.includes("alg_context_status") && initialToolCalls.includes("alg_investigation") &&
       followupToolCalls.filter((name) => name === "alg_investigation").length === 2 && planToolSeen && queryToolSeen && providerStopped && mcpStopped &&
       provider.nonLoopbackRequests === 0 && mcpService.counters.nonLoopbackRequests === 0 && mcpService.counters.submitCalls === 1 && mcpService.counters.acceptedRemoteJobs === 1 &&
-      mcpService.counters.validationCalls >= 3 && sameInvestigationWorkKey && sameInvestigationResult && investigationRevalidatedAfterRestarts &&
+      mcpService.counters.validationCalls >= 6 && actualReadResults.length === 3 && mcpService.counters.readCalls === 1 && mcpService.counters.lookupCalls === 2 && sameInvestigationWorkKey && sameInvestigationResult && investigationRevalidatedAfterRestarts &&
       sameResultPin && compactionSawInitial && recoveredCompaction && recoveredSameEvidence && sameSession && followupSawRef
     const evidenceCandidate: HeadlessAcceptanceEvidence = {
       schema_version: 1, kind: "opencode-alg-v1-headless-acceptance", generated_at: new Date().toISOString(), passed: wasPassed,
@@ -693,6 +716,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
         no_non_loopback_requests: provider.nonLoopbackRequests === 0 && mcpService.counters.nonLoopbackRequests === 0 },
       investigation: { enabled: true, mcp_server_name: mcpService.serverName, mcp_server_version: mcpService.serverVersion, profile_schema_hashes: mcpService.schemas,
         submit_calls: mcpService.counters.submitCalls, accepted_remote_jobs: mcpService.counters.acceptedRemoteJobs, validation_calls: mcpService.counters.validationCalls,
+        read_calls: mcpService.counters.readCalls, lookup_calls: mcpService.counters.lookupCalls, read_result_tool_calls: actualReadResults.length,
         query_tool_calls: investigationQueryToolCalls, same_work_key: sameInvestigationWorkKey, same_result_reference: sameInvestigationResult,
         result_revalidated_after_restarts: investigationRevalidatedAfterRestarts, actual_tool_results: actualInvestigationResults },
       cleanup: { host_processes_stopped: started.length > 0 && exited.filter(Boolean).length === started.length, provider_stopped: providerStopped, mcp_service_stopped: mcpStopped,

@@ -13,7 +13,7 @@ const schemaHash = hashObject({ inputSchema, outputSchema: null })
 const live: Array<{ stop: () => void; close: () => Promise<void> }> = []
 afterEach(async () => { for (const item of live.splice(0)) { item.stop(); await item.close() } })
 
-async function localServer(options: { name?: string; wrongSchema?: boolean; mode?: "normal" | "redirect" | "oversize" } = {}) {
+async function localServer(options: { name?: string; wrongSchema?: boolean; mode?: "normal" | "redirect" | "oversize"; reply?: (name: string, args: Record<string, unknown>) => unknown } = {}) {
   const seen: Array<Record<string, unknown>> = []
   const servers: Server[] = []
   const handle = async (request: Request) => {
@@ -30,7 +30,7 @@ async function localServer(options: { name?: string; wrongSchema?: boolean; mode
       : name === "lookup" ? { kind: "unknown", reason: "pending" }
       : name === "validate" ? { valid: true, validity_key: "a".repeat(64), access_scope: "reader" }
       : { cancelled: true }
-    return { content: [{ type: "text", text: JSON.stringify(value) }] }
+    return { content: [{ type: "text", text: JSON.stringify(options.reply ? options.reply(name, request.params.arguments ?? {}) : value) }] }
     })
     const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true })
     await server.connect(transport)
@@ -112,4 +112,36 @@ describe("qualified MCP HTTP transport", () => {
     expect(() => new InvestigationHttpPort({ ...profile(endpoint),
       executionLimits: { ...profile(endpoint).executionLimits, maxResultBytes: 5000 } }, "p")).toThrow()
   })
+})
+
+
+test("native MCP bindings translate jobs and host validity without requiring ALG-shaped service output", async () => {
+  const service = await localServer({ reply: (name) => name === "submit"
+    ? { state: "queued", job: "native-1" } : name === "lookup" ? { state: "absent" }
+    : { allowed: true, scope: "reader" } })
+  const ptr = (source: "request" | "host", pointer: string) => ({ kind: "pointer" as const, source, pointer })
+  const constant = (value: unknown) => ({ kind: "constant" as const, value })
+  const native = { ...profile(service.endpoint), submit: { name: "submit", schemaHash, binding: {
+    input: { requestId: ptr("request", "/submission_id"), scope: ptr("host", "/project_id"), payload: ptr("request", "/query") },
+    responses: { discriminator: "/state", cases: { queued: { kind: constant("running"), external_job_id: { kind: "pointer", pointer: "/job" } } } },
+  } }, lookup: { name: "lookup", schemaHash, binding: { input: { requestId: ptr("request", "/submission_id") },
+    responses: { discriminator: "/state", cases: { absent: { kind: constant("not_found"), proves_not_accepted: constant(true) } } } } },
+    validateResult: { name: "validate", schemaHash, binding: { input: { object: ptr("request", "/manifest_ref") }, output: {
+      valid: { kind: "pointer", pointer: "/allowed" }, access_scope: { kind: "pointer", pointer: "/scope" },
+      validity_key: { kind: "pointer", source: "request", pointer: "/validity_key" },
+    } } } }
+  const port = new InvestigationHttpPort(native, "host-project")
+  await expect(port.submit({ submission_id: "s1", work_key: "w1", operation: "bounded-read", query: { project_id: "not-authority" } }))
+    .resolves.toEqual({ kind: "running", external_job_id: "native-1" })
+  expect(service.seen[0]).toEqual({ requestId: "s1", scope: "host-project", payload: { project_id: "not-authority" } })
+  await expect(port.lookup("s1")).resolves.toEqual({ kind: "not_found", proves_not_accepted: true })
+  const root = tempProject("alg-native-binding-")
+  try {
+    const store = InvestigationStore.open({ project_directory: root, project_id: "p", owner_id: "o", run_id: "r" }, { create: true, costLimit: 5 })
+    const work = await store.admit({ operation: "bounded-read", recipe_version: "1", parameters: {}, query: {}, reserved_cost: 1 }, port.capabilities)
+    await expect(port.validateResult({ manifest_ref: "native/object", digest: "d".repeat(64), access_scope: "reader" } as any, work))
+      .resolves.toEqual({ valid: true, validity_key: work.validity_key, access_scope: "reader" })
+    expect(service.seen[2]).toEqual({ object: "native/object" })
+  } finally { removeProject(root) }
+  expect(port.capabilities.tool_schema_revision).not.toBe(schemaHash)
 })

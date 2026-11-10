@@ -1,5 +1,14 @@
 # Changelog
 
+# 0.5.2 candidate
+
+- Adds durable investigation fields for bounded result-page caching and persisted lookup accounting. Package compatibility now includes 0.5.2; readers that do not declare 0.5.2 support are rejected after this state is written, preventing rollback to 0.5.1 readers.
+- Adds bounded `read_result` pages (up to 100 rows, with a global 16 KiB page cap and the qualified transport response-byte limit), an eight-page durable cache, and fresh source/access/retention validation before cached evidence is reused.
+- Adds fixed reviewed investigation recipes, trusted local declarative MCP argument/response mappings, and bounded in-host continuation waits with explicit restart/resume semantics.
+- Adds operator-reviewed migration between qualified investigation profiles while preserving history and blocking migration when any job is active or has an uncertain outcome.
+- Adds requested workspace-fact resolution and advisory detection of simple configured tool commands.
+- Synthetic coverage includes a seven-node investigation over an 11,000-entry catalog. This is integration evidence only; it makes no scientific or causal-accuracy claim. The qualification CLI supplied separately by James does not qualify a real air-gapped MCP service.
+
 ## 0.5.1 candidate — V1 workspace and investigations
 
 Adds opt-in scoped workspace requirements, the fixed data-investigation graph, a durable and bounded query ledger, reference MCP transport, engineer review and compaction recovery. Adds prepared offline deployment for matching Linux/Bash and Windows/PowerShell targets. No OpenCode 2 work or automatic skill/graph promotion.

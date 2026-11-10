@@ -35,7 +35,7 @@ function fixture(path = project()) {
     lookup: async () => ({ kind: "unknown", reason: "still pending" }),
     validateResult: async () => ({ valid: false, validity_key: "a".repeat(64), access_scope: "none" }),
   }
-  const runtime = new OperationalRuntime(memory, {}, { enabled: true, costLimit: 20, perJobReservation: 5 }, () => port)
+  const runtime = new OperationalRuntime(memory, {}, { enabled: true, costLimit: 20, perJobReservation: 5, continuation: { waitMs: 0, pollIntervalMs: 100 } }, () => port)
   return { path, memory, run, runtime, port, get submits() { return submits } }
 }
 
@@ -74,7 +74,7 @@ describe("operational investigation host", () => {
     expect(first.status).toBe("running")
     expect(f.submits).toBe(1)
     const restarted = new OperationalRuntime(new SessionMemoryRuntime(f.path, { mode: "assist" }),
-      {}, { enabled: true, costLimit: 20, perJobReservation: 5 }, () => f.port)
+      {}, { enabled: true, costLimit: 20, perJobReservation: 5, continuation: { waitMs: 0, pollIntervalMs: 100 } }, () => f.port)
     for (let i = 0; i < 20; i++) {
       expect(restarted.render("owner", 4096)).toContain(f.run.run_id)
       const again = await restarted.query("owner", input)
@@ -121,7 +121,7 @@ describe("operational investigation host", () => {
       attachments: [], reserved_cost: 5, cumulative_cost: 0,
       work: [{ status: "running", external_job_id: "job-1" }],
     })
-    const resumed = new OperationalRuntime(restarted, {}, { enabled: true, costLimit: 20, perJobReservation: 5 },
+    const resumed = new OperationalRuntime(restarted, {}, { enabled: true, costLimit: 20, perJobReservation: 5, continuation: { waitMs: 0, pollIntervalMs: 100 } },
       () => f.port)
     await resumed.attach("owner", f.run.run_id)
     expect((await resumed.query("owner", input)).status).toBe("running")
@@ -196,7 +196,7 @@ describe("operational investigation host", () => {
       validateResult: async (_result, work) => ({ valid, validity_key: work.validity_key,
         access_scope: valid ? "reader" : "revoked" }),
     }
-    const runtime = new OperationalRuntime(f.memory, {}, { enabled: true, costLimit: 20, perJobReservation: 5 }, () => port)
+    const runtime = new OperationalRuntime(f.memory, {}, { enabled: true, costLimit: 20, perJobReservation: 5, continuation: { waitMs: 0, pollIntervalMs: 100 } }, () => port)
     const first = await runtime.query("owner", input)
     expect(first.result).toMatchObject({ manifest_ref: result.manifest_ref })
     expect((await runtime.query("owner", input)).work_key).toBe(first.work_key)
@@ -319,4 +319,22 @@ describe("operational investigation host", () => {
     await expect(f.runtime.beforeBatch(run, [run.graph.nodes.find((node) => node.id === "confirm")!]))
       .rejects.toThrow("engineer_review_required")
   })
+})
+
+
+test("reviewed recipe admission normalizes parameters and rejects executable-query substitution", async () => {
+  const f = fixture()
+  const recipe = { operation: "bounded-read", version: "v1", base_query: { recipe: "fixture" },
+    parameters: [{ name: "at", type: "iso_timestamp" as const, required: true }] }
+  const runtime = new OperationalRuntime(f.memory, {}, { enabled: true, costLimit: 20, perJobReservation: 5,
+    recipes: [recipe], continuation: { waitMs: 0, pollIntervalMs: 100 } }, () => f.port)
+  await runtime.begin(f.run)
+  const first = await runtime.admitRecipe("owner", "bounded-read", "v1", { at: "2026-11-10T00:00:00Z" }, ["discover"])
+  const same = await runtime.admitRecipe("owner", "bounded-read", "v1", { at: "2026-11-09T18:00:00-06:00" }, ["discover"])
+  expect(same.work_key).toBe(first.work_key)
+  expect(f.submits).toBe(0)
+  await expect(runtime.admitRecipe("owner", "bounded-read", "v1", { at: "ambiguous" }, ["discover"])).rejects.toThrow("recipe")
+  await expect(runtime.admitWork("owner", input, ["discover"])).rejects.toThrow("recipe")
+  expect((await runtime.executeWork("owner", first.work_key)).status).toBe("running")
+  expect(f.submits).toBe(1)
 })

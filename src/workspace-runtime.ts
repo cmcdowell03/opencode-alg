@@ -4,6 +4,7 @@ import { readSkillEvolutionDirectBounded } from "./skill-evolution-store.ts"
 import { hashObject } from "./session-memory/store.ts"
 import { verifyEnvironment } from "./session-memory/environment.ts"
 import type { SessionMemoryRuntime } from "./session-memory/runtime.ts"
+import { resolveWorkspaceFacts } from "./workspace-facts.ts"
 import { WorkspaceOptionsSchema } from "./operational-options.ts"
 import { readWorkspaceRegistry, resolveWorkspaceReadiness, projectWorkspaceContext,
   type WorkspaceCallerSnapshot, type WorkspaceFactEvidence, type WorkspaceReadiness, type SkillApprovalEvidence,
@@ -36,9 +37,10 @@ export class WorkspaceRuntime {
     const current = this.memory.current(owner)
     let environment = "unknown"
     try { environment = verifyEnvironment(this.memory.store, current)?.payload.name ?? "unknown" } catch { /* unresolved */ }
-    const facts: Record<string, WorkspaceFactEvidence> = {
-      platform: { state: "known", value: process.platform, source: "host-platform", observed_at: new Date().toISOString() },
-    }
+    const operationEntry = registry.state === "ready" ? registry.registry.operations.find((item) => item.id === operation) : undefined
+    const requestedFacts = (operationEntry?.requirements ?? []).filter((item) => item.kind === "fact").map((item) => item.ref)
+    const facts: Record<string, WorkspaceFactEvidence> = resolveWorkspaceFacts({ project: this.memory.store.project,
+      store: this.memory.store, checkpoint: current, refs: ["platform", ...requestedFacts] })
     if (registry.state === "ready") for (const requirement of registry.registry.operations.find((item) => item.id === operation)?.requirements ?? []) {
       if (requirement.kind !== "document") continue
       try {

@@ -1,5 +1,7 @@
 import { InvestigationStore, type InvestigationMcpPort, type InvestigationWorkInput } from "./investigation/index.ts"
 import { InvestigationHttpPort } from "./investigation-transport.ts"
+import { waitForInvestigation } from "./investigation-wait.ts"
+import { normalizeInvestigationRecipe } from "./investigation-protocol.ts"
 import { InvestigationOptionsSchema } from "./operational-options.ts"
 import { WorkspaceRuntime } from "./workspace-runtime.ts"
 import { SessionMemoryRuntime } from "./session-memory/runtime.ts"
@@ -9,6 +11,7 @@ import { loadRunForOwner } from "./store.ts"
 import { mutateOwnedRunAsync } from "./ownership.ts"
 import { getTemplate } from "./templates.ts"
 import { requireInvestigationReview } from "./investigation-review.ts"
+import { graphPolicy } from "./graph-policy.ts"
 import type { NodeDef, RunState } from "./types.ts"
 
 export const INVESTIGATION_OPERATION = "data.investigate.read"
@@ -66,7 +69,8 @@ export class OperationalRuntime {
   }
   async begin(run: RunState) {
     this.enabled(); this.ownerOnly(run.owner_session_id)
-    if (hashObject(run.graph) !== hashObject(getTemplate("data-investigation"))) throw new Error("Phase 1 investigations require the fixed data-investigation template")
+    const policy = graphPolicy(run.graph)
+    if (!policy || hashObject(run.graph) !== hashObject(getTemplate(policy.template))) throw new Error("Phase 1 investigations require the fixed data-investigation template")
     this.workspace.guard(run.owner_session_id, INVESTIGATION_OPERATION)
     const store = this.storeFor(run, true)
     if (!store.context.objective) await store.updateCheckpoint({ objective: run.goal, next_action: "discover metadata and establish coverage before bounded analysis" })
@@ -91,11 +95,16 @@ export class OperationalRuntime {
     await awaitFirstLock(() => this.memory.update(owner, (state) => ({ ...state, investigation: undefined, investigation_node: undefined, workspace_operation: undefined })))
     return { detached: true, durable_work_preserved: true }
   }
+  recipe(operation: string, version: string) {
+    const recipe = this.options.recipes.find((entry) => entry.operation === operation && entry.version === version)
+    if (!recipe) throw new Error("reviewed recipe unavailable")
+    return { operation, version, parameters: recipe.parameters }
+  }
   status(owner: string) {
     if (!this.options.enabled) return { enabled: false }
-    if (!this.memory.current(owner).investigation) return { enabled: true, attached: false }
+    if (!this.memory.current(owner).investigation) return { enabled: true, attached: false, recipes: this.options.recipes.map(({ operation, version }) => ({ operation, version })) }
     const { store } = this.attached(owner)
-    return { enabled: true, ...store.status(), checkpoint: store.context }
+    return { enabled: true, ...store.status(), checkpoint: store.context, recipes: this.options.recipes.map(({ operation, version }) => ({ operation, version })) }
   }
   render(owner: string, maxBytes = 3072) {
     const workspace = this.workspace.render(owner, Math.min(maxBytes, 1536))
@@ -121,8 +130,26 @@ export class OperationalRuntime {
     const admitted = await this.admitWork(owner, input, [])
     return this.executeWork(owner, admitted.work_key)
   }
+  async admitRecipe(owner: string, operation: string, version: string, parameters: Record<string, unknown>, nodes: readonly string[]) {
+    const recipe = this.options.recipes.find((entry) => entry.operation === operation && entry.version === version)
+    if (!recipe) throw new Error("reviewed recipe unavailable; inspect configured operation/version")
+    let normalized: ReturnType<typeof normalizeInvestigationRecipe>
+    try { normalized = normalizeInvestigationRecipe(recipe, parameters) }
+    catch { throw new Error("recipe parameters violate the reviewed contract") }
+    return this.admitWork(owner, { operation, recipe_version: version, query: { ...normalized.query },
+      parameters: { ...normalized.parameters }, preprocessing_revision: normalized.recipe_fingerprint, reserved_cost: 0 }, nodes)
+  }
   async admitWork(owner: string, input: InvestigationWorkInput, nodes: readonly string[]) {
     this.ownerOnly(owner)
+    if (this.options.recipes.length) {
+      const recipe = this.options.recipes.find((entry) => entry.operation === input.operation && entry.version === input.recipe_version)
+      if (!recipe) throw new Error("work must use an operator-reviewed recipe")
+      let normalized: ReturnType<typeof normalizeInvestigationRecipe>
+      try { normalized = normalizeInvestigationRecipe(recipe, input.parameters) }
+      catch { throw new Error("recipe parameters violate the reviewed contract") }
+      if (hashObject(normalized.query) !== hashObject(input.query) || input.preprocessing_revision !== normalized.recipe_fingerprint)
+        throw new Error("use admit_recipe; executable query and normalization are host-owned")
+    }
     const { store, run, checkpoint } = this.attached(owner)
     if (this.memory.options.mode === "assist" && this.memory.deliveryUnavailable.has(owner))
       throw new Error("needs_context: investigation recovery pointer was not delivered; restore context before querying")
@@ -145,7 +172,7 @@ export class OperationalRuntime {
     const admitted = await store.admit({ ...input, purpose, generation: 0, reserved_cost: reservation }, port.capabilities)
     return store.authorizeNodes(admitted.work_key, nodes)
   }
-  async executeWork(owner: string, key: string) {
+  async executeWork(owner: string, key: string, signal?: AbortSignal) {
     const { store, run, checkpoint } = this.attached(owner)
     if (this.memory.deliveryUnavailable.has(owner)) throw new Error("needs_context: restore investigation context before dispatch")
     if (!["planning", "running", "blocked"].includes(run.status)) throw new Error("investigation run is terminal")
@@ -157,11 +184,26 @@ export class OperationalRuntime {
     const expectedPurpose = checkpoint.delegation?.role === "checker" ? "independent_verification" : "analysis"
     if (checkpoint.delegation && admitted.purpose !== expectedPurpose) throw new Error("work order purpose does not match the delegated role")
     const port = this.port()
-    const work = admitted.status === "reserved" ? await store.dispatch(admitted.work_key, port) : admitted
+    let work = admitted.status === "reserved" ? await store.dispatch(admitted.work_key, port) : admitted
+    if (this.options.continuation.waitMs > 0 && ["running", "cancel_requested"].includes(work.status)) {
+      await waitForInvestigation(store, port, { ...this.options.continuation, signal, workKey: key })
+      work = store.snapshot.work.find((entry) => entry.work_key === key)!
+    }
     const result = ["result_recorded", "reusable"].includes(work.status) ? await store.getReusableResult(work.work_key, port) : undefined
     return { work_key: work.work_key, status: result ? "reusable" : work.status, submission_id: work.submission_id,
-      external_job_id: work.external_job_id, result, next: result ? "manifest metadata only; result-content reading is not qualified" :
+      external_job_id: work.external_job_id, result, next: result ? "use read_result for bounded verified evidence pages" :
         ["failed_known", "abandoned", "stale"].includes(work.status) ? "terminal work; inspect status and request operator review" : "reconcile existing submission; do not resubmit" }
+  }
+  async readResult(owner: string, key: string, cursor: string | null = null, maxRows = 50) {
+    const { store, checkpoint } = this.attached(owner)
+    if (this.memory.deliveryUnavailable.has(owner)) throw new Error("needs_context: restore investigation context before reading")
+    this.workspace.guard(owner, INVESTIGATION_OPERATION)
+    const work = store.snapshot.work.find((entry) => entry.work_key === key)
+    if (!work || checkpoint.delegation && (!checkpoint.investigation_node ||
+      !work.authorized_nodes?.includes(checkpoint.investigation_node) ||
+      work.purpose !== (checkpoint.delegation.role === "checker" ? "independent_verification" : "analysis")))
+      throw new Error("result work order is not assigned to this active graph node")
+    return { evidence_only: true, page: await store.readResultPage(key, this.port(), cursor, maxRows) }
   }
   async reconcile(owner: string) {
     const { store } = this.attached(owner)
@@ -177,7 +219,7 @@ export class OperationalRuntime {
   async hypothesis(owner: string, input: Parameters<InvestigationStore["upsertHypothesis"]>[0]) {
     this.ownerOnly(owner); return this.attached(owner).store.upsertHypothesis(input)
   }
-  async beforeRun(run: RunState) {
+  async beforeRun(run: RunState, signal?: AbortSignal) {
     if (!run.investigation) return
     this.enabled()
     const checkpoint = this.memory.current(run.owner_session_id)
@@ -185,13 +227,13 @@ export class OperationalRuntime {
     this.workspace.guard(run.owner_session_id, INVESTIGATION_OPERATION)
     const store = this.storeFor(run)
     if (store.snapshot.work.some((work) => ["submitting", "running", "outcome_unknown", "cancel_requested"].includes(work.status))) {
-      if (!(await store.reconcileBeforeResume(this.port())).ready) throw new Error("investigation has pending external work; reconcile before resuming")
+      if (!(await waitForInvestigation(store, this.port(), { ...this.options.continuation, signal })).ready) throw new Error("investigation has pending external work; reconcile before resuming")
     }
   }
-  async beforeBatch(run: RunState, nodes: readonly NodeDef[]) {
+  async beforeBatch(run: RunState, nodes: readonly NodeDef[], signal?: AbortSignal) {
     if (!run.investigation) return
-    await this.beforeRun(run)
-    if (nodes.some((node) => node.id === "confirm")) requireInvestigationReview(run)
+    await this.beforeRun(run, signal)
+    if (nodes.some((node) => node.id === graphPolicy(run.graph)?.reviewNode)) requireInvestigationReview(run)
   }
   async child(run: RunState, child: string, node: NodeDef) {
     if (!run.investigation) return

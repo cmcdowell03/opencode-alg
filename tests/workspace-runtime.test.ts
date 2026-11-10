@@ -90,6 +90,16 @@ describe("workspace runtime selection", () => {
     expect(readiness.status).toBe("needs_skill")
   })
 
+  test("resolves a required test command from the local package manifest as evidence", () => {
+    const packageText = JSON.stringify({ scripts: { test: "bun test --timeout 60000" } })
+    const f = fixture({ operation: { requirements: [
+      { id: "test-command", kind: "fact", ref: "test.command", intent: "required", equals: "bun test --timeout 60000" },
+    ] } })
+    writeFileSync(join(f.project, "package.json"), packageText)
+    const readiness = f.runtime.evaluate("owner", "repo.test", "execute")
+    expect(readiness.requirements).toEqual([expect.objectContaining({ id: "test-command", state: "applicable", reason: "exact_fact_match", mandatory: true })])
+  })
+
   test("selection delegates approval revalidation to current policy and never silently repins", () => {
     const f = fixture()
     expect(f.runtime.select("owner", "repo.test")).toBe(true)

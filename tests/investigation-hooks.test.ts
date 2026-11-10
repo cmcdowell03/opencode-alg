@@ -112,3 +112,15 @@ describe("investigation host boundaries", () => {
     } finally { await hooks.dispose?.() }
   })
 })
+
+
+test("a simple host tool call records an advisory workspace operation without model-supplied operation", async () => {
+  const path = fixture(), hooks = await server(plugin(path), { sessionMemory: { mode: "assist" },
+    workspace: { mode: "observe" }, skillEvolution: { enabled: false } } as any)
+  try {
+    await hooks["tool.execute.before"]!({ tool: "bash", sessionID: "owner", callID: "t1" }, { args: { command: "bun test" } })
+    expect(new SessionMemoryRuntime(path, { mode: "assist" }).current("owner").workspace_operation).toBe("repo.test")
+    await hooks["tool.execute.before"]!({ tool: "bash", sessionID: "owner", callID: "t2" }, { args: { command: "echo git status" } })
+    expect(new SessionMemoryRuntime(path, { mode: "assist" }).current("owner").workspace_operation).toBe("repo.test")
+  } finally { await hooks.dispose?.() }
+})

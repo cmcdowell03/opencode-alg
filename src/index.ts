@@ -29,6 +29,7 @@ import { createMemoryTools } from "./session-memory/tools.ts"
 import { canonicalDirectory, hostProjectDirectory, isContained } from "./paths.ts"
 import { isCompletedUserTurn } from "./turn-boundary.ts"
 import { OperationalRuntime } from "./operational-runtime.ts"
+import { detectWorkspaceOperation } from "./workspace-facts.ts"
 import { createOperationalTools } from "./operational-tools.ts"
 import { ContextDelivery } from "./session-memory/delivery.ts"
 
@@ -175,6 +176,14 @@ const server: Plugin = async (ctx, pluginOptions) => {
           if (info.projectID === ctx.project.id && isContained(memory.store.project, canonicalDirectory(info.directory))) await awaitLock(() => memory.delete(info.id))
         } catch { /* deletion event failure cannot break the host event stream */ }
       }
+    },
+
+    "tool.execute.before": async (input, output) => {
+      if (!operations.workspace.enabled || !memory.enabled) return
+      const operation = detectWorkspaceOperation(input.tool, output.args)
+      if (!operation) return
+      await authorizeMemory(input.sessionID)
+      await operations.plan(input.sessionID, operation)
     },
 
     config: async (config) => {

@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { ToolBindingSchema, InvestigationRecipeListSchema } from "./investigation-protocol.ts"
 
 const Hash = z.string().regex(/^[a-f0-9]{64}$/)
 const Id = z.string().min(1).max(128).regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/)
@@ -16,7 +17,7 @@ const endpoint = z.string().url().max(2048).refine((value) => {
   return !url.username && !url.password && !url.search && !url.hash &&
     (url.protocol === "https:" || (url.protocol === "http:" && ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)))
 }, "MCP endpoint requires HTTPS or loopback HTTP without embedded credentials")
-const ToolSchema = z.object({ name: Id, schemaHash: Hash }).strict()
+const ToolSchema = z.object({ name: Id, schemaHash: Hash, binding: ToolBindingSchema.optional() }).strict()
 const ExecutionLimitsSchema = z.object({
   maxDurationMs: z.number().int().min(100).max(86_400_000),
   maxBytesScanned: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
@@ -39,7 +40,7 @@ export const InvestigationAdapterSchema = z.object({
   expiresAt: z.iso.datetime({ offset: true }),
   idempotentSubmit: z.literal(true), lookupBySubmissionId: z.literal(true),
   operations: z.array(Id).min(1).max(32),
-  submit: ToolSchema, lookup: ToolSchema, validateResult: ToolSchema, cancel: ToolSchema.optional(),
+  submit: ToolSchema, lookup: ToolSchema, validateResult: ToolSchema, cancel: ToolSchema.optional(), readResult: ToolSchema.optional(),
   timeoutMs: z.number().int().min(100).max(60_000).default(15_000),
   responseLimitBytes: z.number().int().min(1024).max(262_144).default(65_536),
 }).strict().refine((value) => value.executionLimits.maxResultBytes <= value.responseLimitBytes,
@@ -53,5 +54,10 @@ export const InvestigationOptionsSchema = z.object({
   /** Fixed reservation for injected/local ports. Live HTTP uses executionLimits.maxCost. */
   perJobReservation: z.number().finite().positive().max(1_000_000_000).optional(),
   adapter: InvestigationAdapterSchema.optional(),
+  recipes: InvestigationRecipeListSchema.default([]),
+  continuation: z.object({
+    waitMs: z.number().int().min(0).max(900_000).default(30_000),
+    pollIntervalMs: z.number().int().min(100).max(60_000).default(1000),
+  }).strict().default({ waitMs: 30_000, pollIntervalMs: 1000 }),
 }).strict()
 export type InvestigationOptions = z.infer<typeof InvestigationOptionsSchema>

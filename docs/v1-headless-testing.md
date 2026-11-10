@@ -33,6 +33,8 @@ Evidence defaults to a new JSON file under the system temporary directory’s `o
 - A real host session invokes `alg_context_status`, calls `alg_plan` with the fixed `data-investigation` template, admits one typed work order, and then executes its recorded key through `alg_investigation query`.
 - The host query uses `InvestigationHttpPort` and the pinned synthetic profile. Its loopback MCP service checks server identity, exact schemas, read-only operation, principal, project scope, and fixed execution limits before accepting the bounded fixture request.
 - The admission response is counted separately from query results. Three completed query tool results, separated by compaction and two restarts, must retain one work key, manifest reference, and digest. The service receipts must show exactly one submit call and accepted remote job, with fresh result validation after both restarts.
+- The same admitted job first returns `running`; host-side waiting performs two lookups and obtains the result without another submit or model polling turn.
+- Three `read_result` tool calls receive bounded evidence pages across compaction and restarts. Only one remote page read is allowed; every reuse must still pass fresh access validation.
 - The session-memory hook stores a result node and checkpoint pin before compaction.
 - OpenCode’s summarize route compacts the transcript using only the synthetic local provider; the host transcript contains the reference and result markers.
 - Two server restarts preserve the same session ID, compacted summary, result pin, and attached investigation; each resumed model turn invokes the same query and receives its revalidated result.

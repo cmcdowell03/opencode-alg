@@ -12,6 +12,8 @@ import {
   runDir,
 } from "./store.ts"
 import { getTemplate, listTemplates } from "./templates.ts"
+import { graphPolicy, assertManagedGraph } from "./graph-policy.ts"
+import { detectWorkspaceOperation } from "./workspace-facts.ts"
 import type { AgentModelMap, GraphDef, ModelResolutionMap, RunState } from "./types.ts"
 import { ALG_TOOL_IDS } from "./types.ts"
 import { mutateOwnedRunAsync, resolveOwnedRun, transferRunOwnershipAsync } from "./ownership.ts"
@@ -52,14 +54,6 @@ const COMPACT_SESSION_COUNT = 32
 const COMPACT_ROOT_AUTHORIZATION_COUNT = 8
 const COMPACT_LIST_COUNT = 20
 const COMPACT_LIST_GOAL_CHARS = 120
-
-function assertFixedInvestigationRun(run: RunState, shellGate?: string): void {
-  if (run.graph.name !== "data-investigation" && !run.investigation) return
-  if (!run.investigation) throw new Error("data-investigation plan has no managed investigation reference; plan it again")
-  if (shellGate || hashObject(run.graph) !== hashObject(validateGraph(getTemplate("data-investigation")))) {
-    throw new Error("managed investigation graph and shell gates are fixed for Phase 1")
-  }
-}
 
 function ok(title: string, data: unknown, meta?: Record<string, unknown>) {
   return {
@@ -646,7 +640,7 @@ export function createAlgTools(
           const { project } = roots(plugin, context)
           let run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned planned run found. Call alg_plan first and pass criteria directly to alg_plan when possible.")
-          if (run.investigation || run.graph.name === "data-investigation") throw new Error("managed investigation criteria are fixed at planning; plan a new investigation")
+          if (run.investigation || graphPolicy(run.graph)?.investigation) throw new Error("managed investigation criteria are fixed at planning; plan a new investigation")
           if (run.status !== "planning") throw new Error("Criteria can only be changed while the run is planning")
           if (run.criteria_locked && run.criteria.length && args.lock !== false) {
             throw new Error(`Criteria are locked on run ${run.run_id}; pass lock=false to replace and leave unlocked.`)
@@ -719,7 +713,7 @@ export function createAlgTools(
             configuredModels(),
           )
           const investigation = args.template === "data-investigation" && !args.graph_json
-          const operation = investigation ? "data.investigate.read" : args.operation
+          const operation = graphPolicy(graph)?.operation ?? args.operation ?? detectWorkspaceOperation("shell", { command: args.shell_gate })
           if (operation) await runtime.operations?.plan(context.sessionID, operation)
           if (investigation && (!runtime.operations?.options.enabled || runtime.sessionMemory?.options.mode !== "assist")) throw new Error("data investigations require enabled configuration and session memory assist mode")
           let run = createRun({
@@ -812,14 +806,14 @@ export function createAlgTools(
           assertFilesystemRootAuthorized(project, args.allow_filesystem_root, "run", additionalFilesystemRoot)
           const run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned run found. Call alg_plan first.")
-          assertFixedInvestigationRun(run, args.shell_gate)
+          assertManagedGraph(run, args.shell_gate)
           if (args.shell_cwd !== undefined && !args.shell_gate) throw new Error("shell_cwd requires shell_gate")
           if (args.shell_gate) {
             run.graph = withShellGate(run.graph, args.shell_gate, args.shell_timeout_ms, args.shell_cwd)
           } else if (args.shell_timeout_ms !== undefined) {
             throw new Error("shell_timeout_ms requires shell_gate")
           }
-          await runtime.operations?.beforeRun(run)
+          await runtime.operations?.beforeRun(run, context.abort)
           cards = runCards(run, project, context)
           const events: string[] = []
           const updated = await executeWithMemory(runtime.sessionMemory, run, {
@@ -838,7 +832,7 @@ export function createAlgTools(
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
             operation: "run",
             workerDisabledTools,
-            beforeBatch: (fresh, nodes) => runtime.operations?.beforeBatch(fresh, nodes) ?? Promise.resolve(),
+            beforeBatch: (fresh, nodes) => runtime.operations?.beforeBatch(fresh, nodes, context.abort) ?? Promise.resolve(),
             beforeChildPrompt: (child, _role, node) => runtime.operations?.child(run, child, node) ?? Promise.resolve(),
             onEvent: (message) => events.push(message),
             onProgress: (savedRun) => {
@@ -1015,7 +1009,7 @@ export function createAlgTools(
           assertFilesystemRootAuthorized(project, args.allow_filesystem_root, "resume", additionalFilesystemRoot)
           const run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned run found to resume.")
-          if (!args.close) assertFixedInvestigationRun(run, args.shell_gate)
+          if (!args.close) assertManagedGraph(run, args.shell_gate)
           if (args.close_reason !== undefined && !args.close) throw new Error("close_reason requires close=true")
           if (args.close) {
             const closed = await mutateOwnedRunAsync(project, run.run_id, context.sessionID, (fresh) => {
@@ -1034,7 +1028,7 @@ export function createAlgTools(
           if (args.shell_cwd !== undefined && !args.shell_gate) throw new Error("shell_cwd requires shell_gate")
           if (args.shell_gate) run.graph = withShellGate(run.graph, args.shell_gate, args.shell_timeout_ms, args.shell_cwd)
           else if (args.shell_timeout_ms !== undefined) throw new Error("shell_timeout_ms requires shell_gate")
-          await runtime.operations?.beforeRun(run)
+          await runtime.operations?.beforeRun(run, context.abort)
           prepareRunForResume(run)
           cards = runCards(run, project, context)
           const events: string[] = []
@@ -1054,7 +1048,7 @@ export function createAlgTools(
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
             operation: "resume",
             workerDisabledTools,
-            beforeBatch: (fresh, nodes) => runtime.operations?.beforeBatch(fresh, nodes) ?? Promise.resolve(),
+            beforeBatch: (fresh, nodes) => runtime.operations?.beforeBatch(fresh, nodes, context.abort) ?? Promise.resolve(),
             beforeChildPrompt: (child, _role, node) => runtime.operations?.child(run, child, node) ?? Promise.resolve(),
             onEvent: (message) => events.push(message),
             onProgress: (savedRun) => {

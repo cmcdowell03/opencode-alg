@@ -4,6 +4,7 @@ import { atomicWriteFile, readNodeArtifactOutput, runContainedPath } from "./sto
 import { readSkillEvolutionDirectBounded } from "./skill-evolution-store.ts"
 import { InvestigationStore } from "./investigation/index.ts"
 import type { RunState } from "./types.ts"
+import { graphPolicy } from "./graph-policy.ts"
 
 const ReviewSchema = z.object({ schema_version: z.literal(1), basis: z.string().regex(/^[a-f0-9]{64}$/),
   engineer_ref: z.string().min(1).max(256), reviewed_at: z.iso.datetime({ offset: true }),
@@ -11,7 +12,7 @@ const ReviewSchema = z.object({ schema_version: z.literal(1), basis: z.string().
 
 /** A review is about these completed findings, not permission for future arbitrary graphs. */
 export function investigationReviewBasis(run: RunState): string {
-  const confirmation = run.graph.nodes.find((node) => node.id === "confirm")
+  const confirmation = run.graph.nodes.find((node) => node.id === graphPolicy(run.graph)?.reviewNode)
   if (!confirmation || !run.investigation) throw new Error("investigation confirmation boundary unavailable")
   const ids = new Set<string>()
   const visit = (id: string) => { if (ids.has(id)) return; ids.add(id)

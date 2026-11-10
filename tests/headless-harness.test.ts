@@ -34,8 +34,8 @@ describe("headless synthetic provider contract", () => {
   })
 
   test("follow-up claims recovery only when both persisted markers are in context", () => {
-    const missing = chooseSyntheticResponse("followup", 1, { messages: [{ role: "assistant", content: `${PERSISTED_REFERENCE} ${PERSISTED_RESULT}` }, { role: "tool", content: PERSISTED_REFERENCE }] })
-    const recovered = chooseSyntheticResponse("followup", 1, { messages: [{ role: "assistant", content: `${PERSISTED_REFERENCE} ${PERSISTED_RESULT}` }, { role: "tool", content: `${PERSISTED_REFERENCE} ${PERSISTED_RESULT}` }] })
+    const missing = chooseSyntheticResponse("followup", 2, { messages: [{ role: "assistant", content: `${PERSISTED_REFERENCE} ${PERSISTED_RESULT}` }, { role: "tool", content: PERSISTED_REFERENCE }] })
+    const recovered = chooseSyntheticResponse("followup", 2, { messages: [{ role: "assistant", content: `${PERSISTED_REFERENCE} ${PERSISTED_RESULT}` }, { role: "tool", content: `${PERSISTED_REFERENCE} ${PERSISTED_RESULT}` }] })
     expect(missing.text).toBe("FOLLOWUP_QUERY_OR_CONTEXT_MISSING_PERSISTED_EVIDENCE")
     expect(recovered.text).toBe(`Recovered ${PERSISTED_REFERENCE} ${PERSISTED_RESULT}`)
   })
