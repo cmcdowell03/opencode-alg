@@ -597,7 +597,8 @@ function assertExactTree(root: string, rootIdentity: FileIdentity, entries: read
   if (!sameFileIdentity(regularDirectoryIdentity(root), rootIdentity)) throw new Error("Generation staging root identity changed")
   const observed = snapshotGenerationTree(root)
   if (!sameTreeEntries(observed, entries)) throw new Error("Generation staging tree changed after validation")
-  for (const entry of entries) assertTreeEntry(root, entry)
+  // Callers recheck each snapshotted entry immediately before unlinking or
+  // linking it. Re-hashing every file here would duplicate the snapshot pass.
 }
 
 function removeSnapshottedTree(root: string, rootIdentity: FileIdentity, entries: readonly TreeEntry[]): void {
@@ -721,15 +722,21 @@ function materializeGenerationTree(
     }
     created.push(createdEntry)
     dependencies.faults?.afterGenerationEntryCreate?.(source, destination, index)
-    assertCreatedEntry(createdEntry)
+    // A file destination is the just-created hard link to the already checked
+    // source. Its inode identity proves both paths name the same bytes; the
+    // complete bundle inventory and the final post-validation identity pass
+    // still verify content after the whole tree exists.
+    if (entry.kind !== "file") assertCreatedEntry(createdEntry)
   }
   // Recheck every created path after the complete tree exists so contained
   // relative symlinks resolve only inside the final package.
-  for (const entry of created) {
-    assertCreatedEntry(entry)
-    if (entry.kind === "symlink") {
-      const resolved = realpathSync.native(entry.path)
-      if (!isContained(packagePath, resolved) && !samePath(packagePath, resolved)) throw new Error(`Materialized generation symlink escapes package: ${entry.path}`)
+  if (staged.sourceKind === "git") {
+    for (const entry of created) {
+      assertCreatedEntry(entry)
+      if (entry.kind === "symlink") {
+        const resolved = realpathSync.native(entry.path)
+        if (!isContained(packagePath, resolved) && !samePath(packagePath, resolved)) throw new Error(`Materialized generation symlink escapes package: ${entry.path}`)
+      }
     }
   }
 }
@@ -1506,6 +1513,15 @@ function selectTag(runner: CommandRunner, clone: string, options: ManagerOptions
   return tag
 }
 
+function assertCompatibleOfflineHost(runner: CommandRunner): void {
+  const host = runner.run({ command: "opencode", args: ["--version"] })
+  if (host.exitCode !== 0) throw new Error("OpenCode 1 host preflight failed; install a compatible OpenCode 1 host before deploying")
+  const hostVersion = host.stdout.match(/\b(\d+\.\d+\.\d+)\b/)?.[1]
+  if (!hostVersion || compareVersions(hostVersion, "1.18.0") < 0 || compareVersions(hostVersion, "2.0.0") >= 0) {
+    throw new Error(`OpenCode host must be >=1.18.0 and <2.0.0; observed: ${bounded(host.stdout, 256)}`)
+  }
+}
+
 function stageRelease(
   options: ManagerOptions,
   paths: ManagerPaths,
@@ -1530,12 +1546,7 @@ function stageRelease(
     const actualProduction = computeProductionDependencyIdentity(packagePath, packageInfo.dependencies)
     if (JSON.stringify(actualProduction) !== JSON.stringify(manifest.dependencies.production_identity)) throw new Error("Prepared production dependency identity differs from the manifest")
     verifyBundleProductionDependencies(packagePath, packageInfo.dependencies)
-    const host = runner.run({ command: "opencode", args: ["--version"] })
-    if (host.exitCode !== 0) throw new Error("OpenCode 1 host preflight failed; install a compatible OpenCode 1 host before deploying")
-    const hostVersion = host.stdout.match(/\b(\d+\.\d+\.\d+)\b/)?.[1]
-    if (!hostVersion || compareVersions(hostVersion, "1.18.0") < 0 || compareVersions(hostVersion, "2.0.0") >= 0) {
-      throw new Error(`OpenCode host must be >=1.18.0 and <2.0.0; observed: ${bounded(host.stdout, 256)}`)
-    }
+    assertCompatibleOfflineHost(runner)
     const transaction = randomUUID()
     const stagingPath = resolveContainedPath(paths.stagingRoot, transaction)
     const finalPath = resolveContainedPath(paths.releasesRoot, `${manifest.package.version}-${manifest.package.source_commit.slice(0, 12)}`)
@@ -2830,6 +2841,58 @@ function transactionResult(
   }
 }
 
+function verifiedActiveBundleNoop(
+  options: ManagerOptions & { command: "install" | "update" },
+  paths: ManagerPaths,
+  receipt: ManagerReceipt | undefined,
+  dependencies: ManagerDependencies,
+): ManagerResult | undefined {
+  if (!receipt?.installed || options.dryRun || options.agentPolicy !== undefined || options.enableCapability ||
+    options.disableCapability || options.excelRoot || !options.bundleRoot || !options.trustBundleHash) return
+  const active = activeGeneration(receipt)
+  const bundleRoot = canonicalDirectory(resolve(options.bundleRoot))
+  if (isContained(paths.configRoot, bundleRoot) || isContained(bundleRoot, paths.configRoot) ||
+    isContained(paths.installRoot, bundleRoot) || isContained(bundleRoot, paths.installRoot)) {
+    throw new Error("Prepared bundle overlaps managed config/install roots")
+  }
+  const manifest = readAndVerifyDeploymentBundle(bundleRoot, options.trustBundleHash)
+  const generationId = `${manifest.package.version}-${manifest.package.source_commit.slice(0, 12)}`
+  if (receipt.active_generation !== generationId || active.id !== generationId || active.source_kind !== "bundle" ||
+    active.version !== manifest.package.version || active.commit !== manifest.package.source_commit ||
+    active.bundle_manifest_sha256 !== manifest.manifest_sha256 || active.bundle_artifact_sha256 !== manifest.package.artifact_sha256) {
+    return
+  }
+  // Preserve the normal path's validation of an already-enabled capability
+  // root before returning early.
+  excelActivationIntent(options, receipt, paths)
+  const trustedRemote = sanitizeRemote(manifest.package.source_repository)
+  if (!remoteEqual(receipt.trusted_remote, trustedRemote)) {
+    throw new Error("Prepared bundle source repository differs from the trusted receipt remote")
+  }
+  const packageInfo = validatePackageAndLock(bundleRoot, manifest.package.version)
+  if (JSON.stringify(packageInfo.dependencies) !== JSON.stringify(manifest.dependencies.production_names)) {
+    throw new Error("Prepared bundle production dependency declaration differs from its manifest")
+  }
+  const productionDependencies = computeProductionDependencyIdentity(bundleRoot, packageInfo.dependencies)
+  if (JSON.stringify(productionDependencies) !== JSON.stringify(manifest.dependencies.production_identity)) {
+    throw new Error("Prepared production dependency identity differs from the manifest")
+  }
+  verifyBundleProductionDependencies(bundleRoot, packageInfo.dependencies)
+  const runner = dependencies.runner ?? new DefaultCommandRunner()
+  assertCompatibleOfflineHost(runner)
+  validateRetainedActiveGeneration(receipt, paths, dependencies)
+  return {
+    command: options.command,
+    ok: true,
+    changed: false,
+    dry_run: false,
+    summary: `Generation ${generationId} is already active.`,
+    generation: generationId,
+    receipt_path: paths.receiptPath,
+    restart_required: receipt.restart_required.pending,
+  }
+}
+
 function installOrUpdate(
   options: ManagerOptions & { command: "install" | "update" },
   paths: ManagerPaths,
@@ -2837,6 +2900,8 @@ function installOrUpdate(
 ): ManagerResult {
   const receipt = readReceipt(paths, options.command === "update")
   if (options.command === "update" && !receipt?.installed) throw new Error("Update requires an installed active receipt")
+  const verifiedNoop = verifiedActiveBundleNoop(options, paths, receipt, dependencies)
+  if (verifiedNoop) return verifiedNoop
   const excelIntent = excelActivationIntent(options, receipt, paths)
   const policy = options.agentPolicy ?? "managed"
   const staged = stageRelease(options, paths, receipt, dependencies)

@@ -158,7 +158,21 @@ describe("offline deployment bundle", () => {
     const installed = runManager({ command: "deploy", configDir: config, bundleRoot: output, trustBundleHash: prepared.manifestSha256 }, { runner })
     expect(installed.ok).toBe(true)
     expect(installed.release_identity).toMatchObject({ source_commit: commit, manifest_sha256: prepared.manifestSha256, artifact_sha256: prepared.artifactSha256 })
-    expect(runManager({ command: "deploy", configDir: config, bundleRoot: output, trustBundleHash: prepared.manifestSha256 }, { runner }).changed).toBe(false)
+    let stagingCleanupCalls = 0
+    const noOp = runManager(
+      { command: "deploy", configDir: config, bundleRoot: output, trustBundleHash: prepared.manifestSha256 },
+      { runner, faults: { beforeGenerationStagingCleanup: () => { stagingCleanupCalls++ } } },
+    )
+    expect(noOp.changed).toBe(false)
+    expect(stagingCleanupCalls).toBe(0)
+    const bundleScript = join(output, "scripts", "fixture.txt")
+    const approvedScriptBytes = readFileSync(bundleScript)
+    writeFileSync(bundleScript, "changed after approval\n")
+    expect(() => runManager(
+      { command: "deploy", configDir: config, bundleRoot: output, trustBundleHash: prepared.manifestSha256 },
+      { runner },
+    )).toThrow(/inventory/)
+    writeFileSync(bundleScript, approvedScriptBytes)
     const candidateReceipt = readFileSync(receiptPath)
     const receipt = JSON.parse(candidateReceipt.toString("utf8"))
     const candidate = receipt.generations.find((generation: { source_kind?: string }) => generation.source_kind === "bundle")
@@ -172,6 +186,10 @@ describe("offline deployment bundle", () => {
     expect(readFileSync(receiptPath)).toEqual(candidateReceipt)
     expect(readFileSync(join(config, "opencode.jsonc"))).toEqual(serverBeforeRollback)
     writeFileSync(join(candidate.package_root, "scripts", "fixture.txt"), "tampered after deployment\n")
+    expect(() => runManager(
+      { command: "deploy", configDir: config, bundleRoot: output, trustBundleHash: prepared.manifestSha256 },
+      { runner },
+    )).toThrow(/inventory|identity|drift/i)
     expect(runManager({ command: "doctor", configDir: config }, { runner }).issues?.map((issue) => issue.code)).toContain("active-release-invalid")
   }, 120_000)
 })

@@ -2,6 +2,8 @@
 
 ## 0.5.3 candidate
 
+- Skips staging/copy/cleanup for an already active exact offline bundle after verifying both the approved input and retained installation. Removes redundant generation-tree hashes while retaining final identity/content checks before activation.
+
 - Prevents repeated investigation plans from resetting work or budget. A durable task-wide claim survives detach, compaction and restart; identical requests reuse the admitted run, and changed requests require the existing explicit new-task workflow. Concurrent planning and attachment changes are checked before publication.
 - Restores authoritative terminal status to normal and compaction context. Completed investigations direct the orchestrator to report the existing outcome and stop, instead of advertising stale discovery work.
 - Adds the optional investigation-plan claim to session checkpoints and advances durable-reader compatibility to 0.5.3. Older 0.5.2 readers are rejected for rollback from this candidate.
