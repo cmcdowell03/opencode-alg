@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test"
 import { createHash } from "node:crypto"
-import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs"
+import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import {
@@ -153,8 +153,8 @@ function semanticEvidence(livePath: string) {
   const npm = resolveNpmInvocation()
   const findExecutable = (names: string[]) => (process.env.PATH ?? "").split(process.platform === "win32" ? ";" : ":")
     .flatMap((directory) => names.map((name) => join(directory.replace(/^"|"$/g, ""), name))).find(existsSync)!
-  const python = findExecutable(process.platform === "win32" ? ["python.exe"] : ["python3", "python"])
-  const uv = findExecutable(process.platform === "win32" ? ["uv.exe"] : ["uv"])
+  const python = realpathSync.native(findExecutable(process.platform === "win32" ? ["python.exe"] : ["python3", "python"]))
+  const uv = realpathSync.native(findExecutable(process.platform === "win32" ? ["uv.exe"] : ["uv"]))
   const interpreter = join(resolve("C:/tmp/opencode-alg-excel-release-gate-fixture"), "env", process.platform === "win32" ? "Scripts/python.exe" : "bin/python")
   const duckdbInterpreter = join(resolve("C:/tmp/opencode-alg-duckdb-release-gate-fixture"), "env", process.platform === "win32" ? "Scripts/python.exe" : "bin/python")
   const bunOutput = " 12 pass\n 2 skip\n 0 fail\n 34 expect() calls\nRan 14 tests across 3 files. [1.00s]\n"
