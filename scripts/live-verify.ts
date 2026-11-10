@@ -1437,7 +1437,6 @@ export async function runLiveVerification(outputPath: string): Promise<{ path: s
     join(isolatedHome, "AppData", "Roaming"),
     join(isolatedHome, "AppData", "Local"),
   ]) mkdirSync(directory, { recursive: true })
-  seedVerificationHostDependencies(configDirectory, pluginConfiguration.source.root)
   writeFileSync(serverConfigPath, `${JSON.stringify(pluginConfiguration.server_config, null, 2)}\n`, "utf8")
   writeFileSync(tuiConfigPath, `${JSON.stringify(pluginConfiguration.tui_config, null, 2)}\n`, "utf8")
   const processEnvironment: NodeJS.ProcessEnv = {
@@ -1506,6 +1505,7 @@ export async function runLiveVerification(outputPath: string): Promise<{ path: s
   let failure: unknown
   let publication: { path: string; sha256: string; bytes: number; identity: EvidenceFileIdentity } | undefined
   try {
+    seedVerificationHostDependencies(configDirectory, pluginConfiguration.source.root)
     try {
       executable = resolveOpenCodeExecutable(requestedExecutable)
     } catch (error) {

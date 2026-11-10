@@ -7,7 +7,10 @@
 - Adds fixed reviewed investigation recipes, trusted local declarative MCP argument/response mappings, and bounded in-host continuation waits with explicit restart/resume semantics.
 - Adds operator-reviewed migration between qualified investigation profiles while preserving history and blocking migration when any job is active or has an uncertain outcome.
 - Adds requested workspace-fact resolution and advisory detection of simple configured tool commands.
-- Synthetic coverage includes a seven-node investigation over an 11,000-entry catalog. This is integration evidence only; it makes no scientific or causal-accuracy claim. The qualification CLI supplied separately by James does not qualify a real air-gapped MCP service.
+- Synthetic coverage includes a seven-node investigation over an 11,000-entry catalog. This is integration evidence only; it makes no scientific or causal-accuracy claim. The qualification CLI inventories schemas and records bounded probes; it does not qualify a real air-gapped MCP service.
+
+- Fixes a cold-import cycle in the packaged configuration schemas and bounds mutex-owner identity for long Windows project paths.
+- Isolated host checks seed their own exact dependency fixture to avoid an unrelated OpenCode registry bootstrap; this does not initialize a production OpenCode host. See deployment prerequisites and exact acceptance identities in the implementation-status document.
 
 ## 0.5.1 candidate — V1 workspace and investigations
 
