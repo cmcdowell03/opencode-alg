@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { hashObject } from "./session-memory/store.ts"
+import { sha256Json as hashObject } from "./persistence.ts"
 
 /** Limits are intentionally small: bindings and recipes are operator configuration. */
 export const INVESTIGATION_PROTOCOL_LIMITS = Object.freeze({
