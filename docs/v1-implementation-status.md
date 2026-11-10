@@ -69,7 +69,7 @@ Terminal headless receipts: Windows SHA-256 `1a726644d83c5e758acfb68af7d832be726
 
 Full local receipts remain outside the repository under the task's implementation-evidence directory and /home/algtest/alg-v1-evidence in the dedicated distro. Only the final headless JSON file is terminal evidence; its .before-cleanup.json companion records the preceding phase. The dedicated test distro, prepared bundles and isolated managed installations are retained for review; temporary host environments were removed. No hosted model calls or GitHub runner tests were used. The bounded host check does not establish a multi-hour soak, scientific correctness, or production endpoint qualification.
 
-Subsequent acceptance-status commits change documentation only. The prepared packages and all runtime identities above remain bound to `395fd23`; they are not relabeled as packages built from a later documentation commit. The PR remains open and unmerged.
+Before the review fixes below, subsequent acceptance-status commits changed documentation only. The prepared packages and all runtime identities above remain bound to `395fd23`; they are not relabeled as packages built from a later documentation commit. The PR remains open and unmerged.
 
 ## PR review disposition — 10 November 2026
 
@@ -95,3 +95,24 @@ The external review reproduced meaningful defects. Three new regression probes f
 The service-specific recipe/parameter normalization, bounded result reader, job-status continuation, revision migration, authoritative fact resolvers, complete real-model specialist graph, 11,000-entry catalog fixture and curated incident evaluation remain explicit acceptance work. No percentage or production-readiness claim is made. Graph-policy generalization follows the next graph-selection milestone; it is not required to fix these ledger defects.
 
 Candidate 0.5.1 makes the new durable fields visible to manager compatibility checks; older 0.5.0 readers must not be activated against this state. Existing pre-fix ledger identities are not silently reinterpreted: inspection and reconciliation remain available, but further admission requires an explicit migration decision.
+
+## Review-fix validation — 10 November 2026
+
+The review fixes were committed as b3641d7; 4d259d3 adds conservative settlement of finer-precision service billing. Both are pushed to this draft PR. Candidate version is 0.5.1. The package/deployment receipts above remain historical 395fd23 evidence; they are not evidence for a new 0.5.1 bundle.
+
+- Windows affected suite: 117 passed, one platform skip, zero failures, 827 assertions across 12 files. Follow-up legacy-identity/deployment fixtures: 14 passed, zero failures. The real-Git compatibility test exceeded its old 20-second fixture allowance; after increasing that fixture allowance to 60 seconds it passed in 21.43 seconds. The earlier timeout is retained.
+- Native Ubuntu affected suite at b3641d7: 119 passed, zero failures, 833 assertions across 12 files (28.58 seconds); the targeted compatibility test also passed.
+- Final cost-settlement regression on Windows at 4d259d3: 26 passed, zero failures, 110 assertions. The same 26 tests and 110 assertions passed on Linux in 2.97 seconds. TypeScript checking passed on both platforms.
+
+A single bounded real local-model probe used the already installed Gemma 4 8B Q4_K_M through OpenCode 1.18.35, with no hosted model or production data. It created the fixed graph and completed discover/process/equipment with valid child outputs, then exceeded the 400-second initial-session limit while metrology was running. Reconcile, confirmation and checking were not reached; no operator review was recorded. This is a failed/incomplete probe, not a full-graph pass or an analytical-quality result. Its runtime was b3641d7 (digest b43e001a9d1d496aadf230cd2906239ed375ba860cbfed7daa6a935d133c3781). The original receipt reported incomplete process cleanup; a separately timestamped post-exit process census found both owned processes and their direct children gone. The global configuration snapshot was unchanged. The original result remains unchanged and failed.
+
+The first revised deterministic Windows host check had a collector defect: it counted an admission response as a fourth query result. The collector now counts query actions only and retains failed query results; its regression passes. The original failing receipt remains preserved. The corrected check passed, and final runtime host receipts are recorded separately.
+
+Final source-checkout headless acceptance at 4d259d395b2ac2fc4c9617f3e119af9b46e41246 passed on both Windows PowerShell and native Ubuntu Bash. Each ran OpenCode 1.18.35, exposed 21 ALG tools, admitted one order, returned three query results around one actual compaction and two restarts, accepted exactly one synthetic MCP job, and performed three fresh validations. All test services/processes stopped, temporary host environments were removed, no provider credentials were inherited, and global configuration snapshots matched. These checks load immutable snapshots copied from the checkout; they do not qualify new offline bundles.
+
+| Final host receipt | Runtime digest | Receipt SHA-256 |
+| --- | --- | --- |
+| Windows | 43ec1bad8c7af3b23a94760b5aa7dc50bc5b21cadbbd2d6b7f800eb488adec5f | d9f2a75284e7d17aa6f3d72b832ce95dda8061c286aef3299d506dc0917ea37c |
+| Ubuntu | ed57a5b108d65af10fcaa94b0100e2e6645e7de16882a0783b8e0e25f027f946 | 580fca1394dc103cd6305fbeffeac4764e993cea1798668d1ad2105bd2bd2bbf |
+
+The checkout runtime digests differ because 77 of 118 runtime files have different line endings. An independent inventory comparison found all 118 identical after CRLF-to-LF normalization; the raw digests above remain the actual loaded identities. The failed local-model receipt is SHA-256 a0c5dbebe2e9b827c9fdf3c26adbacc47e3b626027762f747d070afbed91ae24; its separate cleanup follow-up is 475c8f54c615af503bfe29d7c347732a21c0047cdec3a2912c7b86990482861c. Focused test sets overlap and must not be added into a fictitious full-suite count. No complete new broad-suite, packaged 0.5.1 acceptance, full specialist-graph pass, service qualification or scientific usefulness result is claimed. No GitHub runners, V2 changes or merge occurred.
