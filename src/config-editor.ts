@@ -151,9 +151,11 @@ export function captureStableRegularFile(path: string): StableFileCapture {
     const pathAfter = lstatSync(path, { bigint: true })
     const metadataStable = (left: typeof openedBefore, right: typeof openedBefore) =>
       left.dev === right.dev && left.ino === right.ino && left.size === right.size &&
-      left.mode === right.mode && left.mtimeNs === right.mtimeNs && left.ctimeNs === right.ctimeNs
+      left.mode === right.mode && left.mtimeNs === right.mtimeNs && left.ctimeNs === right.ctimeNs &&
+      left.birthtimeNs === right.birthtimeNs
     const sameOpenedPath = (opened: typeof openedBefore, pathStat: typeof pathBefore) =>
-      opened.dev === pathStat.dev && opened.ino === pathStat.ino && opened.size === pathStat.size
+      opened.dev === pathStat.dev && opened.ino === pathStat.ino && opened.size === pathStat.size &&
+      opened.birthtimeNs === pathStat.birthtimeNs
     if (!openedBefore.isFile() || pathAfter.isSymbolicLink() || !pathAfter.isFile() ||
       !metadataStable(openedBefore, openedAfter) || !metadataStable(pathBefore, pathAfter) ||
       !sameOpenedPath(openedBefore, pathBefore) || !sameOpenedPath(openedAfter, pathAfter) ||
@@ -165,7 +167,7 @@ export function captureStableRegularFile(path: string): StableFileCapture {
       exists: true,
       bytes,
       hash: digest(bytes),
-      identity: { dev: openedBefore.dev.toString(), ino: openedBefore.ino.toString() },
+      identity: { dev: openedBefore.dev.toString(), ino: openedBefore.ino.toString(), birthtimeNs: openedBefore.birthtimeNs.toString() },
     }
   } finally {
     closeSync(descriptor)
@@ -441,6 +443,8 @@ export function assertTextPlanUnchanged(plan: TextFilePlan): void {
 export interface FileIdentity {
   dev: string
   ino: string
+  /** Creation identity distinguishes rapid inode reuse on Linux. Optional for legacy callers. */
+  birthtimeNs?: string
 }
 
 export interface FileCasPlan {
@@ -481,7 +485,8 @@ function normalizedPath(path: string): string {
 }
 
 function sameIdentity(left: FileIdentity, right: FileIdentity): boolean {
-  return left.dev === right.dev && left.ino === right.ino
+  return left.dev === right.dev && left.ino === right.ino &&
+    (right.birthtimeNs === undefined || left.birthtimeNs === right.birthtimeNs)
 }
 
 function directRegularFileIdentity(path: string): FileIdentity {
@@ -489,7 +494,7 @@ function directRegularFileIdentity(path: string): FileIdentity {
   if (!stat.isFile() || stat.isSymbolicLink() || normalizedPath(realpathSync.native(path)) !== normalizedPath(path)) {
     throw new Error(`Path is redirected or not a direct regular file: ${path}`)
   }
-  return { dev: stat.dev.toString(), ino: stat.ino.toString() }
+  return { dev: stat.dev.toString(), ino: stat.ino.toString(), birthtimeNs: stat.birthtimeNs.toString() }
 }
 
 function directDirectoryIdentity(path: string): FileIdentity {
@@ -497,7 +502,7 @@ function directDirectoryIdentity(path: string): FileIdentity {
   if (!stat.isDirectory() || stat.isSymbolicLink() || normalizedPath(realpathSync.native(path)) !== normalizedPath(path)) {
     throw new Error(`Parent is redirected or not a direct directory: ${path}`)
   }
-  return { dev: stat.dev.toString(), ino: stat.ino.toString() }
+  return { dev: stat.dev.toString(), ino: stat.ino.toString(), birthtimeNs: stat.birthtimeNs.toString() }
 }
 
 function missing(path: string): boolean {

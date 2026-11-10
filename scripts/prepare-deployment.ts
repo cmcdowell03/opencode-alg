@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process"
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from "node:fs"
-import { isAbsolute, join, relative, resolve, sep } from "node:path"
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 import { computeProductionDependencyIdentity, verifyBundleProductionDependencies } from "./manager-core.ts"
 import { currentLibcIdentity, inventoryDeploymentTree, sealBundleManifest, sha256 } from "./deployment.ts"
@@ -11,6 +11,129 @@ function run(command: string, args: string[], cwd: string): string {
   const result = spawnSync(command, args, { cwd, encoding: "utf8", shell: false, windowsHide: true, maxBuffer: 4 * 1024 * 1024 })
   if (result.error || result.status !== 0) throw new Error(`${command} ${args.join(" ")} failed: ${(result.stderr || result.error?.message || "unknown error").trim()}`)
   return (result.stdout ?? "").trim()
+}
+
+const MAX_SOURCE_BLOB_BYTES = 64 * 1024 * 1024
+const MAX_SOURCE_TOTAL_BYTES = 128 * 1024 * 1024
+interface CommittedEntry { path: string; oid: string; mode: string; size: number }
+
+function gitBytes(source: string, args: string[], maxBuffer: number, input?: Buffer): Buffer {
+  const result = spawnSync("git", ["-C", source, ...args], { cwd: source, input, encoding: "buffer", shell: false, windowsHide: true, maxBuffer })
+  if (result.error || result.status !== 0 || !Buffer.isBuffer(result.stdout)) {
+    const detail = Buffer.isBuffer(result.stderr) ? result.stderr.toString("utf8").slice(0, 2048) : result.error?.message ?? "unknown error"
+    throw new Error(`Pinned Git object read failed: ${detail.trim()}`)
+  }
+  return result.stdout
+}
+
+function utf8(bytes: Buffer, label: string): string {
+  const value = bytes.toString("utf8")
+  if (!Buffer.from(value, "utf8").equals(bytes)) throw new Error(`Pinned Git ${label} is not valid UTF-8`)
+  return value
+}
+
+function committedTree(source: string, commit: string): CommittedEntry[] {
+  const output = gitBytes(source, ["ls-tree", "-r", "-l", "-z", "--full-tree", commit], 32 * 1024 * 1024)
+  const entries: CommittedEntry[] = []
+  let cursor = 0
+  while (cursor < output.length) {
+    const end = output.indexOf(0, cursor)
+    if (end < 0) throw new Error("Pinned Git tree has an unterminated entry")
+    const row = output.subarray(cursor, end)
+    const tab = row.indexOf(9)
+    const header = tab < 0 ? "" : row.subarray(0, tab).toString("ascii")
+    const match = /^(100644|100755|120000|160000) (blob|commit) ([a-f0-9]{40,64}) +([0-9]+|-)$/ .exec(header)
+    if (!match) throw new Error("Pinned Git tree has an unsupported entry")
+    const path = utf8(row.subarray(tab + 1), "tree path")
+    if (!path || Buffer.byteLength(path, "utf8") > 4096) throw new Error("Pinned Git tree path is empty or oversized")
+    entries.push({ path, mode: match[1]!, oid: match[3]!, size: match[4] === "-" ? -1 : Number(match[4]) })
+    if (entries.length > 50_000) throw new Error("Pinned Git tree exceeds 50000 entries")
+    cursor = end + 1
+  }
+  return entries
+}
+
+function committedBlob(source: string, entry: CommittedEntry, limit: number): Buffer {
+  if (entry.mode === "160000" || !Number.isSafeInteger(entry.size) || entry.size < 0 || entry.size > limit) {
+    throw new Error(`Pinned Git blob is unsupported or oversized: ${entry.path}`)
+  }
+  const bytes = gitBytes(source, ["cat-file", "blob", entry.oid], limit + 1024)
+  if (bytes.length !== entry.size) throw new Error(`Pinned Git blob size changed: ${entry.path}`)
+  return bytes
+}
+
+function inside(root: string, path: string): boolean {
+  const rel = relative(root, path)
+  return rel === "" || (!isAbsolute(rel) && rel !== ".." && !rel.startsWith(`..${sep}`))
+}
+
+/** Materialize only committed distributable blobs; never read worktree payload bytes. */
+function copyCommittedPackage(source: string, commit: string, stage: string): Record<string, any> {
+  const tree = committedTree(source, commit)
+  const packageEntry = tree.find((entry) => entry.path === "package.json")
+  if (!packageEntry || packageEntry.mode !== "100644" && packageEntry.mode !== "100755") throw new Error("Pinned commit has no regular package.json")
+  const pkg = JSON.parse(utf8(committedBlob(source, packageEntry, 1024 * 1024), "package.json")) as Record<string, any>
+  if (pkg.name !== "opencode-alg" || !/^\d+\.\d+\.\d+$/.test(pkg.version)) throw new Error("Source package identity is invalid")
+  if (!Array.isArray(pkg.files)) throw new Error("Package files declaration is missing or invalid")
+  const copyTop = new Set<string>(["package.json", "package-lock.json", "npm-shrinkwrap.json"])
+  for (const item of pkg.files) {
+    if (typeof item !== "string") throw new Error("Package files declaration contains a non-string entry")
+    const top = item.replace(/^(\.\/)+/, "").split(/[/*]/, 1)[0]
+    if (!top || top === "." || top === ".." || /[\\\0]/.test(top)) throw new Error("Package files declaration contains an unsafe path")
+    if (top !== ".git" && top !== "node_modules") copyTop.add(top)
+  }
+  const selected = tree.filter((entry) => copyTop.has(entry.path.split("/")[0]!) && !entry.path.startsWith(".git/") && !entry.path.startsWith("node_modules/"))
+  if (!selected.some((entry) => entry.path === "package-lock.json")) throw new Error("Pinned commit has no package-lock.json")
+  const folded = new Set<string>()
+  let total = 0
+  for (const entry of selected) {
+    const parts = entry.path.split("/")
+    if (entry.path === "alg-bundle.json" || parts.some((part) => !part || part === "." || part === ".." || /[\\\0]/.test(part))) {
+      throw new Error(`Pinned Git tree contains an unsafe bundle path: ${entry.path}`)
+    }
+    const key = entry.path.normalize("NFC").toLowerCase()
+    if (folded.has(key)) throw new Error(`Pinned Git tree contains an ambiguous bundle path: ${entry.path}`)
+    folded.add(key)
+    if (entry.mode !== "100644" && entry.mode !== "100755" && entry.mode !== "120000") throw new Error(`Pinned Git tree contains an unsupported bundle entry: ${entry.path}`)
+    if (!Number.isSafeInteger(entry.size) || entry.size < 0 || entry.size > MAX_SOURCE_BLOB_BYTES || (total += entry.size) > MAX_SOURCE_TOTAL_BYTES) {
+      throw new Error("Pinned Git distributable blobs exceed source bounds")
+    }
+  }
+  const input = Buffer.from(selected.map((entry) => `${entry.oid}\n`).join(""), "ascii")
+  const payload = gitBytes(source, ["cat-file", "--batch"], MAX_SOURCE_TOTAL_BYTES + selected.length * 128 + 1024, input)
+  const links: string[] = []
+  let cursor = 0
+  for (const entry of selected) {
+    const headerEnd = payload.indexOf(10, cursor)
+    if (headerEnd < 0) throw new Error("Pinned Git batch has a truncated header")
+    const header = payload.subarray(cursor, headerEnd).toString("ascii")
+    const match = /^([a-f0-9]{40,64}) blob ([0-9]+)$/.exec(header)
+    if (!match || match[1] !== entry.oid || Number(match[2]) !== entry.size) throw new Error(`Pinned Git batch identity differs for ${entry.path}`)
+    const end = headerEnd + 1 + entry.size
+    if (end >= payload.length || payload[end] !== 10) throw new Error(`Pinned Git batch is truncated for ${entry.path}`)
+    const bytes = payload.subarray(headerEnd + 1, end)
+    cursor = end + 1
+    const to = join(stage, ...entry.path.split("/"))
+    mkdirSync(dirname(to), { recursive: true })
+    if (entry.mode === "120000") {
+      const target = utf8(bytes, "symlink target")
+      if (!target || target.includes("\0") || target.includes("\\") || isAbsolute(target) || !inside(stage, resolve(dirname(to), target))) {
+        throw new Error(`Pinned Git link escapes the bundle: ${entry.path}`)
+      }
+      symlinkSync(target, to)
+      links.push(to)
+    } else {
+      const mode = entry.mode === "100755" ? 0o755 : 0o644
+      writeFileSync(to, bytes, { flag: "wx", mode })
+      chmodSync(to, mode)
+    }
+  }
+  if (cursor !== payload.length) throw new Error("Pinned Git batch has unexpected trailing bytes")
+  const canonicalStage = realpathSync.native(stage)
+  for (const link of links) {
+    if (!inside(canonicalStage, realpathSync.native(link))) throw new Error(`Pinned Git link escapes the bundle: ${link}`)
+  }
+  return pkg
 }
 
 export function prepareDeploymentBundle(sourceInput: string, outputInput: string): { output: string; manifestSha256: string; sourceCommit: string; artifactSha256: string } {
@@ -32,32 +155,12 @@ export function prepareDeploymentBundle(sourceInput: string, outputInput: string
   const commit = run("git", ["-C", source, "rev-parse", "HEAD"], source).toLowerCase()
   if (!/^[a-f0-9]{40,64}$/.test(commit)) throw new Error("Source checkout did not provide a valid immutable commit identity")
   const repository = run("git", ["-C", source, "config", "--get", "remote.origin.url"], source)
-  const pkg = JSON.parse(readFileSync(join(source, "package.json"), "utf8"))
-  if (pkg.name !== "opencode-alg" || !/^\d+\.\d+\.\d+$/.test(pkg.version)) throw new Error("Source package identity is invalid")
   if (existsSync(output)) throw new Error(`Bundle output already exists; refusing to overwrite: ${output}`)
   mkdirSync(output, { recursive: true })
   const stage = join(output, ".package-stage")
   mkdirSync(stage)
   try {
-    const copyTop = new Set<string>(["package.json", "package-lock.json", "npm-shrinkwrap.json"])
-    for (const item of pkg.files ?? []) {
-      if (typeof item !== "string") throw new Error("Package files declaration contains a non-string entry")
-      const top = item.replace(/^(\.\/)+/, "").split(/[/*]/, 1)[0]
-      if (!top || top === "." || top === ".." || /[\\\0]/.test(top)) throw new Error("Package files declaration contains an unsafe path")
-      if (top && top !== ".git" && top !== "node_modules") copyTop.add(top)
-    }
-    const tracked = run("git", ["-C", source, "ls-files", "-z"], source).split("\0").filter(Boolean)
-    for (const path of tracked) {
-      const top = path.split("/")[0]!
-      if (!copyTop.has(top) || top === ".git" || top === "node_modules") continue
-      const from = join(source, ...path.split("/"))
-      const to = join(stage, ...path.split("/"))
-      mkdirSync(join(to, ".."), { recursive: true })
-      cpSync(from, to, { preserveTimestamps: true, verbatimSymlinks: true })
-    }
-    for (const name of ["package.json", "package-lock.json", "npm-shrinkwrap.json"]) {
-      if (existsSync(join(source, name)) && !existsSync(join(stage, name))) throw new Error(`Required bundle lock/package file is not tracked: ${name}`)
-    }
+    const pkg = copyCommittedPackage(source, commit, stage)
     const frozenFiles = ["package.json", "package-lock.json", "npm-shrinkwrap.json", "bun.lock"]
       .filter((name) => existsSync(join(stage, name)))
       .map((name) => [name, sha256(readFileSync(join(stage, name)))] as const)

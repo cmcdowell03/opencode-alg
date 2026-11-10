@@ -855,6 +855,7 @@ export function uniqueLiveEvidencePath(directory: string, sourceSha256: string, 
 export interface EvidenceFileIdentity {
   dev: string
   ino: string
+  birthtimeNs?: string
 }
 
 function evidenceFileIdentity(path: string): EvidenceFileIdentity {
@@ -862,11 +863,12 @@ function evidenceFileIdentity(path: string): EvidenceFileIdentity {
   if (!stat.isFile() || stat.isSymbolicLink() || normalizedPath(realpathSync.native(path)) !== normalizedPath(path)) {
     throw new Error(`evidence path is redirected or not a direct regular file: ${path}`)
   }
-  return { dev: stat.dev.toString(), ino: stat.ino.toString() }
+  return { dev: stat.dev.toString(), ino: stat.ino.toString(), birthtimeNs: stat.birthtimeNs.toString() }
 }
 
 function sameEvidenceIdentity(left: EvidenceFileIdentity, right: EvidenceFileIdentity): boolean {
-  return left.dev === right.dev && left.ino === right.ino
+  return left.dev === right.dev && left.ino === right.ino &&
+    (right.birthtimeNs === undefined || left.birthtimeNs === right.birthtimeNs)
 }
 
 function evidencePathMissing(path: string): boolean {

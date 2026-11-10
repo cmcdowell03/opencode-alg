@@ -517,6 +517,36 @@ describe("bounded release-gate evidence", () => {
     expect(resolveNpmInvocation({ platform: "linux", pathEntries: [posix] })).toEqual({ executable: npm, argsPrefix: [] })
   })
 
+  test("accepts only the canonical Node POSIX bin/npm to lib/npm CLI layout", () => {
+    const root = resolve("C:/fixture/node-v22.23.4")
+    const bin = join(root, "bin")
+    const shim = join(bin, "npm")
+    const cli = join(root, "lib", "node_modules", "npm", "bin", "npm-cli.js")
+    const outside = resolve("C:/outside/npm-cli.js")
+    const filesystem = (shimTarget: string, cliTarget = cli) => ({
+      exists: () => true,
+      isFile: () => true,
+      realpath: (path: string) => path === shim ? shimTarget : path === cli ? cliTarget : path,
+    })
+    expect(resolveNpmInvocation({ platform: "linux", pathEntries: [bin], filesystem: filesystem(cli) })).toEqual({ executable: cli, argsPrefix: [] })
+    expect(() => resolveNpmInvocation({ platform: "linux", pathEntries: [bin], filesystem: filesystem(outside) })).toThrow("shim escapes")
+    expect(() => resolveNpmInvocation({ platform: "linux", pathEntries: [bin], filesystem: filesystem(join(root, "lib", "node_modules", "npm", "bin", "other.js")) })).toThrow("shim escapes")
+    expect(() => resolveNpmInvocation({ platform: "linux", pathEntries: [bin], filesystem: filesystem(outside, outside) })).toThrow("shim escapes")
+  })
+
+  ;(process.platform === "win32" ? test.skip : test)("resolves a real POSIX npm symlink inside the Node installation", () => {
+    const root = tempProject("alg-node-posix-npm-")
+    temporary.push(root)
+    const bin = join(root, "bin")
+    const cli = join(root, "lib", "node_modules", "npm", "bin", "npm-cli.js")
+    mkdirSync(bin)
+    mkdirSync(dirname(cli), { recursive: true })
+    writeFileSync(cli, "#!/usr/bin/env node\n")
+    chmodSync(cli, 0o755)
+    symlinkSync(join("..", "lib", "node_modules", "npm", "bin", "npm-cli.js"), join(bin, "npm"))
+    expect(resolveNpmInvocation({ platform: "linux", pathEntries: [bin] })).toEqual({ executable: cli, argsPrefix: [] })
+  })
+
   test("rejects an actual npm CLI directory junction/symlink escape", () => {
     const root = tempProject("alg-npm-junction-escape-")
     temporary.push(root)

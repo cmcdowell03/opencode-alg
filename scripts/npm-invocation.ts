@@ -1,5 +1,5 @@
 import { existsSync, realpathSync, statSync } from "node:fs"
-import { dirname, isAbsolute, join, relative } from "node:path"
+import { basename, dirname, isAbsolute, join, relative } from "node:path"
 
 export interface NpmInvocation {
   executable: string
@@ -47,8 +47,22 @@ export function resolveNpmInvocation(options: {
     if (fromRoot === "" || fromRoot.startsWith("..") || isAbsolute(fromRoot)) throw new Error(`npm ${label} escapes its installation directory`)
     return canonical
   }
-  const canonicalShim = contained(shim, "shim")
-  if (platform !== "win32") return { executable: canonicalShim, argsPrefix: [] }
+  if (platform !== "win32") {
+    const canonicalShim = filesystem.realpath(shim)
+    const fromBin = relative(installation, canonicalShim)
+    if (fromBin !== "" && !fromBin.startsWith("..") && !isAbsolute(fromBin)) {
+      return { executable: canonicalShim, argsPrefix: [] }
+    }
+    // Official Node POSIX distributions link bin/npm to this exact CLI under
+    // the same installation root. Do not accept other sibling or outside links.
+    const expectedCli = join(dirname(installation), "lib", "node_modules", "npm", "bin", "npm-cli.js")
+    if (basename(installation) !== "bin" || !filesystem.exists(expectedCli) || !filesystem.isFile(expectedCli) ||
+      relative(expectedCli, filesystem.realpath(expectedCli)) !== "" || relative(expectedCli, canonicalShim) !== "") {
+      throw new Error("npm shim escapes its installation directory")
+    }
+    return { executable: canonicalShim, argsPrefix: [] }
+  }
+  contained(shim, "shim")
 
   const containedFile = (candidate: string, label: string): string => {
     if (!filesystem.exists(candidate) || !filesystem.isFile(candidate)) throw new Error(`Unable to resolve npm ${label} beside npm.cmd`)

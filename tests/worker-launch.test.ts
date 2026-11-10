@@ -103,7 +103,7 @@ describe("worker launch", () => {
       // The "alg:" prefix keeps skill-evolution and memory exclusions working; the suffix is what OpenCode's footer reads.
       expect(creates[0].body).toEqual({ parentID: "owner", title: "alg:worker-tools/work/a1 (@implementer subagent)" })
       expect(prompts[0].body.tools).toEqual(Object.fromEntries(ALG_TOOL_IDS.map((id) => [id, false])))
-      expect(Object.keys(prompts[0].body.tools)).toHaveLength(20)
+      expect(Object.keys(prompts[0].body.tools)).toHaveLength(ALG_TOOL_IDS.length)
     } finally { removeProject(project) }
   })
 
@@ -122,11 +122,13 @@ describe("worker launch", () => {
         undefined, undefined, { sessionMemory } as never)
       await tools.alg_run.execute({ run_id: "memory-tools" }, context(project))
       const hidden = Object.keys(prompts[0].body.tools)
+      const memoryTools = new Set(["alg_memory_search", "alg_memory_read", "alg_context_status", "alg_memory_propose"])
+      expect(hidden).toEqual(ALG_TOOL_IDS.filter((id) => !memoryTools.has(id)))
       expect(hidden).toContain("alg_run")
       expect(hidden).toContain("alg_skill_evolution_promote")
       for (const id of ["alg_memory_search", "alg_memory_read", "alg_context_status", "alg_memory_propose"]) expect(hidden).not.toContain(id)
       expect(hidden).toContain("alg_skill")
-      expect(hidden).toHaveLength(16)
+      expect(hidden).toHaveLength(ALG_TOOL_IDS.length - memoryTools.size)
     } finally { removeProject(project) }
   })
 })

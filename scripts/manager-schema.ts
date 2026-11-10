@@ -198,13 +198,13 @@ export const JournalFileSchema = z.object({
   path: AbsolutePathSchema,
   kind: z.enum(["config", "agent"]),
   before_hash: Sha256Schema.nullable(),
-  before_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict().nullable(),
+  before_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/), birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict().nullable(),
   after_hash: Sha256Schema.nullable(),
   backup: AbsolutePathSchema.nullable(),
   claim: AbsolutePathSchema.nullable(),
-  claim_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict().nullable(),
+  claim_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/), birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict().nullable(),
   prepared: AbsolutePathSchema.nullable(),
-  prepared_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict().nullable(),
+  prepared_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/), birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict().nullable(),
 }).strict()
 
 export const ManagerJournalSchema = z.object({
@@ -219,14 +219,14 @@ export const ManagerJournalSchema = z.object({
   target_generation: z.string().max(128).nullable(),
   receipt_path: AbsolutePathSchema,
   receipt_before_hash: Sha256Schema.nullable(),
-  receipt_before_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict().nullable(),
+  receipt_before_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/), birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict().nullable(),
   receipt_after_hash: Sha256Schema,
   receipt_backup: AbsolutePathSchema.nullable(),
-  receipt_backup_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict().nullable(),
+  receipt_backup_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/), birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict().nullable(),
   receipt_claim: AbsolutePathSchema.nullable(),
-  receipt_claim_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict().nullable(),
+  receipt_claim_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/), birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict().nullable(),
   receipt_prepared: AbsolutePathSchema,
-  receipt_prepared_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict(),
+  receipt_prepared_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/), birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict(),
   files: z.array(JournalFileSchema).max(64),
 }).strict()
 

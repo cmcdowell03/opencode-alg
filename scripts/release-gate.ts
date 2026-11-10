@@ -21,7 +21,8 @@ const MAX_RETAINED_COMMAND_BYTES = 96 * 1024
 const MAX_RETAINED_OUTPUT_TOTAL_BYTES = 320 * 1024
 const TAIL_BYTES = 2_048
 const Sha = z.string().regex(/^[a-f0-9]{64}$/)
-const FileIdentitySchema = z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict()
+const FileIdentitySchema = z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/),
+  birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict()
 export const RELEASE_COMMAND_IDS = [
   "typecheck", "bun_test", "manager_tests", "smoke", "live_verify", "excel_manifest", "duckdb_manifest",
   "python_tests", "excel_uv_sync", "excel_wrapper_check", "excel_wrapper_eof", "duckdb_uv_sync",
@@ -628,11 +629,12 @@ function releaseEvidenceIdentity(path: string): EvidenceFileIdentity {
   if (!stat.isFile() || stat.isSymbolicLink() || !sameResolvedPath(realpathSync.native(path), path)) {
     throw new Error(`Release evidence path is redirected or not a direct regular file: ${path}`)
   }
-  return { dev: stat.dev.toString(), ino: stat.ino.toString() }
+  return { dev: stat.dev.toString(), ino: stat.ino.toString(), birthtimeNs: stat.birthtimeNs.toString() }
 }
 
 function sameEvidenceIdentity(left: EvidenceFileIdentity, right: EvidenceFileIdentity): boolean {
-  return left.dev === right.dev && left.ino === right.ino
+  return left.dev === right.dev && left.ino === right.ino &&
+    (right.birthtimeNs === undefined || left.birthtimeNs === right.birthtimeNs)
 }
 
 function releaseEvidenceMissing(path: string): boolean {

@@ -408,7 +408,7 @@ function liveFileAuxiliaryPaths(path: string, transactionId: string): { claim: s
   }
 }
 
-type FileIdentity = { dev: string; ino: string }
+type FileIdentity = { dev: string; ino: string; birthtimeNs?: string }
 
 type TreeEntry = {
   relativePath: string
@@ -437,22 +437,23 @@ const MAX_GENERATION_TREE_BYTES = 2 * 1024 * 1024 * 1024
 function regularFileIdentity(path: string): FileIdentity {
   const stat = lstatSync(path, { bigint: true })
   if (!stat.isFile() || stat.isSymbolicLink() || !samePath(realpathSync.native(path), path)) throw new Error(`Path is redirected or not a regular file: ${path}`)
-  return { dev: stat.dev.toString(), ino: stat.ino.toString() }
+  return { dev: stat.dev.toString(), ino: stat.ino.toString(), birthtimeNs: stat.birthtimeNs.toString() }
 }
 
 function sameFileIdentity(left: FileIdentity, right: FileIdentity): boolean {
-  return left.dev === right.dev && left.ino === right.ino
+  return left.dev === right.dev && left.ino === right.ino &&
+    (right.birthtimeNs === undefined || left.birthtimeNs === right.birthtimeNs)
 }
 
 function filesystemIdentity(path: string): FileIdentity {
   const stat = lstatSync(path, { bigint: true })
-  return { dev: stat.dev.toString(), ino: stat.ino.toString() }
+  return { dev: stat.dev.toString(), ino: stat.ino.toString(), birthtimeNs: stat.birthtimeNs.toString() }
 }
 
 function regularDirectoryIdentity(path: string): FileIdentity {
   const stat = lstatSync(path, { bigint: true })
   if (!stat.isDirectory() || stat.isSymbolicLink() || !samePath(realpathSync.native(path), path)) throw new Error(`Path is redirected or not a direct directory: ${path}`)
-  return { dev: stat.dev.toString(), ino: stat.ino.toString() }
+  return { dev: stat.dev.toString(), ino: stat.ino.toString(), birthtimeNs: stat.birthtimeNs.toString() }
 }
 
 function unlinkOwnedRegularFile(path: string, expectedHash: string, expectedIdentity: FileIdentity, unlink: typeof unlinkSync = unlinkSync): void {
