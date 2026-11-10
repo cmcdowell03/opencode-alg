@@ -40,6 +40,33 @@ function fixture(path = project()) {
 }
 
 describe("operational investigation host", () => {
+  test("models cannot manufacture fresh work through purpose or generation", async () => {
+    const f = fixture()
+    await f.runtime.begin(f.run)
+    const first = await f.runtime.query("owner", { ...input, as_of: "2026-11-10" })
+    await expect(f.runtime.query("owner", { ...input, generation: 1 })).rejects.toThrow("host-owned")
+    for (const purpose of ["independent_verification", "refresh", "recomputation"] as const)
+      await expect(f.runtime.query("owner", { ...input, purpose })).rejects.toThrow("host-owned")
+    const same = await f.runtime.query("owner", { ...input, as_of: "2026-11-09T18:00:00-06:00",
+      parameters: { explanatory_label: "cosmetic" } })
+    expect(same.work_key).toBe(first.work_key)
+    expect(f.submits).toBe(1)
+  })
+
+  test("typed argument diagnostics name safe fields without echoing unknown keys or values", async () => {
+    const f = fixture()
+    await f.runtime.begin(f.run)
+    const tool = createOperationalTools(f.runtime, async () => {}).alg_investigation
+    const context = { sessionID: "owner", worktree: f.path, directory: f.path } as never
+    const reply = await tool.execute({ request: { action: "admit", input: { ...input,
+      recipe_version: 7, "untrusted-private-key": "untrusted-private-value" } } } as never, context)
+    if (typeof reply === "string") throw new Error("expected structured tool result")
+    expect(JSON.parse(reply.output)).toMatchObject({ error: "invalid_request",
+      issues: expect.arrayContaining([{ path: "input.recipe_version", code: "invalid_type" }]) })
+    expect(reply.output).not.toContain("untrusted-private")
+    expect(f.submits).toBe(0)
+  })
+
   test("restart and compaction reuse the pointer and never duplicate unknown work", async () => {
     const f = fixture()
     await f.runtime.begin(f.run)
@@ -138,6 +165,13 @@ describe("operational investigation host", () => {
     const current = loadRunForOwner(f.path, f.run.run_id, "owner")!
     await f.runtime.child(current, "child", current.graph.nodes[0]!)
     expect(f.runtime.status("child")).toMatchObject({ enabled: true, reference: { run_id: f.run.run_id } })
+    await expect(f.runtime.admitWork("child", input, ["discover"])).rejects.toThrow("delegated")
+    const unassigned = await f.runtime.admitWork("owner", input, [])
+    await expect(f.runtime.executeWork("child", unassigned.work_key)).rejects.toThrow("not assigned")
+    const assigned = await f.runtime.admitWork("owner", input, ["discover"])
+    expect(assigned.work_key).toBe(unassigned.work_key)
+    expect((await f.runtime.executeWork("child", assigned.work_key)).status).toBe("running")
+    expect(f.submits).toBe(1)
     await expect(f.runtime.note("child", { next_action: "override" })).rejects.toThrow("children")
     await expect(f.runtime.note("child", { analytical_result: { status: "supported",
       claim: "child override", evidence_refs: [], authority: "reported_analysis" } })).rejects.toThrow("children")
@@ -173,18 +207,26 @@ describe("operational investigation host", () => {
     await expect(runtime.attach("other", f.run.run_id)).rejects.toThrow()
   })
 
-  test("tool ignores a model supplied cost and reserves the operator configured maximum", async () => {
+  test("typed tool rejects model budget controls and reserves the operator configured maximum", async () => {
     const f = fixture()
     await f.runtime.begin(f.run)
     const tool = createOperationalTools(f.runtime, async () => {}).alg_investigation
     const context = { sessionID: "owner", worktree: f.path, directory: f.path } as never
-    const first = await tool.execute({ action: "query", payload_json: JSON.stringify({
+    const rejected = await tool.execute({ request: { action: "admit", input: {
       ...input, reserved_cost: 1000000,
-    }) }, context)
-    const second = await tool.execute({ action: "query", payload_json: JSON.stringify({
+    } } } as never, context)
+    if (typeof rejected === "string") throw new Error("expected structured tool result")
+    expect(JSON.parse(rejected.output).error).toBe("invalid_request")
+    expect(f.submits).toBe(0)
+    const args = { request: { action: "admit" as const, node_ids: [], input: {
       operation: input.operation, recipe_version: input.recipe_version, parameters: input.parameters,
-      query: input.query, source_dependencies: input.source_dependencies,
-    }) }, context)
+      query: input.query, source_dependencies: input.source_dependencies ?? [],
+    } } }
+    const order = await tool.execute(args, context)
+    if (typeof order === "string") throw new Error("expected structured tool result")
+    const execute = { request: { action: "query" as const, work_key: JSON.parse(order.output).work_key as string } }
+    const first = await tool.execute(execute, context)
+    const second = await tool.execute(execute, context)
     if (typeof first === "string" || typeof second === "string") throw new Error("expected structured tool result")
     expect(JSON.parse(first.output).status).toBe("running")
     expect(JSON.parse(second.output).work_key).toBe(JSON.parse(first.output).work_key)
@@ -199,16 +241,16 @@ describe("operational investigation host", () => {
     const context = { sessionID: "owner", worktree: f.path, directory: f.path } as never
     const assessment = { status: "unresolved", claim: "Synthetic evidence leaves two explanations open",
       evidence_refs: ["manifest:1"], authority: "reported_analysis" }
-    const recorded = await tool.execute({ action: "note", payload_json: JSON.stringify({
+    const recorded = await tool.execute({ request: { action: "note", patch: {
       analytical_result: assessment,
-    }) }, context)
+    } } } as never, context)
     if (typeof recorded === "string") throw new Error("expected structured tool result")
     expect(JSON.parse(recorded.output).analytical_result).toEqual(assessment)
     expect(f.runtime.status("owner")).toMatchObject({ checkpoint: { analytical_result: assessment } })
     expect(f.runtime.render("owner", 1024)).toContain("reported_analysis")
-    const rejected = await tool.execute({ action: "note", payload_json: JSON.stringify({
+    const rejected = await tool.execute({ request: { action: "note", patch: {
       analytical_result: { ...assessment, authority: "verified_truth" },
-    }) }, context)
+    } } } as never, context)
     if (typeof rejected === "string") throw new Error("expected structured tool result")
     expect(JSON.parse(rejected.output)).toHaveProperty("error")
     expect(f.runtime.status("owner")).toMatchObject({ checkpoint: { analytical_result: assessment } })

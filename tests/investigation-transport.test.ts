@@ -4,6 +4,8 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js"
 import { hashObject } from "../src/session-memory/store.ts"
 import { InvestigationHttpPort } from "../src/investigation-transport.ts"
+import { InvestigationStore } from "../src/investigation/index.ts"
+import { tempProject, removeProject } from "./helpers.ts"
 
 const inputSchema = { type: "object" as const, properties: {}, additionalProperties: true }
 const names = ["submit", "lookup", "validate", "cancel"]
@@ -57,6 +59,25 @@ function profile(endpoint: string) {
 }
 
 describe("qualified MCP HTTP transport", () => {
+  test("local admission failures release both job slots without submitting", async () => {
+    const service = await localServer()
+    const project = tempProject("alg-pre-submit-")
+    try {
+      const scope = { project_directory: project, project_id: "p", owner_id: "owner", run_id: "run" }
+      const store = InvestigationStore.open(scope, { create: true, costLimit: 10 })
+      const regular = new InvestigationHttpPort(profile(service.endpoint), "p")
+      const expired = new InvestigationHttpPort({ ...profile(service.endpoint),
+        verifiedAt: new Date(Date.now() - 2000).toISOString(), expiresAt: new Date(Date.now() - 1000).toISOString() }, "p")
+      for (const [i, port] of [regular, expired].entries()) {
+        const work = await store.admit({ operation: i ? "bounded-read" : "unlisted", recipe_version: "1",
+          query: { i }, parameters: {}, reserved_cost: 5 }, port.capabilities)
+        expect((await store.dispatch(work.work_key, port)).status).toBe("failed_known")
+      }
+      expect(service.seen).toHaveLength(0)
+      expect(InvestigationStore.open(scope).status()).toMatchObject({ active_jobs: 0, reserved_cost: 0, cumulative_cost: 0 })
+    } finally { removeProject(project) }
+  })
+
   test("official SDK server sees host scope and fixed service limits outside model query", async () => {
     const service = await localServer()
     const port = new InvestigationHttpPort(profile(service.endpoint), "host-project")
@@ -67,7 +88,7 @@ describe("qualified MCP HTTP transport", () => {
     expect(service.seen[0]).toMatchObject({ project_id: "host-project", principal_id: "service-reader",
       execution_limits: { max_duration_ms: 1000, max_bytes_scanned: 4096, max_result_bytes: 1024, max_cost: 5 },
       query: { project_id: "injected" } })
-    await expect(port.submit({ submission_id: "s2", work_key: "w2", operation: "arbitrary-sql", query: {} })).rejects.toThrow("outside qualified")
+    await expect(port.submit({ submission_id: "s2", work_key: "w2", operation: "arbitrary-sql", query: {} })).rejects.toThrow("operation_not_allowed")
     expect(service.seen).toHaveLength(1)
   })
 

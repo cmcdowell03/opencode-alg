@@ -1,14 +1,29 @@
 import { describe, expect, test } from "bun:test"
-import { chooseSyntheticResponse, PERSISTED_REFERENCE, PERSISTED_RESULT } from "../scripts/test-v1-headless.ts"
+import { chooseSyntheticResponse, completedInvestigationOutputs, PERSISTED_REFERENCE, PERSISTED_RESULT } from "../scripts/test-v1-headless.ts"
 
 describe("headless synthetic provider contract", () => {
+  test("query evidence excludes admission but retains failed query outputs", () => {
+    const part = (action: string, output: unknown) => ({ type: "tool", tool: "alg_investigation",
+      state: { status: "completed", input: { request: { action } }, output: JSON.stringify(output) } })
+    const outputs = completedInvestigationOutputs([{ parts: [
+      part("admit", { status: "reserved", work_key: "a".repeat(64) }),
+      part("query", { error: "invalid_request" }),
+      part("query", { status: "reusable", work_key: "a".repeat(64), result: { manifest_ref: "m", digest: "d" } }),
+    ] }])
+    expect(outputs).toHaveLength(2)
+    expect(outputs[0]?.status).toBe("")
+    expect(outputs[1]?.status).toBe("reusable")
+  })
   test("drives the host through workspace, investigation plan, and query tools", () => {
     const context = chooseSyntheticResponse("initial", 0, { tools: [] })
     const plan = chooseSyntheticResponse("initial", 1, { tools: [] })
     const investigation = chooseSyntheticResponse("initial", 2, { tools: [] })
     expect(context).toMatchObject({ kind: "tool", name: "alg_context_status", args: { operation: "headless-smoke" } })
     expect(plan).toMatchObject({ kind: "tool", name: "alg_plan", args: { template: "data-investigation" } })
-    expect(investigation).toMatchObject({ kind: "tool", name: "alg_investigation", args: { action: "query" } })
+    expect(investigation).toMatchObject({ kind: "tool", name: "alg_investigation", args: { request: { action: "admit" } } })
+    const workKey = "a".repeat(64)
+    const execute = chooseSyntheticResponse("initial", 3, { messages: [{ role: "tool", content: JSON.stringify({ work_key: workKey }) }] })
+    expect(execute).toMatchObject({ args: { request: { action: "query", work_key: workKey } } })
   })
 
   test("compaction only repeats references observed in the host request", () => {

@@ -200,16 +200,16 @@ export function projectWorkspaceContext(readiness: WorkspaceReadiness, maximumRe
 
 /** Starter references only; the workspace maintainer must bind them to reviewed local sources and facts. */
 export const STARTER_WORKSPACE_REGISTRY: WorkspaceRegistry = WorkspaceRegistrySchema.parse({ schema_version: 1, operations: [
-  { id: "repo.publish", phase: ["publish"], roles: ["maintainer"], effects: ["read", "write"], requirements: [
+  { id: "repo.publish", phase: ["execute"], roles: ["orchestrator"], effects: ["read", "write"], requirements: [
     { id: "git-publish-procedure", kind: "skill", ref: "git-publish", intent: "advisory" },
     { id: "repository-identity", kind: "fact", ref: "repository.identity", intent: "required" }] },
-  { id: "repo.test", phase: ["verify"], effects: ["read"], requirements: [
+  { id: "repo.test", phase: ["execute"], effects: ["read"], requirements: [
     { id: "test-procedure", kind: "skill", ref: "repo-test", intent: "advisory" },
     { id: "test-command", kind: "fact", ref: "test.command", intent: "required" }] },
-  { id: "data.migration.prepare", phase: ["prepare"], effects: ["read"], requirements: [
+  { id: "data.migration.prepare", phase: ["execute"], effects: ["read"], requirements: [
     { id: "migration-procedure", kind: "skill", ref: "migration-preflight", intent: "advisory" },
     { id: "migration-source-revision", kind: "fact", ref: "migration.source_revision", intent: "required" }] },
-  { id: "data.investigate.read", phase: ["investigate"], effects: ["discover", "read", "submit"], requirements: [
+  { id: "data.investigate.read", phase: ["execute"], effects: ["discover", "read", "submit"], requirements: [
     { id: "investigation-procedure", kind: "skill", ref: "data-investigation", intent: "advisory" },
     { id: "investigation-resource", kind: "fact", ref: "investigation.resource", intent: "required" }] },
 ] })

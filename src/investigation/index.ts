@@ -17,9 +17,35 @@ const TERMINAL_RECEIPT_RESERVE_BYTES = 100_000
 const DEFAULT_MAX_ADMISSIONS = 100
 export const MAX_CONCURRENT_EXPENSIVE_JOBS = 2
 
+// API amounts retain their existing units; arithmetic uses exact millionths.
+// Reject unsupported precision before reserving anything. Never compare float sums.
+const COST_SCALE = 1_000_000
+export function investigationCostUnits(value: number): number {
+  const scaled = value * COST_SCALE, units = Math.round(scaled)
+  if (!Number.isFinite(value) || value < 0 || !Number.isSafeInteger(units) ||
+    Math.abs(scaled - units) > Number.EPSILON * Math.max(1, Math.abs(scaled)) * 4)
+    throw new Error("investigation cost requires nonnegative safe millionth units")
+  return units
+}
+const CostSchema = z.number().finite().nonnegative().refine((value) => {
+  try { investigationCostUnits(value); return true } catch { return false }
+}, "cost requires safe millionth units")
+function sumCost(...amounts: number[]): number {
+  const units = amounts.reduce((sum, value) => sum + investigationCostUnits(value), 0)
+  if (!Number.isSafeInteger(units)) throw new Error("investigation cost total exceeds safe units")
+  return units / COST_SCALE
+}
+export class InvestigationTransportError extends Error {
+  constructor(readonly code: "profile_expired" | "credential_unavailable" | "operation_not_allowed" |
+    "request_invalid" | "qualification_failed" | "remote_outcome_unknown" | "response_invalid",
+    readonly submission: "not_submitted" | "possibly_submitted") {
+    super(`MCP operation unavailable: ${code}`)
+  }
+}
+
 export const InvestigationStatusSchema = z.enum([
   "reserved", "submitting", "running", "result_recorded", "reusable", "failed_known",
-  "outcome_unknown", "cancel_requested", "stale",
+  "outcome_unknown", "cancel_requested", "stale", "abandoned",
 ])
 export type InvestigationStatus = z.infer<typeof InvestigationStatusSchema>
 
@@ -55,7 +81,7 @@ export const InvestigationWorkInputSchema = z.object({
   preprocessing_revision: z.string().max(128).optional(),
   purpose: z.enum(["analysis", "independent_verification", "refresh", "recomputation"]).default("analysis"),
   generation: z.number().int().nonnegative().default(0),
-  reserved_cost: z.number().finite().nonnegative().max(MAX_BUDGET),
+  reserved_cost: CostSchema.refine((value) => value <= MAX_BUDGET),
   query: JsonObjectSchema,
 }).strict()
 export type InvestigationWorkInput = z.input<typeof InvestigationWorkInputSchema>
@@ -85,20 +111,25 @@ export interface InvestigationWork {
   work_key: string; submission_id: string; operation: string; status: InvestigationStatus
   query: Record<string, unknown>; parameters: Record<string, unknown>; reserved_cost: number
   actual_cost?: number; external_job_id?: string; result?: InvestigationResult; failure?: string
+  nonacceptance_proven?: boolean
+  authorized_nodes?: string[]
   source_dependencies: string[]; validity_key: string; created_at: string; updated_at: string
   lease_fence: number; purpose: InvestigationWorkInput["purpose"]; generation: number
 }
 export interface InvestigationLedger {
   schema_version: 1; revision: number; scope: Omit<InvestigationScope, "project_directory">
+  identity_version?: 2
   remote_profile?: InvestigationRemoteProfile
   created_at: string; updated_at: string; attachments: Array<{ session_id: string; attached_at: string }>
   cumulative_cost: number; reserved_cost: number; cost_limit: number; max_admissions: number; work: InvestigationWork[]
   checkpoint: InvestigationCheckpoint; history: Array<{ revision: number; at: string; kind: string; ref?: string }>
+  budget_breach?: { work_key: string; reported_cost: number; reserved_cost: number; at: string }
 }
 export interface InvestigationStatusView {
   reference: InvestigationReference; revision: number; cumulative_cost: number; reserved_cost: number; cost_limit: number
   max_admissions: number; admission_count: number; active_jobs: number
-  work: Array<Pick<InvestigationWork, "work_key" | "operation" | "status" | "created_at" | "updated_at" | "external_job_id" | "failure">>
+  budget_breach?: InvestigationLedger["budget_breach"]
+  work: Array<Pick<InvestigationWork, "work_key" | "operation" | "status" | "created_at" | "updated_at" | "external_job_id" | "failure" | "authorized_nodes">>
 }
 
 export interface InvestigationMcpCapabilities {
@@ -139,6 +170,8 @@ const EngineerSchema = z.object({ id: z.uuid(), engineer_ref: z.string().min(1).
 const WorkSchema = z.object({ work_key: z.string().regex(/^[a-f0-9]{64}$/), submission_id: z.uuid(), operation: z.string().min(1).max(128),
   status: InvestigationStatusSchema, query: JsonObjectSchema, parameters: JsonObjectSchema, reserved_cost: z.number().finite().nonnegative(),
   actual_cost: z.number().finite().nonnegative().optional(), external_job_id: z.string().max(1_024).optional(),
+  nonacceptance_proven: z.boolean().optional(),
+  authorized_nodes: z.array(z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/)).max(16).optional(),
   result: InvestigationResultSchema.optional(), failure: z.string().max(2_000).optional(), source_dependencies: z.array(z.string().max(512)).max(128),
   validity_key: z.string().regex(/^[a-f0-9]{64}$/), created_at: IsoDate, updated_at: IsoDate, lease_fence: z.number().int().nonnegative(),
   purpose: z.enum(["analysis", "independent_verification", "refresh", "recomputation"]), generation: z.number().int().nonnegative() }).strict()
@@ -150,9 +183,14 @@ const CheckpointSchema = z.object({ objective: z.string().max(4_000), scope: Jso
   next_action: z.string().max(2_000), evidence_refs: z.array(z.string().max(2_048)).max(256), engineer_contributions: z.array(EngineerSchema).max(128),
   analytical_result: z.object({ status: z.enum(["supported", "contradicted", "unresolved", "blocked"]), claim: z.string().max(4_000),
     evidence_refs: z.array(z.string().max(2_048)).max(128), authority: z.literal("reported_analysis") }).strict().optional() }).strict()
+export const InvestigationNoteSchema = CheckpointSchema.pick({ scope: true, contradictions: true, completed_tests: true,
+  coverage: true, next_action: true, evidence_refs: true, analytical_result: true }).partial()
 const InvestigationLedgerSchema = z.object({ schema_version: z.literal(1), revision: z.number().int().nonnegative(),
+  identity_version: z.literal(2).optional(),
   scope: z.object({ project_id: z.string().min(1).max(512), owner_id: z.string().min(1).max(512), run_id: z.string().min(1).max(512) }).strict(),
   remote_profile: RemoteProfileSchema.optional(),
+  budget_breach: z.object({ work_key: z.string().regex(/^[a-f0-9]{64}$/), reported_cost: CostSchema,
+    reserved_cost: CostSchema, at: IsoDate }).strict().optional(),
   created_at: IsoDate, updated_at: IsoDate,
   attachments: z.array(z.object({ session_id: z.string().min(1).max(256), attached_at: IsoDate }).strict()).max(MAX_ATTACHMENTS),
   cumulative_cost: z.number().finite().nonnegative(), reserved_cost: z.number().finite().nonnegative(), cost_limit: z.number().finite().nonnegative(),
@@ -160,17 +198,18 @@ const InvestigationLedgerSchema = z.object({ schema_version: z.literal(1), revis
   history: z.array(z.object({ revision: z.number().int().positive(), at: IsoDate, kind: z.string().min(1).max(128), ref: z.string().max(2_048).optional() }).strict()).max(MAX_HISTORY),
 }).strict().superRefine((ledger, ctx) => {
   if (ledger.work.length && !ledger.remote_profile) ctx.addIssue({ code: "custom", path: ["remote_profile"], message: "work has no pinned remote profile" })
-  if (ledger.cumulative_cost + ledger.reserved_cost > ledger.cost_limit) ctx.addIssue({ code: "custom", path: ["reserved_cost"], message: "investigation budget invariant violated" })
+  if (!ledger.budget_breach && sumCost(ledger.cumulative_cost, ledger.reserved_cost) > ledger.cost_limit)
+    ctx.addIssue({ code: "custom", path: ["reserved_cost"], message: "investigation budget invariant violated" })
   const keys = new Set<string>(), submissions = new Set<string>()
   let reserved = 0, active = 0
   for (const work of ledger.work) {
     if (keys.has(work.work_key)) ctx.addIssue({ code: "custom", path: ["work"], message: "duplicate work key" })
     if (submissions.has(work.submission_id)) ctx.addIssue({ code: "custom", path: ["work"], message: "duplicate submission id" })
     keys.add(work.work_key); submissions.add(work.submission_id)
-    if (["reserved", "submitting", "running", "outcome_unknown", "cancel_requested"].includes(work.status)) reserved += work.reserved_cost
+    if (["reserved", "submitting", "running", "outcome_unknown", "cancel_requested"].includes(work.status)) reserved = sumCost(reserved, work.reserved_cost)
     if (["submitting", "running", "outcome_unknown", "cancel_requested"].includes(work.status)) active++
   }
-  if (reserved !== ledger.reserved_cost) ctx.addIssue({ code: "custom", path: ["reserved_cost"], message: "reservation total does not match work ledger" })
+  if (investigationCostUnits(reserved) !== investigationCostUnits(ledger.reserved_cost)) ctx.addIssue({ code: "custom", path: ["reserved_cost"], message: "reservation total does not match work ledger" })
   if (active > MAX_CONCURRENT_EXPENSIVE_JOBS) ctx.addIssue({ code: "custom", path: ["work"], message: "concurrent expensive job limit exceeded" })
   if (ledger.work.length > ledger.max_admissions) ctx.addIssue({ code: "custom", path: ["work"], message: "admission count exceeds configured limit" })
 })
@@ -205,17 +244,25 @@ function remoteProfile(capabilities: InvestigationMcpCapabilities): Investigatio
 function workIdentity(scope: InvestigationLedger["scope"], port: InvestigationMcpCapabilities, input: z.infer<typeof InvestigationWorkInputSchema>): { key: string; validity: string } {
   const semantics = { project_id: scope.project_id, principal_id: port.principal_id, server_id: port.server_id,
     server_revision: port.server_revision, tool_id: port.tool_id, tool_schema_revision: port.tool_schema_revision,
-    operation: input.operation, recipe_version: input.recipe_version, parameters: input.parameters,
+    operation: input.operation, recipe_version: input.recipe_version,
     cohort: input.cohort ?? null, as_of: input.as_of ?? null, source_dependencies: [...new Set(input.source_dependencies)].sort(),
     preprocessing_revision: input.preprocessing_revision ?? null, purpose: input.purpose, generation: input.generation,
     query: input.query }
   const validity = digest(safeJson({ dependencies: [...new Set(input.source_dependencies)].sort(), cohort: input.cohort ?? null, as_of: input.as_of ?? null }))
-  return { key: digest(safeJson({ version: 1, ...semantics })), validity }
+  return { key: digest(safeJson({ version: 2, ...semantics })), validity }
+}
+function canonicalAsOf(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined
+  if (z.iso.date().safeParse(value).success) return value + "T00:00:00.000Z"
+  if (!z.iso.datetime({ offset: true }).safeParse(value).success)
+    throw new Error("as_of requires an ISO date or a timestamp with an explicit timezone")
+  return new Date(value).toISOString()
 }
 function blank(scope: InvestigationScope, costLimit: number, now: string, maxAdmissions = DEFAULT_MAX_ADMISSIONS): InvestigationLedger {
   if (!Number.isFinite(costLimit) || costLimit < 0 || costLimit > MAX_BUDGET) throw new Error("invalid investigation cost limit")
+  investigationCostUnits(costLimit)
   if (!Number.isSafeInteger(maxAdmissions) || maxAdmissions < 1 || maxAdmissions > MAX_WORK) throw new Error("invalid investigation admission limit")
-  return { schema_version: 1, revision: 0, scope: scopeOnly(scope), created_at: now, updated_at: now,
+  return { schema_version: 1, identity_version: 2, revision: 0, scope: scopeOnly(scope), created_at: now, updated_at: now,
     attachments: [], cumulative_cost: 0, reserved_cost: 0, cost_limit: costLimit, max_admissions: maxAdmissions, work: [],
     checkpoint: { objective: "", scope: {}, hypotheses: [], contradictions: [], completed_tests: [], coverage: {}, next_action: "", evidence_refs: [], engineer_contributions: [] }, history: [] }
 }
@@ -250,9 +297,10 @@ export class InvestigationStore {
     return { reference: this.reference, revision: ledger.revision, cumulative_cost: ledger.cumulative_cost,
       reserved_cost: ledger.reserved_cost, cost_limit: ledger.cost_limit, max_admissions: ledger.max_admissions,
       admission_count: ledger.work.length,
+      ...(ledger.budget_breach ? { budget_breach: ledger.budget_breach } : {}),
       active_jobs: ledger.work.filter((w) => ["submitting", "running", "outcome_unknown", "cancel_requested"].includes(w.status)).length,
-      work: ledger.work.map(({ work_key, operation, status, created_at, updated_at, external_job_id, failure }) =>
-        ({ work_key, operation, status, created_at, updated_at, ...(external_job_id ? { external_job_id } : {}), ...(failure ? { failure } : {}) })) }
+      work: ledger.work.map(({ work_key, operation, status, created_at, updated_at, external_job_id, failure, authorized_nodes }) =>
+        ({ work_key, operation, status, created_at, updated_at, authorized_nodes: authorized_nodes ?? [], ...(external_job_id ? { external_job_id } : {}), ...(failure ? { failure } : {}) })) }
   }
 
   private initialize(): void {
@@ -372,22 +420,26 @@ export class InvestigationStore {
 
   async admit(inputValue: InvestigationWorkInput, capabilities: InvestigationMcpCapabilities): Promise<InvestigationWork> {
     const input = InvestigationWorkInputSchema.parse(inputValue)
+    input.as_of = canonicalAsOf(input.as_of)
     this.assertCapabilities(capabilities)
     const current = this.refresh(), identity = workIdentity(current.scope, capabilities, input)
     let result!: InvestigationWork
     await this.mutate("work_reserved", (l) => {
+      if (l.identity_version !== 2 && l.work.length) throw new Error("legacy investigation identity requires operator review; admission is blocked")
+      l.identity_version = 2
       this.assertPinnedProfile(l, capabilities)
       if (!l.remote_profile) l.remote_profile = remoteProfile(capabilities)
       const existing = l.work.find((w) => w.work_key === identity.key)
       if (existing) { result = existing; return }
+      if (l.budget_breach) throw new Error("investigation budget breach requires operator review; new work is blocked")
       if (l.work.length >= Math.min(MAX_WORK, l.max_admissions)) throw new Error("investigation admission count exhausted")
-      if (l.cumulative_cost + l.reserved_cost + input.reserved_cost > l.cost_limit) throw new Error("investigation cost quota exhausted")
+      if (sumCost(l.cumulative_cost, l.reserved_cost, input.reserved_cost) > l.cost_limit) throw new Error("investigation cost quota exhausted")
       const now = this.now().toISOString()
       result = { work_key: identity.key, submission_id: randomUUID(), operation: input.operation, status: "reserved",
         query: input.query, parameters: input.parameters, reserved_cost: input.reserved_cost, source_dependencies: input.source_dependencies,
         validity_key: identity.validity, created_at: now, updated_at: now, lease_fence: l.revision + 1,
         purpose: input.purpose ?? "analysis", generation: input.generation ?? 0 }
-      l.work.push(result); l.reserved_cost += input.reserved_cost
+      l.work.push(result); l.reserved_cost = sumCost(l.reserved_cost, input.reserved_cost)
     })
     return structuredClone(result)
   }
@@ -401,6 +453,11 @@ export class InvestigationStore {
       throw new Error("investigation transport capabilities are unqualified or out of scope")
     }
     remoteProfile(c)
+  }
+  authorizeNodes(workKey: string, nodes: readonly string[]): Promise<InvestigationWork> {
+    return this.updateWork(workKey, "work_order_authorized", (_ledger, work) => {
+      work.authorized_nodes = [...new Set([...(work.authorized_nodes ?? []), ...nodes])].sort()
+    })
   }
   private assertPinnedProfile(ledger: InvestigationLedger, capabilities: InvestigationMcpCapabilities): void {
     if (ledger.work.length && !ledger.remote_profile) throw new Error("investigation remote profile is missing")
@@ -429,10 +486,11 @@ export class InvestigationStore {
     if (before.status !== "reserved") throw new Error(`work cannot dispatch from ${before.status}`)
     const submitting = await this.updateWork(workKey, "submission_intent", (l, w) => {
       this.assertPinnedProfile(l, port.capabilities)
+      if (l.budget_breach) throw new Error("investigation budget breach requires operator review; dispatch is blocked")
       if (w.status !== "reserved") throw new Error(`work cannot dispatch from ${w.status}`)
       const active = l.work.filter((item) => ["submitting", "running", "outcome_unknown", "cancel_requested"].includes(item.status)).length
       if (active >= MAX_CONCURRENT_EXPENSIVE_JOBS) throw new Error("investigation concurrent job limit reached")
-      w.status = "submitting"
+      w.status = "submitting"; w.nonacceptance_proven = undefined
     })
     let outcome: InvestigationSubmission
     try {
@@ -440,11 +498,13 @@ export class InvestigationStore {
         operation: submitting.operation, query: submitting.query })
       if (Buffer.byteLength(safeJson(outcome)) > port.capabilities.response_limit_bytes) throw new Error("MCP response exceeds qualified response bound")
     } catch (error) {
+      if (error instanceof InvestigationTransportError && error.submission === "not_submitted")
+        return this.recordSubmissionOutcome(workKey, { kind: "failed_known", failure: error.code, actual_cost: 0 }, submitting.lease_fence, true)
       return await this.updateWork(workKey, "submission_ambiguous", (_l, w) => { w.status = "outcome_unknown"; w.failure = safeError(error) }, submitting.lease_fence)
     }
     return await this.recordSubmissionOutcome(workKey, outcome, submitting.lease_fence)
   }
-  private recordSubmissionOutcome(key: string, outcome: InvestigationSubmission | InvestigationReconciliation, expectedFence?: number): Promise<InvestigationWork> {
+  private recordSubmissionOutcome(key: string, outcome: InvestigationSubmission | InvestigationReconciliation, expectedFence?: number, localNonacceptance = false): Promise<InvestigationWork> {
     return this.updateWork(key, `submission_${outcome.kind}`, (l, w) => {
       if (!["submitting", "running", "outcome_unknown", "cancel_requested"].includes(w.status)) throw new Error("work is no longer awaiting a remote outcome")
       if (outcome.kind === "running") {
@@ -454,14 +514,19 @@ export class InvestigationStore {
         if (w.status !== "cancel_requested") w.status = "running"
       }
       else if (outcome.kind === "result") { w.status = "result_recorded"; w.result = InvestigationResultSchema.parse(outcome.result); w.actual_cost = outcome.actual_cost }
-      else if (outcome.kind === "failed_known") { w.status = "failed_known"; w.failure = safeError(outcome.failure); w.actual_cost = outcome.actual_cost }
-      else if (outcome.kind === "not_found" && outcome.proves_not_accepted && !w.external_job_id && w.status !== "cancel_requested") { w.status = "reserved" }
+      else if (outcome.kind === "failed_known") { w.status = "failed_known"; w.failure = safeError(outcome.failure); w.actual_cost = outcome.actual_cost; w.nonacceptance_proven = localNonacceptance }
+      else if (outcome.kind === "not_found" && outcome.proves_not_accepted && !w.external_job_id && w.status !== "cancel_requested") {
+        w.status = "failed_known"; w.actual_cost = 0; w.failure = "submission_proved_not_accepted"; w.nonacceptance_proven = true
+      }
       else if (w.status !== "cancel_requested") { w.status = "outcome_unknown"; w.failure = outcome.kind === "unknown" ? safeError(outcome.reason) : "unrecognized remote state" }
       if (w.status === "result_recorded" || w.status === "failed_known") {
         const cost = w.actual_cost
-        if (cost !== undefined && (!Number.isFinite(cost) || cost < 0 || cost > w.reserved_cost)) throw new Error("reported cost exceeds reservation")
-        l.reserved_cost -= w.reserved_cost
-        l.cumulative_cost += cost ?? w.reserved_cost
+        if (cost !== undefined) investigationCostUnits(cost)
+        if (cost !== undefined && cost > w.reserved_cost) l.budget_breach ??= {
+          work_key: w.work_key, reported_cost: cost, reserved_cost: w.reserved_cost, at: this.now().toISOString(),
+        }
+        l.reserved_cost = (investigationCostUnits(l.reserved_cost) - investigationCostUnits(w.reserved_cost)) / COST_SCALE
+        l.cumulative_cost = sumCost(l.cumulative_cost, cost ?? w.reserved_cost)
         w.reserved_cost = 0
       }
     }, expectedFence)
@@ -524,6 +589,37 @@ export class InvestigationStore {
   }
   requestCancel(workKey: string): Promise<InvestigationWork> {
     return this.updateWork(workKey, "cancel_requested", (_l, w) => { if (w.status !== "running") throw new Error("only running work can be cancelled"); w.status = "cancel_requested" })
+  }
+  /** Operator-only local disposition. Uncertain live compute still needs a remote terminal proof. */
+  retryUnaccepted(workKey: string, reservation: number, operator: { engineer_ref: string; statement: string }): Promise<InvestigationWork> {
+    investigationCostUnits(reservation)
+    if (reservation > MAX_BUDGET) throw new Error("reservation exceeds budget bound")
+    const contribution = EngineerSchema.parse({ ...operator, id: randomUUID(), scope: `retry-unaccepted:${workKey}`,
+      classification: "reported_knowledge", received_at: this.now().toISOString() })
+    return this.updateWork(workKey, "operator_retry_unaccepted", (ledger, work) => {
+      if (ledger.budget_breach || ledger.identity_version !== 2) throw new Error("investigation requires budget or identity review")
+      if (work.status !== "failed_known" || !work.nonacceptance_proven || work.actual_cost !== 0 || work.external_job_id || work.result)
+        throw new Error("retry requires proof of zero-cost nonacceptance; uncertain work cannot be replayed")
+      if (sumCost(ledger.cumulative_cost, ledger.reserved_cost, reservation) > ledger.cost_limit) throw new Error("investigation cost quota exhausted")
+      ledger.reserved_cost = sumCost(ledger.reserved_cost, reservation)
+      ledger.checkpoint.engineer_contributions.push(contribution)
+      work.status = "reserved"; work.reserved_cost = reservation; work.actual_cost = undefined; work.failure = undefined
+      // Keep the original submission ID: even this explicit retry retains server idempotency.
+    })
+  }
+  abandon(workKey: string, operator: { engineer_ref: string; statement: string }): Promise<InvestigationWork> {
+    const contribution = EngineerSchema.parse({ ...operator, id: randomUUID(), scope: `abandon:${workKey}`,
+      classification: "reported_knowledge", received_at: this.now().toISOString() })
+    return this.updateWork(workKey, "operator_abandoned", (ledger, work) => {
+      if (["submitting", "running", "outcome_unknown", "cancel_requested"].includes(work.status))
+        throw new Error("cannot abandon potentially active remote work; reconcile or cancel to a proved terminal outcome")
+      if (work.status === "reserved") {
+        ledger.reserved_cost = (investigationCostUnits(ledger.reserved_cost) - investigationCostUnits(work.reserved_cost)) / COST_SCALE
+        work.reserved_cost = 0
+      }
+      ledger.checkpoint.engineer_contributions.push(contribution)
+      work.status = "abandoned"; work.failure = "operator_abandoned"
+    })
   }
   async cancel(workKey: string, port: InvestigationMcpPort): Promise<InvestigationWork> {
     this.assertCapabilities(port.capabilities)

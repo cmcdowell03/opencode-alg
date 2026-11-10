@@ -85,16 +85,18 @@ function toolOutputText(body: any): string {
     .join("\n").slice(-BODY_LIMIT)
 }
 
-function queryPayload(): string {
-  return JSON.stringify({ operation: "bounded-read", recipe_version: "fixture-v1", parameters: { metric: "headless-count" },
-    source_dependencies: ["synthetic://alg-headless/source/catalog-v1"], purpose: "analysis", generation: 0,
-    reserved_cost: 0, query: { select: "count", limit: 10 } })
+function queryPayload() {
+  return { operation: "bounded-read", recipe_version: "fixture-v1", parameters: { metric: "headless-count" },
+    source_dependencies: ["synthetic://alg-headless/source/catalog-v1"], query: { select: "count", limit: 10 } }
 }
 
 export function chooseSyntheticResponse(phase: HostRequestPhase, toolStep: number, body: any): { kind: "tool" | "text"; name?: string; args?: Record<string, any>; text?: string; receipt: ProviderRequestReceipt } {
   const messagesText = requestText(body)
   const names = Array.isArray(body?.tools) ? body.tools.map((item: any) => String(item?.function?.name ?? item?.name ?? "")).filter(Boolean) : []
   const outputText = toolOutputText(body)
+  const keyText = messagesText.replaceAll('\\"', '"')
+  const workKey = keyText.match(/WORK_KEY:([a-f0-9]{64})/)?.[1] ?? keyText.match(/"work_key"\s*:\s*"([a-f0-9]{64})"/)?.[1]
+  const keyMarker = workKey ? ` WORK_KEY:${workKey}` : ""
   const calledTools = Array.isArray(body?.messages) ? body.messages.flatMap((message: any) => (message?.tool_calls ?? []).map((call: any) => String(call?.function?.name ?? ""))).filter(Boolean) : []
   const receipt: ProviderRequestReceipt = {
     phase, tool_names: names.slice(0, 32), called_tools: calledTools.slice(0, 16),
@@ -105,13 +107,14 @@ export function chooseSyntheticResponse(phase: HostRequestPhase, toolStep: numbe
   }
   if (phase === "initial" && toolStep === 0) return { kind: "tool", name: "alg_context_status", args: { operation: "headless-smoke" }, receipt }
   if (phase === "initial" && toolStep === 1) return { kind: "tool", name: "alg_plan", args: { goal: "Run bounded synthetic data investigation acceptance", template: "data-investigation", criteria: ["Use only deterministic local fixture data"], detail: "compact" }, receipt }
-  if (phase === "initial" && toolStep === 2) return { kind: "tool", name: "alg_investigation", args: { action: "query", payload_json: queryPayload() }, receipt }
-  if (phase === "initial") return { kind: "text", text: receipt.saw_query_output ? `Initial host query completed. ${PERSISTED_REFERENCE} ${PERSISTED_RESULT}` : "INITIAL_HOST_QUERY_RESULT_NOT_OBSERVED", receipt }
+  if (phase === "initial" && toolStep === 2) return { kind: "tool", name: "alg_investigation", args: { request: { action: "admit", input: queryPayload(), node_ids: [] } }, receipt }
+  if (phase === "initial" && toolStep === 3) return { kind: "tool", name: "alg_investigation", args: { request: { action: "query", work_key: workKey ?? "0".repeat(64) } }, receipt }
+  if (phase === "initial") return { kind: "text", text: receipt.saw_query_output ? `Initial host query completed. ${PERSISTED_REFERENCE} ${PERSISTED_RESULT}${keyMarker}` : "INITIAL_HOST_QUERY_RESULT_NOT_OBSERVED", receipt }
   if (phase === "compaction") {
     const ok = receipt.saw_initial_reference && receipt.saw_initial_result
-    return { kind: "text", text: ok ? `Preserved ${PERSISTED_REFERENCE} and ${PERSISTED_RESULT}` : "COMPACTION_INPUT_MISSING_INITIAL_EVIDENCE", receipt }
+    return { kind: "text", text: ok ? `Preserved ${PERSISTED_REFERENCE} and ${PERSISTED_RESULT}${keyMarker}` : "COMPACTION_INPUT_MISSING_INITIAL_EVIDENCE", receipt }
   }
-  if (phase === "followup" && toolStep === 0) return { kind: "tool", name: "alg_investigation", args: { action: "query", payload_json: queryPayload() }, receipt }
+  if (phase === "followup" && toolStep === 0) return { kind: "tool", name: "alg_investigation", args: { request: { action: "query", work_key: workKey ?? "0".repeat(64) } }, receipt }
   if (phase === "followup") {
     return { kind: "text", text: receipt.saw_persisted_reference && receipt.saw_query_output ? `Recovered ${PERSISTED_REFERENCE} ${PERSISTED_RESULT}` : "FOLLOWUP_QUERY_OR_CONTEXT_MISSING_PERSISTED_EVIDENCE", receipt }
   }
@@ -365,11 +368,11 @@ function toolNames(message: any): string[] {
 
 function transcriptToolNames(messages: any[]): string[] { return messages.flatMap((message) => toolNames(message)).slice(0, 64) }
 
-function completedInvestigationOutputs(value: any): Array<{ status: string; work_key: string | null; manifest_ref: string | null; digest: string | null }> {
+export function completedInvestigationOutputs(value: any): Array<{ status: string; work_key: string | null; manifest_ref: string | null; digest: string | null }> {
   const messages = Array.isArray(value) ? value : [value]
   const outputs: Array<{ status: string; work_key: string | null; manifest_ref: string | null; digest: string | null }> = []
   for (const message of messages) for (const part of Array.isArray(message?.parts) ? message.parts : []) {
-    if (part?.type !== "tool" || part.tool !== "alg_investigation" || part.state?.status !== "completed" || typeof part.state?.output !== "string") continue
+    if (part?.type !== "tool" || part.tool !== "alg_investigation" || part.state?.status !== "completed" || typeof part.state?.output !== "string" || part.state?.input?.request?.action !== "query") continue
     try {
       let value: any = JSON.parse(part.state.output)
       if (typeof value?.output === "string") { try { value = JSON.parse(value.output) } catch { /* output itself is the bounded returned text */ } }

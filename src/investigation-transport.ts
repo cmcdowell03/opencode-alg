@@ -3,7 +3,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { z } from "zod"
 import { InvestigationAdapterSchema, type InvestigationAdapter } from "./operational-options.ts"
 import { hashObject, assertNoSecrets } from "./session-memory/store.ts"
-import { InvestigationResultSchema, type InvestigationMcpPort, type InvestigationMcpCapabilities,
+import { InvestigationResultSchema, InvestigationTransportError, type InvestigationMcpPort, type InvestigationMcpCapabilities,
   type InvestigationReconciliation, type InvestigationSubmission, type InvestigationResult, type InvestigationWork } from "./investigation/index.ts"
 
 const SubmissionSchema = z.discriminatedUnion("kind", [
@@ -32,10 +32,10 @@ export class InvestigationHttpPort implements InvestigationMcpPort {
     }
   }
 
-  private async connection<T>(action: (client: Client) => Promise<T>): Promise<T> {
-    if (Date.parse(this.profile.expiresAt) <= Date.now()) throw new Error("MCP qualification profile expired")
+  private async connection<T>(action: (client: Client, beforeCall: () => void) => Promise<T>): Promise<T> {
+    if (Date.parse(this.profile.expiresAt) <= Date.now()) throw new InvestigationTransportError("profile_expired", "not_submitted")
     const token = this.profile.tokenEnv ? this.env[this.profile.tokenEnv] : undefined
-    if (this.profile.tokenEnv && !token) throw new Error("MCP credential reference is unavailable")
+    if (this.profile.tokenEnv && !token) throw new InvestigationTransportError("credential_unavailable", "not_submitted")
     const boundedFetch = async (url: string | URL, init?: RequestInit): Promise<Response> => {
       if (new URL(String(url)).href !== new URL(this.profile.endpoint).href) throw new Error("MCP endpoint changed")
       const signal = init?.signal
@@ -60,6 +60,7 @@ export class InvestigationHttpPort implements InvestigationMcpPort {
       requestInit: { redirect: "error", ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}) },
       reconnectionOptions: { maxRetries: 0, initialReconnectionDelay: 1000, maxReconnectionDelay: 1000, reconnectionDelayGrowFactor: 1 },
     })
+    let dispatched = false
     try {
       await client.connect(transport, { timeout: this.profile.timeoutMs })
       const server = client.getServerVersion()
@@ -74,19 +75,28 @@ export class InvestigationHttpPort implements InvestigationMcpPort {
           throw new Error("MCP tool schema differs from qualified profile")
         }
       }
-      return await action(client)
+      return await action(client, () => { dispatched = true })
     } catch {
       // Never return server text, credential values or SDK diagnostics into model context.
-      throw new Error("MCP operation unavailable; reconcile durable submission before retry")
+      throw new InvestigationTransportError(dispatched ? "remote_outcome_unknown" : "qualification_failed",
+        dispatched ? "possibly_submitted" : "not_submitted")
     } finally { await client.close().catch(() => {}) }
   }
 
   async qualify(): Promise<void> { await this.connection(async () => {}) }
+  private parse<T>(schema: z.ZodType<T>, value: unknown): T {
+    const parsed = schema.safeParse(value)
+    if (!parsed.success) throw new InvestigationTransportError("response_invalid", "possibly_submitted")
+    return parsed.data
+  }
   private async call(name: string, args: Record<string, unknown>): Promise<unknown> {
-    const body = JSON.stringify(args)
-    if (Buffer.byteLength(body) > 32_768) throw new Error("MCP request exceeds bound")
-    assertNoSecrets(body)
-    return this.connection(async (client) => {
+    try {
+      const body = JSON.stringify(args)
+      if (Buffer.byteLength(body) > 32_768) throw new Error("request bound")
+      assertNoSecrets(body)
+    } catch { throw new InvestigationTransportError("request_invalid", "not_submitted") }
+    return this.connection(async (client, beforeCall) => {
+      beforeCall()
       const response = await client.callTool({ name, arguments: args }, undefined, { timeout: this.profile.timeoutMs })
       if (response.isError) throw new Error("MCP tool error")
       let value: unknown = response.structuredContent
@@ -104,9 +114,9 @@ export class InvestigationHttpPort implements InvestigationMcpPort {
     })
   }
   async submit(request: Parameters<InvestigationMcpPort["submit"]>[0]): Promise<InvestigationSubmission> {
-    if (!this.profile.operations.includes(request.operation)) throw new Error("MCP operation outside qualified profile")
+    if (!this.profile.operations.includes(request.operation)) throw new InvestigationTransportError("operation_not_allowed", "not_submitted")
     // These are operator-qualified server-enforced limits. HTTP timeout only bounds our wait.
-    return SubmissionSchema.parse(await this.call(this.profile.submit.name, {
+    return this.parse(SubmissionSchema, await this.call(this.profile.submit.name, {
       ...request, project_id: this.capabilities.project_id, principal_id: this.capabilities.principal_id,
       execution_limits: {
         max_duration_ms: this.profile.executionLimits.maxDurationMs,
@@ -117,10 +127,10 @@ export class InvestigationHttpPort implements InvestigationMcpPort {
     }))
   }
   async lookup(submissionId: string): Promise<InvestigationReconciliation> {
-    return LookupSchema.parse(await this.call(this.profile.lookup.name, { submission_id: submissionId }))
+    return this.parse(LookupSchema, await this.call(this.profile.lookup.name, { submission_id: submissionId }))
   }
   async validateResult(result: InvestigationResult, work: InvestigationWork) {
-    return ValiditySchema.parse(await this.call(this.profile.validateResult.name, {
+    return this.parse(ValiditySchema, await this.call(this.profile.validateResult.name, {
       manifest_ref: result.manifest_ref, digest: result.digest, work_key: work.work_key,
       validity_key: work.validity_key, source_dependencies: work.source_dependencies,
     }))

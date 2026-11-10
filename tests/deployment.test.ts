@@ -23,7 +23,7 @@ function execute(command: string, args: string[], cwd: string): string {
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), "alg deployment space "))
   roots.push(root)
-  const pkg = { name: "opencode-alg", version: "0.4.1" }
+  const pkg = { name: "opencode-alg", version: "0.5.0" }
   const lock = { name: pkg.name, version: pkg.version, packages: { "": { name: pkg.name, version: pkg.version } } }
   writeFileSync(join(root, "package.json"), JSON.stringify(pkg))
   writeFileSync(join(root, "package-lock.json"), JSON.stringify(lock))
@@ -103,11 +103,11 @@ describe("offline deployment bundle", () => {
       dependencies[name!] = `file:vendor/${packed[0]!.filename}`
     }
     const pkg = {
-      name: "opencode-alg", version: "0.4.1", type: "module", dependencies,
+      name: "opencode-alg", version: "0.5.0", type: "module", dependencies,
       files: ["src/**/*.ts", "agents", "templates", "scripts", "capabilities/excel", "vendor", "package-lock.json"],
       exports: { ".": "./src/index.ts", "./server": "./src/server.ts", "./tui": "./src/tui.ts" },
       opencode: { server: "./src/server.ts", tui: "./src/tui.ts" },
-      opencodeAlg: { durableState: { format: "alg-run-state", currentSchema: 2, compatibleSchemas: [1, 2], compatiblePackageVersions: ["0.4.1"] } },
+      opencodeAlg: { durableState: { format: "alg-run-state", currentSchema: 2, compatibleSchemas: [1, 2], compatiblePackageVersions: ["0.5.0"] } },
     }
     writeFileSync(join(source, "package.json"), `${JSON.stringify(pkg, null, 2)}\n`)
     writeFileSync(join(source, ".gitignore"), "node_modules/\n")
@@ -117,11 +117,11 @@ describe("offline deployment bundle", () => {
     execute("git", ["remote", "add", "origin", "https://example.invalid/org/opencode-alg.git"], source)
     execute("git", ["add", "."], source)
     execute("git", ["-c", "user.name=ALG Test", "-c", "user.email=alg@example.invalid", "commit", "-m", "old stable fixture"], source)
-    execute("git", ["tag", "v0.4.1"], source)
-    const old = runManager({ command: "install", configDir: config, source, tag: "v0.4.1" })
+    execute("git", ["tag", "v0.5.0"], source)
+    const old = runManager({ command: "install", configDir: config, source, tag: "v0.5.0" })
     expect(old.ok).toBe(true)
-    pkg.version = "0.5.0"
-    pkg.opencodeAlg.durableState.compatiblePackageVersions = ["0.4.1", "0.5.0"]
+    pkg.version = "0.5.1"
+    pkg.opencodeAlg.durableState.compatiblePackageVersions = ["0.5.0", "0.5.1"]
     writeFileSync(join(source, "package.json"), `${JSON.stringify(pkg, null, 2)}\n`)
     execute(npm.executable, [...npm.argsPrefix, "install", "--package-lock-only", "--offline", "--ignore-scripts", "--no-audit", "--no-fund"], source)
     execute("git", ["add", "package.json", "package-lock.json"], source)
@@ -162,7 +162,7 @@ describe("offline deployment bundle", () => {
     const candidateReceipt = readFileSync(receiptPath)
     const receipt = JSON.parse(candidateReceipt.toString("utf8"))
     const candidate = receipt.generations.find((generation: { source_kind?: string }) => generation.source_kind === "bundle")
-    expect(candidate?.version).toBe("0.5.0")
+    expect(candidate?.version).toBe("0.5.1")
     expect(receipt.active_generation).toBe(candidate?.id)
     expect(receipt.channel).toBe("candidate")
     expect(existsSync(join(candidate.package_root, ".git"))).toBe(false)

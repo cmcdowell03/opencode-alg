@@ -1,10 +1,12 @@
 # Changelog
 
-## 0.5.0 candidate — V1 workspace and investigations
+## 0.5.1 candidate — V1 workspace and investigations
 
-Adds opt-in scoped workspace requirements, the fixed data-investigation graph, a durable and bounded query ledger, qualified MCP transport, engineer review and compaction recovery. Adds prepared offline deployment for matching Linux/Bash and Windows/PowerShell targets. No OpenCode 2 work or automatic skill/graph promotion.
+Adds opt-in scoped workspace requirements, the fixed data-investigation graph, a durable and bounded query ledger, reference MCP transport, engineer review and compaction recovery. Adds prepared offline deployment for matching Linux/Bash and Windows/PowerShell targets. No OpenCode 2 work or automatic skill/graph promotion.
 
-New investigation and checkpoint fields require the 0.5 reader. Older releases do not declare compatibility with 0.5 and must not be rolled back over state produced by this candidate. Keep the new reader available; preserve project state and use the managed compatibility check. This is a PR candidate, not a published release tag.
+Review fixes add exact cost accounting, terminal overrun receipts, proven-nonacceptance recovery, host-owned identity fields, assigned work orders, and structured tool requests. The real datalake adapter, result-content reader and autonomous job continuation remain unqualified.
+
+New investigation fields require the 0.5.1 reader. Older readers, including 0.5.0, must not be rolled back over state produced by this candidate. Keep the new reader available; preserve project state and use the managed compatibility check. This is a PR candidate, not a published release tag.
 
 ## Unreleased
 
