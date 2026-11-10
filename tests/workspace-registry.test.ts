@@ -63,7 +63,9 @@ describe("workspace registry loading", () => {
     try {
       try {
         symlinkSync(outside, join(root, ".opencode", "ALG.workspace.json"))
-        expect(readWorkspaceRegistry(root).state).toBe("corrupt")
+        const result = readWorkspaceRegistry(root)
+        expect(result.state).toBe("corrupt")
+        if (result.state === "corrupt") expect(result.reason).toBeTruthy()
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== "EPERM") throw error
       }

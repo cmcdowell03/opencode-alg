@@ -90,8 +90,8 @@ export type WorkspaceRegistryRead =
 
 export function readWorkspaceRegistry(projectDirectory: string): WorkspaceRegistryRead {
   const project = canonicalDirectory(projectDirectory)
-  const path = resolveContainedPath(project, ".opencode", "ALG.workspace.json")
   try {
+    const path = resolveContainedPath(project, ".opencode", "ALG.workspace.json")
     const stat = lstatSync(path)
     if (!stat.isFile() || stat.isSymbolicLink()) return { state: "corrupt", path: WORKSPACE_REGISTRY_PATH, reason: "registry_not_regular_file" }
     if (stat.size > WORKSPACE_REGISTRY_MAX_BYTES) return { state: "corrupt", path: WORKSPACE_REGISTRY_PATH, reason: "registry_exceeds_byte_limit" }
