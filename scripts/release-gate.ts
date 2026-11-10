@@ -235,7 +235,9 @@ export function validatePackedInventory(
   }
   const sorted = [...paths].sort()
   if (JSON.stringify(sorted) !== JSON.stringify(expected)) throw new Error("npm pack inventory differs from the complete reviewed allowlist")
-  if (files.some((file) => file.mode !== 420)) throw new Error("npm pack key file modes must all be 0644")
+  if (files.some((file) => file.mode !== 420 && !(file.mode === 493 && ["scripts/alg.sh", "scripts/install.sh"].includes(file.path)))) {
+    throw new Error("npm pack file modes must be 0644, or 0755 for the reviewed Bash launchers")
+  }
   return { paths: sorted, sha256: sha256(Buffer.from(`${sorted.join("\n")}\n`, "utf8")) }
 }
 
@@ -465,7 +467,7 @@ export function validateReleaseEvidenceSemantics(value: unknown, root = ROOT): R
   }
   for (const file of parsedFiles) {
     const current = join(canonicalRoot, ...file.path.split("/"))
-    if (!existsSync(current) || !lstatSync(current).isFile() || statSync(current).size !== file.size || file.mode !== 420) {
+    if (!existsSync(current) || !lstatSync(current).isFile() || statSync(current).size !== file.size || file.mode !== ((statSync(current).mode & 0o111) ? 493 : 420)) {
       throw new Error(`Release evidence packed file metadata differs from current package: ${file.path}`)
     }
   }

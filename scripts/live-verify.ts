@@ -1353,7 +1353,7 @@ export function findServerStartupLine(output: string, skillEvolutionEnabled: boo
   const quotedJsonString = '"(?:[^"\\\\\u0000-\u001f]|\\\\(?:["\\\\/bfnrt]|u[0-9a-fA-F]{4}))+"'
   const structured = new RegExp(
     `^timestamp=\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z level=INFO ` +
-    `run=[A-Za-z0-9._:-]+ message=(${quotedJsonString}) directory=(${quotedJsonString}) ` +
+    `run=[A-Za-z0-9._:-]+ message=(${quotedJsonString}) directory=(${quotedJsonString}|[^\\s"\\u0000-\\u001f]+) ` +
     `skill_evolution_enabled=false(?: configuration_source=defaults configuration_sidecar_present=false ` +
     `deployment_identity_protocol=alg-runtime-identity-v1 deployment_build=(opencode-alg@[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?) ` +
     `source_manifest_at_module_load=([a-f0-9]{64}))?$`,
@@ -1363,7 +1363,7 @@ export function findServerStartupLine(output: string, skillEvolutionEnabled: boo
     const match = structured.exec(line)
     if (!match) return false
     try {
-      const message = JSON.parse(match[1]!), directory = JSON.parse(match[2]!)
+      const message = JSON.parse(match[1]!), directory = match[2]!.startsWith('"') ? JSON.parse(match[2]!) : match[2]!
       const build = match[3], digest = match[4]
       const expectedMessage = build && digest ? `${expected} ${runtimeIdentityStartupMessage({
         protocol: ALG_RUNTIME_IDENTITY_PROTOCOL, build, source_manifest_at_module_load: digest,

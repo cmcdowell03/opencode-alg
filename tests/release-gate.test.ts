@@ -139,7 +139,7 @@ function semanticEvidence(livePath: string) {
   const liveBytes = Buffer.from(`${JSON.stringify(live)}\n`)
   const livePublication = persistImmutableLiveEvidence(livePath, liveBytes)
   const paths = expectedPackedPaths(ROOT)
-  const packedFiles = paths.map((path) => ({ path, size: statSync(join(ROOT, ...path.split("/"))).size, mode: 420 }))
+  const packedFiles = paths.map((path) => ({ path, size: statSync(join(ROOT, ...path.split("/"))).size, mode: (statSync(join(ROOT, ...path.split("/"))).mode & 0o111) ? 493 : 420 }))
   const inventory = validatePackedInventory(packedFiles, paths)
   const excel = verifyExcelManifest(ROOT)
   const duckdb = verifyDuckDbManifest(ROOT)
@@ -579,6 +579,8 @@ describe("bounded release-gate evidence", () => {
   test("complete package allowlist rejects extras, missing paths, duplicates, unsafe paths, and bad modes", () => {
     const expected = expectedPackedPaths()
     const files = expected.map((path) => ({ path, mode: 420 }))
+    expect(() => validatePackedInventory(files.map((file) => ["scripts/alg.sh", "scripts/install.sh"].includes(file.path) ? { ...file, mode: 493 } : file), expected)).not.toThrow()
+    expect(() => validatePackedInventory(files.map((file) => file.path === "scripts/alg.sh" ? { ...file, mode: 511 } : file), expected)).toThrow("0644")
     expect(validatePackedInventory(files, expected).paths).toEqual(expected)
     expect(() => validatePackedInventory([...files, { path: "scripts/unexpected.ts", mode: 420 }], expected)).toThrow("complete reviewed allowlist")
     expect(() => validatePackedInventory(files.slice(1), expected)).toThrow("complete reviewed allowlist")
