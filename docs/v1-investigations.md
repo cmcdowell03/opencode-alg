@@ -24,7 +24,7 @@ Before using a real deployment, exercise duplicate submission, accepted-request/
 
 ## Start and resume
 
-Call `alg_plan` with `template: "data-investigation"`, a bounded goal and explicit evidence criteria. The fixed graph discovers metadata, fans out into three bounded analysis branches, reconciles their findings, pauses for engineer review, performs confirmation and runs an independent checker. No recursive orchestrator spawning or model-authored graph is admitted to this managed path.
+Call `alg_plan` with `template: "data-investigation"`, a bounded goal and explicit evidence criteria. The fixed graph discovers metadata, fans out into three bounded analysis branches, reconciles their findings, pauses for engineer review, performs confirmation and runs an independent checker. No recursive orchestrator spawning or model-authored graph is admitted to this managed path. Reuse the existing run and attached investigation when continuing the same work. Explicitly creating a new plan creates a separate investigation; ALG does not infer global equivalence between goals or prevent every redundant plan a model may request.
 
 The orchestrator and its active, scoped children use `alg_investigation`:
 

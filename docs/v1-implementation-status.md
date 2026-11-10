@@ -1,8 +1,8 @@
 # V1 Phase One implementation status
 
-PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains a partial, experimental Phase 1a/1b implementation against main baseline 99b88cd. The current candidate is 0.5.2 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier 0.5.1 receipts and statements below remain historical evidence for their named commits and are not relabeled as 0.5.2 acceptance.
+PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current candidate is 0.5.2 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier 0.5.1 receipts and statements below remain historical evidence for their named commits and are not relabeled as 0.5.2 acceptance.
 
-**Review correction, 10 November 2026:** the earlier 80% completion estimate is withdrawn. It over-weighted implemented plumbing and synthetic acceptance while service qualification and the full investigation workflow remain unresolved. The existing HTTP transport is an ALG reference protocol, not an adapter verified against the real datalake-mcp API. Local passing tests do not close those merge blockers.
+**Current disposition, 10 November 2026:** the earlier 80% estimate remains withdrawn. The confirmed ledger defects and the missing local workflow contracts are implemented. Native MCP translation is configurable and tested against fixtures, not verified against the real air-gapped datalake-mcp. The PR remains draft: local engineering results do not establish production service qualification, scientific usefulness or reliable autonomous session termination.
 
 ## Delivered contracts
 
@@ -28,7 +28,84 @@ The single Bash deployment command uses an already prepared bundle and a separat
 bash "/path/to/opencode-alg/scripts/alg.sh" deploy --offline --trust-bundle <reviewed-manifest-sha256>
 ```
 
-Use isolated --config-dir and --install-root overrides when evaluating a candidate. A successful deployment means installed on disk; an existing OpenCode process must restart before it loads the new generation. The new candidate writes state older 0.5.0 schemas do not understand, so rollback to that version is rejected.
+Use isolated --config-dir and --install-root overrides when evaluating a candidate. A successful deployment means installed on disk; an existing OpenCode process must restart before it loads the new generation. The new candidate writes state older 0.5.1 and 0.5.0 readers do not understand, so rollback to those versions is rejected.
+
+## Current 0.5.2 acceptance — 10 November 2026
+
+Runtime implementation and prepared packages: `d62812065e1d3b60cadce35385e1e620cb26f3a0`. The final follow-up changes documentation and moves isolated verification bootstrap inside its cleanup boundary; it changes no plugin runtime, agents or host permission policy. Packages are identified by their actual preparation commit, not by the follow-up commit.
+
+| Check | Result and scope |
+| --- | --- |
+| Native Ubuntu full suite at a13c513 | 1,094 passed, 13 platform skips, zero failures; 11,332 assertions, 81 files, 1,057.76 seconds |
+| Native Ubuntu follow-up at d628120 | 45 passed, zero failures; 452 assertions covering the later long-path mutex and isolated host bootstrap changes; type checking passed |
+| Windows focused implementation checks | 93 passed, zero failures, 491 assertions across ten files; additional package/import, lock and qualification regressions passed. These overlapping sets are not a new full-suite count |
+| Windows final verification-cleanup checks | 68 passed, zero failures; 192 assertions across live verification and headless harness tests |
+| Windows source headless recovery | Passed: one actual host compaction, two restarts, one accepted asynchronous synthetic job, two job lookups, three query/read-result tool calls, one remote result-page read and six fresh validity checks |
+| Native Ubuntu installed package | Passed: offline deploy/redeploy, exact relocated dependencies, the same headless recovery, server and TUI registration, preserved custom config and agent, clean process teardown and unchanged global config |
+| Windows installed package | Passed on the D-drive follow-up: offline deploy, unchanged redeploy, exact relocated dependencies, installed headless recovery, server/TUI registration, preserved custom config/agent and complete cleanup; the first C-drive attempt timed out and remains failed |
+
+Full-suite execution predates d628120 by the focused mutex/bootstrap delta; it is not represented as a full suite against the final commit. No model or production MCP is used by deterministic host acceptance. Both platforms run OpenCode 1.18.35 / Bun 1.3.14. Windows uses PowerShell 7.6.9 and Node 22.17.0; native Ubuntu 24.04.5 runs in the dedicated WSL distro with Bash 5.2.21, Node 22.23.4 and glibc 2.39. These observations do not qualify other host versions or every Linux distribution.
+
+### Real-model outcome and limits
+
+One bounded final local Gemma 4 8B Q4_K_M probe completed all seven fixed investigation nodes in seven attempts, including the exact engineer-review checkpoint and resume. The fixture contained no production data, qualified service or causal evidence. After that graph reached `done`, the model created a second graph despite instructions to stop, then the enclosing continuation hit its 240-second limit. **The overall session result remains failed.** This establishes a completed graph, not dependable session termination, scientific accuracy or a long-session soak. Completed run: `assess-the-input-completeness-of-20261110090422-825de10b8c9a`; the second run remains a preserved interrupted record. No further model attempts were spent to manufacture a pass.
+
+This also bounds the duplicate-work claim: managed reuse protects work within the attached investigation. A model that explicitly creates a new independent plan can create a new investigation and budget; this PR does not deduplicate equivalent goals globally or guarantee that an orchestrator stops after completion.
+
+The original model-test receipt reported incomplete cleanup. A separately timestamped escalated process census subsequently found all three owned parent IDs and their direct children absent; the original receipt remains unchanged. Global configuration snapshots matched.
+
+### Deployment and evidence boundary
+
+Both prepared bundles name `d62812065e1d3b60cadce35385e1e620cb26f3a0`. Linux manifest: `72e82f51241e41b78985064cd36c6059d0b23f48ee7f7f477b4a67d1c21900f4`; Windows manifest: `7a2383f92f233e06d5c80c4644734cd9da0ede6858aba92db59f44a8b4b54699`. Linux prepared/relocated/installed inventories match: 11,568 entries, including 10,052 dependency files / 126,621,871 bytes. Its installed runtime digest is `e069c0791feb7ca7f3afbaa94c95f0bf375aa84c0d405a9fb41ea73ea50f60d7`. Linux deployment took 42.723 seconds and verified no-op redeployment 25.319 seconds; these are acceptance observations, not isolated benchmarks.
+
+| Retained receipt | SHA-256 |
+| --- | --- |
+| Linux installed headless | `7ff9d4e43d14170800156656c9a1dcaef6d9afc7a0c9b386eaa467118721579f` |
+| Linux installed server/TUI, durable follow-up | `472b5df0930f57c23c15de9dc4fa97fb12fed38125ffcaf07737b0af4efe17c7` |
+| Windows source headless | `e33b99c097b69f5995bfd0e160c6f8092060b153f806e612f7085d92380ea876` |
+| Failed enclosing local-model session | `a4779201e4735ddfc84fecda8a3a64de6009588fc9e5fd1b04a8747fb160e6dc` |
+| Separate local-model cleanup census | `0d2f6ed366e48dbe199f6fdbc7c20a1a1d6fba2b3649e961bd96430477b1c76d` |
+
+Windows source-checkout runtime is `920784b15fdf71d8d1441a977b8e9d60c520c687bd2aee5699eba1b2834515ce`; checkout line endings and prepared Git-object bytes have distinct raw identities. The Windows installed runtime matches the Linux prepared runtime byte-for-byte: `e069c0791feb7ca7f3afbaa94c95f0bf375aa84c0d405a9fb41ea73ea50f60d7`. Its prepared/relocated/installed dependency identity matches across 11,602 inventory entries, including 10,104 dependency files / 126,814,922 bytes. Windows installed headless receipt: `ab51c3fc2d33ced62f890c21cb6b7e5609c981dd627c7146cc6b7c147fc9f0e3`; server/TUI receipt: `5aef731128aae9286c50c82c5006ca0ceec5f7f96b238abad74f8116be15b334`.
+
+The first Windows attempt prepared the bundle in 731.946 seconds but exceeded its 900-second deployment limit before activation. Its configuration and custom agent remained unchanged, no activation receipt existed, and an escalated process census found the installer and direct children absent. Its original failed receipt is `1b4689cd7a9ad1cd5061286f829df8380125b0410ebe6e489748a52a4b59774f`; incomplete generation/staging files remain preserved. A single follow-up reused that exact bundle at `D:/alg-v1-acceptance-d628120-20261110`, with a 1,800-second per-step cap: deploy 808.768 seconds, unchanged redeploy 408.911 seconds, installed headless 35.892 seconds and server/TUI 12.538 seconds. Its aggregate receipt is `352a545e412e03b3d72a036f1975c603f653041dce40318d0633f0e786ddb702`. The changed path and allowance do not isolate a performance cause or turn the first timeout into a pass.
+
+The Linux server/TUI check originally passed, but its raw temporary receipt was unavailable after the WSL invocation ended. Its original summary and hash remain preserved. A separate no-model server/TUI verification against the same installed package passed and retained the raw receipt under a durable evidence root; it is a distinct receipt, not a recreation of the original.
+
+Production deployment requires an already installed and initialized OpenCode V1 host, including its host configuration dependencies. A fresh OpenCode 1.18.35 configuration may contact its npm registry before loading ALG. The test harness seeds only isolated test directories from the exact dependency fixture; the ALG offline bundle does not bootstrap an entire air-gapped OpenCode installation. Prepared bundles are platform-specific.
+
+### Remaining qualification and later work
+
+- Real datalake-mcp remains **UNQUALIFIED**. Its actual job API, idempotency/lookup, permissions, retention, source validity, bounds and behavior must be exercised locally by its operator. The qualification CLI inventories schemas and records probes; it deliberately does not issue production approval.
+- Host-side waiting is bounded to 15 minutes, not a background daemon. Expiry or host shutdown requires explicit resume/reconciliation of the durable job.
+- Recipes provide typed normalization for configured operations. An empty recipe list retains legacy explicit admission; arbitrary SQL equivalence and direct MCP calls are outside the duplicate-work guarantee.
+- The 11,000-entry catalog and incident families are synthetic evidence/uncertainty fixtures. They do not establish semiconductor root-cause accuracy. The real-model session loop remains a visible autonomy limitation.
+- Deployment performance still needs isolated profiling. This change preserves inventory/race checks; it makes no fast-install claim and does not remove hashing merely because a concurrent Windows run was slow.
+- Measured skill promotion, autonomous graph authoring/improvement, shared cross-user knowledge and the wider V1 roadmap remain subsequent milestones. No V2 work began.
+
+## V1 PR #14 implementation and acceptance checklist — candidate 0.5.2
+
+This section records the current implementation scope separately from acceptance. It does not change any prior receipt, result, or commit attribution above.
+
+### Implementation documented in this candidate
+
+- [x] Durable result pages: at most 100 rows per request, capped by a global 16 KiB page limit and the qualified transport response size, with at most eight durable cached pages per result.
+- [x] Revalidate source, access scope and retention before reusing a result or its cached pages; page identity includes the manifest, digest, scope, cursor and row bound.
+- [x] Fixed reviewed recipe/version and typed parameter admission through `admit_recipe`; executable query construction and normalization stay host-owned.
+- [x] Trusted local declarative MCP mappings for request and host JSON pointers, nested output fields, constants, and bounded discriminator-selected response cases.
+- [x] Operator profile migration preserves ledger and evidence history and refuses active or uncertain remote jobs.
+- [x] Host-side bounded continuation defaults to 30 seconds and allows at most 15 minutes. It is not a daemon; after expiry or process restart, an explicit run/resume or reconciliation is required. Durable lookups are capped at 1,000 per work item.
+- [x] Requested workspace facts are resolved from bounded local sources; simple configured tool-command detection remains advisory.
+- [x] Synthetic seven-node workflow covers an 11,000-entry catalog. This is fixture/integration evidence and makes no scientific or causal-accuracy claim.
+- [x] Qualification CLI and its operator guide are separately packaged. A real air-gapped MCP service remains **UNQUALIFIED** until service-specific qualification is completed.
+- [x] Package, npm lockfiles, durable compatibility list and release-gate version literals are advanced to 0.5.2. The rollback boundary prevents 0.5.1 readers from opening state after new durable fields are written.
+
+### Acceptance disposition
+
+See the current acceptance record above. Implementation and local engineering validation are tracked separately from actual-service qualification. The original failed and interrupted checks remain failed; no prior receipt is relabeled. No V2 implementation, GitHub runner use, merge or production/scientific claim is included.
+
+<details>
+<summary>Historical 0.5.1 acceptance and review record (unchanged)</summary>
 
 ## Historical 0.5.1 status and receipts — preserved snapshot
 
@@ -121,28 +198,4 @@ Final source-checkout headless acceptance at 4d259d395b2ac2fc4c9617f3e119af9b46e
 
 The checkout runtime digests differ because 77 of 118 runtime files have different line endings. An independent inventory comparison found all 118 identical after CRLF-to-LF normalization; the raw digests above remain the actual loaded identities. The failed local-model receipt is SHA-256 a0c5dbebe2e9b827c9fdf3c26adbacc47e3b626027762f747d070afbed91ae24; its separate cleanup follow-up is 475c8f54c615af503bfe29d7c347732a21c0047cdec3a2912c7b86990482861c. Focused test sets overlap and must not be added into a fictitious full-suite count. No complete new broad-suite, packaged 0.5.1 acceptance, full specialist-graph pass, service qualification or scientific usefulness result is claimed. No GitHub runners, V2 changes or merge occurred.
 
-## V1 PR #14 implementation and acceptance checklist — candidate 0.5.2
-
-This section records the current implementation scope separately from acceptance. It does not change any prior receipt, result, or commit attribution above.
-
-### Implementation documented in this candidate
-
-- [x] Durable result pages: at most 100 rows per request, capped by a global 16 KiB page limit and the qualified transport response size, with at most eight durable cached pages per result.
-- [x] Revalidate source, access scope and retention before reusing a result or its cached pages; page identity includes the manifest, digest, scope, cursor and row bound.
-- [x] Fixed reviewed recipe/version and typed parameter admission through `admit_recipe`; executable query construction and normalization stay host-owned.
-- [x] Trusted local declarative MCP mappings for request and host JSON pointers, nested output fields, constants, and bounded discriminator-selected response cases.
-- [x] Operator profile migration preserves ledger and evidence history and refuses active or uncertain remote jobs.
-- [x] Host-side bounded continuation defaults to 30 seconds and allows at most 15 minutes. It is not a daemon; after expiry or process restart, an explicit run/resume or reconciliation is required. Durable lookups are capped at 1,000 per work item.
-- [x] Requested workspace facts are resolved from bounded local sources; simple configured tool-command detection remains advisory.
-- [x] Synthetic seven-node workflow covers an 11,000-entry catalog. This is fixture/integration evidence and makes no scientific or causal-accuracy claim.
-- [x] Qualification CLI and its operator guide are separately packaged. A real air-gapped MCP service remains **UNQUALIFIED** until service-specific qualification is completed.
-- [x] Package, npm lockfiles, durable compatibility list and release-gate version literals are advanced to 0.5.2. The rollback boundary prevents 0.5.1 readers from opening state after new durable fields are written.
-
-### Acceptance still pending
-
-- [ ] Final full and focused test outcomes for the 0.5.2 candidate, including the package allowlist contract.
-- [ ] Any final packaged/deployed acceptance required for PR #14, with receipts tied to the exact candidate source identity.
-- [ ] Real service qualification for the air-gapped MCP, or a recorded decision to leave that integration unqualified for this PR.
-- [ ] Parent review of this implementation/acceptance split and replacement of this pending acceptance status after final tests.
-
-No V2 implementation, GitHub runner use, merge, or production/scientific claim is included. The final acceptance checkboxes are intentionally pending; historical 0.5.1 test and deployment records above remain unchanged.
+</details>
