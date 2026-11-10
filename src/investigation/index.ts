@@ -27,6 +27,16 @@ export function investigationCostUnits(value: number): number {
     throw new Error("investigation cost requires nonnegative safe millionth units")
   return units
 }
+// Service billing may have finer precision than reservation units. Preserve its
+// raw amount on the work receipt and conservatively round only the charged ledger.
+function settledCost(value: number): number {
+  const scaled = value * COST_SCALE, nearest = Math.round(scaled)
+  const units = Math.abs(scaled - nearest) <= Number.EPSILON * Math.max(1, Math.abs(scaled)) * 4
+    ? nearest : Math.ceil(scaled)
+  if (!Number.isFinite(value) || value < 0 || !Number.isSafeInteger(units))
+    throw new Error("reported investigation cost exceeds safe accounting units")
+  return units / COST_SCALE
+}
 const CostSchema = z.number().finite().nonnegative().refine((value) => {
   try { investigationCostUnits(value); return true } catch { return false }
 }, "cost requires safe millionth units")
@@ -189,7 +199,7 @@ const InvestigationLedgerSchema = z.object({ schema_version: z.literal(1), revis
   identity_version: z.literal(2).optional(),
   scope: z.object({ project_id: z.string().min(1).max(512), owner_id: z.string().min(1).max(512), run_id: z.string().min(1).max(512) }).strict(),
   remote_profile: RemoteProfileSchema.optional(),
-  budget_breach: z.object({ work_key: z.string().regex(/^[a-f0-9]{64}$/), reported_cost: CostSchema,
+  budget_breach: z.object({ work_key: z.string().regex(/^[a-f0-9]{64}$/), reported_cost: z.number().finite().nonnegative(),
     reserved_cost: CostSchema, at: IsoDate }).strict().optional(),
   created_at: IsoDate, updated_at: IsoDate,
   attachments: z.array(z.object({ session_id: z.string().min(1).max(256), attached_at: IsoDate }).strict()).max(MAX_ATTACHMENTS),
@@ -521,12 +531,12 @@ export class InvestigationStore {
       else if (w.status !== "cancel_requested") { w.status = "outcome_unknown"; w.failure = outcome.kind === "unknown" ? safeError(outcome.reason) : "unrecognized remote state" }
       if (w.status === "result_recorded" || w.status === "failed_known") {
         const cost = w.actual_cost
-        if (cost !== undefined) investigationCostUnits(cost)
+        const chargedCost = cost === undefined ? w.reserved_cost : settledCost(cost)
         if (cost !== undefined && cost > w.reserved_cost) l.budget_breach ??= {
           work_key: w.work_key, reported_cost: cost, reserved_cost: w.reserved_cost, at: this.now().toISOString(),
         }
         l.reserved_cost = (investigationCostUnits(l.reserved_cost) - investigationCostUnits(w.reserved_cost)) / COST_SCALE
-        l.cumulative_cost = sumCost(l.cumulative_cost, cost ?? w.reserved_cost)
+        l.cumulative_cost = sumCost(l.cumulative_cost, chargedCost)
         w.reserved_cost = 0
       }
     }, expectedFence)

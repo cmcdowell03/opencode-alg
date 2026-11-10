@@ -82,6 +82,22 @@ describe("investigation review regressions", () => {
     expect(store.snapshot.cumulative_cost).toBe(0.3)
   })
 
+  test.each([0.00000001, 0.50000001])("fine-precision terminal cost %s is preserved and conservatively settled", async (actual_cost) => {
+    const { store, scope } = fixture(1)
+    const work = await store.admit(input(1, 0.5), capabilities)
+    const port: InvestigationMcpPort = { capabilities,
+      submit: async () => ({ kind: "result", result, actual_cost }),
+      lookup: async () => ({ kind: "result", result, actual_cost }) }
+    expect((await store.dispatch(work.work_key, port)).status).toBe("result_recorded")
+    const reopened = InvestigationStore.open(scope)
+    expect(reopened.snapshot.work[0]!.actual_cost).toBe(actual_cost)
+    expect(reopened.snapshot.cumulative_cost).toBe(Math.ceil(actual_cost * 1_000_000) / 1_000_000)
+    expect(reopened.snapshot.reserved_cost).toBe(0)
+    if (actual_cost > 0.5) expect(reopened.snapshot.budget_breach?.reported_cost).toBe(actual_cost)
+    await reopened.reconcile(work.work_key, port)
+    expect(reopened.snapshot.cumulative_cost).toBe(Math.ceil(actual_cost * 1_000_000) / 1_000_000)
+  })
+
   test("a terminal service overrun is recorded once and blocks new spend", async () => {
     const { store, scope } = fixture(1)
     const job = await store.admit(input(1, 0.5), capabilities)

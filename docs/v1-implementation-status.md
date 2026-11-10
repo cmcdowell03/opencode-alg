@@ -77,7 +77,7 @@ The external review reproduced meaningful defects. Three new regression probes f
 
 | Finding | Disposition |
 | --- | --- |
-| Floating-point reservation mismatch | Fixed: arithmetic and equality use safe integer millionths; unsupported input precision is rejected before admission |
+| Floating-point reservation mismatch | Fixed: arithmetic and equality use safe integer millionths; unsupported reservation precision is rejected before admission. Finer service billing is preserved exactly on the work receipt and conservatively rounded up only for the cumulative charge |
 | Local failures become uncertain remote jobs | Fixed: transport errors carry a trusted transmission stage; only potentially dispatched calls retain uncertainty and reservations |
 | Cost above reservation loses terminal outcome | Fixed: persist terminal result/cost, release active reservation, record a budget breach and block further spend |
 | Model-controlled identity creates duplicate work | Fixed for host-owned purpose/generation, equivalent ISO as-of instants and unused descriptive parameters. Arbitrary semantic query equivalence remains unqualified |
