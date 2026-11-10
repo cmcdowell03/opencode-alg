@@ -30,7 +30,9 @@ The 0.5.0 candidate adds strict durable fields. Its compatibility declaration ac
 
 `alg.sh` selects Bun when it is available, then falls back to Node.js. For a Node-prepared bundle on a host with Bun installed, invoke `node --disable-warning=ExperimentalWarning --experimental-strip-types "/path/to/opencode-alg/scripts/manager-cli.ts" deploy --offline --trust-bundle <reviewed-manifest-sha256>` explicitly.
 
-On Windows, invoke `bun run "C:\path\to\opencode-alg\scripts\manager-cli.ts" deploy --offline --trust-bundle <reviewed-manifest-sha256>` for a Bun-prepared bundle, or the equivalent `node --disable-warning=ExperimentalWarning --experimental-strip-types` command for a Node-prepared bundle.
+On Windows PowerShell, use `& "C:\path\to\opencode-alg\scripts\alg.ps1" deploy --offline --trust-bundle <reviewed-manifest-sha256>` for a Bun-prepared bundle. For a Node-prepared bundle, use the explicit Node invocation above.
+
+The manager discovers a native OpenCode binary on PATH, including the binary behind the standard Windows npm wrapper. It never executes Windows shell-wrapper text for host discovery. For a custom installation, set `OPENCODE_BIN` to the absolute OpenCode executable path. The version preflight is bounded to 30 seconds.
 
 The result reports the full source commit, artifact and approved manifest digests, destination and pending restart. It means installed on disk. It does not attest that an already-running OpenCode process loaded the generation. Restart OpenCode yourself, then use `doctor --ack-restart` only after observing the fresh host.
 

@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto"
+import { resolveOpenCodeExecutable } from "./host-executable.ts"
 import { spawnSync } from "node:child_process"
 import {
   closeSync,
@@ -269,7 +270,9 @@ interface StagedRelease {
 
 class DefaultCommandRunner implements CommandRunner {
   run(request: CommandRequest): CommandResult {
-    const child = spawnSync(request.command, [...request.args], {
+    const command = request.command === "opencode" ? resolveOpenCodeExecutable(request.env?.OPENCODE_BIN) : request.command
+    const child = spawnSync(command, [...request.args], {
+      timeout: request.command === "opencode" && request.args.length === 1 && request.args[0] === "--version" ? 30_000 : undefined,
       cwd: request.cwd,
       shell: false,
       encoding: "utf8",

@@ -124,7 +124,7 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "docs/historical-audit-recovery.md", "docs/live-run-visibility.md", "docs/context-budget.md",
   "scripts/alg.ps1", "scripts/alg.sh", "scripts/check-live.ts", "scripts/install.ps1", "scripts/install.sh",
   "scripts/installer-core.ts", "scripts/live-verify.ts", "scripts/manager-cli.ts", "scripts/manager-core.ts",
-  "scripts/manager-schema.ts", "scripts/npm-invocation.ts", "scripts/release-gate.ts", "scripts/smoke.ts",
+  "scripts/manager-schema.ts", "scripts/npm-invocation.ts", "scripts/host-executable.ts", "scripts/release-gate.ts", "scripts/smoke.ts",
   "scripts/verify-duckdb-manifest.ts", "scripts/verify-excel-manifest.ts",
   "scripts/duckdb-project.ts", "scripts/datascience-project.ts",
   "scripts/data-science-cli.ts", "scripts/experience-cli.ts", "scripts/verify-optional-manifests.ts",

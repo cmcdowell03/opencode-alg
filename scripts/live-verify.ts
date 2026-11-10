@@ -1,3 +1,4 @@
+import { resolveOpenCodeExecutable } from "./host-executable.ts"
 import { spawn, type ChildProcess } from "node:child_process"
 import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto"
 import {
@@ -627,25 +628,6 @@ function spawnCaptured(
   }
 }
 
-function resolveOpenCodeExecutable(requested: string): string {
-  if (isAbsolute(requested)) {
-    if (!existsSync(requested)) throw new Error(`OpenCode executable does not exist: ${requested}`)
-    return requested
-  }
-  const extensions = process.platform === "win32" ? [".exe", ".cmd", ".bat", ""] : [""]
-  for (const directory of (process.env.PATH ?? "").split(delimiter).filter(Boolean)) {
-    for (const extension of extensions) {
-      const candidate = join(directory, `${requested}${extension}`)
-      if (!existsSync(candidate)) continue
-      if (process.platform === "win32" && /\.(?:cmd|bat)$/i.test(candidate)) {
-        const packaged = join(dirname(candidate), "node_modules", "opencode-ai", "bin", "opencode.exe")
-        if (existsSync(packaged)) return packaged
-      }
-      return candidate
-    }
-  }
-  throw new Error(`OpenCode executable was not found on PATH: ${requested}`)
-}
 
 function boundedError(error: unknown): string {
   return (error instanceof Error ? error.message : String(error)).replace(/[\r\n]+/g, " ").slice(0, 1_000)
