@@ -88,10 +88,11 @@ class LocalGitRunner implements CommandRunner {
     if (isNpmRequest(request)) {
       if (this.failDependencies) return { exitCode: 17, stdout: "", stderr: this.dependencyError }
       if (!request.cwd) throw new Error("npm fixture requires cwd")
-      for (const dependency of ["@opencode-ai/plugin", "jsonc-parser", "zod"]) {
+      const declared = JSON.parse(readFileSync(join(request.cwd, "package.json"), "utf8")) as { dependencies?: Record<string, string> }
+      for (const dependency of Object.keys(declared.dependencies ?? {})) {
         const directory = join(request.cwd, "node_modules", ...dependency.split("/"))
         mkdirSync(directory, { recursive: true })
-        writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: dependency, version: "1.0.0" })}\n`)
+        writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: dependency, version: declared.dependencies![dependency] })}\n`)
         writeFileSync(join(directory, "index.js"), `export const dependency = ${JSON.stringify(dependency)}\n`)
       }
       return { exitCode: 0, stdout: "", stderr: "" }
@@ -1182,13 +1183,15 @@ describe("v0.2 side-by-side release manager", () => {
     const serverPath = join(config, "opencode.jsonc")
     const receiptBefore = readFileSync(receiptPath)
     const serverBefore = readFileSync(serverPath)
+    const targetTag = target.tag
+    if (!targetTag) throw new Error("Git fixture generation must retain its exact tag")
     const restore = () => {
       for (const path of ["package.json", "package-lock.json", "src/index.ts"]) {
         git(target.package_root, "update-index", "--no-skip-worktree", path)
       }
       git(target.package_root, "reset", "--hard", target.commit)
       git(target.package_root, "clean", "-fd")
-      git(target.package_root, "tag", "-f", target.tag, target.commit)
+      git(target.package_root, "tag", "-f", targetTag, target.commit)
       git(target.package_root, "remote", "set-url", "origin", state.trusted_remote)
       rmSync(join(target.package_root, "node_modules", "zod", "dependency-drift.js"), { force: true })
     }
@@ -1199,7 +1202,7 @@ describe("v0.2 side-by-side release manager", () => {
       ["tag drift", () => {
         git(target.package_root, "-c", "user.name=ALG Test", "-c", "user.email=alg@example.invalid", "commit", "--allow-empty", "-m", "unexpected tag target")
         const wrong = git(target.package_root, "rev-parse", "HEAD")
-        git(target.package_root, "tag", "-f", target.tag, wrong)
+        git(target.package_root, "tag", "-f", targetTag, wrong)
         git(target.package_root, "reset", "--hard", target.commit)
       }],
       ["package drift hidden from status", () => {

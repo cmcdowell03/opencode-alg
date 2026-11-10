@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process"
 import {
   closeSync,
   chmodSync,
+  cpSync,
   constants,
   existsSync,
   fstatSync,
@@ -46,6 +47,7 @@ import {
 } from "../src/paths.ts"
 import { computeAlgSourceIdentity } from "../src/source-identity.ts"
 import { resolveNpmInvocation } from "./npm-invocation.ts"
+import { inventoryDeploymentTree, readAndVerifyDeploymentBundle } from "./deployment.ts"
 import {
   BUNDLED_AGENT_NAMES,
   MANAGER_VERSION,
@@ -92,7 +94,7 @@ const EXCEL_TOOLS = [
   "validate_formula_syntax", "write_data_to_excel",
 ] as const
 
-export type ManagerCommand = "install" | "update" | "doctor" | "rollback" | "uninstall"
+export type ManagerCommand = "install" | "update" | "deploy" | "doctor" | "rollback" | "uninstall"
 export type AgentPolicy = "managed" | "skip" | "force"
 
 export interface ManagerOptions {
@@ -100,6 +102,8 @@ export interface ManagerOptions {
   configDir: string
   installRoot?: string
   source?: string
+  bundleRoot?: string
+  trustBundleHash?: string
   remote?: string
   tag?: string
   version?: string
@@ -179,6 +183,15 @@ export interface ManagerResult {
   pending_journals?: string[]
   previous_generation?: string | null
   restart_required?: boolean
+  release_identity?: {
+    package_version: string
+    source_commit: string
+    release_tag: string | null
+    artifact_sha256: string
+    manifest_sha256: string
+    destination: string
+    verification: "approved-manifest-and-inventory-verified"
+  }
   agent_status?: Array<{ name: string; status: "managed" | "custom" | "missing" | "drift"; source_hash: string; current_hash: string | null }>
   capability_status?: {
     name: "excel"
@@ -249,6 +262,9 @@ interface StagedRelease {
   trustedRemote: string
   stagingIdentity: FileIdentity
   stagingEntries: TreeEntry[]
+  sourceKind: "git" | "bundle"
+  bundleManifestSha256?: string
+  bundleArtifactSha256?: string
 }
 
 class DefaultCommandRunner implements CommandRunner {
@@ -758,7 +774,8 @@ function readReceipt(paths: ManagerPaths, required = false): ManagerReceipt | un
   for (const generation of receipt.generations) {
     const generationRoot = resolveContainedPath(paths.releasesRoot, generation.id)
     const expectedRoot = resolveContainedPath(generationRoot, "package")
-    if (!samePath(generation.package_root, expectedRoot) || generation.id !== `${generation.version}-${generation.commit.slice(0, 12)}` || generation.tag !== `v${generation.version}`) {
+    if (!samePath(generation.package_root, expectedRoot) || generation.id !== `${generation.version}-${generation.commit.slice(0, 12)}` ||
+      (generation.source_kind === "bundle" ? generation.tag !== null : generation.tag !== `v${generation.version}`)) {
       throw new Error(`Receipt generation identity/path is invalid: ${generation.id}`)
     }
     const expectedSpec = pathToFileURL(expectedRoot).href.replace(/\/$/, "")
@@ -908,7 +925,7 @@ function validatePackageAndLock(root: string, tag: string): {
   durableState: DurableStateCompatibility
 } {
   const pkg = parsePackage(root)
-  const version = tag.slice(1)
+  const version = tag.startsWith("v") ? tag.slice(1) : tag
   if (pkg.name !== "opencode-alg" || pkg.version !== version) throw new Error(`package.json version/name does not agree with ${tag}`)
   const lockPath = resolveContainedPath(root, "package-lock.json")
   const lockBytes = readBounded(lockPath)
@@ -1299,6 +1316,34 @@ export function computeProductionDependencyIdentity(
   return { sha256: hash.digest("hex"), files, bytes }
 }
 
+/** Validate direct installed packages against npm's active production lock without assuming CommonJS entry points. */
+export function verifyBundleProductionDependencies(root: string, dependencies: readonly string[]): void {
+  const pkg = parsePackage(root)
+  const lockName = existsSync(resolveContainedPath(root, "npm-shrinkwrap.json")) ? "npm-shrinkwrap.json" : "package-lock.json"
+  const lock = JSON.parse(readBounded(resolveContainedPath(root, lockName)).toString("utf8")) as {
+    packages?: Record<string, { name?: string; version?: string; dependencies?: Record<string, string> }>
+  }
+  const declared = pkg.dependencies ?? {}
+  const sortedDependencies = (value: Record<string, string>) => JSON.stringify(Object.entries(value).sort(([left], [right]) => left.localeCompare(right)))
+  if (JSON.stringify(Object.keys(declared).sort()) !== JSON.stringify([...dependencies].sort()) ||
+    sortedDependencies(lock.packages?.[""]?.dependencies ?? {}) !== sortedDependencies(declared)) {
+    throw new Error("Active npm lock does not match the declared production dependencies")
+  }
+  for (const name of dependencies) {
+    const path = dependencyPath(resolveContainedPath(root, "node_modules"), name)
+    const metadata = resolveContainedPath(path, "package.json")
+    const recorded = lock.packages?.[`node_modules/${name}`]
+    if (!recorded?.version || !existsSync(metadata) || !lstatSync(metadata).isFile() ||
+      !samePath(realpathSync.native(metadata), metadata)) {
+      throw new Error(`Prepared bundle is missing production dependency ${name}`)
+    }
+    const installed = JSON.parse(readBounded(metadata).toString("utf8")) as { name?: string; version?: string }
+    if (installed.name !== name || installed.version !== recorded.version) {
+      throw new Error(`Prepared production dependency ${name} differs from the active npm lock`)
+    }
+  }
+}
+
 function computeManagedEnvironmentIdentity(environmentRoot: string): ProductionDependencyIdentity {
   const root = canonicalDirectory(environmentRoot)
   if (!samePath(root, environmentRoot)) throw new Error("Managed capability environment is redirected")
@@ -1392,13 +1437,30 @@ function agentSources(root: string): ReleaseGeneration["agents"] {
     .map((name) => ({ name, source_hash: sha256(readFileSync(resolveContainedPath(directory, name))) }))
 }
 
-function validateReleaseRoot(root: string, tag: string, runner: CommandRunner, expectedCommit?: string): ReleaseGeneration {
-  const packageInfo = validatePackageAndLock(root, tag)
+function validateReleaseRoot(
+  root: string,
+  tag: string | null,
+  runner: CommandRunner,
+  expectedCommit?: string,
+  provenance: { sourceKind?: "git" | "bundle"; manifestSha256?: string; artifactSha256?: string } = {},
+): ReleaseGeneration {
+  const packageInfo = validatePackageAndLock(root, tag ?? parsePackage(root).version)
   const assets = excelAssets(root, compareVersions(packageInfo.version, "0.2.0") >= 0)
-  const commit = git(runner, root, ["rev-parse", "HEAD"]).toLowerCase()
+  const sourceKind = provenance.sourceKind ?? "git"
+  const commit = sourceKind === "bundle" ? expectedCommit?.toLowerCase() : git(runner, root, ["rev-parse", "HEAD"]).toLowerCase()
+  if (!commit || !/^[a-f0-9]{40,64}$/.test(commit)) throw new Error("Release source commit identity is missing or invalid")
   if (expectedCommit && commit !== expectedCommit) throw new Error("Retained release commit does not match its receipt")
-  const tagCommit = git(runner, root, ["rev-parse", `${tag}^{commit}`]).toLowerCase()
-  if (tagCommit !== commit) throw new Error("Retained release HEAD does not match its exact tag")
+  if (sourceKind === "git") {
+    if (!tag) throw new Error("Git release has no exact tag")
+    const tagCommit = git(runner, root, ["rev-parse", `${tag}^{commit}`]).toLowerCase()
+    if (tagCommit !== commit) throw new Error("Retained release HEAD does not match its exact tag")
+  } else if (!provenance.manifestSha256 || !provenance.artifactSha256) throw new Error("Bundle release has no verified manifest/artifact identity")
+  if (sourceKind === "bundle") {
+    const manifest = readAndVerifyDeploymentBundle(root, provenance.manifestSha256!)
+    if (manifest.package.source_commit !== commit || manifest.package.artifact_sha256 !== provenance.artifactSha256) {
+      throw new Error("Retained bundle source/artifact identity differs from its approved manifest")
+    }
+  }
   const identity = computeAlgSourceIdentity(root)
   const productionDependencies = computeProductionDependencyIdentity(root, packageInfo.dependencies)
   const timestamp = new Date().toISOString()
@@ -1414,6 +1476,8 @@ function validateReleaseRoot(root: string, tag: string, runner: CommandRunner, e
     installed_at: timestamp,
     activated_at: timestamp,
     dependency_manager: "npm",
+    source_kind: sourceKind,
+    ...(sourceKind === "bundle" ? { bundle_manifest_sha256: provenance.manifestSha256, bundle_artifact_sha256: provenance.artifactSha256 } : {}),
     production_dependencies: productionDependencies,
     agents: agentSources(root),
     durable_state: packageInfo.durableState,
@@ -1445,6 +1509,73 @@ function stageRelease(
   dependencies: ManagerDependencies,
 ): StagedRelease {
   const runner = dependencies.runner ?? new DefaultCommandRunner()
+  if (options.bundleRoot) {
+    if (!options.trustBundleHash) throw new Error("Offline deployment requires --trust-bundle with the reviewed manifest SHA-256")
+    const bundleRoot = canonicalDirectory(resolve(options.bundleRoot))
+    if (isContained(paths.configRoot, bundleRoot) || isContained(bundleRoot, paths.configRoot) ||
+      isContained(paths.installRoot, bundleRoot) || isContained(bundleRoot, paths.installRoot)) {
+      throw new Error("Prepared bundle overlaps managed config/install roots")
+    }
+    const manifest = readAndVerifyDeploymentBundle(bundleRoot, options.trustBundleHash)
+    const trustedRemote = sanitizeRemote(manifest.package.source_repository)
+    if (receipt && !remoteEqual(receipt.trusted_remote, trustedRemote)) {
+      throw new Error("Prepared bundle source repository differs from the trusted receipt remote")
+    }
+    const packagePath = bundleRoot
+    const packageInfo = validatePackageAndLock(packagePath, manifest.package.version)
+    const actualProduction = computeProductionDependencyIdentity(packagePath, packageInfo.dependencies)
+    if (JSON.stringify(actualProduction) !== JSON.stringify(manifest.dependencies.production_identity)) throw new Error("Prepared production dependency identity differs from the manifest")
+    verifyBundleProductionDependencies(packagePath, packageInfo.dependencies)
+    const host = runner.run({ command: "opencode", args: ["--version"] })
+    if (host.exitCode !== 0) throw new Error("OpenCode 1 host preflight failed; install a compatible OpenCode 1 host before deploying")
+    const hostVersion = host.stdout.match(/\b(\d+\.\d+\.\d+)\b/)?.[1]
+    if (!hostVersion || compareVersions(hostVersion, "1.18.0") < 0 || compareVersions(hostVersion, "2.0.0") >= 0) {
+      throw new Error(`OpenCode host must be >=1.18.0 and <2.0.0; observed: ${bounded(host.stdout, 256)}`)
+    }
+    const transaction = randomUUID()
+    const stagingPath = resolveContainedPath(paths.stagingRoot, transaction)
+    const finalPath = resolveContainedPath(paths.releasesRoot, `${manifest.package.version}-${manifest.package.source_commit.slice(0, 12)}`)
+    if (existsSync(stagingPath)) throw new Error("Staging transaction collision")
+    try {
+      cpSync(packagePath, stagingPath, { recursive: true, errorOnExist: true, force: false, preserveTimestamps: true, verbatimSymlinks: true })
+      const stagingIdentity = regularDirectoryIdentity(stagingPath)
+      if (JSON.stringify(inventoryDeploymentTree(stagingPath, true)) !== JSON.stringify(manifest.dependencies.tree)) {
+        throw new Error("Prepared bundle changed while it was being staged")
+      }
+      const packageRoot = canonicalDirectory(stagingPath)
+      const identity = computeAlgSourceIdentity(packageRoot)
+      const assets = excelAssets(packageRoot, compareVersions(packageInfo.version, "0.2.0") >= 0)
+      const timestamp = nowIso(dependencies)
+      const generation: ReleaseGeneration = {
+        id: `${packageInfo.version}-${manifest.package.source_commit.slice(0, 12)}`,
+        version: packageInfo.version,
+        tag: null,
+        commit: manifest.package.source_commit,
+        package_root: resolveContainedPath(finalPath, "package"),
+        spec: pathToFileURL(resolveContainedPath(finalPath, "package")).href.replace(/\/$/, ""),
+        runtime_digest: identity.digest,
+        lock_digest: packageInfo.lockDigest,
+        installed_at: timestamp,
+        activated_at: timestamp,
+        dependency_manager: "npm",
+        source_kind: "bundle",
+        bundle_manifest_sha256: manifest.manifest_sha256,
+        bundle_artifact_sha256: manifest.package.artifact_sha256,
+        production_dependencies: actualProduction,
+        agents: agentSources(packageRoot),
+        durable_state: packageInfo.durableState,
+        capabilities: assets ? { excel: disabledExcelReceipt(assets) } : undefined,
+      }
+      return {
+        stagingPath, finalPath, generation,
+        trustedRemote,
+        stagingIdentity, stagingEntries: snapshotGenerationTree(stagingPath),
+        sourceKind: "bundle", bundleManifestSha256: manifest.manifest_sha256, bundleArtifactSha256: manifest.package.artifact_sha256,
+      }
+    } catch (error) {
+      throw new Error(`Offline bundle staging failed; no dependencies were downloaded or installed: ${safeMessage(error instanceof Error ? error.message : String(error))}`)
+    }
+  }
   let source: string | undefined
   let trustedRemote: string
   if (options.source) {
@@ -1515,7 +1646,7 @@ function stageRelease(
       capabilities: assets ? { excel: disabledExcelReceipt(assets) } : undefined,
     }
     const stagingEntries = snapshotGenerationTree(stagingPath)
-    return { stagingPath, finalPath, generation, trustedRemote, stagingIdentity, stagingEntries }
+    return { stagingPath, finalPath, generation, trustedRemote, stagingIdentity, stagingEntries, sourceKind: "git" }
   } catch (error) {
     // A failed external staging command may have introduced paths we never
     // created or identity-recorded. Preserve the exclusive tree for doctor and
@@ -2427,6 +2558,7 @@ function generationMatches(left: ReleaseGeneration, right: ReleaseGeneration): b
     ? true
     : JSON.stringify(left.production_dependencies) === JSON.stringify(right.production_dependencies)
   return left.id === right.id && left.version === right.version && left.tag === right.tag &&
+    (left.source_kind ?? "git") === (right.source_kind ?? "git") && left.bundle_manifest_sha256 === right.bundle_manifest_sha256 && left.bundle_artifact_sha256 === right.bundle_artifact_sha256 &&
     left.commit === right.commit && left.runtime_digest === right.runtime_digest &&
     left.lock_digest === right.lock_digest && samePath(left.package_root, right.package_root) &&
     specMatches(left.spec, right.spec) &&
@@ -2444,10 +2576,12 @@ function promoteStaged(
     regularDirectoryIdentity(staged.finalPath)
     if (!existsSync(packagePath)) throw new Error("Occupied generation reservation has no exact package child")
     regularDirectoryIdentity(packagePath)
-    assertCleanRepository(runner, packagePath, "Existing generation")
-    const existingOrigin = git(runner, packagePath, ["config", "--get", "remote.origin.url"])
-    if (!remoteEqual(existingOrigin, staged.trustedRemote)) throw new Error("Existing generation origin differs from the staged trusted remote")
-    const observed = validateReleaseRoot(packagePath, staged.generation.tag, runner, staged.generation.commit)
+    if (staged.sourceKind === "git") {
+      assertCleanRepository(runner, packagePath, "Existing generation")
+      const existingOrigin = git(runner, packagePath, ["config", "--get", "remote.origin.url"])
+      if (!remoteEqual(existingOrigin, staged.trustedRemote)) throw new Error("Existing generation origin differs from the staged trusted remote")
+    }
+    const observed = validateReleaseRoot(packagePath, staged.generation.tag, runner, staged.generation.commit, { sourceKind: staged.sourceKind, manifestSha256: staged.bundleManifestSha256, artifactSha256: staged.bundleArtifactSha256 })
     if (!generationMatches(observed, staged.generation)) throw new Error("Existing generation directory does not match the resolved release")
     removeStagingIfPresent(staged, dependencies)
     return { ...staged.generation, package_root: canonicalDirectory(packagePath), spec: observed.spec }
@@ -2461,10 +2595,12 @@ function promoteStaged(
     if (!sameFileIdentity(regularDirectoryIdentity(staged.finalPath), reservationIdentity)) throw new Error("Generation reservation identity changed after materialization")
     const canonical = canonicalDirectory(packagePath)
     if (!samePath(canonical, packagePath)) throw new Error("Materialized generation package path was redirected")
-    assertCleanRepository(runner, canonical, "Materialized generation")
-    const promotedOrigin = git(runner, canonical, ["config", "--get", "remote.origin.url"])
-    if (!remoteEqual(promotedOrigin, staged.trustedRemote)) throw new Error("Materialized generation origin differs from the staged trusted remote")
-    const observed = validateReleaseRoot(canonical, staged.generation.tag, runner, staged.generation.commit)
+    if (staged.sourceKind === "git") {
+      assertCleanRepository(runner, canonical, "Materialized generation")
+      const promotedOrigin = git(runner, canonical, ["config", "--get", "remote.origin.url"])
+      if (!remoteEqual(promotedOrigin, staged.trustedRemote)) throw new Error("Materialized generation origin differs from the staged trusted remote")
+    }
+    const observed = validateReleaseRoot(canonical, staged.generation.tag, runner, staged.generation.commit, { sourceKind: staged.sourceKind, manifestSha256: staged.bundleManifestSha256, artifactSha256: staged.bundleArtifactSha256 })
     if (!generationMatches(observed, staged.generation)) throw new Error("Materialized generation directory does not match the staged release")
     for (const entry of created) assertCreatedEntry(entry)
     removeStagingIfPresent(staged, dependencies)
@@ -2518,7 +2654,7 @@ function buildReceipt(options: {
     config_root: options.paths.configRoot,
     install_root: options.paths.installRoot,
     trusted_remote: options.trustedRemote,
-    channel: "stable",
+    channel: options.generation?.tag === null ? "candidate" : "stable",
     active_generation: options.installed ? options.generation?.id ?? null : null,
     generations,
     server_registration: { config_path: options.paths.serverConfig, spec },
@@ -2565,10 +2701,14 @@ function validateRetainedActiveGeneration(
   const active = activeGeneration(receipt)
   if (!existsSync(active.package_root) || !samePath(canonicalDirectory(active.package_root), active.package_root)) throw new Error("Active generation root is missing or redirected")
   const runner = dependencies.runner ?? new DefaultCommandRunner()
-  assertCleanRepository(runner, active.package_root, "Active generation")
-  const origin = git(runner, active.package_root, ["config", "--get", "remote.origin.url"])
-  if (!remoteEqual(origin, receipt.trusted_remote)) throw new Error("Active generation origin differs from trusted receipt remote")
-  const observed = validateReleaseRoot(active.package_root, active.tag, runner, active.commit)
+  if (active.source_kind !== "bundle") {
+    assertCleanRepository(runner, active.package_root, "Active generation")
+    const origin = git(runner, active.package_root, ["config", "--get", "remote.origin.url"])
+    if (!remoteEqual(origin, receipt.trusted_remote)) throw new Error("Active generation origin differs from trusted receipt remote")
+  }
+  const observed = validateReleaseRoot(active.package_root, active.tag, runner, active.commit, {
+    sourceKind: active.source_kind ?? "git", manifestSha256: active.bundle_manifest_sha256, artifactSha256: active.bundle_artifact_sha256,
+  })
   if (!generationMatches(observed, active)) throw new Error("Active generation identity differs from receipt")
   for (const path of [paths.serverConfig, paths.tuiConfig]) {
     if (pluginSpecs(path).filter((spec) => specMatches(spec, active.spec)).length !== 1) throw new Error("Active generation registration is missing or ambiguous")
@@ -2704,7 +2844,7 @@ function installOrUpdate(
     }
     if (receipt?.installed && options.command === "update") {
       const active = activeGeneration(receipt)
-      if (active.commit !== generation.commit && compareVersions(generation.version, active.version) <= 0) {
+      if (staged.sourceKind === "git" && active.commit !== generation.commit && compareVersions(generation.version, active.version) <= 0) {
         throw new Error("Stable update version must increase monotonically")
       }
     }
@@ -2858,12 +2998,16 @@ function rollbackManager(
   if (options.agentPolicy === "force") throw new Error("Rollback never force-overwrites customized agents")
   const target = selectRollbackGeneration(receipt, options)
   const runner = dependencies.runner ?? new DefaultCommandRunner()
-  assertCleanRepository(runner, target.package_root, "Rollback generation")
-  const observedRemote = git(runner, target.package_root, ["config", "--get", "remote.origin.url"])
-  if (!remoteEqual(observedRemote, receipt.trusted_remote)) {
-    throw new Error("Rollback generation origin differs from the trusted receipt remote")
+  if (target.source_kind !== "bundle") {
+    assertCleanRepository(runner, target.package_root, "Rollback generation")
+    const observedRemote = git(runner, target.package_root, ["config", "--get", "remote.origin.url"])
+    if (!remoteEqual(observedRemote, receipt.trusted_remote)) {
+      throw new Error("Rollback generation origin differs from the trusted receipt remote")
+    }
   }
-  const validated = validateReleaseRoot(target.package_root, target.tag, runner, target.commit)
+  const validated = validateReleaseRoot(target.package_root, target.tag, runner, target.commit, {
+    sourceKind: target.source_kind ?? "git", manifestSha256: target.bundle_manifest_sha256, artifactSha256: target.bundle_artifact_sha256,
+  })
   if (!generationMatches(validated, target)) throw new Error("Rollback generation no longer matches its receipt")
   const timestamp = nowIso(dependencies)
   let activated = { ...target, production_dependencies: validated.production_dependencies, activated_at: timestamp }
@@ -3339,10 +3483,15 @@ function doctorManager(
       try {
         if (!samePath(canonicalDirectory(active.package_root), active.package_root)) throw new Error("active package root is redirected")
         const runner = dependencies.runner ?? new DefaultCommandRunner()
-        const observed = validateReleaseRoot(active.package_root, active.tag, runner, active.commit)
-        const observedRemote = git(runner, active.package_root, ["config", "--get", "remote.origin.url"])
-        if (!remoteEqual(observedRemote, receipt.trusted_remote)) throw new Error("active release remote differs from receipt")
-        assertCleanRepository(runner, active.package_root, "Active release")
+        const sourceKind = active.source_kind ?? "git"
+        const observed = validateReleaseRoot(active.package_root, active.tag, runner, active.commit, {
+          sourceKind, manifestSha256: active.bundle_manifest_sha256, artifactSha256: active.bundle_artifact_sha256,
+        })
+        if (sourceKind === "git") {
+          const observedRemote = git(runner, active.package_root, ["config", "--get", "remote.origin.url"])
+          if (!remoteEqual(observedRemote, receipt.trusted_remote)) throw new Error("active release remote differs from receipt")
+          assertCleanRepository(runner, active.package_root, "Active release")
+        }
         if (!generationMatches(observed, active)) throw new Error("active release identity differs from receipt")
       } catch (error) {
         issues.push({ code: "active-release-invalid", message: safeMessage(error instanceof Error ? error.message : String(error)) })
@@ -3407,6 +3556,13 @@ function validateOptionCombinations(options: ManagerOptions): void {
   if (options.tag) assertStableTag(options.tag)
   if (options.version && !/^\d+\.\d+\.\d+$/.test(options.version)) throw new Error("--version requires MAJOR.MINOR.PATCH")
   requestedTag(options)
+  if (options.command === "deploy") {
+    if (!options.bundleRoot || !options.trustBundleHash) throw new Error("deploy --offline requires a prepared bundle and --trust-bundle <reviewed-manifest-sha256>")
+    if (options.dryRun) throw new Error("Offline deploy does not accept --dry-run")
+    if (options.source || options.remote || options.tag || options.version || options.generation || options.enableCapability || options.disableCapability || options.excelRoot) {
+      throw new Error("Offline deploy accepts only its prepared bundle, trust hash, destination, and agent policy options")
+    }
+  } else if (options.bundleRoot || options.trustBundleHash) throw new Error("Bundle options are valid only with deploy")
   if (options.command !== "rollback" && options.generation) throw new Error("--generation is only valid with rollback")
   if (options.command !== "uninstall" && options.removeAgents) throw new Error("--remove-agents is only valid with uninstall")
   if (options.command !== "doctor" && (options.repairJournal || options.ackRestart)) throw new Error("--repair-journal and --ack-restart are doctor-only")
@@ -3447,6 +3603,26 @@ export function runManager(options: ManagerOptions, dependencies: ManagerDepende
     const pending = journalPaths(paths)
     if (pending.length) throw new Error("A pending manager journal blocks mutation; run doctor --repair-journal")
     if (options.ackRestart) throw new Error("--ack-restart is doctor-only")
+    if (options.command === "deploy") {
+      const effectiveCommand = readReceipt(paths, false)?.installed ? "update" : "install"
+      const result = installOrUpdate({ ...options, command: effectiveCommand }, paths, dependencies)
+      const receipt = readReceipt(paths, true)
+      const active = receipt?.installed ? activeGeneration(receipt) : undefined
+      return {
+        ...result,
+        command: "deploy",
+        summary: `${result.summary} Source: explicitly approved offline bundle ${options.trustBundleHash}.`,
+        ...(active ? { release_identity: {
+          package_version: active.version,
+          source_commit: active.commit,
+          release_tag: active.tag,
+          artifact_sha256: active.bundle_artifact_sha256!,
+          manifest_sha256: active.bundle_manifest_sha256!,
+          destination: active.package_root,
+          verification: "approved-manifest-and-inventory-verified" as const,
+        } } : {}),
+      }
+    }
     if (options.command === "install" || options.command === "update") {
       return installOrUpdate(options as ManagerOptions & { command: "install" | "update" }, paths, dependencies)
     }

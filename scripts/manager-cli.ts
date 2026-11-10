@@ -10,10 +10,12 @@ import {
   type ManagerResult,
 } from "./manager-core.ts"
 
-const COMMANDS = new Set<ManagerCommand>(["install", "update", "doctor", "rollback", "uninstall"])
+const COMMANDS = new Set<ManagerCommand>(["install", "update", "deploy", "doctor", "rollback", "uninstall"])
 
 function usage(): string {
-  return `Usage: alg <install|update|doctor|rollback|uninstall> [options]
+  return `Usage: alg <install|update|deploy|doctor|rollback|uninstall> [options]
+
+Offline deploy: alg deploy --offline --trust-bundle <reviewed-manifest-sha256>
 
 Common options:
   --config-dir <absolute>       OpenCode config directory
@@ -48,9 +50,12 @@ export function parseManagerArgs(args: readonly string[], env = process.env): Ma
   const home = env.USERPROFILE || env.HOME
   let configDir = home ? join(home, ".config", "opencode") : undefined
   const options: Partial<ManagerOptions> & { command: ManagerCommand } = { command }
+  let offline = false
   for (let index = 1; index < args.length; index++) {
     const arg = args[index]!
-    if (arg === "--config-dir") configDir = resolve(value(args, index++, arg))
+    if (arg === "--offline") offline = true
+    else if (arg === "--trust-bundle") options.trustBundleHash = value(args, index++, arg).toLowerCase()
+    else if (arg === "--config-dir") configDir = resolve(value(args, index++, arg))
     else if (arg === "--install-root") options.installRoot = resolve(value(args, index++, arg))
     else if (arg === "--source") options.source = resolve(value(args, index++, arg))
     else if (arg === "--remote") options.remote = value(args, index++, arg)
@@ -82,6 +87,11 @@ export function parseManagerArgs(args: readonly string[], env = process.env): Ma
     else if (arg === "--help" || arg === "-h") throw new Error(usage())
     else throw new Error(`Unknown manager argument: ${arg}`)
   }
+  if (command === "deploy") {
+    if (!offline) throw new Error("deploy requires --offline; connected version dispatch is not enabled")
+    options.bundleRoot = resolve(fileURLToPath(new URL("..", import.meta.url)))
+    if (!options.trustBundleHash) throw new Error("deploy --offline requires --trust-bundle <reviewed-manifest-sha256>")
+  } else if (offline || options.trustBundleHash) throw new Error("--offline and --trust-bundle are deploy-only")
   if (!configDir) throw new Error("Cannot determine a config directory; pass --config-dir")
   return { ...options, command, configDir }
 }
@@ -89,6 +99,14 @@ export function parseManagerArgs(args: readonly string[], env = process.env): Ma
 function printHuman(result: ManagerResult): void {
   console.log(result.summary)
   if (result.generation) console.log(`Generation: ${result.generation}`)
+  if (result.release_identity) {
+    console.log(`Package version: ${result.release_identity.package_version} (candidate; no release tag)`)
+    console.log(`Source commit: ${result.release_identity.source_commit}`)
+    console.log(`Artifact SHA-256: ${result.release_identity.artifact_sha256}`)
+    console.log(`Approved manifest SHA-256: ${result.release_identity.manifest_sha256}`)
+    console.log(`Verification: ${result.release_identity.verification}`)
+    console.log(`Installed package: ${result.release_identity.destination}`)
+  }
   if (result.receipt_path) console.log(`Receipt: ${result.receipt_path}`)
   for (const config of result.configs ?? []) {
     console.log(`${config.changed ? "changed" : "unchanged"}: ${config.path}`)
