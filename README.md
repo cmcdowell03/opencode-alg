@@ -1,5 +1,7 @@
 # opencode-alg
 
+V1 implementation roadmap: [workspace readiness, durable investigations and portable deployment](docs/alg-v1-design-index.md). Linux/Bash and Windows/PowerShell acceptance run locally; no GitHub runners.
+
 New opt-in [environment-aware session memory](docs/session-memory.md) restores exact
 procedures after compaction, with bounded context and scoped repeat-work guards.
 
