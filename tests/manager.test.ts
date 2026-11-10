@@ -36,6 +36,7 @@ const sandboxes: string[] = []
 
 function isNpmRequest(request: CommandRequest): boolean {
   return /^npm(?:\.cmd)?$/i.test(request.command) ||
+    (/[\\/]node_modules[\\/]npm[\\/]bin[\\/]npm-cli\.js$/i.test(request.command) && request.args.includes("ci")) ||
     (request.args.some((arg) => /[\\/]node_modules[\\/]npm[\\/]bin[\\/]npm-cli\.js$/i.test(arg)) && request.args.includes("ci"))
 }
 
@@ -292,7 +293,7 @@ describe("v0.2 side-by-side release manager", () => {
     runManager({ command: "install", configDir: config, source }, { runner })
     const state = receipt(config)
     expect(state.generations[0]?.capabilities).toBeUndefined()
-    expect(state.generations[0]?.durable_state.compatible_package_versions).toEqual(["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1"])
+    expect(state.generations[0]?.durable_state.compatible_package_versions).toEqual(["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1", "0.5.0"])
     expect(runManager({ command: "doctor", configDir: config }, { runner }).capability_status).toMatchObject({
       status: "disabled", enabled: false, manifest: "not-recorded", runtime_check: "not-run",
     })

@@ -89,6 +89,7 @@ describe("offline deployment bundle", () => {
     for (const name of ["index.ts", "server.ts", "tui.ts"]) writeFileSync(join(source, "src", name), `export const fixture = ${JSON.stringify(name)}\n`)
     for (const name of ["checker", "explorer", "implementer", "orchestrator", "researcher"]) writeFileSync(join(source, "agents", `${name}.md`), `# ${name}\n`)
     writeFileSync(join(source, "templates", "fixture.json"), "{}\n")
+    writeFileSync(join(source, "src", "local-config.json"), "{\"fixture_only\":true}\n")
     writeFileSync(join(source, "scripts", "fixture.txt"), "bundle script\n")
     const dependencies: Record<string, string> = {}
     const npm = resolveNpmInvocation()
@@ -103,7 +104,7 @@ describe("offline deployment bundle", () => {
     }
     const pkg = {
       name: "opencode-alg", version: "0.4.1", type: "module", dependencies,
-      files: ["src", "agents", "templates", "scripts", "capabilities/excel", "vendor", "package-lock.json"],
+      files: ["src/**/*.ts", "agents", "templates", "scripts", "capabilities/excel", "vendor", "package-lock.json"],
       exports: { ".": "./src/index.ts", "./server": "./src/server.ts", "./tui": "./src/tui.ts" },
       opencode: { server: "./src/server.ts", tui: "./src/tui.ts" },
       opencodeAlg: { durableState: { format: "alg-run-state", currentSchema: 2, compatibleSchemas: [1, 2], compatiblePackageVersions: ["0.4.1"] } },
@@ -142,6 +143,7 @@ describe("offline deployment bundle", () => {
     expect(prepared.sourceCommit).toBe(commit)
     expect(readFileSync(join(output, "scripts", "fixture.txt")).equals(committedScript)).toBe(true)
     expect(existsSync(join(output, ".git"))).toBe(false)
+    expect(existsSync(join(output, "src", "local-config.json"))).toBe(false)
     expect(existsSync(join(output, "node_modules", "@modelcontextprotocol", "sdk", "package.json"))).toBe(true)
     const runner: CommandRunner = { run(request) {
       if (request.command === "opencode" && JSON.stringify(request.args) === JSON.stringify(["--version"])) {

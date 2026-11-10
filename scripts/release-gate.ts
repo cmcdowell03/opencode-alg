@@ -114,6 +114,7 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "CHANGELOG.md", "DESIGN.md", "README.md",
   "bun.lock", "npm-shrinkwrap.json",
   "docs/operations.md", "docs/release-verification.md", "docs/upgrades.md",
+  "docs/deployment.md", "docs/v1-investigations.md", "docs/v1-headless-testing.md", "docs/v1-implementation-status.md",
   "docs/duckdb-query-plane.md",
   "docs/experience-and-data-science.md", "docs/connectors.md", "docs/implementation-status.md",
   "docs/session-continuity.md", "docs/session-memory.md", "docs/session-memory-implementation-plan.md",
@@ -130,10 +131,12 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "scripts/synthetic-gate.ts",
   "scripts/memory-cli.ts", "scripts/session-memory-gate.ts", "scripts/session-memory-benchmark.ts",
   "scripts/environment-memory-cli.ts", "scripts/environment-memory-benchmark.ts", "scripts/snapshot-upgrade.ts",
-  "scripts/offline-diagnostics.ts",
+  "scripts/offline-diagnostics.ts", "scripts/deployment.ts", "scripts/prepare-deployment.ts",
+  "scripts/investigation-cli.ts", "scripts/test-v1-headless.ts",
 ] as const
 
 const RELEASE_CONTROL_PATHS = [
+  "docs/alg-v1-design-index.md", "docs/alg-v1-applicability-measured-improvement-design.md", "docs/alg-v1-large-data-investigation-design.md", "docs/alg-v1-phase-one-investigation-plan.md", "docs/alg-v1-linux-bash-acceptance-plan.md", "docs/alg-v1-artifact-skill-extension.md", "docs/alg-v1-claude-review-reconciliation.md",
   "docs/skill-knowledge-graph-design.md", "docs/execution-recovery-contract.md",
   "docs/knowledge-environment-contract.md", "docs/context-decision-contract.md",
   "docs/coordination-improvement-contract.md", "docs/opencode-v2-design.md", "docs/incident-watcher-design.md",

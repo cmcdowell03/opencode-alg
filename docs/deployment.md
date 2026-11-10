@@ -10,7 +10,7 @@ From a clean, committed source checkout on the target platform, prepare a new ou
 bun run scripts/prepare-deployment.ts --source "/path/to/clean/opencode-alg" --output "/path/to/release bundle/opencode-alg"
 ```
 
-Preparation copies the package's declared distributable files, runs `npm ci --omit=dev --ignore-scripts --no-audit --no-fund`, verifies production dependency resolution, then inventories every shipped path, byte hash, link target, mode, package lock, runtime target, source commit, and package version. It prints a manifest SHA-256. Keep that value in a separately reviewed release record. A checksum included in the bundle detects accidental changes; it does not authenticate the publisher.
+Preparation reads the package's declared distributable files from the pinned Git commit (not live worktree bytes), runs `npm ci --omit=dev --ignore-scripts --no-audit --no-fund`, verifies production dependency resolution, then inventories every shipped path, byte hash, link target, mode, package lock, runtime target, source commit, and package version. It prints a manifest SHA-256. Keep that value in a separately reviewed release record. A checksum included in the bundle detects accidental changes; it does not authenticate the publisher.
 
 Prepare with the launcher that will run deployment. Bun reports a Node compatibility version; that value is not the installed Node.js version. A Bun-prepared bundle records `runtime: bun` and its Bun major. A Node-prepared bundle records `runtime: node` and its actual Node major. Deployment rejects a different launcher or major version. To prepare with Node.js 22+, run `node --disable-warning=ExperimentalWarning --experimental-strip-types scripts/prepare-deployment.ts ...`.
 

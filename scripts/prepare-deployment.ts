@@ -75,14 +75,24 @@ function copyCommittedPackage(source: string, commit: string, stage: string): Re
   const pkg = JSON.parse(utf8(committedBlob(source, packageEntry, 1024 * 1024), "package.json")) as Record<string, any>
   if (pkg.name !== "opencode-alg" || !/^\d+\.\d+\.\d+$/.test(pkg.version)) throw new Error("Source package identity is invalid")
   if (!Array.isArray(pkg.files)) throw new Error("Package files declaration is missing or invalid")
-  const copyTop = new Set<string>(["package.json", "package-lock.json", "npm-shrinkwrap.json"])
-  for (const item of pkg.files) {
+  const declarations = ["package.json", "package-lock.json", "npm-shrinkwrap.json", ...pkg.files]
+  const patterns = declarations.map((item: unknown) => {
     if (typeof item !== "string") throw new Error("Package files declaration contains a non-string entry")
-    const top = item.replace(/^(\.\/)+/, "").split(/[/*]/, 1)[0]
-    if (!top || top === "." || top === ".." || /[\\\0]/.test(top)) throw new Error("Package files declaration contains an unsafe path")
-    if (top !== ".git" && top !== "node_modules") copyTop.add(top)
-  }
-  const selected = tree.filter((entry) => copyTop.has(entry.path.split("/")[0]!) && !entry.path.startsWith(".git/") && !entry.path.startsWith("node_modules/"))
+    const normalized = item.replace(/^(\.\/)+/, "").replace(/\/$/, "")
+    const parts = normalized.split("/")
+    if (!normalized || parts.some((part) => !part || part === "." || part === ".." || /[\\\0[\]{}!]/.test(part))) {
+      throw new Error("Package files declaration contains an unsafe or unsupported pattern")
+    }
+    if (!normalized.includes("*") && !normalized.includes("?")) return (path: string) => path === normalized || path.startsWith(normalized + "/")
+    const expression = parts.map((part, index) => {
+      if (part === "**") return index === parts.length - 1 ? ".*" : "(?:[^/]+/)*"
+      const segment = [...part].map((char) => char === "*" ? "[^/]*" : char === "?" ? "[^/]" : char.replace(/[.*+?^$()|\\]/g, "\\$&")).join("")
+      return segment + (index === parts.length - 1 ? "" : "/")
+    }).join("")
+    const pattern = new RegExp("^" + expression + "$")
+    return (path: string) => pattern.test(path)
+  })
+  const selected = tree.filter((entry) => !entry.path.startsWith(".git/") && !entry.path.startsWith("node_modules/") && patterns.some((matches) => matches(entry.path)))
   if (!selected.some((entry) => entry.path === "package-lock.json")) throw new Error("Pinned commit has no package-lock.json")
   const folded = new Set<string>()
   let total = 0

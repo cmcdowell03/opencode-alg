@@ -4,7 +4,7 @@ Design review and proposed implementation sequence. Dated 9 November 2026.
 
 The first V1 milestone combines workspace readiness with durable investigation recovery: the harness resolves the procedures and facts its action requires, then retains evidence and search state through compaction or restart without automatically repeating completed or possibly running work. Qualify datalake-mcp before deciding what orchestration state it lacks; reuse ALG's executor, memory and persistence.
 
-This reviews the [applicability and measured improvement spec](alg-v1-applicability-measured-improvement-design.md) and [large data investigation spec](alg-v1-large-data-investigation-design.md). It follows the [shared design index and roadmap](alg-v1-design-index.md), reconciled with the companion drafts after Claude's review. It does not authorize implementation. No V2 work, production queries, model evaluations or GitHub runner tests were performed for this review.
+This reviews the [applicability and measured improvement spec](alg-v1-applicability-measured-improvement-design.md) and [large data investigation spec](alg-v1-large-data-investigation-design.md). It follows the [shared design index and roadmap](alg-v1-design-index.md), reconciled with the companion drafts after Claude's review. This paragraph records the original design review; implementation was subsequently authorized and is tracked in PR #14. See [implementation status](v1-implementation-status.md) for delivered and deferred contracts. No V2 work, production queries, model evaluations or GitHub runner tests were performed for this review.
 
 ## Verified baseline and integration assumptions
 
