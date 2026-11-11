@@ -2,7 +2,7 @@
 
 PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current candidate is 0.5.3 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier 0.5.1/0.5.2 receipts and statements below remain historical evidence for their named commits and are not relabeled as 0.5.3 acceptance.
 
-**Current disposition, 10 November 2026:** the earlier 80% estimate remains withdrawn. The confirmed ledger defects and the missing local workflow contracts are implemented. Native MCP translation is configurable and tested against fixtures, not verified against the real air-gapped datalake-mcp. The PR remains draft: the loop fix now has one successful bounded local-model session, while production service qualification, scientific usefulness and general long-session reliability remain unestablished.
+**Current disposition, 11 November 2026:** the earlier 80% estimate remains withdrawn. The confirmed ledger defects and the missing local workflow contracts are implemented. Native MCP translation is configurable and tested against fixtures, not verified against the real air-gapped datalake-mcp. The checker follow-up delivers selected evidence without changing saved investigation graphs. The PR remains unmerged: the loop fix has one successful bounded local-model session, while production service qualification, scientific usefulness and general long-session reliability remain unestablished.
 
 ## Delivered contracts
 
@@ -30,7 +30,40 @@ bash "/path/to/opencode-alg/scripts/alg.sh" deploy --offline --trust-bundle <rev
 
 Use isolated --config-dir and --install-root overrides when evaluating a candidate. A successful deployment means installed on disk; an existing OpenCode process must restart before it loads the new generation. The new candidate writes an investigation-plan claim that 0.5.2 and older readers do not understand, so rollback to those versions is rejected.
 
-## Current 0.5.3 loop and deployment follow-up — 10 November 2026
+## Checker evidence and graph strategy follow-up — 11 November 2026
+
+Implementation commit: `d6c8012233560b281a3793a75b506d06accfe77c`. Checker prompts now include explicitly selected evidence under fixed count/byte limits with source/attempt metadata, JSON identity and honest omitted/unavailable states. The compiled graph policy selects the existing investigation reconciliation input; the stored template and its digest are unchanged. No worker transcript or unrelated wiring is added when an explicit claim is supplied. State ownership is documented in [operator usage](v1-investigations.md#state-ownership).
+
+The [graph and adversarial-review proposal](v1-graph-evolution-adversarial-review.md) distinguishes existing custom graph authoring from future evidence-bound verdicts, graph revisions and measured promotion. These future capabilities are design only; this change adds no recursive agents, graph mutation, permission expansion or V2 runtime.
+
+| Local check | Result and scope |
+| --- | --- |
+| Windows affected regressions | 95 passed, zero failures; 562 assertions across seven files, 54.07 seconds |
+| Native Ubuntu affected regressions | 95 passed, zero failures; 562 assertions across the same seven files, 19.71 seconds |
+| Windows manager full-file invocation | Completed all 84 original tests: 83 passed and one bundled receipt-race test timed out at 76.56 seconds against its 60-second limit; 697 assertions, 1,709.01 seconds total. This invocation remains failed, not interrupted or relabelled green |
+| Receipt-race test repair | Commit `0d5cec3c` separates the four independent boundary scenarios while retaining all 14 assertions and the 60-second per-case limit. All four pass on Windows (91.84 seconds total) and native Ubuntu (3.24 seconds total). The other 83 tests were unchanged; no single all-green final full-file invocation is claimed |
+| Type checking | Passed on Windows and native Ubuntu |
+| Headless checker fixture | Three executor-to-SDK-to-host child sessions, three attempts and host-verified parent links on both platforms; deterministic provider checks selected evidence and rejects missing evidence or unrelated wiring |
+| Recovery and isolation | One compaction, two restarts, one accepted synthetic remote job and one remote page read per run; configuration preservation and process/temporary-environment cleanup passed |
+
+The headless fixture directly drives the executor through the installed OpenCode 1.18.35 host; it does not exercise `alg_run` for this custom graph. It uses a deterministic local provider, not a new real-model quality trial. The initial Windows checker fixture failed after two child attempts and before a checker verdict. That receipt remains failed; the follow-up installed the shipped worker/checker definitions into isolated configuration, persisted the explicit model selection, and retained bounded failure diagnostics. The final harness copies agent definitions from the verified runtime snapshot and verifies each child's `parentID` against the host.
+
+The Windows manager invocation now covers the entire file, unlike the earlier interrupted receipt. Its one failure was the combined test deadline, not a failed correctness assertion. Each repaired scenario starts from the same installed baseline that the earlier sequence restored between boundaries. Production manager code, transaction assertions and product deadlines were unchanged. Verification is the completed original invocation plus the focused four-case repair checks, rather than a claim that the original failed invocation passed.
+
+Windows runtime digest: `aff4a314b03effc477f95387fc1756a811b752c3cf5dac46d2d019360bbd7b79`. Native Ubuntu digest: `d570dfc12804936d83d77f49a4b0b195046669883ed31e42b05b545ba16f58bd`. All 123 runtime inputs match after CRLF-to-LF normalization (69 Windows files differ in line endings); the raw identities remain distinct. The earlier prepared-package receipts below retain their earlier runtime identities and are not relabelled as checker-follow-up packages. New local evidence is retained under the external `implementation-evidence/checker-20261111` directory.
+
+| Retained receipt | SHA-256 |
+| --- | --- |
+| Final Windows headless checker/recovery | `651601101d1428ba9ca48f76e0a94b31c18ac7ad5e1f3b1109319ba9012b433f` |
+| Native Ubuntu headless checker/recovery | `c647fbad1ed8638661b83e1a4f6162768271563ff9aa7809ab619153ac88cc53` |
+| Runtime line-ending comparison | `2dae53fda15c79eacd47bf44a63235cfe40ce448ed641bae42080296e3693307` |
+| Windows repaired receipt-race cases | `8e97f25dad8a8c063da46828b6391b0cde54cc7cfe7a7fbdf9dfa3d02f4583c3` |
+| Native Ubuntu repaired receipt-race cases | `58f920a30b570f12c6cd9c6f8d2a24744dfd1b173efed40d7a6b0bffff22645d` |
+| Completed Windows manager invocation, including its timeout | `7fe7abeb6263e4c621d17de0a9e79b3ad98b399b04607d1cce1706e31a0b955b` |
+
+All checks remained local and model agnostic. No GitHub runners, hosted model calls, global configuration changes or V2 work were used.
+
+## 0.5.3 loop and deployment follow-up — 10 November 2026
 
 Plan recovery commit: `6cf3c087186bfe4685705e76a96ff3217c9fb49f`. Final deployment/package implementation: `ca175aa0d1637325c76a733620aedb47a3bc876f`. Later acceptance documentation does not change these tested package identities.
 
