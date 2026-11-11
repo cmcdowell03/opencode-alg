@@ -2,6 +2,9 @@
 
 ## 0.5.3 candidate
 
+- Delivers explicitly selected checker evidence alongside claims, with source/attempt identity, byte digests and explicit omission/missing states. The compiled investigation policy preserves its legacy reconciliation input without changing persisted graph identity. Keeps unrelated wiring and worker transcripts outside the explicit checker payload.
+- Documents V1 state ownership and a design-only path for evidence-bound adversarial verdicts, validated model graph proposals and budget-preserving graph revisions. No active-graph editing, recursive delegation or V2 implementation is enabled.
+
 - Skips staging/copy/cleanup for an already active exact offline bundle after verifying both the approved input and retained installation. Removes redundant generation-tree hashes while retaining final identity/content checks before activation.
 
 - Prevents repeated investigation plans from resetting work or budget. A durable task-wide claim survives detach, compaction and restart; identical requests reuse the admitted run, and changed requests require the existing explicit new-task workflow. Concurrent planning and attachment changes are checked before publication.

@@ -11,7 +11,8 @@ import {
   wireInputs,
 } from "./graph.ts"
 import { canonicalJson } from "./persistence.ts"
-import { assertManagedGraph } from "./graph-policy.ts"
+import { buildCheckerEvidence, isCheckerEvidencePort } from "./checker-evidence.ts"
+import { assertManagedGraph, graphPolicy } from "./graph-policy.ts"
 import { parseAndValidate } from "./schemas.ts"
 import {
   acquireRunLock,
@@ -329,7 +330,8 @@ async function runOneNode(
       const prompt = checker
         ? buildCheckerPrompt({
             criteria: run.criteria.length ? run.criteria : ["Output must be complete and match the goal."],
-            claimed: inputs.claimed ?? inputs,
+            claimed: inputs.claimed ?? Object.fromEntries(Object.entries(inputs).filter(([key]) => !isCheckerEvidencePort(key))),
+            evidence: buildCheckerEvidence(definition, run, graphPolicy(run.graph)?.checkerEvidencePorts?.[definition.id]),
             priorFailures: state.attempts.at(-2)?.outcome === "substantive_rejection" ? [] : state.last_failures,
             priorOutcome,
           })

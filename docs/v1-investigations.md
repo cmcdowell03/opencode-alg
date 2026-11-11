@@ -1,6 +1,6 @@
 # V1 workspace readiness and durable investigations
 
-This experimental candidate implements the local workspace and durable-investigation contracts of the first phase of the [V1 design](alg-v1-design-index.md). Synthetic full-graph and installed-host recovery checks are recorded in [implementation status](v1-implementation-status.md). The real air-gapped datalake-mcp remains unqualified; a local-model graph completed, but its enclosing session timed out after starting redundant work. Workspace requirements, a fixed investigation graph and a durable query ledger reuse ALG's existing skill approval, run ownership, node schemas, retries, checkpoints and context budget. All features are model independent. OpenCode 2, autonomous graph changes and measured skill promotion remain later work.
+This experimental candidate implements the local workspace and durable-investigation contracts of the first phase of the [V1 design](alg-v1-design-index.md). Synthetic full-graph and installed-host recovery checks are recorded in [implementation status](v1-implementation-status.md). The real air-gapped datalake-mcp remains unqualified. The earlier redundant-plan failure is preserved; the 0.5.3 correction passed one bounded local-model session, not a long-session or scientific-quality qualification. Workspace requirements, a fixed investigation graph and a durable query ledger reuse ALG's existing skill approval, run ownership, node schemas, retries, checkpoints and context budget. All features are model independent. OpenCode 2, autonomous graph changes and measured skill promotion remain later work.
 
 ## Enable deliberately
 
@@ -85,6 +85,21 @@ For example, the request is:
 This preserves the prior investigation and outstanding remote work; it does not cancel or refund it. The harness may perform this workflow within its existing permissions when the user has requested a new task, not as an automatic retry escape. It also resets task-specific skill bindings as the existing task workflow specifies. Cross-session/global semantic goal equivalence remains outside this guarantee.
 
 ## What survives context loss
+
+### State ownership
+
+| Record | Authoritative owner | Recovery rule |
+| --- | --- | --- |
+| Run graph, criteria, attempts, feedback and completed outputs | ALG run store and referenced artifacts | Resume exact persisted state; a conversation summary cannot reset attempts or replace outputs |
+| Task/plan claim, approved skill revisions, delivery and revocation state | ALG session-memory store, revalidated against current operator policy | Restore bindings and the existing investigation; a new session or compaction is not a new budget or approval |
+| Work orders, reservations, submissions, uncertain outcomes and engineer review | ALG investigation ledger and review receipt | Persist dispatch intent before remote calls, reconcile uncertainty, and bind review to exact evidence; never refund unconfirmed remote work |
+| Transcript and child-session interaction | OpenCode | Use host history where available; do not require it to reconstruct ALG's budget or authorization |
+| Bulk data, remote jobs, result retention and access | Qualified datalake-mcp | Store bounded identities/references locally; revalidate access, source versions and retention before reuse |
+| Context capsule, status summary and cached result pages | Derived ALG projections/caches | Rebuild summaries from durable records; cached pages require fresh validation. Editing a summary cannot approve findings |
+
+The existing stores reuse shared locking, canonical serialization and atomic-write primitives where applicable; this phase does not replace them with another storage system. Remote idempotency prevents duplicate submission of one identity, but cannot replace local authorization, budget reservations or unknown-outcome accounting. Hashes establish byte identity, not authenticity or causal truth. Host/operator permissions remain authoritative; ALG's application-level receipts do not create an OS security boundary.
+
+### Reconstruction
 
 The normal request hook and compaction hook reconstruct a bounded view from disk: the investigation reference, current budget, recent job identities/status, hypothesis and contradiction summaries, coverage and the next action. Full ledgers, data and evidence stay outside the prompt. Approved skills retain their existing complete-instruction and delivery checks. Managed query dispatch and run/resume recheck durable authority even when a hook is missed.
 

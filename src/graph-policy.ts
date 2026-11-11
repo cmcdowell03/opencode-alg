@@ -5,9 +5,11 @@ import type { GraphDef, RunState } from "./types.ts"
 
 export interface ManagedGraphPolicy {
   template: string; operation: string; reviewNode: string; investigation: true
+  checkerEvidencePorts?: Readonly<Record<string, readonly string[]>>
 }
 const policies: Readonly<Record<string, ManagedGraphPolicy>> = Object.freeze({
-  "data-investigation": Object.freeze({ template: "data-investigation", operation: "data.investigate.read", reviewNode: "confirm", investigation: true }),
+  "data-investigation": Object.freeze({ template: "data-investigation", operation: "data.investigate.read", reviewNode: "confirm", investigation: true,
+    checkerEvidencePorts: Object.freeze({ check: Object.freeze(["reconciliation"]) }) }),
 })
 /** Compiled policies only; model-authored graphs cannot register new execution authority. */
 export function graphPolicy(graph: GraphDef): ManagedGraphPolicy | undefined { return policies[graph.name] }

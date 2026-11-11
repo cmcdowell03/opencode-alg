@@ -13,6 +13,7 @@ import { tmpdir } from "node:os"
 import { basename, delimiter, dirname, extname, isAbsolute, join, resolve, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 import { z } from "zod"
+import { checkerProbeResponse, runCheckerHeadlessProbe } from "./checker-headless-probe.ts"
 import {
   ALG_TOOL_IDS,
   findSourceIdentityLine,
@@ -41,6 +42,8 @@ export const PERSISTED_REFERENCE = "synthetic://alg-headless/manifest/readings-v
 export const PERSISTED_RESULT = sha256("ALG V1 deterministic local result fixture; no real source data")
 
 const EvidenceSchema = z.object({
+  checker_probe: z.object({ passed: z.boolean(), run_id: z.string(), attempts: z.number().int(), distinct_children: z.number().int(), host_verified_parents: z.number().int(),
+    nodes: z.array(z.object({ id: z.string(), status: z.string(), outcome: z.string().nullable(), failures: z.array(z.string().max(2048)).max(3) })).max(3) }).nullable(),
   schema_version: z.literal(1), kind: z.literal("opencode-alg-v1-headless-acceptance"), generated_at: z.iso.datetime({ offset: true }),
   passed: z.boolean(), failure: z.string().max(2048).nullable(), evidence_path: z.string().min(1),
   source: z.object({ package_version: z.string(), root: z.string(), loaded_root: z.string(), sha256: z.string().regex(/^[a-f0-9]{64}$/), node: z.string(), bun: z.string().nullable() }).strict(),
@@ -113,6 +116,8 @@ export function chooseSyntheticResponse(phase: HostRequestPhase, toolStep: numbe
     saw_persisted_reference: messagesText.includes(PERSISTED_REFERENCE) && messagesText.includes(PERSISTED_RESULT),
     saw_query_output: outputText.includes(PERSISTED_REFERENCE) && outputText.includes(PERSISTED_RESULT),
   }
+  const checkerResponse = checkerProbeResponse(latestUserText(body))
+  if (checkerResponse !== undefined) return { kind: "text", text: checkerResponse, receipt }
   if (phase === "initial" && toolStep === 0) return { kind: "tool", name: "alg_context_status", args: { operation: "headless-smoke" }, receipt }
   if (phase === "initial" && toolStep === 1) return { kind: "tool", name: "alg_plan", args: { goal: "Run bounded synthetic data investigation acceptance", template: "data-investigation", criteria: ["Use only deterministic local fixture data"], detail: "compact" }, receipt }
   if (phase === "initial" && toolStep === 2) return { kind: "tool", name: "alg_investigation", args: { request: { action: "admit", input: queryPayload(), node_ids: [] } }, receipt }
@@ -500,6 +505,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
   let sessionId: string | null = null
   let ids: string[] = []
   let initialToolCalls: string[] = [], followupToolCalls: string[] = []
+  let checkerProbe: Awaited<ReturnType<typeof runCheckerHeadlessProbe>> | null = null
   let initialCheckpoint: HeadlessAcceptanceEvidence["session"]["initial_memory_checkpoint"] = null
   let compactCheckpoint: HeadlessAcceptanceEvidence["session"]["compacted_memory_checkpoint"] = null
   let finalCheckpoint: HeadlessAcceptanceEvidence["session"]["final_memory_checkpoint"] = null
@@ -535,6 +541,9 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     symlinkSync(join(checkoutPlugin.source.root, "node_modules"), join(runtimeSourceRoot, "node_modules"), process.platform === "win32" ? "junction" : "dir")
     plugin = verificationPluginConfiguration(runtimeSourceRoot)
     if (plugin.source.digest !== checkoutPlugin.source.digest) throw new Error("runtime source changed while the immutable host snapshot was prepared")
+    const probeAgents = join(configHome, "opencode", "agents")
+    mkdirSync(probeAgents)
+    for (const role of ["implementer", "checker"]) copyFileSync(join(runtimeSourceRoot, "agents", `${role}.md`), join(probeAgents, `${role}.md`), constants.COPYFILE_EXCL)
     writeFileSync(join(projectRoot, "README.md"), "Synthetic headless host acceptance fixture.\n", { flag: "wx" })
     mkdirSync(join(projectRoot, ".opencode"), { recursive: true, mode: 0o700 })
     seedVerificationHostDependencies(join(projectRoot, ".opencode"), checkoutPlugin.source.root)
@@ -670,6 +679,11 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     const finalMessages = (await jsonRequest<any[]>(`${third.base}/session/${encodeURIComponent(sessionId)}/message?${query}&limit=100`, "GET")).value
     recoveredCompaction &&= Array.isArray(finalMessages) && hasCompactionWithEvidence(finalMessages)
     await runFollowup(third.base, 2)
+    provider.setPhase("background")
+    const probeParent = await jsonRequest<any>(`${third.base}/session?${query}`, "POST", { title: "Isolated checker evidence fixture" })
+    if (typeof probeParent.value?.id !== "string") throw new Error("Checker probe parent session was not created")
+    checkerProbe = await runCheckerHeadlessProbe(third.base, projectRoot, probeParent.value.id)
+    if (!checkerProbe.passed) throw new Error("Actual OpenCode children did not complete the selected-evidence fixture")
     finalCheckpoint = (() => { const state = resultCheckpoint(projectRoot, sessionId!); return { revision: state.revision, generation: state.generation, result_persisted: state.result_persisted } })()
     if (!sameSession || !recoveredCompaction || !finalCheckpoint.result_persisted) throw new Error("Final server restart did not preserve the session and memory evidence")
     if (!await stopProcess(third.processInfo)) throw new Error("Third OpenCode server process could not be confirmed stopped")
@@ -692,7 +706,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     try { await mcpService.close(); mcpStopped = true } catch { mcpStopped = false }
     try { configAfterSha = snapshotGlobalOpenCodeConfig(roots, hmacKey).sha256 } catch { configAfterSha = "0".repeat(64) }
     const globalConfigUnchanged = configAfterSha === configBeforeSha
-    const wasPassed = failure === null && !credentialsInherited && globalConfigUnchanged && started.length === 3 && exited.filter(Boolean).length === 3 && pluginProofs.length === 3 && pluginProofs.every(Boolean) &&
+    const wasPassed = failure === null && checkerProbe?.passed === true && !credentialsInherited && globalConfigUnchanged && started.length === 3 && exited.filter(Boolean).length === 3 && pluginProofs.length === 3 && pluginProofs.every(Boolean) &&
       ids.length === ALG_TOOL_IDS.length && ALG_TOOL_IDS.every((id) => ids.includes(id)) && initialToolCalls.includes("alg_context_status") && initialToolCalls.includes("alg_investigation") &&
       followupToolCalls.filter((name) => name === "alg_investigation").length === 2 && planToolSeen && queryToolSeen && providerStopped && mcpStopped &&
       provider.nonLoopbackRequests === 0 && mcpService.counters.nonLoopbackRequests === 0 && mcpService.counters.submitCalls === 1 && mcpService.counters.acceptedRemoteJobs === 1 &&
@@ -700,6 +714,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
       sameResultPin && compactionSawInitial && recoveredCompaction && recoveredSameEvidence && sameSession && followupSawRef
     const evidenceCandidate: HeadlessAcceptanceEvidence = {
       schema_version: 1, kind: "opencode-alg-v1-headless-acceptance", generated_at: new Date().toISOString(), passed: wasPassed,
+      checker_probe: checkerProbe,
       failure: globalConfigUnchanged ? failure : "real-user OpenCode configuration changed during the isolated host run",
       evidence_path: evidencePath,
       source: { package_version: plugin.package_version, root: checkoutPlugin.source.root, loaded_root: plugin.source.root, sha256: plugin.source.digest, node: process.versions.node, bun: process.versions.bun ?? null },
