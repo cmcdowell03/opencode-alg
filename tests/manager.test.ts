@@ -1606,7 +1606,10 @@ describe("v0.2 side-by-side release manager", () => {
     expect(() => serializeManagerJson({ value: "x".repeat(MANAGER_JSON_MAX_BYTES) })).toThrow("exceeds")
   }, 30_000)
 
-  test("receipt claim/publish races preserve third-party bytes and crash recovery is deterministic", () => {
+  // Each boundary starts from the same installed receipt. Keep the 60s limit
+  // per independent scenario instead of charging four Windows filesystem-heavy
+  // updates and repairs to one test's clock.
+  test.each(["before-commit", "after-claim", "claim-crash", "publish-crash"] as const)("receipt claim/publish boundary %s preserves bytes and recovers deterministically", (boundary) => {
     const source = sourceFixture()
     const config = tempProject("alg-receipt-claim-races-")
     sandboxes.push(config)
@@ -1617,40 +1620,37 @@ describe("v0.2 side-by-side release manager", () => {
     const before = readFileSync(receiptPath)
     const third = Buffer.from('{"third_party":true}\n')
 
-    expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
-      runner,
-      faults: { beforeReceiptCommit(path) { writeFileSync(path, third) } },
-    })).toThrow("derivation baseline")
-    expect(readFileSync(receiptPath)).toEqual(third)
-    expect(readdirSync(transactionRoot)).toEqual([])
-    writeFileSync(receiptPath, before)
-
-    expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
-      runner,
-      faults: { afterReceiptClaim(path) { writeFileSync(path, third) } },
-    })).toThrow("Third-party receipt was preserved")
-    expect(readFileSync(receiptPath)).toEqual(third)
-    expect(readdirSync(transactionRoot)).toHaveLength(1)
-    rmSync(receiptPath)
-    runManager({ command: "doctor", configDir: config, repairJournal: true }, { runner })
-    expect(readFileSync(receiptPath)).toEqual(before)
-
-    expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
-      runner,
-      faults: { afterReceiptClaim() { throw new SimulatedManagerCrashError("claim crash") } },
-    })).toThrow("claim crash")
-    expect(existsSync(receiptPath)).toBe(false)
-    expect(readdirSync(transactionRoot)).toHaveLength(1)
-    runManager({ command: "doctor", configDir: config, repairJournal: true }, { runner })
-    expect(readFileSync(receiptPath)).toEqual(before)
-
-    expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
-      runner,
-      faults: { afterReceiptPublish() { throw new SimulatedManagerCrashError("publish crash") } },
-    })).toThrow("publish crash")
-    expect(receipt(config).installed).toBe(true)
-    runManager({ command: "doctor", configDir: config, repairJournal: true }, { runner })
-    expect(readdirSync(transactionRoot)).toEqual([])
+    if (boundary === "before-commit") {
+      expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
+        runner, faults: { beforeReceiptCommit(path) { writeFileSync(path, third) } },
+      })).toThrow("derivation baseline")
+      expect(readFileSync(receiptPath)).toEqual(third)
+      expect(readdirSync(transactionRoot)).toEqual([])
+    } else if (boundary === "after-claim") {
+      expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
+        runner, faults: { afterReceiptClaim(path) { writeFileSync(path, third) } },
+      })).toThrow("Third-party receipt was preserved")
+      expect(readFileSync(receiptPath)).toEqual(third)
+      expect(readdirSync(transactionRoot)).toHaveLength(1)
+      rmSync(receiptPath)
+      runManager({ command: "doctor", configDir: config, repairJournal: true }, { runner })
+      expect(readFileSync(receiptPath)).toEqual(before)
+    } else if (boundary === "claim-crash") {
+      expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
+        runner, faults: { afterReceiptClaim() { throw new SimulatedManagerCrashError("claim crash") } },
+      })).toThrow("claim crash")
+      expect(existsSync(receiptPath)).toBe(false)
+      expect(readdirSync(transactionRoot)).toHaveLength(1)
+      runManager({ command: "doctor", configDir: config, repairJournal: true }, { runner })
+      expect(readFileSync(receiptPath)).toEqual(before)
+    } else {
+      expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
+        runner, faults: { afterReceiptPublish() { throw new SimulatedManagerCrashError("publish crash") } },
+      })).toThrow("publish crash")
+      expect(receipt(config).installed).toBe(true)
+      runManager({ command: "doctor", configDir: config, repairJournal: true }, { runner })
+      expect(readdirSync(transactionRoot)).toEqual([])
+    }
   }, 60_000)
 
   test.each(["different", "same-bytes"] as const)("pre-created %s claim is never overwritten or deleted and blocks recovery", (variant) => {
