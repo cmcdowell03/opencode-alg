@@ -1,0 +1,4 @@
+$ bun ./node_modules/typescript/bin/tsc -p tsconfig.json --noEmit
+tests/build-benchmark-retention-boundaries.test.ts(219,12): error TS2532: Object is possibly 'undefined'.
+tests/build-benchmark-retention-boundaries.test.ts(221,12): error TS2532: Object is possibly 'undefined'.
+tests/build-benchmark-retention-boundaries.test.ts(223,12): error TS2532: Object is possibly 'undefined'.

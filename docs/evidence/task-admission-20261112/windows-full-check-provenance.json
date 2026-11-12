@@ -1,0 +1,8 @@
+{
+  "invocation": "windows-full-check-final.log",
+  "started_from_commit": "a1ce98c9c3f1fabd8c792a3e366aed288bb07fe7",
+  "runtime_commit": "79da198f2149e49385e38d2656f1dc53b4f2706f",
+  "runtime_source_sha256": "192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d",
+  "atomic_source_freeze": false,
+  "explanation": "The runtime did not change during this invocation. Test-fixture migrations and benchmark-only additions were edited while it ran. The candidate_commit captured by the wrapper at exit is an end-of-invocation HEAD, not proof all tests exercised that head. Preserve this failed invocation; later focused receipts qualify repaired fixtures and a fresh Linux full gate will qualify the final benchmark/test candidate."
+}

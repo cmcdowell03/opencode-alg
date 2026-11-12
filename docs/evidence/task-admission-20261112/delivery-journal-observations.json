@@ -1,0 +1,42 @@
+{
+  "scope": "durable-state journal transactions, not model compactions",
+  "observations": [
+    {
+      "observation": {
+        "benchmark": "delivery-journal-5100",
+        "transactions": 5100,
+        "journal_bytes": 16493,
+        "early_median_ms": 43.16619999999966,
+        "early_p95_ms": 51.94599999999991,
+        "late_median_ms": 43.17389999999432,
+        "late_p95_ms": 52.10949999996228
+      },
+      "invocation": "windows-full-check-final.log"
+    },
+    {
+      "observation": {
+        "benchmark": "delivery-journal-5100",
+        "transactions": 5100,
+        "journal_bytes": 16493,
+        "early_median_ms": 23.100001999991946,
+        "early_p95_ms": 27.62173799998709,
+        "late_median_ms": 48.62373900000239,
+        "late_p95_ms": 60.96056300000055
+      },
+      "invocation": "linux-full-check-candidate.log"
+    },
+    {
+      "observation": {
+        "benchmark": "delivery-journal-5100",
+        "transactions": 5100,
+        "journal_bytes": 16493,
+        "early_median_ms": 36.85568000000785,
+        "early_p95_ms": 43.66748099998222,
+        "late_median_ms": 37.52871600002982,
+        "late_p95_ms": 45.727559999970254
+      },
+      "invocation": "linux-full-check-packaged.log"
+    }
+  ],
+  "latency_interpretation": "uncontrolled host load; no causal or constant-latency claim"
+}

@@ -1,0 +1,9 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\task-evidence-integrity.test.ts:
+(pass) checker task evidence references survive attempt archiving and hydration; tampering fails closed [6877.09ms]
+
+ 1 pass
+ 0 fail
+ 32 expect() calls
+Ran 1 test across 1 file. [7.08s]

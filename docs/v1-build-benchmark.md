@@ -2,6 +2,34 @@
 
 This is an end-to-end feasibility pilot, distinct from the earlier researcher-memo comparison. It compares native OpenCode Build, shipped ALG, and shipped ALG with an additional targeted checker mandate. ALG's shipped checker already uses adversarial instructions; the third arm is not a neutral-versus-adversarial comparison.
 
+## 0.5.7 development instrumentation
+
+The protocol/results below describe their historical cohorts. The current development runner defaults to paired Build/default-ALG trials; `track="targeted_compatibility"` selects the separate Build/targeted-ALG comparison. It retains issued-but-unstarted outcomes, separates artifact correctness from workflow/measurement eligibility, and records bounded final-census uncertainty. It does not make provider-request or invoice caps out of polled host counters. These changes do not rescore earlier cohorts.
+
+Compaction is verified by new host markers and linked completed summary messages, rather than the summary endpoint's acknowledgement alone. Passive long-task telemetry reports successful/failed/unknown events, root/child counts, session lineage, frequencies with denominators and explicit missing coverage. Restart and reassignment remain part of the logical task. The retention evaluator distinguishes durable records, context projection, retrieval, applied behavior and externally observed repeated work. Its current fact evaluation is task aggregate; per-boundary obligation probes and actual long-task behavioral observations remain unqualified. An absent context fact or a zero-filled usage field is not a measured loss or complete usage receipt.
+
+The offline retention analyzer accepts a bounded `alg-retention-input-v1` JSON document with `events`, `expectedFacts`, and optional `boundaries`. Task-level rates include observed time to first compaction, gaps between observed compactions and request-to-summary latency. Missing historical coverage suppresses rates; observed gaps can contain missing events. The optional boundary payload is separately validated against `RetentionBoundaryInputSchema`; it never upgrades an old task-aggregate observation into a boundary-level result. Frozen obligations, task/session identities, exact snapshots, current/revoked versions and externally observed behavior must be supplied by the evaluator. Without them, boundary retention is explicitly unavailable.
+
+```sh
+bun scripts/build-benchmark-retention-cli.ts observations.json new-retention-report.json
+```
+
+The same command works in PowerShell and Bash. It reads at most 16 MiB, writes only a new report, and records input/output hashes. It does not contact a model or authenticate caller-supplied observations. The actual model runner has not yet wired independent per-boundary probes or qualified full historical pagination. Therefore the analyzer and its synthetic positive/negative controls are measurement infrastructure, **not a measured long-session information-loss rate**. A later recovery must not erase an earlier boundary failure; a context omission alone must not become one.
+
+Examples of how to interpret the layers:
+
+| Observed sequence | Report |
+| --- | --- |
+| A result pointer leaves context; its durable record survives; the agent retrieves the current result and completes the scored action correctly | Context omission, successful recovery and no behavioral failure observed for that obligation |
+| Original criteria survive on disk, but the resumed action uses altered criteria | Durable retention with behavioral failure; preserve the individual violation |
+| A revoked procedure remains in old context, but a complete observed governed-action window shows it was not applied | Revocation respected for the exposed action; no claim the model forgot the text |
+| The first boundary fails and the second succeeds | Two separate outcomes; the first failure remains in task-level accounting |
+| A summary marker exists but completion or post-boundary observations are missing | Unknown completion or untested retention; no zero-loss rate |
+
+These observations identify what failed. Estimating how much compaction *caused* the failure requires the predeclared matched with/without-compaction variants in the development plan.
+
+The hard-case fixtures add service-owned work charges, durable idempotent query recovery, independent data-quality checks and executed repository compatibility tests. They still require a qualified MCP/headless interface, physical oracle isolation and shared-allowance enforcement before the new hard pilot. The runner deliberately reports isolation as unqualified. No new model comparison or superiority result is claimed for 0.5.7. See the [gated development plan](v1-reliability-and-build-comparison-plan.md) for those prerequisites and the long-task measurement design.
+
 ## Frozen protocol
 
 Two tasks run once in each arm for each model: a dependency-free CommonJS wafer API/UI repair and a staged skill-guided wafer report. The second task must persist preparation before the harness compacts the actual OpenCode session, stops/restarts the host, and submits the same short continuation prompt to every arm. A task that never reaches preparation is not credited with a recovery pass.

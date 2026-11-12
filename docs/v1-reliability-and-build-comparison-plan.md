@@ -2,6 +2,8 @@
 
 Status: expanded development and evaluation plan, 12 November 2026, following the request to make ALG demonstrably better on difficult work without false positives. Current baseline is PR #14 at `1f06455`, with 0.5.6 product repairs at `01e18ec`; the historical hosted comparison used 0.5.5 runtime `373b8d0`. This document does not activate the planned runtime contracts or launch model cohorts. V1 only; local Windows/PowerShell and native Ubuntu/Bash tests; no GitHub runners, Gemma, global configuration edits or merge.
 
+Implementation has begun prospectively: 0.5.7 runtime `79da198` implements P1, with deterministic headless evidence on both platforms. H0 adds retained issued denominators, completed-summary checks, resource coverage, hard development fixtures and compaction measurement. The [implementation status](v1-implementation-status.md) distinguishes delivered mechanisms from remaining shared allowance, qualified service/oracle isolation and behavioral evidence. The historical baseline and all evaluation rules below remain unchanged.
+
 The sections below define the first product changes; the added **Development work packages**, **Hard benchmark specification**, and **Evidence and improvement rules** make their delivery and evaluation concrete. The earlier twenty-trial confirmation proposal is superseded by a qualification rehearsal and a separately powered, frozen confirmation. Small cohorts can find defects; they cannot promise a reliable superiority conclusion.
 
 ## Decision and evidence

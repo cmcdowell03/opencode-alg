@@ -2,6 +2,23 @@
 
 This analysis separates artifact correctness, root-turn completion, graph completion, and benchmark limits. It uses the preserved Luna attempts and a separately bounded Terra cohort at the same product runtime. The original Gemma skill-discovery and synchronous-transport problems belong to the test apparatus and are already described in [the benchmark report](v1-build-benchmark.md).
 
+## 0.5.7 engineering follow-up
+
+Implementation `79da198` addresses the task/template and evidence-boundary failures identified by the earlier cohorts. These are forward repairs with local regression/host evidence, not a retrospective change to any model's score.
+
+| Failure or invariant | Repair and qualification |
+| --- | --- |
+| A report-file task is routed to a research-only producer | Typed deliverable/producer admission and known host capability checks reject the mismatch before child calls. Known scope can select the compact coding route. |
+| Research suggestions replace original requirements, or preparation is mistaken for final completion | Immutable goal/criteria and phase declaration; researcher proposals remain advisory. The declaration records what the planner submitted, not a certification that it understood the user correctly. |
+| A valid worker JSON object claims work whose required file or native command receipt is absent | Host prerequisite check blocks the checker. Explicit resume repairs only necessary producers under the original remaining attempts and preserves completed unrelated work. |
+| Evidence changes after checking or is lost in archived projection | Immutable task evidence references bind the original contract and current observations. Drift reopens fresh checking; hydration and TUI readers reject missing/corrupt references. |
+| Gate recovery weakens an admitted task | Command replacement and live-to-dry conversion are prohibited. Same-command cwd/timeout repair requires an actual persisted setup failure and retains recovery lineage. |
+| A lost summary acknowledgement, missing marker or stopped pair distorts the comparison | Linked completed-summary and continuation checks, stable final census, preserved issued denominators, separate eligibility, and explicit unproven historical coverage. |
+
+The hard-case fixtures in `2626574`, initial measurement changes in `a1ce98c` and reviewed boundary analyzer in `f6a3218` are tested development apparatus. The [qualification receipts](evidence/task-admission-20261112/summary.json) record supported host versions, source hashes, tests and limitations. Shared cross-phase/provider allowance, physical oracle isolation, complete historical-census qualification and live long-task per-boundary obligation probes remain open. None of these local repairs alone establishes a better real-model completion rate, lower cost or long-session information-loss rate.
+
+Full package testing also found that the npm tarball included development evidence and benchmark/grade assets outside its reviewed inventory. `7c60070` excludes those assets while explicitly retaining operational headless probes and the offline retention analyzer. Actual extraction tests execute the analyzer and installer from the package; retained Git evidence is unchanged. This corrects packaging, not the isolation or scientific-validity requirements of a future comparison.
+
 **Repair status, 0.5.5 candidate:** the recovery, evidence and planning repairs are implemented in commits `f5f0929` and `373b8d0`. [Local validation and a separate prospective Windows/Linux Terra cohort](#post-repair-validation--windows-and-linux) are recorded below. The earlier diagnosis remains tied to its original runtime. Mechanical recovery checks pass; cumulative usage and inappropriate graph selection still prevent some whole tasks completing. No general completion/cost improvement or 0.5.5 offline-package acceptance is claimed.
 
 ## The confirmed failure chain
