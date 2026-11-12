@@ -1,0 +1,135 @@
+[
+  {
+    "at_ms": 9308,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 10366,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 11410,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 12484,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 13530,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 14898,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 15985,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 17044,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 18115,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 19168,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 20218,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 21267,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 22318,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 23408,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 24481,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 25547,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 26589,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 27664,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 27739,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  }
+]

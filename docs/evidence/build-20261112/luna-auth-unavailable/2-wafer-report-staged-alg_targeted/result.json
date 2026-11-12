@@ -1,0 +1,207 @@
+{
+  "caseId": "wafer-report-staged",
+  "arm": "alg_targeted",
+  "status": "model_error:UnknownError",
+  "passed": false,
+  "independent_score": {
+    "passed": false,
+    "checks": [
+      {
+        "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+        "passed": true
+      },
+      {
+        "id": "protected:data/system-export.json",
+        "passed": true
+      },
+      {
+        "id": "protected:data/manual-review.json",
+        "passed": true
+      },
+      {
+        "id": "preparation-artifact",
+        "passed": false,
+        "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-luna-20261112\\2-wafer-report-staged-alg_targeted\\project\\preparation.md'"
+      },
+      {
+        "id": "report-json",
+        "passed": false,
+        "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-luna-20261112\\2-wafer-report-staged-alg_targeted\\project\\report.json'"
+      }
+    ],
+    "metrics": {
+      "protectedFiles": 3,
+      "preparationBytes": 0,
+      "reportBytes": 0,
+      "reportParsed": false
+    }
+  },
+  "metrics": {
+    "sessions": {
+      "total": 1,
+      "roots": 1,
+      "children": 0
+    },
+    "assistantTurns": {
+      "total": 1,
+      "finished": 0,
+      "unfinished": 0,
+      "error": 1,
+      "modelIdentities": [
+        {
+          "providerID": "openai",
+          "modelID": "gpt-6-luna",
+          "turns": 1
+        }
+      ]
+    },
+    "usage": {
+      "components": {
+        "input": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0
+        },
+        "output": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0
+        },
+        "reasoning": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0
+        },
+        "cacheRead": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0
+        },
+        "cacheWrite": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0
+        }
+      },
+      "totalReportedTokens": 0,
+      "turns": {
+        "complete": 1,
+        "partial": 0,
+        "unknown": 0
+      },
+      "billing": "not_estimated"
+    },
+    "cost": {
+      "reportedTotal": 0,
+      "reportedTurns": 1,
+      "unknownTurns": 0,
+      "billing": "not_estimated"
+    },
+    "tools": {
+      "total": 0,
+      "completed": 0,
+      "error": 0,
+      "pending": 0,
+      "byName": {}
+    },
+    "repeatedExactToolInputs": {},
+    "skillLoads": {},
+    "algTools": {
+      "alg_plan": {
+        "total": 0,
+        "completed": 0,
+        "error": 0,
+        "pending": 0
+      },
+      "alg_run": {
+        "total": 0,
+        "completed": 0,
+        "error": 0,
+        "pending": 0
+      }
+    },
+    "observedErrors": {
+      "deniedTool": 0,
+      "stepExhaustion": 0
+    }
+  },
+  "wall_ms": 9658,
+  "total_with_startup_ms": 25115,
+  "phases": [],
+  "rootSession": "ses_e3206da3dffeTAxjUYLyt6m1Qq",
+  "recovery": {
+    "requested": true,
+    "restarted": false,
+    "compactionRecovered": false,
+    "phase1": null
+  },
+  "alg_states": [],
+  "budget_observed_overshoot": 0,
+  "cleanup": true,
+  "metering_complete": true,
+  "auth_copy_removed": true,
+  "processes": [
+    1574188
+  ],
+  "source_unchanged": true,
+  "final_files": [
+    {
+      "path": ".opencode/session-memory/artifacts/7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107.txt",
+      "bytes": 1270,
+      "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/744b2734afaef724d33104d5cb4c6b2e97ddda9a43f4190a5d9078c37d538f19.json",
+      "bytes": 1744,
+      "sha256": "744b2734afaef724d33104d5cb4c6b2e97ddda9a43f4190a5d9078c37d538f19"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/c2b2570d371f8197763e019efe1765bea4f56efc0f1e26ad5792de5e8edbb96e.json",
+      "bytes": 1995,
+      "sha256": "c2b2570d371f8197763e019efe1765bea4f56efc0f1e26ad5792de5e8edbb96e"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/aa47e6cc25b117e1edd029907fa8e07f9e16ac400c645b7aad97c6be2d9f55c9.json",
+      "bytes": 2352,
+      "sha256": "ca2a2e51cfcb3cc66c084911b171083780d3013e17c0369db6e7dbb2cd6f153d"
+    },
+    {
+      "path": ".opencode/session-memory/heads/aa47e6cc25b117e1edd029907fa8e07f9e16ac400c645b7aad97c6be2d9f55c9.json",
+      "bytes": 218,
+      "sha256": "ad2e7602ef85e682965f882bf3ffd86ed2b003ade4eeda347ba2c07c93ee8c21"
+    },
+    {
+      "path": ".opencode/session-memory/objects/2a3eeffee2fd39c3c315d344dc20f08dc02061454e5327a0d4eec15e9c27fc93.json",
+      "bytes": 563,
+      "sha256": "2a3eeffee2fd39c3c315d344dc20f08dc02061454e5327a0d4eec15e9c27fc93"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/aa47e6cc25b117e1edd029907fa8e07f9e16ac400c645b7aad97c6be2d9f55c9.json",
+      "bytes": 596,
+      "sha256": "15584392c6d077b890bd8618b8c3785c4a3b5823cfcc01fd0fd1836cb1ce13a1"
+    },
+    {
+      "path": ".opencode/skills/wafer-analysis/SKILL.md",
+      "bytes": 1270,
+      "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+    },
+    {
+      "path": "data/manual-review.json",
+      "bytes": 359,
+      "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+    },
+    {
+      "path": "data/system-export.json",
+      "bytes": 558,
+      "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+    }
+  ],
+  "measurement_limits": [
+    "actual provider invoice",
+    "hidden model calls not represented by session messages",
+    "operator minutes",
+    "production MCP cost/reuse",
+    "multi-hour reliability",
+    "hardware-normalized latency"
+  ]
+}

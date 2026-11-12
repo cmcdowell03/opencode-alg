@@ -1,0 +1,2742 @@
+{
+  "schema": "alg-build-pilot-v1",
+  "complete": true,
+  "fatal": null,
+  "model": "alg-local/gemma4",
+  "limits": {
+    "trialMs": 480000,
+    "assistantTurns": 40,
+    "reportedTokens": 200000,
+    "outputTokens": 4096,
+    "reportedCostPerSuite": 5,
+    "suiteMs": 3300000
+  },
+  "results": [
+    {
+      "caseId": "wafer-count-commonjs",
+      "arm": "build",
+      "status": "completed",
+      "passed": true,
+      "independent_score": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:package.json",
+            "passed": true
+          },
+          {
+            "id": "protected:test/wafer-count.test.cjs",
+            "passed": true
+          },
+          {
+            "id": "protected:data/inspection-records.json",
+            "passed": true
+          },
+          {
+            "id": "visible-node-tests",
+            "passed": true
+          },
+          {
+            "id": "api-module-loads",
+            "passed": true
+          },
+          {
+            "id": "ui-module-loads",
+            "passed": true
+          },
+          {
+            "id": "distinct-ids-and-offset-window",
+            "passed": true
+          },
+          {
+            "id": "user-visible-count",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "heldOutTestLocation": "outside-project-temporary-directory",
+          "heldOutCheckCount": 4,
+          "heldOutPassed": 4,
+          "visibleTestCommand": "npm test",
+          "visibleTestCount": 2,
+          "protectedFiles": 3,
+          "userVisibleChecks": 1
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 1,
+          "roots": 1,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 6,
+          "finished": 6,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": [
+            {
+              "providerID": "alg-local",
+              "modelID": "gemma4",
+              "turns": 6
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 8651,
+              "reportedTurns": 6,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 3485,
+              "reportedTurns": 6,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 6,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 38953,
+              "reportedTurns": 6,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 6,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 51089,
+          "turns": {
+            "complete": 6,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 6,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 5,
+          "completed": 5,
+          "error": 0,
+          "pending": 0,
+          "byName": {
+            "glob": {
+              "total": 1,
+              "completed": 1,
+              "error": 0,
+              "pending": 0,
+              "durationMsReported": 129,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 1,
+                  "durationMsReported": 129,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "read": {
+              "total": 2,
+              "completed": 2,
+              "error": 0,
+              "pending": 0,
+              "durationMsReported": 62,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 2,
+                  "durationMsReported": 62,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "edit": {
+              "total": 2,
+              "completed": 2,
+              "error": 0,
+              "pending": 0,
+              "durationMsReported": 70,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 2,
+                  "durationMsReported": 70,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            }
+          }
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 134728,
+      "total_with_startup_ms": 144958,
+      "phases": [
+        {
+          "phase": "initial",
+          "ms": 132866,
+          "completed": true
+        }
+      ],
+      "rootSession": "ses_e3205ea2effe5I6ElfnMYqbsxz",
+      "recovery": {
+        "requested": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": null
+      },
+      "alg_states": [],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        1579172
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": "data/inspection-records.json",
+          "bytes": 702,
+          "sha256": "ae8c396da3661e221e9716663c2cc79ce2715bff9d3d99de401093960709d14d"
+        },
+        {
+          "path": "package.json",
+          "bytes": 116,
+          "sha256": "a78a9ceb37d11a4b0e970b5cfd854e44f49f1563898501eeac5a3e51228acfd0"
+        },
+        {
+          "path": "src/wafer-count.cjs",
+          "bytes": 456,
+          "sha256": "09c30e1eab1d3bc9a7badb70c3763bceacf5e73a6c13424f7adfa8e31898729a"
+        },
+        {
+          "path": "src/wafer-view.cjs",
+          "bytes": 140,
+          "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+        },
+        {
+          "path": "test/wafer-count.test.cjs",
+          "bytes": 768,
+          "sha256": "a7719415e595d1bfd8656b74d05b7171a81ec4fc7c8369b6755a15ce96426eeb"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    },
+    {
+      "caseId": "wafer-count-commonjs",
+      "arm": "alg_default",
+      "status": "completed",
+      "passed": false,
+      "independent_score": {
+        "passed": false,
+        "checks": [
+          {
+            "id": "protected:package.json",
+            "passed": true
+          },
+          {
+            "id": "protected:test/wafer-count.test.cjs",
+            "passed": true
+          },
+          {
+            "id": "protected:data/inspection-records.json",
+            "passed": true
+          },
+          {
+            "id": "visible-node-tests",
+            "passed": false,
+            "detail": "Command failed: C:\\Program Files\\nodejs\\node.exe --test test/wafer-count.test.cjs"
+          },
+          {
+            "id": "api-module-loads",
+            "passed": true
+          },
+          {
+            "id": "ui-module-loads",
+            "passed": true
+          },
+          {
+            "id": "distinct-ids-and-offset-window",
+            "passed": false,
+            "detail": "expected 2 distinct wafers, received 4"
+          },
+          {
+            "id": "user-visible-count",
+            "passed": false,
+            "detail": "unexpected visible text: Inspections: 4"
+          }
+        ],
+        "metrics": {
+          "heldOutTestLocation": "outside-project-temporary-directory",
+          "heldOutCheckCount": 4,
+          "heldOutPassed": 2,
+          "visibleTestCommand": "npm test",
+          "visibleTestCount": 2,
+          "protectedFiles": 3,
+          "userVisibleChecks": 1
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 1,
+          "roots": 1,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 4,
+          "finished": 4,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": [
+            {
+              "providerID": "alg-local",
+              "modelID": "gemma4",
+              "turns": 4
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 11414,
+              "reportedTurns": 4,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 2144,
+              "reportedTurns": 4,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 4,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 30787,
+              "reportedTurns": 4,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 4,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 44345,
+          "turns": {
+            "complete": 4,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 4,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 3,
+          "completed": 3,
+          "error": 0,
+          "pending": 0,
+          "byName": {
+            "glob": {
+              "total": 2,
+              "completed": 2,
+              "error": 0,
+              "pending": 0,
+              "durationMsReported": 1836,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 2,
+                  "durationMsReported": 1836,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "read": {
+              "total": 1,
+              "completed": 1,
+              "error": 0,
+              "pending": 0,
+              "durationMsReported": 250,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 1,
+                  "durationMsReported": 250,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            }
+          }
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 55376,
+      "total_with_startup_ms": 67827,
+      "phases": [
+        {
+          "phase": "initial",
+          "ms": 51639,
+          "completed": true
+        }
+      ],
+      "rootSession": "ses_e3203a6f8ffe3itCpzuW2gooVV",
+      "recovery": {
+        "requested": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": null
+      },
+      "alg_states": [],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        1580544
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": ".opencode/session-memory/checkpoints/598853c8028bc68ad549888f85b71760ba3e429ca86ae6dfe739e159242644a9.json",
+          "bytes": 1122,
+          "sha256": "598853c8028bc68ad549888f85b71760ba3e429ca86ae6dfe739e159242644a9"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/0075ee9f76df1df7c334128a38cc6c59fd7ff5336230f81bd7647c2936f77b3d.json",
+          "bytes": 7166,
+          "sha256": "7c21a3b127442920689a4f1957f9d93b4d510d55a887914d1e22e45ae1994636"
+        },
+        {
+          "path": ".opencode/session-memory/heads/0075ee9f76df1df7c334128a38cc6c59fd7ff5336230f81bd7647c2936f77b3d.json",
+          "bytes": 218,
+          "sha256": "d50324eea17a5bf3cf734a5ef82b5d0c1f9b2648541127f16d8733d3809231f6"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/0075ee9f76df1df7c334128a38cc6c59fd7ff5336230f81bd7647c2936f77b3d.json",
+          "bytes": 372,
+          "sha256": "6f742c8da31eb9a53007fb2dda112d53b8307b7893aabf2b1f27fb1c66dd2da0"
+        },
+        {
+          "path": "data/inspection-records.json",
+          "bytes": 702,
+          "sha256": "ae8c396da3661e221e9716663c2cc79ce2715bff9d3d99de401093960709d14d"
+        },
+        {
+          "path": "package.json",
+          "bytes": 116,
+          "sha256": "a78a9ceb37d11a4b0e970b5cfd854e44f49f1563898501eeac5a3e51228acfd0"
+        },
+        {
+          "path": "src/wafer-count.cjs",
+          "bytes": 361,
+          "sha256": "7315f66c62048781619c9b04de7875370bcbe398ecd913ac1e5270449c656067"
+        },
+        {
+          "path": "src/wafer-view.cjs",
+          "bytes": 126,
+          "sha256": "2ac52abb30d3ffa1770e7d720dabf520654d5a09de84a595b6e1fc4f209cbab3"
+        },
+        {
+          "path": "test/wafer-count.test.cjs",
+          "bytes": 768,
+          "sha256": "a7719415e595d1bfd8656b74d05b7171a81ec4fc7c8369b6755a15ce96426eeb"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    },
+    {
+      "caseId": "wafer-count-commonjs",
+      "arm": "alg_targeted",
+      "status": "completed",
+      "passed": true,
+      "independent_score": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:package.json",
+            "passed": true
+          },
+          {
+            "id": "protected:test/wafer-count.test.cjs",
+            "passed": true
+          },
+          {
+            "id": "protected:data/inspection-records.json",
+            "passed": true
+          },
+          {
+            "id": "visible-node-tests",
+            "passed": true
+          },
+          {
+            "id": "api-module-loads",
+            "passed": true
+          },
+          {
+            "id": "ui-module-loads",
+            "passed": true
+          },
+          {
+            "id": "distinct-ids-and-offset-window",
+            "passed": true
+          },
+          {
+            "id": "user-visible-count",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "heldOutTestLocation": "outside-project-temporary-directory",
+          "heldOutCheckCount": 4,
+          "heldOutPassed": 4,
+          "visibleTestCommand": "npm test",
+          "visibleTestCount": 2,
+          "protectedFiles": 3,
+          "userVisibleChecks": 1
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 1,
+          "roots": 1,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 7,
+          "finished": 7,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": [
+            {
+              "providerID": "alg-local",
+              "modelID": "gemma4",
+              "turns": 7
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 12160,
+              "reportedTurns": 7,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 4689,
+              "reportedTurns": 7,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 7,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 66144,
+              "reportedTurns": 7,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 7,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 82993,
+          "turns": {
+            "complete": 7,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 7,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 7,
+          "completed": 7,
+          "error": 0,
+          "pending": 0,
+          "byName": {
+            "glob": {
+              "total": 1,
+              "completed": 1,
+              "error": 0,
+              "pending": 0,
+              "durationMsReported": 178,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 1,
+                  "durationMsReported": 178,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "read": {
+              "total": 3,
+              "completed": 3,
+              "error": 0,
+              "pending": 0,
+              "durationMsReported": 364,
+              "durationCalls": 3,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 3,
+                  "durationMsReported": 364,
+                  "durationCalls": 3,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "edit": {
+              "total": 2,
+              "completed": 2,
+              "error": 0,
+              "pending": 0,
+              "durationMsReported": 78,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 2,
+                  "durationMsReported": 78,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "bash": {
+              "total": 1,
+              "completed": 1,
+              "error": 0,
+              "pending": 0,
+              "durationMsReported": 1767,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 1,
+                  "durationMsReported": 1767,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            }
+          }
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 104112,
+      "total_with_startup_ms": 119410,
+      "phases": [
+        {
+          "phase": "initial",
+          "ms": 101623,
+          "completed": true
+        }
+      ],
+      "rootSession": "ses_e32028b76ffeGTpaj3eZ1PFeLH",
+      "recovery": {
+        "requested": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": null
+      },
+      "alg_states": [],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        1579496
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": ".opencode/session-memory/artifacts/2bd28ee8f888c1303c59999468b58160567dd40c7bab09afb4ab2f89e703e7b2.txt",
+          "bytes": 947,
+          "sha256": "2bd28ee8f888c1303c59999468b58160567dd40c7bab09afb4ab2f89e703e7b2"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/77eaa1c036fa92d86961d60cde3bdac702174fd79c7f3a70e83bc527aeedf8a2.txt",
+          "bytes": 4929,
+          "sha256": "77eaa1c036fa92d86961d60cde3bdac702174fd79c7f3a70e83bc527aeedf8a2"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/1e146d48ccc7e5d05f7146d62bd79712668255430f739900efeab11203560a2c.json",
+          "bytes": 1278,
+          "sha256": "1e146d48ccc7e5d05f7146d62bd79712668255430f739900efeab11203560a2c"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/a84ac80691ea723e1df50d48f2a3c5c62bcf402fa1466bec514e85f87018517e.json",
+          "bytes": 1122,
+          "sha256": "a84ac80691ea723e1df50d48f2a3c5c62bcf402fa1466bec514e85f87018517e"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/8a6048cdaf7223362f2e12df7d8f1287609e4a03e2c7ab44385442624e641e3d.json",
+          "bytes": 12428,
+          "sha256": "15cdffa0ee8b029544df2bd80257baa970c8eab297fb0f134a56fe4b7d9e5a77"
+        },
+        {
+          "path": ".opencode/session-memory/heads/8a6048cdaf7223362f2e12df7d8f1287609e4a03e2c7ab44385442624e641e3d.json",
+          "bytes": 218,
+          "sha256": "bfee2b9f64d98870a1ce8a141470b54dbfd209edffce32c029f5ff17d808e975"
+        },
+        {
+          "path": ".opencode/session-memory/objects/85901bd2475b2db67803b9b34322a9349256616adf8d079b1613e130a0f1b977.json",
+          "bytes": 1736,
+          "sha256": "85901bd2475b2db67803b9b34322a9349256616adf8d079b1613e130a0f1b977"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/8a6048cdaf7223362f2e12df7d8f1287609e4a03e2c7ab44385442624e641e3d.json",
+          "bytes": 372,
+          "sha256": "55f009051aa8f9067e67e2ddd91cdcee496b5fdabcfc0ba9a2e2f0d88674253b"
+        },
+        {
+          "path": "data/inspection-records.json",
+          "bytes": 702,
+          "sha256": "ae8c396da3661e221e9716663c2cc79ce2715bff9d3d99de401093960709d14d"
+        },
+        {
+          "path": "package.json",
+          "bytes": 116,
+          "sha256": "a78a9ceb37d11a4b0e970b5cfd854e44f49f1563898501eeac5a3e51228acfd0"
+        },
+        {
+          "path": "src/wafer-count.cjs",
+          "bytes": 610,
+          "sha256": "82863ca08beb26b75a996741f1b47bce5788e4aaf1f572bc68ed244993a7fcee"
+        },
+        {
+          "path": "src/wafer-view.cjs",
+          "bytes": 140,
+          "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+        },
+        {
+          "path": "test/wafer-count.test.cjs",
+          "bytes": 768,
+          "sha256": "a7719415e595d1bfd8656b74d05b7171a81ec4fc7c8369b6755a15ce96426eeb"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    },
+    {
+      "caseId": "wafer-report-staged",
+      "arm": "alg_targeted",
+      "status": "TimeoutError: The operation timed out.",
+      "passed": false,
+      "independent_score": {
+        "passed": false,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-alg_targeted\\project\\preparation.md'"
+          },
+          {
+            "id": "report-json",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-alg_targeted\\project\\report.json'"
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 0,
+          "reportBytes": 0,
+          "reportParsed": false
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 5,
+          "roots": 1,
+          "children": 4
+        },
+        "assistantTurns": {
+          "total": 8,
+          "finished": 6,
+          "unfinished": 0,
+          "error": 2,
+          "modelIdentities": [
+            {
+              "providerID": "alg-local",
+              "modelID": "gemma4",
+              "turns": 8
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 33495,
+              "reportedTurns": 8,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 6785,
+              "reportedTurns": 8,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 8,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 10259,
+              "reportedTurns": 8,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 8,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 50539,
+          "turns": {
+            "complete": 8,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 8,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 10,
+          "completed": 6,
+          "error": 4,
+          "pending": 0,
+          "byName": {
+            "alg_plan": {
+              "total": 1,
+              "completed": 1,
+              "error": 0,
+              "pending": 0,
+              "durationMsReported": 14,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 1,
+                  "durationMsReported": 14,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "alg_run": {
+              "total": 1,
+              "completed": 0,
+              "error": 1,
+              "pending": 0,
+              "durationMsReported": 211243,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 1,
+                  "durationMsReported": 211243,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "task": {
+              "total": 4,
+              "completed": 2,
+              "error": 2,
+              "pending": 0,
+              "durationMsReported": 208587,
+              "durationCalls": 4,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 2,
+                  "durationMsReported": 138388,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 2,
+                  "durationMsReported": 70199,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "glob": {
+              "total": 1,
+              "completed": 1,
+              "error": 0,
+              "pending": 0,
+              "durationMsReported": 245,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 1,
+                  "durationMsReported": 245,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "read": {
+              "total": 3,
+              "completed": 2,
+              "error": 1,
+              "pending": 0,
+              "durationMsReported": 408,
+              "durationCalls": 3,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 2,
+                  "durationMsReported": 389,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 1,
+                  "durationMsReported": 19,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            }
+          }
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 1,
+            "completed": 1,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 1,
+            "completed": 0,
+            "error": 1,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 253207,
+      "total_with_startup_ms": 265759,
+      "phases": [],
+      "rootSession": "ses_e3200bf73ffenPdeQsXcJcYR9o",
+      "recovery": {
+        "requested": true,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": null
+      },
+      "alg_states": [
+        {
+          "run_id": "prepare-the-necessary-documentat-20261112042408-fcacdf632a7d",
+          "status": "blocked",
+          "global_attempts": 4,
+          "nodes": [
+            {
+              "id": "check",
+              "status": "pending",
+              "attempts": []
+            },
+            {
+              "id": "explore",
+              "status": "done",
+              "attempts": [
+                {
+                  "outcome": "passed",
+                  "failures": [],
+                  "session_id": "ses_e32001c28ffeJ5CSuGsGqWF5mL"
+                }
+              ]
+            },
+            {
+              "id": "implement",
+              "status": "pending",
+              "attempts": [
+                {
+                  "outcome": "schema_invalid",
+                  "failures": [
+                    "Response parse: empty; error_category=none; parts=3; text_parts=0; non_text_parts=3"
+                  ],
+                  "session_id": "ses_e31fdfb6fffesftdrhvNzs5Bb8"
+                },
+                {
+                  "outcome": "sdk_error",
+                  "failures": [
+                    "{\"name\":\"AbortError\",\"message\":\"The operation was aborted.\",\"code\":20}"
+                  ],
+                  "session_id": "ses_e31fd66b9ffeiDcfyk0Y9LVC5O"
+                }
+              ]
+            },
+            {
+              "id": "research",
+              "status": "done",
+              "attempts": [
+                {
+                  "outcome": "passed",
+                  "failures": [],
+                  "session_id": "ses_e31ff7749ffeLg281BqLS6dern"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        1521756
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/artifacts/explore-attempt-1-output-a863332427ae26110e559e8100f951cdc72ec9b961ca9fa2afcc730694e7884e.json",
+          "bytes": 1820,
+          "sha256": "a863332427ae26110e559e8100f951cdc72ec9b961ca9fa2afcc730694e7884e"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/artifacts/explore-attempt-1.json",
+          "bytes": 1820,
+          "sha256": "a863332427ae26110e559e8100f951cdc72ec9b961ca9fa2afcc730694e7884e"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/artifacts/explore-output-a863332427ae26110e559e8100f951cdc72ec9b961ca9fa2afcc730694e7884e.json",
+          "bytes": 1820,
+          "sha256": "a863332427ae26110e559e8100f951cdc72ec9b961ca9fa2afcc730694e7884e"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/artifacts/explore.json",
+          "bytes": 1820,
+          "sha256": "a863332427ae26110e559e8100f951cdc72ec9b961ca9fa2afcc730694e7884e"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/artifacts/graph-0834a43ca231c2e94b7f399aa6be6d94c4bd812bbb055323efba41cb6590062a.json",
+          "bytes": 1134,
+          "sha256": "0834a43ca231c2e94b7f399aa6be6d94c4bd812bbb055323efba41cb6590062a"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/artifacts/research-attempt-1-output-91b67309f648640caf69767e01cbe6375a514187b31e5124bc7cf180a677f7e9.json",
+          "bytes": 3514,
+          "sha256": "91b67309f648640caf69767e01cbe6375a514187b31e5124bc7cf180a677f7e9"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/artifacts/research-attempt-1.json",
+          "bytes": 3514,
+          "sha256": "91b67309f648640caf69767e01cbe6375a514187b31e5124bc7cf180a677f7e9"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/artifacts/research-output-91b67309f648640caf69767e01cbe6375a514187b31e5124bc7cf180a677f7e9.json",
+          "bytes": 3514,
+          "sha256": "91b67309f648640caf69767e01cbe6375a514187b31e5124bc7cf180a677f7e9"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/artifacts/research.json",
+          "bytes": 3514,
+          "sha256": "91b67309f648640caf69767e01cbe6375a514187b31e5124bc7cf180a677f7e9"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/criteria.md",
+          "bytes": 1112,
+          "sha256": "4a1e4c4e840cb54b58020b692d9ec2053b37acd216219eb3ff5c10cd9739f25f"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/graph.json",
+          "bytes": 1681,
+          "sha256": "b7a1c3f33a285ab2e3040633cc66871b008be3d32b4b3c59902dda36e72cf429"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/explore-attempt-1-detail-30645a078c6883d7c584f62206a6e5c726e05add75a52c5d3878a95120f84383.json",
+          "bytes": 132,
+          "sha256": "30645a078c6883d7c584f62206a6e5c726e05add75a52c5d3878a95120f84383"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/explore-attempt-1-detail-763ea92e43ba7fa699e6a1b14434dcca0c9d5497cde5b1378f12435cc6774440.json",
+          "bytes": 2036,
+          "sha256": "763ea92e43ba7fa699e6a1b14434dcca0c9d5497cde5b1378f12435cc6774440"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/explore-attempt-1-detail-c9036bd2463f68aeab49ac48e7125825d1de59cf9f3f549c57d36b0f04c8ea39.json",
+          "bytes": 86,
+          "sha256": "c9036bd2463f68aeab49ac48e7125825d1de59cf9f3f549c57d36b0f04c8ea39"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/explore-attempt-1.json",
+          "bytes": 2036,
+          "sha256": "763ea92e43ba7fa699e6a1b14434dcca0c9d5497cde5b1378f12435cc6774440"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/implement-attempt-1-detail-2f24cf54e8ab4764683813a655ed3c1d3f0fb5e777f5a19251fef7d8d9898af1.json",
+          "bytes": 132,
+          "sha256": "2f24cf54e8ab4764683813a655ed3c1d3f0fb5e777f5a19251fef7d8d9898af1"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/implement-attempt-1-detail-aa23f67381cbc83320fdfe11149f52393f5908f4b07b4db3035d5d20a0e00794.json",
+          "bytes": 86,
+          "sha256": "aa23f67381cbc83320fdfe11149f52393f5908f4b07b4db3035d5d20a0e00794"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/implement-attempt-1-detail-fa91913dd45ccfe060cf3af1b9538f52040eef0c9ef33e3c6e3b7d19f0ae91b8.json",
+          "bytes": 323,
+          "sha256": "fa91913dd45ccfe060cf3af1b9538f52040eef0c9ef33e3c6e3b7d19f0ae91b8"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/implement-attempt-1.json",
+          "bytes": 323,
+          "sha256": "fa91913dd45ccfe060cf3af1b9538f52040eef0c9ef33e3c6e3b7d19f0ae91b8"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/implement-attempt-2-detail-ae987cc00740d566979f66ffd3e5dd650d501686f8ae316f2ce4a0a27bcb4b15.json",
+          "bytes": 385,
+          "sha256": "ae987cc00740d566979f66ffd3e5dd650d501686f8ae316f2ce4a0a27bcb4b15"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/implement-attempt-2-detail-d09501e1c1a4a6523063db317fb91db0a59350866fce61470100fd5673b1029f.json",
+          "bytes": 86,
+          "sha256": "d09501e1c1a4a6523063db317fb91db0a59350866fce61470100fd5673b1029f"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/implement-attempt-2-detail-ef42b875a3337b2887a076164643a686a4aa5f5d9d6888cc2d35b9410b9f1a67.json",
+          "bytes": 132,
+          "sha256": "ef42b875a3337b2887a076164643a686a4aa5f5d9d6888cc2d35b9410b9f1a67"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/implement-attempt-2.json",
+          "bytes": 385,
+          "sha256": "ae987cc00740d566979f66ffd3e5dd650d501686f8ae316f2ce4a0a27bcb4b15"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/implement-failures-00eaaf935750b597bd311dd768a51b88d6d6b4f704b3f74c3dc32dc759ab9b1d.json",
+          "bytes": 84,
+          "sha256": "00eaaf935750b597bd311dd768a51b88d6d6b4f704b3f74c3dc32dc759ab9b1d"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/implement-failures-3aa07cbb57b1c278344bce840c6283b3d91e1a10546f0decb56fb1db2d3ecf0d.json",
+          "bytes": 108,
+          "sha256": "3aa07cbb57b1c278344bce840c6283b3d91e1a10546f0decb56fb1db2d3ecf0d"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/implement-failures.json",
+          "bytes": 84,
+          "sha256": "00eaaf935750b597bd311dd768a51b88d6d6b4f704b3f74c3dc32dc759ab9b1d"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/research-attempt-1-detail-6190b2f43e9079c5b0a26dc70f08649acfe1c88bc98f78521ad601d0f9b75a71.json",
+          "bytes": 86,
+          "sha256": "6190b2f43e9079c5b0a26dc70f08649acfe1c88bc98f78521ad601d0f9b75a71"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/research-attempt-1-detail-9769ebef94046e4aaaf779a8df99ab0510dcf81122e36d708d439aaec191d9be.json",
+          "bytes": 132,
+          "sha256": "9769ebef94046e4aaaf779a8df99ab0510dcf81122e36d708d439aaec191d9be"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/research-attempt-1-detail-a5669d8631c8d11057138e99f0f4f4437a106bca51ff87b87b65b4cf238b8fef.json",
+          "bytes": 3730,
+          "sha256": "a5669d8631c8d11057138e99f0f4f4437a106bca51ff87b87b65b4cf238b8fef"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/history/research-attempt-1.json",
+          "bytes": 3730,
+          "sha256": "a5669d8631c8d11057138e99f0f4f4437a106bca51ff87b87b65b4cf238b8fef"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/progress.json",
+          "bytes": 10190,
+          "sha256": "c311019c0d39e41809a33d33ed47fabc740fa4f58b03085268fca1dd554a43fd"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/progress.json.bak",
+          "bytes": 9617,
+          "sha256": "c78c00cc62c3f840d31967f6927e8968d02f51a9f6cd48a7d54ae132eab6945a"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/sessions/explore-a1.json",
+          "bytes": 507,
+          "sha256": "970902aa66d28177cf81e752d626300d3eb07c17739d74b8bc0022dc15fd47bb"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/sessions/implement-a1.json",
+          "bytes": 509,
+          "sha256": "6e4a69462a2ca89a383a7bf177c021fed9718cd830b13279fce5d851fc2f3c8c"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/sessions/implement-a2.json",
+          "bytes": 509,
+          "sha256": "3046605e004398e2a4f5fad10a38e02883e233bca3e17f2620d18b97365c53ab"
+        },
+        {
+          "path": ".opencode/runs/prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/sessions/research-a1.json",
+          "bytes": 508,
+          "sha256": "f1e188ed6c333a67ef38983395a439921bc748412a5af9e04f4126ed3597d815"
+        },
+        {
+          "path": ".opencode/runs/_owners/2ec270c69ca17cd282ce288de7bf8b965d659dd5c343c93c75b821bc89e60852.json",
+          "bytes": 282,
+          "sha256": "75ad79b2eeda89d8d7f5019458e5ba99c334ef17bc9e36bdba907d6cd9bc7ec0"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/2ff8b1c7feba37814730681f5c297840a849e2e0e36ddbb5d5e04de42685ec41.txt",
+          "bytes": 3839,
+          "sha256": "2ff8b1c7feba37814730681f5c297840a849e2e0e36ddbb5d5e04de42685ec41"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/5bb847df57747513f1f06b1f6d87e103f7da736d3c70d1521e0f36f204dd4361.txt",
+          "bytes": 3281,
+          "sha256": "5bb847df57747513f1f06b1f6d87e103f7da736d3c70d1521e0f36f204dd4361"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107.txt",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/9237d094b0b4001f4d8da52e87b51b9e2aa0640e59bbfc6a4f8a69941f4d856d.txt",
+          "bytes": 682,
+          "sha256": "9237d094b0b4001f4d8da52e87b51b9e2aa0640e59bbfc6a4f8a69941f4d856d"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/a9e2b3d5e1375bfeee853eb7eaf05d2d91c217512fee0e2fe3b674bf0d3beb31.txt",
+          "bytes": 1959,
+          "sha256": "a9e2b3d5e1375bfeee853eb7eaf05d2d91c217512fee0e2fe3b674bf0d3beb31"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/3e6894a9c062a396b47bf97a392af88a9b897002c8983317baa2d233bade3924.json",
+          "bytes": 1744,
+          "sha256": "3e6894a9c062a396b47bf97a392af88a9b897002c8983317baa2d233bade3924"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/46d41d9194a9578932cb6e928aa00ee00053573dec29b0570aefa9c7369e8abd.json",
+          "bytes": 753,
+          "sha256": "46d41d9194a9578932cb6e928aa00ee00053573dec29b0570aefa9c7369e8abd"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/6d6f4e5bc61b11912e49f1076dd74adf86ce095b9526fa0d9e35af818f789163.json",
+          "bytes": 909,
+          "sha256": "6d6f4e5bc61b11912e49f1076dd74adf86ce095b9526fa0d9e35af818f789163"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/8a8fc6de198798fe8fda10f289403fae4fd55a2da36639f1c8a0b59de02bdec0.json",
+          "bytes": 753,
+          "sha256": "8a8fc6de198798fe8fda10f289403fae4fd55a2da36639f1c8a0b59de02bdec0"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/c6ae912d99fdbc6f6b6f4fa6caa10b5f6213d0d5f8e4ee032ce10d5c87e980d0.json",
+          "bytes": 753,
+          "sha256": "c6ae912d99fdbc6f6b6f4fa6caa10b5f6213d0d5f8e4ee032ce10d5c87e980d0"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/ce235f740a3191e69920bfa96dcfdf0d7bb4237b09a03867fed879c9b36960d2.json",
+          "bytes": 909,
+          "sha256": "ce235f740a3191e69920bfa96dcfdf0d7bb4237b09a03867fed879c9b36960d2"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/eb4dad0892843cf26d4017839807cc3644cf0516c4a432a3727c75a6c62142d3.json",
+          "bytes": 753,
+          "sha256": "eb4dad0892843cf26d4017839807cc3644cf0516c4a432a3727c75a6c62142d3"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/f5ac444bdc67b0f81280f33cc3b3b147269dcaded2b20009cf20458c808b07d1.json",
+          "bytes": 1995,
+          "sha256": "f5ac444bdc67b0f81280f33cc3b3b147269dcaded2b20009cf20458c808b07d1"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/6441b0c3be22493eb247a39ee1125ec7897670f1ac125a4006e48651b77ed42e.json",
+          "bytes": 4550,
+          "sha256": "9ac63a16760c77e884bbe65cae0000754702ad1d17970823bdaf19a40a530e19"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/8d6c155e2adaf6744290f2b63204915db5d4e74bdc9859511e0ed0c4161809eb.json",
+          "bytes": 4550,
+          "sha256": "892b617dc6d8346f6e4b9452f1194aa746bf1d54aa487b332a64f0672ca53f46"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/a59ee8c1c6c2a9d06f79f311bef55a994a6c2a25dc4468e2fecceead70aee05b.json",
+          "bytes": 2350,
+          "sha256": "c07918395d428390a93021a565877ae1e2a5ddfc20406381724920df1b39127c"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/b54f05c8d1c259f38ef71c98e880bc963dacd225af464f05533e5ea375c6d0ae.json",
+          "bytes": 4550,
+          "sha256": "ec0a25ba5606eed9328e2f6d3b0bc1558e5e7c9d15b05a409070223ef9fe637a"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/e2c37262ebe8416107ae894855311e9ea8944689e047d22ace04da11299cc8ca.json",
+          "bytes": 2350,
+          "sha256": "5eb78a7e0e0a4e2409c495954097fbcb062c5a6f1e7edf0f3784f712e6ad70bc"
+        },
+        {
+          "path": ".opencode/session-memory/heads/6441b0c3be22493eb247a39ee1125ec7897670f1ac125a4006e48651b77ed42e.json",
+          "bytes": 218,
+          "sha256": "ee7954b614f9bc99e8c578e6dab79dab2dc1e23292e12a431089cd828b91693e"
+        },
+        {
+          "path": ".opencode/session-memory/heads/8d6c155e2adaf6744290f2b63204915db5d4e74bdc9859511e0ed0c4161809eb.json",
+          "bytes": 218,
+          "sha256": "27044e40b7d7c96e9eb9ddb0f14c4fd9e9e2521b9b02759dd61ebfcff422738f"
+        },
+        {
+          "path": ".opencode/session-memory/heads/a59ee8c1c6c2a9d06f79f311bef55a994a6c2a25dc4468e2fecceead70aee05b.json",
+          "bytes": 218,
+          "sha256": "616e83f6f3273c20afad0dbd9a5e8e5d7f4b6b840fdf540f5a811db38714f184"
+        },
+        {
+          "path": ".opencode/session-memory/heads/b54f05c8d1c259f38ef71c98e880bc963dacd225af464f05533e5ea375c6d0ae.json",
+          "bytes": 218,
+          "sha256": "3a6ad02736720cd9c920de3c714ea037811f2d99242a59d4ba7f08ddad868d2a"
+        },
+        {
+          "path": ".opencode/session-memory/heads/e2c37262ebe8416107ae894855311e9ea8944689e047d22ace04da11299cc8ca.json",
+          "bytes": 218,
+          "sha256": "f1ab42cec35959bf7ca823a66850bfce1b570d47844605b847307bab030fb798"
+        },
+        {
+          "path": ".opencode/session-memory/objects/16c90a789c98849b061d612340082058197dda247234db55de97e95f8253efc1.json",
+          "bytes": 563,
+          "sha256": "16c90a789c98849b061d612340082058197dda247234db55de97e95f8253efc1"
+        },
+        {
+          "path": ".opencode/session-memory/objects/302bd59aa6bb22017535fd0a2033690b84b4329b63185132696c9206489e4522.json",
+          "bytes": 563,
+          "sha256": "302bd59aa6bb22017535fd0a2033690b84b4329b63185132696c9206489e4522"
+        },
+        {
+          "path": ".opencode/session-memory/objects/4f57a74efd141dc085d597ecf507d1456d6bac9f73534ca32d2f4d446256be93.json",
+          "bytes": 563,
+          "sha256": "4f57a74efd141dc085d597ecf507d1456d6bac9f73534ca32d2f4d446256be93"
+        },
+        {
+          "path": ".opencode/session-memory/objects/9b8fbe563d5106469f8ddb160a42195145e57ed67aed7930df0b6f41cd149325.json",
+          "bytes": 2921,
+          "sha256": "9b8fbe563d5106469f8ddb160a42195145e57ed67aed7930df0b6f41cd149325"
+        },
+        {
+          "path": ".opencode/session-memory/objects/b2bc0dbe321b9d3b1496570039e834bef386dfeb888207090750e945570b5c16.json",
+          "bytes": 563,
+          "sha256": "b2bc0dbe321b9d3b1496570039e834bef386dfeb888207090750e945570b5c16"
+        },
+        {
+          "path": ".opencode/session-memory/objects/d423e1fd5ac2f0f329799e10d4e2af579e0ed30aa7fdd84accf0163e58539a01.json",
+          "bytes": 2922,
+          "sha256": "d423e1fd5ac2f0f329799e10d4e2af579e0ed30aa7fdd84accf0163e58539a01"
+        },
+        {
+          "path": ".opencode/session-memory/objects/f095ef38df0e8ccfe6c6a9d6b1cc037588ca92b3ed27931ceb7736336ccc939f.json",
+          "bytes": 563,
+          "sha256": "f095ef38df0e8ccfe6c6a9d6b1cc037588ca92b3ed27931ceb7736336ccc939f"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/6441b0c3be22493eb247a39ee1125ec7897670f1ac125a4006e48651b77ed42e.json",
+          "bytes": 595,
+          "sha256": "1bafc9bef9df7382a23dd9d1ac562e8a115ffcd67e6f034469ec415bf23006d2"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/8d6c155e2adaf6744290f2b63204915db5d4e74bdc9859511e0ed0c4161809eb.json",
+          "bytes": 595,
+          "sha256": "01581b12c5696ea3b5b15fdacb86aed7df04b472a0591fcb549b736b1707bdfb"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/a59ee8c1c6c2a9d06f79f311bef55a994a6c2a25dc4468e2fecceead70aee05b.json",
+          "bytes": 595,
+          "sha256": "32c4c59fcc355e2aedae863151aa7427b3df683d8544939db65b37ba66601c5b"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/b54f05c8d1c259f38ef71c98e880bc963dacd225af464f05533e5ea375c6d0ae.json",
+          "bytes": 595,
+          "sha256": "17ac73de78962f8e89d1ec9c71b377c4cf58e9b187d8d0f41f05e60ea656692e"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/e2c37262ebe8416107ae894855311e9ea8944689e047d22ace04da11299cc8ca.json",
+          "bytes": 595,
+          "sha256": "a6fa395cef144e33a36199b5ea4bc3ac6fc60ff1f58e342d1d04a775f5d5c05b"
+        },
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": "data/manual-review.json",
+          "bytes": 359,
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        },
+        {
+          "path": "data/system-export.json",
+          "bytes": 558,
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    },
+    {
+      "caseId": "wafer-report-staged",
+      "arm": "alg_default",
+      "status": "TimeoutError: The operation timed out.",
+      "passed": false,
+      "independent_score": {
+        "passed": false,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-alg_default\\project\\preparation.md'"
+          },
+          {
+            "id": "report-json",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-alg_default\\project\\report.json'"
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 0,
+          "reportBytes": 0,
+          "reportParsed": false
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 5,
+          "roots": 1,
+          "children": 4
+        },
+        "assistantTurns": {
+          "total": 11,
+          "finished": 9,
+          "unfinished": 0,
+          "error": 2,
+          "modelIdentities": [
+            {
+              "providerID": "alg-local",
+              "modelID": "gemma4",
+              "turns": 11
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 26685,
+              "reportedTurns": 11,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 8078,
+              "reportedTurns": 11,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 11,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 27787,
+              "reportedTurns": 11,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 11,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 62550,
+          "turns": {
+            "complete": 11,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 11,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 14,
+          "completed": 8,
+          "error": 6,
+          "pending": 0,
+          "byName": {
+            "alg_plan": {
+              "total": 1,
+              "completed": 1,
+              "error": 0,
+              "pending": 0,
+              "durationMsReported": 15,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 1,
+                  "durationMsReported": 15,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "alg_run": {
+              "total": 1,
+              "completed": 0,
+              "error": 1,
+              "pending": 0,
+              "durationMsReported": 251544,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 1,
+                  "durationMsReported": 251544,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "task": {
+              "total": 4,
+              "completed": 2,
+              "error": 2,
+              "pending": 0,
+              "durationMsReported": 248933,
+              "durationCalls": 4,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 2,
+                  "durationMsReported": 160905,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 2,
+                  "durationMsReported": 88028,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "glob": {
+              "total": 6,
+              "completed": 5,
+              "error": 1,
+              "pending": 0,
+              "durationMsReported": 1286,
+              "durationCalls": 6,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 5,
+                  "durationMsReported": 1234,
+                  "durationCalls": 5,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 1,
+                  "durationMsReported": 52,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "read": {
+              "total": 2,
+              "completed": 0,
+              "error": 2,
+              "pending": 0,
+              "durationMsReported": 57,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 2,
+                  "durationMsReported": 57,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            }
+          }
+        },
+        "repeatedExactToolInputs": {
+          "glob": {
+            "distinctRepeatedInputs": 1,
+            "repeatedCalls": 1
+          }
+        },
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 1,
+            "completed": 1,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 1,
+            "completed": 0,
+            "error": 1,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 291384,
+      "total_with_startup_ms": 303452,
+      "phases": [],
+      "rootSession": "ses_e31fcadf4ffeX5ptCQ7MrO67Qs",
+      "recovery": {
+        "requested": true,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": null
+      },
+      "alg_states": [
+        {
+          "run_id": "complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d",
+          "status": "blocked",
+          "global_attempts": 4,
+          "nodes": [
+            {
+              "id": "check",
+              "status": "pending",
+              "attempts": []
+            },
+            {
+              "id": "explore",
+              "status": "done",
+              "attempts": [
+                {
+                  "outcome": "passed",
+                  "failures": [],
+                  "session_id": "ses_e31fc12beffewkA6wWoWMFtxk9"
+                }
+              ]
+            },
+            {
+              "id": "implement",
+              "status": "pending",
+              "attempts": [
+                {
+                  "outcome": "sdk_error",
+                  "failures": [
+                    "{\"name\":\"AbortError\",\"message\":\"The operation was aborted.\",\"code\":20}"
+                  ],
+                  "session_id": "ses_e31f848b9ffe0jM2AuTEaUY6p2"
+                }
+              ]
+            },
+            {
+              "id": "research",
+              "status": "done",
+              "attempts": [
+                {
+                  "outcome": "schema_invalid",
+                  "failures": [
+                    "schema: constraints.4: code=custom rule=text_trimmed; Remove surrounding whitespace from this string."
+                  ],
+                  "session_id": "ses_e31fb53f5ffeW6vq8V1kIcU4ZE"
+                },
+                {
+                  "outcome": "passed",
+                  "failures": [],
+                  "session_id": "ses_e31fa025dffe0oXgmri2zKU2u1"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        1581120
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/artifacts/explore-attempt-1-output-0ec7e1eab00dd0e43885704f0ec14e51e239b68b83e453addd98375d1e4cf3de.json",
+          "bytes": 1000,
+          "sha256": "0ec7e1eab00dd0e43885704f0ec14e51e239b68b83e453addd98375d1e4cf3de"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/artifacts/explore-attempt-1.json",
+          "bytes": 1000,
+          "sha256": "0ec7e1eab00dd0e43885704f0ec14e51e239b68b83e453addd98375d1e4cf3de"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/artifacts/explore-output-0ec7e1eab00dd0e43885704f0ec14e51e239b68b83e453addd98375d1e4cf3de.json",
+          "bytes": 1000,
+          "sha256": "0ec7e1eab00dd0e43885704f0ec14e51e239b68b83e453addd98375d1e4cf3de"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/artifacts/explore.json",
+          "bytes": 1000,
+          "sha256": "0ec7e1eab00dd0e43885704f0ec14e51e239b68b83e453addd98375d1e4cf3de"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/artifacts/graph-0834a43ca231c2e94b7f399aa6be6d94c4bd812bbb055323efba41cb6590062a.json",
+          "bytes": 1134,
+          "sha256": "0834a43ca231c2e94b7f399aa6be6d94c4bd812bbb055323efba41cb6590062a"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/artifacts/research-attempt-2-output-f6c084d1051827f9c19c25f5eabf7725e5a6b2f409b2dcd65ad49d77b1bb7423.json",
+          "bytes": 4197,
+          "sha256": "f6c084d1051827f9c19c25f5eabf7725e5a6b2f409b2dcd65ad49d77b1bb7423"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/artifacts/research-attempt-2.json",
+          "bytes": 4197,
+          "sha256": "f6c084d1051827f9c19c25f5eabf7725e5a6b2f409b2dcd65ad49d77b1bb7423"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/artifacts/research-output-f6c084d1051827f9c19c25f5eabf7725e5a6b2f409b2dcd65ad49d77b1bb7423.json",
+          "bytes": 4197,
+          "sha256": "f6c084d1051827f9c19c25f5eabf7725e5a6b2f409b2dcd65ad49d77b1bb7423"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/artifacts/research.json",
+          "bytes": 4197,
+          "sha256": "f6c084d1051827f9c19c25f5eabf7725e5a6b2f409b2dcd65ad49d77b1bb7423"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/criteria.md",
+          "bytes": 1106,
+          "sha256": "0cad6cca385afdb9b6d4ba371497dd24768d75282acb5a39ca5f1cc90f85a431"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/graph.json",
+          "bytes": 1681,
+          "sha256": "b7a1c3f33a285ab2e3040633cc66871b008be3d32b4b3c59902dda36e72cf429"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/explore-attempt-1-detail-172d91396dafc8fbbab162a991f7fa63bd44202e730478b62c184f0d41fc149e.json",
+          "bytes": 86,
+          "sha256": "172d91396dafc8fbbab162a991f7fa63bd44202e730478b62c184f0d41fc149e"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/explore-attempt-1-detail-271ecca9450d03632eb6f59e4113ab129e156f19ff88c0580c27cd2aa2a5af89.json",
+          "bytes": 132,
+          "sha256": "271ecca9450d03632eb6f59e4113ab129e156f19ff88c0580c27cd2aa2a5af89"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/explore-attempt-1-detail-a804a680796789b070abaee43f284443b04593b241e1c13ee98ead4c4dad8606.json",
+          "bytes": 1216,
+          "sha256": "a804a680796789b070abaee43f284443b04593b241e1c13ee98ead4c4dad8606"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/explore-attempt-1.json",
+          "bytes": 1216,
+          "sha256": "a804a680796789b070abaee43f284443b04593b241e1c13ee98ead4c4dad8606"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/implement-attempt-1-detail-80d2b80ce5e28910cbacb09a9bf1f73dc6a4a8fdba2381a29db2346476dcb3fa.json",
+          "bytes": 86,
+          "sha256": "80d2b80ce5e28910cbacb09a9bf1f73dc6a4a8fdba2381a29db2346476dcb3fa"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/implement-attempt-1-detail-a7515f284b70acf8a4fed99436a426f41e454bea5da86b1a7e3e7d0f9bac6340.json",
+          "bytes": 385,
+          "sha256": "a7515f284b70acf8a4fed99436a426f41e454bea5da86b1a7e3e7d0f9bac6340"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/implement-attempt-1-detail-dc3fe724e601bc54abd7392838a2f46afcd9ef16f5f109750025dd716232c18b.json",
+          "bytes": 132,
+          "sha256": "dc3fe724e601bc54abd7392838a2f46afcd9ef16f5f109750025dd716232c18b"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/implement-attempt-1.json",
+          "bytes": 385,
+          "sha256": "a7515f284b70acf8a4fed99436a426f41e454bea5da86b1a7e3e7d0f9bac6340"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/implement-failures-00eaaf935750b597bd311dd768a51b88d6d6b4f704b3f74c3dc32dc759ab9b1d.json",
+          "bytes": 84,
+          "sha256": "00eaaf935750b597bd311dd768a51b88d6d6b4f704b3f74c3dc32dc759ab9b1d"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/implement-failures.json",
+          "bytes": 84,
+          "sha256": "00eaaf935750b597bd311dd768a51b88d6d6b4f704b3f74c3dc32dc759ab9b1d"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/research-attempt-1-detail-48b30ad23350b23739dca6653e07b4bbd815eac7facd75a76fe5bc0ed3c2d726.json",
+          "bytes": 320,
+          "sha256": "48b30ad23350b23739dca6653e07b4bbd815eac7facd75a76fe5bc0ed3c2d726"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/research-attempt-1-detail-50e87d2c3c701b8431252f7f4725778be1dcada4fa7eeb8f1b4f59229512bbfa.json",
+          "bytes": 132,
+          "sha256": "50e87d2c3c701b8431252f7f4725778be1dcada4fa7eeb8f1b4f59229512bbfa"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/research-attempt-1-detail-8690228271c0d60a2bdc9325d9a5284e1945dd493e98512aaaf089f4eaa58932.json",
+          "bytes": 86,
+          "sha256": "8690228271c0d60a2bdc9325d9a5284e1945dd493e98512aaaf089f4eaa58932"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/research-attempt-1.json",
+          "bytes": 320,
+          "sha256": "48b30ad23350b23739dca6653e07b4bbd815eac7facd75a76fe5bc0ed3c2d726"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/research-attempt-2-detail-1058a7d47130cdee2bc117fb16b931d2984912c5cbdb7de3133041295e3b1f46.json",
+          "bytes": 4413,
+          "sha256": "1058a7d47130cdee2bc117fb16b931d2984912c5cbdb7de3133041295e3b1f46"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/research-attempt-2-detail-314246ba948e090a75deff0de6f1062b9962a547aa8ba0c445d446c7cd3c8391.json",
+          "bytes": 86,
+          "sha256": "314246ba948e090a75deff0de6f1062b9962a547aa8ba0c445d446c7cd3c8391"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/research-attempt-2-detail-6f4e3296e642411e56013402d477119240491ad8039828c31e656f4a5b61513b.json",
+          "bytes": 132,
+          "sha256": "6f4e3296e642411e56013402d477119240491ad8039828c31e656f4a5b61513b"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/research-attempt-2.json",
+          "bytes": 4413,
+          "sha256": "1058a7d47130cdee2bc117fb16b931d2984912c5cbdb7de3133041295e3b1f46"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/research-failures-a7d34f11b0e6f8cf6dbf506767ea8f25c851a3b9606cd92ac581696b77774ded.json",
+          "bytes": 105,
+          "sha256": "a7d34f11b0e6f8cf6dbf506767ea8f25c851a3b9606cd92ac581696b77774ded"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/history/research-failures.json",
+          "bytes": 105,
+          "sha256": "a7d34f11b0e6f8cf6dbf506767ea8f25c851a3b9606cd92ac581696b77774ded"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/progress.json",
+          "bytes": 10229,
+          "sha256": "d804ddcc2a655e73f67635a51c121077928dd91f5b8e9edf2677fa611040afdd"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/progress.json.bak",
+          "bytes": 9608,
+          "sha256": "d3bb868cf3d2304db8a4f4ea503b8839c3d66bbc04c7b04783d0bbc9854fba1b"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/sessions/explore-a1.json",
+          "bytes": 506,
+          "sha256": "26ebbe13232e7ee351c961c32fcccc0c79029bc88c9e488b6b17a9b6fec2b7a6"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/sessions/implement-a1.json",
+          "bytes": 508,
+          "sha256": "e81fb2d8506ca492968be2cdf1251e83241483eef26c54f210a0b08af98b1ff1"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/sessions/research-a1.json",
+          "bytes": 507,
+          "sha256": "18b84653e2683258ef85687d8ef5fa02050f907b7c770cfd63c7e59d5a8348cb"
+        },
+        {
+          "path": ".opencode/runs/complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/sessions/research-a2.json",
+          "bytes": 507,
+          "sha256": "460d89aba2097e8e3dd00cd0906a07da6d792083af814b5ba6096f5c0f327311"
+        },
+        {
+          "path": ".opencode/runs/_owners/a11f3a503b9428304c788bfc8da4fcc135165cf35655269b1793dc263e4c0485.json",
+          "bytes": 282,
+          "sha256": "783f8c8c57b55becf782d5eebe9ac44df0a4a9235037d3650c704153bf79ec4a"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/1952a85131900cf461e2de98b8c0b5da4bf417ab70055aa2bfacc3efafa97644.txt",
+          "bytes": 816,
+          "sha256": "1952a85131900cf461e2de98b8c0b5da4bf417ab70055aa2bfacc3efafa97644"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/54fab1d1818e42372b090f91a55ec47fd143d69ae5f80f6b2827b3b4c85bca18.txt",
+          "bytes": 1165,
+          "sha256": "54fab1d1818e42372b090f91a55ec47fd143d69ae5f80f6b2827b3b4c85bca18"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/675375a9b3b9b8f5a74b67ba928770a342429637abab6f95d10201b6f5c53a6b.txt",
+          "bytes": 5420,
+          "sha256": "675375a9b3b9b8f5a74b67ba928770a342429637abab6f95d10201b6f5c53a6b"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107.txt",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/7d9466abf8eb66c42dcec79a03b819db77867882395a5dd52eba57cf23bd961d.txt",
+          "bytes": 4529,
+          "sha256": "7d9466abf8eb66c42dcec79a03b819db77867882395a5dd52eba57cf23bd961d"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/d491f561d583700494a115f12e97d7db0ded47aa965a25defae168ce11739570.txt",
+          "bytes": 275,
+          "sha256": "d491f561d583700494a115f12e97d7db0ded47aa965a25defae168ce11739570"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/e11f70ef570f760fdfc3c0a84f3c38f2d84158b6cc44899044a9dc4a60684048.txt",
+          "bytes": 1108,
+          "sha256": "e11f70ef570f760fdfc3c0a84f3c38f2d84158b6cc44899044a9dc4a60684048"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/06363af01089edd1ea0c0a4c819f515c2465068267b01fb1c35acdaa950b5e31.json",
+          "bytes": 753,
+          "sha256": "06363af01089edd1ea0c0a4c819f515c2465068267b01fb1c35acdaa950b5e31"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/16bcc4e1a5dd12094fed231c87b82d90f172a3c327e8f002a87f32d3aa4944d8.json",
+          "bytes": 909,
+          "sha256": "16bcc4e1a5dd12094fed231c87b82d90f172a3c327e8f002a87f32d3aa4944d8"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/206d4d616eeaca676dd9404966258dfa6c8e4307267193100bf066f2a3d5f29a.json",
+          "bytes": 909,
+          "sha256": "206d4d616eeaca676dd9404966258dfa6c8e4307267193100bf066f2a3d5f29a"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/45478cac03edd6e924a985f6c5d38528315c6b71f04a528489c056b8f1a1c227.json",
+          "bytes": 1744,
+          "sha256": "45478cac03edd6e924a985f6c5d38528315c6b71f04a528489c056b8f1a1c227"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/468a33a0c26e2b771842640144bc09068980b69dc6bd77829a1138895f68426f.json",
+          "bytes": 909,
+          "sha256": "468a33a0c26e2b771842640144bc09068980b69dc6bd77829a1138895f68426f"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/7a0c087bf12d1890085aa5fc9091768f6f5bc93af34662b9311354dd59cef245.json",
+          "bytes": 753,
+          "sha256": "7a0c087bf12d1890085aa5fc9091768f6f5bc93af34662b9311354dd59cef245"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/a4b16fb6b44dc4e02d5b504291c232834f9af6a7cf39e765daf26ba7f4823c59.json",
+          "bytes": 753,
+          "sha256": "a4b16fb6b44dc4e02d5b504291c232834f9af6a7cf39e765daf26ba7f4823c59"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/f1c4bdced8ee5f9d68a6dc569d50d63f881b86488ff0c33979c3fbbee3c6a0a3.json",
+          "bytes": 1995,
+          "sha256": "f1c4bdced8ee5f9d68a6dc569d50d63f881b86488ff0c33979c3fbbee3c6a0a3"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/f570a5d327c895eb0a400890ad055d7d5b6a8f9d2095c27b1a2d9e727a0d23dc.json",
+          "bytes": 753,
+          "sha256": "f570a5d327c895eb0a400890ad055d7d5b6a8f9d2095c27b1a2d9e727a0d23dc"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/6dca1022532612cbf5dba5187381c81f851cc48455968a341a2955efc3c02cd4.json",
+          "bytes": 4550,
+          "sha256": "d5bce7a1856ba6bee5dcdc8a74801b0ac43d55c703c94fd405d0e9fe344dda86"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/96adeb3148fcadd203c0d9a9b6916150a48b3e2b10c916f6d902657d7feb50d1.json",
+          "bytes": 4550,
+          "sha256": "1d5299f1878ca93cdc12c97850fdd54ff7e6794638cffeacffc00ed2e91b8420"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/bdcfedb005cfe48c5a91fc2320fc328bf1666db82903a3de0da4942bc2079641.json",
+          "bytes": 2350,
+          "sha256": "a37a710f4db5e2dcc958b993bda710ddc2786317a97f413941bddfa4471e4882"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/ed86f4bd37444dba69af7de596fd1f99cde66da3971377d419ae5e67c9ba89f4.json",
+          "bytes": 8950,
+          "sha256": "5341a143cc9ba49cc27f7e7629ea47e6097e7ca8b91b400a576d29bf428bb46a"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/ef5454d39fd0640cc66fbdeeeaee463b44d3fb2119d2383e7af6fab0b4d59fa4.json",
+          "bytes": 4550,
+          "sha256": "b7815ffe6ae0c14c779d5b96fbd5b1eabb12ee7d346156cfc1db177988774307"
+        },
+        {
+          "path": ".opencode/session-memory/heads/6dca1022532612cbf5dba5187381c81f851cc48455968a341a2955efc3c02cd4.json",
+          "bytes": 218,
+          "sha256": "c166b5b8dc7bdf802dedd9540088fef14a7cc0685530a473475747bc54c93524"
+        },
+        {
+          "path": ".opencode/session-memory/heads/96adeb3148fcadd203c0d9a9b6916150a48b3e2b10c916f6d902657d7feb50d1.json",
+          "bytes": 218,
+          "sha256": "874e0eb817e3d3a556c094c32e6497b6e5bcb7de6393b5ee7554170327e72fe8"
+        },
+        {
+          "path": ".opencode/session-memory/heads/bdcfedb005cfe48c5a91fc2320fc328bf1666db82903a3de0da4942bc2079641.json",
+          "bytes": 218,
+          "sha256": "9947dd5535de97b82a34647e813418a5e07318dbc4bda63b22b2dc6c120dba1c"
+        },
+        {
+          "path": ".opencode/session-memory/heads/ed86f4bd37444dba69af7de596fd1f99cde66da3971377d419ae5e67c9ba89f4.json",
+          "bytes": 218,
+          "sha256": "c9912f10cf9fd381e805a2d26cf56ccb80ae1a35acf4bc342c2b4e132aee59d2"
+        },
+        {
+          "path": ".opencode/session-memory/heads/ef5454d39fd0640cc66fbdeeeaee463b44d3fb2119d2383e7af6fab0b4d59fa4.json",
+          "bytes": 218,
+          "sha256": "6f9ebb2526dbf117797f44306680174de97445e661de05a93073f090b634bc1f"
+        },
+        {
+          "path": ".opencode/session-memory/objects/1135c24dd01bf1944c6b15e808295638fbd25b3ba42bce3b6debadb38c136580.json",
+          "bytes": 563,
+          "sha256": "1135c24dd01bf1944c6b15e808295638fbd25b3ba42bce3b6debadb38c136580"
+        },
+        {
+          "path": ".opencode/session-memory/objects/51a2c4d82b1fd77935e7f0321ee0ab1654a7267e8f281223aa3d62acee4b4d10.json",
+          "bytes": 563,
+          "sha256": "51a2c4d82b1fd77935e7f0321ee0ab1654a7267e8f281223aa3d62acee4b4d10"
+        },
+        {
+          "path": ".opencode/session-memory/objects/65fd2e88059d0107ae8635e1d53ab1b56c78be15268fba4444503fcc79fda0ee.json",
+          "bytes": 563,
+          "sha256": "65fd2e88059d0107ae8635e1d53ab1b56c78be15268fba4444503fcc79fda0ee"
+        },
+        {
+          "path": ".opencode/session-memory/objects/8c66a583c26f70be532e9259e40722709f4d7b6139cdd1c3848effedc2ea8122.json",
+          "bytes": 2831,
+          "sha256": "8c66a583c26f70be532e9259e40722709f4d7b6139cdd1c3848effedc2ea8122"
+        },
+        {
+          "path": ".opencode/session-memory/objects/a954b89d92ea8f905d538ca27a191a929042755dba7a559287574f128b0d5957.json",
+          "bytes": 563,
+          "sha256": "a954b89d92ea8f905d538ca27a191a929042755dba7a559287574f128b0d5957"
+        },
+        {
+          "path": ".opencode/session-memory/objects/aa790a2b7bfa0e850300d550e023779118bc14b09dad61395d1686fb7c1a4ae1.json",
+          "bytes": 2839,
+          "sha256": "aa790a2b7bfa0e850300d550e023779118bc14b09dad61395d1686fb7c1a4ae1"
+        },
+        {
+          "path": ".opencode/session-memory/objects/f68a8f2a93e4a720ff87f4f59164a5f351d19748f82fa75955756c18cd941aef.json",
+          "bytes": 563,
+          "sha256": "f68a8f2a93e4a720ff87f4f59164a5f351d19748f82fa75955756c18cd941aef"
+        },
+        {
+          "path": ".opencode/session-memory/objects/f95f6ee496eccdba9b284dcb3112e5cffa707a9f64e59ce3c5656ae768302f97.json",
+          "bytes": 2024,
+          "sha256": "f95f6ee496eccdba9b284dcb3112e5cffa707a9f64e59ce3c5656ae768302f97"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/6dca1022532612cbf5dba5187381c81f851cc48455968a341a2955efc3c02cd4.json",
+          "bytes": 595,
+          "sha256": "e854ca440f4b696b958b34b729027f2da7e50b53d0f4d7083ce924ef10ebdf94"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/96adeb3148fcadd203c0d9a9b6916150a48b3e2b10c916f6d902657d7feb50d1.json",
+          "bytes": 595,
+          "sha256": "57aa722a88e63a0aee2dd1576d03e68f650577c755a17c144c9f02c19232d871"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/bdcfedb005cfe48c5a91fc2320fc328bf1666db82903a3de0da4942bc2079641.json",
+          "bytes": 595,
+          "sha256": "72eda29b6f547ba23368982646fb06b470854abedd18c314ced392930a0b275e"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/ed86f4bd37444dba69af7de596fd1f99cde66da3971377d419ae5e67c9ba89f4.json",
+          "bytes": 595,
+          "sha256": "c601d7b90b1aa8fdcaf4a1bd0e73d5cadfb51850234eb169b8675068c4e79dcb"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/ef5454d39fd0640cc66fbdeeeaee463b44d3fb2119d2383e7af6fab0b4d59fa4.json",
+          "bytes": 595,
+          "sha256": "1599dd43d1b04c9192b4edbbf6927df9d4de14fab6369dff0f0052914448aa89"
+        },
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": "data/manual-review.json",
+          "bytes": 359,
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        },
+        {
+          "path": "data/system-export.json",
+          "bytes": 558,
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    },
+    {
+      "caseId": "wafer-report-staged",
+      "arm": "build",
+      "status": "preparation_milestone_not_reached",
+      "passed": false,
+      "independent_score": {
+        "passed": false,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-build\\project\\preparation.md'"
+          },
+          {
+            "id": "report-json",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-build\\project\\report.json'"
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 0,
+          "reportBytes": 0,
+          "reportParsed": false
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 2,
+          "roots": 1,
+          "children": 1
+        },
+        "assistantTurns": {
+          "total": 5,
+          "finished": 5,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": [
+            {
+              "providerID": "alg-local",
+              "modelID": "gemma4",
+              "turns": 5
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 21001,
+              "reportedTurns": 5,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 2609,
+              "reportedTurns": 5,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 5,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 13311,
+              "reportedTurns": 5,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 5,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 36921,
+          "turns": {
+            "complete": 5,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 5,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 3,
+          "completed": 1,
+          "error": 2,
+          "pending": 0,
+          "byName": {
+            "skill": {
+              "total": 2,
+              "completed": 0,
+              "error": 2,
+              "pending": 0,
+              "durationMsReported": 20,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 2,
+                  "durationMsReported": 20,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            },
+            "task": {
+              "total": 1,
+              "completed": 1,
+              "error": 0,
+              "pending": 0,
+              "durationMsReported": 24480,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0,
+              "byStatus": {
+                "completed": {
+                  "calls": 1,
+                  "durationMsReported": 24480,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0
+                },
+                "error": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                },
+                "pending": {
+                  "calls": 0,
+                  "durationMsReported": 0,
+                  "durationCalls": 0,
+                  "unknownDurationCalls": 0
+                }
+              }
+            }
+          }
+        },
+        "repeatedExactToolInputs": {
+          "skill": {
+            "distinctRepeatedInputs": 1,
+            "repeatedCalls": 1
+          }
+        },
+        "skillLoads": {
+          "wafer-analysis": {
+            "attempted": 2,
+            "successful": 0,
+            "error": 2,
+            "pending": 0
+          }
+        },
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 74348,
+      "total_with_startup_ms": 85169,
+      "phases": [
+        {
+          "phase": "initial",
+          "ms": 73911,
+          "completed": true
+        }
+      ],
+      "rootSession": "ses_e31f80cd9ffehqq45aTTY1GoM3",
+      "recovery": {
+        "requested": true,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": {
+          "files": [
+            {
+              "path": ".opencode/skills/wafer-analysis/SKILL.md",
+              "bytes": 1270,
+              "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+            },
+            {
+              "path": "data/manual-review.json",
+              "bytes": 359,
+              "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+            },
+            {
+              "path": "data/system-export.json",
+              "bytes": 558,
+              "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+            }
+          ],
+          "at_ms": 73963,
+          "preparation_content": null,
+          "report_absent": true,
+          "independent_score": {
+            "passed": false,
+            "checks": [
+              {
+                "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+                "passed": true
+              },
+              {
+                "id": "protected:data/system-export.json",
+                "passed": true
+              },
+              {
+                "id": "protected:data/manual-review.json",
+                "passed": true
+              },
+              {
+                "id": "preparation-artifact",
+                "passed": false,
+                "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-build\\project\\preparation.md'"
+              }
+            ],
+            "metrics": {
+              "protectedFiles": 3,
+              "preparationBytes": 0
+            }
+          }
+        }
+      },
+      "alg_states": [],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        1570672
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": "data/manual-review.json",
+          "bytes": 359,
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        },
+        {
+          "path": "data/system-export.json",
+          "bytes": 558,
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    }
+  ],
+  "known_reported_cost": 0,
+  "global_configuration_unchanged": true,
+  "local_model_stopped": true,
+  "source_unchanged": true
+}

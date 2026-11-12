@@ -2,7 +2,7 @@
 
 PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current candidate is 0.5.4 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as 0.5.4 acceptance.
 
-**Current disposition, 11 November 2026:** the earlier 80% estimate remains withdrawn. The confirmed ledger defects and the missing local workflow contracts are implemented. Native MCP translation is configurable and tested against fixtures, not verified against the real air-gapped datalake-mcp. The checker follow-up delivers selected evidence without changing saved investigation graphs. The PR remains unmerged: the loop fix has one successful bounded local-model session, while production service qualification, scientific usefulness and general long-session reliability remain unestablished.
+**Current disposition, 12 November 2026:** the earlier 80% estimate remains withdrawn. The confirmed ledger defects and the missing local workflow contracts are implemented. Native MCP translation is configurable and tested against fixtures, not verified against the real air-gapped datalake-mcp. The checker follow-up delivers selected evidence without changing saved investigation graphs. The PR remains unmerged. The [native Build comparison](v1-build-benchmark.md) exposes Windows gate-helper setup failures, budget-limited graph completion and an orchestrator stopping after planning instead of producing the requested artifact. Harness transport/skill-discovery defects are accounted separately and corrected for subsequent trials. Production service qualification, scientific usefulness and general long-session reliability remain unestablished.
 
 ## Delivered contracts
 
@@ -19,6 +19,8 @@ PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experi
 | Local acceptance | Windows PowerShell and native Ubuntu Bash in dedicated WSL; deterministic host/MCP fixtures plus a bounded Gemma/Luna strategy comparison | Luna inference is explicitly authorized; no GitHub runners, production queries or user-global config changes |
 
 ## Operator entry points
+
+The latest benchmark is a small feasibility study, not a promotion gate. Its independent artifact checks, graph/checker participation and within-budget workflow completion are separate outcomes. The runtime remains 0.5.4; later benchmark-harness fixes do not retrospectively change earlier model results. Further local Gemma use is suspended at the user's request; hosted Luna/Grok require explicit authorization and working provider authentication.
 
 See [V1 investigation usage](v1-investigations.md), [deployment](deployment.md), and [headless acceptance](v1-headless-testing.md). Workspace and investigation features are opt-in. Enabling an adapter requires a qualified service profile with the actual endpoint's schemas and behavioral evidence; the synthetic test profile is not a production approval.
 

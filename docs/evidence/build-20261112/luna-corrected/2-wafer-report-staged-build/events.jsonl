@@ -1,0 +1,7 @@
+{"at":"2026-11-12T05:06:19.882Z","phase":"initial","event":"start"}
+{"at":"2026-11-12T05:07:08.456Z","phase":"initial","event":"complete"}
+{"at":"2026-11-12T05:07:08.469Z","phase":"compaction","event":"start"}
+{"at":"2026-11-12T05:07:20.974Z","phase":"compaction","event":"complete"}
+{"at":"2026-11-12T05:07:21.148Z","event":"restart_stop","passed":true}
+{"at":"2026-11-12T05:07:25.330Z","phase":"followup","event":"start"}
+{"at":"2026-11-12T05:08:13.791Z","phase":"followup","event":"complete"}

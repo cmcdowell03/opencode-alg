@@ -1,0 +1,36 @@
+[
+  {
+    "id": "ses_e31e8b5ebffezhsmimeoNU4dLe",
+    "slug": "crisp-river",
+    "projectID": "4f910a124a3fa0c6fdc1e3869730f9f8cffab99c",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-smoke-final-windows-20261112\\2-wafer-report-staged-build\\project",
+    "path": "",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 16,
+      "output": 4,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "title": "Frozen benchmark wafer-report-staged build",
+    "agent": "build",
+    "model": {
+      "id": "synthetic",
+      "providerID": "transport-fixture",
+      "variant": "default"
+    },
+    "version": "1.19.5",
+    "time": {
+      "created": 1794458995221,
+      "updated": 1794459000175
+    }
+  }
+]

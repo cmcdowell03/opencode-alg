@@ -1,0 +1,44 @@
+[
+  {
+    "at_ms": 12090,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 13782,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 15130,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 16207,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 17359,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 17435,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  }
+]

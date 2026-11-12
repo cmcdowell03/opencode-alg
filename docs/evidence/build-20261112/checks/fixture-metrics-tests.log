@@ -1,0 +1,19 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\build-benchmark-fixtures.test.ts:
+(pass) Build end-to-end benchmark fixtures and scorer > exports two compact, frozen fixtures with the same per-case prompts for every arm [0.77ms]
+killed 1 dangling process
+(fail) Build end-to-end benchmark fixtures and scorer > held-out API and UI tests fail the original bug and pass a known-good repair [5005.61ms]
+  ^ this test timed out after 5000ms.
+(pass) Build end-to-end benchmark fixtures and scorer > staged report scorer checks preparation, arithmetic, provenance, uncertainty, skill rules, and protected inputs [3563.42ms]
+(pass) Build end-to-end benchmark fixtures and scorer > detects a tampered protected wafer-data file in the code fixture [3358.96ms]
+
+tests\build-benchmark-metrics.test.ts:
+(pass) reported session benchmark metrics > deduplicates polled message updates and aggregates usage, costs, models, sessions and calls [3.26ms]
+(pass) reported session benchmark metrics > keeps unknown usage and cost distinct from reported zeros and only counts fixed error signals [0.41ms]
+(pass) reported session benchmark metrics > counts only exact observed step and denial markers and handles absent model/token fields [0.24ms]
+
+ 6 pass
+ 1 fail
+ 53 expect() calls
+Ran 7 tests across 2 files. [12.12s]
