@@ -298,6 +298,30 @@ For protected paths, the task must state whether it forbids final differences or
 
 ## Evidence and improvement rules
 
+### Compaction frequency and retention across long tasks
+
+Measure at the **logical task** level, with explicit session, child, restart and reassignment lineage. A new host session or handoff does not create a fresh denominator, erase earlier failures or replenish the task allowance. Report both root-only and whole-task counts; child session turnover is not compaction. Preserve host-native and harness-requested compactions separately. A persisted marker alone is not success: require a new marker, linked completed summary without host error, and the corresponding continuation. Keep requested, accepted, completed, failed, unknown and continuation-verified counts distinct.
+
+Record event times and model/context-limit identity. Report completed compactions per 100 assistant turns and per active-task hour, with raw numerators/denominators; also report per elapsed hour so service waits are visible. Active time excludes explicitly observed suspension or external-wait intervals, not inconvenient slow computation. Overlapping child spans are unioned for task wall time; separately summed child time is not the same unit. Report time/turns to first compaction and intervals between successive events. Input-volume-normalized rates require complete compatible usage coverage; otherwise that rate is unavailable. Exclude preflight/setup consistently for both arms, and report compaction request latency, summary size, known model usage, unknown usage and compaction's share of measured task cost separately. Missing host usage is never zero billing.
+
+**A high compaction rate is not itself information loss.** Before each declared boundary, freeze an external checkpoint of the facts needed for the next part of the task, using references and digests rather than copying sensitive contents. Stratify these obligations: original goal/criteria and phase, approved skill version/applicability, source and schema versions, validated positive/negative findings, unresolved hypotheses, evidence/result references, pending remote intent/idempotency identity, consumed allowance, and next permitted action. Also record superseded and revoked facts that must *not* be reused. Keep the evaluator's expected facts outside the contestant's accessible context.
+
+After the boundary, measure distinct layers:
+
+| Layer | Observation | Interpretation |
+| --- | --- | --- |
+| Durable state | Exact required records and digests remain loadable under the same task identity | Persistence integrity; not proof the model used them |
+| Context projection | Correct required pointers or selected facts appear in the actual request | Availability; an omitted fact can still be recovered on demand |
+| Retrieval | The resumed agent retrieves the current authorized version when the task requires it | Recovery performance and retrieval cost |
+| Applied behavior | Externally scored action/conclusion obeys the criterion, evidence, skill and pending intent | Task-relevant retention; model assertions alone are insufficient |
+| Repeated work | Service-observed duplicate accepted computations and their work units after the boundary | Avoidable work only after checking scope/revision and justified independent verification |
+
+Classify each tested obligation as retained, recovered-on-demand, stale/wrong, durably missing, or unresolved/unobserved. Context omission by itself is not a lost fact. A record can survive on disk while the model applies a stale version; report these separately. Report critical-obligation violations individually, micro/macro retention with denominators, first-boundary versus cumulative failures, recovery latency/calls, duplicate work and task outcome. Do not average a lost pending-submit identity away with many easy retained facts. Unknown probes do not enter the numerator as successes. Diagnostic probes themselves consume budget and alter context; keep passive observation separate from active recovery probes and apply the same schedule to both arms.
+
+Use the existing L1/L2/L3 ladder and its limits. L2 includes the declared compaction/restart and a predeclared handoff variant; L3 can assess cumulative retention across the already proposed bounded long task. This addition does not authorize extending old soaks, consuming every upper bound, or starting an extra paid cohort. Synthetic qualification must include successful retrieval after context omission, an altered criterion, stale/revoked skill, lost pending job identity, duplicate expensive query, absent/error summary and incomplete usage. A real-model comparison follows apparatus qualification.
+
+Association after compaction is not causal attribution. To estimate the *incremental* effect of compaction, use predeclared paired variants of the same incident with and without a requested compaction at a comparable work milestone, equal resource allowance and independent fresh namespaces. Record unavoidable native compactions in both arms. Analyze repeated boundaries within a task as clustered observations, not independent trials; report task-level uncertainty and model/context strata. Separate evidence loss, failed retrieval, invalidated evidence and ordinary reasoning error before deciding whether to change ALG's projection, retrieval, skill loading or graph policy.
+
 ### What “ALG is better” will mean
 
 The primary claim is scoped: **on the frozen difficult-workload distribution, with the specified model/host and equal total allowance, ALG completes more tasks correctly**. The mixture of the four challenge families, difficulty tiers and any fault exposure must be fixed before confirmation. A fault-heavy cohort establishes resilience under those faults, not their prevalence in ordinary work.
