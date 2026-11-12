@@ -72,6 +72,7 @@ export async function runBuildBenchmark(config:Config){
     pairs:issuedCases.map(({pair,order})=>({...pair,arms:[...pair.arms],order})),
     cases:selectedCases.map(c=>({id:c.id,criteria:c.criteria,initialPrompt:c.initialPrompt,followupPrompt:c.followupPrompt??null,fixture_files:Object.entries(c.files).map(([path,text])=>({path,sha256:sha(text)}))})),
     retention_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-retention.ts"))),
+    retention_boundaries_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-retention-boundaries.ts"))),
     interpretation:"Single-repeat feasibility pilot. Equal externally enforced time and per-call output limits; the assistant-turn threshold is a polling-based observed cutoff subject to overshoot, not a hard request cap. ALG internal gates are diagnostics, never the independent oracle. Reported token/cost thresholds are monitors only, not provider-call, token, or invoice ceilings. Session-visible usage is not proof of complete provider billing. No superiority claim.",
     enforcement:{time:"hard host deadline",output:"per-call configured limit",assistantTurns:"observed cutoff; polling overshoot possible",reportedTokens:"telemetry only",reportedCost:"telemetry only"},
     usage_monitors:USAGE_MONITORS,
@@ -245,6 +246,7 @@ export async function runBuildBenchmark(config:Config){
         const result={pairId:pair.pairId,caseId:fixture.id,arm,status:config.preflightOnly?(stopReason?"preflight_failed":"preflight_passed"):(stopReason?"stopped":"completed"),stopReason,passed:artifactPassed,
           independent_score:score,metrics:metric,wall_ms:activeStart?Date.now()-activeStart:null,total_with_startup_ms:Date.now()-start,phases,rootSession,
           recovery:{requested:!!compactionInput,recoveryRequired:!!fixture.followupPrompt,restarted,compactionRecovered:compactionIsQualified(compaction),compaction,phase1},retention:retention.tasks[0]??{status:"unavailable_preflight"},alg_states:algStates,budget_observed_overshoot:childBudgetOvershoot,
+          retention_boundaries:retention.boundaryRetention,
           cleanup,metering_complete:null,observed_metering_stable:meteringComplete,final_census:finalCensusReceipt,
           coverage:{historical_message_pagination:"unchecked",provider_usage:"session_reported_fields_only",quiescent_snapshot:finalCensusReceipt?.outcome==="quiescent"},eligibility:qualification,auth_copy_removed:!existsSync(authCopy),processes,source_unchanged:computeAlgSourceIdentity(repo).digest===initialIdentity.digest,arm_config_sha256:armConfigHash,
           final_files:stateFiles,usage_monitors:USAGE_MONITORS,measurement_limits:protocol.unmeasured}

@@ -30,6 +30,8 @@ describe("build benchmark retention measurement", () => {
     expect(measured.compactionRates.attempts.perActiveHour).toBeNull()
     expect(measured.compactionRates.attempts.perMillionKnownInputTokens).toBeNull()
     expect(measured.turns.inputTokenCoverage).toBe(0.5)
+    expect(measured.compactionTiming).toMatchObject({ timeToFirstObservedSeconds: 3, turnsToFirstObserved: 1,
+      observedIntervalSeconds: [], events: [{ requestId: "c1", requestToSummarySeconds: 1 }, { requestId: "c2", requestToSummarySeconds: null }] })
   })
 
   test("distinguishes changed criteria, stale skills, pending loss, and retrieval after context omission", () => {
@@ -105,6 +107,18 @@ describe("build benchmark retention measurement", () => {
   })
 })
 
+test("compaction intervals retain one task timeline after reassignment", () => {
+  const events = [ev("start", 0, "task_window", { stage: "start" }),
+    ev("first", 2_000, "compaction", { mode: "native", stage: "succeeded", requestId: "first", markerId: "m1", summaryAssistantId: "s1", summaryParentId: "m1", summaryTerminal: true, summaryErrored: false }),
+    ev("handoff", 3_000, "session_lineage", { kind: "reassigned", fromSessionId: "root", toSessionId: "new" }),
+    ev("second", 7_000, "compaction", { mode: "requested", stage: "succeeded", requestId: "second", markerId: "m2", summaryAssistantId: "s2", summaryParentId: "m2", summaryTerminal: true, summaryErrored: false }, "new"),
+  ]
+  expect(run(events).compactionTiming).toMatchObject({ timeToFirstObservedSeconds: 2, observedIntervalSeconds: [5],
+    coverage: "observed_events_only_intervening_events_may_be_missing" })
+  expect(run(events).compactionTiming.events.every(event => event.requestToSummarySeconds === null)).toBe(true)
+  expect(() => run([...events, ev("conflict", 8_000, "compaction", { mode: "requested", stage: "failed", requestId: "first" }, "unrelated")])).toThrow("retention_compaction_request_session_conflict")
+})
+
 test("root and child turns follow session ancestry, and accepted compaction counts despite failed recovery", () => {
   const at = 1_800_000_000_000
   const marker = { info: { id: "m", sessionID: "s1", role: "user", time: { created: at + 100 } }, parts: [{ type: "compaction", auto: false }] }
@@ -120,8 +134,14 @@ test("root and child turns follow session ancestry, and accepted compaction coun
   expect(rows.find(event => event.type === "compaction" && event.stage === "succeeded")?.at).toBe(at + 200)
   const measured = run(rows)
   expect(measured.turns).toMatchObject({ assistantTurns: 3, byRole: { root: 1, child: 1, summary: 1 }, knownInputTokens: 20 })
-  expect(measured.compactions.requested).toEqual({ attempts: 1, successful: 1, failed: 0, pending: 0 })
+  expect(measured.compactions.requested).toEqual({ attempts: 1, successful: 1, failed: 0, pending: 0, unverified: 0 })
   expect(measured.compactionRates.successful.per100AssistantTurns).toBeNull()
+})
+
+test("unlinked success is unverified, not an observed failed summary", () => {
+  const measured = run([ev("unlinked", 1, "compaction", { mode: "native", stage: "succeeded", requestId: "c" })])
+  expect(measured.compactions.native).toMatchObject({ attempts: 1, successful: 0, failed: 0, unverified: 1 })
+  expect(measured.compactionTiming.events[0]?.status).toBe("unverified_summary")
 })
 
 test("only repeated accepted work can be a classified duplicate and only cross-boundary repeats count after compaction", () => {

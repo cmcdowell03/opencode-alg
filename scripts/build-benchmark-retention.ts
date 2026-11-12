@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { measureRetentionBoundaries } from "./build-benchmark-retention-boundaries.ts"
 import { hostTimestamp, messageIdentity, messageSession, observeCompactionMarkers, type compactionReceipt } from "./build-benchmark-protocol.ts"
 
 const ID = z.string().min(1).max(256)
@@ -189,11 +190,12 @@ function measureTask(taskId: string, events: RetentionEvent[], expectedFacts: Ex
   const knownInputTokens = turns.reduce((sum, turn) => sum + (turn.inputTokens ?? 0), 0)
   const knownInputTurns = turns.filter(turn => turn.inputTokens !== null).length
   const inputTokenCoverage = turns.length ? knownInputTurns / turns.length : null
-  const compactions = new Map<string, { mode: "native" | "requested" | "unknown"; requested: boolean; terminal?: "succeeded" | "failed"; at: number; qualified: boolean }>()
+  const compactions = new Map<string, { mode: "native" | "requested" | "unknown"; sessionId: string; requested: boolean; requestedAt?: number; terminal?: "succeeded" | "failed"; at: number; qualified: boolean }>()
   for (const event of ordered) if (event.type === "compaction") {
-    const current = compactions.get(event.requestId) ?? { mode: event.mode, requested: false, at: event.at, qualified: false }
+    const current = compactions.get(event.requestId) ?? { mode: event.mode, sessionId: event.sessionId, requested: false, at: event.at, qualified: false }
+    if (current.sessionId !== event.sessionId) throw new Error("retention_compaction_request_session_conflict")
     current.mode = event.mode
-    if (event.stage === "requested") current.requested = true
+    if (event.stage === "requested") { current.requested = true; current.requestedAt ??= event.at }
     else {
       current.terminal = event.stage
       current.at = event.at
@@ -202,14 +204,14 @@ function measureTask(taskId: string, events: RetentionEvent[], expectedFacts: Ex
     }
     compactions.set(event.requestId, current)
   }
-  const compactionSummary = { native: { attempts: 0, successful: 0, failed: 0, pending: 0 }, requested: { attempts: 0, successful: 0, failed: 0, pending: 0 }, unknown: { attempts: 0, successful: 0, failed: 0, pending: 0 } }
+  const compactionSummary = { native: { attempts: 0, successful: 0, failed: 0, pending: 0, unverified: 0 }, requested: { attempts: 0, successful: 0, failed: 0, pending: 0, unverified: 0 }, unknown: { attempts: 0, successful: 0, failed: 0, pending: 0, unverified: 0 } }
   const qualifiedCompactionTimes: number[] = []
   for (const item of compactions.values()) {
     const metric = compactionSummary[item.mode]
     metric.attempts++
     if (item.terminal === "failed") metric.failed++
     else if (item.terminal === "succeeded" && item.qualified) { metric.successful++; qualifiedCompactionTimes.push(item.at) }
-    else if (item.terminal === "succeeded") metric.failed++
+    else if (item.terminal === "succeeded") metric.unverified++
     else metric.pending++
   }
   const totalCompaction = compactionSummary.native.attempts + compactionSummary.requested.attempts + compactionSummary.unknown.attempts
@@ -220,6 +222,18 @@ function measureTask(taskId: string, events: RetentionEvent[], expectedFacts: Ex
     attempts: compactionRate(totalCompaction),
     successful: compactionRate(compactionSummary.native.successful + compactionSummary.requested.successful + compactionSummary.unknown.successful),
     failed: compactionRate(compactionSummary.native.failed + compactionSummary.requested.failed + compactionSummary.unknown.failed),
+  }
+  const completedAt = qualifiedCompactionTimes.sort((a, b) => a - b)
+  const compactionTiming = {
+    coverage: compactionCensusComplete === true ? "complete_host_census" : "observed_events_only_intervening_events_may_be_missing",
+    timeToFirstObservedSeconds: completedAt.length ? Math.max(0, (completedAt[0]! - firstAt) / 1000) : null,
+    turnsToFirstObserved: completedAt.length ? turns.filter(turn => turn.at >= firstAt && turn.at <= completedAt[0]!).length : null,
+    observedIntervalSeconds: completedAt.slice(1).map((at, index) => (at - completedAt[index]!) / 1000),
+    events: [...compactions].map(([requestId, item]) => ({ requestId, sessionId: item.sessionId, mode: item.mode,
+      requestedAt: item.requestedAt ?? null, terminalAt: item.terminal ? item.at : null,
+      status: item.terminal === "succeeded" && !item.qualified ? "unverified_summary" : item.terminal ?? "pending",
+      requestToSummarySeconds: item.qualified && item.requestedAt !== undefined && item.at >= item.requestedAt ? (item.at - item.requestedAt) / 1000 : null,
+    })),
   }
 
   const snapshots = new Map<string, Map<string, string>>()
@@ -290,7 +304,7 @@ function measureTask(taskId: string, events: RetentionEvent[], expectedFacts: Ex
     turns: { assistantTurns: turns.length, byRole: Object.fromEntries(["root", "child", "summary", "compaction", "unknown"].map(role => [role, turns.filter(turn => turn.role === role).length])),
       knownInputTokens, inputTokenCoverage, turnsWithKnownInput: knownInputTurns, turnsWithUnknownInput: turns.length - knownInputTurns },
     compactions: { ...compactionSummary, censusComplete: compactionCensusComplete === true,
-      countsInterpretation: compactionCensusComplete === true ? "complete_host_census" : "observed_lower_bounds_only_missing_markers_are_not_zero" }, compactionRates,
+      countsInterpretation: compactionCensusComplete === true ? "complete_host_census" : "observed_lower_bounds_only_missing_markers_are_not_zero" }, compactionRates, compactionTiming,
     facts: { expectedCount: expectedFacts.length, evidenceCoverage: expectedFacts.length ? "expected_facts_provided_but_boundary_attribution_is_task_aggregate" : "unavailable_no_obligation_probes_wired",
       observations: factObservations, lossClaim, granularity: "task_aggregate_no_per_compaction_boundary_attribution",
       rule: "Absence from context alone is not information loss; untested facts support no loss claim." },
@@ -303,7 +317,7 @@ function measureTask(taskId: string, events: RetentionEvent[], expectedFacts: Ex
 }
 
 /** Pure bounded aggregation of host-observed events. It creates no runtime state or policy. */
-export function measureBuildBenchmarkRetention(rawEvents: unknown, rawExpectedFacts: unknown) {
+export function measureBuildBenchmarkRetention(rawEvents: unknown, rawExpectedFacts: unknown, boundaryEvidence?: unknown) {
   const eventsParsed = z.array(RetentionEventSchema).max(MAX_EVENTS).safeParse(rawEvents)
   if (!eventsParsed.success) throw new Error("retention_events_invalid_or_over_limit")
   const factsParsed = z.array(ExpectedFactSchema).max(MAX_EXPECTED_FACTS).safeParse(rawExpectedFacts)
@@ -317,5 +331,6 @@ export function measureBuildBenchmarkRetention(rawEvents: unknown, rawExpectedFa
   for (const fact of factsParsed.data) { const rows = factsByTask.get(fact.taskId) ?? []; rows.push(fact); factsByTask.set(fact.taskId, rows) }
   const taskIds = new Set([...byTask.keys(), ...factsByTask.keys()])
   return { schema: "alg-build-retention-v1", eventCount: eventsParsed.data.length, expectedFactCount: factsParsed.data.length,
+    boundaryRetention: boundaryEvidence === undefined ? { status: "unavailable_no_boundary_probes" } : measureRetentionBoundaries(boundaryEvidence),
     tasks: [...taskIds].sort().map(taskId => measureTask(taskId, byTask.get(taskId) ?? [], factsByTask.get(taskId) ?? [])) }
 }
