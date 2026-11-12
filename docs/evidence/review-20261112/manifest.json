@@ -1,0 +1,98 @@
+{
+  "source_commit": "01e18ecae14c475ec6bd76299fd011945f49a63b",
+  "candidate": "0.5.6",
+  "algorithm": "sha256",
+  "files": [
+    {
+      "path": "archive-capacity-before.log",
+      "bytes": 3206,
+      "sha256": "1c10e872110b3c95b7bb2caf8d5c9eb882ac72c456c9019cd4ef16b8053915ef"
+    },
+    {
+      "path": "archive-capacity-v3-first-check.log",
+      "bytes": 4182,
+      "sha256": "1d6caa2b8bbbf321ae65892e7fdba446d8ea3bcae1165fb5d725ad25a70fc1c0"
+    },
+    {
+      "path": "archive-capacity-after.log",
+      "bytes": 907,
+      "sha256": "2e6609f35de083ecfc7558095a7c1ee55b8c13a70e021df611881e06b918b433"
+    },
+    {
+      "path": "archive-legacy-compatibility.log",
+      "bytes": 927,
+      "sha256": "a098fbd247fdfc5fb499b589b65e6e55119a19140d6c35ab850650d6a7d79176"
+    },
+    {
+      "path": "archive-typecheck.log",
+      "bytes": 13,
+      "sha256": "a9f58776a09b5dac438049683f24bf85764e0ff8e7455952456165c68c158627"
+    },
+    {
+      "path": "sol-archive-summary.json",
+      "bytes": 3666,
+      "sha256": "c33db70deea7f0988b3681e59753cc28d59eaf5361240814402fcca737c4a2e1"
+    },
+    {
+      "path": "oracle-correction.md",
+      "bytes": 3124,
+      "sha256": "5d48494507af33b72655d6d228ddc2bcca0bcf73566860bc94311df1dea9e2ac"
+    },
+    {
+      "path": "windows-review.log",
+      "bytes": 20530,
+      "sha256": "98550a0a9be3008de96d1623db2551abc07456ed8b75e014194b3443766321fa"
+    },
+    {
+      "path": "windows-review.json",
+      "bytes": 74,
+      "sha256": "974343fe84ddaaa67cacaaf14649abc83a08a8e9c8c3da349785e02a7bd441c4"
+    },
+    {
+      "path": "windows-typecheck.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "windows-release-identity.log",
+      "bytes": 310,
+      "sha256": "e97bbf85c5f92258838a6eaa9e0061b3277ae4f92f02b34b225127d9850b666c"
+    },
+    {
+      "path": "windows-commit.txt",
+      "bytes": 42,
+      "sha256": "40fcf81c0a374ac07beff121140ad35aea9cb3981bd68d84899132cf166c5e00"
+    },
+    {
+      "path": "linux-review.log",
+      "bytes": 20295,
+      "sha256": "b659c62410ab5f0af85dbd18b02a3f2d9c4b765bf80f3054f2f8200c2fae0c5b"
+    },
+    {
+      "path": "linux-review.json",
+      "bytes": 50,
+      "sha256": "426008e00df2ae2afcd3418d2c1da8046d440352bccd6edb4f2f71e420549b3d"
+    },
+    {
+      "path": "linux-typecheck.log",
+      "bytes": 66,
+      "sha256": "d773539b4007a1c6e881b39c4bad4ce65837992453c5228198f10bd7ca4677c6"
+    },
+    {
+      "path": "linux-release-identity.log",
+      "bytes": 300,
+      "sha256": "a306649b363596df2665dd639b149ccda96e263e140a41cb09dbd17a81c2704c"
+    },
+    {
+      "path": "linux-commit.txt",
+      "bytes": 41,
+      "sha256": "a82702deba03292a390d2f273e4ec1f7b9580570488a28d86df1dafd9a992bc1"
+    }
+  ],
+  "local_methodology_review": {
+    "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\review-plan-20261112\\benchmark-review.md",
+    "bytes": 16801,
+    "sha256": "9734c3313426368b405c85bff8603ab4338cb81721e5d3cf0ac1c34913b7b05c"
+  },
+  "scope": "Local synthetic affected tests and prospective scorer correction only. Initial failed receipts retained; no hosted benchmark rerun or historical regrade."
+}

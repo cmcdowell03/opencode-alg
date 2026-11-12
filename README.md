@@ -52,7 +52,11 @@ See [implementation status and remaining completion gates](docs/implementation-s
 
 The SDK/plugin dependency used to compile this package is pinned at `1.18.3`; that dependency pin is not the runtime compatibility floor. Live verification accepts stable OpenCode versions satisfying the declared engine range and is currently exercised with `1.18.18`.
 
-## Pending 0.5.5 recovery and evidence
+## Pending 0.5.6 archive recovery
+
+The candidate repairs recovery/checker lookup of archived original attempts and preserves cancellation causes during evidence collection. Large receipt-bearing histories use compact archive rows backed by verified immutable details; new compact archives require a 0.5.6 reader, while older histories remain readable. Do not downgrade an installation after it writes these archives. See the [V1 reliability and comparison plan](docs/v1-reliability-and-build-comparison-plan.md). The last hosted comparison remains the separate 0.5.5 cohort; these repairs do not change its scores.
+
+## 0.5.5 recovery and evidence
 
 The 0.5.5 candidate implements repairs identified by the [V1 benchmark failure analysis](docs/v1-benchmark-failure-analysis.md). Local Windows/Linux regressions and headless compaction/restart checks pass; the separate hosted Terra follow-up still exposes usage limits and incorrect task/template choices. Historical results retain their tested versions. See [current V1 status](docs/v1-implementation-status.md) for qualification boundaries.
 

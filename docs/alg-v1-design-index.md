@@ -1,6 +1,6 @@
 # ALG V1 Design Index and Delivery Roadmap
 
-Draft revised 9 November 2026. V1 means the OpenCode 1 host; document revisions use dates. No OpenCode 2 implementation is included.
+Draft revised 12 November 2026. V1 means the OpenCode 1 host; document revisions use dates. No OpenCode 2 implementation is included.
 
 ## Purpose
 
@@ -15,6 +15,8 @@ This index owns sequencing within this draft set. The existing four owner contra
 **Phase 1b — Durable bounded investigation.** Add one fixed investigation template to the existing graph machinery. Reuse server jobs and ALG persistence, adding only missing admissions, reconciliation, result reuse and compact context projections. Preserve approved procedures, ruled-out hypotheses, search coverage, budget and unknown submissions across compaction and restart. Include an engineer checkpoint before expensive discriminating work. The detailed Phase One plan owns limits, transitions and acceptance.
 
 **Later V1 work.** Curated cases and useful candidates precede measured skill promotion. Selection and parameterization of existing templates precede free-form graph authoring and lifecycle-safe revisions. The requested artifact skill remains an optional extension. Recursive orchestrators, shared multi-user synchronization and new analytics engines are outside Phase One.
+
+**Reliability follow-up to PR #14.** Before further graph complexity or automatic promotion, complete the [task-admission and Build-comparison plan](v1-reliability-and-build-comparison-plan.md): fix reproduced mechanics, reject incompatible deliverable/worker assignments, preserve original criteria, measure overhead, then evaluate durable recovery on a frozen fair cohort. These are planned V1 follow-ups; the earlier post-repair benchmark does not establish superiority.
 
 The older umbrella's baseline/visibility and recovery work maps into Phase 1a/1b. Former A–E labels identify capability families, not another implementation order.
 
@@ -46,6 +48,7 @@ Do not reward faster unsupported causal claims, silence about missing procedures
 - [Claude review reconciliation](alg-v1-claude-review-reconciliation.md): agreements, qualifications and source provenance.
 - [Graph evolution and adversarial review](v1-graph-evolution-adversarial-review.md): implemented opt-in citation-linked verdicts, bounded pending-node graph revisions and paired probe evaluation; stronger provenance and automatic promotion remain design.
 - [Measured graph/review evaluation](v1-adversarial-evaluation.md): bounded Gemma/Luna comparisons, preserved failures, criterion ambiguity and exact local host/recovery evidence. Exploratory results do not authorize automatic promotion.
+- [Reliability and comparison with native Build](v1-reliability-and-build-comparison-plan.md): first task/capability admission increment, mechanical qualification, overhead/budget design, fair workload matrix and held-out decision rules.
 
 ## Canonical documentation
 
@@ -53,4 +56,4 @@ This repository copy is the canonical implementation design. Earlier local artif
 
 ## Implementation tracking
 
-Candidate 0.5.4 is tracked in PR #14. The November 10 review withdrew the 80% estimate. Its confirmed ledger defects and missing local contracts now have implementations: assigned recipe orders, bounded result reads/cache, in-host job continuation, reviewed profile migration, native MCP mappings and workspace fact sources. Exact local acceptance and the remaining boundaries are recorded separately: the real datalake-mcp is unqualified, host waits are bounded rather than a daemon, and one successful local-model session after the duplicate-plan correction does not establish general long-session reliability. See [implementation status](v1-implementation-status.md), [V1 operator usage](v1-investigations.md) and [prepared deployment](deployment.md) for the implemented surfaces. The design remains broader than this first delivery: measured promotion, template improvement, recursive delegation, shared cross-user knowledge and OpenCode V2 are not activated by this PR. Local acceptance results are recorded against exact commits; draft design status does not count as a shipped or validated feature.
+Candidate 0.5.6 is tracked in PR #14. The November 10 review withdrew the 80% estimate. Its confirmed ledger defects and missing local contracts now have implementations: assigned recipe orders, bounded result reads/cache, in-host job continuation, reviewed profile migration, native MCP mappings and workspace fact sources. Exact local acceptance and the remaining boundaries are recorded separately: the real datalake-mcp is unqualified, host waits are bounded rather than a daemon, and one successful local-model session after the duplicate-plan correction does not establish general long-session reliability. See [implementation status](v1-implementation-status.md), [V1 operator usage](v1-investigations.md) and [prepared deployment](deployment.md) for the implemented surfaces. The design remains broader than this first delivery: measured promotion, template improvement, recursive delegation, shared cross-user knowledge and OpenCode V2 are not activated by this PR. Local acceptance results are recorded against exact commits; draft design status does not count as a shipped or validated feature.

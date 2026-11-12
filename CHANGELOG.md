@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.6 candidate — archived evidence recovery and review follow-up
+
+- Gate-only recovery and checker evidence resolve the original verified attempt after it leaves the four-attempt visible tail. Receipt identity and revision checks remain enforced.
+- Evidence collection preserves cancellation/timeout causes when the SDK rejects immediately on abort, rather than calling them generic SDK failures.
+- Oversized attempt-history documents use compact version-3 rows referencing existing immutable detail sidecars, with full evidence verified and restored on read. Ordinary version-2 and historical version-1 archives remain readable; existing byte limits remain in force. Newly written compact archives require a 0.5.6 reader; do not downgrade over them.
+- Prospective benchmark scoring rejects empty/incomplete preparation and checks final source changes against the original two-file limit. It does not audit transient edits later reverted. Historical cohorts retain their original oracle and grades.
+- Adds the V1 task-admission, mechanical qualification and fair Build-comparison plan. It does not activate task contracts, new model-spending policy, automatic graph selection, V2 or a new paid cohort.
+
 ## 0.5.5 candidate — bounded gate recovery, execution evidence and compact planning
 
 Implemented in the pending candidate and checked locally on Windows PowerShell and native Ubuntu Bash. Headless compaction/restart checks passed on both platforms. The prospective Terra comparison retains usage-cap and task/template-selection failures; it does not establish general model-quality or efficiency gains. Earlier benchmark results and release receipts retain their original runtime identities. No new offline-package or production qualification is claimed. See the [validation record](docs/v1-benchmark-failure-analysis.md#post-repair-validation--windows-and-linux).

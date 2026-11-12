@@ -1,0 +1,30 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\persistence-evidence-capacity.test.ts:
+(pass) bounded receipt-bearing attempt archives > implementer receipts survive persist, reload and attempt 100 [16128.34ms]
+130 |       const name = `work-attempts-${hash}.json`
+131 |       writeFileSync(join(runDir(project, run.run_id), "history", name), canonicalJson(currentArchive))
+132 |       final.nodes.work!.attempt_history_ref = { ...currentReference,
+133 |         artifact_path: `.opencode/runs/${run.run_id}/history/${name}`, sha256: hash,
+134 |         byte_size: Buffer.byteLength(JSON.stringify(currentArchive)) }
+135 |       expect(() => hydrateRunFully(final)).toThrow(/compact.*inline|inline.*compact/)
+                                                 ^
+error: expect(received).toThrow(expected)
+
+Expected pattern: /compact.*inline|inline.*compact/
+Received message: "[\n  {\n    \"code\": \"invalid_value\",\n    \"values\": [\n      1\n    ],\n    \"path\": [\n      \"execution_evidence\",\n      \"version\"\n    ],\n    \"message\": \"Invalid input: expected 1\"\n  },\n  {\n    \"expected\": \"string\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"execution_evidence\",\n      \"run_id\"\n    ],\n    \"message\": \"Invalid input: expected string, received undefined\"\n  },\n  {\n    \"expected\": \"string\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"execution_evidence\",\n      \"node_id\"\n    ],\n    \"message\": \"Invalid input: expected string, received undefined\"\n  },\n  {\n    \"expected\": \"number\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"execution_evidence\",\n      \"attempt\"\n    ],\n    \"message\": \"Invalid input: expected number, received undefined\"\n  },\n  {\n    \"code\": \"invalid_value\",\n    \"values\": [\n      \"available\",\n      \"unavailable\"\n    ],\n    \"path\": [\n      \"execution_evidence\",\n      \"retrieval_status\"\n    ],\n    \"message\": \"Invalid option: expected one of \\\"available\\\"|\\\"unavailable\\\"\"\n  },\n  {\n    \"expected\": \"array\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"execution_evidence\",\n      \"commands\"\n    ],\n    \"message\": \"Invalid input: expected array, received undefined\"\n  },\n  {\n    \"expected\": \"number\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"execution_evidence\",\n      \"omitted_commands\"\n    ],\n    \"message\": \"Invalid input: expected number, received undefined\"\n  },\n  {\n    \"expected\": \"boolean\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"execution_evidence\",\n      \"window_may_be_incomplete\"\n    ],\n    \"message\": \"Invalid input: expected boolean, received undefined\"\n  },\n  {\n    \"expected\": \"number\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"execution_evidence\",\n      \"foreign_messages_omitted\"\n    ],\n    \"message\": \"Invalid input: expected number, received undefined\"\n  },\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"forged\"\n    ],\n    \"path\": [\n      \"execution_evidence\"\n    ],\n    \"message\": \"Unrecognized key: \\\"forged\\\"\"\n  }\n]"
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\persistence-evidence-capacity.test.ts:135:44)
+(fail) bounded receipt-bearing attempt archives > checker receipts survive persist, reload and attempt 100 [16681.85ms]
+
+tests\verification-tui.test.ts:
+(pass) verified TUI archives > compact v3 archive validates its exact detail before navigation: valid [33.99ms]
+(pass) verified TUI archives > compact v3 archive validates its exact detail before navigation: session_mismatch [31.37ms]
+(pass) verified TUI archives > compact v3 archive validates its exact detail before navigation: missing_basis [31.96ms]
+(pass) verified TUI archives > rejects an archived failed call whose pre-call basis is missing [15.98ms]
+(pass) verified TUI archives > rejects a detail whose verification basis differs from its archive projection [29.86ms]
+
+ 6 pass
+ 1 fail
+ 2658 expect() calls
+Ran 7 tests across 2 files. [33.14s]

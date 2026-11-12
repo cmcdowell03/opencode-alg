@@ -1,10 +1,28 @@
 # V1 Phase One implementation status
 
-PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current pending candidate is 0.5.5 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as 0.5.5 acceptance.
+PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current pending candidate is 0.5.6 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as acceptance of the current candidate.
 
-**Current disposition, 12 November 2026:** the earlier 80% estimate remains withdrawn. The confirmed ledger defects and the missing local workflow contracts are implemented. Native MCP translation is configurable and tested against fixtures, not verified against the real air-gapped datalake-mcp. The pending 0.5.5 candidate implements bounded setup recovery, host execution/preservation evidence and compact-task/plan-to-run guidance in response to the [native Build comparison](v1-build-benchmark.md). Local Windows and native Ubuntu regressions and headless recovery checks support these repairs. The [post-repair validation](v1-benchmark-failure-analysis.md#post-repair-validation--windows-and-linux) preserves the hosted Terra failures: cumulative usage and task/template mismatch still prevent some workflows completing. Historical harness transport/skill-discovery defects remain accounted separately. The PR remains unmerged. Production service qualification, scientific usefulness and general long-session reliability remain unestablished.
+**Current disposition, 12 November 2026:** the earlier 80% estimate remains withdrawn. The confirmed ledger defects and the missing local workflow contracts are implemented. Native MCP translation is configurable and tested against fixtures, not verified against the real air-gapped datalake-mcp. The 0.5.5 increment implemented bounded setup recovery, host execution/preservation evidence and compact-task/plan-to-run guidance in response to the [native Build comparison](v1-build-benchmark.md); 0.5.6 adds the mechanical repairs below. Local Windows and native Ubuntu regressions support these repairs; headless recovery evidence retains its 0.5.5 identity. The [post-repair validation](v1-benchmark-failure-analysis.md#post-repair-validation--windows-and-linux) preserves the hosted Terra failures: cumulative usage and task/template mismatch still prevent some workflows completing. Historical harness transport/skill-discovery defects remain accounted separately. The PR remains unmerged. Production service qualification, scientific usefulness and general long-session reliability remain unestablished.
 
-## Pending 0.5.5 implementation — local repairs validated, workflow limits remain
+## 0.5.6 mechanical review and improvement plan — 12 November 2026
+
+Implementation `01e18ecae14c475ec6bd76299fd011945f49a63b` repairs three locally reproduced defects: archived original-receipt lookup after the four-attempt visible tail, cancellation/timeout misclassification during SDK evidence collection, and attempt archives overflowing their existing byte limit because they duplicate large receipts.
+
+Large histories now use version-3 archive rows backed by exact immutable detail references. Both store and TUI readers validate/restore the evidence; forged session identity and missing verification basis fail closed. Existing version-1/2 archives and ordinary version-2 writes remain supported. The 100-attempt fixtures produce 90,562/91,042-byte archives under the unchanged 524,288-byte cap. Gate recovery stores three fixed digests, not the declared-file list. Package/locks/release metadata now identify **0.5.6**; rollback to readers that cannot read new compact archives is unsupported.
+
+The prospective benchmark scorer also rejects empty/incomplete preparation and checks added/changed/deleted final source files against the existing two-file limit. It does not audit transient edits later reverted, and its preparation checks are bounded lexical checks rather than a general semantic verifier. Historical cohorts retain their original fixture/oracle hashes and grades.
+
+| Local check at `01e18ec` | Windows PowerShell | Native Ubuntu Bash |
+| --- | --- | --- |
+| Combined affected regressions, nine files | 151 passed, zero failed; 5,470 assertions, 127.82 s | 151 passed, zero failed; 5,470 assertions, 49.10 s |
+| TypeScript | Passed | Passed |
+| Package/lock/durable-reader identity | One passed, seven assertions | One passed, seven assertions |
+
+The affected suite covers gate recovery, execution/checker evidence, 100-attempt persistence, full hydration, ownership, schemas, benchmark fixtures and TUI archives. These are local regression results, not a new full-repository gate, offline bundle acceptance or hosted-model comparison. Initial capacity failures and the intermediate negative-fixture failure remain in the [review receipts](evidence/review-20261112/). No new model trial was run; the most recent hosted comparison remains the explicitly identified 0.5.5 cohort.
+
+The [ordered V1 plan](v1-reliability-and-build-comparison-plan.md) starts with task-contract admission and compatible producer roles, then criteria provenance, measured overhead/shared allowance, and a frozen Build-versus-ALG comparison of interrupted expensive investigations. Those broader contracts are not implemented by this mechanical patch. Remaining harness work includes final usage reconciliation, stronger compaction receipts and explicit comparison eligibility. The PR stays draft; the actual air-gapped service remains unqualified. No V2, GitHub runners, Gemma, global configuration changes or merge.
+
+## 0.5.5 implementation — local repairs validated, workflow limits remain
 
 - Shell-runtime preparation and bounded Windows compiler diagnostics distinguish setup failure before command launch. An attempted node keeps aggregate `gate_failure` with diagnostic `setup_failed`; automatic implementer retries stop on that setup failure.
 - Explicit resume can retry only the gate when saved schema-valid output, gate/cwd and bounded declared-file state match. It uses ordinary node/global attempt slots and retains history, limits and permissions. Missing or stale recovery bases fail closed.
@@ -42,7 +60,7 @@ The single Bash deployment command uses an already prepared bundle and a separat
 bash "/path/to/opencode-alg/scripts/alg.sh" deploy --offline --trust-bundle <reviewed-manifest-sha256>
 ```
 
-Use isolated --config-dir and --install-root overrides when evaluating a candidate. A successful deployment means installed on disk; an existing OpenCode process must restart before it loads the new generation. The pending candidate adds optional attempt recovery/evidence fields requiring a compatible 0.5.5 reader; older state remains readable, but older-reader rollback over newly written state is unsupported. Earlier investigation-plan claims retain their original compatibility boundary.
+Use isolated --config-dir and --install-root overrides when evaluating a candidate. A successful deployment means installed on disk; an existing OpenCode process must restart before it loads the new generation. The 0.5.5 increment added optional attempt recovery/evidence fields; 0.5.6 adds compact version-3 histories requiring its reader. Older state remains readable, but older-reader rollback over newly written state is unsupported. Earlier investigation-plan claims retain their original compatibility boundary.
 
 ## 0.5.4 graph/review follow-up — 11 November 2026
 
