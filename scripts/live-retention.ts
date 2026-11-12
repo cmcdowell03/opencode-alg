@@ -93,8 +93,16 @@ export async function runLiveRetention(config: Config) {
   const continuation = prior ? validateDiagnosticContinuation(prior, config.providerID + "/" + config.modelID, source.digest, Date.now()) : null
   if (parentPlan && parentPlan.runtimeDigest !== source.digest) throw Error("continuation_runtime_changed")
   if (continuation) {
-    if (existsSync(join(stateRoot, "continuation-issued.json"))) throw Error("continuation_already_issued")
-    writeFileSync(join(stateRoot, "continuation-issued.json"), JSON.stringify({ outputRoot: root, at: Date.now() }), { flag: "wx" })
+    const marker = join(stateRoot, "continuation-issued.json")
+    let previous: any = null
+    if (existsSync(marker)) {
+      previous = JSON.parse(readFileSync(marker, "utf8"))
+      const stopped = JSON.parse(readFileSync(join(previous.outputRoot, "result.json"), "utf8"))
+      // One pre-model apparatus failure may be repaired without replaying a call.
+      if (previous.previous || stopped.startedAt !== 0 || stopped.phases?.length !== 0 || stopped.receipts?.length !== 0 ||
+        stopped.cleanup !== true || stopped.authCopyRemoved !== true || stopped.stopReason !== "verification dependency destination must be fresh") throw Error("continuation_already_issued")
+    }
+    writeFileSync(marker, JSON.stringify({ outputRoot: root, at: Date.now(), previous }), { flag: previous ? "w" : "wx" })
     cpSync(project, join(root, "parent-project"), { recursive: true, errorOnExist: true })
     for (const name of ["opencode.db", "opencode.db-wal", "opencode.db-shm"]) {
       const path = join(stateRoot, "data/opencode", name)
@@ -210,7 +218,7 @@ export async function runLiveRetention(config: Config) {
     execFileSync("git", ["add", "."], { cwd: project })
     execFileSync("git", ["-c", "user.name=ALG Diagnostic", "-c", "user.email=local@localhost", "commit", "-qm", "Frozen synthetic mission"], { cwd: project })
     }
-    seedVerificationHostDependencies(join(stateRoot, "config/opencode"), repo)
+    if (!continuation) seedVerificationHostDependencies(join(stateRoot, "config/opencode"), repo)
     const auth = JSON.parse(readFileSync(config.authFile, "utf8"))[config.providerID]
     if (!auth) throw Error("provider_not_connected")
     for (const value of Object.values(auth)) if (typeof value === "string" && value.length > 20) secrets.push(value)
