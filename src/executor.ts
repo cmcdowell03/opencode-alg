@@ -181,16 +181,22 @@ function gateRecoverySource(run: RunState, definition: NodeDef): NodeAttempt | u
   if (definition.agent !== "implementer") return undefined
   const attempts = run.nodes[definition.id]!.attempts
   const last = attempts.at(-1)
-  if (last?.shell_setup_failed) return last
-  if (last && last.status !== "done" && last.reused_output_from !== undefined &&
-    (last.outcome === undefined || last.outcome === "sdk_error")) {
-    const source = attempts.find(attempt => attempt.attempt === last.reused_output_from)
+  if (!last) return undefined
+  const interrupted = last.status !== "done" && last.reused_output_from !== undefined &&
+    (last.outcome === undefined || last.outcome === "sdk_error")
+  if (!last.shell_setup_failed && !interrupted) return undefined
+  let source = last
+  while (source.reused_output_from !== undefined) {
+    const prior = attempts.find(attempt => attempt.attempt === source.reused_output_from)
+    if (!prior || prior.attempt >= source.attempt) throw new Error("Invalid gate recovery lineage")
+    source = prior
+  }
+  if (source !== last || interrupted) {
     if (!source?.shell_setup_failed || !source.gate_recovery || source.schema_ok !== true) {
       throw new Error("Gate recovery source is unavailable; refusing to rerun implementation")
     }
-    return source
   }
-  return undefined
+  return source
 }
 
 function preflightExecutableNodes(run: RunState, options: ExecuteOptions, batch?: readonly NodeDef[]): boolean {
@@ -548,7 +554,7 @@ async function runOneNode(
     if (setupFailed) {
       attemptRecord.shell_setup_failed = true
       if (definition.agent === "implementer" && schemaOk && shellDefinition) {
-        attemptRecord.gate_recovery = gateRecoveryBasis(options.worktree, options.directory, shellDefinition, rawOutput)
+        attemptRecord.gate_recovery ??= gateRecoveryBasis(options.worktree, options.directory, shellDefinition, rawOutput)
       }
     }
     attemptRecord.schema_ok = schemaOk

@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto"
+import { isDeepStrictEqual } from "node:util"
 import { resolveInputValue } from "./graph.ts"
 import { parseInputExpression } from "./schemas.ts"
 import { serializedBytes } from "./limits.ts"
@@ -45,9 +46,14 @@ export function buildCheckerEvidence(definition: NodeDef, run: RunState, legacyP
     const gate = ExecutionEvidenceSchema.safeParse(attempt?.gate_evidence)
     const preservation = PreservationEvidenceSchema.safeParse(attempt?.preservation_evidence)
     const currentAttempt = state?.current_attempt ?? -1
-    const sessionId = latest?.session_id
+    const origin = latest?.reused_output_from === undefined ? latest
+      : state?.attempts.find(candidate => candidate.attempt === latest.reused_output_from)
+    const validOrigin = latest?.reused_output_from === undefined || (!!origin?.shell_setup_failed &&
+      origin.attempt < currentAttempt && isDeepStrictEqual(origin.gate_recovery, latest.gate_recovery) &&
+      isDeepStrictEqual(origin.execution_evidence, latest.execution_evidence))
+    const sessionId = origin?.session_id
     const executionMatches = execution.success && execution.data.run_id === run.run_id && execution.data.node_id === nodeId &&
-      execution.data.attempt === currentAttempt && execution.data.child_session_id === sessionId
+      validOrigin && execution.data.attempt === origin?.attempt && execution.data.child_session_id === sessionId
     const gateMatches = gate.success && gate.data.run_id === run.run_id && gate.data.node_id === nodeId &&
       gate.data.attempt === currentAttempt && gate.data.child_session_id === undefined
     if (executionMatches || gateMatches || preservation.success) receiptPairs.push({
