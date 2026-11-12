@@ -52,6 +52,18 @@ See [implementation status and remaining completion gates](docs/implementation-s
 
 The SDK/plugin dependency used to compile this package is pinned at `1.18.3`; that dependency pin is not the runtime compatibility floor. Live verification accepts stable OpenCode versions satisfying the declared engine range and is currently exercised with `1.18.18`.
 
+## Pending 0.5.5 recovery and evidence
+
+The 0.5.5 candidate implements repairs identified by the [V1 benchmark failure analysis](docs/v1-benchmark-failure-analysis.md). Candidate acceptance and prospective benchmark validation are pending; historical results retain their tested versions. See [current V1 status](docs/v1-implementation-status.md) for qualification boundaries.
+
+For a small code task with known files and clear criteria, explicitly select `template="coding-compact"`: implement → fresh checker, two attempts per node, four total attempts, concurrency one. `coding-diamond` remains the default for work needing exploration and research. A successful live plan is followed by bounded `alg_run` when the user requested work or an artifact. Explicit plan-only/dry-run requests and reused `done` runs retain their stop behavior; the guidance does not introduce automatic continuation loops or new permissions.
+
+If the user requires specific existing files to stay unchanged, pass `preserve_paths` to `alg_plan`, alongside the original criterion. For example, `preserve_paths=["test/wafer-count.test.cjs"]` requests snapshots of that existing project-relative file on the first implementer. The optional list accepts 1–8 distinct normalized paths, at most 512 characters each; live snapshot capture requires contained regular files of at most 1 MiB each. The original before hashes remain the basis across retries. Planning validates paths but captures no evidence, and snapshots neither scan the whole workspace nor prove that tests ran. Researcher suggestions and verification methods remain separate from original user requirements.
+
+For reachable live shell gates, ALG prepares the Windows helper before spending model attempts and retains bounded compiler diagnostics. A later setup failure remains an aggregate `gate_failure` with diagnostic `setup_failed`; the requested command did not launch. Repair the environment, then explicitly resume the existing run. Gate-only recovery requires matching saved output, gate/cwd and bounded declared-file digests and spends an ordinary attempt slot. Changed or unavailable bases fail closed; limits are not reset.
+
+Checker inputs can now include bounded host receipts for native child `bash` execution, ALG shell gates and explicit file preservation. Missing exit metadata and unavailable/truncated evidence remain visible. A completed tool call, passing command or unchanged file does not prove semantic truth or that the tests adequately cover the user criteria. These are V1 changes; real air-gapped service qualification and new offline-package acceptance remain separate, unresolved work.
+
 ## Tools
 
 | Tool | Purpose |

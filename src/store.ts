@@ -699,6 +699,12 @@ function verifyFailureCommitment(
 }
 
 const ATTEMPT_DETAIL_IDENTITY_FIELDS = [
+  "execution_evidence",
+  "gate_evidence",
+  "preservation_evidence",
+  "shell_setup_failed",
+  "gate_recovery",
+  "reused_output_from",
   "attempt",
   "status",
   "session_id",

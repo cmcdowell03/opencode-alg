@@ -201,6 +201,15 @@ export interface FilesystemRootAuthorizationReference extends RunDataReference {
 }
 
 export interface NodeAttempt {
+  /** Host observations, never populated from the worker's claimed JSON. */
+  execution_evidence?: import("./execution-evidence.ts").ExecutionEvidence
+  gate_evidence?: import("./execution-evidence.ts").ExecutionEvidence
+  preservation_evidence?: import("./preservation-evidence.ts").PreservationEvidence
+  /** Gate infrastructure failed before command launch; do not request code repair. */
+  shell_setup_failed?: true
+  gate_recovery?: import("./gate-recovery.ts").GateRecovery
+  /** An explicit resume reran only the gate against bound output/files. */
+  reused_output_from?: number
   /** Frozen input commitments saved before the checker child starts. */
   verification_basis?: import("./verification.ts").VerificationBasis
   attempt: number

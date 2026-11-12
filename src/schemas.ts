@@ -1,5 +1,8 @@
 import { isAbsolute } from "node:path"
 import { z } from "zod"
+import { GateRecoverySchema } from "./gate-recovery.ts"
+import { ExecutionEvidenceSchema } from "./execution-evidence.ts"
+import { PreservationEvidenceSchema } from "./preservation-evidence.ts"
 import { ALG_AGENTS, MODEL_AGENTS } from "./types.ts"
 import type {
   AlgAgent,
@@ -46,7 +49,7 @@ const OUTPUT_RULE_HINTS = {
   failures_empty_when_passed: "passed=true requires failures=[]. If criteria are unmet, report passed=false and specific failures.",
   failures_required_when_rejected: "passed=false requires at least one specific failure.",
   score_matches_verdict: "passed must equal (score >= 7); use score 0-6 for rejection and 7-10 for a pass, reflecting the actual assessment.",
-  shell_ok_matches_execution: "ok must equal (exit_code === 0 && !timed_out && !cancelled && !termination_failed).",
+  shell_ok_matches_execution: "ok must equal (exit_code === 0 && !timed_out && !cancelled && !termination_failed && !setup_failed).",
   output_byte_limit: "Reduce the complete serialized UTF-8 JSON output to the stated byte limit without changing facts.",
   json_serializable: "Return a JSON-serializable object.",
 } as const
@@ -399,10 +402,11 @@ export const ShellOut = z
     timed_out: z.boolean().optional(),
     cancelled: z.boolean().optional(),
     termination_failed: z.boolean().optional(),
+    setup_failed: z.boolean().optional(),
   })
   .strict()
   .superRefine((value, ctx) => {
-    if (value.ok !== (value.exit_code === 0 && !value.timed_out && !value.cancelled && !value.termination_failed)) {
+    if (value.ok !== (value.exit_code === 0 && !value.timed_out && !value.cancelled && !value.termination_failed && !value.setup_failed)) {
       ctx.addIssue({ code: "custom", path: ["ok"], message: "ok must reflect exit_code/timeout/cancellation",
         params: outputRuleParams("shell_ok_matches_execution") })
     }
@@ -489,6 +493,12 @@ const FilesystemRootAuthorizationReferenceSchema: z.ZodType<FilesystemRootAuthor
   )
 
 const NodeAttemptDetailShape = {
+    execution_evidence: ExecutionEvidenceSchema.optional(),
+    gate_evidence: ExecutionEvidenceSchema.optional(),
+    preservation_evidence: PreservationEvidenceSchema.optional(),
+    shell_setup_failed: z.literal(true).optional(),
+    gate_recovery: GateRecoverySchema.optional(),
+    reused_output_from: z.number().int().positive().optional(),
     verification_basis: VerificationBasisSchema.optional(),
     attempt: z.number().int().positive().max(10_000),
     status: z.enum(["pending", "ready", "running", "done", "failed", "skipped"]),
@@ -747,6 +757,14 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
         ctx.addIssue({ code: "custom", path: ["nodes", id, "current_attempt"], message: "node exceeded local attempt limit" })
       }
       state.attempts.forEach((attempt, i) => {
+        if (attempt.reused_output_from !== undefined) {
+          const source = state.attempts.find(candidate => candidate.attempt === attempt.reused_output_from)
+          if (source && (!source.shell_setup_failed || source.schema_ok !== true ||
+            !isDeepStrictEqual(source.gate_recovery, attempt.gate_recovery) ||
+            !isDeepStrictEqual(source.execution_evidence, attempt.execution_evidence))) {
+            ctx.addIssue({ code: "custom", path: ["nodes", id, "attempts", i], message: "gate-only recovery source/basis/evidence mismatch" })
+          }
+        }
         try {
           parsePersistedNodeAttempt(attempt, {
             agent: def.agent,
@@ -1226,6 +1244,29 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
     add(`${attempt.outcome} outcome requires schema_ok=true`)
   }
   const liveShellGate = context.requires_shell === true && context.mode !== "dry"
+  if (attempt.shell_setup_failed && (!liveShellGate || attempt.outcome !== "gate_failure" || attempt.shell_ok !== false)) {
+    add("shell_setup_failed requires a live failed shell gate")
+  }
+  if (attempt.gate_recovery && ((!attempt.shell_setup_failed && attempt.reused_output_from === undefined) || !knownAgent.success || knownAgent.data !== "implementer")) {
+    add("gate recovery requires an implementer setup failure")
+  }
+  if (attempt.reused_output_from !== undefined &&
+    (!liveShellGate || !knownAgent.success || knownAgent.data !== "implementer" ||
+      attempt.reused_output_from >= attempt.attempt || attempt.session_id !== undefined)) {
+    add("gate-only recovery must reference an earlier implementer attempt without creating a child")
+  }
+  if (attempt.reused_output_from !== undefined && !attempt.gate_recovery) add("gate-only recovery requires its persisted basis")
+  for (const [kind, receipt] of [["native", attempt.execution_evidence], ["gate", attempt.gate_evidence]] as const) {
+    if (!receipt) continue
+    if (receipt.run_id !== runId || receipt.node_id !== nodeId) add("execution receipt belongs to another run/node")
+    if (kind === "gate" && receipt.attempt !== attempt.attempt) add("gate receipt belongs to another attempt")
+    if (kind === "native") {
+      if (attempt.reused_output_from === undefined && (receipt.attempt !== attempt.attempt || receipt.child_session_id !== attempt.session_id)) {
+        add("native execution receipt belongs to another attempt/session")
+      }
+      if (attempt.reused_output_from !== undefined && receipt.attempt > attempt.reused_output_from) add("reused execution receipt cannot come from a later attempt")
+    }
+  }
   if (attempt.outcome === "gate_failure" &&
     (!liveShellGate || attempt.shell_ok !== false)) {
     add("gate_failure outcome requires an actual live shell/all graph gate and shell_ok=false")

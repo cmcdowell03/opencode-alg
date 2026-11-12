@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.5 candidate — bounded gate recovery, execution evidence and compact planning
+
+Implemented in the pending candidate; aggregate candidate acceptance and prospective benchmark validation are pending. Earlier benchmark results and release receipts retain their original runtime identities. No new model-quality, efficiency, offline-deployment or production qualification result is claimed.
+
+- Windows shell-runtime preparation runs before model-attempt reservation for reachable live gates. Private helper paths are shorter; bounded diagnostics retain compiler identity, stdout and stderr. A setup failure before command launch is identified as `setup_failed`, while an attempted node still uses the aggregate `gate_failure` outcome. It does not establish that the requested test command ran.
+- A recorded implementer setup failure stops automatic implementation retries. Explicit `alg_resume` may retry only its gate when the saved schema-valid output, gate/cwd identity and bounded declared-file basis still match. Recovery consumes normal node/global attempt slots, retains history and permissions, and refuses missing or changed bases instead of resetting budgets or silently rewriting work.
+- Persist bounded host execution receipts for native child `bash` calls and ALG shell gates, and deliver available receipts through the existing checker-evidence channel. Missing exit metadata stays unavailable; truncation and incomplete retrieval remain visible. Execution evidence does not establish test adequacy or semantic truth.
+- Optional `alg_plan.preserve_paths` selects 1–8 distinct existing contained project-relative regular files, at most 512 characters per path and 1 MiB per file at snapshot time. Host before/after digests are retained in attempt evidence; retries preserve the original before basis. This is explicit file preservation evidence, not a workspace scan or verification that tests ran.
+- Live-plan guidance now proceeds to bounded `alg_run` for requested work, while preserving explicit plan-only/dry-run intent and reused-completed semantics. Opt-in `coding-compact` supplies implement → fresh checker, two attempts per node, four total attempts and concurrency one. Original user criteria stay authoritative; research proposals do not silently become new hard requirements.
+- New optional attempt evidence/recovery fields require the 0.5.5 reader; older state remains readable. The candidate adds no permission expansion, automatic remote resubmission, new tool ID or V2 runtime. The real air-gapped service remains unqualified.
+
 ## 0.5.4 candidate — evidence-linked review and bounded graph revisions
 
 - Opt-in checker findings link each criterion to included evidence IDs, preserve unsupported/inconclusive outcomes, and save the input basis before child launch. Linkage is not proof of source truth or independence; legacy verdicts stay legacy.

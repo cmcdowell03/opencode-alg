@@ -58,6 +58,34 @@ export const CODING_DIAMOND: GraphDef = {
   ],
 }
 
+/** Opt-in for small code tasks whose scope and user criteria are already known. */
+export const CODING_COMPACT: GraphDef = {
+  name: "coding-compact",
+  description: "Opt-in small, well-scoped code task: implement → fresh-child checker",
+  max_global_attempts: 4,
+  max_concurrency: 1,
+  nodes: [
+    {
+      id: "implement",
+      agent: "implementer",
+      depends_on: [],
+      description: "Implement the known scope against original user criteria; report missing prerequisites",
+      inputs: { goal: "$goal", criteria: "$criteria" },
+      loop: { max_attempts: 2, gate: "schema" },
+    },
+    {
+      id: "check",
+      agent: "checker",
+      depends_on: ["implement"],
+      description: "Fresh-child check against original user criteria and required verification evidence",
+      isolated_check: true,
+      feedback_to: "implement",
+      inputs: { criteria: "$criteria", claimed: "implement" },
+      loop: { max_attempts: 2, gate: "schema" },
+    },
+  ],
+}
+
 export const RESEARCH_DIAMOND: GraphDef = {
   name: "research-diamond",
   description: "Parallel explore lanes → synthesis research → fresh-child checker",
@@ -226,6 +254,7 @@ export const DATA_INVESTIGATION: GraphDef = {
 
 export const TEMPLATES: Record<string, GraphDef> = {
   "coding-diamond": CODING_DIAMOND,
+  "coding-compact": CODING_COMPACT,
   "research-diamond": RESEARCH_DIAMOND,
   "spreadsheet-diamond": SPREADSHEET_DIAMOND,
   "data-investigation": DATA_INVESTIGATION,

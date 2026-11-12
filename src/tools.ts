@@ -37,6 +37,8 @@ import {
   hostProjectDirectory,
   isContained,
   isFilesystemRoot,
+  isSafeProjectRelativePath,
+  resolveContainedPath,
 } from "./paths.ts"
 import { formatSdkError } from "./diagnostics.ts"
 import { MAX_GRAPH_STATE_BYTES, serializedBytes, truncateUtf8, utf8Bytes } from "./limits.ts"
@@ -366,6 +368,38 @@ function nextAction(run: RunState): string {
   return "Inspect alg_status/detail=full and failure artifacts; attempt limits require a new run when exhausted."
 }
 
+/** Planning guidance only: execution remains an explicit, separately authorized tool call. */
+function planNextAction(run: RunState): string {
+  if (run.status === "done" || run.status === "failed") return nextAction(run)
+  if (run.status === "planning") {
+    if (run.mode === "dry") return `This is a dry plan, not live work. Stop here for an explicit plan-only request; if a dry smoke was requested, call alg_run with run_id=${run.run_id} and dry=true. Existing permissions and per-call filesystem-root approval still apply.`
+    return `This live plan has not executed the requested work. If the user requested implementation or an artifact, call alg_run with run_id=${run.run_id} before your final response; use bounded max_waves and inspect the result. Stop at planning for an explicit plan-only request. Existing permissions and per-call filesystem-root approval still apply; do not automatically retry a blocked run.`
+  }
+  return `Inspect alg_status and recorded blockers for run_id=${run.run_id}. Resume only if an authorized bounded retry can address the blocker; do not start duplicate execution, automatically loop, or reset budgets.`
+}
+
+const preservePathsSchema = tool.schema.array(tool.schema.string().min(1).max(512)
+  .refine(isSafeProjectRelativePath, "preserve_paths must use normalized project-relative file paths"))
+  .min(1).max(8).refine((paths) => new Set(paths).size === paths.length, "duplicate preservation path")
+
+function withPreservePaths(graph: GraphDef, project: string, requested: string[]): GraphDef {
+  const paths = preservePathsSchema.parse(requested)
+  const clone = structuredClone(graph)
+  const implementer = clone.nodes.find((node) => node.agent === "implementer")
+  if (!implementer) throw new Error("graph has no implementer node for preserve_paths")
+  for (const path of paths) {
+    const contained = resolveContainedPath(project, ...path.split("/"))
+    if (!statSync(contained).isFile()) throw new Error(`preserve_paths requires an existing regular file: ${path}`)
+  }
+  // Explicit inputs replace wireInputs' default dependency ports, so retain
+  // those ports when augmenting a custom node that previously omitted inputs.
+  implementer.inputs = {
+    ...(implementer.inputs ?? Object.fromEntries(implementer.depends_on.map((id) => [id, id]))),
+    preserve_paths: JSON.stringify(paths),
+  }
+  return validateGraph(clone)
+}
+
 function executionSummary(run: RunState, events: string[]) {
   let startedAt: string | undefined
   let finishedAt: string | undefined
@@ -693,12 +727,13 @@ export function createAlgTools(
     }),
 
     alg_plan: tool({
-      description: "Create an owned ALG DAG or revise a bounded pending graph on an owned planning/blocked run using expected_graph_sha256. Identical investigation plans reuse the existing run, including completed runs; managed investigations cannot be revised. Compact by default.",
+      description: "Plan an owned ALG DAG; planning does not execute work. For requested live work, follow a successful plan with alg_run; preserve explicit plan-only/dry-run intent and stop on reused done runs. Opt into coding-compact for small, well-scoped code tasks. Revisions use expected_graph_sha256 on owned planning/blocked runs; managed investigations cannot be revised. Compact by default.",
       args: {
         goal: tool.schema.string().min(1).max(20_000).optional(),
-        template: tool.schema.enum(["coding-diamond", "research-diamond", "data-investigation"]).optional(),
+        template: tool.schema.enum(["coding-diamond", "coding-compact", "research-diamond", "data-investigation"]).optional(),
         operation: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/).optional().describe("Advisory workspace requirement lookup; covered data-investigation uses data.investigate.read."),
-        criteria: tool.schema.array(tool.schema.string().min(1).max(2_000)).max(100).optional(),
+        criteria: tool.schema.array(tool.schema.string().min(1).max(2_000)).max(100).optional().describe("Original user requirements. Research proposals and suggested verification methods remain advisory unless explicitly adopted by the user."),
+        preserve_paths: preservePathsSchema.optional().describe("Optional 1–8 distinct existing project-relative files the user explicitly requires unchanged (512 chars each, forward slashes). Requests host pre/post snapshots on the first implementer; planning does not capture evidence or add criteria."),
         shell_gate: tool.schema.string().min(1).max(8_192).optional().describe("Executable validation command, not prose or tool permissions. Windows uses cmd.exe, not PowerShell."),
         shell_cwd: tool.schema.string().trim().min(1).max(1_024).optional().describe("Existing gate directory inside the project, relative to the pinned execution directory. Requires shell_gate."),
         shell_timeout_ms: tool.schema.number().int().min(100).max(600_000).optional(),
@@ -720,7 +755,8 @@ export function createAlgTools(
               throw new Error("graph revision requires graph_json, expected_graph_sha256, and revision_reason")
             }
             if (args.goal !== undefined || args.criteria !== undefined || args.template !== undefined || args.mode !== undefined ||
-              args.operation !== undefined || args.shell_gate !== undefined || args.shell_cwd !== undefined || args.shell_timeout_ms !== undefined) {
+              args.operation !== undefined || args.shell_gate !== undefined || args.shell_cwd !== undefined || args.shell_timeout_ms !== undefined ||
+              args.preserve_paths !== undefined) {
               throw new Error("graph revision changes only graph_json; run goal, criteria, mode, and execution scope are immutable")
             }
             let receipt: GraphRevisionReceipt | undefined
@@ -761,7 +797,7 @@ export function createAlgTools(
                 nodes: revised.graph.nodes,
                 run: hydrateRunFully(revised),
                 path: runDir(project, revised.run_id),
-                next: nextAction(revised),
+                next: planNextAction(revised),
               } : (() => {
                 const compacted = compactPlanNodes(revised)
                 return finalizeCompact({
@@ -773,7 +809,7 @@ export function createAlgTools(
                   nodes: compacted.nodes,
                   truncation: compacted.truncation,
                   path: runDir(project, revised.run_id),
-                  next: nextAction(revised),
+                  next: planNextAction(revised),
                 })
               })()),
               }, { run_id: revised.run_id })
@@ -799,6 +835,12 @@ export function createAlgTools(
           }
           if (args.shell_cwd !== undefined && !args.shell_gate) throw new Error("shell_cwd requires shell_gate")
           if (args.shell_gate) graph = withShellGate(graph, args.shell_gate, args.shell_timeout_ms, args.shell_cwd)
+          if (args.preserve_paths !== undefined) graph = withPreservePaths(graph, project, args.preserve_paths)
+          const preservationRequest = args.preserve_paths === undefined ? undefined : {
+            node_id: graph.nodes.find((node) => node.agent === "implementer")!.id,
+            paths: args.preserve_paths,
+            scope: "Optional host pre/post snapshot request. Planning validates paths only; preservation must be established from recorded execution evidence.",
+          }
           const gatePreflight = preflightShellGates(graph, { worktree: project, directory,
             phase: "plan", checkExecutables: args.mode !== "dry" })
           const modelResolution = snapshotModelResolutions(
@@ -833,7 +875,7 @@ export function createAlgTools(
           const investigationAttached = "attached" in planned ? planned.attached : undefined
           const planNext = investigation && investigationAttached === false && !["done", "failed"].includes(run.status)
             ? `This investigation is detached. Call alg_investigation with request={action:"attach",run_id:"${run.run_id}"} before alg_run or alg_resume; do not create another plan.`
-            : nextAction(run)
+            : planNextAction(run)
           const detail = args.detail ?? "compact"
           const fullRun = detail === "full" ? hydrateRunFully(run) : undefined
           const compactedNodes = compactPlanNodes(run)
@@ -851,6 +893,7 @@ export function createAlgTools(
             execution_directory: run.execution_directory,
             shell_gate_base: run.execution_directory,
             shell_gate_preflight: compactGatePreflight(gatePreflight),
+            preservation_request: preservationRequest,
             workspace: runtime.operations?.workspace.status(context.sessionID, operation),
             root_authorization: rootAuthorization(run),
             model_resolution: compactModels(run),
@@ -875,6 +918,7 @@ export function createAlgTools(
               execution_directory: run.execution_directory,
               shell_gate_base: run.execution_directory,
               shell_gate_preflight: { gates: gatePreflight },
+              preservation_request: preservationRequest,
               root_authorization: rootAuthorization(run, "full"),
               model_resolution: compactModels(run),
               goal: run.goal,

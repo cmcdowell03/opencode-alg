@@ -256,6 +256,12 @@ function projectAttempt(run: RunState, nodeId: string, attempt: NodeAttempt): No
       )
     : attempt.detail_ref
   const projected: NodeAttempt = {
+    ...(attempt.execution_evidence ? { execution_evidence: attempt.execution_evidence } : {}),
+    ...(attempt.gate_evidence ? { gate_evidence: attempt.gate_evidence } : {}),
+    ...(attempt.preservation_evidence ? { preservation_evidence: attempt.preservation_evidence } : {}),
+    ...(attempt.shell_setup_failed ? { shell_setup_failed: true as const } : {}),
+    ...(attempt.gate_recovery ? { gate_recovery: attempt.gate_recovery } : {}),
+    ...(attempt.reused_output_from !== undefined ? { reused_output_from: attempt.reused_output_from } : {}),
     ...(attempt.verification_basis ? { verification_basis: attempt.verification_basis } : {}),
     attempt: attempt.attempt,
     status: attempt.status,

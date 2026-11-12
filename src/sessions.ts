@@ -10,6 +10,7 @@ import {
   assertTextBytes,
 } from "./limits.ts"
 import { formatSdkDiagnostic, formatSdkError } from "./diagnostics.ts"
+import { captureChildExecutionEvidence, type ExecutionEvidence, type ExecutionEvidenceIdentity } from "./execution-evidence.ts"
 
 export type Client = PluginInput["client"]
 
@@ -30,6 +31,8 @@ export interface NodePromptOpts {
   directory: string
   model?: ModelRef
   abort?: AbortSignal
+  /** Host identity required to persist evidence from this child; omitted for legacy callers. */
+  execution_evidence_identity?: Omit<ExecutionEvidenceIdentity, "child_session_id"> & { directory?: string }
   onSessionCreated?: (sessionId: string) => void | Promise<void>
   /** Tool ids hidden from this worker: their definitions are not sent to its model and it cannot call them. */
   disabledTools?: readonly string[]
@@ -80,6 +83,13 @@ export interface NodePromptResult {
   parsed: unknown | null
   error?: string
   response_diagnostic?: string
+  execution_evidence?: ExecutionEvidence
+}
+
+async function executionEvidenceFor(opts: NodePromptOpts, sessionId: string): Promise<ExecutionEvidence | undefined> {
+  const identity = opts.execution_evidence_identity
+  if (!identity) return undefined
+  return captureChildExecutionEvidence(opts.client, { ...identity, child_session_id: sessionId || undefined, directory: opts.directory })
 }
 
 export type JsonExtractionReason = "empty" | "no_json" | "truncated" | "oversized" | "too_many" | "invalid_json" | "not_object" | "ambiguous"
@@ -354,11 +364,13 @@ export async function runNodeSession(opts: NodePromptOpts): Promise<NodePromptRe
       signal: opts.abort,
     })
     if (prompted.error) {
+      const execution_evidence = await executionEvidenceFor(opts, sessionId)
       return {
         session_id: sessionId,
         text: "",
         parsed: null,
         error: formatSdkDiagnostic("session.prompt failed: ", prompted.error),
+        ...(execution_evidence ? { execution_evidence } : {}),
       }
     }
     const parts = (prompted.data as { parts?: unknown } | undefined)?.parts
@@ -374,7 +386,9 @@ export async function runNodeSession(opts: NodePromptOpts): Promise<NodePromptRe
     const responseDiagnostic = extraction.value === null
       ? `Response parse: ${extraction.reason ?? "no_json"}; error_category=${failure?.category ?? "none"}; parts=${partCount}; text_parts=${textPartCount}; non_text_parts=${partCount - textPartCount}${finish ? `; finish=${finish}` : ""}`
       : undefined
+    const execution_evidence = await executionEvidenceFor(opts, sessionId)
     return { session_id: sessionId, text, parsed: extraction.value, ...(failure ? { error: failure.text } : {}),
+      ...(execution_evidence ? { execution_evidence } : {}),
       ...(responseDiagnostic ? { response_diagnostic: responseDiagnostic } : {}) }
   } catch (error) {
     if (callbackFailed) throw error

@@ -88,11 +88,14 @@ describe("permissioned bounded shell gate", () => {
         windowsJobHelperBuildFault(stage, context) {
           if (stage !== "helper-recorded") return
           paths = context
-          throw new Error("injected post-compile helper build failure")
+          throw new Error("\x1b[31minjected post-compile helper build failure; api_key=synthetic-do-not-persist\x1b[0m")
         },
       })
-      expect(result).toMatchObject({ ok: false, exit_code: 125, termination_failed: true })
+      expect(result).toMatchObject({ ok: false, exit_code: 125, setup_failed: true })
+      expect(result.termination_failed).toBeUndefined()
       expect(result.stderr_tail).toContain("injected post-compile helper build failure")
+      expect(result.stderr_tail).not.toContain("synthetic-do-not-persist")
+      expect(result.stderr_tail).not.toContain("\x1b")
       expect(existsSync(commandMarker)).toBe(false)
       expect(paths).toBeDefined()
       expect(existsSync(paths!.sourcePath)).toBe(false)
@@ -146,7 +149,7 @@ describe("permissioned bounded shell gate", () => {
         schema: "opencode-alg-windows-helper-owner", schema_version: 1, pid: process.pid,
       })
       const helperName = firstBuild.helperPath!.split(/[\\/]/).at(-1)
-      const sourceName = `source-${marker.token}.cs`
+      const sourceName = "source.cs"
       expect(marker.helper.file).toBe(helperName)
       expect(marker.source.file).toBe(sourceName)
       for (const record of [marker.helper, marker.source]) {

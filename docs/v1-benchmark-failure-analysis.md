@@ -2,6 +2,8 @@
 
 This analysis separates artifact correctness, root-turn completion, graph completion, and benchmark limits. It uses the preserved Luna attempts and a separately bounded Terra cohort at the same product runtime. The original Gemma skill-discovery and synchronous-transport problems belong to the test apparatus and are already described in [the benchmark report](v1-build-benchmark.md).
 
+**Repair status, 0.5.5 candidate:** the recovery, evidence and planning repairs listed below are now implemented in the pending candidate and await aggregate candidate acceptance and prospective benchmark validation. The diagnosis and measured Luna/Terra results in this document describe the preserved earlier runtime. They are not rerun results, proof that these repairs improve completion/cost, or acceptance of a 0.5.5 offline package.
+
 ## The confirmed failure chain
 
 ```mermaid
@@ -100,4 +102,17 @@ Across the six Luna/Terra coding trials, the independent code oracle passed ever
 4. **Close the plan-to-run handoff.** Clarify execution intent and preserve an explicit plan-only path. An honest plan is not the requested implementation or preparation artifact.
 5. **Choose graph size for the task.** Measure usage and select the smallest workflow that supplies the needed independent checks. Avoid repeating a full exploration/research sequence for a small continuation when validated evidence can be reused. Do not special-case model names or treat a larger spending limit as a repair.
 
-This change records diagnosis, reproducers and the bounded Terra experiment. It does not claim these product repairs are implemented. All tests/probes ran locally; no local Gemma inference, GitHub runners, V2 work, global configuration edits or merge occurred.
+The original analysis recorded diagnosis, reproducers and the bounded Terra experiment before these product repairs were implemented. Its historical tests/probes ran locally; no local Gemma inference, GitHub runners, V2 work, global configuration edits or merge occurred. The evidence and runtime identities remain unchanged.
+
+## Implemented 0.5.5 repairs — validation pending
+
+| Diagnosed gap | Pending candidate implementation | Remaining boundary |
+| --- | --- | --- |
+| Windows helper setup and lost diagnostics | Shorter private helper paths, bounded compiler identity/stdout/stderr, runtime preparation before model-attempt reservation, explicit `setup_failed` diagnostics | No claim that the old failed commands ran; new setup failures remain possible and fail closed |
+| Futile implementer retry after setup failure | Stop automatic retry; explicit resume may rerun only the gate with matching saved output, gate/cwd and bounded declared-file basis | Uses normal local/global attempt slots, preserves limits, refuses stale/missing bases; does not bind every workspace file |
+| Checker missing executed verification | Persist bounded native child `bash` and shell-gate receipts and deliver available related evidence to the checker | Missing exit metadata stays unavailable; tool completion and gate success do not prove test adequacy or semantic truth |
+| Preservation claim missing a pre-work basis | Optional explicit `preserve_paths`, max eight files, 512 characters per path, 1 MiB per file; host before/after hashes persist on attempts | Original before basis stays fixed across retries; unlisted files are not scanned and snapshots do not verify tests |
+| Premature final answer after planning | Live work/artifact guidance proceeds to bounded `alg_run`, preserving plan-only/dry-run and reused-done behavior | Model-followed guidance; no automatic continuation loop or new permission |
+| Full diamond overhead on known small work | Opt-in `coding-compact`: implement → fresh checker, two attempts per node, four total, concurrency one | Original criteria and required verification remain authoritative; improved efficiency is not yet measured |
+
+Researcher suggestions do not silently become new hard acceptance criteria. The repair adds no V2 runtime and does not resolve real air-gapped service qualification. New benchmark outcomes will be recorded only after a separately measured prospective cohort; the historical failure counts, token sums, artifact results and compiler reproductions above are preserved.

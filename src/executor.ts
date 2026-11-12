@@ -36,6 +36,7 @@ import {
 } from "./sessions.ts"
 import {
   executeShellGate,
+  prepareShellRuntime,
   type ShellExecutionContext,
   type ShellExecutionResult,
 } from "./shell.ts"
@@ -46,6 +47,9 @@ import {
 } from "./diagnostics.ts"
 import { truncateUtf8, utf8Bytes } from "./limits.ts"
 import { preflightShellGates } from "./shell-preflight.ts"
+import { gateRecoveryBasis, sameGateRecovery } from "./gate-recovery.ts"
+import { capturePreservationBasis, finishPreservationEvidence } from "./preservation-evidence.ts"
+import { fromShellGateEvidence } from "./execution-evidence.ts"
 
 export const MAX_RUN_SUMMARY_CHARS = 40_000
 const MAX_RUN_SUMMARY_BYTES = 40_000
@@ -77,6 +81,8 @@ export interface ExecuteOptions {
     context: ShellExecutionContext
     metadata?: Record<string, unknown>
   }) => Promise<ShellExecutionResult>
+  /** Test seam for setup admission; production uses the same shell runtime as execution. */
+  shellPreparer?: typeof prepareShellRuntime
   /** Test-only fault barrier after atomic sidecar write and before progress fencing. */
   afterSessionSidecar?: () => void
   /** Scoped procedure handoff must succeed before the child prompt is sent. */
@@ -148,7 +154,7 @@ async function save(run: RunState, options: ExecuteOptions): Promise<void> {
 }
 
 function shellFailure(result: ShellExecutionResult): string {
-  const category = result.termination_failed ? "termination_unverified" : result.cancelled ? "cancelled"
+  const category = result.setup_failed ? "setup_failed" : result.termination_failed ? "termination_unverified" : result.cancelled ? "cancelled"
     : result.timed_out ? "timeout" : "nonzero_exit"
   // Test frameworks often report only on stdout. Empty stderr is not an empty diagnostic.
   // Exit codes alone never establish a planner defect or prove implementation correctness.
@@ -171,8 +177,24 @@ function effectiveShellGate(run: RunState, definition: NodeDef, options: Execute
     : definition.shell_gate
 }
 
-function preflightExecutableNodes(run: RunState, options: ExecuteOptions, batch?: readonly NodeDef[]): void {
-  if (run.global_attempts >= run.graph.max_global_attempts) return
+function gateRecoverySource(run: RunState, definition: NodeDef): NodeAttempt | undefined {
+  if (definition.agent !== "implementer") return undefined
+  const attempts = run.nodes[definition.id]!.attempts
+  const last = attempts.at(-1)
+  if (last?.shell_setup_failed) return last
+  if (last && last.status !== "done" && last.reused_output_from !== undefined &&
+    (last.outcome === undefined || last.outcome === "sdk_error")) {
+    const source = attempts.find(attempt => attempt.attempt === last.reused_output_from)
+    if (!source?.shell_setup_failed || !source.gate_recovery || source.schema_ok !== true) {
+      throw new Error("Gate recovery source is unavailable; refusing to rerun implementation")
+    }
+    return source
+  }
+  return undefined
+}
+
+function preflightExecutableNodes(run: RunState, options: ExecuteOptions, batch?: readonly NodeDef[]): boolean {
+  if (run.global_attempts >= run.graph.max_global_attempts) return false
   const reachable = new Set<string>()
   const candidates: NodeDef[] = []
   // Graph definitions are topologically ordered. Failed/exhausted branches
@@ -186,7 +208,7 @@ function preflightExecutableNodes(run: RunState, options: ExecuteOptions, batch?
     reachable.add(node.id)
     if (!batch || batch.some((member) => member.id === node.id)) candidates.push(node)
   }
-  if (!candidates.length) return
+  if (!candidates.length) return false
   const reports = preflightShellGates({ ...run.graph, nodes: candidates.map((node) => ({
     ...node, shell_gate: effectiveShellGate(run, node, options),
   })) }, { worktree: options.worktree, directory: options.directory, phase: "execute",
@@ -195,6 +217,17 @@ function preflightExecutableNodes(run: RunState, options: ExecuteOptions, batch?
   for (const report of reports) {
     if (report.diagnostics.length) log(options, `shell gate preflight ${report.node_id}: ${report.diagnostics.slice(0, 8).map((issue) => issue.code).join(", ")}`)
   }
+  for (const node of candidates) {
+    const previous = gateRecoverySource(run, node)
+    if (!previous) continue
+    const gate = effectiveShellGate(run, node, options)
+    if (options.operation !== "resume") throw new Error("Gate setup failed before launch. Repair the environment, then explicitly resume the existing run; do not replan or rewrite the implementation.")
+    if (!gate || !sameGateRecovery(previous.gate_recovery,
+      gateRecoveryBasis(options.worktree, options.directory, gate, previous.output))) {
+      throw new Error("Gate-only recovery refused: saved output, declared files or gate changed, or no bounded recovery basis exists. Inspect retained work before starting an explicit new task.")
+    }
+  }
+  return reports.length > 0
 }
 
 function dryOutput(definition: NodeDef, run: RunState): unknown {
@@ -291,12 +324,23 @@ async function runOneNode(
     let error: string | undefined
     let schemaOk = false
     let shellOk: boolean | undefined
+    let setupFailed = false
+    const previous = gateRecoverySource(run, definition)
+    const recoveryGate = effectiveShellGate(run, definition, options)
+    const gateOnly = !dry && definition.agent === "implementer" && previous?.shell_setup_failed === true
     const failures: string[] = []
     const retainedFailures: string[] = []
 
     if (dry) {
       rawOutput = dryOutput(definition, run)
       sessionId = `dry-${definition.id}-a${attempt}`
+    } else if (gateOnly) {
+      if (!recoveryGate || !sameGateRecovery(previous.gate_recovery,
+        gateRecoveryBasis(options.worktree, options.directory, recoveryGate, previous.output))) {
+        throw new Error("Gate-only recovery basis changed after admission")
+      }
+      rawOutput = previous.output
+      attemptRecord.execution_evidence = previous.execution_evidence
     } else if (definition.agent === "shell") {
       const shell = definition.shell_gate!
       const result = await shellRunner({
@@ -320,8 +364,11 @@ async function runOneNode(
         ...(result.timed_out ? { timed_out: true } : {}),
         ...(result.cancelled ? { cancelled: true } : {}),
         ...(result.termination_failed ? { termination_failed: true } : {}),
+        ...(result.setup_failed ? { setup_failed: true } : {}),
       }
       shellOk = result.ok
+      setupFailed = result.setup_failed === true
+      attemptRecord.gate_evidence = fromShellGateEvidence(shell.cmd, result, { run_id: run.run_id, node_id: definition.id, attempt })
       if (!result.ok) {
         const failure = shellFailure(result)
         failures.push(failure)
@@ -366,6 +413,9 @@ async function runOneNode(
         model: run.model_snapshot[definition.agent],
         abort: options.toolContext.abort,
         disabledTools: options.workerDisabledTools,
+        ...(definition.agent === "implementer" ? { execution_evidence_identity: {
+          run_id: run.run_id, node_id: definition.id, attempt,
+        } } : {}),
         onSessionCreated: async (createdSessionId) => {
           try {
             linkSession(run, options.worktree, definition.id, attempt, createdSessionId)
@@ -377,6 +427,7 @@ async function runOneNode(
         },
       })
       sessionId = result.session_id || undefined
+      attemptRecord.execution_evidence = result.execution_evidence
       if (sessionId && !attemptRecord.session_id) {
         attemptRecord.session_id = sessionId
         await save(run, options)
@@ -456,6 +507,8 @@ async function runOneNode(
         metadata: { run_id: run.run_id, node_id: definition.id, attempt },
       })
       shellOk = result.ok
+      setupFailed = result.setup_failed === true
+      attemptRecord.gate_evidence = fromShellGateEvidence(shellDefinition.cmd, result, { run_id: run.run_id, node_id: definition.id, attempt })
       if (!result.ok) {
         const failure = shellFailure(result)
         failures.push(failure)
@@ -476,6 +529,9 @@ async function runOneNode(
     }
 
     const shellRequired = definition.agent === "shell" || gate === "shell" || gate === "all"
+    if (attemptRecord.preservation_evidence) {
+      attemptRecord.preservation_evidence = finishPreservationEvidence(options.worktree, attemptRecord.preservation_evidence)
+    }
     const passed = failures.length === 0 && schemaOk && (!shellRequired || dry || shellOk === true)
     const shellGateFailed = shellRequired && !dry && shellOk !== true
     const checkerRejected = definition.agent === "checker" && schemaOk &&
@@ -489,6 +545,12 @@ async function runOneNode(
       ? (rawOutput as { score?: number }).score
       : undefined
     attemptRecord.shell_ok = shellOk
+    if (setupFailed) {
+      attemptRecord.shell_setup_failed = true
+      if (definition.agent === "implementer" && schemaOk && shellDefinition) {
+        attemptRecord.gate_recovery = gateRecoveryBasis(options.worktree, options.directory, shellDefinition, rawOutput)
+      }
+    }
     attemptRecord.schema_ok = schemaOk
     attemptRecord.error = error
     attemptRecord.outcome = passed
@@ -605,6 +667,9 @@ export function prepareRunForResume(run: RunState): RunState {
         // the old reference must remain immutable and must not be rehydrated
         // over the interruption verdict below.
         last.detail_ref = undefined
+        last.failures_commitment = undefined
+        last.failures_omitted = undefined
+        last.failure_texts_truncated = undefined
         last.status = "failed"
         last.finished_at = new Date().toISOString()
         last.failures = boundDiagnosticList([
@@ -614,6 +679,10 @@ export function prepareRunForResume(run: RunState): RunState {
         last.schema_ok = false
       }
       state.last_failures = ["Previous execution ended before the attempt completed"]
+      state.last_failures_ref = undefined
+      state.last_failures_commitment = undefined
+      state.last_failures_omitted = undefined
+      state.last_failure_texts_truncated = undefined
       state.status = state.current_attempt < limit ? "pending" : "failed"
       if (state.status === "pending") reopened = true
     } else if (state.status === "failed" && state.current_attempt < limit) {
@@ -674,6 +743,7 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
   // Taking the run lock needs its guard, which another process may hold for an instant.
   const lock = await awaitLock(() => acquireRunLock(options.worktree, run.run_id, options.parentSessionId))
   options.activeLock = lock
+  let releaseShellRuntime: (() => void) | undefined
   try {
     if (run.owner_session_id !== options.parentSessionId) {
       throw new Error(`session does not own run ${run.run_id}`)
@@ -690,7 +760,12 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     // Validate every reachable executable gate before reserving any model work.
     // Errors leave the committed plan/history/counters untouched so the caller can
     // correct the gate and resume. Dry/injected runners still receive structural checks.
-    preflightExecutableNodes(run, options)
+    const hasGates = preflightExecutableNodes(run, options)
+    if (hasGates && !options.dry && run.mode !== "dry" && (!options.shellRunner || options.shellPreparer)) {
+      const prepared = await (options.shellPreparer ?? prepareShellRuntime)({ signal: options.toolContext.abort })
+      releaseShellRuntime = prepared.release
+      if (!prepared.ok) throw new Error(safeDiagnosticText(`Shell runtime setup failed before reserving model work: ${prepared.stderr_tail || prepared.stdout_tail}`))
+    }
     if (filesystemRoot) {
       ;(run.filesystem_root_authorizations ??= []).push({
         operation,
@@ -707,6 +782,9 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     await save(run, options)
 
     const maxWaves = Math.max(1, Math.min(options.maxWaves ?? 128, 1_000))
+    // An infrastructure failure stops this node for this invocation, without
+    // burning its remaining attempts or preventing independent siblings.
+    const setupStopped = new Set<string>()
     const concurrency = Math.max(
       1,
       Math.min(options.maxConcurrency ?? run.graph.max_concurrency, run.graph.max_concurrency, 8),
@@ -721,18 +799,29 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
       }
       if (allTerminal(run)) break
 
-      const ready = readyNodes(run)
+      const ready = readyNodes(run).filter(node => !setupStopped.has(node.id))
       if (ready.length === 0) break
       log(options, `wave ${wave + 1}: ${ready.map((node) => node.id).join(", ")}`)
 
       for (let offset = 0; offset < ready.length; offset += concurrency) {
         if (options.toolContext.abort.aborted) break
         const batch = ready.slice(offset, offset + concurrency)
+        let preservation: Array<NodeAttempt["preservation_evidence"]> = []
         try {
           // Earlier workers may change the environment, or checker feedback may
           // reopen a node that was done at startup. Recheck before reserving it.
           preflightExecutableNodes(run, options, batch)
           await options.beforeBatch?.(run, batch)
+          preservation = batch.map(definition => {
+            if (definition.agent !== "implementer" || options.dry || run.mode === "dry") return undefined
+            const prior = run.nodes[definition.id]!.attempts.at(-1)
+            const paths = wireInputs(definition, run).preserve_paths
+            if (prior?.preservation_evidence && JSON.stringify(prior.preservation_evidence.files.map(file => file.path)) !== JSON.stringify(paths)) {
+              throw new Error("Preservation path set changed after its original basis was captured")
+            }
+            return prior?.preservation_evidence
+              ?? capturePreservationBasis(options.worktree, paths)
+          })
         } catch (error) {
           run.status = "blocked"
           run.phase = "blocked"
@@ -746,7 +835,19 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
           run.criteria = [...effectiveCriteria(run.criteria)]
           run.criteria_locked = true
         }
-        const reservations = batch.map((definition) => reserveAttempt(run, definition))
+        // Explicit preservation paths are hashed before reserving any model work;
+        // missing/oversized/non-contained files block admission without spending an attempt.
+        const reservations = batch.map((definition, index) => {
+          const recovery = gateRecoverySource(run, definition)
+          const attempt = reserveAttempt(run, definition)
+          if (attempt && preservation[index]) attempt.preservation_evidence = preservation[index]
+          if (attempt && recovery) {
+            attempt.reused_output_from = recovery.attempt
+            attempt.gate_recovery = recovery.gate_recovery
+            attempt.execution_evidence = recovery.execution_evidence
+          }
+          return attempt
+        })
         // Persist every bounded-batch reservation before any child sidecar can
         // be created, preserving the sidecar -> child-id progress crash fence.
         await save(run, options)
@@ -777,6 +878,10 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
         // Each node committed its own outcome. This save only has work to do
         // when an executor error was recorded above; an unchanged run is skipped.
         await save(run, options)
+        for (const definition of batch) {
+          const last = run.nodes[definition.id]!.attempts.at(-1)
+          if (last?.shell_setup_failed || (last?.reused_output_from !== undefined && last.outcome === "sdk_error")) setupStopped.add(definition.id)
+        }
       }
 
       await applyCheckerFeedback(run, options)
@@ -800,6 +905,7 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     await save(run, options)
     return run
   } finally {
+    releaseShellRuntime?.()
     options.activeLock = undefined
     lock.release()
   }

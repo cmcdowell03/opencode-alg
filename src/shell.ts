@@ -1,10 +1,11 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process"
-import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs"
+import { accessSync, constants, chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs"
 import { createHash, randomUUID } from "node:crypto"
 import { tmpdir } from "node:os"
 import { basename, delimiter, dirname, join, resolve } from "node:path"
 import type { ToolContext } from "@opencode-ai/plugin"
 import { canonicalContainedDirectory } from "./paths.ts"
+import { safeDiagnosticText } from "./diagnostics.ts"
 
 export const DEFAULT_SHELL_TIMEOUT_MS = 60_000
 export const MAX_SHELL_TIMEOUT_MS = 600_000
@@ -51,8 +52,33 @@ export interface ShellExecutionResult {
   stderr_tail: string
   timed_out?: boolean
   cancelled?: boolean
+  /** No project command was launched because runtime preparation failed. */
+  setup_failed?: boolean
   termination_failed?: boolean
   cwd: string
+}
+
+export interface ShellCompilerDiagnostics {
+  backend: "csc" | "powershell-add-type"
+  executable: string
+  sha256: string
+  exit_code: number | null
+  stdout_tail: string
+  stderr_tail: string
+  duration_ms: number
+  timed_out?: boolean
+  cancelled?: boolean
+}
+
+export interface ShellRuntimePreparation {
+  ok: boolean
+  setup_failed?: boolean
+  cancelled?: boolean
+  stdout_tail: string
+  stderr_tail: string
+  compiler?: ShellCompilerDiagnostics
+  /** Retains the verified cache until released; call in finally. Idempotent. */
+  release: () => void
 }
 
 export interface WindowsTreeTerminationResult {
@@ -162,7 +188,14 @@ export function windowsJobHelperCachePath(environment: NodeJS.ProcessEnv = contr
 
 let windowsJobHelperPromise: Promise<string> | undefined
 let windowsJobHelperCompileCount = 0
-const WINDOWS_HELPER_DIRECTORY = /^opencode-alg-job-helper-v13-(\d{1,10})-([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i
+// Recognize historical ownership records for the janitor as well as the compact
+// layout. Uniqueness still comes from the full random UUID, never a shared name.
+const WINDOWS_HELPER_DIRECTORY = /^(?:opencode-alg-job-helper-v13|aj14)-(\d{1,10})-([0-9a-f-]{36}|[A-Za-z0-9_-]{22})$/
+const WINDOWS_HELPER_TOKEN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+function compactHelperToken(token: string): string {
+  return Buffer.from(token.replace(/-/g, ""), "hex").toString("base64url")
+}
 const WINDOWS_HELPER_MARKER = ".opencode-alg-owner.json"
 const WINDOWS_HELPER_MARKER_LIMIT = 2_048
 const WINDOWS_HELPER_IDLE_MS = 1_500
@@ -195,6 +228,7 @@ interface WindowsHelperLifecycle {
   marker: WindowsHelperOwnerMarker
   helperPath: string
   sourcePath: string
+  compiler?: ShellCompilerDiagnostics
 }
 
 type WindowsHelperBuildStage = "source-recorded" | "helper-recorded" | "marker-recorded"
@@ -300,6 +334,7 @@ function processStartIdentity(pid: number, environment: NodeJS.ProcessEnv): { st
 function parseOwnedHelper(directory: string): WindowsHelperLifecycle | undefined {
   const match = WINDOWS_HELPER_DIRECTORY.exec(basename(directory))
   if (!match) return undefined
+  const compact = basename(directory).startsWith("aj14-")
   try {
     const directoryStat = lstatSync(directory)
     if (!directoryStat.isDirectory() || directoryStat.isSymbolicLink()) return undefined
@@ -316,13 +351,14 @@ function parseOwnedHelper(directory: string): WindowsHelperLifecycle | undefined
     const marker = value as Record<string, unknown>
     if (!exactKeys(marker, ["schema", "schema_version", "token", "pid", "process_start_identity", "process_start_time", "created_at", "helper", "source"]) ||
       marker.schema !== "opencode-alg-windows-helper-owner" || marker.schema_version !== 1 ||
-      typeof marker.token !== "string" || marker.token.toLowerCase() !== match[2]!.toLowerCase() ||
+      typeof marker.token !== "string" || !WINDOWS_HELPER_TOKEN.test(marker.token) ||
+      (compact ? compactHelperToken(marker.token) !== match[2] : marker.token.toLowerCase() !== match[2]!.toLowerCase()) ||
       !Number.isSafeInteger(marker.pid) || marker.pid !== Number(match[1]) ||
       typeof marker.process_start_identity !== "string" || !ISO_UTC.test(marker.process_start_identity) ||
       typeof marker.process_start_time !== "string" || marker.process_start_time !== marker.process_start_identity ||
       typeof marker.created_at !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(marker.created_at) ||
-      !validWindowsHelperOwnedFile(marker.helper) || marker.helper.file !== `helper-${marker.token}.exe` ||
-      !validWindowsHelperOwnedFile(marker.source) || marker.source.file !== `source-${marker.token}.cs`) return undefined
+      !validWindowsHelperOwnedFile(marker.helper) || marker.helper.file !== (compact ? "helper.exe" : `helper-${marker.token}.exe`) ||
+      !validWindowsHelperOwnedFile(marker.source) || marker.source.file !== (compact ? "source.cs" : `source-${marker.token}.cs`)) return undefined
     const typed = marker as unknown as WindowsHelperOwnerMarker
     if (!exactWindowsHelperFile(directory, typed.helper) || !exactWindowsHelperFile(directory, typed.source)) return undefined
     const names = readdirSync(directory).sort()
@@ -539,23 +575,157 @@ function assertCurrentWindowsHelper(path: string): WindowsHelperLifecycle {
   return observed
 }
 
-async function ensureWindowsJobHelper(environment: NodeJS.ProcessEnv, buildFault?: WindowsHelperBuildFault): Promise<string> {
+async function ensureWindowsJobHelper(environment: NodeJS.ProcessEnv, buildFault?: WindowsHelperBuildFault, signal?: AbortSignal): Promise<string> {
+  signal?.throwIfAborted()
   if (!windowsHelperJanitorRan) {
     windowsHelperJanitorRan = true
     cleanupWindowsShellHelpers({ environment })
   }
   if (windowsHelperLifecycle) return assertCurrentWindowsHelper(windowsHelperLifecycle.helperPath).helperPath
   if (windowsJobHelperPromise) {
-    const path = await windowsJobHelperPromise
+    const path = await waitForPreparation(windowsJobHelperPromise, signal)
     return assertCurrentWindowsHelper(path).helperPath
   }
-  windowsJobHelperPromise = buildWindowsJobHelper(environment, buildFault)
+  windowsJobHelperPromise = buildWindowsJobHelper(environment, buildFault, signal)
   try {
     const path = await windowsJobHelperPromise
     return assertCurrentWindowsHelper(path).helperPath
   } catch (error) {
     windowsJobHelperPromise = undefined
     throw error
+  }
+}
+
+function setupText(value: string, limit = SHELL_TAIL_BYTES): string {
+  // Compiler diagnostics are data, not terminal control sequences. Bound bytes
+  // after sanitization, including multibyte and replacement characters.
+  const clean = value.replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, "").replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]/g, "")
+  return clean.trim() ? safeDiagnosticText(clean, limit) : ""
+}
+
+class ShellSetupError extends Error {
+  constructor(message: string, readonly compiler?: ShellCompilerDiagnostics, readonly cleanupSafe = true) {
+    super(setupText(message))
+  }
+}
+
+function waitForPreparation<T>(operation: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return operation
+  if (signal.aborted) return Promise.reject(new Error("shell runtime preparation cancelled"))
+  return new Promise((resolveWait, rejectWait) => {
+    const abort = () => { signal.removeEventListener("abort", abort); rejectWait(new Error("shell runtime preparation cancelled")) }
+    signal.addEventListener("abort", abort, { once: true })
+    operation.then(
+      (value) => { signal.removeEventListener("abort", abort); resolveWait(value) },
+      (error) => { signal.removeEventListener("abort", abort); rejectWait(error) },
+    )
+    if (signal.aborted) abort()
+  })
+}
+
+/** Executes only fixed runtime setup programs, never a project command. */
+async function runSetupProcess(executable: string, args: string[], options: {
+  environment: NodeJS.ProcessEnv; cwd?: string; signal?: AbortSignal; timeoutMs: number
+}): Promise<{
+  exit_code: number | null; stdout_tail: string; stderr_tail: string; duration_ms: number
+  timed_out?: boolean; cancelled?: boolean; closed: boolean
+}> {
+  const started = performance.now()
+  const stdout = new ByteTail(); const stderr = new ByteTail()
+  return new Promise((resolveProcess) => {
+    let child: ChildProcess | undefined
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let settled = false; let stopping = false; let closed = false
+    let timedOut = false; let cancelled = false
+    const finish = () => {
+      if (settled) return
+      settled = true
+      if (timer) clearTimeout(timer)
+      options.signal?.removeEventListener("abort", abort)
+      resolveProcess({
+        exit_code: child?.exitCode ?? null, stdout_tail: setupText(stdout.text()), stderr_tail: setupText(stderr.text()),
+        duration_ms: Math.max(0, performance.now() - started), closed,
+        ...(timedOut ? { timed_out: true } : {}), ...(cancelled ? { cancelled: true } : {}),
+      })
+    }
+    const stop = () => {
+      if (stopping || settled) return
+      stopping = true
+      void (async () => {
+        if (child?.pid && !closed) {
+          await defaultWindowsTaskkill(child.pid, options.environment, 2_000).catch(() => {})
+          if (!closed) { try { child.kill("SIGKILL") } catch { /* preserved as unconfirmed setup cleanup */ } }
+          const deadline = Date.now() + 1_000
+          while (!closed && Date.now() < deadline) await delay(10)
+        }
+        finish()
+      })()
+    }
+    const abort = () => { cancelled = true; stop() }
+    if (options.signal?.aborted) { cancelled = true; closed = true; finish(); return }
+    try {
+      child = spawn(executable, args, {
+        cwd: options.cwd, env: options.environment, windowsHide: true, stdio: ["ignore", "pipe", "pipe"],
+      })
+      trackWindowsHelperChild(child)
+      child.stdout?.on("data", (chunk: Buffer) => stdout.push(chunk))
+      child.stderr?.on("data", (chunk: Buffer) => stderr.push(chunk))
+      child.once("error", (error) => { stderr.push(error.message); if (!child?.pid) closed = true; if (!stopping) finish() })
+      child.once("close", () => { closed = true; if (!stopping) finish() })
+      timer = setTimeout(() => { timedOut = true; stop() }, options.timeoutMs)
+      options.signal?.addEventListener("abort", abort, { once: true })
+      if (options.signal?.aborted) abort()
+    } catch (error) {
+      closed = true
+      stderr.push(error instanceof Error ? error.message : String(error))
+      finish()
+    }
+  })
+}
+
+async function prepareWindowsOwner(environment: NodeJS.ProcessEnv, signal?: AbortSignal): Promise<string> {
+  if (windowsOwnerStartIdentity) return windowsOwnerStartIdentity
+  const powershell = join(environment.SystemRoot || environment.WINDIR || "C:\\Windows", "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+  const result = await runSetupProcess(powershell, ["-NoProfile", "-NonInteractive", "-Command",
+    `[Console]::Out.Write((Get-Process -Id ${process.pid}).StartTime.ToUniversalTime().ToString('o'))`],
+  { environment, signal, timeoutMs: 5_000 })
+  signal?.throwIfAborted()
+  const identity = result.stdout_tail.trim()
+  if (result.exit_code !== 0 || result.timed_out || !ISO_UTC.test(identity)) {
+    throw new ShellSetupError(`Windows Job helper owner process-start identity is unavailable: ${result.stderr_tail || (result.timed_out ? "query timed out" : "invalid query result")}`)
+  }
+  windowsOwnerStartIdentity = identity
+  return identity
+}
+
+function setupFailure(error: unknown, cancelled = false): Omit<ShellRuntimePreparation, "release"> {
+  const compiler = error instanceof ShellSetupError ? error.compiler : undefined
+  const detail = error instanceof Error ? error.message : String(error)
+  return {
+    ok: false, ...(cancelled ? { cancelled: true } : { setup_failed: true }),
+    stdout_tail: compiler?.stdout_tail ?? "",
+    stderr_tail: setupText(cancelled ? "shell runtime preparation cancelled" : `Shell runtime setup failed before command launch: ${detail}`),
+    ...(compiler ? { compiler } : {}),
+  }
+}
+
+/** Read-only to the project. On Windows, hold release() through the run to keep
+ * the identity-checked helper cached. No project command or helper is executed.
+ * Cancelling the caller that started a build stops that shared build; other
+ * waiters fail closed. Cancelling a cache waiter only detaches that waiter. */
+export async function prepareShellRuntime(options: { signal?: AbortSignal } = {}): Promise<ShellRuntimePreparation> {
+  const release = process.platform === "win32" ? acquireWindowsHelper() : () => {}
+  try {
+    options.signal?.throwIfAborted()
+    const environment = controlledShellEnvironment()
+    if (process.platform === "win32") await ensureWindowsJobHelper(environment, undefined, options.signal)
+    else accessSync(environment.SHELL || "/bin/sh", constants.X_OK)
+    options.signal?.throwIfAborted()
+    const compiler = windowsHelperLifecycle?.compiler
+    return { ok: true, stdout_tail: compiler?.stdout_tail ?? "", stderr_tail: compiler?.stderr_tail ?? "", ...(compiler ? { compiler: { ...compiler } } : {}), release }
+  } catch (error) {
+    release()
+    return { ...setupFailure(error, options.signal?.aborted), release: () => {} }
   }
 }
 
@@ -585,17 +755,19 @@ function cleanupFailedWindowsHelperBuild(options: {
   }
 }
 
-async function buildWindowsJobHelper(environment: NodeJS.ProcessEnv, buildFault?: WindowsHelperBuildFault): Promise<string> {
+async function buildWindowsJobHelper(environment: NodeJS.ProcessEnv, buildFault?: WindowsHelperBuildFault, signal?: AbortSignal): Promise<string> {
   const root = environment.TEMP || environment.TMP || tmpdir()
-  const owner = processStartIdentity(process.pid, environment)
-  if (owner.state !== "alive" || !owner.identity) throw new Error("Windows Job helper owner process-start identity is unavailable")
+  const ownerIdentity = await prepareWindowsOwner(environment, signal)
+  signal?.throwIfAborted()
   const token = randomUUID()
-  const directory = join(root, `opencode-alg-job-helper-v13-${process.pid}-${token}`)
+  // A full random directory remains private. Repeating its UUID in filenames
+  // exhausted legacy csc's MAX_PATH budget under an isolated, deeply nested TEMP.
+  const directory = join(root, `aj14-${process.pid}-${compactHelperToken(token)}`)
   mkdirSync(directory, { mode: 0o700 })
   try { chmodSync(directory, 0o700) } catch { /* Windows relies on the private TEMP ACL. */ }
   const directoryIdentity = fileIdentity(directory)
-  const target = join(directory, `helper-${token}.exe`)
-  const sourcePath = join(directory, `source-${token}.cs`)
+  const target = join(directory, "helper.exe")
+  const sourcePath = join(directory, "source.cs")
   const markerPath = join(directory, WINDOWS_HELPER_MARKER)
   const systemRoot = environment.SystemRoot || environment.WINDIR || "C:\\Windows"
   const powershell = join(systemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
@@ -616,42 +788,35 @@ async function buildWindowsJobHelper(environment: NodeJS.ProcessEnv, buildFault?
     if (!csc && !existsSync(powershell)) throw new Error("Windows C# compiler is unavailable")
     windowsJobHelperCompileCount += 1
     const compilerCommand = csc ?? powershell
+    const compilerIdentity = captureWindowsHelperFile(compilerCommand)
     const compilerArgs = csc
       ? ["/nologo", "/target:exe", `/out:${target}`, sourcePath]
-      : ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", `Add-Type -Path $env:ALG_JOB_HELPER_SOURCE_PATH -OutputAssembly $env:ALG_JOB_HELPER_OUTPUT -OutputType ConsoleApplication`]
-    await new Promise<void>((resolveBuild, rejectBuild) => {
-      let settled = false
-      const compiler = spawn(compilerCommand, compilerArgs, {
-        windowsHide: true,
-        stdio: ["ignore", "ignore", "pipe"],
-        env: { ...environment, ALG_JOB_HELPER_SOURCE_PATH: sourcePath, ALG_JOB_HELPER_OUTPUT: target },
-      })
-      trackWindowsHelperChild(compiler)
-      let error = ""
-      compiler.stderr?.on("data", (chunk: Buffer) => { error = `${error}${chunk.toString("utf8")}`.slice(-2_000) })
-      const finish = (failure?: Error) => {
-        if (settled) return
-        settled = true
-        clearTimeout(timer)
-        failure ? rejectBuild(failure) : resolveBuild()
-      }
-      const timer = setTimeout(() => {
-        void (compiler.pid
-          ? defaultWindowsTaskkill(compiler.pid, environment, 2_000)
-          : Promise.resolve()).finally(() => finish(new Error("Windows Job helper compilation timed out after 45000 ms")))
-      }, 45_000)
-      compiler.once("error", (failure) => finish(failure))
-      compiler.once("close", (code) => finish(code === 0 && existsSync(target)
-        ? undefined
-        : new Error(error || `Windows Job helper compiler exited ${code}`)))
+      : ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", `$ErrorActionPreference='Stop'; try { Add-Type -Path $env:ALG_JOB_HELPER_SOURCE_PATH -OutputAssembly $env:ALG_JOB_HELPER_OUTPUT -OutputType ConsoleApplication; exit 0 } catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }`]
+    // Both absolute artifact paths stay in the owned directory. Keep cwd at the
+    // isolated TEMP root: legacy csc also needs room for internal temp filenames.
+    const result = await runSetupProcess(compilerCommand, compilerArgs, {
+      cwd: root,
+      environment: { ...environment, ALG_JOB_HELPER_SOURCE_PATH: sourcePath, ALG_JOB_HELPER_OUTPUT: target },
+      signal, timeoutMs: 45_000,
     })
+    const { closed, ...measured } = result
+    const compiler: ShellCompilerDiagnostics = {
+      backend: csc ? "csc" : "powershell-add-type", executable: setupText(compilerCommand), sha256: compilerIdentity.sha256, ...measured,
+    }
+    if (result.cancelled || result.timed_out || result.exit_code !== 0 || !existsSync(target)) {
+      const cause = result.cancelled ? "cancelled" : result.timed_out ? "timed out after 45000 ms" : `exited ${result.exit_code} (helper output ${existsSync(target) ? "present" : "absent"})`
+      throw new ShellSetupError(`Windows Job helper compiler ${cause}; backend=${compiler.backend}; executable=${JSON.stringify(compiler.executable)}; sha256=${compiler.sha256}\nstdout: ${setupText(compiler.stdout_tail, 1_500)}\nstderr: ${setupText(compiler.stderr_tail, 1_500)}`, compiler, closed)
+    }
+    if (!sameFileIdentity(fileIdentity(directory), directoryIdentity) || !exactWindowsHelperFile(directory, source)) {
+      throw new ShellSetupError("Windows Job helper directory or source identity changed during compilation", compiler)
+    }
     try { chmodSync(target, 0o700) } catch { /* Windows relies on the private TEMP ACL. */ }
     const helper = captureWindowsHelperFile(target)
     recordedFiles.push(helper)
     buildFault?.("helper-recorded", faultContext)
     const marker: WindowsHelperOwnerMarker = {
       schema: "opencode-alg-windows-helper-owner", schema_version: 1, token, pid: process.pid,
-      process_start_identity: owner.identity, process_start_time: owner.identity, created_at: new Date().toISOString(),
+      process_start_identity: ownerIdentity, process_start_time: ownerIdentity, created_at: new Date().toISOString(),
       helper,
       source,
     }
@@ -669,12 +834,15 @@ async function buildWindowsJobHelper(environment: NodeJS.ProcessEnv, buildFault?
       marker,
       helperPath: target,
       sourcePath,
+      compiler,
     }
     assertCurrentWindowsHelper(target)
     return target
   } catch (error) {
     if (windowsHelperLifecycle?.directory === directory) windowsHelperLifecycle = undefined
-    cleanupFailedWindowsHelperBuild({ directory, directoryIdentity, files: recordedFiles, markerPath, markerIdentity, markerBytes })
+    if (!(error instanceof ShellSetupError) || error.cleanupSafe) {
+      cleanupFailedWindowsHelperBuild({ directory, directoryIdentity, files: recordedFiles, markerPath, markerIdentity, markerBytes })
+    }
     throw error
   }
 }
@@ -1283,27 +1451,36 @@ export async function executeShellGate(options: {
   if (windows && !options.spawnProcess) {
     releaseWindowsHelper = acquireWindowsHelper()
     try {
-      windowsJobHelper = await ensureWindowsJobHelper(environment, options.windowsJobHelperBuildFault)
+      windowsJobHelper = await ensureWindowsJobHelper(environment, options.windowsJobHelperBuildFault, options.context.abort)
     } catch (error) {
       releaseWindowsHelper()
       return {
-        ok: false,
-        exit_code: 125,
-        stdout_tail: "",
-        stderr_tail: `Windows Job Object setup failed before command launch: ${error instanceof Error ? error.message : String(error)}`.slice(-SHELL_TAIL_BYTES),
-        termination_failed: true,
+        exit_code: options.context.abort.aborted ? 130 : 125,
+        ...setupFailure(error, options.context.abort.aborted),
         cwd,
       }
     }
+  }
+
+  // Preparation can take time; cancellation during it must never start a command.
+  if (options.context.abort.aborted) {
+    releaseWindowsHelper?.()
+    return { ok: false, exit_code: 130, stdout_tail: "", stderr_tail: "shell command cancelled before spawn", cancelled: true, cwd }
+  }
+  let job: ReturnType<typeof windowsJobLauncher> | null
+  try {
+    job = windows && !options.spawnProcess && windowsJobHelper
+      ? windowsJobLauncher(cmd, environment, windowsJobHelper, cwd)
+      : null
+  } catch (error) {
+    releaseWindowsHelper?.()
+    return { ...setupFailure(error), exit_code: 125, cwd }
   }
 
   return new Promise((resolveResult) => {
     const executable = windows
       ? environment.ComSpec || join(environment.SystemRoot || environment.WINDIR || "C:\\Windows", "System32", "cmd.exe")
       : environment.SHELL || "/bin/sh"
-    const job = windows && !options.spawnProcess && windowsJobHelper
-      ? windowsJobLauncher(cmd, environment, windowsJobHelper, cwd)
-      : null
     const child = options.spawnProcess
       ? options.spawnProcess(cmd, [], {
           shell: executable,
