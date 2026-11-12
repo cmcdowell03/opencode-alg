@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
-import { buildCheckerEvidence } from "../src/checker-evidence.ts"
-import { captureChildExecutionEvidence, ExecutionEvidenceSchema, fromShellGateEvidence } from "../src/execution-evidence.ts"
+import { buildCheckerEvidence, type CheckerEvidence } from "../src/checker-evidence.ts"
+import { appendHostExecutionEvidence, captureChildExecutionEvidence, ExecutionEvidenceSchema, fromShellGateEvidence } from "../src/execution-evidence.ts"
 import type { GraphDef } from "../src/types.ts"
 
 function fakeClient(messages: unknown[], resolveDelay = 0): any {
@@ -17,6 +17,130 @@ const tool = (overrides: Record<string, unknown> = {}) => ({
 })
 
 describe("host-origin child execution evidence", () => {
+  test("checker projection compacts outputs across commands before omitting rows", async () => {
+    const source = ExecutionEvidenceSchema.parse({ version: 1, run_id: "run", node_id: "tests", attempt: 1, child_session_id: "child",
+      retrieval_status: "available", commands: Array.from({ length: 8 }, (_, index) => ({ call_id: `call-${index}`, message_id: "message",
+        tool: "bash", command: `test-${index}`, cwd: `C:/work/${index}`, tool_status: "completed", exit_code: index === 3 ? 7 : 0,
+        exit_code_status: "reported", output: `output-${index}-${"x".repeat(900)}`, output_truncated: false,
+        command_truncated: false, cwd_truncated: false })), omitted_commands: 0, window_may_be_incomplete: false, foreign_messages_omitted: 0 })
+    const before = JSON.stringify(source)
+    const projected = appendHostExecutionEvidence<CheckerEvidence>({ entries: [], omitted_entries: 0 }, source)!
+    const entry = projected.entries[0]!
+    const value = entry.value as typeof source
+    expect(entry.status).toBe("included")
+    expect(value.commands).toHaveLength(8)
+    expect(value.commands.map(command => command.command)).toEqual(Array.from({ length: 8 }, (_, index) => `test-${index}`))
+    expect(value.commands.map(command => command.exit_code)).toEqual([0, 0, 0, 7, 0, 0, 0, 0])
+    expect(value.commands.every(command => command.output_truncated && Buffer.byteLength(command.output ?? "") <= 128)).toBe(true)
+    expect(entry.json_bytes).toBeLessThanOrEqual(4 * 1024)
+    expect(Buffer.byteLength(JSON.stringify(projected))).toBeLessThanOrEqual(16 * 1024)
+    expect(JSON.stringify(source)).toBe(before)
+  })
+
+  test("projection keeps exact command and cwd after output trimming, or removes identity entirely", () => {
+    const makeSource = (command: string, cwd: string) => ExecutionEvidenceSchema.parse({
+      version: 1, run_id: "r", node_id: "n", attempt: 1, child_session_id: "child", retrieval_status: "available",
+      commands: [{ tool: "bash", tool_status: "completed", exit_code: 0, exit_code_status: "reported",
+        command, cwd, command_truncated: false, cwd_truncated: false,
+        output: "🧪".repeat(900), output_truncated: false }],
+      omitted_commands: 0, window_may_be_incomplete: false, foreign_messages_omitted: 0,
+    })
+    const exactCommand = `npm test --filter=${"a".repeat(180)}`
+    const exactCwd = `C:/work/${"b".repeat(180)}`
+    const source = makeSource(exactCommand, exactCwd)
+    const projected = appendHostExecutionEvidence<CheckerEvidence>({ entries: [], omitted_entries: 0 }, source)!
+    expect((projected.entries[0]!.value as typeof source).commands[0]).toMatchObject({
+      command: exactCommand, cwd: exactCwd, command_truncated: false, cwd_truncated: false, output_truncated: true,
+    })
+    expect(JSON.stringify(source)).toContain("🧪")
+
+    const longSource = makeSource(`npm test --filter=${"a".repeat(3_850)}`, `C:/work/${"b".repeat(300)}`)
+    const compact = appendHostExecutionEvidence<CheckerEvidence>({ entries: [], omitted_entries: 0 }, longSource)!
+    const row = (compact.entries[0]!.value as typeof source).commands[0]!
+    expect(compact.entries[0]!.status).toBe("included")
+    expect(row.command).toBeUndefined()
+    expect(row.cwd).toBeUndefined()
+    expect(row.command_truncated).toBe(true)
+    expect(row.cwd_truncated).toBe(true)
+    expect(row.exit_code).toBe(0)
+    expect(compact.entries[0]!.json_bytes).toBeLessThanOrEqual(4 * 1024)
+    expect(longSource.commands[0]!.command).toContain("npm test --filter=")
+
+    const mixed = ExecutionEvidenceSchema.parse({ ...longSource, commands: [
+      longSource.commands[0], { ...longSource.commands[0], command: "bun test", cwd: "C:/repo" },
+    ] })
+    const mixedProjection = appendHostExecutionEvidence<CheckerEvidence>({ entries: [], omitted_entries: 0 }, mixed)!
+    const mixedRows = (mixedProjection.entries[0]!.value as typeof source).commands
+    expect(mixedRows).toHaveLength(2)
+    expect(mixedRows[0]).toMatchObject({ command_truncated: true, exit_code: 0 })
+    expect(mixedRows[0]!.command).toBeUndefined()
+    expect(mixedRows[1]).toMatchObject({ command: "bun test", cwd: "C:/repo", command_truncated: false })
+  })
+
+  test("captured command normalization is disclosed as loss of exact identity", async () => {
+    const source = await captureChildExecutionEvidence(fakeClient([{ info: { id: "m" }, parts: [
+      tool({ state: { status: "completed", input: { command: "  npm test  ", cwd: "  C:/repo  " },
+        output: "ok", metadata: { exit_code: 0 } } }),
+      tool({ callID: "redacted", state: { status: "completed", input: { command: "npm test --token=private-value" },
+        output: "ok", metadata: { exit_code: 0 } } }),
+    ] }]), { run_id: "r", node_id: "n", attempt: 1, child_session_id: "child" })
+    expect(source.commands[0]).toMatchObject({ command: "npm test", command_truncated: true,
+      cwd: "C:/repo", cwd_truncated: true, exit_code: 0 })
+    expect(source.commands[1]!.command).not.toContain("private-value")
+    expect(source.commands[1]!.command_truncated).toBe(true)
+  })
+
+  test("projection preserves unavailable and nonzero exit outcomes without inferring success", async () => {
+    const source = await captureChildExecutionEvidence(fakeClient([{ info: { id: "m" }, parts: [
+      tool({ callID: "unknown", state: { status: "completed", input: { command: "unknown" }, output: "exit code 0", metadata: {} } }),
+      tool({ callID: "failed", state: { status: "error", input: { command: "failed", cwd: "C:/repo" }, error: "failed", metadata: { exit_code: 23 } } }),
+    ] }]), { run_id: "r", node_id: "n", attempt: 1, child_session_id: "child" })
+    const projected = appendHostExecutionEvidence<CheckerEvidence>({ entries: [], omitted_entries: 0 }, source)!
+    const commands = (projected.entries[0]!.value as typeof source).commands
+    expect(commands[0]).toMatchObject({ exit_code_status: "unavailable", tool_status: "completed", command: "unknown" })
+    expect(commands[0]!.exit_code).toBeUndefined()
+    expect(commands[1]).toMatchObject({ exit_code_status: "reported", exit_code: 23, tool_status: "error", cwd: "C:/repo" })
+  })
+
+  test("projection preserves omission accounting and UTF-8-safe truncation", async () => {
+    const source = await captureChildExecutionEvidence(fakeClient([{ info: { id: "m" }, parts: [tool({
+      callID: "utf8", state: { status: "completed", input: { command: "echo 🧪".repeat(600), cwd: "C:/🧪/".repeat(600) },
+        output: "🧪".repeat(1_000), metadata: { exit_code: 0 } },
+    })] }]), { run_id: "r", node_id: "n", attempt: 1, child_session_id: "child" })
+    const output = appendHostExecutionEvidence<CheckerEvidence>({ entries: [], omitted_entries: 0 }, source)!
+    const value = output.entries[0]!.value as typeof source
+    expect(value.commands[0]).toMatchObject({ output_truncated: true, command_truncated: true, cwd_truncated: true })
+    expect(() => JSON.parse(JSON.stringify(output))).not.toThrow()
+    const full = { entries: Array.from({ length: 8 }, () => ({})), omitted_entries: 2 }
+    const capped = appendHostExecutionEvidence(full, source)!
+    expect(capped.omitted_entries).toBe(3)
+    expect(capped.entries).toBe(full.entries)
+    expect(appendHostExecutionEvidence(undefined, source)).toBeUndefined()
+    const nearSharedLimit = { entries: [{ value: "x".repeat(16 * 1024 - 128) }], omitted_entries: 4 }
+    const sharedCapped = appendHostExecutionEvidence(nearSharedLimit, source)!
+    expect(sharedCapped.omitted_entries).toBe(5)
+    expect(sharedCapped.entries).toBe(nearSharedLimit.entries)
+  })
+
+  test("only drops commands after compact metadata still cannot fit", async () => {
+    const hugeIdentity = "i".repeat(255)
+    const source = ExecutionEvidenceSchema.parse({ version: 1, run_id: "r", node_id: "n", attempt: 1, child_session_id: "child",
+      retrieval_status: "available", commands: Array.from({ length: 8 }, (_, index) => ({
+        call_id: `${index}${hugeIdentity}`, message_id: `${index}${hugeIdentity}`, tool: "bash", tool_status: "completed",
+        exit_code: index, exit_code_status: "reported", output: "x".repeat(500), output_truncated: false,
+        command: `test-${index}`, command_truncated: false, cwd: "C:/repo", cwd_truncated: false,
+      })), omitted_commands: 0, window_may_be_incomplete: false, foreign_messages_omitted: 0 })
+    const projected = appendHostExecutionEvidence<CheckerEvidence>({ entries: [], omitted_entries: 0 }, source)!
+    const entry = projected.entries[0]!
+    expect(entry.status).toBe("included")
+    const value = entry.value as typeof source
+    expect(value.commands.length).toBeGreaterThan(0)
+    expect(value.commands.length).toBeLessThan(8)
+    expect(value.omitted_commands).toBe(8 - value.commands.length)
+    expect(value.commands.every(command => command.exit_code_status === "reported" && command.output_truncated)).toBe(true)
+    expect(entry.json_bytes).toBeLessThanOrEqual(4 * 1024)
+  })
+
   test("captures only host bash tool records and requires exact exit metadata", async () => {
     const evidence = await captureChildExecutionEvidence(fakeClient([
       { info: { id: "assistant-1", role: "assistant" }, parts: [

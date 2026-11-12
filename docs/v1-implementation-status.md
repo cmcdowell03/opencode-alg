@@ -4,6 +4,16 @@ PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experi
 
 ## 0.5.7 implementation — admission and trustworthy comparison apparatus
 
+The [fresh Terra control cohort](evidence/current-control-20261112/README.md)
+measures this runtime rather than extrapolating from 0.5.5. Build completes the
+coding task in 41.299 seconds; ALG produces correct code but reaches its usage
+cutoff after two evidence-related checker rejections (121.848 seconds). Both
+report arms encounter a preparation-scorer false negative, so neither measures
+report continuation. The original receipts, offline correction and configuration
+metadata audit remain distinct. A follow-up candidate repairs evidence projection,
+deduplicates worker inputs, and clarifies criterion-specific verification. It
+does not yet implement production task-wide allowance or establish superiority.
+
 The [development plan](v1-reliability-and-build-comparison-plan.md) is being delivered in gated increments. This increment implements P1 task admission and the first H0 measurement controls, reusing the existing P2 run/attempt, investigation and skill stores. New plans carry an immutable declared task contract and original criteria. Required project files, native command evidence and protected files receive host checks before fresh checking. Explicitly incompatible graphs and unavailable permissions block before child calls. Investigation reuse includes contract scope before mutating its durable claim.
 
 The comparison keeps issued pairs and unknown telemetry visible. Hard synthetic families have service-owned work accounting and independent checks; they are development fixtures, not evidence that ALG beats Build. The compaction work measures frequency separately from durable retention, context availability, retrieval and behavior across task/session lineage. Actual long-session retention must still be observed; synthetic tests cannot establish it.

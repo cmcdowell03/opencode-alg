@@ -2,7 +2,7 @@
   "source": "..\\implementation-evidence\\current-control-terra-20261112",
   "files": [
     {
-      "path": "1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/progress.json",
+      "path": "1-wafer-count-commonjs-alg_default/alg-progress.json",
       "bytes": 24947,
       "sha256": "d45c2268ef972970f71a2dd70f4fcdf24cf4d43b752d96208bad7fe4f7039360"
     },
@@ -17,7 +17,7 @@
       "sha256": "9ab5c106f4e58e687ab5a0d3a019fe73e21e9a844818c7ce14c448ae9b7b8268"
     },
     {
-      "path": "2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112220817-9313a9b6118e/progress.json",
+      "path": "2-wafer-report-staged-alg_default/alg-progress.json",
       "bytes": 11611,
       "sha256": "ab650d72fbc4f0e63c64e4ef3c8fd1e05c66d0a401e5fd010870a59acedde887"
     },

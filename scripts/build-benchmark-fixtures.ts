@@ -319,11 +319,28 @@ function missingPreparationContent(prep: string): string[] {
   const prose = text.replace(/[_`*#]/g, " ").replace(/\s+/g, " ")
   const near = (left: string, right: string) => new RegExp(`(?:${left}).{0,160}(?:${right})|(?:${right}).{0,160}(?:${left})`).test(prose)
   const fields = ["numerator", "denominator", "rate", "window", "sources", "conflicts", "limitations"]
-  const reportFields = text.replace(/[`*#]/g, "").match(
-    /(?:\b(?:report(?:\.json)?|output)\s+(?:fields|schema|structure|keys)\b|\b(?:planned\s+)?fields\s*:|\breport(?:\.json)?\s+(?:(?:will|must|should)\s+)?(?:contain\w*|include\w*|with|as)\b)([\s\S]*?)(?:\n\s*\n|$)/,
-  )?.[1] ?? text.split(/\n\s*\n/).find(paragraph => fields.every(field => new RegExp(`\\b${field}\\b`).test(paragraph))) ?? ""
+  const lines = text.split(/\r?\n/)
+  const heading = lines.findIndex(line => /^\s*#{1,6}\s+(?:(?:planned|future)\s+)*(?:(?:future|planned)\s+)?(?:report\s+fields|output\s+schema)\b/.test(line))
+  const nextHeading = lines.findIndex((line, index) => index > heading && /^\s*#{1,6}\s+/.test(line))
+  const headingFields = heading < 0 ? "" : lines.slice(heading + 1, nextHeading < 0 ? undefined : nextHeading).join(" ")
+  const inlineFields = text.replace(/[`*#]/g, "").match(
+    /(?:\b(?:report(?:\.json)?|output)\s+(?:fields|schema|structure|keys)\b|\b(?:planned\s+)?fields\s*:|\breport(?:\.json)?\s+(?:(?:will|must|should)\s+)?(?:contain\w*|include\w*|with|as)\b)([^\n]*(?:\n(?!\s*\n)[^\n]*)*)/,
+  )?.[1] ?? ""
+  const reportFields = heading >= 0 ? headingFields : inlineFields || text.split(/\n\s*\n/).find(paragraph =>
+    fields.every(field => new RegExp(`\\b${field}\\b`).test(paragraph))) || ""
+  const plannedField: Record<string, RegExp> = {
+    numerator: /\bnumerator\b/,
+    denominator: /\bdenominator\b/,
+    rate: /\brate\b/,
+    window: /\bwindow\b/,
+    sources: /\bsources?\b/,
+    conflicts: /\bconflicts?\b/,
+    limitations: /\blimitations?\b/,
+  }
   const fraction = /\b(?:defects?|defective|numerator)\b[^.!?;]{0,80}(?:\/|\bdivid\w*\b|\bover\b)[^.!?;]{0,80}\b(?:distinct|unique|wafers?|denominator)\b/.test(prose) ||
-    /\bdivide\b[^.!?;]{0,60}\b(?:defect\w*|numerator)\b[^.!?;]{0,60}\bby\b[^.!?;]{0,60}\b(?:distinct|unique|wafers?|denominator)\b/.test(prose)
+    /\bdivide\b[^.!?;]{0,60}\b(?:defect\w*|numerator)\b[^.!?;]{0,60}\bby\b[^.!?;]{0,60}\b(?:distinct|unique|wafers?|denominator)\b/.test(prose) ||
+    (near("\\b(?:defective|defects?|numerator)\\b", "\\b(?:distinct|unique|denominator)\\b") &&
+      /\b(?:rate|calculation)\b[^.!?;]{0,60}\b\d+\s*\/\s*\d+\b/.test(prose))
   const required: Array<[string, boolean]> = [
     ["nonempty preparation", prep.trim().length > 0],
     ["reporting date", /\b2025-04-01\b/.test(text)],
@@ -339,8 +356,8 @@ function missingPreparationContent(prep: string): string[] {
     ["manual conflict observation", near("\\b(?:manual|review)\\b", "\\b(?:true|flagged|defective|positive)\\b")],
     ["unresolved conflict", /\bunresolved\b|\bnot\s+(?:yet\s+)?resolved\b|\b(?:remains?|still)\s+(?:in\s+)?(?:dispute|disputed|uncertain|unreconciled)\b/.test(prose)],
     ...fields.map(field =>
-      [`planned field ${field}`, new RegExp(`\\b${field}\\b`).test(reportFields) ||
-        new RegExp(`"${field}"\\s*:`).test(text)] as [string, boolean]),
+      [`planned field ${field}`, plannedField[field]!.test(reportFields) ||
+        new RegExp(`"${field}"\\s*:`).test(heading >= 0 ? reportFields : text)] as [string, boolean]),
     ["explicit STOP", /\bstop\b/.test(text)],
   ]
   return required.filter(([, present]) => !present).map(([name]) => name)

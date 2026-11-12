@@ -78,6 +78,25 @@ function snapshotDirectory(root: string): Record<string, string> {
 }
 
 describe("architecture audit remediation", () => {
+  test("worker payload retains one authoritative task and preserves differing advisory inputs", () => {
+    const goal = "Preserve the existing interface while correcting the aggregate"
+    const criteria = ["Keep the field types unchanged", "Run the existing acceptance command"]
+    const inputs = { goal, criteria: [...criteria], advisory_criteria: ["Consider another optional test"] }
+    const before = structuredClone(inputs)
+    const prompt = buildWorkerPrompt({ goal, criteria, agent: "implementer", inputs, priorFailures: [] })
+    expect(prompt.split(goal)).toHaveLength(2)
+    for (const criterion of criteria) expect(prompt.split(criterion)).toHaveLength(2)
+    expect(prompt).toContain("Wired goal and criteria reuse the exact authoritative text above.")
+    expect(prompt).toContain("Consider another optional test")
+    expect(inputs).toEqual(before)
+
+    const distinct = buildWorkerPrompt({ goal, criteria, agent: "researcher",
+      inputs: { goal: "Investigate a narrower dependency", criteria: [...criteria].reverse() }, priorFailures: [] })
+    expect(distinct).not.toContain("reuse the exact authoritative")
+    expect(distinct).toContain("Investigate a narrower dependency")
+    expect(distinct).toContain(JSON.stringify([...criteria].reverse()))
+  })
+
   test("README, operations, and orchestrator help document the local-integrity authenticity boundary", () => {
     const documents = [
       new URL("../README.md", import.meta.url),

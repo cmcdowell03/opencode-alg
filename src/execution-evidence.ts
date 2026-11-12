@@ -2,7 +2,7 @@ import { createHash } from "node:crypto"
 import { z } from "zod"
 import type { PluginInput } from "@opencode-ai/plugin"
 import { safeDiagnosticText } from "./diagnostics.ts"
-import { serializedBytes, truncateUtf8, utf8Bytes } from "./limits.ts"
+import { serializedBytes, truncateUtf8 } from "./limits.ts"
 import type { ShellExecutionResult } from "./shell.ts"
 
 export const MAX_EXECUTION_EVIDENCE_COMMANDS = 8
@@ -88,14 +88,22 @@ function exitCodeFromMetadata(value: unknown): number | undefined {
   return undefined
 }
 
+function boundedUtf8Prefix(value: string, cap: number): string {
+  const prefix = truncateUtf8(value, cap)
+  // String slicing can land between UTF-16 surrogate halves. Keep the
+  // projected text on a complete code point before JSON serialization.
+  return /[\uD800-\uDBFF]$/.test(prefix) ? prefix.slice(0, -1) : prefix
+}
+
 function safeBounded(value: unknown, cap: number): { text?: string; truncated: boolean } {
   if (typeof value !== "string" || value.length === 0) return { truncated: false }
   // Redact before applying the output cap so secrets outside the retained prefix cannot
   // alter whether the captured prefix is safe. The shared sanitizer also applies a hard cap.
   const sanitized = safeDiagnosticText(value, Math.min(cap, 2_000))
-  const truncated = utf8Bytes(value) > cap || sanitized.includes("…[truncated]")
-  const text = truncateUtf8(sanitized, cap)
-  return { ...(text ? { text } : {}), truncated }
+  const text = boundedUtf8Prefix(sanitized, cap)
+  // Sanitization can redact or trim a command without adding a truncation
+  // marker. Such text is no longer an exact executable identity.
+  return { ...(text ? { text } : {}), truncated: text !== value }
 }
 
 function commandEvidence(part: UnknownRecord, messageId: string | undefined): ExecutionCommandEvidence | undefined {
@@ -254,9 +262,56 @@ export function appendHostExecutionEvidence<T extends { entries: unknown[]; omit
   }
   let checkerReceipt = receipt
   let json = JSON.stringify(checkerReceipt)
-  while (Buffer.byteLength(json) > 4 * 1024 && checkerReceipt.commands.length) {
-    checkerReceipt = { ...checkerReceipt, commands: checkerReceipt.commands.slice(1), omitted_commands: checkerReceipt.omitted_commands + 1 }
-    json = JSON.stringify(checkerReceipt)
+  const entryByteLimit = 4 * 1024
+  if (Buffer.byteLength(json) > entryByteLimit && checkerReceipt.commands.length) {
+    // Keep exact command and cwd text while shrinking output. If identity text
+    // cannot fit, omit it entirely rather than show a successful-looking prefix
+    // for a different command. The durable receipt is never changed.
+    const outputCaps = [1_500, 1_024, 512, 256, 128, 64, 32, 0]
+    const project = (outputCap: number, commands: ExecutionCommandEvidence[], omitIdentity: ReadonlySet<number>) => commands.map((command, index) => {
+      const output = command.output === undefined ? undefined : boundedUtf8Prefix(command.output, outputCap)
+      const { output: _output, command: _command, cwd: _cwd, ...metadata } = command
+      const retainIdentity = !omitIdentity.has(index)
+      return {
+        ...metadata,
+        ...(output ? { output } : {}),
+        output_truncated: command.output_truncated || output !== command.output,
+        ...(retainIdentity && command.command !== undefined ? { command: command.command } : {}),
+        command_truncated: command.command_truncated || (!retainIdentity && command.command !== undefined),
+        ...(retainIdentity && command.cwd !== undefined ? { cwd: command.cwd } : {}),
+        cwd_truncated: command.cwd_truncated || (!retainIdentity && command.cwd !== undefined),
+      }
+    })
+
+    let compacted: ExecutionEvidence | undefined
+    for (let commandCount = checkerReceipt.commands.length; commandCount > 0 && !compacted; commandCount--) {
+      const rows = checkerReceipt.commands.slice(checkerReceipt.commands.length - commandCount)
+      const omitted_commands = checkerReceipt.omitted_commands + checkerReceipt.commands.length - commandCount
+      const tryCandidate = (outputCap: number, omittedIdentity: ReadonlySet<number>) => {
+        const candidate = { ...checkerReceipt, commands: project(outputCap, rows, omittedIdentity), omitted_commands }
+        const candidateJson = JSON.stringify(candidate)
+        if (Buffer.byteLength(candidateJson) > entryByteLimit) return false
+        compacted = candidate
+        json = candidateJson
+        return true
+      }
+      for (const outputCap of outputCaps) {
+        if (tryCandidate(outputCap, new Set())) break
+      }
+      if (compacted) break
+      // Omit the largest exact identities first. This retains the other command
+      // rows and their exact identities whenever they still fit.
+      const byIdentityBytes = rows.map((row, index) => ({ index,
+        bytes: Buffer.byteLength(row.command ?? "") + Buffer.byteLength(row.cwd ?? "") }))
+        .sort((a, b) => b.bytes - a.bytes || a.index - b.index)
+      const omittedIdentity = new Set<number>()
+      for (const item of byIdentityBytes) {
+        if (!item.bytes) continue
+        omittedIdentity.add(item.index)
+        if (tryCandidate(0, omittedIdentity)) break
+      }
+    }
+    if (compacted) checkerReceipt = compacted
   }
   entry.json_bytes = Buffer.byteLength(json)
   entry.json_sha256 = createHash("sha256").update(json).digest("hex")

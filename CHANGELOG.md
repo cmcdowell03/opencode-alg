@@ -2,6 +2,8 @@
 
 ## 0.5.7 candidate — task admission and benchmark qualification
 
+- Follow-up to the current Build control: checker evidence trims bounded command output before sacrificing exact command/cwd/exit metadata; full durable receipts remain unchanged. Worker prompts deduplicate exact task copies, and role guidance asks for criterion-specific evidence before edits and verification-gap repair without unnecessary reimplementation. No criterion is waived.
+- Benchmark preparation scoring recognizes Markdown sections and labeled numeric calculation plans. Host configuration metadata is seeded before integrity hashing. Original failed trial receipts remain preserved with separate offline apparatus audits; these changes do not establish superiority.
 - New `alg_plan` calls require a typed task contract and original criteria. Work kind, deliverables, phase, fresh checking, command evidence and protected paths are bound before child work; original criteria cannot be unlocked. Legacy runs remain readable/resumable and are explicitly unqualified for the new admission contract.
 - Declared file work must have a capable producer. Unknown, ask or denied effective host permissions block admission without granting tools. Default template selection follows declared scope and discovery needs, independent of model identity.
 - Host observations of declared deliverables, required execution and preservation precede checking. Immutable checker evidence references and contract hashes survive projections and archives. File presence and a successful command remain observations, not proof of scientific correctness or relevant test coverage.

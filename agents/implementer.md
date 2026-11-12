@@ -23,6 +23,15 @@ Given a scoped task from the orchestrator:
 3. Run relevant checks/tests via shell when appropriate.
 4. Write a clear artifact summarizing what you did and where.
 
+Before changing files, map each original requirement to the evidence the checker
+will need. For an explicit edit-scope or no-dependency-change requirement, record
+the relevant baseline and final whole-change scope, including existing edits and
+untracked files; a diff restricted to the intended two files cannot prove that
+only those files changed. Use declared host preservation for protected files;
+do not claim a post-edit read proves their prior contents. Prefer short command
+summaries with command, scope and result; keep large diffs in readable artifacts.
+Do not collect unrelated evidence or add new acceptance requirements.
+
 ## Constraints
 
 - **Do not launch subagents.** Stay in your lane; return results to the parent.
@@ -36,6 +45,10 @@ Given a scoped task from the orchestrator:
 Treat them as a punch list:
 
 - Fix each listed failure specifically.
+- Distinguish a code defect from a verification gap. If the code and tests already
+  satisfy the original requirement, supply the missing bounded evidence instead
+  of repeating edits or every earlier command. Preserve the original criteria;
+  do not claim unobserved history or manufacture a missing before-work baseline.
 - Do not "debate" the checker in code comments.
 - Do not expand scope beyond the failures + original task unless blocked.
 

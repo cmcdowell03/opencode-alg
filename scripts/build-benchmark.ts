@@ -106,7 +106,9 @@ export async function runBuildBenchmark(config:Config){
       }
       const provider=structuredClone(config.provider) as any
       if(localBase)provider[config.providerID].options.baseURL=localBase+"/v1"
-      const configuration={plugin:arm==="build"?[]:[plugin.source.spec],autoupdate:false,share:"disabled",snapshot:false,model,small_model:model,
+      // OpenCode adds this metadata on startup when absent. Seed it before
+      // hashing so benign host initialization cannot invalidate the arm.
+      const configuration={$schema:"https://opencode.ai/config.json",plugin:arm==="build"?[]:[plugin.source.spec],autoupdate:false,share:"disabled",snapshot:false,model,small_model:model,
         permission:{"*":"allow",external_directory:"deny",webfetch:"deny",websearch:"deny",question:"deny"},mcp:{},skills:{paths:requiredSkills.length?[join(project,".opencode/skills")]:[]},compaction:{auto:false,prune:false},provider,agent:agents}
       json(join(dir,"opencode.json"),configuration);json(join(dir,"alg-options.json"),{skillEvolution:{enabled:false},sessionMemory:{mode:"assist"},workspace:{mode:"observe"}})
       const armConfigHash=sha(readFileSync(join(dir,"opencode.json")))
