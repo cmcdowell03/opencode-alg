@@ -266,4 +266,5 @@ export async function runBuildBenchmark(config:Config){
     if(fatal||!unchanged||!localStopped||results.some(r=>r.cleanup===false))process.exitCode=1
   }
 }
+export { freePort, launch, isolatedEnv }
 if(import.meta.main){if(!process.argv[2])throw Error("Usage: bun scripts/build-benchmark.ts <non-secret-config.json>");await runBuildBenchmark(JSON.parse(readFileSync(resolve(process.argv[2]),"utf8")))}

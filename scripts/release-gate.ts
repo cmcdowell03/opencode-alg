@@ -148,6 +148,7 @@ export const RELEASE_CONTROL_PATHS = [
   "scripts/adversarial-cases.ts", "scripts/adversarial-evaluation.ts",
   "scripts/build-benchmark.ts", "scripts/build-benchmark-fixtures.ts", "scripts/build-benchmark-metrics.ts", "scripts/build-benchmark-transport.ts",
   "scripts/hard-benchmark-fixtures.ts", "scripts/hard-benchmark-service.ts",
+  "scripts/live-retention.ts", "scripts/live-retention-fixture.ts",
   "docs/v1-adversarial-evaluation.md", "docs/v1-benchmark-failure-analysis.md", "docs/v1-build-benchmark.md",
   "docs/v1-graph-evolution-adversarial-review.md", "docs/v1-reliability-and-build-comparison-plan.md",
 ] as const
