@@ -1,0 +1,10 @@
+# Development competitors, synthetic cases and graders stay in the source checkout.
+# Operational headless probes and the offline retention analyzer are packaged.
+/adversarial-cases.ts
+/adversarial-evaluation.ts
+/build-benchmark.ts
+/build-benchmark-fixtures.ts
+/build-benchmark-metrics.ts
+/build-benchmark-transport.ts
+/hard-benchmark-fixtures.ts
+/hard-benchmark-service.ts

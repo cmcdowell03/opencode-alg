@@ -133,6 +133,9 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "scripts/environment-memory-cli.ts", "scripts/environment-memory-benchmark.ts", "scripts/snapshot-upgrade.ts",
   "scripts/offline-diagnostics.ts", "scripts/deployment.ts", "scripts/prepare-deployment.ts",
   "scripts/investigation-cli.ts", "scripts/qualify-investigation.ts", "scripts/verification-host-dependencies.ts", "scripts/test-v1-headless.ts",
+  "scripts/checker-headless-probe.ts", "scripts/task-headless-probe.ts",
+  "scripts/build-benchmark-protocol.ts", "scripts/build-benchmark-retention.ts",
+  "scripts/build-benchmark-retention-boundaries.ts", "scripts/build-benchmark-retention-cli.ts",
   "docs/datalake-mcp-qualification.md",
 ] as const
 
@@ -141,7 +144,7 @@ const RELEASE_CONTROL_PATHS = [
   "docs/skill-knowledge-graph-design.md", "docs/execution-recovery-contract.md",
   "docs/knowledge-environment-contract.md", "docs/context-decision-contract.md",
   "docs/coordination-improvement-contract.md", "docs/opencode-v2-design.md", "docs/incident-watcher-design.md",
-  ".gitattributes", ".gitignore", ".npmignore", "docs/.npmignore", "bun.lock", "package-lock.json", "tsconfig.json",
+  ".gitattributes", ".gitignore", ".npmignore", "docs/.npmignore", "scripts/.npmignore", "bun.lock", "package-lock.json", "tsconfig.json",
 ] as const
 
 export function expectedPackedPaths(root = ROOT): string[] {
