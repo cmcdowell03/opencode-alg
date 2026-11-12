@@ -337,6 +337,7 @@ function missingPreparationContent(prep: string): string[] {
     ["conflicting wafer", /\bw13\b/.test(prose)],
     ["system conflict observation", near("\\b(?:system|primary)\\b", "\\b(?:false|non[- ]?defect\\w*|not defective|no defect\\w*|clean)\\b")],
     ["manual conflict observation", near("\\b(?:manual|review)\\b", "\\b(?:true|flagged|defective|positive)\\b")],
+    ["unresolved conflict", /\bunresolved\b|\bnot\s+(?:yet\s+)?resolved\b|\b(?:remains?|still)\s+(?:in\s+)?(?:dispute|disputed|uncertain|unreconciled)\b/.test(prose)],
     ...fields.map(field =>
       [`planned field ${field}`, new RegExp(`\\b${field}\\b`).test(reportFields) ||
         new RegExp(`"${field}"\\s*:`).test(text)] as [string, boolean]),
@@ -345,7 +346,7 @@ function missingPreparationContent(prep: string): string[] {
   return required.filter(([, present]) => !present).map(([name]) => name)
 }
 
-export async function scoreBenchmarkPreparation(projectDir: string): Promise<BenchmarkScore> {
+async function scorePreparation(projectDir: string, requireNoReport: boolean): Promise<BenchmarkScore> {
   const benchmark = BENCHMARK_CASES[1]!
   const checks = await protectedFileChecks(benchmark, resolve(projectDir))
   let prep = ""
@@ -355,12 +356,23 @@ export async function scoreBenchmarkPreparation(projectDir: string): Promise<Ben
   const missing = missingPreparationContent(prep)
   checks.push({ id: "preparation-artifact", passed: readError === undefined && missing.length === 0,
     ...(readError !== undefined || missing.length ? { detail: readError ?? `Missing preparation content: ${missing.join(", ")}` } : {}) })
+  if (requireNoReport) {
+    let reportAbsent = false
+    try { await readFile(resolve(projectDir, "report.json")) }
+    catch (error) { reportAbsent = (error as NodeJS.ErrnoException).code === "ENOENT" }
+    checks.push({ id: "phase-one-report-absent", passed: reportAbsent,
+      ...(!reportAbsent ? { detail: "report.json must not exist during preparation" } : {}) })
+  }
   return { passed: checks.every(check => check.passed), checks, metrics: { protectedFiles: benchmark.protectedPaths.length, preparationBytes: Buffer.byteLength(prep) } }
+}
+
+export async function scoreBenchmarkPreparation(projectDir: string): Promise<BenchmarkScore> {
+  return scorePreparation(projectDir, true)
 }
 
 async function scoreStagedReport(projectDir: string): Promise<BenchmarkScore> {
   const benchmark = BENCHMARK_CASES[1]!
-  const preparation = await scoreBenchmarkPreparation(projectDir)
+  const preparation = await scorePreparation(projectDir, false)
   const checks = [...preparation.checks]
   let reportText = ""
   let report: unknown

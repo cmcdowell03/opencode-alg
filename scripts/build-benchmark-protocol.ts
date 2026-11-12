@@ -5,6 +5,32 @@ export const TARGETED_COMPATIBILITY_ARMS = ["build", "alg_targeted"] as const
 export type BenchmarkArm = typeof DEFAULT_TRACK_ARMS[number] | "alg_targeted"
 export type BenchmarkTrack = "default" | "targeted_compatibility"
 
+/** Session-observed cumulative cutoffs, not provider-call or invoice ceilings. */
+export function benchmarkObservedStop(input: { now: number; deadline: number; assistantTurns: number; reportedComponents: number }, limits: { assistantTurns: number; reportedComponents: number }) {
+  if (![input.now, input.deadline, input.assistantTurns, input.reportedComponents, limits.assistantTurns, limits.reportedComponents].every(Number.isFinite) ||
+    input.assistantTurns < 0 || input.reportedComponents < 0 || limits.assistantTurns <= 0 || limits.reportedComponents <= 0) return "invalid_usage_observation"
+  if (input.now >= input.deadline) return "trial_deadline"
+  if (input.assistantTurns >= limits.assistantTurns) return "assistant_turn_limit"
+  if (input.reportedComponents >= limits.reportedComponents) return "reported_component_limit"
+  return null
+}
+
+export function reconcileHostCensus(input: { storedSessions: string[]; storedMessages: Array<{ id: string; session_id: string }>; observedSessions: string[]; observedMessages: Array<{ id: string; session_id: string }>; quiescent: boolean }) {
+  const key = (m: { id: string; session_id: string }) => JSON.stringify([m.session_id, m.id])
+  const storedSessions = new Set(input.storedSessions), observedSessions = new Set(input.observedSessions)
+  const storedMessages = new Set(input.storedMessages.map(key)), observedMessages = new Set(input.observedMessages.map(key))
+  const same = (a: Set<string>, b: Set<string>) => a.size === b.size && [...a].every(id => b.has(id))
+  const unique = storedSessions.size === input.storedSessions.length && observedSessions.size === input.observedSessions.length &&
+    storedMessages.size === input.storedMessages.length && observedMessages.size === input.observedMessages.length
+  const valid = [...storedSessions, ...observedSessions].every(id => typeof id === "string" && id.length > 0) &&
+    [...input.storedMessages, ...input.observedMessages].every(m => typeof m.id === "string" && m.id.length > 0 && typeof m.session_id === "string" && m.session_id.length > 0) &&
+    input.storedMessages.every(m => storedSessions.has(m.session_id)) && input.observedMessages.every(m => observedSessions.has(m.session_id))
+  return { qualified: input.quiescent && unique && valid && same(storedSessions, observedSessions) && same(storedMessages, observedMessages),
+    databaseSessions: input.storedSessions.length, databaseMessages: input.storedMessages.length,
+    observedSessions: input.observedSessions.length, observedMessages: input.observedMessages.length,
+    basis: "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness." }
+}
+
 export interface PairIssue {
   pairId: string
   caseId: string

@@ -152,6 +152,7 @@ describe("Build end-to-end benchmark fixtures and scorer", () => {
     ["conflicting wafer", "W13", ""],
     ["system observation", "non-defect in the primary export and ", ""],
     ["manual observation", " and flagged in manual review", ""],
+    ["unresolved conflict", "unresolved", "resolved"],
     ["planned fields", preparationSections.fields, ""],
     ["explicit STOP", preparationSections.stop, ""],
     ...["numerator", "denominator", "rate", "window", "sources", "conflicts", "limitations"].map(field =>
@@ -174,6 +175,8 @@ Deduplicate unique wafer IDs. Divide defective wafer count by unique wafer count
 W13: system=false; manual=true. The disagreement remains unresolved; retain the primary result.
 The report will include numerator, denominator, rate, window, sources, conflicts and limitations.
 STOP until continuation; report.json must wait.`],
+    ["equivalent uncertainty wording", stagedPreparation.replace("unresolved", "not yet resolved")],
+    ["disputed evidence wording", stagedPreparation.replace("unresolved", "remains disputed")],
     ["table", stagedPreparation.replace(preparationSections.fields, "Output schema:\n| Field | Type |\n| --- | --- |\n" +
       Object.entries(knownGoodReport).map(([field, value]) => `| ${field} | ${typeof value} |`).join("\n"))],
     ["JSON field plan", stagedPreparation.replace(preparationSections.fields, JSON.stringify({
@@ -209,6 +212,18 @@ STOP until continuation; report.json must wait.`],
       const tampered = await scoreBenchmarkCase("wafer-report-staged", project)
       expect(tampered.passed).toBe(false)
       expect(tampered.checks.some(check => check.id === "protected:data/system-export.json" && !check.passed)).toBe(true)
+    } finally { await cleanup(project) }
+  })
+
+  test("phase one rejects an early report while final scoring accepts the completed report", async () => {
+    const project = await projectFromFixture(1)
+    try {
+      await writeFile(join(project, "preparation.md"), stagedPreparation)
+      await writeFile(join(project, "report.json"), JSON.stringify(knownGoodReport))
+      const preparation = await scoreBenchmarkPreparation(project)
+      expect(preparation.passed).toBe(false)
+      expect(preparation.checks.find(check => check.id === "phase-one-report-absent")?.passed).toBe(false)
+      expect((await scoreBenchmarkCase("wafer-report-staged", project)).passed).toBe(true)
     } finally { await cleanup(project) }
   })
 

@@ -3,12 +3,13 @@ import { createServer } from "node:net"
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync, readdirSync, copyFileSync, unlinkSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { createHash, randomBytes } from "node:crypto"
+import { Database } from "bun:sqlite"
 import type { SessionSummarizeResponses } from "@opencode-ai/sdk/client"
 import { BENCHMARK_CASES, scoreBenchmarkCase, scoreBenchmarkPreparation } from "./build-benchmark-fixtures.ts"
 import { summarizeSessionMetrics } from "./build-benchmark-metrics.ts"
 import { sendBenchmarkPrompt } from "./build-benchmark-transport.ts"
 import { hostRetentionEvents, measureBuildBenchmarkRetention } from "./build-benchmark-retention.ts"
-import { scheduleIssuedPairs, summarizeIssuedArms, finalCensus, compactionReceipt, compactionIsQualified, eligibility, type BenchmarkTrack } from "./build-benchmark-protocol.ts"
+import { scheduleIssuedPairs, summarizeIssuedArms, finalCensus, compactionReceipt, compactionIsQualified, eligibility, benchmarkObservedStop, reconcileHostCensus, type BenchmarkTrack } from "./build-benchmark-protocol.ts"
 import { computeAlgSourceIdentity } from "../src/source-identity.ts"
 import { seedVerificationHostDependencies } from "./verification-host-dependencies.ts"
 import { verificationPluginConfiguration, realUserGlobalConfigRoots, snapshotGlobalOpenCodeConfig, stopCapturedProcess } from "./live-verify.ts"
@@ -19,8 +20,8 @@ interface Config {
   provider: Record<string, unknown>; authFile?: string; preflightOnly?: boolean; caseIds?: string[]; track?: BenchmarkTrack;
   ollama?: { executable: string; models: string; model: string };
 }
-const LIMITS = { trialMs: 480_000, assistantTurns: 40, outputTokens: 4096, suiteMs: 55*60_000 }
-const USAGE_MONITORS = { reportedTokens: 200_000, reportedCostPerSuite: 5, enforcement: "telemetry_only_not_a_provider_or_invoice_ceiling" }
+const LIMITS = { trialMs: 480_000, assistantTurns: 40, reportedComponents: 200_000, outputTokens: 4096, suiteMs: 55*60_000 }
+const USAGE_MONITORS = { reportedTokens: LIMITS.reportedComponents, reportedCostPerSuite: 5, enforcement: "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling" }
 const TARGETED = "Additional targeted falsification mandate: assess the original user deliverable, not whether a review memo sounds correct. Seek a concrete counterexample involving distinct entity counts, joins, UTC interval boundaries, denominators or conflicting sources when relevant. Read the actual artifact and supplied source. Preserve uncertainty when sources disagree. A useful criticism must cite the violated original criterion. Do not invent defects or new requirements."
 const COMMON = "Work only in this fixture workspace. Do not access credentials, change global configuration, install packages, or use network services. The available Node runtime and fixture files are sufficient. Preserve supplied evidence, skills and visible tests. Finish the requested artifact and explain the result honestly."
 const sha=(value:Buffer|string)=>createHash("sha256").update(value).digest("hex")
@@ -73,8 +74,8 @@ export async function runBuildBenchmark(config:Config){
     cases:selectedCases.map(c=>({id:c.id,criteria:c.criteria,initialPrompt:c.initialPrompt,followupPrompt:c.followupPrompt??null,fixture_files:Object.entries(c.files).map(([path,text])=>({path,sha256:sha(text)}))})),
     retention_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-retention.ts"))),
     retention_boundaries_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-retention-boundaries.ts"))),
-    interpretation:"Single-repeat feasibility pilot. Equal externally enforced time and per-call output limits; the assistant-turn threshold is a polling-based observed cutoff subject to overshoot, not a hard request cap. ALG internal gates are diagnostics, never the independent oracle. Reported token/cost thresholds are monitors only, not provider-call, token, or invoice ceilings. Session-visible usage is not proof of complete provider billing. No superiority claim.",
-    enforcement:{time:"hard host deadline",output:"per-call configured limit",assistantTurns:"observed cutoff; polling overshoot possible",reportedTokens:"telemetry only",reportedCost:"telemetry only"},
+    interpretation:"Single-repeat feasibility pilot. Equal externally enforced time and per-call output limits; assistant-turn and reported-component thresholds are cumulative polling-based cutoffs subject to overshoot across root/children/maintenance/phases, not hard provider-request or invoice caps. ALG internal gates are diagnostics, never the independent oracle. Reported cost is telemetry only. Session-visible usage is not proof of complete provider billing. No superiority claim.",
+    enforcement:{time:"host deadline",output:"per-call configured limit",assistantTurns:"cumulative observed cutoff; polling overshoot possible",reportedTokens:"cumulative observed component cutoff; polling overshoot possible",reportedCost:"telemetry only"},
     usage_monitors:USAGE_MONITORS,
     targeted_mandate:TARGETED,common_instruction:COMMON,unmeasured:["actual provider invoice","hidden model calls not represented by session messages","operator minutes","production MCP cost/reuse","multi-hour reliability","hardware-normalized latency"]}
   json(join(root,"plan.json"),protocol)
@@ -119,12 +120,13 @@ export async function runBuildBenchmark(config:Config){
       const collect=async(final=false)=>{
         const censusDeadline=final?Date.now()+5000:Math.min(Date.now()+10_000,deadline||Infinity)
         const remaining=()=>Math.max(1,censusDeadline-Date.now())
-        const rows=await api("/session",undefined,remaining());let next=0
-        await Promise.all(Array.from({length:Math.min(3,rows.length)},async()=>{while(next<rows.length){const s=rows[next++];sessions.set(s.id,s);const history=await api(`/session/${s.id}/message`,undefined,remaining());for(const m of history){const prior=messages.get(s.id+":"+m.info.id);messages.set(s.id+":"+m.info.id,{sessionID:s.id,...m,benchmarkPhase:prior?.benchmarkPhase??currentPhase})}}}))
+        const rows=await api("/session?limit=10000",undefined,remaining());let next=0
+        if(!Array.isArray(rows)||rows.length>=10000)throw Error("session_census_invalid_or_at_limit")
+        await Promise.all(Array.from({length:Math.min(3,rows.length)},async()=>{while(next<rows.length){const s=rows[next++];sessions.set(s.id,s);const history=await api(`/session/${s.id}/message?limit=10000`,undefined,remaining());if(!Array.isArray(history)||history.length>=10000)throw Error("message_census_invalid_or_at_limit");for(const m of history){const prior=messages.get(s.id+":"+m.info.id);messages.set(s.id+":"+m.info.id,{sessionID:s.id,...m,benchmarkPhase:prior?.benchmarkPhase??currentPhase})}}}))
         const metric=summarizeSessionMetrics([...sessions.values()],[...messages.values()])
         const turns=metric.assistantTurns.total,tokens=metric.usage.totalReportedTokens,cost=metric.cost.reportedTotal
         samples.push({at_ms:Date.now()-start,assistant_turns:turns,tokens,reported_cost:cost,sessions:sessions.size})
-        if(turns>LIMITS.assistantTurns)stopReason??="assistant_turn_limit"
+        if(activeStart)stopReason??=benchmarkObservedStop({now:Date.now(),deadline,assistantTurns:turns,reportedComponents:tokens},LIMITS)
         childBudgetOvershoot=Math.max(childBudgetOvershoot,turns-LIMITS.assistantTurns)
         return metric
       }
@@ -233,6 +235,14 @@ export async function runBuildBenchmark(config:Config){
         if(existsSync(authCopy))unlinkSync(authCopy)
         if(!config.preflightOnly)score=await scoreBenchmarkCase(fixture.id,project).catch(error=>({passed:false,scorer_error:String(error)}))
         const metric=summarizeSessionMetrics([...sessions.values()],[...messages.values()]) as any
+        let databaseCensus: ReturnType<typeof reconcileHostCensus> | {qualified:false;reason:string} = {qualified:false,reason:"unavailable"}
+        let db:Database|undefined
+        try {
+          db=new Database(join(dir,"data/opencode/opencode.db"),{readonly:true})
+          databaseCensus=reconcileHostCensus({storedSessions:(db.query("SELECT id FROM session").all() as Array<{id:string}>).map(s=>s.id),
+            storedMessages:db.query("SELECT id, session_id FROM message").all() as Array<{id:string;session_id:string}>,observedSessions:[...sessions.keys()],
+            observedMessages:[...messages.values()].map(m=>({id:m.info.id,session_id:m.sessionID})),quiescent:cleanup&&finalCensusReceipt?.outcome==="quiescent"})
+        } catch { databaseCensus={qualified:false,reason:"database_read_or_schema_unavailable"} } finally {db?.close()}
         knownCost+=metric.cost.reportedTotal
         json(join(dir,"messages.json"),[...messages.values()]);json(join(dir,"sessions.json"),[...sessions.values()]);json(join(dir,"samples.json"),samples)
         const stateFiles=files(project),algStates:any[]=[]
@@ -241,14 +251,17 @@ export async function runBuildBenchmark(config:Config){
         const qualification=eligibility({artifactPassed,workflowComplete:!config.preflightOnly&&!stopReason,sourceIntegrity:computeAlgSourceIdentity(repo).digest===initialIdentity.digest,configIntegrity:snapshotGlobalOpenCodeConfig(globals,hmac).sha256===before&&sha(readFileSync(join(dir,"opencode.json")))===armConfigHash,cleanup:cleanup&&(!config.authFile||!existsSync(authCopy)),censusQuiescent:!config.preflightOnly&&finalCensusReceipt?.outcome==="quiescent",isolationQualified:false})
         const compaction=compactionInput?compactionReceipt(compactionInput):null
         const observedCompaction=compactionInput?compactionReceipt({...compactionInput,afterMessages:rootMessages()}):undefined
-        const retentionEvents=activeStart?hostRetentionEvents({taskId:`${pair.pairId}:${fixture.id}:${arm}`,sessions:[...sessions.values()],messages:[...messages.values()],startedAt:activeStart,endedAt:Date.now(),restarted,compactionReceipt:observedCompaction,censusComplete:false}):[]
+        const retentionEvents=activeStart?hostRetentionEvents({taskId:`${pair.pairId}:${fixture.id}:${arm}`,sessions:[...sessions.values()],messages:[...messages.values()],startedAt:activeStart,endedAt:Date.now(),restarted,compactionReceipt:observedCompaction,censusComplete:databaseCensus.qualified}):[]
         const retention=measureBuildBenchmarkRetention(retentionEvents,[])
         const result={pairId:pair.pairId,caseId:fixture.id,arm,status:config.preflightOnly?(stopReason?"preflight_failed":"preflight_passed"):(stopReason?"stopped":"completed"),stopReason,passed:artifactPassed,
+          scored_task_success:artifactPassed&&!config.preflightOnly&&!stopReason&&qualification.workflowEligible&&cleanup&&databaseCensus.qualified&&
+            computeAlgSourceIdentity(repo).digest===initialIdentity.digest&&snapshotGlobalOpenCodeConfig(globals,hmac).sha256===before&&sha(readFileSync(join(dir,"opencode.json")))===armConfigHash,
           independent_score:score,metrics:metric,wall_ms:activeStart?Date.now()-activeStart:null,total_with_startup_ms:Date.now()-start,phases,rootSession,
           recovery:{requested:!!compactionInput,recoveryRequired:!!fixture.followupPrompt,restarted,compactionRecovered:compactionIsQualified(compaction),compaction,phase1},retention:retention.tasks[0]??{status:"unavailable_preflight"},alg_states:algStates,budget_observed_overshoot:childBudgetOvershoot,
           retention_boundaries:retention.boundaryRetention,
           cleanup,metering_complete:null,observed_metering_stable:meteringComplete,final_census:finalCensusReceipt,
-          coverage:{historical_message_pagination:"unchecked",provider_usage:"session_reported_fields_only",quiescent_snapshot:finalCensusReceipt?.outcome==="quiescent"},eligibility:qualification,auth_copy_removed:!existsSync(authCopy),processes,source_unchanged:computeAlgSourceIdentity(repo).digest===initialIdentity.digest,arm_config_sha256:armConfigHash,
+          coverage:{historical_message_pagination:databaseCensus.qualified?"IDs_reconciled_with_stopped_host_database":"unqualified",provider_usage:"session_reported_fields_only",quiescent_snapshot:finalCensusReceipt?.outcome==="quiescent"},databaseCensus,
+          reported_component_overshoot:Math.max(0,metric.usage.totalReportedTokens-LIMITS.reportedComponents),eligibility:qualification,auth_copy_removed:!existsSync(authCopy),processes,source_unchanged:computeAlgSourceIdentity(repo).digest===initialIdentity.digest,arm_config_sha256:armConfigHash,
           final_files:stateFiles,usage_monitors:USAGE_MONITORS,measurement_limits:protocol.unmeasured}
         json(join(dir,"result.json"),result);updateResult(pair.pairId,arm,result);console.log(JSON.stringify({case:fixture.id,arm,status:result.status,passed:result.passed,wall_ms:result.wall_ms}));
       }

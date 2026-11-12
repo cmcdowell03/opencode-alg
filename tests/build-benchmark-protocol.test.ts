@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { SessionSummarizeResponses } from "@opencode-ai/sdk/client"
-import { compactionIsQualified, compactionReceipt, eligibility, finalCensus, issuePairs, scheduleIssuedPairs, summarizeIssuedArms } from "../scripts/build-benchmark-protocol.ts"
+import { benchmarkObservedStop, reconcileHostCensus, compactionIsQualified, compactionReceipt, eligibility, finalCensus, issuePairs, scheduleIssuedPairs, summarizeIssuedArms } from "../scripts/build-benchmark-protocol.ts"
 
 const followupHistory = (sessionID = "s1", userId = "followup-user", assistantId = "followup-assistant", parentID = userId) => [
   { info: { id: userId, sessionID, role: "user", time: { created: 1_800_000_000_300 } }, parts: [] },
@@ -8,6 +8,24 @@ const followupHistory = (sessionID = "s1", userId = "followup-user", assistantId
 ]
 
 describe("benchmark protocol integrity", () => {
+  test("observed cumulative limits stop at equality including maintenance and resumed-phase usage", () => {
+    const limits={assistantTurns:40,reportedComponents:200000}, base={now:100,deadline:1000,assistantTurns:39,reportedComponents:199999}
+    expect(benchmarkObservedStop(base,limits)).toBeNull()
+    expect(benchmarkObservedStop({...base,assistantTurns:40},limits)).toBe("assistant_turn_limit")
+    expect(benchmarkObservedStop({...base,reportedComponents:120000+10000+70000},limits)).toBe("reported_component_limit")
+    expect(benchmarkObservedStop({...base,now:1000},limits)).toBe("trial_deadline")
+    expect(benchmarkObservedStop({...base,reportedComponents:NaN},limits)).toBe("invalid_usage_observation")
+  })
+
+  test("database census requires exact session/message IDs, ownership, uniqueness and quiescence", () => {
+    const base={storedSessions:["s"],storedMessages:[{id:"m",session_id:"s"}],observedSessions:["s"],observedMessages:[{id:"m",session_id:"s"}],quiescent:true}
+    expect(reconcileHostCensus(base).qualified).toBe(true)
+    expect(reconcileHostCensus({...base,observedMessages:[]}).qualified).toBe(false)
+    expect(reconcileHostCensus({...base,quiescent:false}).qualified).toBe(false)
+    expect(reconcileHostCensus({...base,storedMessages:[...base.storedMessages,...base.storedMessages]}).qualified).toBe(false)
+    expect(reconcileHostCensus({...base,observedMessages:[{id:"m",session_id:"other"}]}).qualified).toBe(false)
+    expect(reconcileHostCensus({...base,storedSessions:[],observedSessions:[]}).qualified).toBe(false)
+  })
   test("issues matched default Build/ALG pairs and isolates targeted compatibility as opt-in", () => {
     const cases = [{ id: "a" }, { id: "b" }]
     expect(issuePairs(cases, "default")[0]!.arms.map(row => row.arm)).toEqual(["build", "alg_default"])
