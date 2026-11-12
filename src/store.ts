@@ -33,6 +33,7 @@ import { initNodeStates, validateGraph } from "./graph.ts"
 import {
   parsePersistedNodeAttempt,
   parsePersistedAttemptDetail,
+  parseCompactArchivedAttempt,
   PersistedFailureListSchema,
   parseRunState,
   parseRunStateForProjection,
@@ -75,6 +76,7 @@ import {
   nodeFailuresPath,
   projectRunState,
   rootAuthorizationCounts,
+  restoreArchivedAttemptEvidence,
   sha256Json,
 } from "./persistence.ts"
 import {
@@ -928,7 +930,8 @@ function readAttemptHistoryDocument(
   }
   const document = value as AttemptHistoryDocument
   const legacy = document.schema_version === 1 && document.kind === undefined && document.owner_session_id === undefined
-  const current = document.schema_version === 2 && document.kind === "attempt_history" &&
+  const compact = document.schema_version === 3
+  const current = (document.schema_version === 2 || compact) && document.kind === "attempt_history" &&
     document.owner_session_id === expectedOwnerSessionId
   const allowedKeys = legacy
     ? ["schema_version", "run_id", "node_id", "attempts"]
@@ -938,8 +941,16 @@ function readAttemptHistoryDocument(
     Object.keys(document).some((key) => !allowedKeys.includes(key))) {
     throw new StoreError(`attempt history identity mismatch: ${reference.artifact_path}`)
   }
-  const parsedAttempts = document.attempts.map((attempt, index) =>
-    parseAttemptBeforeHydration(state, nodeId, attempt, index + 1))
+  const parsedAttempts = document.attempts.map((attempt, index) => {
+    if (!compact) return parseAttemptBeforeHydration(state, nodeId, attempt, index + 1)
+    const context = persistedAttemptContext(state, nodeId, index + 1)
+    const row = parseCompactArchivedAttempt(attempt, context)
+    const detail = parsePersistedAttemptDetail(readAndVerifyReference(state, row.detail_ref!), context)
+    const restored = restoreArchivedAttemptEvidence(row, detail)
+    // Preserve the same metadata, diagnostics, output and commitment checks as v2.
+    hydrateAttemptData(state, nodeId, node.agent, restored, false)
+    return restored
+  })
   if (current) {
     for (const attempt of parsedAttempts) {
       if (attempt.output !== undefined || attempt.detail_ref === undefined ||

@@ -12,6 +12,7 @@ import type {
   StateProjectionMetadata,
 } from "./types.ts"
 import {
+  MAX_ATTEMPT_HISTORY_BYTES,
   MAX_INLINE_ATTEMPTS_PER_NODE,
   MAX_PROJECTED_ATTEMPT_FAILURES,
   MAX_PROJECTED_ERROR_BYTES,
@@ -25,13 +26,24 @@ import {
 import { safeDiagnosticText } from "./diagnostics.ts"
 
 export interface AttemptHistoryDocument {
-  schema_version: 1 | 2
+  schema_version: 1 | 2 | 3
   /** Present on newly published archives; schema-v1 archives remain loadable. */
   kind?: "attempt_history"
   owner_session_id?: string
   run_id: string
   node_id: string
   attempts: NodeAttempt[]
+}
+
+/** Version-3 archive rows retain exact detail refs instead of duplicating these payloads. */
+export const ARCHIVED_ATTEMPT_EVIDENCE_FIELDS = [
+  "execution_evidence", "gate_evidence", "preservation_evidence", "verification_basis",
+] as const satisfies readonly (keyof NodeAttempt)[]
+
+/** Call only after verifying and validating the referenced immutable detail. */
+export function restoreArchivedAttemptEvidence(compact: NodeAttempt, detail: NodeAttempt): NodeAttempt {
+  return { ...compact, ...Object.fromEntries(ARCHIVED_ATTEMPT_EVIDENCE_FIELDS
+    .filter(field => detail[field] !== undefined).map(field => [field, detail[field]])) }
 }
 
 export interface RootAuthorizationHistoryDocument {
@@ -335,6 +347,16 @@ export function projectRunState(run: RunState): ProjectedRunState {
         run_id: run.run_id,
         node_id: node.id,
         attempts: archived,
+      }
+      if (serializedBytes(document) > MAX_ATTEMPT_HISTORY_BYTES) {
+        // Keep normal archives readable by existing v2 readers. Only an archive
+        // that cannot fit uses v3; every omitted byte remains in its exact sidecar.
+        document.schema_version = 3
+        document.attempts = archived.map(attempt => {
+          const compact = { ...attempt }
+          for (const field of ARCHIVED_ATTEMPT_EVIDENCE_FIELDS) delete compact[field]
+          return compact
+        })
       }
       histories.set(node.id, document)
       attemptHistoryRef = historyReference(run, node.id, document)

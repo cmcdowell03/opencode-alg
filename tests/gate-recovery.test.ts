@@ -6,12 +6,12 @@ import { createRun, loadRun, persistRun } from "../src/store.ts"
 import type { ExecutionEvidence } from "../src/execution-evidence.ts"
 import { executeContext, tempProject, removeProject } from "./helpers.ts"
 
-function fixture(project: string, preservePaths?: string[]) {
+function fixture(project: string, preservePaths?: string[], maxAttempts = 3) {
   writeFileSync(join(project, "work.txt"), "verified candidate")
   return createRun({ goal: "keep verified work", criteria: ["test passes"],
     projectDirectory: project, ownerSessionId: "session-owner", graph: {
-      name: "setup-recovery", max_global_attempts: 5, max_concurrency: 1, nodes: [
-        { id: "work", agent: "implementer", depends_on: [], shell_gate: { cmd: "test-fixture" }, loop: { gate: "all", max_attempts: 3 },
+      name: "setup-recovery", max_global_attempts: maxAttempts + 2, max_concurrency: 1, nodes: [
+        { id: "work", agent: "implementer", depends_on: [], shell_gate: { cmd: "test-fixture" }, loop: { gate: "all", max_attempts: maxAttempts },
           ...(preservePaths ? { inputs: { preserve_paths: JSON.stringify(preservePaths) } } : {}) },
         { id: "check", agent: "checker", depends_on: ["work"], inputs: { claimed: "work" }, loop: { gate: "schema", max_attempts: 2 } },
       ],
@@ -89,10 +89,10 @@ describe("gate setup recovery", () => {
     } finally { removeProject(project) }
   }, 120_000)
 
-  test("repeated setup failures retain the original native receipt for the fresh checker", async () => {
+  test.each([3, 6])("repeated setup failures retain the original native receipt for the fresh checker at attempt %i", async successAttempt => {
     const project = tempProject()
     try {
-      const run = fixture(project)
+      const run = fixture(project, undefined, successAttempt)
       const nativeReceipt: ExecutionEvidence = {
         version: 1, run_id: run.run_id, node_id: "work", attempt: 1, child_session_id: "child",
         retrieval_status: "available", omitted_commands: 0, window_may_be_incomplete: false,
@@ -111,7 +111,7 @@ describe("gate setup recovery", () => {
           checkerPrompt = opts.userPrompt
           return result
         },
-        shellRunner: async () => ++gates < 3
+        shellRunner: async () => ++gates < successAttempt
           ? { cwd: project, ok: false, exit_code: 125, stdout_tail: "", stderr_tail: "setup", setup_failed: true }
           : { cwd: project, ok: true, exit_code: 0, stdout_tail: "GATE_RECOVERED", stderr_tail: "" },
       }
@@ -122,16 +122,26 @@ describe("gate setup recovery", () => {
       expect(second.nodes.work!.attempts[1]).toMatchObject({ shell_setup_failed: true, reused_output_from: 1 })
       expect(modelRoles).toEqual(["implementer"])
 
+      for (let attempt = 3; attempt < successAttempt; attempt++) {
+        const resumed = prepareRunForResume(loadRun(project, run.run_id)!)
+        await executeRun(resumed, { ...options, operation: "resume" })
+        expect(resumed.status).toBe("blocked")
+        expect(modelRoles).toEqual(["implementer"])
+      }
       const third = prepareRunForResume(loadRun(project, run.run_id)!)
+      if (successAttempt > 5) {
+        expect(third.nodes.work!.attempt_history_ref?.attempt_count).toBe(1)
+        expect(third.nodes.work!.attempts.some(attempt => attempt.attempt === 1)).toBe(false)
+      }
       await executeRun(third, { ...options, operation: "resume" })
       expect(third.status).toBe("done")
       expect(modelRoles).toEqual(["implementer", "checker"])
-      expect(gates).toBe(3)
+      expect(gates).toBe(successAttempt)
       const durable = loadRun(project, run.run_id)!
-      expect(durable.global_attempts).toBe(4)
-      expect(durable.nodes.work!.attempts[2]!.reused_output_from).toBe(1)
-      expect(durable.nodes.work!.attempts[2]!.session_id).toBeUndefined()
-      expect(durable.nodes.work!.attempts[2]!.execution_evidence).toEqual(nativeReceipt)
+      expect(durable.global_attempts).toBe(successAttempt + 1)
+      expect(durable.nodes.work!.attempts.at(-1)!.reused_output_from).toBe(1)
+      expect(durable.nodes.work!.attempts.at(-1)!.session_id).toBeUndefined()
+      expect(durable.nodes.work!.attempts.at(-1)!.execution_evidence).toEqual(nativeReceipt)
       expect(checkerPrompt).toContain("ORIGINAL_NATIVE_VERIFICATION")
       expect(checkerPrompt).toContain("host_execution_work")
       expect(checkerPrompt).toContain("GATE_RECOVERED")

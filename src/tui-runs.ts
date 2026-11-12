@@ -18,6 +18,7 @@ import {
   canonicalJson,
   failureListCommitment,
   isFullShaImmutableReference,
+  restoreArchivedAttemptEvidence,
   sha256Json,
 } from "./persistence.ts"
 import {
@@ -25,6 +26,7 @@ import {
   parseCanonicalAgentOutput,
   parseGraph,
   parsePersistedAttemptDetail,
+  parseCompactArchivedAttempt,
   parsePersistedNodeAttempt,
   parseRunState,
   PersistedFailureListSchema,
@@ -78,6 +80,7 @@ interface TuiAttempt {
   persisted_attempt?: unknown
   authoritative_projection?: true
   legacy_reference_integrity?: true
+  compact_archive?: true
 }
 
 interface TuiNode {
@@ -715,11 +718,12 @@ function parseArchivedAttemptForNode(
   node: TuiNode,
   expected: number,
   allowLegacyFixedNestedReferences: boolean,
+  compact = false,
 ): TuiAttempt {
   const label = `${run.run_id}/${node.id}/${expected}`
   let parsed
   try {
-    parsed = parsePersistedNodeAttempt(value, attemptValidationContext(run, node, expected))
+    parsed = (compact ? parseCompactArchivedAttempt : parsePersistedNodeAttempt)(value, attemptValidationContext(run, node, expected))
   } catch (error) {
     throw new Error(`Archived attempt ${label} violates the authoritative attempt schema: ${formatSdkError(error)}`)
   }
@@ -755,6 +759,7 @@ function parseArchivedAttemptForNode(
     ...session,
     persisted_attempt: parsed,
     authoritative_projection: true,
+    ...(compact ? { compact_archive: true as const } : {}),
     ...(outputKind?.legacy_fixed_path || detailKind?.legacy_fixed_path
       ? { legacy_reference_integrity: true as const }
       : {}),
@@ -812,7 +817,8 @@ async function readArchivedAttempts(api: TuiPluginApi, run: TuiRun, node: TuiNod
   const keys = isRecord(value) ? Object.keys(value) : []
   const legacyV1 = legacy && isRecord(value) && value.schema_version === 1 &&
     keys.length === 4 && keys.every((key) => ["schema_version", "run_id", "node_id", "attempts"].includes(key))
-  const currentV2 = isRecord(value) && value.schema_version === 2 && value.kind === "attempt_history" &&
+  const compact = isRecord(value) && value.schema_version === 3
+  const currentV2 = isRecord(value) && (value.schema_version === 2 || compact) && value.kind === "attempt_history" &&
     value.owner_session_id === run.owner_session_id && keys.length === 6 &&
     keys.every((key) => [
       "schema_version", "kind", "owner_session_id", "run_id", "node_id", "attempts",
@@ -823,7 +829,7 @@ async function readArchivedAttempts(api: TuiPluginApi, run: TuiRun, node: TuiNod
     throw new Error(`Archived attempts for ${run.run_id}/${node.id} have an owner/run/node/kind/schema mismatch`)
   }
   const attempts = value.attempts.map((attempt, index) =>
-    parseArchivedAttemptForNode(attempt, run, node, index + 1, legacyV1))
+    parseArchivedAttemptForNode(attempt, run, node, index + 1, legacyV1, compact))
   const sessions = attempts.filter((attempt) => attempt.session_id !== undefined).length
   const rawAttempts = value.attempts as Array<Record<string, unknown>>
   const outputCount = rawAttempts.filter((attempt) => attempt.output_ref !== undefined).length
@@ -892,7 +898,7 @@ function attemptValidationContext(run: TuiRun, node: TuiNode, attempt: number) {
 function parseAttemptForNavigation(run: TuiRun, node: TuiNode, attempt: TuiAttempt): NodeAttempt {
   const raw = attempt.persisted_attempt
   try {
-    return parsePersistedNodeAttempt(raw, attemptValidationContext(run, node, attempt.attempt))
+    return (attempt.compact_archive ? parseCompactArchivedAttempt : parsePersistedNodeAttempt)(raw, attemptValidationContext(run, node, attempt.attempt))
   } catch (error) {
     throw new Error(
       `Attempt ${run.run_id}/${node.id}/${attempt.attempt} violates the authoritative attempt schema: ${formatSdkError(error)}`,
@@ -1020,6 +1026,12 @@ async function readValidatedAttemptOutput(
 }
 
 const ATTEMPT_DETAIL_IDENTITY_FIELDS = [
+  "execution_evidence",
+  "gate_evidence",
+  "preservation_evidence",
+  "shell_setup_failed",
+  "gate_recovery",
+  "reused_output_from",
   "attempt",
   "status",
   "session_id",
@@ -1041,6 +1053,7 @@ async function readValidatedAttemptDetail(
   reference: RunDataReference,
   cache: OutputValidationCache,
   allowLegacyFixed: boolean,
+  compact = false,
 ): Promise<NodeAttempt> {
   const validated = await readValidatedNestedReference(
     api,
@@ -1064,6 +1077,7 @@ async function readValidatedAttemptDetail(
       `Attempt detail ${run.run_id}/${node.id}/${projected.attempt} violates the strict authoritative schema: ${formatSdkError(error)}`,
     )
   }
+  if (compact) projected = restoreArchivedAttemptEvidence(projected, detail)
   for (const key of ATTEMPT_DETAIL_IDENTITY_FIELDS) {
     if (!isDeepStrictEqual(projected[key], detail[key])) {
       throw new Error(`Attempt detail ${String(key)} identity mismatch: ${reference.artifact_path}`)
@@ -1138,6 +1152,7 @@ function navigateValidatedAttempt(
             projected.detail_ref,
             cache,
             allowLegacyFixed,
+            attempt.compact_archive,
           )
         : projected
       const output = projected.output_ref
@@ -1158,7 +1173,7 @@ function navigateValidatedAttempt(
       }
       try {
         parsePersistedNodeAttempt(
-          { ...projected, output },
+          { ...(attempt.compact_archive ? complete : projected), output },
           attemptValidationContext(run, node, attempt.attempt),
         )
       } catch (error) {

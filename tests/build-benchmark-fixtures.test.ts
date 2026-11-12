@@ -38,13 +38,15 @@ function renderWaferCount(count) { return "Distinct wafers inspected: " + count;
 module.exports = { renderWaferCount };
 `
 
-const stagedPreparation = `# Preparation
-Reporting date: 2025-04-01 UTC.
-Sources: SYS-APR-01 in data/system-export.json (primary export) and MR-APR-01 in data/manual-review.json (supplemental review).
-Plan: apply the UTC date window, count distinct wafer IDs, deduplicate repeated system events, and calculate defects / distinct wafers. Planned report fields: numerator, denominator, rate, window, sources, conflicts, limitations.
-Conflict: W13 is non-defect in the primary export and flagged in manual review. Preserve the system result and report the disagreement as unresolved.
-STOP before producing report.json; compact and restart before phase two.
-`
+const preparationSections = {
+  date: "Reporting date: 2025-04-01 UTC.",
+  sources: "Sources: SYS-APR-01 in data/system-export.json (primary export) and MR-APR-01 in data/manual-review.json (supplemental review).",
+  calculation: "Plan: apply the UTC date window, count distinct wafer IDs, deduplicate repeated system events, and calculate defects / distinct wafers.",
+  fields: "Planned report fields: numerator, denominator, rate, window, sources, conflicts, limitations.",
+  conflict: "Conflict: W13 is non-defect in the primary export and flagged in manual review. Preserve the system result and report the disagreement as unresolved.",
+  stop: "STOP before producing report.json; compact and restart before phase two.",
+}
+const stagedPreparation = "# Preparation\n\n" + Object.values(preparationSections).join("\n\n") + "\n"
 const knownGoodReport = {
   numerator: 1,
   denominator: 4,
@@ -82,12 +84,109 @@ describe("Build end-to-end benchmark fixtures and scorer", () => {
       expect(original.metrics.heldOutTestLocation).toBe("outside-project-temporary-directory")
       expect(original.checks.some(check => check.id === "distinct-ids-and-offset-window" && !check.passed)).toBe(true)
       expect(original.checks.some(check => check.id === "protected:data/inspection-records.json" && check.passed)).toBe(true)
+      expect(original.metrics.changedSourceFiles).toEqual([])
 
       await writeFile(join(project, "src/wafer-count.cjs"), knownGoodCountApi)
       await writeFile(join(project, "src/wafer-view.cjs"), knownGoodView)
       const repaired = await scoreBenchmarkCase("wafer-count-commonjs", project)
       expect(repaired.passed).toBe(true)
       expect(repaired.checks.every(check => check.passed)).toBe(true)
+      expect(repaired.metrics.changedSourceFiles).toEqual(["src/wafer-count.cjs", "src/wafer-view.cjs"])
+    } finally { await cleanup(project) }
+  })
+
+  test.each(["src/helper.cjs", "src/helper", "helper.js", "lib/nested/helper.ts"])("rejects a third source edit at %s even when every behavioral check passes", async extraPath => {
+    const project = await projectFromFixture(0)
+    try {
+      await writeFile(join(project, "src/wafer-count.cjs"), knownGoodCountApi)
+      await writeFile(join(project, "src/wafer-view.cjs"), knownGoodView)
+      await mkdir(join(project, extraPath, ".."), { recursive: true })
+      await writeFile(join(project, extraPath), "// Additional implementation file.\n")
+      const result = await scoreBenchmarkCase("wafer-count-commonjs", project)
+      expect(result.passed).toBe(false)
+      expect(result.checks.filter(check => !check.passed).map(check => check.id)).toEqual(["source-file-edit-limit"])
+      expect(result.metrics.changedSourceFiles).toEqual([extraPath, "src/wafer-count.cjs", "src/wafer-view.cjs"].sort())
+    } finally { await cleanup(project) }
+  })
+
+  test("counts final source changes independently of tests, notes and runtime bookkeeping", async () => {
+    const project = await projectFromFixture(0)
+    try {
+      await writeFile(join(project, "src/wafer-count.cjs"), knownGoodCountApi)
+      await writeFile(join(project, "src/wafer-view.cjs"), knownGoodView)
+      await writeFile(join(project, "README.md"), "Repair notes.\n")
+      await writeFile(join(project, "test/additional.test.cjs"), "// Additional test.\n")
+      await mkdir(join(project, ".opencode/runs/fixture/artifacts"), { recursive: true })
+      await writeFile(join(project, ".opencode/runs/fixture/artifacts/example.js"), "// Recorded example, not project implementation.\n")
+      const result = await scoreBenchmarkCase("wafer-count-commonjs", project)
+      expect(result.passed).toBe(true)
+      expect(result.metrics.changedSourceFiles).toHaveLength(2)
+    } finally { await cleanup(project) }
+  })
+
+  test.each([
+    ["empty", ""],
+    ["whitespace", " \r\n\t"],
+    ["old keyword-only", "2025-04-01 SYS-APR-01 MR-APR-01 data/system-export.json data/manual-review.json STOP"],
+  ])("rejects %s preparation even with an otherwise correct report", async (_name, prep) => {
+    const project = await projectFromFixture(1)
+    try {
+      await writeFile(join(project, "preparation.md"), prep!)
+      await writeFile(join(project, "report.json"), JSON.stringify(knownGoodReport))
+      const result = await scoreBenchmarkCase("wafer-report-staged", project)
+      expect(result.passed).toBe(false)
+      expect(result.checks.filter(check => !check.passed).map(check => check.id)).toEqual(["preparation-artifact"])
+    } finally { await cleanup(project) }
+  })
+
+  const omittedPreparation = [
+    ["reporting date", preparationSections.date, ""],
+    ["system source ID", "SYS-APR-01", ""],
+    ["manual source ID", "MR-APR-01", ""],
+    ["system source path", "data/system-export.json", ""],
+    ["manual source path", "data/manual-review.json", ""],
+    ["calculation plan", preparationSections.calculation, ""],
+    ["distinct-wafer calculation", preparationSections.calculation, "Plan: UTC defects / inspection events."],
+    ["rate calculation", preparationSections.calculation, "Plan: count distinct wafer IDs in the UTC window."],
+    ["conflict", preparationSections.conflict, ""],
+    ["conflicting wafer", "W13", ""],
+    ["system observation", "non-defect in the primary export and ", ""],
+    ["manual observation", " and flagged in manual review", ""],
+    ["planned fields", preparationSections.fields, ""],
+    ["explicit STOP", preparationSections.stop, ""],
+    ...["numerator", "denominator", "rate", "window", "sources", "conflicts", "limitations"].map(field =>
+      [`planned field ${field}`, preparationSections.fields, preparationSections.fields.replace(new RegExp(`\\b${field}\\b`), "")]),
+  ]
+  test.each(omittedPreparation)("rejects preparation omitting %s", async (_name, before, after) => {
+    const project = await projectFromFixture(1)
+    try {
+      await writeFile(join(project, "preparation.md"), stagedPreparation.replace(before!, after!))
+      const result = await scoreBenchmarkPreparation(project)
+      expect(result.passed).toBe(false)
+      expect(result.checks.filter(check => !check.passed).map(check => check.id)).toEqual(["preparation-artifact"])
+    } finally { await cleanup(project) }
+  })
+
+  test.each([
+    ["unlabelled field list", stagedPreparation.replace("Planned report fields: ", "")],
+    ["prose", `For 2025-04-01 UTC, use SYS-APR-01 (data/system-export.json) and MR-APR-01 (data/manual-review.json).
+Deduplicate unique wafer IDs. Divide defective wafer count by unique wafer count for the UTC day.
+W13: system=false; manual=true. The disagreement remains unresolved; retain the primary result.
+The report will include numerator, denominator, rate, window, sources, conflicts and limitations.
+STOP until continuation; report.json must wait.`],
+    ["table", stagedPreparation.replace(preparationSections.fields, "Output schema:\n| Field | Type |\n| --- | --- |\n" +
+      Object.entries(knownGoodReport).map(([field, value]) => `| ${field} | ${typeof value} |`).join("\n"))],
+    ["JSON field plan", stagedPreparation.replace(preparationSections.fields, JSON.stringify({
+      numerator: "number", denominator: "number", rate: "number", window: "UTC range", sources: "array", conflicts: "array", limitations: "array",
+    }, null, 2))],
+  ])("accepts equivalent %s preparation and UTC instant representations", async (_name, prep) => {
+    const project = await projectFromFixture(1)
+    try {
+      await writeFile(join(project, "preparation.md"), prep!)
+      await writeFile(join(project, "report.json"), JSON.stringify({ ...knownGoodReport,
+        window: { start: "2025-03-31T19:00:00-05:00", endExclusive: "2025-04-01T19:00:00-05:00", timezone: "UTC" },
+      }))
+      expect((await scoreBenchmarkCase("wafer-report-staged", project)).passed).toBe(true)
     } finally { await cleanup(project) }
   })
 

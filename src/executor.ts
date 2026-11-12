@@ -20,7 +20,9 @@ import {
   assertProjectFilePathContained,
   assertRunArtifactPathContained,
   hydrateRunForExecution,
+  hydrateRunFully,
   linkSession,
+  loadRun,
   persistRunFenced,
   type RunLock,
 } from "./store.ts"
@@ -186,8 +188,19 @@ function gateRecoverySource(run: RunState, definition: NodeDef): NodeAttempt | u
     (last.outcome === undefined || last.outcome === "sdk_error")
   if (!last.shell_setup_failed && !interrupted) return undefined
   let source = last
+  let archivedAttempts: NodeAttempt[] | undefined
   while (source.reused_output_from !== undefined) {
-    const prior = attempts.find(attempt => attempt.attempt === source.reused_output_from)
+    let prior = attempts.find(attempt => attempt.attempt === source.reused_output_from)
+    if (!prior && source.reused_output_from <= (run.nodes[definition.id]!.attempt_history_ref?.attempt_count ?? 0)) {
+      // Durable saves normalize the live array to its visible tail. Read the
+      // verified committed archive without replacing active sibling/attempt objects.
+      if (!archivedAttempts) {
+        const committed = loadRun(run.project_directory, run.run_id)
+        if (!committed || committed.revision !== run.revision) throw new Error("Gate recovery history changed")
+        archivedAttempts = hydrateRunFully(committed).nodes[definition.id]!.attempts
+      }
+      prior = archivedAttempts.find(attempt => attempt.attempt === source.reused_output_from)
+    }
     if (!prior || prior.attempt >= source.attempt) throw new Error("Invalid gate recovery lineage")
     source = prior
   }

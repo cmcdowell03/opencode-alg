@@ -61,6 +61,31 @@ describe("host-origin child execution evidence", () => {
     expect(Buffer.byteLength(command.output ?? "")).toBeLessThanOrEqual(1_500)
   })
 
+  test.each(["timeout", "aborted"] as const)("retains %s when the SDK rejects immediately on abort", async reason => {
+    const controller = new AbortController()
+    let requests = 0
+    const client = { session: { messages: ({ signal }: { signal: AbortSignal }) => {
+      requests++
+      return new Promise((_resolve, reject) => {
+        signal.addEventListener("abort", () => reject(new Error("request aborted")), { once: true })
+      })
+    } } } as any
+    const pending = captureChildExecutionEvidence(client, {
+      run_id: "r", node_id: "n", attempt: 1, child_session_id: "child",
+      signal: controller.signal, timeout_ms: reason === "timeout" ? 5 : 1000,
+    })
+    if (reason === "aborted") controller.abort()
+    expect(await pending).toMatchObject({ retrieval_status: "unavailable", unavailable_reason: reason, commands: [] })
+    expect(requests).toBe(1)
+  })
+
+  test("keeps ordinary SDK rejection distinct from cancellation", async () => {
+    const client = { session: { messages: async () => { throw new Error("transport failed") } } } as any
+    expect(await captureChildExecutionEvidence(client, {
+      run_id: "r", node_id: "n", attempt: 1, child_session_id: "child",
+    })).toMatchObject({ retrieval_status: "unavailable", unavailable_reason: "sdk_error", commands: [] })
+  })
+
   test("checker evidence attaches only receipts from claimed or selected evidence inputs", () => {
       const graph: GraphDef = { name: "host-receipts", max_global_attempts: 3, max_concurrency: 1, nodes: [
         { id: "work", agent: "implementer", depends_on: [] },

@@ -1326,6 +1326,19 @@ export function parsePersistedAttemptDetail(raw: unknown, context: PersistedAtte
   return parsePersistedNodeAttempt(detail, context)
 }
 
+/** V3 alone declares evidence externalized; full detail must validate before use/navigation. */
+export function parseCompactArchivedAttempt(raw: unknown, context: PersistedAttemptContext): NodeAttempt {
+  const attempt = parsePersistedNodeAttempt(raw, { ...context, verification_required: false })
+  if (!attempt.detail_ref || !attempt.detail_ref.artifact_path.endsWith(`-${attempt.detail_ref.sha256}.json`)) {
+    throw new Error("compact archive requires an immutable attempt detail reference")
+  }
+  if (attempt.execution_evidence !== undefined || attempt.gate_evidence !== undefined ||
+    attempt.preservation_evidence !== undefined || attempt.verification_basis !== undefined) {
+    throw new Error("compact archive cannot contain inline evidence or verification basis")
+  }
+  return attempt
+}
+
 /** Models copy the JSON Schema `$schema` marker into their answers; it is metadata, never output content. */
 function withoutSchemaMarker(value: unknown): unknown {
   if (!value || typeof value !== "object" || Array.isArray(value) || !Object.hasOwn(value, "$schema")) return value

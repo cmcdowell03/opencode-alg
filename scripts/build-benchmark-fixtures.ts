@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto"
 import { execFileSync } from "node:child_process"
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 
@@ -235,8 +235,42 @@ async function protectedFileChecks(benchmark: BenchmarkCase, projectDir: string)
   return checks
 }
 
+// Prospective oracle correction: score the original two-source-file limit against
+// the frozen fixture, not mutable Git state. Historical cohort scores stay frozen.
+async function changedSourceFiles(benchmark: BenchmarkCase, projectDir: string): Promise<string[]> {
+  const sources = new Map<string, Buffer>()
+  const isSource = (path: string) => (path.startsWith("src/") || /\.(?:[cm]?[jt]sx?|css|html)$/i.test(path)) &&
+    !/(?:^|\/)(?:tests?|__tests__)(?:\/|$)|\.(?:test|spec)\.[^/]+$/i.test(path)
+  const walk = async (directory: string, prefix = ""): Promise<void> => {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      // Runtime receipts, repository metadata and installed dependencies are not
+      // implementation edits. Apply the same exclusions to either benchmark arm.
+      if ([".git", ".opencode", "node_modules"].includes(entry.name)) continue
+      const relative = prefix + entry.name
+      if (entry.isSymbolicLink()) throw new Error(`Cannot establish source-edit count through symlink: ${relative}`)
+      if (entry.isDirectory()) await walk(join(directory, entry.name), relative + "/")
+      else if (entry.isFile() && isSource(relative)) sources.set(relative, await readFile(join(directory, entry.name)))
+    }
+  }
+  await walk(projectDir)
+  const paths = new Set([...Object.keys(benchmark.files).filter(isSource), ...sources.keys()])
+  return [...paths].filter(path => {
+    const before = benchmark.files[path]
+    const after = sources.get(path)
+    return before === undefined || after === undefined || !after.equals(Buffer.from(before))
+  }).sort()
+}
+
 async function scoreWaferCount(projectDir: string): Promise<BenchmarkScore> {
   const checks = await protectedFileChecks(BENCHMARK_CASES[0]!, projectDir)
+  let sourceEdits: string[] | undefined
+  try {
+    sourceEdits = await changedSourceFiles(BENCHMARK_CASES[0]!, projectDir)
+    checks.push({ id: "source-file-edit-limit", passed: sourceEdits.length <= 2,
+      ...(sourceEdits.length > 2 ? { detail: `Expected at most two changed source files; found ${sourceEdits.length}` } : {}) })
+  } catch (error) {
+    checks.push({ id: "source-file-edit-limit", passed: false, detail: error instanceof Error ? error.message : String(error) })
+  }
   try {
     execFileSync(nodeExecutable(), ["--test", "test/wafer-count.test.cjs"], {
       cwd: projectDir, encoding: "utf8", timeout: 10_000, windowsHide: true, maxBuffer: 64 * 1024,
@@ -272,22 +306,55 @@ async function scoreWaferCount(projectDir: string): Promise<BenchmarkScore> {
       visibleTestCount: 2,
       protectedFiles: BENCHMARK_CASES[0]!.protectedPaths.length,
       userVisibleChecks: countChecks.filter(check => check.id === "user-visible-count").length,
+      changedSourceFiles: sourceEdits ?? null,
+      sourceFileEditLimit: 2,
     },
   }
+}
+
+function missingPreparationContent(prep: string): string[] {
+  const text = prep.toLowerCase()
+  // Accept prose, lists, Markdown tables and inline code. These are bounded
+  // content checks, not a semantic verifier or a requirement for final numbers.
+  const prose = text.replace(/[_`*#]/g, " ").replace(/\s+/g, " ")
+  const near = (left: string, right: string) => new RegExp(`(?:${left}).{0,160}(?:${right})|(?:${right}).{0,160}(?:${left})`).test(prose)
+  const fields = ["numerator", "denominator", "rate", "window", "sources", "conflicts", "limitations"]
+  const reportFields = text.replace(/[`*#]/g, "").match(
+    /(?:\b(?:report(?:\.json)?|output)\s+(?:fields|schema|structure|keys)\b|\b(?:planned\s+)?fields\s*:|\breport(?:\.json)?\s+(?:(?:will|must|should)\s+)?(?:contain\w*|include\w*|with|as)\b)([\s\S]*?)(?:\n\s*\n|$)/,
+  )?.[1] ?? text.split(/\n\s*\n/).find(paragraph => fields.every(field => new RegExp(`\\b${field}\\b`).test(paragraph))) ?? ""
+  const fraction = /\b(?:defects?|defective|numerator)\b[^.!?;]{0,80}(?:\/|\bdivid\w*\b|\bover\b)[^.!?;]{0,80}\b(?:distinct|unique|wafers?|denominator)\b/.test(prose) ||
+    /\bdivide\b[^.!?;]{0,60}\b(?:defect\w*|numerator)\b[^.!?;]{0,60}\bby\b[^.!?;]{0,60}\b(?:distinct|unique|wafers?|denominator)\b/.test(prose)
+  const required: Array<[string, boolean]> = [
+    ["nonempty preparation", prep.trim().length > 0],
+    ["reporting date", /\b2025-04-01\b/.test(text)],
+    ["system source ID", /\bsys-apr-01\b/.test(text)],
+    ["manual source ID", /\bmr-apr-01\b/.test(text)],
+    ["system source path", text.includes("data/system-export.json")],
+    ["manual source path", text.includes("data/manual-review.json")],
+    ["calculation plan", /\butc\b/.test(prose) &&
+      near("\\b(?:distinct|unique|deduplicat\\w*)\\b", "\\bwafer\\w*\\b") &&
+      fraction],
+    ["conflicting wafer", /\bw13\b/.test(prose)],
+    ["system conflict observation", near("\\b(?:system|primary)\\b", "\\b(?:false|non[- ]?defect\\w*|not defective|no defect\\w*|clean)\\b")],
+    ["manual conflict observation", near("\\b(?:manual|review)\\b", "\\b(?:true|flagged|defective|positive)\\b")],
+    ...fields.map(field =>
+      [`planned field ${field}`, new RegExp(`\\b${field}\\b`).test(reportFields) ||
+        new RegExp(`"${field}"\\s*:`).test(text)] as [string, boolean]),
+    ["explicit STOP", /\bstop\b/.test(text)],
+  ]
+  return required.filter(([, present]) => !present).map(([name]) => name)
 }
 
 export async function scoreBenchmarkPreparation(projectDir: string): Promise<BenchmarkScore> {
   const benchmark = BENCHMARK_CASES[1]!
   const checks = await protectedFileChecks(benchmark, resolve(projectDir))
   let prep = ""
+  let readError: string | undefined
   try { prep = await readFile(resolve(projectDir, "preparation.md"), "utf8") }
-  catch (error) { checks.push({ id: "preparation-artifact", passed: false, detail: error instanceof Error ? error.message : String(error) }) }
-  if (prep) {
-    const normalized = prep.toLowerCase()
-    const required = ["2025-04-01", "sys-apr-01", "mr-apr-01", "data/system-export.json", "data/manual-review.json", "stop"]
-    const hasPreparation = required.every(part => normalized.includes(part))
-    checks.push({ id: "preparation-artifact", passed: hasPreparation, ...(!hasPreparation ? { detail: "preparation must preserve the reporting date, source IDs/paths, calculation plan, conflict, planned fields, and explicit stop" } : {}) })
-  }
+  catch (error) { readError = error instanceof Error ? error.message : String(error) }
+  const missing = missingPreparationContent(prep)
+  checks.push({ id: "preparation-artifact", passed: readError === undefined && missing.length === 0,
+    ...(readError !== undefined || missing.length ? { detail: readError ?? `Missing preparation content: ${missing.join(", ")}` } : {}) })
   return { passed: checks.every(check => check.passed), checks, metrics: { protectedFiles: benchmark.protectedPaths.length, preparationBytes: Buffer.byteLength(prep) } }
 }
 

@@ -198,7 +198,9 @@ export async function captureChildExecutionEvidence(
     }
     return ExecutionEvidenceSchema.parse(makeReceipt())
   } catch {
-    return unavailable(identity, "sdk_error")
+    // Aborting the request may reject its promise before the race's explicit
+    // stop result settles. Preserve that cause instead of reporting an SDK fault.
+    return unavailable(identity, identity.signal?.aborted ? "aborted" : controller.signal.aborted ? "timeout" : "sdk_error")
   } finally {
     if (timer) clearTimeout(timer)
     identity.signal?.removeEventListener("abort", propagateAbort)

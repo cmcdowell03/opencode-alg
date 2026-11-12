@@ -5,7 +5,7 @@ import { canonicalJson, sha256Json } from "../src/persistence.ts"
 import { serializedBytes } from "../src/limits.ts"
 import { ownerIndexRelativePath } from "../src/owner-index.ts"
 
-function archivedVerifiedAttempt(missingBasis: boolean) {
+function archivedVerifiedAttempt(missingBasis: boolean, compact?: "valid" | "session_mismatch" | "missing_basis") {
   const runId = "verified-archive"
   const criteria = ["required"]
   const basis = buildVerificationBasis(criteria)
@@ -16,11 +16,13 @@ function archivedVerifiedAttempt(missingBasis: boolean) {
     failures: ["malformed checker output"], schema_ok: false, outcome: "schema_invalid",
     verification_basis: differentBasis,
   }
+  if (compact === "missing_basis") delete (detail as { verification_basis?: unknown }).verification_basis
   const detailRef = { artifact_path: `.opencode/runs/${runId}/history/check-attempt-1-detail-${sha256Json(detail)}.json`,
     sha256: sha256Json(detail), byte_size: serializedBytes(detail) }
   const attempt = { ...detail, ...(!missingBasis ? { verification_basis: basis } : {}), detail_ref: detailRef }
-  if (missingBasis) delete (attempt as { verification_basis?: unknown }).verification_basis
-  const archive = { schema_version: 2, kind: "attempt_history", owner_session_id: "parent",
+  if (missingBasis || compact) delete (attempt as { verification_basis?: unknown }).verification_basis
+  if (compact === "session_mismatch") attempt.session_id = "forged-child"
+  const archive = { schema_version: compact ? 3 : 2, kind: "attempt_history", owner_session_id: "parent",
     run_id: runId, node_id: "check", attempts: [attempt] }
   const archiveRef = { artifact_path: `.opencode/runs/${runId}/history/check-attempts-${sha256Json(archive)}.json`,
     sha256: sha256Json(archive), byte_size: serializedBytes(archive), attempt_count: 1,
@@ -60,6 +62,27 @@ function tuiApi(files: Map<string, string>) {
 }
 
 describe("verified TUI archives", () => {
+  test.each(["valid", "session_mismatch", "missing_basis"] as const)("compact v3 archive validates its exact detail before navigation: %s", async kind => {
+    const fixture = archivedVerifiedAttempt(false, kind)
+    const view = tuiApi(fixture.files)
+    await openAlgRuns(view.api)
+    view.dialogs.at(-1).onSelect(view.dialogs.at(-1).options[0])
+    view.dialogs.at(-1).onSelect(view.dialogs.at(-1).options[0])
+    await Bun.sleep(5)
+    const attempts = view.dialogs.at(-1)
+    const child = attempts.options.find((option: any) => option.value?.kind === "session")
+    expect(child).toBeDefined()
+    attempts.onSelect(child)
+    await Bun.sleep(5)
+    if (kind === "valid") {
+      expect(view.navigations).toEqual([["session", { sessionID: "checker-child" }]])
+    } else {
+      expect(view.toasts.at(-1)).toMatchObject({ variant: "error", title: "ALG attempt unavailable",
+        message: expect.stringContaining(kind === "session_mismatch" ? "session_id" : "basis") })
+      expect(view.navigations).toEqual([])
+    }
+  })
+
   test("rejects an archived failed call whose pre-call basis is missing", async () => {
     const fixture = archivedVerifiedAttempt(true)
     const view = tuiApi(fixture.files)

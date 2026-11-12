@@ -5,6 +5,7 @@ import { parseInputExpression } from "./schemas.ts"
 import { serializedBytes } from "./limits.ts"
 import { appendHostExecutionEvidence, ExecutionEvidenceSchema } from "./execution-evidence.ts"
 import { PreservationEvidenceSchema, type PreservationEvidence } from "./preservation-evidence.ts"
+import { hydrateRunFully, loadRun } from "./store.ts"
 import type { NodeDef, RunState } from "./types.ts"
 
 export const MAX_CHECKER_EVIDENCE_BYTES = 16 * 1024
@@ -38,6 +39,7 @@ export function buildCheckerEvidence(definition: NodeDef, run: RunState, legacyP
     if (parsed.kind === "reference") relatedNodes.add(parsed.node)
   }
   const receiptPairs: Array<{ execution?: ReturnType<typeof ExecutionEvidenceSchema.parse>; gate?: ReturnType<typeof ExecutionEvidenceSchema.parse>; preservation?: PreservationEvidence; nodeId: string }> = []
+  let archivedRun: RunState | undefined
   for (const nodeId of [...relatedNodes].sort()) {
     const state = run.nodes[nodeId]
     const latest = (state?.attempts ?? []).find((attempt) => attempt.attempt === state?.current_attempt)
@@ -46,8 +48,17 @@ export function buildCheckerEvidence(definition: NodeDef, run: RunState, legacyP
     const gate = ExecutionEvidenceSchema.safeParse(attempt?.gate_evidence)
     const preservation = PreservationEvidenceSchema.safeParse(attempt?.preservation_evidence)
     const currentAttempt = state?.current_attempt ?? -1
-    const origin = latest?.reused_output_from === undefined ? latest
+    let origin = latest?.reused_output_from === undefined ? latest
       : state?.attempts.find(candidate => candidate.attempt === latest.reused_output_from)
+    if (!origin && latest?.reused_output_from !== undefined &&
+      latest.reused_output_from <= (state?.attempt_history_ref?.attempt_count ?? 0)) {
+      if (!archivedRun) {
+        const committed = loadRun(run.project_directory, run.run_id)
+        if (!committed || committed.revision !== run.revision) throw new Error("Checker evidence history changed")
+        archivedRun = hydrateRunFully(committed)
+      }
+      origin = archivedRun.nodes[nodeId]?.attempts.find(candidate => candidate.attempt === latest.reused_output_from)
+    }
     const validOrigin = latest?.reused_output_from === undefined || (!!origin?.shell_setup_failed &&
       origin.attempt < currentAttempt && isDeepStrictEqual(origin.gate_recovery, latest.gate_recovery) &&
       isDeepStrictEqual(origin.execution_evidence, latest.execution_evidence))
