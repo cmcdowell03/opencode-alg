@@ -8,12 +8,13 @@ export function completedReadOutputs(messages: any[]): any[] {
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http"
 import { spawn, type ChildProcess } from "node:child_process"
 import { createHash, createHmac, randomUUID } from "node:crypto"
-import { constants, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
+import { constants, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { basename, delimiter, dirname, extname, isAbsolute, join, resolve, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 import { z } from "zod"
 import { checkerProbeResponse, runCheckerHeadlessProbe } from "./checker-headless-probe.ts"
+import { runTaskAdmissionHostProbe } from "./task-headless-probe.ts"
 import {
   ALG_TOOL_IDS,
   findSourceIdentityLine,
@@ -31,6 +32,7 @@ import { hashObject } from "../src/session-memory/store.ts"
 import { Server as McpServer } from "@modelcontextprotocol/sdk/server/index.js"
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js"
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js"
+import { TaskContractInputSchema, TaskContractSchema, type TaskContractInput } from "../src/task-contract.ts"
 
 const WAIT_MS = 60_000
 const POLL_MS = 150
@@ -40,13 +42,27 @@ const INITIAL_MARKER = "ALG_HEADLESS_INITIAL_REQUEST_7F2A"
 const FOLLOWUP_MARKER = "ALG_HEADLESS_FOLLOWUP_REQUEST_C941"
 export const PERSISTED_REFERENCE = "synthetic://alg-headless/manifest/readings-v1"
 export const PERSISTED_RESULT = sha256("ALG V1 deterministic local result fixture; no real source data")
+const HEADLESS_PLAN_GOAL = "Run bounded synthetic data investigation acceptance"
+const HEADLESS_ORIGINAL_CRITERIA = ["Use only deterministic local fixture data"]
+export const HEADLESS_TASK_CONTRACT: TaskContractInput = {
+  version: 1, kind: "read_only", discovery: "required", phase: "complete",
+  deliverables: [{ destination: "response", producer_node: "confirm" }],
+  verification: { checker_node: "check", execution: "none" }, preserve_paths: [],
+}
+export const HEADLESS_INITIAL_PROMPT = `${INITIAL_MARKER} Check workspace readiness, plan the fixed data-investigation template using the bounded local fixture, then query it with alg_investigation. Declare the task_contract and original criteria from this request. Once accepted, the original criteria are immutable across planning, compaction and restart; do not replace them with later suggestions. Do not claim a result unless the query tool returns one.`
 
-const EvidenceSchema = z.object({
+export const EvidenceSchema = z.object({
   checker_probe: z.object({ passed: z.boolean(), run_id: z.string(), attempts: z.number().int(), distinct_children: z.number().int(), host_verified_parents: z.number().int(),
     verification_basis_recovered: z.boolean(),
     nodes: z.array(z.object({ id: z.string(), status: z.string(), outcome: z.string().nullable(), failures: z.array(z.string().max(2048)).max(3) })).max(3) }).nullable(),
+  task_admission_probe: z.object({ passed: z.boolean(), run_id: z.string(), host_permissions_checked: z.boolean(), criteria_immutable: z.boolean(), incompatible_graph_rejected: z.boolean(), child_calls: z.number().int().nonnegative(), scope: z.string().max(512) }).strict().nullable().optional(),
   schema_version: z.literal(1), kind: z.literal("opencode-alg-v1-headless-acceptance"), generated_at: z.iso.datetime({ offset: true }),
   passed: z.boolean(), failure: z.string().max(2048).nullable(), evidence_path: z.string().min(1),
+  task_contract: z.object({
+    run_id: z.string().nullable(), input: TaskContractInputSchema.nullable(), original_goal: z.string().nullable(), original_criteria: z.array(z.string().max(2000)).max(100),
+    requirements_sha256: z.string().regex(/^[a-f0-9]{64}$/).nullable(), contract_sha256: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
+    persisted_before_compaction: z.boolean(), persisted_after_compaction: z.boolean(), persisted_after_restart: z.boolean(), persisted_after_final_restart: z.boolean(), digests_stable: z.boolean(),
+  }).strict().optional(),
   source: z.object({ package_version: z.string(), root: z.string(), loaded_root: z.string(), sha256: z.string().regex(/^[a-f0-9]{64}$/), node: z.string(), bun: z.string().nullable() }).strict(),
   host: z.object({ executable: z.string(), version: z.string(), platform: z.string(), arch: z.string(), libc: z.string(), starts: z.number().int().min(0).max(3), restarts: z.number().int().min(0).max(2), pids: z.array(z.number().int().positive()).max(3), clean_exits: z.array(z.boolean()).max(3) }).strict(),
   isolation: z.object({ temporary_root: z.string(), project: z.string(), config_home: z.string(), config_path: z.string(), sidecar_path: z.string(), provider_endpoint: z.string(), server_bind_host: z.literal("127.0.0.1"), credentials_inherited: z.boolean(), real_user_config_unchanged: z.boolean(), config_before_sha256: z.string().regex(/^[a-f0-9]{64}$/), config_after_sha256: z.string().regex(/^[a-f0-9]{64}$/) }).strict(),
@@ -120,7 +136,7 @@ export function chooseSyntheticResponse(phase: HostRequestPhase, toolStep: numbe
   const checkerResponse = checkerProbeResponse(latestUserText(body))
   if (checkerResponse !== undefined) return { kind: "text", text: checkerResponse, receipt }
   if (phase === "initial" && toolStep === 0) return { kind: "tool", name: "alg_context_status", args: { operation: "headless-smoke" }, receipt }
-  if (phase === "initial" && toolStep === 1) return { kind: "tool", name: "alg_plan", args: { goal: "Run bounded synthetic data investigation acceptance", template: "data-investigation", criteria: ["Use only deterministic local fixture data"], detail: "compact" }, receipt }
+  if (phase === "initial" && toolStep === 1) return { kind: "tool", name: "alg_plan", args: { goal: HEADLESS_PLAN_GOAL, template: "data-investigation", criteria: HEADLESS_ORIGINAL_CRITERIA, task_contract: HEADLESS_TASK_CONTRACT, detail: "compact" }, receipt }
   if (phase === "initial" && toolStep === 2) return { kind: "tool", name: "alg_investigation", args: { request: { action: "admit", input: queryPayload(), node_ids: [] } }, receipt }
   if (phase === "initial" && toolStep === 3) return { kind: "tool", name: "alg_investigation", args: { request: { action: "query", work_key: workKey ?? "0".repeat(64) } }, receipt }
   if (phase === "initial" && toolStep === 4 || phase === "followup" && toolStep === 1)
@@ -432,6 +448,44 @@ function resultCheckpoint(project: string, sessionId: string): { revision: numbe
   return { revision: checkpoint?.revision ?? 0, generation: checkpoint?.generation ?? 0, result_pins: results.slice(-16), result_persisted: resultPersisted }
 }
 
+interface PersistedTaskContractSnapshot {
+  runId: string
+  goal: string
+  criteria: string[]
+  input: TaskContractInput | null
+  requirementsSha256: string | null
+  contractSha256: string | null
+  valid: boolean
+}
+
+function readPersistedTaskContract(project: string): PersistedTaskContractSnapshot | null {
+  const runsDirectory = join(project, ".opencode", "runs")
+  if (!existsSync(runsDirectory)) return null
+  for (const runId of readdirSync(runsDirectory).slice(0, 128)) {
+    const progressPath = join(runsDirectory, runId, "progress.json")
+    if (!existsSync(progressPath)) continue
+    try {
+      const state = JSON.parse(readFileSync(progressPath, "utf8"))
+      if (state?.goal !== HEADLESS_PLAN_GOAL || JSON.stringify(state?.criteria) !== JSON.stringify(HEADLESS_ORIGINAL_CRITERIA)) continue
+      const parsed = TaskContractSchema.safeParse(state.task_contract)
+      return {
+        runId, goal: state.goal, criteria: state.criteria,
+        input: parsed.success ? parsed.data.input : null,
+        requirementsSha256: parsed.success ? parsed.data.requirements_sha256 : null,
+        contractSha256: parsed.success ? parsed.data.contract_sha256 : null,
+        valid: parsed.success && JSON.stringify(parsed.data.input) === JSON.stringify(HEADLESS_TASK_CONTRACT),
+      }
+    } catch { /* malformed or unrelated run rows are not evidence */ }
+  }
+  return null
+}
+
+function taskContractPersisted(snapshot: PersistedTaskContractSnapshot | null): snapshot is PersistedTaskContractSnapshot {
+  return !!snapshot && snapshot.valid && snapshot.goal === HEADLESS_PLAN_GOAL &&
+    JSON.stringify(snapshot.criteria) === JSON.stringify(HEADLESS_ORIGINAL_CRITERIA) &&
+    !!snapshot.requirementsSha256 && !!snapshot.contractSha256
+}
+
 function portNumber(address: string | undefined): number {
   if (!address) throw new Error("local service did not bind a port")
   const port = Number(new URL(address).port)
@@ -507,9 +561,14 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
   let ids: string[] = []
   let initialToolCalls: string[] = [], followupToolCalls: string[] = []
   let checkerProbe: Awaited<ReturnType<typeof runCheckerHeadlessProbe>> | null = null
+  let taskAdmissionProbe: Awaited<ReturnType<typeof runTaskAdmissionHostProbe>> | null = null
   let initialCheckpoint: HeadlessAcceptanceEvidence["session"]["initial_memory_checkpoint"] = null
   let compactCheckpoint: HeadlessAcceptanceEvidence["session"]["compacted_memory_checkpoint"] = null
   let finalCheckpoint: HeadlessAcceptanceEvidence["session"]["final_memory_checkpoint"] = null
+  let taskContractBefore: PersistedTaskContractSnapshot | null = null
+  let taskContractCompacted: PersistedTaskContractSnapshot | null = null
+  let taskContractAfterRestart: PersistedTaskContractSnapshot | null = null
+  let taskContractAfterFinalRestart: PersistedTaskContractSnapshot | null = null
   let sameResultPin = false, recoveredCompaction = false, recoveredSameEvidence = false, sameSession = false
   let failure: string | null = null
   let providerServer: Server | undefined
@@ -598,7 +657,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     if (!sessionId) throw new Error("OpenCode session creation did not return a session ID")
     const initial = await jsonRequest<any>(`${first.base}/session/${encodeURIComponent(sessionId)}/message?${query}`, "POST", {
       model: { providerID: "alg-headless", modelID: "deterministic" },
-      parts: [{ type: "text", text: `${INITIAL_MARKER} Check workspace readiness, plan the fixed data-investigation template using the bounded local fixture, then query it with alg_investigation. Do not claim a result unless the query tool returns one.` }],
+      parts: [{ type: "text", text: HEADLESS_INITIAL_PROMPT }],
     }, WAIT_MS)
     const initialMessages = (await jsonRequest<any[]>(`${first.base}/session/${encodeURIComponent(sessionId)}/message?${query}&limit=100`, "GET")).value
     if (!Array.isArray(initialMessages) || !initialMessages.length) throw new Error("Initial session transcript did not persist")
@@ -614,6 +673,8 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     if (!initialToolCalls.includes("alg_context_status") || !planToolSeen || !queryToolSeen) {
       throw new Error(`Actual OpenCode session did not invoke the expected ALG tools: ${initialToolCalls.join(",")}`)
     }
+    taskContractBefore = readPersistedTaskContract(projectRoot)
+    if (!taskContractPersisted(taskContractBefore)) throw new Error("Actual data-investigation plan did not persist its declared contract and original criteria")
     if (!actualInvestigationResults.some((item) => item.status === "reusable" && item.manifest_ref === PERSISTED_REFERENCE && item.digest === PERSISTED_RESULT && item.work_key)) {
       throw new Error("Actual alg_investigation query did not return a completed revalidated synthetic result")
     }
@@ -623,6 +684,8 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     provider.setPhase("compaction")
     compactionSawInitial = provider.requests.some((item) => item.phase === "compaction" && item.saw_initial_reference && item.saw_initial_result)
     await jsonRequest<boolean>(`${first.base}/session/${encodeURIComponent(sessionId)}/summarize?${query}`, "POST", { providerID: "alg-headless", modelID: "deterministic" }, WAIT_MS)
+    taskContractCompacted = readPersistedTaskContract(projectRoot)
+    if (!taskContractPersisted(taskContractCompacted)) throw new Error("Task contract or original criteria disappeared during host compaction")
     compactionSawInitial = provider.requests.some((item) => item.phase === "compaction" && item.saw_initial_reference && item.saw_initial_result)
     const afterCompactState = resultCheckpoint(projectRoot, sessionId)
     sameResultPin = initialState.result_pins.some((pin) => afterCompactState.result_pins.includes(pin)) && afterCompactState.result_persisted
@@ -641,6 +704,8 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     const afterRestartState = resultCheckpoint(projectRoot, sessionId)
     recoveredSameEvidence = afterRestartState.result_pins.some((pin) => initialState.result_pins.includes(pin)) && afterRestartState.result_persisted
     if (!recoveredSameEvidence) throw new Error("Durable session-memory result reference changed or disappeared after restart")
+    taskContractAfterRestart = readPersistedTaskContract(projectRoot)
+    if (!taskContractPersisted(taskContractAfterRestart)) throw new Error("Task contract or original criteria disappeared after host restart")
     const runFollowup = async (base: string, round: number): Promise<void> => {
       provider.setPhase("followup")
       const transcriptBefore = (await jsonRequest<any[]>(`${base}/session/${encodeURIComponent(sessionId!)}/message?${query}&limit=100`, "GET")).value
@@ -679,12 +744,16 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     sameSession &&= (await jsonRequest<any[]>(`${third.base}/session?${query}`, "GET")).value.some((item: any) => item?.id === sessionId)
     const finalMessages = (await jsonRequest<any[]>(`${third.base}/session/${encodeURIComponent(sessionId)}/message?${query}&limit=100`, "GET")).value
     recoveredCompaction &&= Array.isArray(finalMessages) && hasCompactionWithEvidence(finalMessages)
+    taskContractAfterFinalRestart = readPersistedTaskContract(projectRoot)
+    if (!taskContractPersisted(taskContractAfterFinalRestart)) throw new Error("Task contract or original criteria disappeared after final host restart")
     await runFollowup(third.base, 2)
     provider.setPhase("background")
     const probeParent = await jsonRequest<any>(`${third.base}/session?${query}`, "POST", { title: "Isolated checker evidence fixture" })
     if (typeof probeParent.value?.id !== "string") throw new Error("Checker probe parent session was not created")
     checkerProbe = await runCheckerHeadlessProbe(third.base, projectRoot, probeParent.value.id)
     if (!checkerProbe.passed) throw new Error("Actual OpenCode children did not complete the selected-evidence fixture")
+    taskAdmissionProbe = await runTaskAdmissionHostProbe(third.base, projectRoot, probeParent.value.id)
+    if (!taskAdmissionProbe.passed) throw new Error("Actual OpenCode task-admission qualification failed")
     finalCheckpoint = (() => { const state = resultCheckpoint(projectRoot, sessionId!); return { revision: state.revision, generation: state.generation, result_persisted: state.result_persisted } })()
     if (!sameSession || !recoveredCompaction || !finalCheckpoint.result_persisted) throw new Error("Final server restart did not preserve the session and memory evidence")
     if (!await stopProcess(third.processInfo)) throw new Error("Third OpenCode server process could not be confirmed stopped")
@@ -707,7 +776,21 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     try { await mcpService.close(); mcpStopped = true } catch { mcpStopped = false }
     try { configAfterSha = snapshotGlobalOpenCodeConfig(roots, hmacKey).sha256 } catch { configAfterSha = "0".repeat(64) }
     const globalConfigUnchanged = configAfterSha === configBeforeSha
-    const wasPassed = failure === null && checkerProbe?.passed === true && !credentialsInherited && globalConfigUnchanged && started.length === 3 && exited.filter(Boolean).length === 3 && pluginProofs.length === 3 && pluginProofs.every(Boolean) &&
+    const taskContractSnapshots = [taskContractBefore, taskContractCompacted, taskContractAfterRestart, taskContractAfterFinalRestart]
+    const taskContractBaseline = taskContractPersisted(taskContractBefore) ? taskContractBefore : null
+    const taskContractDigestsStable = !!taskContractBaseline && taskContractSnapshots.every((snapshot) => taskContractPersisted(snapshot) &&
+        snapshot.runId === taskContractBaseline.runId && snapshot.requirementsSha256 === taskContractBaseline.requirementsSha256 &&
+        snapshot.contractSha256 === taskContractBaseline.contractSha256 && snapshot.goal === HEADLESS_PLAN_GOAL &&
+        JSON.stringify(snapshot.criteria) === JSON.stringify(HEADLESS_ORIGINAL_CRITERIA) && JSON.stringify(snapshot.input) === JSON.stringify(HEADLESS_TASK_CONTRACT))
+    const taskContractEvidence: NonNullable<HeadlessAcceptanceEvidence["task_contract"]> = {
+      run_id: taskContractBefore?.runId ?? null, input: taskContractBefore?.input ?? null,
+      original_goal: taskContractBefore?.goal ?? null, original_criteria: taskContractBefore?.criteria ?? [],
+      requirements_sha256: taskContractBefore?.requirementsSha256 ?? null, contract_sha256: taskContractBefore?.contractSha256 ?? null,
+      persisted_before_compaction: taskContractPersisted(taskContractBefore), persisted_after_compaction: taskContractPersisted(taskContractCompacted),
+      persisted_after_restart: taskContractPersisted(taskContractAfterRestart), persisted_after_final_restart: taskContractPersisted(taskContractAfterFinalRestart),
+      digests_stable: taskContractDigestsStable,
+    }
+    const wasPassed = failure === null && checkerProbe?.passed === true && taskAdmissionProbe?.passed === true && taskAdmissionProbe.child_calls === 0 && !credentialsInherited && globalConfigUnchanged && started.length === 3 && exited.filter(Boolean).length === 3 && pluginProofs.length === 3 && pluginProofs.every(Boolean) && taskContractDigestsStable &&
       ids.length === ALG_TOOL_IDS.length && ALG_TOOL_IDS.every((id) => ids.includes(id)) && initialToolCalls.includes("alg_context_status") && initialToolCalls.includes("alg_investigation") &&
       followupToolCalls.filter((name) => name === "alg_investigation").length === 2 && planToolSeen && queryToolSeen && providerStopped && mcpStopped &&
       provider.nonLoopbackRequests === 0 && mcpService.counters.nonLoopbackRequests === 0 && mcpService.counters.submitCalls === 1 && mcpService.counters.acceptedRemoteJobs === 1 &&
@@ -716,8 +799,9 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     const evidenceCandidate: HeadlessAcceptanceEvidence = {
       schema_version: 1, kind: "opencode-alg-v1-headless-acceptance", generated_at: new Date().toISOString(), passed: wasPassed,
       checker_probe: checkerProbe,
+      task_admission_probe: taskAdmissionProbe,
       failure: globalConfigUnchanged ? failure : "real-user OpenCode configuration changed during the isolated host run",
-      evidence_path: evidencePath,
+      evidence_path: evidencePath, task_contract: taskContractEvidence,
       source: { package_version: plugin.package_version, root: checkoutPlugin.source.root, loaded_root: plugin.source.root, sha256: plugin.source.digest, node: process.versions.node, bun: process.versions.bun ?? null },
       host: { executable, version: hostVersion, platform: process.platform, arch: process.arch, libc: linuxLibc(), starts: started.length, restarts: Math.max(0, started.length - 1), pids: started.map((item) => item.child.pid).filter((pid): pid is number => typeof pid === "number"), clean_exits: exited.slice(0, 3) },
       isolation: { temporary_root: temporaryRoot, project, config_home: configHome, config_path: configPath, sidecar_path: sidecarPath,

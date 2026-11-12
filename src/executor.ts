@@ -1,5 +1,5 @@
 import type { ToolContext } from "@opencode-ai/plugin"
-import type { NodeAttempt, NodeDef, RunState, ShellGateDef } from "./types.ts"
+import type { NodeAttempt, NodeDef, RunDataReference, RunState, ShellGateDef } from "./types.ts"
 import { assertFilesystemRootAuthorized, canonicalContainedDirectory } from "./paths.ts"
 import {
   allTerminal,
@@ -10,13 +10,17 @@ import {
   validateGraph,
   wireInputs,
 } from "./graph.ts"
-import { canonicalJson } from "./persistence.ts"
+import { canonicalJson, sha256Json } from "./persistence.ts"
 import { buildCheckerEvidence, isCheckerEvidencePort } from "./checker-evidence.ts"
 import { buildVerificationBasis, validateVerification, effectiveCriteria } from "./verification.ts"
 import { assertManagedGraph, graphPolicy } from "./graph-policy.ts"
+import { assertTaskState } from "./task-contract.ts"
+import { taskEvidence, type TaskEvidence } from "./task-evidence.ts"
 import { parseAndValidate } from "./schemas.ts"
 import {
   acquireRunLock,
+  writeTaskEvidence,
+  loadCommittedRunProjectionForOwner,
   assertProjectFilePathContained,
   assertRunArtifactPathContained,
   hydrateRunForExecution,
@@ -212,6 +216,56 @@ function gateRecoverySource(run: RunState, definition: NodeDef): NodeAttempt | u
   return source
 }
 
+function sameRecoveryBasis(run: RunState, definition: NodeDef, options: ExecuteOptions, source: NodeAttempt, gate: ShellGateDef): boolean {
+  const next = gateRecoveryBasis(options.worktree, options.directory, gate, source.output)
+  const prior = source.gate_recovery
+  if (sameGateRecovery(prior, next)) return true
+  // A same-command setup repair may change only cwd/timeout. Keep the
+  // original output/files commitment, even across repeated setup failures.
+  return !!run.task_contract && options.operation === "resume" && !!definition.shell_gate &&
+    gate.cmd === definition.shell_gate.cmd && options.shellGateCmd === gate.cmd && !!prior && !!next &&
+    source.shell_setup_failed === true && source.gate_evidence?.commands.some(command =>
+      command.tool === "shell_gate" && command.setup_failed === true && command.gate_ok === false &&
+      !command.timed_out && !command.cancelled && !command.termination_failed) === true &&
+    next.output_sha256 === prior.output_sha256 && next.files_sha256 === prior.files_sha256
+}
+
+function assertAdmittedGateExecution(run: RunState, options: ExecuteOptions): string | undefined {
+  if (!run.task_contract) return
+  const committed = loadCommittedRunProjectionForOwner(options.worktree, run.run_id, options.parentSessionId)
+  if (!committed || committed.revision !== run.revision || committed.task_contract?.contract_sha256 !== run.task_contract.contract_sha256)
+    throw new Error("task_contract_locked: committed admission changed before execution")
+  const hasOverride = options.shellGateCmd !== undefined || options.shellGateCwd !== undefined || options.shellGateTimeoutMs !== undefined
+  const target = committed.graph.nodes.find(node => node.agent === "implementer")
+  if (sha256Json(run.graph) !== sha256Json(committed.graph)) {
+    // The legacy tool adapter eagerly applies the requested override. Admit
+    // only that exact overlay, then restore the immutable graph before work.
+    const overlay = structuredClone(committed.graph)
+    const node = overlay.nodes.find(item => item.id === target?.id)
+    if (!hasOverride || !node || !options.shellGateCmd)
+      throw new Error("task_contract_locked: execute the committed graph without rewriting admitted verification")
+    node.shell_gate = effectiveShellGate(committed, target!, options)
+    node.loop = { max_attempts: node.loop?.max_attempts ?? 1, gate: "all" }
+    if (sha256Json(run.graph) !== sha256Json(overlay))
+      throw new Error("task_contract_locked: execute the committed graph without rewriting admitted verification")
+  }
+  run.graph = committed.graph
+  if (!hasOverride) return committed.phase
+  const state = target && run.nodes[target.id]
+  if (options.operation !== "resume" || options.dry || run.mode === "dry" || !target?.shell_gate || !state ||
+    (state.status !== "pending" && state.status !== "ready") || state.current_attempt >= (target.loop?.max_attempts ?? 1) ||
+    run.global_attempts >= run.graph.max_global_attempts || options.shellGateCmd !== target.shell_gate.cmd ||
+    (options.shellGateCwd === undefined && options.shellGateTimeoutMs === undefined) ||
+    (options.shellGateTimeoutMs !== undefined && (!Number.isSafeInteger(options.shellGateTimeoutMs) ||
+      options.shellGateTimeoutMs < 100 || options.shellGateTimeoutMs > 600_000))) {
+    throw new Error("task_contract_locked: admitted gates allow only a same-command cwd or timeout repair on explicit setup resume")
+  }
+  const source = gateRecoverySource(run, target)
+  if (!source?.gate_recovery || !source.gate_evidence?.commands.some(command => command.setup_failed === true))
+    throw new Error("task_contract_locked: gate repair requires a durable setup-failure receipt")
+  return committed.phase
+}
+
 function preflightExecutableNodes(run: RunState, options: ExecuteOptions, batch?: readonly NodeDef[]): boolean {
   if (run.global_attempts >= run.graph.max_global_attempts) return false
   const reachable = new Set<string>()
@@ -241,8 +295,7 @@ function preflightExecutableNodes(run: RunState, options: ExecuteOptions, batch?
     if (!previous) continue
     const gate = effectiveShellGate(run, node, options)
     if (options.operation !== "resume") throw new Error("Gate setup failed before launch. Repair the environment, then explicitly resume the existing run; do not replan or rewrite the implementation.")
-    if (!gate || !sameGateRecovery(previous.gate_recovery,
-      gateRecoveryBasis(options.worktree, options.directory, gate, previous.output))) {
+    if (!gate || !sameRecoveryBasis(run, node, options, previous, gate)) {
       throw new Error("Gate-only recovery refused: saved output, declared files or gate changed, or no bounded recovery basis exists. Inspect retained work before starting an explicit new task.")
     }
   }
@@ -287,7 +340,7 @@ function reserveAttempt(
   const state = run.nodes[definition.id]!
   const localLimit = definition.loop?.max_attempts ?? 1
   if (state.current_attempt >= localLimit) {
-    state.status = "failed"
+    state.status = state.attempts.at(-1)?.status === "done" ? "pending" : "failed"
     state.last_failures = [`Local attempt limit reached (${localLimit})`]
     return null
   }
@@ -312,11 +365,14 @@ function reserveAttempt(
   return attempt
 }
 
+type StagedTaskEvidence = { value: TaskEvidence; reference: RunDataReference }
+
 async function runOneNode(
   run: RunState,
   definition: NodeDef,
   options: ExecuteOptions,
   attemptRecord: NodeAttempt | null,
+  task?: StagedTaskEvidence,
 ): Promise<void> {
   const state = run.nodes[definition.id]!
   const localLimit = definition.loop?.max_attempts ?? 1
@@ -332,7 +388,7 @@ async function runOneNode(
 
     const inputs = wireInputs(definition, run)
     const evidence = definition.agent === "checker"
-      ? buildCheckerEvidence(definition, run, graphPolicy(run.graph)?.checkerEvidencePorts?.[definition.id]) : undefined
+      ? buildCheckerEvidence(definition, run, graphPolicy(run.graph)?.checkerEvidencePorts?.[definition.id], task) : undefined
     if (definition.verification) {
       attemptRecord.verification_basis = buildVerificationBasis(run.criteria, evidence)
       // Persist the basis before any child/model call, including runners that fail before session creation.
@@ -354,8 +410,7 @@ async function runOneNode(
       rawOutput = dryOutput(definition, run)
       sessionId = `dry-${definition.id}-a${attempt}`
     } else if (gateOnly) {
-      if (!recoveryGate || !sameGateRecovery(previous.gate_recovery,
-        gateRecoveryBasis(options.worktree, options.directory, recoveryGate, previous.output))) {
+      if (!recoveryGate || !sameRecoveryBasis(run, definition, options, previous, recoveryGate)) {
         throw new Error("Gate-only recovery basis changed after admission")
       }
       rawOutput = previous.output
@@ -421,6 +476,7 @@ async function runOneNode(
             priorFailures: state.last_failures,
             priorOutcome,
             description: definition.description,
+            taskContract: run.task_contract,
           })
       const result = await sessionRunner({
         client: options.client,
@@ -745,8 +801,73 @@ export function closeRun(run: RunState, reason: string): RunState {
   return run
 }
 
+function invalidateDriftedTaskCheck(run: RunState): string | undefined {
+  const checkId = run.task_contract?.input.verification.checker_node
+  if (!checkId || run.nodes[checkId]?.status !== "done") return undefined
+  const checker = run.nodes[checkId]!
+  const observed = taskEvidence(run)!
+  const checked = checker.attempts.at(-1)?.task_evidence_ref
+  if (!observed.failures.length && checked?.sha256 === sha256Json(observed)) return undefined
+  const reason = "task_evidence_changed: declared evidence changed after the checker snapshot; fresh verification is required"
+  for (const id of [checkId, ...descendantsOf(run.graph, checkId)]) {
+    const node = run.nodes[id]!
+    if (node.status !== "done") continue
+    node.status = "pending"
+    node.last_failures = [reason]
+  }
+  return observed.failures.length ? `${reason}\n${observed.failures.join("\n")}` : reason
+}
+
+function taskDriftExhausted(run: RunState): boolean {
+  const checkId = run.task_contract?.input.verification.checker_node
+  if (!checkId || run.nodes[checkId]?.status !== "pending" || run.nodes[checkId]?.attempts.at(-1)?.status !== "done") return false
+  const affected = new Set([checkId, ...descendantsOf(run.graph, checkId)])
+  const pending = run.graph.nodes.filter(node => affected.has(node.id) && run.nodes[node.id]?.status === "pending")
+  return run.global_attempts + pending.length > run.graph.max_global_attempts ||
+    pending.some(node => run.nodes[node.id]!.current_attempt >= (node.loop?.max_attempts ?? 1))
+}
+
+function reopenTaskPrerequisites(run: RunState): { producers: Set<string>; blocked?: string } {
+  const evidence = taskEvidence(run)!
+  const input = run.task_contract!.input
+  const producers = new Set(evidence.deliverables
+    .filter(item => item.status === "unavailable" || item.status === "producer_incomplete")
+    .map(item => item.producer_node))
+  if (evidence.execution === "unavailable") producers.add(input.verification.execution_node!)
+  for (const id of producers) {
+    if (run.nodes[id]?.status !== "done") producers.delete(id)
+  }
+  if (!producers.size) return { producers }
+  try {
+    for (const item of input.deliverables) {
+      if (item.destination === "project_file" && producers.has(item.producer_node))
+        assertProjectFilePathContained(run.project_directory, item.path!)
+    }
+  } catch {
+    return { producers, blocked: "task_prerequisite_path_unavailable: restore project containment before reopening a producer" }
+  }
+  if (evidence.preservation.some(item => item.status !== "unchanged"))
+    return { producers, blocked: "task_preservation_unverified: restore protected evidence before reopening a producer" }
+
+  const affected = new Set([...producers, ...[...producers].flatMap(id => [...descendantsOf(run.graph, id)])])
+  if (run.global_attempts + affected.size > run.graph.max_global_attempts ||
+    run.graph.nodes.some(node => affected.has(node.id) && run.nodes[node.id]!.current_attempt >= (node.loop?.max_attempts ?? 1))) {
+    return { producers, blocked: "task_prerequisite_retry_budget_exhausted: producer repair and fresh verification require remaining local and global attempts" }
+  }
+  const reason = "Host prerequisite repair: supply the missing declared deliverable or native command evidence within the accepted task contract."
+  for (const id of affected) {
+    const state = run.nodes[id]!
+    state.status = "pending"
+    if (producers.has(id)) state.last_failures = [reason, ...evidence.failures]
+  }
+  return { producers }
+}
+
 /** Execute topological waves under one exclusive per-run lease. */
 export async function executeRun(run: RunState, options: ExecuteOptions): Promise<RunState> {
+  assertTaskState(run)
+  if (run.task_contract && options.dry && run.mode === "live")
+    throw new Error("task_contract_locked: admitted live runs cannot be converted to dry runs")
   if (run.graph_revisions?.length &&
     (options.shellGateCmd !== undefined || options.shellGateCwd !== undefined ||
       options.shellGateTimeoutMs !== undefined || (options.dry === true && run.mode === "live"))) {
@@ -776,6 +897,25 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     run.execution_directory = canonicalContainedDirectory(options.worktree,
       run.execution_directory ?? run.project_directory)
     options.directory = run.execution_directory
+    const committedPhase = await awaitLock(() => assertAdmittedGateExecution(run, options))
+    const liveTask = !options.dry && run.mode !== "dry" && !!run.task_contract
+    const initialDrift = liveTask ? invalidateDriftedTaskCheck(run) : undefined
+    if (initialDrift || (liveTask && taskDriftExhausted(run))) {
+      run.status = "blocked"
+      run.phase = "task-evidence"
+      run.summary = capCompleteSummary(initialDrift ?? "task_evidence_retry_budget_exhausted: fresh verification requires remaining local and global attempts")
+      await save(run, options)
+      return run
+    }
+    const repair = liveTask && operation === "resume" && (committedPhase === "task-prerequisite" || committedPhase === "task-evidence")
+      ? reopenTaskPrerequisites(run) : undefined
+    if (repair?.blocked) {
+      run.status = "blocked"
+      run.phase = "task-prerequisite"
+      run.summary = repair.blocked
+      await save(run, options)
+      return run
+    }
     // Validate every reachable executable gate before reserving any model work.
     // Errors leave the committed plan/history/counters untouched so the caller can
     // correct the gate and resume. Dry/injected runners still receive structural checks.
@@ -826,11 +966,24 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
         if (options.toolContext.abort.aborted) break
         const batch = ready.slice(offset, offset + concurrency)
         let preservation: Array<NodeAttempt["preservation_evidence"]> = []
+        let task: StagedTaskEvidence | undefined
+        let taskPrerequisiteBlocked = false
+        const taskChecker = liveTask ? batch.find(node => node.id === run.task_contract?.input.verification.checker_node) : undefined
         try {
           // Earlier workers may change the environment, or checker feedback may
           // reopen a node that was done at startup. Recheck before reserving it.
           preflightExecutableNodes(run, options, batch)
           await options.beforeBatch?.(run, batch)
+          if (taskChecker) {
+            const value = taskEvidence(run)!
+            if (value.failures.length) {
+              taskPrerequisiteBlocked = true
+              throw new Error(value.failures.join("; ") + "; restore the evidence or explicitly resume bounded producer repair")
+            }
+            const current = run.nodes[taskChecker.id]!.current_attempt
+            if (current < (taskChecker.loop?.max_attempts ?? 1) && run.global_attempts < run.graph.max_global_attempts)
+              task = { value, reference: writeTaskEvidence(run, taskChecker.id, current + 1, value) }
+          }
           preservation = batch.map(definition => {
             if (definition.agent !== "implementer" || options.dry || run.mode === "dry") return undefined
             const prior = run.nodes[definition.id]!.attempts.at(-1)
@@ -843,8 +996,8 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
           })
         } catch (error) {
           run.status = "blocked"
-          run.phase = "blocked"
-          run.summary = summarize(run)
+          run.phase = taskPrerequisiteBlocked ? "task-prerequisite" : "blocked"
+          run.summary = capCompleteSummary(summarize(run) + "\nAdmission blocked: " + safeDiagnosticText(error instanceof Error ? error.message : "admission unavailable"))
           await save(run, options)
           throw error
         }
@@ -860,6 +1013,7 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
           const recovery = gateRecoverySource(run, definition)
           const attempt = reserveAttempt(run, definition)
           if (attempt && preservation[index]) attempt.preservation_evidence = preservation[index]
+          if (attempt && task && definition.id === taskChecker?.id) attempt.task_evidence_ref = task.reference
           if (attempt && recovery) {
             attempt.reused_output_from = recovery.attempt
             attempt.gate_recovery = recovery.gate_recovery
@@ -871,7 +1025,7 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
         // be created, preserving the sidecar -> child-id progress crash fence.
         await save(run, options)
         const settled = await Promise.allSettled(batch.map((definition, index) =>
-          runOneNode(run, definition, options, reservations[index]!)))
+          runOneNode(run, definition, options, reservations[index]!, definition.id === taskChecker?.id ? task : undefined)))
         settled.forEach((result, i) => {
           if (result.status === "fulfilled") return
           if (result.reason instanceof PersistenceBoundaryError) throw result.reason
@@ -899,11 +1053,21 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
         await save(run, options)
         for (const definition of batch) {
           const last = run.nodes[definition.id]!.attempts.at(-1)
-          if (last?.shell_setup_failed || (last?.reused_output_from !== undefined && last.outcome === "sdk_error")) setupStopped.add(definition.id)
+          if ((repair?.producers.has(definition.id) && last?.status !== "done") ||
+            last?.shell_setup_failed || (last?.reused_output_from !== undefined &&
+            (last.outcome === "sdk_error" || (!!run.task_contract && !!options.shellGateCmd && last.status !== "done")))) setupStopped.add(definition.id)
         }
       }
 
       await applyCheckerFeedback(run, options)
+      const waveDrift = liveTask ? invalidateDriftedTaskCheck(run) : undefined
+      if (waveDrift) {
+        run.status = "blocked"
+        run.phase = "task-evidence"
+        run.summary = capCompleteSummary(waveDrift)
+        await save(run, options)
+        return run
+      }
       finishGlobalLimit(run)
       await save(run, options)
       if (run.global_attempts >= run.graph.max_global_attempts) break
@@ -921,6 +1085,12 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
       run.phase = "blocked"
     }
     run.summary = summarize(run)
+    const finalDrift = liveTask && run.status !== "failed" ? invalidateDriftedTaskCheck(run) : undefined
+    if (finalDrift) {
+      run.status = "blocked"
+      run.phase = "task-evidence"
+      run.summary = capCompleteSummary(finalDrift)
+    }
     await save(run, options)
     return run
   } finally {

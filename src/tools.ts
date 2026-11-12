@@ -45,6 +45,8 @@ import { MAX_GRAPH_STATE_BYTES, serializedBytes, truncateUtf8, utf8Bytes } from 
 import { executeWithMemory } from "./session-memory/attempts.ts"
 import { hashObject } from "./session-memory/store.ts"
 import { canonicalJson } from "./persistence.ts"
+import { TaskContractInputSchema, parseTaskContractInput, taskTemplate, bindTaskContract, assertTaskState,
+  assertTaskGraph, assertTaskHostCapabilities, taskContractSummary, type TaskContractInput } from "./task-contract.ts"
 import type { SessionMemoryRuntime } from "./session-memory/runtime.ts"
 import { buildRunProgress, parseRunProgress, type AlgRunProgress } from "./run-progress.ts"
 import { createRunCardProjector, type RunCardProjector, type SubagentCardMode } from "./run-cards.ts"
@@ -209,6 +211,7 @@ function compactNodes(run: RunState) {
         session_id: sessionId,
         ...(attempt.output_ref ? { output_ref: attempt.output_ref } : {}),
         ...(attempt.detail_ref ? { detail_ref: attempt.detail_ref } : {}),
+        ...(attempt.task_evidence_ref ? { task_evidence_ref: attempt.task_evidence_ref } : {}),
       }
     })
     const visibleSessionCount = node.attempts.filter((attempt) => Boolean(attempt.session_id)).length
@@ -362,9 +365,10 @@ function routingSummary(run: RunState) {
 
 function nextAction(run: RunState): string {
   if (run.status === "planning") return `Call alg_run with run_id=${run.run_id}; filesystem-root approval, if needed, must be explicit again.`
-  if (run.status === "blocked" || run.status === "running") return `Call alg_resume with run_id=${run.run_id} for another bounded synchronous wave set.`
+  if (run.status === "blocked") return `Inspect alg_status and the recorded blocker for run_id=${run.run_id}. Resolve its prerequisite before alg_resume; do not loop or reset attempts by replanning.`
+  if (run.status === "running") return `Call alg_resume with run_id=${run.run_id} for another bounded synchronous wave set.`
   if (run.status === "done") return "The run is complete. Report its existing outcome and stop; do not plan or execute the same task again. Use alg_status/detail=full only if its recorded evidence is needed."
-  if (run.investigation) return "Inspect this investigation and its failure artifacts. Do not replace it to reset attempts or budget; an intentional repeat requires an explicit new task."
+  if (run.investigation || run.task_contract) return "Inspect the retained run and its failure artifacts. Do not replace it to reset attempts or budget; an intentional repeat requires an explicit new task."
   return "Inspect alg_status/detail=full and failure artifacts; attempt limits require a new run when exhausted."
 }
 
@@ -443,6 +447,10 @@ function finalizeCompact(data: Record<string, unknown>): Record<string, unknown>
     mode: candidate.mode,
     template: candidate.template,
     criteria_locked: candidate.criteria_locked,
+    task_admission: isPlainRecord(candidate.task_admission) ? {
+      status: candidate.task_admission.status, contract_sha256: candidate.task_admission.contract_sha256,
+      requirements_sha256: candidate.task_admission.requirements_sha256, phase: candidate.task_admission.phase,
+    } : undefined,
     plan_reused: candidate.plan_reused,
     investigation_attached: candidate.investigation_attached,
     criteria_count: candidate.criteria_count,
@@ -475,6 +483,7 @@ function runResponse(run: RunState, events: string[], detail: Detail) {
     const visibleEvents = events.slice(-128).map((event) => cap(event))
     return {
       ...full,
+      task_admission: taskContractSummary(full),
       execution_directory: full.execution_directory ?? full.project_directory,
       shell_gate_base: full.execution_directory ?? full.project_directory,
       events: visibleEvents,
@@ -492,6 +501,7 @@ function runResponse(run: RunState, events: string[], detail: Detail) {
   const truncatedEvents = events.filter((event) => utf8Bytes(event) > COMPACT_TEXT_BYTES).length
   return finalizeCompact({
     run_id: run.run_id,
+    task_admission: taskContractSummary(run),
     status: run.status,
     phase: run.phase,
     mode: run.mode,
@@ -598,6 +608,28 @@ export function createAlgTools(
   runtime: AlgToolRuntime = {},
 ) {
   const { client } = plugin
+  const checkTaskCapabilities = async (input: TaskContractInput, graph: GraphDef, directory: string, signal: AbortSignal) => {
+    if (!input.deliverables.some(d => d.destination === "project_file") && input.verification.execution !== "host_command") return
+    const controller = new AbortController()
+    const abort = () => controller.abort()
+    signal.addEventListener("abort", abort, { once: true })
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+      if (signal.aborted) throw new Error("task_host_capability_unknown: capability lookup cancelled")
+      const response = await Promise.race([
+        client.app.agents({ query: { directory }, signal: controller.signal, responseStyle: "fields", throwOnError: false }),
+        new Promise<never>((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error("task_host_capability_unknown: host agent lookup timed out")) }, 3_000) }),
+      ])
+      assertTaskHostCapabilities(input, graph, response.error ? undefined : response.data)
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith("task_host_capability_")) throw error
+      throw new Error("task_host_capability_unknown: effective host agent permissions unavailable")
+    } finally { if (timer) clearTimeout(timer); signal.removeEventListener("abort", abort) }
+  }
+  const checkAdmittedTask = async (run: RunState, signal: AbortSignal) => {
+    assertTaskState(run)
+    if (run.task_contract) await checkTaskCapabilities(run.task_contract.input, run.graph, run.execution_directory ?? run.project_directory, signal)
+  }
   const isAdditionalFilesystemRoot = (project: string): boolean =>
     runtime.additionalFilesystemRoot?.(project) === true
   // Workers never orchestrate: hiding ALG's own tools saves their definitions on every worker request and
@@ -701,12 +733,14 @@ export function createAlgTools(
           const { project } = roots(plugin, context)
           let run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned planned run found. Call alg_plan first and pass criteria directly to alg_plan when possible.")
+          if (run.task_contract) throw new Error("task_contract_locked: accepted original criteria cannot be replaced or unlocked")
           if (run.investigation || graphPolicy(run.graph)?.investigation) throw new Error("managed investigation criteria are fixed at planning; plan a new investigation")
           if (run.status !== "planning") throw new Error("Criteria can only be changed while the run is planning")
           if (run.criteria_locked && run.criteria.length && args.lock !== false) {
             throw new Error(`Criteria are locked on run ${run.run_id}; pass lock=false to replace and leave unlocked.`)
           }
           run = await mutateOwnedRunAsync(project, run.run_id, context.sessionID, (fresh) => {
+            if (fresh.task_contract) throw new Error("task_contract_locked: accepted original criteria cannot be replaced or unlocked")
             if (fresh.status !== "planning") throw new Error("Criteria can only be changed while the run is planning")
             if (fresh.criteria_locked && fresh.criteria.length && args.lock !== false) {
               throw new Error(`Criteria are locked on run ${fresh.run_id}; pass lock=false to replace and leave unlocked.`)
@@ -727,9 +761,10 @@ export function createAlgTools(
     }),
 
     alg_plan: tool({
-      description: "Plan an owned ALG DAG; planning does not execute work. For requested live work, follow a successful plan with alg_run; preserve explicit plan-only/dry-run intent and stop on reused done runs. Opt into coding-compact for small, well-scoped code tasks. Revisions use expected_graph_sha256 on owned planning/blocked runs; managed investigations cannot be revised. Compact by default.",
+      description: "Admit an owned ALG DAG; new plans require task_contract and original criteria. Declare deliverable producer node IDs, phase, verification and protected paths. Missing template selects by declared work/discovery: coding-compact for known project changes, research-diamond for read-only work. Planning does not execute. Follow requested live work with alg_run; stop at explicit preparation/plan-only boundaries or reused done runs. Revisions retain the accepted task contract.",
       args: {
         goal: tool.schema.string().min(1).max(20_000).optional(),
+        task_contract: TaskContractInputSchema.optional().describe("Required for new plans, omitted for graph revision. Version 1, kind read_only/project_change/mixed, discovery required/not_required, phase preparation/complete, deliverables [{destination:response/run_artifact/project_file,producer_node,path only for project_file}], verification {checker_node,execution:none/host_command/shell_gate,execution_node only if execution required}, preserve_paths []. Names refer to selected graph nodes."),
         template: tool.schema.enum(["coding-diamond", "coding-compact", "research-diamond", "data-investigation"]).optional(),
         operation: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/).optional().describe("Advisory workspace requirement lookup; covered data-investigation uses data.investigate.read."),
         criteria: tool.schema.array(tool.schema.string().min(1).max(2_000)).max(100).optional().describe("Original user requirements. Research proposals and suggested verification methods remain advisory unless explicitly adopted by the user."),
@@ -756,7 +791,7 @@ export function createAlgTools(
             }
             if (args.goal !== undefined || args.criteria !== undefined || args.template !== undefined || args.mode !== undefined ||
               args.operation !== undefined || args.shell_gate !== undefined || args.shell_cwd !== undefined || args.shell_timeout_ms !== undefined ||
-              args.preserve_paths !== undefined) {
+              args.preserve_paths !== undefined || args.task_contract !== undefined) {
               throw new Error("graph revision changes only graph_json; run goal, criteria, mode, and execution scope are immutable")
             }
             let receipt: GraphRevisionReceipt | undefined
@@ -771,6 +806,7 @@ export function createAlgTools(
                 requestedBy: context.sessionID,
                 reason: args.revision_reason!,
               })
+              if (fresh.task_contract) assertTaskGraph(fresh.task_contract.input, result.graph)
               preflightShellGates(result.graph, {
                 worktree: project,
                 directory: fresh.execution_directory ?? fresh.project_directory,
@@ -815,6 +851,8 @@ export function createAlgTools(
               }, { run_id: revised.run_id })
           }
           if (!args.goal) throw new Error("goal is required when creating a new run")
+          if (!args.task_contract) throw new Error("task_contract_required: declare the work kind, deliverables, phase, verification and protected paths before planning")
+          const taskInput = parseTaskContractInput(args.task_contract)
           // Authorize root scope before model-settings recovery/quarantine or
           // run creation can touch the filesystem.
           if (args.template === "data-investigation" && (args.graph_json || args.shell_gate)) {
@@ -822,7 +860,7 @@ export function createAlgTools(
           }
           const source: unknown = args.graph_json
             ? JSON.parse(args.graph_json)
-            : getTemplate(args.template ?? "coding-diamond")
+            : getTemplate(args.template ?? taskTemplate(taskInput))
           let graph = validateGraph(source)
           if (args.graph_json && graph.name === "data-investigation") {
             throw new Error("Phase 1 investigations require the built-in data-investigation template")
@@ -835,10 +873,15 @@ export function createAlgTools(
           }
           if (args.shell_cwd !== undefined && !args.shell_gate) throw new Error("shell_cwd requires shell_gate")
           if (args.shell_gate) graph = withShellGate(graph, args.shell_gate, args.shell_timeout_ms, args.shell_cwd)
-          if (args.preserve_paths !== undefined) graph = withPreservePaths(graph, project, args.preserve_paths)
-          const preservationRequest = args.preserve_paths === undefined ? undefined : {
+          if (args.preserve_paths !== undefined && JSON.stringify(args.preserve_paths) !== JSON.stringify(taskInput.preserve_paths))
+            throw new Error("task_preservation_mismatch: preserve_paths must match the task contract")
+          if (taskInput.preserve_paths.length) graph = withPreservePaths(graph, project, taskInput.preserve_paths)
+          const taskContract = bindTaskContract(taskInput, args.goal, args.criteria ?? [], graph,
+            { session_id: context.sessionID, message_id: context.messageID })
+          await checkTaskCapabilities(taskInput, graph, directory, context.abort)
+          const preservationRequest = !taskInput.preserve_paths.length ? undefined : {
             node_id: graph.nodes.find((node) => node.agent === "implementer")!.id,
-            paths: args.preserve_paths,
+            paths: taskInput.preserve_paths,
             scope: "Optional host pre/post snapshot request. Planning validates paths only; preservation must be established from recorded execution evidence.",
           }
           const gatePreflight = preflightShellGates(graph, { worktree: project, directory,
@@ -853,6 +896,7 @@ export function createAlgTools(
           if (operation) await runtime.operations?.plan(context.sessionID, operation)
           if (investigation && (!runtime.operations?.options.enabled || runtime.sessionMemory?.options.mode !== "assist")) throw new Error("data investigations require enabled configuration and session memory assist mode")
           const create = (runId?: string) => createRun({
+            taskContract,
             ...(runId ? { runId } : {}),
             goal: args.goal!,
             criteria: args.criteria ?? [],
@@ -868,9 +912,11 @@ export function createAlgTools(
           })
           const planned = investigation
             ? await runtime.operations!.planInvestigation(context.sessionID, { goal: args.goal!, criteria: args.criteria ?? [],
-                graph, directory, mode: args.mode ?? "live" }, create)
+                graph, directory, mode: args.mode ?? "live", task_contract: taskContract }, create)
             : { run: create(), reused: false }
           const { run } = planned
+          if (!run.task_contract || canonicalJson(run.task_contract.input) !== canonicalJson(taskInput))
+            throw new Error("task_reuse_contract_mismatch: existing investigation retains a different or legacy contract; inspect its status")
           const initialOrCurrentGraphSha256 = persistGraphSnapshot(project, run.run_id, run.graph)
           const investigationAttached = "attached" in planned ? planned.attached : undefined
           const planNext = investigation && investigationAttached === false && !["done", "failed"].includes(run.status)
@@ -881,6 +927,7 @@ export function createAlgTools(
           const compactedNodes = compactPlanNodes(run)
           const compact = finalizeCompact({
             run_id: run.run_id,
+            task_admission: taskContractSummary(run),
             graph_sha256: initialOrCurrentGraphSha256,
             template: graph.name,
             plan_reused: planned.reused,
@@ -906,6 +953,7 @@ export function createAlgTools(
             "alg plan",
             detail === "full" ? {
               run_id: run.run_id,
+              task_admission: taskContractSummary(run),
               graph_sha256: initialOrCurrentGraphSha256,
               template: graph.name,
               plan_reused: planned.reused,
@@ -969,6 +1017,7 @@ export function createAlgTools(
           } else if (args.shell_timeout_ms !== undefined) {
             throw new Error("shell_timeout_ms requires shell_gate")
           }
+          await checkAdmittedTask(run, context.abort)
           await runtime.operations?.beforeRun(run, context.abort)
           cards = runCards(run, project, context)
           const events: string[] = []
@@ -988,7 +1037,7 @@ export function createAlgTools(
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
             operation: "run",
             workerDisabledTools,
-            beforeBatch: (fresh, nodes) => runtime.operations?.beforeBatch(fresh, nodes, context.abort) ?? Promise.resolve(),
+            beforeBatch: async (fresh, nodes) => { await checkAdmittedTask(fresh, context.abort); await runtime.operations?.beforeBatch(fresh, nodes, context.abort) },
             beforeChildPrompt: (child, _role, node) => runtime.operations?.child(run, child, node) ?? Promise.resolve(),
             onEvent: (message) => events.push(message),
             onProgress: (savedRun) => {
@@ -1098,6 +1147,7 @@ export function createAlgTools(
           const compact = finalizeCompact({
             run_id: run.run_id,
             owner_session_id: run.owner_session_id,
+            task_admission: taskContractSummary(run),
             status: run.status,
             phase: run.phase,
             graph_sha256: graphSha256(run.graph),
@@ -1186,6 +1236,7 @@ export function createAlgTools(
           if (args.shell_cwd !== undefined && !args.shell_gate) throw new Error("shell_cwd requires shell_gate")
           if (args.shell_gate) run.graph = withShellGate(run.graph, args.shell_gate, args.shell_timeout_ms, args.shell_cwd)
           else if (args.shell_timeout_ms !== undefined) throw new Error("shell_timeout_ms requires shell_gate")
+          await checkAdmittedTask(run, context.abort)
           await runtime.operations?.beforeRun(run, context.abort)
           prepareRunForResume(run)
           cards = runCards(run, project, context)
@@ -1206,7 +1257,7 @@ export function createAlgTools(
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
             operation: "resume",
             workerDisabledTools,
-            beforeBatch: (fresh, nodes) => runtime.operations?.beforeBatch(fresh, nodes, context.abort) ?? Promise.resolve(),
+            beforeBatch: async (fresh, nodes) => { await checkAdmittedTask(fresh, context.abort); await runtime.operations?.beforeBatch(fresh, nodes, context.abort) },
             beforeChildPrompt: (child, _role, node) => runtime.operations?.child(run, child, node) ?? Promise.resolve(),
             onEvent: (message) => events.push(message),
             onProgress: (savedRun) => {

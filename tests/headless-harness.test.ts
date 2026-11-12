@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { chooseSyntheticResponse, completedInvestigationOutputs, PERSISTED_REFERENCE, PERSISTED_RESULT } from "../scripts/test-v1-headless.ts"
+import { chooseSyntheticResponse, completedInvestigationOutputs, EvidenceSchema, HEADLESS_INITIAL_PROMPT, HEADLESS_TASK_CONTRACT, PERSISTED_REFERENCE, PERSISTED_RESULT } from "../scripts/test-v1-headless.ts"
 import { checkerProbeResponse } from "../scripts/checker-headless-probe.ts"
 
 describe("headless synthetic provider contract", () => {
@@ -30,7 +30,15 @@ describe("headless synthetic provider contract", () => {
     const plan = chooseSyntheticResponse("initial", 1, { tools: [] })
     const investigation = chooseSyntheticResponse("initial", 2, { tools: [] })
     expect(context).toMatchObject({ kind: "tool", name: "alg_context_status", args: { operation: "headless-smoke" } })
-    expect(plan).toMatchObject({ kind: "tool", name: "alg_plan", args: { template: "data-investigation" } })
+    expect(plan).toMatchObject({ kind: "tool", name: "alg_plan", args: {
+      goal: "Run bounded synthetic data investigation acceptance", template: "data-investigation", criteria: ["Use only deterministic local fixture data"],
+      task_contract: { version: 1, kind: "read_only", discovery: "required", phase: "complete",
+        deliverables: [{ destination: "response", producer_node: "confirm" }], verification: { checker_node: "check", execution: "none" }, preserve_paths: [] },
+    } })
+    expect(HEADLESS_TASK_CONTRACT).toEqual(plan.args!.task_contract)
+    expect(HEADLESS_INITIAL_PROMPT).toContain("original criteria are immutable")
+    expect(EvidenceSchema.shape.task_contract.isOptional()).toBe(true) // prior evidence reports remain readable
+    expect(EvidenceSchema.shape.task_admission_probe.isOptional()).toBe(true)
     expect(investigation).toMatchObject({ kind: "tool", name: "alg_investigation", args: { request: { action: "admit" } } })
     const workKey = "a".repeat(64)
     const execute = chooseSyntheticResponse("initial", 3, { messages: [{ role: "tool", content: JSON.stringify({ work_key: workKey }) }] })

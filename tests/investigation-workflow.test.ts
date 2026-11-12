@@ -10,9 +10,10 @@ import { recordInvestigationReview, requireInvestigationReview } from "../src/in
 import { InvestigationStore, type InvestigationMcpPort, type InvestigationWorkInput } from "../src/investigation/index.ts"
 import { SessionMemoryRuntime } from "../src/session-memory/runtime.ts"
 import { getTemplate } from "../src/templates.ts"
+import { bindTaskContract } from "../src/task-contract.ts"
 import type { NodePromptOpts } from "../src/sessions.ts"
 import { readSyntheticCatalogPage, syntheticFrontier, syntheticInvestigationCatalog } from "./fixtures/investigation-catalog.ts"
-import { executeContext, inertClient, removeProject } from "./helpers.ts"
+import { executeContext, inertClient, removeProject, testTaskContract } from "./helpers.ts"
 
 function toolOutput(value: unknown): any { return JSON.parse(typeof value === "string" ? value : (value as { output: string }).output) }
 const projects: string[] = []
@@ -91,9 +92,15 @@ describe("V1 Phase One synthetic investigation acceptance", () => {
     const path = project()
     const memory = new SessionMemoryRuntime(path, { mode: "assist" })
     memory.beginTask("owner", "Explain a synthetic excursion using scoped evidence")
-    const run = createRun({ goal: "Explain a synthetic excursion using scoped evidence",
-      criteria: ["Preserve source versions, coverage, alternatives, and uncertainty"],
-      graph: getTemplate("data-investigation"), projectDirectory: path, ownerSessionId: "owner" })
+    const goal = "Explain a synthetic excursion using scoped evidence"
+    const criteria = ["Preserve source versions, coverage, alternatives, and uncertainty"]
+    const graph = getTemplate("data-investigation")
+    const taskContractInput = testTaskContract({ kind: "read_only", discovery: "required", phase: "complete",
+      deliverables: [{ destination: "response", producer_node: "confirm" }],
+      verification: { checker_node: "check", execution: "none" }, preserve_paths: [] })
+    const taskContract = bindTaskContract(taskContractInput, goal, criteria, graph,
+      { session_id: "owner", message_id: "initial-investigation-plan" })
+    const run = createRun({ goal, criteria, graph, taskContract, projectDirectory: path, ownerSessionId: "owner" })
     const synthetic = portFor(memory.store.projectId)
     const options = { enabled: true, costLimit: 20, perJobReservation: 5 }
     let runtime = new OperationalRuntime(memory, {}, options, () => synthetic.port)
@@ -186,7 +193,8 @@ describe("V1 Phase One synthetic investigation acceptance", () => {
     const context = { sessionID: "owner", messageID: "after-compaction", agent: "orchestrator", directory: path, worktree: path,
       abort: new AbortController().signal, metadata: () => {}, ask: async () => {} } as any
     for (let i = 0; i < 3; i++) {
-      const planned = toolOutput(await tools.alg_plan.execute({ goal: run.goal, criteria: run.criteria, template: "data-investigation" }, context))
+      const planned = toolOutput(await tools.alg_plan.execute({ goal: run.goal, criteria: run.criteria, template: "data-investigation",
+        task_contract: taskContractInput }, context))
       expect(planned).toMatchObject({ run_id: run.run_id, plan_reused: true, status: "done" })
       expect(planned.next).toContain("stop")
       const repeated = toolOutput(await tools.alg_run.execute({ run_id: planned.run_id }, context))

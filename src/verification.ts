@@ -20,7 +20,7 @@ export const VerificationBasisSchema = z.object({
   evidence: z.array(z.object({
     id: z.string().regex(/^E[1-8]$/),
     port: z.string().min(1).max(64),
-    source: z.object({ run_id: z.string().min(1).max(64), kind: z.enum(["node_output", "graph_literal", "run_input", "host_execution", "host_preservation"]),
+    source: z.object({ run_id: z.string().min(1).max(64), kind: z.enum(["node_output", "graph_literal", "run_input", "host_execution", "host_preservation", "host_task"]),
       reference: z.string().min(1).max(4_096).optional(), attempt: z.number().int().nonnegative().optional() }).strict(),
     status: z.enum(["included", "omitted", "unavailable"]),
     json_bytes: z.number().int().nonnegative().optional(),

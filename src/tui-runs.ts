@@ -42,6 +42,8 @@ import {
 } from "./owner-index.ts"
 import { canonicalDirectory, hostProjectDirectory, isSafeProjectRelativePath } from "./paths.ts"
 import { buildRunProgress, type AlgRunProgress } from "./run-progress.ts"
+import { assertTaskState, TaskContractSchema, type TaskContract } from "./task-contract.ts"
+import { assertTaskEvidence, MAX_TASK_EVIDENCE_BYTES } from "./task-evidence.ts"
 
 const MAX_RECENT_RUNS = 20
 const MAX_READ_CONCURRENCY = 8
@@ -118,6 +120,7 @@ interface TuiRun {
   status: string
   mode?: "live" | "dry"
   criteria?: string[]
+  task_contract?: TaskContract
   updated_at: string
   nodes: Record<string, TuiNode>
   graph: GraphDef
@@ -132,7 +135,7 @@ interface ValidatedOutput {
   byte_size: number
   sha256?: string
   legacy_fixed_path: boolean
-  kind: "output" | "detail"
+  kind: "output" | "detail" | "task evidence"
 }
 
 type OutputValidationCache = Map<string, Promise<ValidatedOutput>>
@@ -346,6 +349,16 @@ function parseOwnedRun(value: unknown, owner: string, directoryRunId: string): T
     throw new Error(`Run ${directoryRunId} progress has invalid verification criteria`)
   }
   const criteria = parsedCriteria?.success ? parsedCriteria.data : undefined
+  let taskContract: TaskContract | undefined
+  if (value.task_contract !== undefined) {
+    try {
+      taskContract = TaskContractSchema.parse(value.task_contract)
+      if (typeof value.goal !== "string" || !criteria || value.criteria_locked !== true) throw new Error("invalid requirements")
+      assertTaskState({ task_contract: taskContract, goal: value.goal, criteria, criteria_locked: true, graph })
+    } catch {
+      throw new Error(`Run ${directoryRunId} progress has invalid task admission metadata`)
+    }
+  }
   const graphById = new Map(graph.nodes.map((definition) => [definition.id, definition]))
   const stateIds = Object.keys(value.nodes)
   if (stateIds.length !== graphById.size || stateIds.some((id) => !graphById.has(id)) ||
@@ -392,6 +405,7 @@ function parseOwnedRun(value: unknown, owner: string, directoryRunId: string): T
             definition.loop?.gate === "all",
           verification_required: !!definition.verification,
           verification_criteria: criteria,
+          task_evidence_required: value.mode !== "dry" && taskContract?.input.verification.checker_node === nodeId,
         })
       } catch (error) {
         throw new Error(
@@ -446,6 +460,7 @@ function parseOwnedRun(value: unknown, owner: string, directoryRunId: string): T
     status: previewField(value.status as string, MAX_TUI_ID_PREVIEW_BYTES, truncation),
     ...(value.mode === "live" || value.mode === "dry" ? { mode: value.mode } : {}),
     ...(criteria ? { criteria } : {}),
+    ...(taskContract ? { task_contract: taskContract } : {}),
     updated_at: previewField(value.updated_at as string, MAX_TUI_ID_PREVIEW_BYTES, truncation),
     nodes,
     nodes_total: nodeCount,
@@ -685,9 +700,15 @@ function nestedAttemptReferenceKind(
   runId: string,
   nodeId: string,
   attempt: number,
-  kind: "output" | "detail",
+  kind: "output" | "detail" | "task evidence",
   allowLegacyFixed: boolean,
 ): { legacy_fixed_path: boolean; expected_path: string } {
+  if (kind === "task evidence") {
+    const expected_path = `.opencode/runs/${runId}/artifacts/task-evidence-${nodeId}-a${attempt}-${reference.sha256}.json`
+    if (reference.artifact_path !== expected_path || !isFullShaImmutableReference(reference))
+      throw new Error("Invalid checker task evidence reference path")
+    return { expected_path, legacy_fixed_path: false }
+  }
   const directory = kind === "output" ? "artifacts" : "history"
   const suffix = kind === "output" ? `-output-${reference.sha256}` : `-detail-${reference.sha256}`
   const base = `.opencode/runs/${runId}/${directory}/${nodeId}-attempt-${attempt}`
@@ -892,6 +913,7 @@ function attemptValidationContext(run: TuiRun, node: TuiNode, attempt: number) {
     requires_shell: node.requires_shell,
     verification_required: node.verification_required,
     verification_criteria: run.criteria,
+    task_evidence_required: run.mode !== "dry" && run.task_contract?.input.verification.checker_node === node.id,
   }
 }
 
@@ -913,7 +935,7 @@ async function readValidatedNestedReference(
   attempt: NodeAttempt,
   reference: RunDataReference,
   cache: OutputValidationCache,
-  kind: "output" | "detail",
+  kind: "output" | "detail" | "task evidence",
   maximumLogicalBytes: number,
   allowLegacyFixed: boolean,
 ): Promise<ValidatedOutput> {
@@ -1026,6 +1048,7 @@ async function readValidatedAttemptOutput(
 }
 
 const ATTEMPT_DETAIL_IDENTITY_FIELDS = [
+  "task_evidence_ref",
   "execution_evidence",
   "gate_evidence",
   "preservation_evidence",
@@ -1134,7 +1157,7 @@ function navigateValidatedAttempt(
     toast(api, "error", "ALG attempt unavailable", formatSdkError(error))
     return
   }
-  if (!projected.output_ref && !projected.detail_ref) {
+  if (!projected.output_ref && !projected.detail_ref && !projected.task_evidence_ref) {
     api.ui.dialog.clear()
     api.route.navigate("session", { sessionID: sessionId })
     return
@@ -1155,6 +1178,13 @@ function navigateValidatedAttempt(
             attempt.compact_archive,
           )
         : projected
+      if (complete.task_evidence_ref) {
+        if (!run.task_contract || run.task_contract.input.verification.checker_node !== node.id)
+          throw new Error("Task evidence belongs to an unadmitted checker")
+        const evidence = await readValidatedNestedReference(api, run, node, complete, complete.task_evidence_ref, cache,
+          "task evidence", MAX_TASK_EVIDENCE_BYTES, false)
+        assertTaskEvidence(evidence.value, run.task_contract, run.run_id)
+      }
       const output = projected.output_ref
         ? await readValidatedAttemptOutput(
             api,

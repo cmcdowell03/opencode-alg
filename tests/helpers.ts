@@ -1,6 +1,7 @@
 import { mkdtempSync, realpathSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
+import type { TaskContractInput } from "../src/task-contract.ts"
 import type { GraphDef } from "../src/types.ts"
 
 export function tempProject(label = "alg-test-"): string {
@@ -43,8 +44,19 @@ export function inertClient(): never {
         throw new Error("unexpected SDK call")
       },
     },
-    app: { log: async () => ({ data: true, error: undefined }) },
+    app: {
+      log: async () => ({ data: true, error: undefined }),
+      // Explicit test-only host capability: admission can exercise its real
+      // capability check without making any model or host calls.
+      agents: async () => ({ data: [{ name: "implementer", tools: { edit: true, bash: true },
+        permission: { edit: "allow", bash: "allow" } }], error: undefined }),
+    },
   } as never
+}
+
+/** Declare task scope explicitly in tests that exercise new-plan admission. */
+export function testTaskContract(input: Omit<TaskContractInput, "version">): TaskContractInput {
+  return { version: 1, ...input }
 }
 
 export function executeContext(project: string, signal = new AbortController().signal) {

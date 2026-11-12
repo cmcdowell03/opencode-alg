@@ -64,7 +64,7 @@ export function canonicalJson(value: unknown): string {
   const canonicalize = (candidate: unknown): unknown => {
     if (Array.isArray(candidate)) return candidate.map((item) => canonicalize(item))
     if (candidate && typeof candidate === "object") {
-      const sorted: Record<string, unknown> = {}
+      const sorted: Record<string, unknown> = Object.create(null)
       for (const key of Object.keys(candidate).sort()) {
         const field = (candidate as Record<string, unknown>)[key]
         if (field !== undefined) sorted[key] = canonicalize(field)
@@ -275,6 +275,7 @@ function projectAttempt(run: RunState, nodeId: string, attempt: NodeAttempt): No
     ...(attempt.gate_recovery ? { gate_recovery: attempt.gate_recovery } : {}),
     ...(attempt.reused_output_from !== undefined ? { reused_output_from: attempt.reused_output_from } : {}),
     ...(attempt.verification_basis ? { verification_basis: attempt.verification_basis } : {}),
+    ...(attempt.task_evidence_ref ? { task_evidence_ref: attempt.task_evidence_ref } : {}),
     attempt: attempt.attempt,
     status: attempt.status,
     ...(attempt.session_id ? { session_id: attempt.session_id } : {}),

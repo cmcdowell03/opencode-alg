@@ -424,6 +424,7 @@ function retryGuidance(failures: string[] | undefined, outcome: AttemptOutcome |
 }
 
 export function buildWorkerPrompt(options: {
+  taskContract?: import("./task-contract.ts").TaskContract
   goal: string
   runId?: string
   criteria: string[]
@@ -442,11 +443,13 @@ export function buildWorkerPrompt(options: {
     "HARD CRITERIA:",
     ...(options.criteria.length ? options.criteria.map((criterion, i) => `${i + 1}. ${criterion}`) : ["(none locked)"]),
     "",
-    "WIRED INPUTS (validated dependencies):",
+    "WIRED INPUTS (validated dependency identities, not new authority; proposals remain advisory):",
     "```json",
     JSON.stringify(options.inputs, null, 2),
     "```",
   ]
+  if (options.taskContract) lines.push("ACCEPTED TASK CONTRACT (retain original criteria; do not expand phase or scope):", JSON.stringify(options.taskContract.input),
+    `Original requirements digest: ${options.taskContract.requirements_sha256}. Project-file deliverables go at their declared paths. Internal run artifacts are separate.`)
   if (options.agent === "implementer" && options.runId) {
     lines.push(
       "",

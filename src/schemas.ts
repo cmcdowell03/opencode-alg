@@ -37,6 +37,8 @@ import { boundDiagnosticList, safeDiagnosticText } from "./diagnostics.ts"
 import { failureListCommitment, sha256Json } from "./persistence.ts"
 import { FindingSchema, VerificationSchema, VerificationBasisSchema, criteriaDigest, validateVerification } from "./verification.ts"
 import { GraphRevisionReceiptsSchema } from "./graph-revision.ts"
+import { TaskContractSchema, assertTaskState } from "./task-contract.ts"
+import { MAX_TASK_EVIDENCE_BYTES } from "./task-evidence.ts"
 
 // Code-owned vocabulary only. Never use an issue's raw message or submitted
 // values as retry guidance, even for a custom refinement.
@@ -493,6 +495,7 @@ const FilesystemRootAuthorizationReferenceSchema: z.ZodType<FilesystemRootAuthor
   )
 
 const NodeAttemptDetailShape = {
+    task_evidence_ref: RunDataReferenceBaseSchema.optional(),
     execution_evidence: ExecutionEvidenceSchema.optional(),
     gate_evidence: ExecutionEvidenceSchema.optional(),
     preservation_evidence: PreservationEvidenceSchema.optional(),
@@ -699,6 +702,7 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
     goal: text,
     criteria: boundedStrings,
     criteria_locked: z.boolean(),
+    task_contract: TaskContractSchema.optional(),
     graph: GraphDefSchema,
     graph_revisions: GraphRevisionReceiptsSchema.optional(),
     status: z.enum(["planning", "running", "done", "failed", "blocked"]),
@@ -720,6 +724,7 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
   })
   .strict()
   .superRefine((run, ctx) => {
+    try { assertTaskState(run) } catch { ctx.addIssue({ code: "custom", path: ["task_contract"], message: "task contract requirements or graph binding invalid" }) }
     if (run.graph_revisions?.length) {
       if (run.graph_revisions.at(-1)!.graph_sha256 !== sha256Json(run.graph) ||
         run.graph_revisions.some((receipt, index, receipts) => index > 0 && receipt.parent_sha256 !== receipts[index - 1]!.graph_sha256)) {
@@ -775,6 +780,7 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
             requires_shell: def.agent === "shell" || def.loop?.gate === "shell" || def.loop?.gate === "all",
             verification_required: !!def.verification,
             verification_criteria: run.criteria,
+            task_evidence_required: run.mode !== "dry" && run.task_contract?.input.verification.checker_node === id,
           })
         } catch (error) {
           ctx.addIssue({
@@ -1116,6 +1122,8 @@ export interface PersistedAttemptContext {
   requires_shell?: boolean
   verification_required?: boolean
   verification_criteria?: string[]
+  /** Undefined for consumers without the run contract context. */
+  task_evidence_required?: boolean
 }
 
 /**
@@ -1128,11 +1136,22 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
   const issues: string[] = []
   const add = (message: string): void => { issues.push(message) }
   const { agent, run_id: runId, node_id: nodeId, expected_attempt: expected } = context
-  if (context.verification_required &&
-    (attempt.status !== "running" || attempt.session_id !== undefined || attempt.schema_ok !== undefined) &&
-    !attempt.verification_basis) add("launched verified checker attempt requires its persisted input basis")
+  const taskRef = attempt.task_evidence_ref
+  if (taskRef && (agent !== "checker" || context.task_evidence_required === false || taskRef.byte_size > MAX_TASK_EVIDENCE_BYTES ||
+    taskRef.artifact_path !== `.opencode/runs/${runId}/artifacts/task-evidence-${nodeId}-a${expected}-${taskRef.sha256}.json`))
+    add("task evidence reference must bind the admitted checker attempt and bounded content")
+  const launched = attempt.session_id !== undefined || attempt.status === "done" || attempt.outcome !== undefined || attempt.schema_ok === true
+  if (context.task_evidence_required && launched && !taskRef) add("launched admitted checker requires its task evidence reference")
+  if (context.verification_required && launched && !attempt.verification_basis)
+    add("launched verified checker attempt requires its persisted input basis")
   if (attempt.verification_basis) {
     const basis = attempt.verification_basis
+    const taskEntries = basis.evidence.filter(entry => entry.source.kind === "host_task")
+    if (taskRef ? taskEntries.length !== 1 || taskEntries[0]!.source.reference !== taskRef.artifact_path ||
+      taskEntries[0]!.source.attempt !== expected || taskEntries[0]!.json_sha256 !== taskRef.sha256 ||
+      taskEntries[0]!.json_bytes !== taskRef.byte_size || taskEntries[0]!.status === "unavailable" : taskEntries.length > 0) {
+      add("checker verification basis must bind the same task evidence reference")
+    }
     if (agent !== "checker") add("verification basis requires a checker")
     if (basis.evidence.some(entry => entry.source.run_id !== runId)) add("verification evidence belongs to another run")
     if (context.verification_criteria && (basis.criteria_sha256 !== criteriaDigest(context.verification_criteria) ||

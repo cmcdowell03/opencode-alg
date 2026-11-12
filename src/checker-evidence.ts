@@ -6,7 +6,8 @@ import { serializedBytes } from "./limits.ts"
 import { appendHostExecutionEvidence, ExecutionEvidenceSchema } from "./execution-evidence.ts"
 import { PreservationEvidenceSchema, type PreservationEvidence } from "./preservation-evidence.ts"
 import { hydrateRunFully, loadRun } from "./store.ts"
-import type { NodeDef, RunState } from "./types.ts"
+import type { NodeDef, RunDataReference, RunState } from "./types.ts"
+import type { TaskEvidence } from "./task-evidence.ts"
 
 export const MAX_CHECKER_EVIDENCE_BYTES = 16 * 1024
 export const MAX_CHECKER_EVIDENCE_ENTRIES = 8
@@ -15,7 +16,7 @@ const MAX_VALUE_BYTES = 4 * 1024
 export interface CheckerEvidence {
   entries: Array<{
     port: string
-    source: { run_id: string; kind: "node_output" | "graph_literal" | "run_input" | "host_execution" | "host_preservation"; reference?: string; attempt?: number }
+    source: { run_id: string; kind: "node_output" | "graph_literal" | "run_input" | "host_execution" | "host_preservation" | "host_task"; reference?: string; attempt?: number }
     status: "included" | "omitted" | "unavailable"
     json_bytes?: number
     json_sha256?: string
@@ -29,10 +30,15 @@ export function isCheckerEvidencePort(port: string): boolean {
 }
 
 /** Select only explicitly wired evidence. Hashes identify JSON bytes, not truth. */
-export function buildCheckerEvidence(definition: NodeDef, run: RunState, legacyPorts: readonly string[] = []): CheckerEvidence | undefined {
+export function buildCheckerEvidence(definition: NodeDef, run: RunState, legacyPorts: readonly string[] = [],
+  task?: { value: TaskEvidence; reference: RunDataReference }): CheckerEvidence | undefined {
   const ports = Object.entries(definition.inputs ?? {}).filter(([port]) => isCheckerEvidencePort(port) || legacyPorts.includes(port))
     .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
   const relatedNodes = new Set<string>()
+  if (definition.id === run.task_contract?.input.verification.checker_node) {
+    for (const item of run.task_contract.input.deliverables) relatedNodes.add(item.producer_node)
+    if (run.task_contract.input.verification.execution_node) relatedNodes.add(run.task_contract.input.verification.execution_node)
+  }
   for (const [port, expression] of Object.entries(definition.inputs ?? {})) {
     if (port !== "claimed" && !isCheckerEvidencePort(port) && !legacyPorts.includes(port)) continue
     const parsed = parseInputExpression(expression)
@@ -73,11 +79,22 @@ export function buildCheckerEvidence(definition: NodeDef, run: RunState, legacyP
       ...(preservation.success ? { preservation: preservation.data } : {}), nodeId,
     })
   }
-  if (!ports.length && !receiptPairs.length) return undefined
+  if (!ports.length && !receiptPairs.length && !task) return undefined
   const receiptEntryCount = receiptPairs.reduce((count, pair) => count + Number(!!pair.execution) + Number(!!pair.gate) + Number(!!pair.preservation), 0)
-  const ordinaryPortLimit = Math.max(0, MAX_CHECKER_EVIDENCE_ENTRIES - receiptEntryCount)
+  const ordinaryPortLimit = Math.max(0, MAX_CHECKER_EVIDENCE_ENTRIES - receiptEntryCount - Number(!!task))
   const selectedPorts = ports.slice(0, ordinaryPortLimit)
   const result: CheckerEvidence = { entries: [], omitted_entries: ports.length }
+  if (task) {
+    const { artifact_path, byte_size, sha256 } = task.reference
+    const entry: CheckerEvidence["entries"][number] = { port: "host_task", source: { run_id: run.run_id, kind: "host_task",
+      reference: artifact_path, attempt: run.nodes[definition.id]?.current_attempt },
+      status: "included", json_bytes: byte_size, json_sha256: sha256, value: task.value }
+    if (serializedBytes({ ...result, entries: [entry] }) > MAX_CHECKER_EVIDENCE_BYTES) {
+      delete entry.value
+      entry.status = "omitted"
+    }
+    result.entries.push(entry)
+  }
   for (const [port, expression] of selectedPorts) {
     const parsed = parseInputExpression(expression)
     const source: CheckerEvidence["entries"][number]["source"] = {

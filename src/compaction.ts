@@ -49,6 +49,9 @@ function renderRunSummary(run: RunState, detail: RunSummaryDetail): string {
     "",
     `- run_id: ${run.run_id}`,
     `- status: ${run.status} / phase: ${cap(run.phase, 80)}`,
+    ...(run.status === "blocked" && run.summary ? [`- blocker: ${cap(run.summary, 700)}`] : []),
+    ...(run.task_contract ? [`- task_contract: ${run.task_contract.contract_sha256}; phase=${run.task_contract.input.phase}; requirements=${run.task_contract.requirements_sha256}`,
+      "- Reuse the accepted task via alg_status; advisory findings cannot replace its criteria. A preparation phase stops at its declared deliverables."] : ["- task_admission: legacy-unqualified"]),
     "- continue with alg_resume; alg_status and alg_artifact hold the authoritative details.",
     `- path: .opencode/runs/${run.run_id}/`,
     "",
@@ -102,6 +105,8 @@ export function formatCompactionContext(run: RunState, maximumBytes?: number): s
     `- status: ${run.status} / phase: ${cap(run.phase, 80)}`,
     `- goal: ${cap(run.goal, COMPACTION_GOAL_CHARS)}`,
     `- criteria_locked: ${run.criteria_locked}`,
+    ...(run.status === "blocked" && run.summary ? [`- blocker: ${cap(run.summary, 700)}`] : []),
+    ...(run.task_contract ? [`- task_contract: ${run.task_contract.contract_sha256}; phase=${run.task_contract.input.phase}; requirements=${run.task_contract.requirements_sha256}`] : ["- task_admission: legacy-unqualified"]),
     "- criteria:",
     ...(run.criteria.length
       ? run.criteria.slice(0, COMPACTION_CRITERIA_COUNT).map((criterion) =>

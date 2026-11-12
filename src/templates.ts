@@ -21,7 +21,7 @@ export const CODING_DIAMOND: GraphDef = {
       id: "research",
       agent: "researcher",
       depends_on: ["explore"],
-      description: "Constraints + hard acceptance criteria",
+      description: "Evidence, constraints and advisory verification proposals; original user criteria remain authoritative",
       inputs: {
         goal: "$goal",
         explore: "explore",
@@ -37,7 +37,7 @@ export const CODING_DIAMOND: GraphDef = {
         goal: "$goal",
         criteria: "$criteria",
         constraints: "research.constraints",
-        acceptance_criteria: "research.acceptance_criteria",
+        advisory_criteria: "research.acceptance_criteria",
       },
       loop: { max_attempts: 5, gate: "schema" },
       // shell_gate left optional; set via alg_plan or project config

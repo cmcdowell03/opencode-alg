@@ -6,7 +6,7 @@ import { createRun, loadRun, runDir } from "../src/store.ts"
 import { graphSha256, GraphRevisionReceiptSchema, reviseGraph } from "../src/graph-revision.ts"
 import { createAlgTools } from "../src/tools.ts"
 import type { GraphDef, RunState } from "../src/types.ts"
-import { inertClient, removeProject, executeContext } from "./helpers.ts"
+import { inertClient, removeProject, executeContext, testTaskContract } from "./helpers.ts"
 import { executeRun } from "../src/executor.ts"
 
 function tempProject(label = ".graph-revision-test-"): string {
@@ -194,13 +194,16 @@ describe("bounded V1 graph revisions", () => {
       // alg_plan writes the initial content-addressed version; the digest makes
       // retrieval independent of mutable graph.json projections.
       const tools = createAlgTools({ client: inertClient(), project: { id: "project" }, directory: f.project, worktree: f.project } as never)
-      const result = tools.alg_plan.execute({ goal: "persist root graph", mode: "dry" }, toolContext(f.project))
+      const result = tools.alg_plan.execute({ goal: "persist root graph", criteria: ["Persist the admitted graph"], mode: "dry",
+        task_contract: testTaskContract({ kind: "project_change", discovery: "not_required", phase: "complete",
+          deliverables: [{ destination: "project_file", producer_node: "implement", path: "result.txt" }],
+          verification: { checker_node: "check", execution: "none" }, preserve_paths: [] }) }, toolContext(f.project))
       const response = await result
       const output = JSON.parse((response as { output: string }).output)
       expect(output.error).toBeUndefined()
       const digest = output.graph_sha256
       expect(digest).toMatch(/^[a-f0-9]{64}$/)
-      expect(readFileSync(join(runDir(f.project, output.run_id), "artifacts", `graph-${digest}.json`), "utf8")).toContain('"name":"coding-diamond"')
+      expect(readFileSync(join(runDir(f.project, output.run_id), "artifacts", `graph-${digest}.json`), "utf8")).toContain('"name":"coding-compact"')
     } finally { removeProject(f.project) }
   })
 
@@ -209,15 +212,20 @@ describe("bounded V1 graph revisions", () => {
     try {
       const tools = createAlgTools({ client: inertClient(), project: { id: "project" }, directory: project, worktree: project } as never)
       const planned = JSON.parse((await tools.alg_plan.execute({
-        goal: "revise pending graph", mode: "dry", graph_json: JSON.stringify(graph([
+        goal: "revise pending graph", criteria: ["Preserve graph history"], mode: "dry", graph_json: JSON.stringify(graph([
           { id: "work", agent: "implementer", depends_on: [] },
+          { id: "check", agent: "checker", depends_on: ["work"], isolated_check: true },
         ])),
+        task_contract: testTaskContract({ kind: "project_change", discovery: "not_required", phase: "complete",
+          deliverables: [{ destination: "project_file", producer_node: "work", path: "result.txt" }],
+          verification: { checker_node: "check", execution: "none" }, preserve_paths: [] }),
       }, toolContext(project)) as { output: string }).output)
       const initialHash = planned.graph_sha256 as string
       const runId = planned.run_id as string
       const revisionGraph = graph([
         { id: "work", agent: "implementer", depends_on: [], description: "clarified" },
         { id: "probe", agent: "researcher", depends_on: ["work"] },
+        { id: "check", agent: "checker", depends_on: ["work"], isolated_check: true },
       ])
       const stale = await tools.alg_plan.execute({ revise_run_id: runId, expected_graph_sha256: "0".repeat(64),
         revision_reason: "stale", graph_json: JSON.stringify(revisionGraph) }, toolContext(project))
@@ -228,8 +236,10 @@ describe("bounded V1 graph revisions", () => {
       const accepted = JSON.parse((await tools.alg_plan.execute({ revise_run_id: runId, expected_graph_sha256: initialHash,
         revision_reason: "Add a bounded evidence probe", graph_json: JSON.stringify(revisionGraph) }, toolContext(project)) as { output: string }).output)
       const nextGraph = graph([
-        ...revisionGraph.nodes,
+        revisionGraph.nodes[0]!,
+        revisionGraph.nodes[1]!,
         { id: "probe2", agent: "researcher", depends_on: ["probe"] },
+        revisionGraph.nodes[2]!,
       ])
       const second = JSON.parse((await tools.alg_plan.execute({ revise_run_id: runId,
         expected_graph_sha256: accepted.graph_sha256, revision_reason: "Add one final bounded probe",

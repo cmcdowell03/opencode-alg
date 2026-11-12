@@ -6,7 +6,7 @@ import { validateGraph, wireInputs } from "../src/graph.ts"
 import { createRun, listOwnedRunEnvelopes, loadRunForOwner } from "../src/store.ts"
 import { CODING_COMPACT, getTemplate, listTemplates } from "../src/templates.ts"
 import { createAlgTools, withShellGate } from "../src/tools.ts"
-import { executeContext, inertClient, removeProject, tempProject } from "./helpers.ts"
+import { executeContext, inertClient, removeProject, tempProject, testTaskContract } from "./helpers.ts"
 
 const projects: string[] = []
 afterEach(() => { for (const project of projects.splice(0)) removeProject(project) })
@@ -19,13 +19,16 @@ function fixture() {
   return { project, tools, context }
 }
 function output(value: unknown): any { return JSON.parse((value as { output: string }).output) }
-
+const codingTask = (preserve_paths: string[] = [], phase: "preparation" | "complete" = "complete", discovery: "required" | "not_required" = "not_required") => testTaskContract({ kind: "project_change", discovery, phase,
+  deliverables: [{ destination: "project_file", producer_node: "implement", path: phase === "preparation" ? "preparation.md" : "result.txt" }],
+  verification: { checker_node: "check", execution: "none" }, preserve_paths })
 describe("plan execution intent", () => {
   for (const detail of ["compact", "full"] as const) {
     test(`${detail} live plan directs requested artifacts to bounded execution without executing during planning`, async () => {
       const f = fixture()
       const criteria = ["Write preparation.md", "Stop before creating report.json"]
-      const plan = output(await f.tools.alg_plan.execute({ goal: "Create the preparation artifact", criteria, detail }, f.context))
+      const plan = output(await f.tools.alg_plan.execute({ goal: "Create the preparation artifact", criteria, detail,
+        task_contract: codingTask([], "preparation", "required") }, f.context))
       expect(plan).toMatchObject({ status: "planning", mode: "live", plan_reused: false, template: "coding-diamond" })
       expect(plan.next).toContain("has not executed the requested work")
       expect(plan.next).toContain(`call alg_run with run_id=${plan.run_id} before your final response`)
@@ -41,7 +44,8 @@ describe("plan execution intent", () => {
 
     test(`${detail} dry plan keeps live execution out of its next action`, async () => {
       const f = fixture()
-      const plan = output(await f.tools.alg_plan.execute({ goal: "Dry smoke of a small change", template: "coding-compact", mode: "dry", detail }, f.context))
+      const plan = output(await f.tools.alg_plan.execute({ goal: "Dry smoke of a small change", criteria: ["Record the dry plan"],
+        template: "coding-compact", mode: "dry", detail, task_contract: codingTask() }, f.context))
       expect(plan.error).toBeUndefined()
       expect(plan.next).toContain("This is a dry plan")
       expect(plan.next).toContain("if a dry smoke was requested")
@@ -53,7 +57,8 @@ describe("plan execution intent", () => {
 
   test("explicit plan-only goals remain unexecuted and receive a stop-at-planning exception", async () => {
     const f = fixture()
-    const plan = output(await f.tools.alg_plan.execute({ goal: "Plan only: describe a small count fix; do not implement", template: "coding-compact" }, f.context))
+    const plan = output(await f.tools.alg_plan.execute({ goal: "Plan only: describe a small count fix; do not implement", criteria: ["Describe the bounded count fix"],
+      template: "coding-compact", task_contract: codingTask() }, f.context))
     expect(plan.next).toContain("Stop at planning for an explicit plan-only request")
     expect(loadRunForOwner(f.project, plan.run_id, "owner")!.global_attempts).toBe(0)
     // Intent is guidance, not a heuristic that rewrites the user's goal or criteria.
@@ -79,7 +84,7 @@ describe("opt-in coding-compact workflow", () => {
     const f = fixture()
     const criteria = ["Count distinct IDs", "Preserve the visible test file"]
     const plan = output(await f.tools.alg_plan.execute({ goal: "Small known count fix", criteria,
-      template: "coding-compact", shell_gate: "node --version", mode: "dry" }, f.context))
+      template: "coding-compact", shell_gate: "node --version", mode: "dry", task_contract: codingTask() }, f.context))
     expect(plan.error).toBeUndefined()
     const run = loadRunForOwner(f.project, plan.run_id, "owner")!
     expect(run.graph).toMatchObject({ max_global_attempts: 4, max_concurrency: 1 })
@@ -144,7 +149,7 @@ describe("optional plan preservation inputs", () => {
       const criteria = ["Preserve tests/visible.cjs"]
       const paths = ["tests/visible.cjs"]
       const plan = output(await f.tools.alg_plan.execute({ goal: "Small change", template: "coding-compact", criteria,
-        preserve_paths: paths, detail }, { ...f.context, directory: join(f.project, "nested") }))
+        preserve_paths: paths, detail, task_contract: codingTask(paths) }, { ...f.context, directory: join(f.project, "nested") }))
       expect(plan.error).toBeUndefined()
       expect(plan.preservation_request).toMatchObject({ node_id: "implement", paths })
       expect(plan.preservation_request.scope).toContain("Planning validates paths only")
@@ -160,24 +165,28 @@ describe("optional plan preservation inputs", () => {
 
   test("omission is opt-in and custom graph augmentation retains dependency inputs on only the first implementer", async () => {
     const f = fixture()
-    const ordinary = output(await f.tools.alg_plan.execute({ goal: "No preservation requested", template: "coding-compact" }, f.context))
+    const ordinary = output(await f.tools.alg_plan.execute({ goal: "No preservation requested", criteria: ["Plan the known change"],
+      template: "coding-compact", task_contract: codingTask() }, f.context))
     expect(ordinary).not.toHaveProperty("preservation_request")
     expect(loadRunForOwner(f.project, ordinary.run_id, "owner")!.graph.nodes[0]!.inputs).not.toHaveProperty("preserve_paths")
     writeFileSync(join(f.project, "keep.txt"), "original")
-    const graph = { name: "dependency-context", max_global_attempts: 3, max_concurrency: 1, nodes: [
+    const graph = { name: "dependency-context", max_global_attempts: 4, max_concurrency: 1, nodes: [
       { id: "research", agent: "researcher", depends_on: [] },
       { id: "first", agent: "implementer", depends_on: ["research"] },
       { id: "second", agent: "implementer", depends_on: ["first"] },
+      { id: "check", agent: "checker", depends_on: ["first", "second"], isolated_check: true },
     ] }
-    const planned = output(await f.tools.alg_plan.execute({ goal: "Keep existing context", graph_json: JSON.stringify(graph),
-      preserve_paths: ["keep.txt"] }, f.context))
+    const planned = output(await f.tools.alg_plan.execute({ goal: "Keep existing context", criteria: ["Preserve the existing context"], graph_json: JSON.stringify(graph),
+      preserve_paths: ["keep.txt"], task_contract: testTaskContract({ kind: "project_change", discovery: "not_required", phase: "complete",
+        deliverables: [{ destination: "project_file", producer_node: "second", path: "result.txt" }],
+        verification: { checker_node: "check", execution: "none" }, preserve_paths: ["keep.txt"] }) }, f.context))
     expect(planned.error).toBeUndefined()
     const run = loadRunForOwner(f.project, planned.run_id, "owner")!
     expect(run.graph.nodes[1]!.inputs).toEqual({ research: "research", preserve_paths: '["keep.txt"]' })
     expect(run.graph.nodes[2]!.inputs).toBeUndefined()
     run.nodes.research!.output = { answer: "Existing dependency context" }
     expect(wireInputs(run.graph.nodes[1]!, run).research).toEqual(run.nodes.research!.output)
-    expect(run.criteria).toEqual([])
+    expect(run.criteria).toEqual(["Preserve the existing context"])
   })
 
   test("enforces count, path length, normalization, existence and regular files before creating a run", async () => {
@@ -185,22 +194,25 @@ describe("optional plan preservation inputs", () => {
     mkdirSync(join(f.project, "directory"))
     writeFileSync(join(f.project, "keep.txt"), "original")
     const invalid = [
-      [], ["keep.txt", "keep.txt"], Array(9).fill("keep.txt"), ["a".repeat(513)], [""], ["../keep.txt"], ["./keep.txt"],
+      ["keep.txt", "keep.txt"], Array(9).fill("keep.txt"), ["a".repeat(513)], [""], ["../keep.txt"], ["./keep.txt"],
       ["/keep.txt"], ["C:/keep.txt"], ["directory\\keep.txt"], ["keep.txt:stream"],
       ["directory//keep.txt"], ["keep.txt\u0000"], ["NUL"], ["missing.txt"], ["directory"],
     ]
     for (const preserve_paths of invalid) {
-      const plan = output(await f.tools.alg_plan.execute({ goal: "Invalid preservation input", template: "coding-compact", preserve_paths }, f.context))
+      const plan = output(await f.tools.alg_plan.execute({ goal: "Invalid preservation input", criteria: ["Reject invalid preserved paths"],
+        template: "coding-compact", preserve_paths, task_contract: codingTask(preserve_paths) }, f.context))
       expect(plan.error).toBeString()
     }
     expect(listOwnedRunEnvelopes(f.project, "owner")).toHaveLength(0)
+    expect(f.tools.alg_plan.args.preserve_paths.safeParse([]).success).toBe(false)
     const longest = ["a".repeat(170), "b".repeat(170), "c".repeat(170)].join("/")
     expect(longest.length).toBe(512)
     expect(f.tools.alg_plan.args.preserve_paths.safeParse([longest]).success).toBe(true)
     expect(f.tools.alg_plan.args.preserve_paths.safeParse([longest + "c"]).success).toBe(false)
     const eight = Array.from({ length: 8 }, (_, i) => `keep-${i}.txt`)
     for (const path of eight) writeFileSync(join(f.project, path), "original")
-    const accepted = output(await f.tools.alg_plan.execute({ goal: "Eight explicit files", template: "coding-compact", preserve_paths: eight }, f.context))
+    const accepted = output(await f.tools.alg_plan.execute({ goal: "Eight explicit files", criteria: ["Preserve the eight declared files"],
+      template: "coding-compact", preserve_paths: eight, task_contract: codingTask(eight) }, f.context))
     expect(accepted.error).toBeUndefined()
     expect(accepted.preservation_request.paths).toEqual(eight)
   })
@@ -210,8 +222,9 @@ describe("optional plan preservation inputs", () => {
     projects.push(outside)
     writeFileSync(join(outside, "keep.txt"), "outside")
     symlinkSync(outside, join(f.project, "link"), process.platform === "win32" ? "junction" : "dir")
-    const plan = output(await f.tools.alg_plan.execute({ goal: "Invalid escaped file", template: "coding-compact",
-      preserve_paths: ["link/keep.txt"] }, f.context))
+    const preserve_paths = ["link/keep.txt"]
+    const plan = output(await f.tools.alg_plan.execute({ goal: "Invalid escaped file", criteria: ["Reject escaped preserved files"], template: "coding-compact",
+      preserve_paths, task_contract: codingTask(preserve_paths) }, f.context))
     expect(plan.error).toContain("escapes")
     expect(listOwnedRunEnvelopes(f.project, "owner")).toHaveLength(0)
     expect(readFileSync(join(outside, "keep.txt"), "utf8")).toBe("outside")
@@ -220,10 +233,13 @@ describe("optional plan preservation inputs", () => {
   test("rejects graphs without implementers and preserves the revision argument boundary", async () => {
     const f = fixture()
     writeFileSync(join(f.project, "keep.txt"), "original")
-    const absent = output(await f.tools.alg_plan.execute({ goal: "Research only", template: "research-diamond",
-      preserve_paths: ["keep.txt"] }, f.context))
+    const absent = output(await f.tools.alg_plan.execute({ goal: "Research only", criteria: ["Preserve the named file"], template: "research-diamond",
+      preserve_paths: ["keep.txt"], task_contract: testTaskContract({ kind: "read_only", discovery: "required", phase: "complete",
+        deliverables: [{ destination: "response", producer_node: "research" }],
+        verification: { checker_node: "check", execution: "none" }, preserve_paths: ["keep.txt"] }) }, f.context))
     expect(absent.error).toContain("no implementer node")
-    const planned = output(await f.tools.alg_plan.execute({ goal: "Original plan", template: "coding-compact" }, f.context))
+    const planned = output(await f.tools.alg_plan.execute({ goal: "Original plan", criteria: ["Preserve the original plan"],
+      template: "coding-compact", task_contract: codingTask() }, f.context))
     const revision = output(await f.tools.alg_plan.execute({ revise_run_id: planned.run_id,
       expected_graph_sha256: planned.graph_sha256, revision_reason: "Attempt to add a new plan argument",
       graph_json: JSON.stringify(getTemplate("coding-compact")), preserve_paths: ["keep.txt"] }, f.context))

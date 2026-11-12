@@ -201,6 +201,8 @@ export interface FilesystemRootAuthorizationReference extends RunDataReference {
 }
 
 export interface NodeAttempt {
+  /** Exact host task observations used by this checker; immutable contained sidecar. */
+  task_evidence_ref?: RunDataReference
   /** Host observations, never populated from the worker's claimed JSON. */
   execution_evidence?: import("./execution-evidence.ts").ExecutionEvidence
   gate_evidence?: import("./execution-evidence.ts").ExecutionEvidence
@@ -307,6 +309,8 @@ export interface RunState {
   goal: string
   criteria: string[]
   criteria_locked: boolean
+  /** Accepted declared deliverables and original requirements; absent on legacy runs. */
+  task_contract?: import("./task-contract.ts").TaskContract
   graph: GraphDef
   /** Only pending-node edits are supported; immutable snapshots remain run artifacts. */
   graph_revisions?: import("./graph-revision.ts").GraphRevisionReceipt[]

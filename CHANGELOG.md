@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.7 candidate — task admission and benchmark qualification
+
+- New `alg_plan` calls require a typed task contract and original criteria. Work kind, deliverables, phase, fresh checking, command evidence and protected paths are bound before child work; original criteria cannot be unlocked. Legacy runs remain readable/resumable and are explicitly unqualified for the new admission contract.
+- Declared file work must have a capable producer. Unknown, ask or denied effective host permissions block admission without granting tools. Default template selection follows declared scope and discovery needs, independent of model identity.
+- Host observations of declared deliverables, required execution and preservation precede checking. Immutable checker evidence references and contract hashes survive projections and archives. File presence and a successful command remain observations, not proof of scientific correctness or relevant test coverage.
+- Investigation reuse identity includes declared scope, before claim mutation. Benchmark plumbing keeps issued pairs, separate eligibility, bounded terminal census and linked compaction evidence. Hard-case service/oracle fixtures and long-task compaction-retention measurements are development apparatus; they do not establish comparative superiority.
+- New optional state fields require the 0.5.7 reader. Existing 0.5.6 and earlier compatible state remains readable; rollback over newly written state to older readers is unsupported. V1 only; no hosted CI or automatic graph promotion.
+
 ## 0.5.6 candidate — archived evidence recovery and review follow-up
 
 - Gate-only recovery and checker evidence resolve the original verified attempt after it leaves the four-attempt visible tail. Receipt identity and revision checks remain enforced.

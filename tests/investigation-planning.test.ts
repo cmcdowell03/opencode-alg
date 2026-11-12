@@ -6,7 +6,7 @@ import { SessionMemoryRuntime } from "../src/session-memory/runtime.ts"
 import { OperationalRuntime } from "../src/operational-runtime.ts"
 import { InvestigationStore } from "../src/investigation/index.ts"
 import { getTemplate } from "../src/templates.ts"
-import { inertClient, removeProject, tempProject } from "./helpers.ts"
+import { inertClient, removeProject, tempProject, testTaskContract } from "./helpers.ts"
 
 const paths: string[] = []
 afterEach(() => { for (const path of paths.splice(0)) removeProject(path) })
@@ -18,7 +18,10 @@ function fixture() {
     () => ({}), () => undefined, { sessionMemory: memory, operations })
   const context = { sessionID: "owner", messageID: "m1", agent: "orchestrator", directory: path, worktree: path,
     abort: new AbortController().signal, metadata: () => {}, ask: async () => {} } as any
-  const args = { goal: "Explain the fixture", criteria: ["Preserve uncertainty"], template: "data-investigation" as const }
+  const args = { goal: "Explain the fixture", criteria: ["Preserve uncertainty"], template: "data-investigation" as const,
+    task_contract: testTaskContract({ kind: "read_only", discovery: "required", phase: "complete",
+      deliverables: [{ destination: "response", producer_node: "confirm" }],
+      verification: { checker_node: "check", execution: "none" }, preserve_paths: [] }) }
   return { path, memory, operations, tools, context, args }
 }
 function unpack(value: unknown): any { return JSON.parse((value as { output: string }).output) }
@@ -48,11 +51,26 @@ describe("durable investigation planning", () => {
 
   test("changed criteria, mode or goal cannot replace the attached investigation", async () => {
     const f = fixture(), first = unpack(await f.tools.alg_plan.execute(f.args, f.context))
-    for (const changed of [{ criteria: ["Different"] }, { mode: "dry" as const }, { goal: "Paraphrased new plan" }]) {
+    const checkpoint = structuredClone(f.memory.current("owner"))
+    for (const changed of [
+      { criteria: ["Different"] },
+      { mode: "dry" as const },
+      { goal: "Paraphrased new plan" },
+      { task_contract: { ...f.args.task_contract, phase: "preparation" as const } },
+      { task_contract: { ...f.args.task_contract, deliverables: [{ destination: "response" as const, producer_node: "discover" }] } },
+    ]) {
       const result = unpack(await f.tools.alg_plan.execute({ ...f.args, ...changed }, f.context))
       expect(result.error).toContain("investigation already admitted")
     }
     expect(f.memory.current("owner").investigation?.run_id).toBe(first.run_id)
+    const afterRejections = f.memory.current("owner")
+    // The durable task admission and attachment claim must not move on a
+    // rejected request; host checkpoint revision metadata may be refreshed.
+    expect(afterRejections.investigation).toEqual(checkpoint.investigation)
+    expect(afterRejections.investigation_plan).toEqual(checkpoint.investigation_plan)
+    expect(afterRejections.task_epoch).toBe(checkpoint.task_epoch)
+    expect(afterRejections.goal).toBe(checkpoint.goal)
+    expect(afterRejections.workspace_operation).toBe(checkpoint.workspace_operation)
     expect(listOwnedRunEnvelopes(f.path, "owner")).toHaveLength(1)
   })
 
@@ -81,14 +99,32 @@ describe("durable investigation planning", () => {
       goal: f.args.goal, criteria: f.args.criteria, graph: getTemplate("data-investigation") })
     await f.operations.begin(legacy)
     f.memory.update("owner", (state) => ({ ...state, investigation_plan: undefined })) // Pre-upgrade checkpoint.
-    expect(unpack(await f.tools.alg_plan.execute(f.args, f.context))).toMatchObject({ run_id: legacy.run_id, plan_reused: true })
+    const legacyIntent = { goal: f.args.goal, criteria: f.args.criteria, graph: getTemplate("data-investigation"), directory: f.path, mode: "live" as const }
+    const legacyReuse = await f.operations.planInvestigation("owner", legacyIntent, () => { throw new Error("must reuse the legacy run") })
+    expect(legacyReuse).toMatchObject({ run: { run_id: legacy.run_id }, reused: true })
+    const checkpoint = structuredClone(f.memory.current("owner"))
+    const refusedAdoption = unpack(await f.tools.alg_plan.execute(f.args, f.context))
+    expect(refusedAdoption.error).toContain("investigation already admitted")
+    const afterRefusedAdoption = f.memory.current("owner")
+    expect(afterRefusedAdoption.investigation).toEqual(checkpoint.investigation)
+    expect(afterRefusedAdoption.investigation_plan).toEqual(checkpoint.investigation_plan)
+    expect(afterRefusedAdoption.task_epoch).toBe(checkpoint.task_epoch)
     const other = unpack(await f.tools.alg_plan.execute(f.args, { ...f.context, sessionID: "other" }))
     expect(other.error).toBeUndefined()
     expect(other.run_id).not.toBe(legacy.run_id)
     expect(() => loadRunForOwner(f.path, other.run_id, "owner")).toThrow("does not own")
     await f.operations.detach("owner")
-    const legacyDetached = unpack(await fresh(f).tools.alg_plan.execute(f.args, f.context))
-    expect(legacyDetached).toMatchObject({ run_id: legacy.run_id, plan_reused: true, investigation_attached: false })
+    const legacyDetached = await fresh(f).operations.planInvestigation("owner", legacyIntent, () => { throw new Error("must reuse the legacy run") })
+    expect(legacyDetached).toMatchObject({ run: { run_id: legacy.run_id }, reused: true, attached: false })
+    await f.operations.attach("owner", legacy.run_id)
+    const oldRunResume = unpack(await f.tools.alg_run.execute({ run_id: legacy.run_id, dry: true }, f.context))
+    expect(oldRunResume.error).toContain("engineer_review_required")
+    const resumedLegacy = loadRunForOwner(f.path, legacy.run_id, "owner")!
+    expect(resumedLegacy.task_contract).toBeUndefined()
+    const discovered = resumedLegacy.nodes.discover
+    expect(discovered).toBeDefined()
+    expect(discovered!.status).toBe("done")
+    expect(discovered!.current_attempt).toBeGreaterThan(0)
     expect(unpack(await f.tools.alg_plan.execute({ ...f.args, goal: "Changed" }, f.context)).error).toContain("already admitted")
   })
 

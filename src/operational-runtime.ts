@@ -73,10 +73,13 @@ export class OperationalRuntime {
     await awaitFirstLock(() => this.memory.update(owner, (state) => ({ ...state, workspace_operation: operation })))
     if (this.workspace.select(owner, operation)) throw new Error("needs_context: required skills loaded; plan again after reading restored procedures")
   }
-  private planRequest(run: { goal: string; criteria: string[]; graph: GraphDef; mode: "live" | "dry"; directory: string }) {
+  private planRequest(run: { goal: string; criteria: string[]; graph: GraphDef; mode: "live" | "dry"; directory: string; task_contract?: RunState["task_contract"] }) {
     return hashObject({ goal: run.goal.trim().replace(/\r\n/g, "\n"),
       criteria: run.criteria.map((item) => item.trim().replace(/\r\n/g, "\n")), graph: run.graph, mode: run.mode,
-      directory: canonicalContainedDirectory(this.memory.store.project, run.directory) })
+      directory: canonicalContainedDirectory(this.memory.store.project, run.directory),
+      // Admission identity excludes the transient tool message but includes declared scope.
+      // Legacy claims retain their exact historical hash and cannot silently adopt a contract.
+      ...(run.task_contract ? { task_contract: run.task_contract.input } : {}) })
   }
   private runPlan(run: RunState) {
     return { reference: { schema_version: 1 as const, project_id: this.memory.store.projectId,
@@ -84,7 +87,7 @@ export class OperationalRuntime {
       request_sha256: this.planRequest({ ...run, directory: run.execution_directory ?? run.project_directory }) }
   }
   /** One durable admission per task; identity is independent of model/message/process. */
-  async planInvestigation(owner: string, intent: { goal: string; criteria: string[]; graph: GraphDef; directory: string; mode: "live" | "dry" },
+  async planInvestigation(owner: string, intent: { goal: string; criteria: string[]; graph: GraphDef; directory: string; mode: "live" | "dry"; task_contract?: RunState["task_contract"] },
     create: (runId: string) => RunState) {
     this.enabled(); this.ownerOnly(owner)
     const root = projectRunsRoot(this.memory.store.project)

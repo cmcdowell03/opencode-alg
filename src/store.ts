@@ -3,12 +3,14 @@ import {
   copyFileSync,
   existsSync,
   fsyncSync,
+  fstatSync,
   linkSync,
   lstatSync,
   mkdirSync,
   opendirSync,
   openSync,
   readFileSync,
+  readSync,
   renameSync,
   rmSync,
   statSync,
@@ -29,6 +31,8 @@ import type {
   RunState,
 } from "./types.ts"
 import { ALG_SCHEMA_VERSION } from "./types.ts"
+import { assertTaskState } from "./task-contract.ts"
+import { assertTaskEvidence, MAX_TASK_EVIDENCE_BYTES, type TaskEvidence } from "./task-evidence.ts"
 import { initNodeStates, validateGraph } from "./graph.ts"
 import {
   parsePersistedNodeAttempt,
@@ -327,6 +331,7 @@ function assertRunArtifactMetadataContained(state: RunState, projectDirectory: s
       node.last_failures_ref,
       ...node.attempts.map((attempt) => attempt.output_ref),
       ...node.attempts.map((attempt) => attempt.detail_ref),
+      ...node.attempts.map((attempt) => attempt.task_evidence_ref),
     ]) {
       if (!reference) continue
       try {
@@ -701,6 +706,7 @@ function verifyFailureCommitment(
 }
 
 const ATTEMPT_DETAIL_IDENTITY_FIELDS = [
+  "task_evidence_ref",
   "execution_evidence",
   "gate_evidence",
   "preservation_evidence",
@@ -720,6 +726,20 @@ const ATTEMPT_DETAIL_IDENTITY_FIELDS = [
   "verification_basis",
 ] as const satisfies readonly (keyof NodeAttempt)[]
 
+export function writeTaskEvidence(state: RunState, nodeId: string, attempt: number, evidence: TaskEvidence): RunDataReference {
+  if (!state.task_contract || state.task_contract.input.verification.checker_node !== nodeId)
+    throw new StoreError("task evidence must belong to the admitted checker")
+  assertTaskEvidence(evidence, state.task_contract, state.run_id)
+  const byte_size = serializedBytes(evidence), sha256 = sha256Json(evidence)
+  if (byte_size > MAX_TASK_EVIDENCE_BYTES) throw new StoreError("task evidence exceeds byte limit")
+  const name = `task-evidence-${nodeId}-a${attempt}-${sha256}.json`
+  const reference = { artifact_path: `.opencode/runs/${state.run_id}/artifacts/${name}`, byte_size, sha256 }
+  const path = runContainedPath(state.project_directory, state.run_id, "artifacts", name)
+  if (!existsSync(path)) writeImmutableJson(path, evidence)
+  readAndVerifyReference(state, reference, true)
+  return reference
+}
+
 function persistedAttemptContext(
   state: RunState,
   nodeId: string,
@@ -737,6 +757,7 @@ function persistedAttemptContext(
       definition.loop?.gate === "all",
     verification_required: !!definition.verification,
     verification_criteria: state.criteria,
+    task_evidence_required: state.task_contract?.input.verification.checker_node === nodeId && state.mode !== "dry",
   }
 }
 
@@ -830,6 +851,15 @@ function hydrateAttemptData(
 
   if (!detailReference) {
     verifyFailureCommitment(complete.failures, projected.failures_commitment, `attempt ${nodeId}/${projected.attempt}`)
+  }
+  if (complete.task_evidence_ref) {
+    if (!state.task_contract || state.task_contract.input.verification.checker_node !== nodeId)
+      throw new StoreError("task evidence must belong to the admitted checker")
+    try {
+      assertTaskEvidence(readAndVerifyReference(state, complete.task_evidence_ref, true), state.task_contract, state.run_id)
+    } catch (cause) {
+      throw new StoreError("task evidence integrity or contract binding failed", { cause })
+    }
   }
 
   if (outputReference) {
@@ -1113,6 +1143,7 @@ export function readNodeArtifactOutput(state: RunState, nodeId: string): unknown
 }
 
 export function createRun(options: {
+  taskContract?: import("./task-contract.ts").TaskContract
   goal: string
   criteria: string[]
   graph: GraphDef | unknown
@@ -1142,6 +1173,10 @@ export function createRun(options: {
     options.treatProjectAsFilesystemRoot === true,
   )
   const graph = validateGraph(options.graph)
+  assertTaskState({ task_contract: options.taskContract, goal: options.goal, criteria: options.criteria,
+    criteria_locked: options.criteria.length > 0, graph })
+  if (options.taskContract && options.taskContract.source.session_id !== options.ownerSessionId)
+    throw new StoreError("task contract source must match the admitting run owner")
   const runId = options.runId ?? createRunId(options.goal)
   assertSafeId(runId, "run_id")
   ensureDir(projectRunsRoot(projectDirectory))
@@ -1169,6 +1204,7 @@ export function createRun(options: {
     goal: options.goal,
     criteria: options.criteria,
     criteria_locked: options.criteria.length > 0,
+    ...(options.taskContract ? { task_contract: options.taskContract } : {}),
     graph,
     status: "planning",
     phase: "plan",
@@ -1370,12 +1406,12 @@ function localReferencePath(state: RunState, reference: RunDataReference): strin
   return runContainedPath(state.project_directory, state.run_id, ...parts.slice(3))
 }
 
-function readAndVerifyReference(state: RunState, reference: RunDataReference): unknown {
+function readAndVerifyReference(state: RunState, reference: RunDataReference, requireCanonical = false): unknown {
   const path = localReferencePath(state, reference)
   // Several passes of one save check the same content-addressed object. Its bytes are read and verified
   // once per save; each caller still receives its own parsed copy.
   const immutableName = reference.artifact_path.endsWith(`-${reference.sha256}.json`)
-  const verifiedKey = immutableName ? `verified-reference\0${path}\0${reference.sha256}\0${reference.byte_size}` : undefined
+  const verifiedKey = immutableName ? `verified-reference\0${path}\0${reference.sha256}\0${reference.byte_size}\0${requireCanonical}` : undefined
   const verifiedText = verifiedKey ? scopedValue<string>(verifiedKey) : undefined
   if (verifiedText !== undefined) return JSON.parse(verifiedText)
   const maximumFileBytes = Math.min(MAX_STATE_BYTES, Math.max(reference.byte_size * 2 + 8_192, 16_384))
@@ -1392,12 +1428,34 @@ function readAndVerifyReference(state: RunState, reference: RunDataReference): u
   let value: unknown
   let text: string
   try {
-    text = readFileSync(path, "utf8")
+    if (requireCanonical) {
+      const fd = openSync(path, "r")
+      try {
+        const stat = fstatSync(fd)
+        if (!stat.isFile() || stat.size !== reference.byte_size) throw new Error("task evidence is not the expected regular file")
+        const data = Buffer.alloc(reference.byte_size + 1)
+        let total = 0
+        while (total < data.length) {
+          const count = readSync(fd, data, total, data.length - total, null)
+          if (!count) break
+          total += count
+        }
+        if (total !== reference.byte_size) throw new Error("task evidence size changed during read")
+        const content = data.subarray(0, total)
+        text = content.toString("utf8")
+        if (!content.equals(Buffer.from(text, "utf8"))) throw new Error("task evidence must be valid UTF-8")
+      } finally {
+        closeSync(fd)
+      }
+    } else {
+      text = readFileSync(path, "utf8")
+    }
     value = JSON.parse(text)
   } catch (error) {
     throw new StoreError(`referenced JSON is not valid: ${reference.artifact_path}`, { cause: error })
   }
-  if (serializedBytes(value) !== reference.byte_size || sha256Json(value) !== reference.sha256) {
+  if (serializedBytes(value) !== reference.byte_size || sha256Json(value) !== reference.sha256 ||
+    (requireCanonical && text !== canonicalJson(value))) {
     throw new StoreError(`referenced JSON integrity mismatch: ${reference.artifact_path}`)
   }
   if (verifiedKey) rememberInScope(verifiedKey, text)
@@ -1414,7 +1472,7 @@ function runReferences(state: RunState): RunDataReference[] {
       node.output_ref,
       node.attempt_history_ref,
       node.last_failures_ref,
-      ...node.attempts.flatMap((attempt) => [attempt.output_ref, attempt.detail_ref]),
+      ...node.attempts.flatMap((attempt) => [attempt.output_ref, attempt.detail_ref, attempt.task_evidence_ref]),
     ]) {
       if (reference) references.push(reference)
     }
@@ -1438,6 +1496,7 @@ function protectedReferencePaths(
         for (const attempt of document.attempts) {
           if (attempt.output_ref) paths.add(attempt.output_ref.artifact_path)
           if (attempt.detail_ref) paths.add(attempt.detail_ref.artifact_path)
+          if (attempt.task_evidence_ref) paths.add(attempt.task_evidence_ref.artifact_path)
         }
       } catch {
         uncertainBackup = true
@@ -1710,6 +1769,7 @@ function recoveryReachablePaths(state: RunState): Set<string> | null {
         for (const attempt of document.attempts) {
           if (attempt.output_ref) reachable.add(attempt.output_ref.artifact_path)
           if (attempt.detail_ref) reachable.add(attempt.detail_ref.artifact_path)
+          if (attempt.task_evidence_ref) reachable.add(attempt.task_evidence_ref.artifact_path)
         }
       } catch {
         return null
@@ -1785,6 +1845,8 @@ function reconcileDerivedFilesUnlocked(state: RunState): void {
  * wholly new full-SHA reference tree, children before parent archives.
  */
 function prepareRunForImmutableCommit(candidate: RunState, current: RunState): RunState {
+  if (JSON.stringify(candidate.task_contract) !== JSON.stringify(current.task_contract))
+    throw new StoreError("accepted task contract is immutable; it cannot be added, removed or replaced on an existing run")
   // `candidate` is already the detached result of the precommit structured-clone
   // guard and schema parsing. It is safe to materialize retained references in
   // place instead of performing another full graph clone.
@@ -1836,6 +1898,16 @@ function prepareRunForImmutableCommit(candidate: RunState, current: RunState): R
     }
   }
 
+  const checker = current.task_contract?.input.verification.checker_node
+  if (checker) {
+    const committed = current.nodes[checker]!
+    const archived = readAttemptHistoryDocument(current, checker)?.attempts ?? []
+    const next = prepared.nodes[checker]!.attempts
+    for (const attempt of [...archived, ...committed.attempts]) {
+      if (attempt.task_evidence_ref && !isDeepStrictEqual(attempt.task_evidence_ref, next[attempt.attempt - 1]?.task_evidence_ref))
+        throw new StoreError("committed checker task evidence reference is immutable")
+    }
+  }
   if (prepared.filesystem_root_authorizations_ref) {
     const reference = prepared.filesystem_root_authorizations_ref
     const document = readRootAuthorizationHistoryDocument(prepared, current.owner_session_id)!

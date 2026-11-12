@@ -1,3 +1,6 @@
+import { initNodeStates, validateGraph } from "../src/graph.ts"
+import { bindTaskContract } from "../src/task-contract.ts"
+import { taskEvidence } from "../src/task-evidence.ts"
 import { describe, expect, test } from "bun:test"
 import { openAlgRuns } from "../src/tui-runs.ts"
 import { buildVerificationBasis } from "../src/verification.ts"
@@ -109,3 +112,56 @@ describe("verified TUI archives", () => {
     expect(view.navigations).toEqual([])
   })
 })
+
+
+test.each(["valid", "missing", "tampered", "wrong-contract"] as const)(
+  "visible task evidence is checked before navigation even without detail/output references: %s", async variant => {
+    const runId = "task-ref", goal = "Report the declared result", criteria = ["Answer the question"]
+    const graph = validateGraph({ name: "task-ref", nodes: [
+      { id: "research", agent: "researcher", depends_on: [] },
+      { id: "check", agent: "checker", depends_on: ["research"], isolated_check: true },
+    ] })
+    const taskContract = bindTaskContract({
+      version: 1, kind: "read_only", discovery: "required", phase: "complete",
+      deliverables: [{ destination: "response", producer_node: "research" }],
+      verification: { checker_node: "check", execution: "none" }, preserve_paths: [],
+    }, goal, criteria, graph, { session_id: "parent", message_id: "origin" })
+    const states = initNodeStates(graph)
+    states.research!.status = "done"
+    states.research!.output = { answer: "fixture" }
+    const observed = taskEvidence({ task_contract: taskContract, graph, nodes: states, run_id: runId, project_directory: "C:/fixture" })!
+    const evidence = variant === "wrong-contract" ? { ...observed, contract_sha256: "0".repeat(64) } : observed
+    const sha256 = sha256Json(evidence)
+    const reference = { artifact_path: `.opencode/runs/${runId}/artifacts/task-evidence-check-a1-${sha256}.json`,
+      sha256, byte_size: serializedBytes(evidence) }
+    const date = "2026-08-09T14:00:00.000Z"
+    const progress = { run_id: runId, owner_session_id: "parent", status: "done", mode: "live", goal, criteria,
+      criteria_locked: true, updated_at: date, graph, task_contract: taskContract, nodes: {
+        research: { id: "research", agent: "researcher", status: "done", attempts: [] },
+        check: { id: "check", agent: "checker", status: "done", attempts: [{ attempt: 1, status: "done",
+          started_at: date, finished_at: date, session_id: "checker-child", task_evidence_ref: reference, failures: [],
+          output: { passed: true, score: 10, failures: [] }, score: 10, schema_ok: true, outcome: "passed" }] },
+      } }
+    const index = { schema_version: 1, owner_session_id: "parent", updated_at: date, runs: [{ run_id: runId, updated_at: date }] }
+    const files = new Map([[ownerIndexRelativePath("parent"), JSON.stringify(index)],
+      [`.opencode/runs/${runId}/progress.json`, JSON.stringify(progress)]])
+    if (variant !== "missing") files.set(reference.artifact_path, variant === "tampered"
+      ? canonicalJson({ ...evidence, requirements_sha256: "0".repeat(64) }) : canonicalJson(evidence))
+    const view = tuiApi(files)
+    await openAlgRuns(view.api)
+    view.dialogs.at(-1).onSelect(view.dialogs.at(-1).options[0])
+    const nodes = view.dialogs.at(-1)
+    nodes.onSelect(nodes.options.find((option: any) => option.value?.id === "check"))
+    const attempts = view.dialogs.at(-1)
+    const child = attempts.options.find((option: any) => option.value === "checker-child")
+    expect(child).toBeDefined()
+    attempts.onSelect(child)
+    await Bun.sleep(5)
+    if (variant === "valid") {
+      expect(view.navigations).toEqual([["session", { sessionID: "checker-child" }]])
+    } else {
+      expect(view.navigations).toEqual([])
+      expect(view.toasts.at(-1)).toMatchObject({ variant: "error", title: "ALG attempt unavailable" })
+    }
+  },
+)
