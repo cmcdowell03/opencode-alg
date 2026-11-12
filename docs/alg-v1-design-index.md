@@ -45,6 +45,7 @@ Do not reward faster unsupported causal claims, silence about missing procedures
 - [Optional artifact skill extension](alg-v1-artifact-skill-extension.md): retained upstream skill, portability and verification requirements.
 - [Claude review reconciliation](alg-v1-claude-review-reconciliation.md): agreements, qualifications and source provenance.
 - [Graph evolution and adversarial review](v1-graph-evolution-adversarial-review.md): implemented opt-in citation-linked verdicts, bounded pending-node graph revisions and paired probe evaluation; stronger provenance and automatic promotion remain design.
+- [Measured graph/review evaluation](v1-adversarial-evaluation.md): bounded Gemma/Luna comparisons, preserved failures, criterion ambiguity and exact local host/recovery evidence. Exploratory results do not authorize automatic promotion.
 
 ## Canonical documentation
 

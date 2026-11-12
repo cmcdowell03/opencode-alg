@@ -1,6 +1,6 @@
 # V1 Phase One implementation status
 
-PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current candidate is 0.5.4 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier 0.5.1/0.5.2 receipts and statements below remain historical evidence for their named commits and are not relabeled as 0.5.3 acceptance.
+PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current candidate is 0.5.4 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as 0.5.4 acceptance.
 
 **Current disposition, 11 November 2026:** the earlier 80% estimate remains withdrawn. The confirmed ledger defects and the missing local workflow contracts are implemented. Native MCP translation is configurable and tested against fixtures, not verified against the real air-gapped datalake-mcp. The checker follow-up delivers selected evidence without changing saved investigation graphs. The PR remains unmerged: the loop fix has one successful bounded local-model session, while production service qualification, scientific usefulness and general long-session reliability remain unestablished.
 
@@ -13,10 +13,10 @@ PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experi
 | Investigation state | Independent durable ledger, typed session pointer, bounded hypothesis/evidence/checkpoint records | Bulk data and the large knowledge map remain in datalake-mcp |
 | Remote work recovery | Work identity, durable admission and reservation, unknown-outcome lookup, fresh result validation | Deduplication applies to the managed route with a qualified service, not arbitrary direct MCP calls |
 | Compaction and task changes | Bounded projection in normal/compaction hooks; restart reconciliation; durable task-detachment intent | A summary is a projection, never the only copy of investigation state |
-| Research graph | Fixed data-investigation graph with bounded fan-out and fresh checking | No recursive orchestrators or automatic graph rewriting |
+| Research graph | Fixed data-investigation graph plus optional evidence-linked checkers and bounded owner-proposed revisions for custom graphs | Managed investigation graphs stay fixed; no recursive orchestrators, completed-work rewriting or automatic promotion |
 | Analytical authority | Reported analytical outcome separate from execution completion; engineer review binds the exact evidence before confirmation | Model output and execution success do not establish causal truth or remediation authority |
 | Deployment | Platform-specific prepared bundle, pinned Git object bytes, exact dependency inventory, approved manifest, existing transactional manager | Dependencies are prepared before transfer; deployment is offline; runtime and host versions are checked |
-| Local acceptance | Windows PowerShell and native Ubuntu Bash in dedicated WSL; deterministic local provider and official MCP SDK fixture | No GitHub runners, paid model calls, production queries, or user-global config changes |
+| Local acceptance | Windows PowerShell and native Ubuntu Bash in dedicated WSL; deterministic host/MCP fixtures plus a bounded Gemma/Luna strategy comparison | Luna inference is explicitly authorized; no GitHub runners, production queries or user-global config changes |
 
 ## Operator entry points
 
@@ -30,11 +30,19 @@ bash "/path/to/opencode-alg/scripts/alg.sh" deploy --offline --trust-bundle <rev
 
 Use isolated --config-dir and --install-root overrides when evaluating a candidate. A successful deployment means installed on disk; an existing OpenCode process must restart before it loads the new generation. The new candidate writes an investigation-plan claim that 0.5.2 and older readers do not understand, so rollback to those versions is rejected.
 
+## 0.5.4 graph/review follow-up — 11 November 2026
+
+The runtime at `c9cefb46e5a2c88cdee5b3ce00accaba0812e147` adds opt-in evidence-linked findings and owner-proposed revisions of unattempted pending custom-graph work. Completed work, existing checkers and original root budgets remain fixed. Saved checker bases and canonical revision snapshots recover after reload. Managed investigation graphs stay fixed; automatic promotion, semantic truth certification and V2 are not implemented.
+
+The [measured comparison and exact receipts](v1-adversarial-evaluation.md) cover local Gemma and explicitly authorized hosted Luna through isolated OpenCode 1.18.35. Luna produced 10/10 correct ordinary workflows and 9/10 targeted workflows; the losing pair exposes a method/claim ambiguity and is retained. Gemma issued 34/40 requests; raw workflow scores are 6/10 ordinary and 5/10 targeted, including availability/contract failures. The report separates completed/valid pairs, budget stops, calibration mistakes, usage and uncertainty. No superiority or automatic promotion is claimed.
+
+Final PowerShell/Bash headless receipts passed: three child sessions, persisted verification basis, one compaction, two restarts, one accepted synthetic job/page read, configuration preservation and cleanup on each platform. All 125 runtime inputs agree after LF normalization. The affected suites retained one Windows timeout and three Linux harness-PATH failures; their scoped rechecks passed, as did type checking. See the report for exact counts and hashes; no single all-green final full-suite invocation is claimed. Old bundle/TUI/relocation receipts keep their old identities and do not qualify a new 0.5.4 offline package. All host/testing remained local; no GitHub runners, global configuration edits, V2 work or merge.
+
 ## Checker evidence and graph strategy follow-up — 11 November 2026
 
 Implementation commit: `d6c8012233560b281a3793a75b506d06accfe77c`. Checker prompts now include explicitly selected evidence under fixed count/byte limits with source/attempt metadata, JSON identity and honest omitted/unavailable states. The compiled graph policy selects the existing investigation reconciliation input; the stored template and its digest are unchanged. No worker transcript or unrelated wiring is added when an explicit claim is supplied. State ownership is documented in [operator usage](v1-investigations.md#state-ownership).
 
-The [graph and adversarial-review proposal](v1-graph-evolution-adversarial-review.md) distinguishes existing custom graph authoring from future evidence-bound verdicts, graph revisions and measured promotion. These future capabilities are design only; this change adds no recursive agents, graph mutation, permission expansion or V2 runtime.
+At `d6c8012`, the [graph and adversarial-review proposal](v1-graph-evolution-adversarial-review.md) was design only. The later 0.5.4 increment implements evidence-linked findings and bounded pending-work revisions. Measured promotion, general graph rewriting and recursive agents remain design targets; no permission expansion or V2 runtime is added.
 
 | Local check | Result and scope |
 | --- | --- |

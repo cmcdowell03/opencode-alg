@@ -1,0 +1,55 @@
+{
+  "complete": true,
+  "failure": null,
+  "source_sha256": "d0614611c04d7f054dbbb0a8ac686fe3578bbca9bc8527946cff556734f37b5a",
+  "source_unchanged": true,
+  "model": "openai/gpt-6-luna",
+  "actual_calls": 40,
+  "known_reported_cost": 0,
+  "output_cap_observed": true,
+  "cleanup": true,
+  "auth_copy_removed": true,
+  "global_config_unchanged": true,
+  "report": {
+    "runId": "116cfafe-63bf-4494-97fa-8544ac2de6b3",
+    "paired": {
+      "wins": 0,
+      "losses": 1,
+      "ties": 9
+    },
+    "schemaFailures": 0,
+    "transportFailures": 0
+  },
+  "processes": [
+    {
+      "name": "opencode",
+      "pid": 1534760,
+      "closed": true,
+      "exit_code": null
+    }
+  ],
+  "plan": {
+    "kind": "alg-paired-model-host",
+    "model": "openai/gpt-6-luna",
+    "calls_max": 40,
+    "output_tokens_per_call": 2048,
+    "wall_ms": 1800000,
+    "per_call_ms": 120000,
+    "consecutive_transport_failure_stop": 3,
+    "reported_cost_stop_usd": 5,
+    "source_sha256": "d0614611c04d7f054dbbb0a8ac686fe3578bbca9bc8527946cff556734f37b5a",
+    "started_at": "2026-11-12T00:18:37.787Z",
+    "harness_sha256": "b31152a2445aab3450434b718fec6882f0577f1ec87f50041fcb47bfcc5e45b7",
+    "evaluator_sha256": "35b5bee05958e5ab937093bcfe941445a53065a3093b30f88b9bcae8562cebea",
+    "cases_sha256": "32682c25869b8ec2540337af45f0e9a25bc628e820403664a67295931fac4966",
+    "scope": "Synthetic fixed evidence; fresh real OpenCode sessions, ALG prompt/parser/validation; no live factory query or nested execution"
+  },
+  "original_files": {
+    "report_sha256": "b148482f1117fed321163b9e042153eb773b8aa4f421c55bdb6375741e01fcd3",
+    "events_sha256": "ef463dfdf6965967c14759df9920fa611ddabc9006cb3a968d496d35497b96ff",
+    "manifest_sha256": "d4920bf416839b6ffbf832ae16c698a7166f021fe7ae16f1a7608cfad5e0f932"
+  },
+  "local_model": null,
+  "local_model_load": null,
+  "note": "A reported zero OpenCode cost is not proof of free inference or actual billed cost. Usage is the raw host telemetry; time includes transport and host overhead."
+}

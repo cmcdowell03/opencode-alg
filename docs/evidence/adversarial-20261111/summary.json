@@ -1,0 +1,599 @@
+{
+  "runtime_commit": "c9cefb46e5a2c88cdee5b3ce00accaba0812e147",
+  "candidate": "0.5.4",
+  "models": {
+    "luna": {
+      "model": "openai/gpt-6-luna",
+      "actual_calls": 40,
+      "paired": {
+        "wins": 0,
+        "losses": 1,
+        "ties": 9
+      },
+      "arms": {
+        "ordinary_review": {
+          "actualTokens": 40408,
+          "actualTokensKnownCalls": 20,
+          "usageUnknownCalls": 0,
+          "usage": {
+            "input": 33199,
+            "output": 5685,
+            "reasoning": 1524,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "costUsd": 0,
+          "costUnknownCalls": 0,
+          "wallTimeMs": 159896,
+          "calls": 20,
+          "schemaFailures": 0,
+          "transportFailures": 0,
+          "byExpectedDisposition": {
+            "supported": {
+              "cases": 3,
+              "correct": 3,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 0
+            },
+            "disconfirmed": {
+              "cases": 4,
+              "correct": 4,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 0
+            },
+            "unsupported": {
+              "cases": 2,
+              "correct": 2,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 2
+            },
+            "inconclusive": {
+              "cases": 1,
+              "correct": 1,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 1
+            }
+          }
+        },
+        "targeted_falsification": {
+          "actualTokens": 42996,
+          "actualTokensKnownCalls": 20,
+          "usageUnknownCalls": 0,
+          "usage": {
+            "input": 34516,
+            "output": 6787,
+            "reasoning": 1693,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "costUsd": 0,
+          "costUnknownCalls": 0,
+          "wallTimeMs": 181312,
+          "calls": 20,
+          "schemaFailures": 0,
+          "transportFailures": 0,
+          "byExpectedDisposition": {
+            "supported": {
+              "cases": 3,
+              "correct": 3,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 0
+            },
+            "disconfirmed": {
+              "cases": 4,
+              "correct": 3,
+              "falseAccepts": 1,
+              "falseRejects": 0,
+              "unresolved": 0
+            },
+            "unsupported": {
+              "cases": 2,
+              "correct": 2,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 2
+            },
+            "inconclusive": {
+              "cases": 1,
+              "correct": 1,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 1
+            }
+          }
+        }
+      },
+      "derived_metrics": {
+        "derivation": "Post-run accounting only; raw report and outcomes unchanged. No inference rerun.",
+        "falseRejectsDefinition": "disconfirmed on expected supported (original narrow counter)",
+        "missedSupportDefinition": "any valid non-supported checker outcome on expected supported; missing/invalid output is separate",
+        "ordinary": {
+          "missedSupport": 0,
+          "correct": 10
+        },
+        "targeted": {
+          "missedSupport": 0,
+          "correct": 9
+        },
+        "completed_pairs": {
+          "case_ids": [
+            "control-supported-direct",
+            "control-supported-null-effect",
+            "join-inflation",
+            "timestamp-offset",
+            "confounding",
+            "missing-evidence",
+            "conflicting-data",
+            "source-duplicates",
+            "misleading-evidence-instruction",
+            "control-supported-independent-reconciliation"
+          ],
+          "cases": 10,
+          "ordinary_correct": 10,
+          "targeted_correct": 9,
+          "targeted_wins": 0,
+          "targeted_losses": 1
+        },
+        "joint_valid_pairs": {
+          "case_ids": [
+            "control-supported-direct",
+            "control-supported-null-effect",
+            "join-inflation",
+            "timestamp-offset",
+            "confounding",
+            "missing-evidence",
+            "conflicting-data",
+            "source-duplicates",
+            "misleading-evidence-instruction",
+            "control-supported-independent-reconciliation"
+          ],
+          "cases": 10,
+          "ordinary_correct": 10,
+          "targeted_correct": 9,
+          "targeted_wins": 0,
+          "targeted_losses": 1
+        },
+        "subset_caution": "Descriptive post-hoc availability views only. Excluding incomplete or invalid outputs introduces selection; these are not superiority estimates.",
+        "dispatch": {
+          "planned_slots": 40,
+          "host_requests": 40,
+          "completed": 40,
+          "unissued_budget_or_stop_slots": 0,
+          "failures": []
+        },
+        "sensitivity": {
+          "post_hoc": true,
+          "excluded": [
+            "misleading-evidence-instruction"
+          ],
+          "reason": "Method-focused criterion permits judging the memo instead of original claim; not a replacement score or equivalence claim.",
+          "ordinary_correct": 9,
+          "targeted_correct": 9,
+          "cases": 9
+        }
+      },
+      "schemaFailures": 0,
+      "transportFailures": 0,
+      "wallTimeMs": 343073,
+      "actualTokens": 83404,
+      "usageUnknownCalls": 0,
+      "source_unchanged": true,
+      "output_cap_observed": true,
+      "cleanup": true,
+      "auth_copy_removed": true,
+      "global_config_unchanged": true
+    },
+    "gemma": {
+      "model": "alg-local/gemma4",
+      "actual_calls": 34,
+      "paired": {
+        "wins": 1,
+        "losses": 2,
+        "ties": 7
+      },
+      "arms": {
+        "ordinary_review": {
+          "actualTokens": 55562,
+          "actualTokensKnownCalls": 17,
+          "usageUnknownCalls": 3,
+          "usage": {
+            "input": 32458,
+            "output": 23104,
+            "reasoning": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "costUsd": 0,
+          "costUnknownCalls": 3,
+          "wallTimeMs": 978367,
+          "calls": 20,
+          "schemaFailures": 1,
+          "transportFailures": 2,
+          "byExpectedDisposition": {
+            "supported": {
+              "cases": 3,
+              "correct": 2,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 0
+            },
+            "disconfirmed": {
+              "cases": 4,
+              "correct": 2,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 0
+            },
+            "unsupported": {
+              "cases": 2,
+              "correct": 2,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 2
+            },
+            "inconclusive": {
+              "cases": 1,
+              "correct": 0,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 0
+            }
+          }
+        },
+        "targeted_falsification": {
+          "actualTokens": 50605,
+          "actualTokensKnownCalls": 16,
+          "usageUnknownCalls": 4,
+          "usage": {
+            "input": 31616,
+            "output": 18989,
+            "reasoning": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "costUsd": 0,
+          "costUnknownCalls": 4,
+          "wallTimeMs": 686983,
+          "calls": 20,
+          "schemaFailures": 3,
+          "transportFailures": 2,
+          "byExpectedDisposition": {
+            "supported": {
+              "cases": 3,
+              "correct": 1,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 0
+            },
+            "disconfirmed": {
+              "cases": 4,
+              "correct": 1,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 0
+            },
+            "unsupported": {
+              "cases": 2,
+              "correct": 2,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 2
+            },
+            "inconclusive": {
+              "cases": 1,
+              "correct": 1,
+              "falseAccepts": 0,
+              "falseRejects": 0,
+              "unresolved": 1
+            }
+          }
+        }
+      },
+      "derived_metrics": {
+        "derivation": "Post-run accounting only; raw report and outcomes unchanged. No inference rerun.",
+        "falseRejectsDefinition": "disconfirmed on expected supported (original narrow counter)",
+        "missedSupportDefinition": "any valid non-supported checker outcome on expected supported; missing/invalid output is separate",
+        "ordinary": {
+          "missedSupport": 0,
+          "correct": 6
+        },
+        "targeted": {
+          "missedSupport": 0,
+          "correct": 5
+        },
+        "completed_pairs": {
+          "case_ids": [
+            "control-supported-direct",
+            "control-supported-null-effect",
+            "join-inflation",
+            "timestamp-offset",
+            "confounding",
+            "missing-evidence",
+            "conflicting-data",
+            "source-duplicates"
+          ],
+          "cases": 8,
+          "ordinary_correct": 6,
+          "targeted_correct": 5,
+          "targeted_wins": 1,
+          "targeted_losses": 2
+        },
+        "joint_valid_pairs": {
+          "case_ids": [
+            "control-supported-null-effect",
+            "join-inflation",
+            "confounding",
+            "missing-evidence",
+            "conflicting-data"
+          ],
+          "cases": 5,
+          "ordinary_correct": 4,
+          "targeted_correct": 5,
+          "targeted_wins": 1,
+          "targeted_losses": 0
+        },
+        "subset_caution": "Descriptive post-hoc availability views only. Excluding incomplete or invalid outputs introduces selection; these are not superiority estimates.",
+        "dispatch": {
+          "planned_slots": 40,
+          "host_requests": 34,
+          "completed": 33,
+          "unissued_budget_or_stop_slots": 6,
+          "failures": [
+            {
+              "caseId": "misleading-evidence-instruction",
+              "strategy": "ordinary_review",
+              "step": "checker",
+              "diagnostic": "TimeoutError: The operation timed out."
+            },
+            {
+              "caseId": "misleading-evidence-instruction",
+              "strategy": "targeted_falsification",
+              "step": "review",
+              "diagnostic": "Error: trial_budget_exhausted"
+            },
+            {
+              "caseId": "misleading-evidence-instruction",
+              "strategy": "targeted_falsification",
+              "step": "checker",
+              "diagnostic": "Error: trial_budget_exhausted"
+            },
+            {
+              "caseId": "control-supported-independent-reconciliation",
+              "strategy": "targeted_falsification",
+              "step": "review",
+              "diagnostic": "Error: trial_budget_exhausted"
+            },
+            {
+              "caseId": "control-supported-independent-reconciliation",
+              "strategy": "targeted_falsification",
+              "step": "checker",
+              "diagnostic": "Error: trial_budget_exhausted"
+            },
+            {
+              "caseId": "control-supported-independent-reconciliation",
+              "strategy": "ordinary_review",
+              "step": "review",
+              "diagnostic": "Error: trial_budget_exhausted"
+            },
+            {
+              "caseId": "control-supported-independent-reconciliation",
+              "strategy": "ordinary_review",
+              "step": "checker",
+              "diagnostic": "Error: trial_budget_exhausted"
+            }
+          ]
+        },
+        "sensitivity": {
+          "post_hoc": true,
+          "excluded": [
+            "misleading-evidence-instruction"
+          ],
+          "reason": "Method-focused criterion permits judging the memo instead of original claim; not a replacement score or equivalence claim.",
+          "ordinary_correct": 6,
+          "targeted_correct": 5,
+          "cases": 9
+        }
+      },
+      "schemaFailures": 4,
+      "transportFailures": 4,
+      "wallTimeMs": 1666453,
+      "actualTokens": 106167,
+      "usageUnknownCalls": 7,
+      "source_unchanged": true,
+      "output_cap_observed": true,
+      "cleanup": true,
+      "auth_copy_removed": true,
+      "global_config_unchanged": true
+    }
+  },
+  "calibration": {
+    "luna": {
+      "excluded_from_comparison": true,
+      "reason": "Benchmark omitted production nested role schemas. Additional fixture wording/arithmetic inconsistencies corrected before the comparison.",
+      "plan_sha256": "0cc12015064632523af781712e77fa9ee84db34480d74d15e78da3ceeecbde97",
+      "events_sha256": "9b14b5ac6df7038af51a608c38ac790071cb3dec8fa7edb7261f374ecf944a9f",
+      "source_sha256": "2d0dd02f096bccca807096f29d6ba935e859f48b896f85b39f75fad0f2da2012",
+      "started": 40,
+      "completed": 40,
+      "failed": 0,
+      "unsettled": 0,
+      "known_tokens": 58864,
+      "stopped": null
+    },
+    "gemma": {
+      "excluded_from_comparison": true,
+      "reason": "Benchmark omitted production nested role schemas. Additional fixture wording/arithmetic inconsistencies corrected before the comparison.",
+      "plan_sha256": "422f6903595070f6741fb5be810a4a24553c511ba931eb5064dbd984655ea9a1",
+      "events_sha256": "5a3f442299222e2c60c8199d3f6bb5a0872bba05730485b3f6965051ad6ac121",
+      "source_sha256": "2d0dd02f096bccca807096f29d6ba935e859f48b896f85b39f75fad0f2da2012",
+      "started": 19,
+      "completed": 17,
+      "failed": 1,
+      "unsettled": 1,
+      "known_tokens": 36062,
+      "stopped": {
+        "reason": "Stopped invalid calibration: missing nested ResearchOut schema in benchmark prompt",
+        "at": "2026-11-12T00:12:21.9467761Z",
+        "processes": [
+          {
+            "ProcessId": 1541860,
+            "ParentProcessId": 1541792,
+            "Name": "bun.exe",
+            "CreationDate": "2026-11-11T18:02:22.804531-06:00"
+          },
+          {
+            "ProcessId": 1538480,
+            "ParentProcessId": 1541860,
+            "Name": "ollama.exe",
+            "CreationDate": "2026-11-11T18:02:23.167843-06:00"
+          },
+          {
+            "ProcessId": 1538348,
+            "ParentProcessId": 1538480,
+            "Name": "conhost.exe",
+            "CreationDate": "2026-11-11T18:02:23.208405-06:00"
+          },
+          {
+            "ProcessId": 1525860,
+            "ParentProcessId": 1541860,
+            "Name": "opencode.exe",
+            "CreationDate": "2026-11-11T18:02:41.702249-06:00"
+          },
+          {
+            "ProcessId": 1540296,
+            "ParentProcessId": 1525860,
+            "Name": "conhost.exe",
+            "CreationDate": "2026-11-11T18:02:41.712838-06:00"
+          },
+          {
+            "ProcessId": 1539188,
+            "ParentProcessId": 1538480,
+            "Name": "llama-server.exe",
+            "CreationDate": "2026-11-11T18:02:48.60123-06:00"
+          },
+          {
+            "ProcessId": 1535780,
+            "ParentProcessId": 1539188,
+            "Name": "conhost.exe",
+            "CreationDate": "2026-11-11T18:02:48.614614-06:00"
+          }
+        ]
+      }
+    }
+  },
+  "checks": {
+    "windows": {
+      "passed": true,
+      "source_sha256": "d0614611c04d7f054dbbb0a8ac686fe3578bbca9bc8527946cff556734f37b5a",
+      "receipt_sha256": "4d632db2006b5eb26a3d48a4456058503bd2a6be7c9bd0974363a7baa17228ec",
+      "host_version": "1.18.35",
+      "starts": 3,
+      "restarts": 2,
+      "checker_probe": {
+        "passed": true,
+        "run_id": "alg-selected-evidence-probe-5a92-20261112002701-f40253864ea6",
+        "attempts": 3,
+        "distinct_children": 3,
+        "host_verified_parents": 3,
+        "verification_basis_recovered": true,
+        "nodes": [
+          {
+            "id": "work",
+            "status": "done",
+            "outcome": "passed",
+            "failures": []
+          },
+          {
+            "id": "probe",
+            "status": "done",
+            "outcome": "passed",
+            "failures": []
+          },
+          {
+            "id": "check",
+            "status": "done",
+            "outcome": "passed",
+            "failures": []
+          }
+        ]
+      },
+      "cleanup": {
+        "host_processes_stopped": true,
+        "provider_stopped": true,
+        "mcp_service_stopped": true,
+        "temporary_environment_removed": true,
+        "evidence_persisted_before_environment_removal": true
+      },
+      "global_configuration_unchanged": true,
+      "regression_tail": "(fail) bounded release-gate evidence > semantic verification rejects coherent-looking contradictory or stale evidence [35838.83ms]\n  ^ this test timed out after 30000ms.\n\n 265 pass\n 1 skip\n 1 fail\n 4384 expect() calls\nRan 267 tests across 16 files. [231.09s]\n",
+      "regression_sha256": "881f0462edb78d3a1e3bb07c25105af7944bc73522cce81e12d1d7906ddb5bba",
+      "regression_invocation_passed": false,
+      "recheck_tail": "\n 1 pass\n 24 filtered out\n 0 fail\n 23 expect() calls\nRan 1 test across 1 file. [26.41s]\n",
+      "recheck_sha256": "727b284f30d6d6d7e1cbf1528feb38811987688d107ed062ead822eeeff66170",
+      "qualification": "One existing release-gate case exceeded its unchanged 30-second deadline under concurrent load (35.84s); the isolated recheck passed in26.04s. Original failed invocation retained."
+    },
+    "linux": {
+      "passed": true,
+      "source_sha256": "f6e704d630ec3125e5aec8fc65f64b753b60d023ab3bd3a2e95c44226d80ba4c",
+      "receipt_sha256": "1523c09df9839b17ae0821af1978519514762a0b62c37fd97a846866036d8ee8",
+      "host_version": "1.18.35",
+      "starts": 3,
+      "restarts": 2,
+      "checker_probe": {
+        "passed": true,
+        "run_id": "alg-selected-evidence-probe-5a92-20261112002640-de8b7b902e7c",
+        "attempts": 3,
+        "distinct_children": 3,
+        "host_verified_parents": 3,
+        "verification_basis_recovered": true,
+        "nodes": [
+          {
+            "id": "work",
+            "status": "done",
+            "outcome": "passed",
+            "failures": []
+          },
+          {
+            "id": "probe",
+            "status": "done",
+            "outcome": "passed",
+            "failures": []
+          },
+          {
+            "id": "check",
+            "status": "done",
+            "outcome": "passed",
+            "failures": []
+          }
+        ]
+      },
+      "cleanup": {
+        "host_processes_stopped": true,
+        "provider_stopped": true,
+        "mcp_service_stopped": true,
+        "temporary_environment_removed": true,
+        "evidence_persisted_before_environment_removal": true
+      },
+      "global_configuration_unchanged": true,
+      "regression_tail": "(fail) bounded release-gate evidence > semantically verifies retained evidence against the current source, package, live proof, path, and hash [51.26ms]\n(fail) bounded release-gate evidence > semantic verification rejects coherent-looking contradictory or stale evidence [45.04ms]\n(fail) bounded release-gate evidence > strict live semantics reject minimal, empty, wrong-tool, manifest, and registration evidence [33.82ms]\n\n 264 pass\n 3 fail\n 4334 expect() calls\nRan 267 tests across 16 files. [63.32s]\n",
+      "regression_sha256": "00542f5b407bd84f2cb67d4356bf380cec3153b6751dfbb302ede02a7ac9df18",
+      "regression_invocation_passed": false,
+      "recheck_tail": "(pass) bounded release-gate evidence > complete package allowlist rejects extras, missing paths, duplicates, unsafe paths, and bad modes [26.30ms]\n\n 25 pass\n 0 fail\n 160 expect() calls\nRan 25 tests across 1 file. [3.97s]\n",
+      "recheck_sha256": "18d9d1c7a8180d976b8fe5e109c4e317f4453e185f2e7a63b78b051fd2a7067f",
+      "qualification": "Three release cases failed because the local shell harness accidentally changed linux-x64 to linux-final-x64 in the Node PATH. The corrected PATH passed all25 release cases. Original failed invocation retained."
+    }
+  },
+  "runtime_comparison": {
+    "passed": true,
+    "windows_raw": "d0614611c04d7f054dbbb0a8ac686fe3578bbca9bc8527946cff556734f37b5a",
+    "linux_raw": "f6e704d630ec3125e5aec8fc65f64b753b60d023ab3bd3a2e95c44226d80ba4c",
+    "windows_lf_normalized": "f6e704d630ec3125e5aec8fc65f64b753b60d023ab3bd3a2e95c44226d80ba4c",
+    "inputs": 125,
+    "crlf_files": 71
+  }
+}

@@ -18,6 +18,10 @@ The paired evaluation in `scripts/adversarial-evaluation.ts` compares an ordinar
 
 The broader contracts below remain design targets where they exceed this bounded increment. See the implementation status and paired-evaluation receipt for exact tested scope and limitations. New fields require the 0.5.4 reader; do not roll older readers over newly written state.
 
+### Evaluation-target boundary
+
+The [bounded model comparison](v1-adversarial-evaluation.md) exposed a distinction this contract cannot settle through citation checks: a child can verify a review memo's method while passing an original claim that the memo contradicts. Write each criterion as a proposition about the original claim; express required methods separately. A probe memo supplies leads, never a replacement claim or acceptance criterion. The recorded criterion/evidence basis protects identity and consistency of references, not semantic interpretation. A later V1 extension should give the original claim its own host-pinned identity and separate it structurally from advisory memos, then qualify that interface on a fresh frozen cohort. This is a design follow-up, not a retroactive repair or promotion of the current evaluation result.
+
 ## Minimal roadmap
 
 ### Using the implemented increment
