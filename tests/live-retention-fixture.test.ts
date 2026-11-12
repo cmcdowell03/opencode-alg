@@ -101,8 +101,16 @@ describe("bounded live-retention development fixture", () => {
     expect((await scoreRetentionPhase(p.dir, 0)).checks.find(c => c.id === "evidence-refs")?.passed).toBe(false)
   })
 
-  test("checks the local cached observation ids and rejects fabricated live-query claims", async () => {
+  test("checks structured cached IDs and status without requiring prose duplication", async () => {
+    const p = await project(0); await p.put("REPORT.md", "Cached local observation. Evidence: " + refs.join(", "))
+    expect((await scoreRetentionPhase(p.dir, 0)).passed).toBe(true)
+    await p.put("artifacts/phase-0.json", JSON.stringify({ ...record(0), pending: { ...pending, status: "live" } }))
+    expect((await scoreRetentionPhase(p.dir, 0)).checks.find(c => c.id === "pending-query")?.passed).toBe(false)
+  })
+
+  test("rejects incorrect cached identifiers", async () => {
     const p = await project(0); await p.put("REPORT.md", "I queried the live service. Evidence: " + refs.join(", "))
+    await p.put("artifacts/phase-0.json", JSON.stringify({ ...record(0), pending: { ...pending, queryId: "incorrect" } }))
     const result = await scoreRetentionPhase(p.dir, 0)
     expect(result.checks.find(c => c.id === "pending-query")?.passed).toBe(false)
   })

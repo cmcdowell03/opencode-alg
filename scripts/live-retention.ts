@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, readdirSync } from "node:fs"
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, cpSync, copyFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { execFileSync } from "node:child_process"
 import { createHash, randomBytes } from "node:crypto"
@@ -71,19 +71,47 @@ export function verifyFixtureSkills(discovered: unknown, project: string, files:
   }
   return expected.map(([path, text]) => ({ name: path.split("/")[2], path, sha256: sha(text) }))
 }
-interface Config { outputRoot: string; hostExecutable: string; providerID: string; modelID: string; provider: Record<string, unknown>; authFile: string; preflightOnly?: boolean }
+interface Config { outputRoot: string; hostExecutable: string; providerID: string; modelID: string; provider: Record<string, unknown>; authFile: string; preflightOnly?: boolean; resumeFrom?: string }
+export function validateDiagnosticContinuation(prior: any, model: string, runtimeDigest: string, now: number) {
+  if (prior?.schema !== "alg-live-retention-diagnostic-v1" || prior.status !== "stopped" || prior.stopReason !== "preparation_not_qualified" ||
+    prior.model !== model || prior.phases?.length !== 1 || prior.phases[0]?.phase !== 0 || prior.receipts?.length !== 0 ||
+    prior.cleanup !== true || prior.authCopyRemoved !== true || prior.sourceUnchanged !== true || prior.dbCensus?.qualified !== true ||
+    !Number.isFinite(prior.startedAt) || prior.startedAt <= 0 || now >= prior.startedAt + LIVE_LIMITS.wallMs ||
+    typeof prior.rootSession !== "string" || !prior.rootSession || !runtimeDigest) throw Error("continuation_parent_ineligible")
+  const stop = observedStopReason(prior.metrics, now, prior.startedAt + LIVE_LIMITS.wallMs)
+  if (stop) throw Error("continuation_" + stop)
+  return { startedAt: prior.startedAt as number, deadline: prior.startedAt + LIVE_LIMITS.wallMs, rootSession: prior.rootSession as string }
+}
 export async function runLiveRetention(config: Config) {
-  const repo = resolve(import.meta.dir, ".."), root = resolve(config.outputRoot), project = join(root, "project")
+  const repo = resolve(import.meta.dir, ".."), root = resolve(config.outputRoot), stateRoot = config.resumeFrom ? resolve(config.resumeFrom) : root, project = join(stateRoot, "project")
   if (existsSync(root)) throw Error("Evidence path exists; no implicit rerun")
+  const prior = config.resumeFrom ? JSON.parse(readFileSync(join(stateRoot, "result.json"), "utf8")) : null
+  const parentPlan = config.resumeFrom ? JSON.parse(readFileSync(join(stateRoot, "plan.json"), "utf8")) : null
+  mkdirSync(root, { recursive: true })
   mkdirSync(project, { recursive: true })
   const fixture = liveRetentionFixture(), source = computeAlgSourceIdentity(repo), plugin = verificationPluginConfiguration(repo)
+  const continuation = prior ? validateDiagnosticContinuation(prior, config.providerID + "/" + config.modelID, source.digest, Date.now()) : null
+  if (parentPlan && parentPlan.runtimeDigest !== source.digest) throw Error("continuation_runtime_changed")
+  if (continuation) {
+    if (existsSync(join(stateRoot, "continuation-issued.json"))) throw Error("continuation_already_issued")
+    writeFileSync(join(stateRoot, "continuation-issued.json"), JSON.stringify({ outputRoot: root, at: Date.now() }), { flag: "wx" })
+    cpSync(project, join(root, "parent-project"), { recursive: true, errorOnExist: true })
+    for (const name of ["opencode.db", "opencode.db-wal", "opencode.db-shm"]) {
+      const path = join(stateRoot, "data/opencode", name)
+      if (existsSync(path)) copyFileSync(path, join(root, "parent-" + name))
+    }
+  }
   const globals = realUserGlobalConfigRoots(), hmac = randomBytes(32), globalBefore = snapshotGlobalOpenCodeConfig(globals, hmac).sha256
-  const secrets: string[] = [], env = isolatedEnv(root), authCopy = join(root, "data/opencode/auth.json")
+  const secrets: string[] = [], env = isolatedEnv(stateRoot), authCopy = join(stateRoot, "data/opencode/auth.json")
   const scrub = (s: string) => secrets.reduce((s, key) => s.replaceAll(key, "[REDACTED]"), s)
   const json = (path: string, value: unknown) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, scrub(JSON.stringify(value, null, 2)) + "\n") }
   const event = (value: unknown) => appendFileSync(join(root, "progress.jsonl"), scrub(JSON.stringify({ at: new Date().toISOString(), ...value as any })) + "\n")
   const put = (path: string, value: string) => { mkdirSync(dirname(join(project, path)), { recursive: true }); writeFileSync(join(project, path), value) }
   const sessions = new Map<string, any>(), messages = new Map<string, any>(), phases: any[] = [], requests: any[] = [], restarts: any[] = [], samples: any[] = [], hosts: any[] = []
+  if (continuation) {
+    for (const s of JSON.parse(readFileSync(join(stateRoot, "sessions.json"), "utf8"))) sessions.set(s.id, s)
+    for (const m of JSON.parse(readFileSync(join(stateRoot, "messages.json"), "utf8"))) messages.set(m.sessionID + ":" + m.info.id, m)
+  }
   let server: ReturnType<typeof launch> | undefined, api: (path: string, body?: unknown, ms?: number) => Promise<any>
   let rootSession = "", currentPhase = "setup", stopReason: string | null = null, startedAt = 0, deadline = Infinity, cleanup = true, final: any = null, preflight: any = null
   const rootMessages = () => [...messages.values()].filter(m => m.sessionID === rootSession)
@@ -170,14 +198,19 @@ export async function runLiveRetention(config: Config) {
     fixture: Object.fromEntries(Object.entries(fixture.files).map(([path, text]) => [path, sha(text)])),
     interpretation: "One development diagnostic. No Build comparison, no causal or model-generalization claim. Durable task documents remain available. Requested and native compactions counted separately. Observed stop thresholds can overshoot while calls are in flight. Usage component sums are not provider invoice tokens. No timed padding, implicit retry or cap reset.",
     preflightOnly: !!config.preflightOnly, isolation: "Permission-based workspace isolation, not an adversarial sandbox. External scorer/plan are not copied to contestant."
+    ,continuation: prior ? { parent: stateRoot, parentResultSha256: sha(readFileSync(join(stateRoot, "result.json"))), originalStartedAt: prior.startedAt,
+      originalUsage: prior.metrics.usage.totalReportedTokens, originalAssistantTurns: prior.metrics.assistantTurns.total,
+      reason: "Explicit development apparatus repair: original scorer required undeclared duplicate IDs in prose. Preserve original receipt and prepared state; no phase-0 rerun, no time/turn/usage reset." } : null
   }
   json(join(root, "plan.json"), plan)
   try {
+    if (!continuation) {
     for (const [path, text] of Object.entries(fixture.files)) put(path, text)
     execFileSync("git", ["init", "-q"], { cwd: project })
     execFileSync("git", ["add", "."], { cwd: project })
     execFileSync("git", ["-c", "user.name=ALG Diagnostic", "-c", "user.email=local@localhost", "commit", "-qm", "Frozen synthetic mission"], { cwd: project })
-    seedVerificationHostDependencies(join(root, "config/opencode"), repo)
+    }
+    seedVerificationHostDependencies(join(stateRoot, "config/opencode"), repo)
     const auth = JSON.parse(readFileSync(config.authFile, "utf8"))[config.providerID]
     if (!auth) throw Error("provider_not_connected")
     for (const value of Object.values(auth)) if (typeof value === "string" && value.length > 20) secrets.push(value)
@@ -185,13 +218,13 @@ export async function runLiveRetention(config: Config) {
     const model = config.providerID + "/" + config.modelID, agents: Record<string, unknown> = {}
     for (const role of ["build", "general", "explore", "compaction", "summary", "title", "orchestrator", "explorer", "researcher", "implementer", "checker"]) agents[role] = { model }
     for (const role of ["orchestrator", "explorer", "researcher", "implementer", "checker"]) {
-      const path = join(root, "config/opencode/agents", role + ".md"); mkdirSync(dirname(path), { recursive: true })
+      const path = join(stateRoot, "config/opencode/agents", role + ".md"); mkdirSync(dirname(path), { recursive: true })
       writeFileSync(path, readFileSync(join(repo, "agents", role + ".md")))
     }
-    json(join(root, "opencode.json"), { plugin: [plugin.source.spec], autoupdate: false, share: "disabled", snapshot: false, model, small_model: model,
+    json(join(stateRoot, "opencode.json"), { plugin: [plugin.source.spec], autoupdate: false, share: "disabled", snapshot: false, model, small_model: model,
       permission: { "*": "allow", external_directory: "deny", webfetch: "deny", websearch: "deny", question: "deny" }, mcp: {},
       skills: { paths: [join(project, ".opencode/skills")] }, compaction: { auto: true, prune: true }, provider: config.provider, agent: agents })
-    json(join(root, "alg-options.json"), { skillEvolution: { enabled: false }, sessionMemory: { mode: "assist" }, workspace: { mode: "observe" } })
+    json(join(stateRoot, "alg-options.json"), { skillEvolution: { enabled: false }, sessionMemory: { mode: "assist" }, workspace: { mode: "observe" } })
     await startHost()
     const providers = await api!("/provider"), selected = providers.all.find((p: any) => p.id === config.providerID)?.models?.[config.modelID]
     if (!selected || !providers.connected.includes(config.providerID)) throw Error("selected_model_unavailable")
@@ -203,10 +236,18 @@ export async function runLiveRetention(config: Config) {
     preflight = { health: await api!("/global/health"), tools, selected: { id: config.modelID, limit: selected.limit }, fixtureSkills }
     json(join(root, "preflight.json"), preflight)
     if (!config.preflightOnly) {
-      startedAt = Date.now(); deadline = startedAt + LIVE_LIMITS.wallMs
-      rootSession = (await api!("/session", { title: "ALG bounded live retention diagnostic" })).id
+      startedAt = continuation?.startedAt ?? Date.now(); deadline = startedAt + LIVE_LIMITS.wallMs
+      rootSession = continuation?.rootSession ?? (await api!("/session", { title: "ALG bounded live retention diagnostic" })).id
       let previousScore: Awaited<ReturnType<typeof scoreRetentionPhase>> | undefined
-      for (let i = 0; i < fixture.phases.length; i++) {
+      if (continuation) {
+        await collect()
+        if (stopReason) throw Error(stopReason)
+        previousScore = await scoreRetentionPhase(project, 0)
+        json(join(root, "parent-rescore.json"), { originalScore: prior.phases[0].score, correctedScore: previousScore, paidPhaseRepeated: false })
+        if (!previousScore.passed) throw Error("continuation_preparation_still_invalid")
+        phases.push({ ...prior.phases[0], score: previousScore, apparatusReassessment: true })
+      }
+      for (let i = continuation ? 1 : 0; i < fixture.phases.length; i++) {
         currentPhase = fixture.phases[i]!.id
         for (const [path, value] of Object.entries(phaseUpdates(i))) put(path, value)
         let request: any
@@ -264,7 +305,7 @@ export async function runLiveRetention(config: Config) {
     if (existsSync(authCopy)) unlinkSync(authCopy)
     const endedAt = Date.now(), metric = summarizeSessionMetrics([...sessions.values()], [...messages.values()])
     let dbCensus: any = { qualified: false, reason: "database_not_found" }
-    const dbPath = join(root, "data/opencode/opencode.db")
+    const dbPath = join(stateRoot, "data/opencode/opencode.db")
     if (existsSync(dbPath)) {
       let db: Database | undefined
       try {

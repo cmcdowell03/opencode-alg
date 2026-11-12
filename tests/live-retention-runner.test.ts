@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { join } from "node:path"
-import { LIVE_LIMITS, aggregateRetention, observedStopReason, retentionDelta, retentionEvidenceQualified, summaryBoundaryQualified, verifyFixtureSkills } from "../scripts/live-retention.ts"
+import { LIVE_LIMITS, aggregateRetention, observedStopReason, retentionDelta, retentionEvidenceQualified, summaryBoundaryQualified, verifyFixtureSkills, validateDiagnosticContinuation } from "../scripts/live-retention.ts"
 import type { RetentionCheck, RetentionScore } from "../scripts/live-retention-fixture.ts"
 import { summarizeSessionMetrics } from "../scripts/build-benchmark-metrics.ts"
 
@@ -11,6 +11,17 @@ const linked = (scorePassed: boolean) => ({ requestAcceptance: "accepted", marke
   summary: { outcome: "terminal_linked" }, continuation: { status: "completed", scorePassed } })
 
 describe("live retention runner evidence guards", () => {
+  test("apparatus continuation cannot reset time or usage or replay already compacted work", () => {
+    const prior = { schema: "alg-live-retention-diagnostic-v1", status: "stopped", stopReason: "preparation_not_qualified", model: "test/model",
+      phases: [{ phase: 0 }], receipts: [], cleanup: true, authCopyRemoved: true, sourceUnchanged: true, dbCensus: { qualified: true }, startedAt: 1000,
+      rootSession: "session", metrics: summarizeSessionMetrics([], []) }
+    expect(validateDiagnosticContinuation(prior, "test/model", "digest", 2000)).toEqual({ startedAt: 1000, deadline: 1000 + LIVE_LIMITS.wallMs, rootSession: "session" })
+    expect(() => validateDiagnosticContinuation(prior, "test/model", "digest", 1000 + LIVE_LIMITS.wallMs)).toThrow()
+    expect(() => validateDiagnosticContinuation({ ...prior, receipts: [{}] }, "test/model", "digest", 2000)).toThrow()
+    expect(() => validateDiagnosticContinuation({ ...prior, model: "other" }, "test/model", "digest", 2000)).toThrow()
+    prior.metrics.usage.totalReportedTokens = LIVE_LIMITS.reportedUsageComponents
+    expect(() => validateDiagnosticContinuation(prior, "test/model", "digest", 2000)).toThrow()
+  })
   test("observed stop thresholds include equality and wall expiry", () => {
     const base = summarizeSessionMetrics([], [])
     expect(observedStopReason(base, 99, 100)).toBeNull()

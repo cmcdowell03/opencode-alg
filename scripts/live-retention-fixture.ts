@@ -163,7 +163,8 @@ export async function scoreRetentionPhase(project: string, phaseIndex: number): 
     if (g.id === "artifact-budget") pass = sizeValid
     if (g.id === "source-summary") pass = pass && execution && tests && canonical(isolatedSummary) === canonical(summary)
     if (g.id === "evidence-refs") pass = pass && sourceIntact && report.length > 0 && evidenceRefs.every(ref => report.includes(ref))
-    if (g.id === "pending-query") pass = pass && report.includes("cached-q-17") && report.includes("cached-r-17")
+    // The mission requires these IDs in the structured record. Requiring a
+    // second copy in prose would add an undisclosed criterion.
     const observedDigest = value === undefined ? null : digest(value)
     return { ...g, passed: pass, observedDigest, basis: g.id === "source-summary" ? "independent raw-source gold plus isolated utility and node:test" : undefined }
   })
