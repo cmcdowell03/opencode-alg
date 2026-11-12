@@ -1,0 +1,149 @@
+{
+  "schema": "alg-build-pilot-v1",
+  "started_at": "2026-11-12T22:05:09.620Z",
+  "source_commit": "01d5bb3e722f96a9ef9285e24dae264eb28f8088",
+  "source_sha256": "192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d",
+  "harness_sha256": "a8d8b88bb52c146c531e93a02d92875a3c1c2335d2bfdceaab849c145b522b67",
+  "protocol_sha256": "bab4b911eeeb7870f6e29b6146fa35dada08de630cf5e4d037c90ab1f5f9739f",
+  "fixtures_sha256": "15c55e643c5e27e49bacd0d1d07b9e40a292777a1221df169de3423e2feb7ab7",
+  "metrics_sha256": "7f73b2b96057551fd8b777b20bd1fab715570107c7b15f5537a39ae7350e9e48",
+  "transport_sha256": "559b8647feeb15c4e499bc5e06282d129610e4837e42497f49588ce1229f0b7a",
+  "prompt_transport": "prompt_async",
+  "model": "openai/gpt-6.1-terra",
+  "limits": {
+    "trialMs": 480000,
+    "assistantTurns": 40,
+    "reportedComponents": 200000,
+    "outputTokens": 4096,
+    "suiteMs": 3300000
+  },
+  "preflight_only": false,
+  "track": "default",
+  "pairs": [
+    {
+      "pairId": "pair-0001-6958c4e4c69e",
+      "caseId": "wafer-count-commonjs",
+      "track": "default",
+      "issuedAt": "2026-11-12T22:05:09.496Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "issued_not_started"
+        },
+        {
+          "arm": "alg_default",
+          "status": "issued_not_started"
+        }
+      ],
+      "order": [
+        "build",
+        "alg_default"
+      ]
+    },
+    {
+      "pairId": "pair-0002-b8757b8d2177",
+      "caseId": "wafer-report-staged",
+      "track": "default",
+      "issuedAt": "2026-11-12T22:05:09.496Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "issued_not_started"
+        },
+        {
+          "arm": "alg_default",
+          "status": "issued_not_started"
+        }
+      ],
+      "order": [
+        "alg_default",
+        "build"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "wafer-count-commonjs",
+      "criteria": [
+        "Count each distinct wafer_id at most once when at least one valid inspection timestamp falls in the UTC window [start, end).",
+        "Treat the end of the date range as exclusive and compare timestamps by their parsed UTC instant, including offsets.",
+        "The user-visible summary must say `Distinct wafers inspected: N` for the computed count.",
+        "Keep the implementation CommonJS-compatible, dependency-free, and confined to the existing small API/UI modules."
+      ],
+      "initialPrompt": "Fix the wafer-count bug in this small CommonJS API/UI. Count distinct wafer IDs with an inclusive UTC start and exclusive UTC end, correctly handling offset timestamps, then show the exact user-visible label `Distinct wafers inspected: N`. Keep the change small (at most two source-file edits), do not add dependencies, and do not change the supplied inspection data.",
+      "followupPrompt": null,
+      "fixture_files": [
+        {
+          "path": "package.json",
+          "sha256": "a78a9ceb37d11a4b0e970b5cfd854e44f49f1563898501eeac5a3e51228acfd0"
+        },
+        {
+          "path": "src/wafer-count.cjs",
+          "sha256": "7315f66c62048781619c9b04de7875370bcbe398ecd913ac1e5270449c656067"
+        },
+        {
+          "path": "src/wafer-view.cjs",
+          "sha256": "2ac52abb30d3ffa1770e7d720dabf520654d5a09de84a595b6e1fc4f209cbab3"
+        },
+        {
+          "path": "test/wafer-count.test.cjs",
+          "sha256": "a7719415e595d1bfd8656b74d05b7171a81ec4fc7c8369b6755a15ce96426eeb"
+        },
+        {
+          "path": "data/inspection-records.json",
+          "sha256": "ae8c396da3661e221e9716663c2cc79ce2715bff9d3d99de401093960709d14d"
+        }
+      ]
+    },
+    {
+      "id": "wafer-report-staged",
+      "criteria": [
+        "The initial stage must persist preparation.md with the selected reporting date, source identities, calculation plan, conflict, and an explicit stop before report generation.",
+        "After restart, report.json must calculate from distinct system-export wafer IDs: one defective wafer out of four, or 25%.",
+        "The report must identify both protected source files and preserve conflicting evidence as explicit uncertainty; manual evidence does not overwrite the primary system result.",
+        "Follow .opencode/skills/wafer-analysis/SKILL.md, including UTC window, distinct-wafer denominator, source precedence, conflict disclosure, and no unsupported process-validation claim."
+      ],
+      "initialPrompt": "Complete a two-phase synthetic wafer evidence report using the applicable wafer-analysis project skill and supplied source files. Final deliverable: report.json with fields numerator (number), denominator (number), rate (number), window ({start, endExclusive, timezone}), sources (array of source file paths), conflicts (array of {wafer_id, system_defect, manual_defect, status}), and limitations (array of scope limits). The conflict entry must expose both source observations and mark the disagreement unresolved; follow the skill's source-priority rule. Use a UTC reporting window, count distinct wafer IDs, and calculate defects divided by distinct wafers. Include the exact standard limitations sentence required by the skill. This first phase is preparation only: write preparation.md with the reporting date, source IDs/paths, calculation plan, conflicts, planned report fields, and an explicit STOP. Do not create report.json in this phase; the run will be compacted and restarted.",
+      "followupPrompt": "Continue the originally requested report using persisted preparation and applicable project procedure; do not repeat preparation.",
+      "fixture_files": [
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": "data/system-export.json",
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        },
+        {
+          "path": "data/manual-review.json",
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        }
+      ]
+    }
+  ],
+  "retention_sha256": "c54a6bfcb985a40934e59f1b15d345a5deea125129f510cb58842018883b506c",
+  "retention_boundaries_sha256": "407248573f07920ee3d4f701070415c2ee3fcf09a7e25942788ad2ccfffffbaa",
+  "interpretation": "Single-repeat feasibility pilot. Equal externally enforced time and per-call output limits; assistant-turn and reported-component thresholds are cumulative polling-based cutoffs subject to overshoot across root/children/maintenance/phases, not hard provider-request or invoice caps. ALG internal gates are diagnostics, never the independent oracle. Reported cost is telemetry only. Session-visible usage is not proof of complete provider billing. No superiority claim.",
+  "enforcement": {
+    "time": "host deadline",
+    "output": "per-call configured limit",
+    "assistantTurns": "cumulative observed cutoff; polling overshoot possible",
+    "reportedTokens": "cumulative observed component cutoff; polling overshoot possible",
+    "reportedCost": "telemetry only"
+  },
+  "usage_monitors": {
+    "reportedTokens": 200000,
+    "reportedCostPerSuite": 5,
+    "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+  },
+  "targeted_mandate": "Additional targeted falsification mandate: assess the original user deliverable, not whether a review memo sounds correct. Seek a concrete counterexample involving distinct entity counts, joins, UTC interval boundaries, denominators or conflicting sources when relevant. Read the actual artifact and supplied source. Preserve uncertainty when sources disagree. A useful criticism must cite the violated original criterion. Do not invent defects or new requirements.",
+  "common_instruction": "Work only in this fixture workspace. Do not access credentials, change global configuration, install packages, or use network services. The available Node runtime and fixture files are sufficient. Preserve supplied evidence, skills and visible tests. Finish the requested artifact and explain the result honestly.",
+  "unmeasured": [
+    "actual provider invoice",
+    "hidden model calls not represented by session messages",
+    "operator minutes",
+    "production MCP cost/reuse",
+    "multi-hour reliability",
+    "hardware-normalized latency"
+  ]
+}

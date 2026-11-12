@@ -1,0 +1,34 @@
+[
+  {
+    "arm": "1-wafer-count-commonjs-alg_default",
+    "schema": "https://opencode.ai/config.json",
+    "recorded": "fcfdb04cc80a857cf9d92f4e4744df2c78ec35084784e2dcd9fd6f8fa77e6267",
+    "current": "57f271836265e8723448b25c83745fe8398849b3a3dd9441c6982c9aecc7c8ab",
+    "original_without_added_schema": "fcfdb04cc80a857cf9d92f4e4744df2c78ec35084784e2dcd9fd6f8fa77e6267",
+    "schema_only_change": true
+  },
+  {
+    "arm": "1-wafer-count-commonjs-build",
+    "schema": "https://opencode.ai/config.json",
+    "recorded": "3c6239e575a06eb6777eff8d62e2e0bba046dc0c457fec21cfd5e3cf11b1749d",
+    "current": "56c71461fae0faec727c98621d29ea726db3e6224eeb77f3269e8a4abfe4f536",
+    "original_without_added_schema": "3c6239e575a06eb6777eff8d62e2e0bba046dc0c457fec21cfd5e3cf11b1749d",
+    "schema_only_change": true
+  },
+  {
+    "arm": "2-wafer-report-staged-alg_default",
+    "schema": "https://opencode.ai/config.json",
+    "recorded": "857ebd4e4d15a22e11974a63149002717bd8bcd464ca178323aa29df2f944407",
+    "current": "122c2ed192c95d8098acb281e85b795cc86ee358898fe419806e488a0a683e9a",
+    "original_without_added_schema": "857ebd4e4d15a22e11974a63149002717bd8bcd464ca178323aa29df2f944407",
+    "schema_only_change": true
+  },
+  {
+    "arm": "2-wafer-report-staged-build",
+    "schema": "https://opencode.ai/config.json",
+    "recorded": "f77e4c2a7e3a4088096efad05452dbbd49ce2d55c0f5158df099087a49103386",
+    "current": "0e7f532e0e5f98130e3b29f07cce0f26c387acb202ae0e728ad4bdab35350b0e",
+    "original_without_added_schema": "f77e4c2a7e3a4088096efad05452dbbd49ce2d55c0f5158df099087a49103386",
+    "schema_only_change": true
+  }
+]

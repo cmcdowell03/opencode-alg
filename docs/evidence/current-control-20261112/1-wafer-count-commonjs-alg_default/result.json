@@ -1,0 +1,1218 @@
+{
+  "pairId": "pair-0001-6958c4e4c69e",
+  "caseId": "wafer-count-commonjs",
+  "arm": "alg_default",
+  "status": "stopped",
+  "stopReason": "reported_component_limit",
+  "passed": true,
+  "scored_task_success": false,
+  "independent_score": {
+    "passed": true,
+    "checks": [
+      {
+        "id": "protected:package.json",
+        "passed": true
+      },
+      {
+        "id": "protected:test/wafer-count.test.cjs",
+        "passed": true
+      },
+      {
+        "id": "protected:data/inspection-records.json",
+        "passed": true
+      },
+      {
+        "id": "source-file-edit-limit",
+        "passed": true
+      },
+      {
+        "id": "visible-node-tests",
+        "passed": true
+      },
+      {
+        "id": "api-module-loads",
+        "passed": true
+      },
+      {
+        "id": "ui-module-loads",
+        "passed": true
+      },
+      {
+        "id": "distinct-ids-and-offset-window",
+        "passed": true
+      },
+      {
+        "id": "user-visible-count",
+        "passed": true
+      }
+    ],
+    "metrics": {
+      "heldOutTestLocation": "outside-project-temporary-directory",
+      "heldOutCheckCount": 4,
+      "heldOutPassed": 4,
+      "visibleTestCommand": "npm test",
+      "visibleTestCount": 2,
+      "protectedFiles": 3,
+      "userVisibleChecks": 1,
+      "changedSourceFiles": [
+        "src/wafer-count.cjs",
+        "src/wafer-view.cjs"
+      ],
+      "sourceFileEditLimit": 2
+    }
+  },
+  "metrics": {
+    "attribution": {
+      "rows": [
+        {
+          "sessionID": "ses_e2e342483ffeJohVFTrHqNK7Nv",
+          "requestID": "msg_1d1cbdb95001lwsnRYKNdTnL24",
+          "role": "orchestrator",
+          "phase": "initial",
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "assistantTurns": 7,
+          "usageComplete": 7,
+          "usagePartial": 0,
+          "usageUnknown": 0,
+          "reportedComponents": {
+            "input": 23455,
+            "output": 627,
+            "reasoning": 35,
+            "cacheRead": 51968,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "sessionID": "ses_e2e33cb46ffevEiKIi2wH2Qh2a",
+          "requestID": "msg_1d1cc3597001rPdgubwrM36VII",
+          "role": "implementer",
+          "phase": "initial",
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "assistantTurns": 6,
+          "usageComplete": 6,
+          "usagePartial": 0,
+          "usageUnknown": 0,
+          "reportedComponents": {
+            "input": 11043,
+            "output": 1244,
+            "reasoning": 0,
+            "cacheRead": 43776,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "sessionID": "ses_e2e3334b0ffeyfPCa7bJJ5L93t",
+          "requestID": "msg_1d1cccc27001Vif82hBH42RJmO",
+          "role": "checker",
+          "phase": "initial",
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "assistantTurns": 2,
+          "usageComplete": 2,
+          "usagePartial": 0,
+          "usageUnknown": 0,
+          "reportedComponents": {
+            "input": 7250,
+            "output": 330,
+            "reasoning": 48,
+            "cacheRead": 6784,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "sessionID": "ses_e2e330986ffe68wEBD32vS4nPD",
+          "requestID": "msg_1d1ccf741001h5My0ComPoUTyf",
+          "role": "implementer",
+          "phase": "initial",
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "assistantTurns": 3,
+          "usageComplete": 3,
+          "usagePartial": 0,
+          "usageUnknown": 0,
+          "reportedComponents": {
+            "input": 16716,
+            "output": 1324,
+            "reasoning": 58,
+            "cacheRead": 21888,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "sessionID": "ses_e2e3289d3ffeyZVQtG5v8ly1vO",
+          "requestID": "msg_1d1cd7745001k0QO2DaSBfbUAo",
+          "role": "checker",
+          "phase": "initial",
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "assistantTurns": 2,
+          "usageComplete": 2,
+          "usagePartial": 0,
+          "usageUnknown": 0,
+          "reportedComponents": {
+            "input": 7587,
+            "output": 335,
+            "reasoning": 81,
+            "cacheRead": 7040,
+            "cacheWrite": 0
+          }
+        }
+      ],
+      "overflowMessages": 0
+    },
+    "sessions": {
+      "total": 5,
+      "roots": 1,
+      "children": 4
+    },
+    "assistantTurns": {
+      "total": 20,
+      "finished": 19,
+      "unfinished": 0,
+      "error": 1,
+      "modelIdentities": [
+        {
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "turns": 20
+        }
+      ]
+    },
+    "usage": {
+      "components": {
+        "input": {
+          "reportedTotal": 66051,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "output": {
+          "reportedTotal": 3860,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "reasoning": {
+          "reportedTotal": 222,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "cacheRead": {
+          "reportedTotal": 131456,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "cacheWrite": {
+          "reportedTotal": 0,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        }
+      },
+      "totalReportedTokens": 201589,
+      "turns": {
+        "complete": 20,
+        "partial": 0,
+        "unknown": 0
+      },
+      "billing": "not_estimated",
+      "coverage": "observed_session_fields_only"
+    },
+    "cost": {
+      "reportedTotal": 0,
+      "reportedTurns": 20,
+      "unknownTurns": 0,
+      "billing": "not_estimated"
+    },
+    "tools": {
+      "total": 34,
+      "completed": 32,
+      "error": 2,
+      "pending": 0,
+      "byName": {
+        "alg_context_status": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 92,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 92,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "alg_plan": {
+          "total": 2,
+          "completed": 2,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 201,
+          "durationCalls": 2,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 2,
+              "durationMsReported": 201,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "glob": {
+          "total": 3,
+          "completed": 3,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 264,
+          "durationCalls": 3,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 3,
+              "durationMsReported": 264,
+              "durationCalls": 3,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "alg_run": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 96893,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 96893,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "task": {
+          "total": 4,
+          "completed": 2,
+          "error": 2,
+          "pending": 0,
+          "durationMsReported": 93137,
+          "durationCalls": 4,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 2,
+              "durationMsReported": 70709,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 2,
+              "durationMsReported": 22428,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "bash": {
+          "total": 8,
+          "completed": 8,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 7415,
+          "durationCalls": 8,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 8,
+              "durationMsReported": 7415,
+              "durationCalls": 8,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "read": {
+          "total": 13,
+          "completed": 13,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 409,
+          "durationCalls": 13,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 13,
+              "durationMsReported": 409,
+              "durationCalls": 13,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "apply_patch": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 12,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 12,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "alg_artifact": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 2,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 2,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        }
+      }
+    },
+    "repeatedExactToolInputs": {
+      "glob": {
+        "distinctRepeatedInputs": 1,
+        "repeatedCalls": 2
+      },
+      "read": {
+        "distinctRepeatedInputs": 3,
+        "repeatedCalls": 7
+      }
+    },
+    "skillLoads": {},
+    "algTools": {
+      "alg_plan": {
+        "total": 2,
+        "completed": 2,
+        "error": 0,
+        "pending": 0
+      },
+      "alg_run": {
+        "total": 1,
+        "completed": 1,
+        "error": 0,
+        "pending": 0
+      }
+    },
+    "observedErrors": {
+      "deniedTool": 0,
+      "stepExhaustion": 0
+    }
+  },
+  "wall_ms": 121848,
+  "total_with_startup_ms": 127723,
+  "phases": [],
+  "rootSession": "ses_e2e342483ffeJohVFTrHqNK7Nv",
+  "recovery": {
+    "requested": false,
+    "recoveryRequired": false,
+    "restarted": false,
+    "compactionRecovered": false,
+    "compaction": null,
+    "phase1": null
+  },
+  "retention": {
+    "taskId": "pair-0001-6958c4e4c69e:wafer-count-commonjs:alg_default",
+    "sessions": [
+      "ses_e2e3289d3ffeyZVQtG5v8ly1vO",
+      "ses_e2e330986ffe68wEBD32vS4nPD",
+      "ses_e2e3334b0ffeyfPCa7bJJ5L93t",
+      "ses_e2e33cb46ffevEiKIi2wH2Qh2a",
+      "ses_e2e342483ffeJohVFTrHqNK7Nv"
+    ],
+    "lineage": [
+      {
+        "kind": "child",
+        "fromSessionId": "ses_e2e342483ffeJohVFTrHqNK7Nv",
+        "toSessionId": "ses_e2e33cb46ffevEiKIi2wH2Qh2a",
+        "at": 1794521282386
+      },
+      {
+        "kind": "child",
+        "fromSessionId": "ses_e2e342483ffeJohVFTrHqNK7Nv",
+        "toSessionId": "ses_e2e3334b0ffeyfPCa7bJJ5L93t",
+        "at": 1794521282386
+      },
+      {
+        "kind": "child",
+        "fromSessionId": "ses_e2e342483ffeJohVFTrHqNK7Nv",
+        "toSessionId": "ses_e2e330986ffe68wEBD32vS4nPD",
+        "at": 1794521282386
+      },
+      {
+        "kind": "child",
+        "fromSessionId": "ses_e2e342483ffeJohVFTrHqNK7Nv",
+        "toSessionId": "ses_e2e3289d3ffeyZVQtG5v8ly1vO",
+        "at": 1794521282386
+      }
+    ],
+    "time": {
+      "elapsedWallSeconds": 121.846,
+      "taskActiveWallSeconds": null,
+      "taskActiveObservedWallSeconds": 0,
+      "taskActiveCoverage": "unproven",
+      "serviceWaitSeconds": null,
+      "serviceWaitObservedSeconds": 0,
+      "serviceWaitCoverage": "unproven"
+    },
+    "turns": {
+      "assistantTurns": 20,
+      "byRole": {
+        "root": 7,
+        "child": 13,
+        "summary": 0,
+        "compaction": 0,
+        "unknown": 0
+      },
+      "knownInputTokens": 66051,
+      "inputTokenCoverage": 1,
+      "turnsWithKnownInput": 20,
+      "turnsWithUnknownInput": 0
+    },
+    "compactions": {
+      "native": {
+        "attempts": 0,
+        "successful": 0,
+        "failed": 0,
+        "pending": 0,
+        "unverified": 0
+      },
+      "requested": {
+        "attempts": 0,
+        "successful": 0,
+        "failed": 0,
+        "pending": 0,
+        "unverified": 0
+      },
+      "unknown": {
+        "attempts": 0,
+        "successful": 0,
+        "failed": 0,
+        "pending": 0,
+        "unverified": 0
+      },
+      "censusComplete": true,
+      "countsInterpretation": "complete_host_census"
+    },
+    "compactionRates": {
+      "attempts": {
+        "per100AssistantTurns": 0,
+        "perActiveHour": null,
+        "perObservedElapsedHour": 0,
+        "perMillionKnownInputTokens": 0
+      },
+      "successful": {
+        "per100AssistantTurns": 0,
+        "perActiveHour": null,
+        "perObservedElapsedHour": 0,
+        "perMillionKnownInputTokens": 0
+      },
+      "failed": {
+        "per100AssistantTurns": 0,
+        "perActiveHour": null,
+        "perObservedElapsedHour": 0,
+        "perMillionKnownInputTokens": 0
+      }
+    },
+    "compactionTiming": {
+      "coverage": "complete_host_census",
+      "timeToFirstObservedSeconds": null,
+      "turnsToFirstObserved": null,
+      "observedIntervalSeconds": [],
+      "events": []
+    },
+    "facts": {
+      "expectedCount": 0,
+      "evidenceCoverage": "unavailable_no_obligation_probes_wired",
+      "observations": [],
+      "lossClaim": "untested",
+      "granularity": "task_aggregate_no_per_compaction_boundary_attribution",
+      "rule": "Absence from context alone is not information loss; untested facts support no loss claim."
+    },
+    "serviceWork": {
+      "evidenceCoverage": "unavailable_or_zero_exposure_not_distinguished",
+      "acceptedComputations": 0,
+      "repeatedAcceptedComputations": 0,
+      "explicitlyAvoidableDuplicateComputations": 0,
+      "explicitlyLegitimateEquivalentComputations": 0,
+      "duplicatesAfterSuccessfulCompaction": 0,
+      "duplicateWorkUnitsKnown": 0,
+      "duplicateWorkUnitsUnknownCount": 0,
+      "duplicateEvents": [],
+      "interpretation": "Repeated accepted equivalents and explicitly assessed avoidable duplicates are separate; absent an external duplicate assessment this metric makes no avoidability claim. Temporal association only; it does not attribute duplicate work to compaction."
+    }
+  },
+  "alg_states": [
+    {
+      "run_id": "fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180",
+      "status": "failed",
+      "global_attempts": 4,
+      "nodes": [
+        {
+          "id": "check",
+          "status": "failed",
+          "attempts": [
+            {
+              "outcome": "substantive_rejection",
+              "failures": [
+                "The evidence does not establish that no other source files were edited or dependencies added: the reported diff is…[truncated]"
+              ],
+              "session_id": "ses_e2e3334b0ffeyfPCa7bJJ5L93t"
+            },
+            {
+              "outcome": "substantive_rejection",
+              "failures": [
+                "Criterion 4 is unverified: preservation of supplied evidence and skills is not established, and the available exec…[truncated]"
+              ],
+              "session_id": "ses_e2e3289d3ffeyZVQtG5v8ly1vO"
+            }
+          ]
+        },
+        {
+          "id": "implement",
+          "status": "done",
+          "attempts": [
+            {
+              "outcome": "passed",
+              "failures": [],
+              "session_id": "ses_e2e33cb46ffevEiKIi2wH2Qh2a"
+            },
+            {
+              "outcome": "passed",
+              "failures": [],
+              "session_id": "ses_e2e330986ffe68wEBD32vS4nPD"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "budget_observed_overshoot": 0,
+  "retention_boundaries": {
+    "status": "unavailable_no_boundary_probes"
+  },
+  "cleanup": true,
+  "metering_complete": null,
+  "observed_metering_stable": true,
+  "final_census": {
+    "elapsedMs": 313,
+    "rounds": 2,
+    "stableQuiescentRounds": 2,
+    "quiescent": true,
+    "activeSessions": 0,
+    "pendingWork": false,
+    "inFlightRequests": null,
+    "assistantTurns": 20,
+    "usage": {
+      "completeTurns": 20,
+      "partialTurns": 0,
+      "unknownTurns": 0,
+      "reportedComponents": 100
+    },
+    "outcome": "quiescent"
+  },
+  "coverage": {
+    "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+    "provider_usage": "session_reported_fields_only",
+    "quiescent_snapshot": true
+  },
+  "databaseCensus": {
+    "qualified": true,
+    "databaseSessions": 5,
+    "databaseMessages": 25,
+    "observedSessions": 5,
+    "observedMessages": 25,
+    "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+  },
+  "reported_component_overshoot": 1589,
+  "eligibility": {
+    "artifactOutcome": "passed",
+    "workflowEligible": false,
+    "operationalEligible": false,
+    "comparisonEligible": false,
+    "reasons": [
+      "workflow_incomplete",
+      "config_integrity_failed",
+      "service_isolation_unqualified"
+    ]
+  },
+  "auth_copy_removed": true,
+  "processes": [
+    1325664
+  ],
+  "source_unchanged": true,
+  "arm_config_sha256": "fcfdb04cc80a857cf9d92f4e4744df2c78ec35084784e2dcd9fd6f8fa77e6267",
+  "final_files": [
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/check-attempt-1-output-a2cfe900f10fca3a1e17798e5f9cf763872793ffb6a2f3e410cee6a3cad41ad3.json",
+      "bytes": 588,
+      "sha256": "a2cfe900f10fca3a1e17798e5f9cf763872793ffb6a2f3e410cee6a3cad41ad3"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/check-attempt-1.json",
+      "bytes": 588,
+      "sha256": "a2cfe900f10fca3a1e17798e5f9cf763872793ffb6a2f3e410cee6a3cad41ad3"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/check-attempt-2-output-2da892c883ff90d7c8d65ff74ddf69bfa000a0ba345f5c4fb07b09ef412a4b3a.json",
+      "bytes": 640,
+      "sha256": "2da892c883ff90d7c8d65ff74ddf69bfa000a0ba345f5c4fb07b09ef412a4b3a"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/check-attempt-2.json",
+      "bytes": 640,
+      "sha256": "2da892c883ff90d7c8d65ff74ddf69bfa000a0ba345f5c4fb07b09ef412a4b3a"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/check-output-2da892c883ff90d7c8d65ff74ddf69bfa000a0ba345f5c4fb07b09ef412a4b3a.json",
+      "bytes": 640,
+      "sha256": "2da892c883ff90d7c8d65ff74ddf69bfa000a0ba345f5c4fb07b09ef412a4b3a"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/check-output-a2cfe900f10fca3a1e17798e5f9cf763872793ffb6a2f3e410cee6a3cad41ad3.json",
+      "bytes": 588,
+      "sha256": "a2cfe900f10fca3a1e17798e5f9cf763872793ffb6a2f3e410cee6a3cad41ad3"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/check.json",
+      "bytes": 640,
+      "sha256": "2da892c883ff90d7c8d65ff74ddf69bfa000a0ba345f5c4fb07b09ef412a4b3a"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/graph-c5ad27db47fc0804383e1c545a02a8737329bf20c982bdd9c562a481652d758b.json",
+      "bytes": 865,
+      "sha256": "c5ad27db47fc0804383e1c545a02a8737329bf20c982bdd9c562a481652d758b"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/implement-attempt-1-output-2af5fb75a44afae94ad85a884cd76b3b534821e652e73c1f66175c3cbfd85616.json",
+      "bytes": 735,
+      "sha256": "2af5fb75a44afae94ad85a884cd76b3b534821e652e73c1f66175c3cbfd85616"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/implement-attempt-1.json",
+      "bytes": 735,
+      "sha256": "2af5fb75a44afae94ad85a884cd76b3b534821e652e73c1f66175c3cbfd85616"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/implement-attempt-2-output-fc0c80fd9e15bd31feffbc6eb507fe240a6632a93b3a41e9c5a3490e9b702ecd.json",
+      "bytes": 1829,
+      "sha256": "fc0c80fd9e15bd31feffbc6eb507fe240a6632a93b3a41e9c5a3490e9b702ecd"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/implement-attempt-2.json",
+      "bytes": 1829,
+      "sha256": "fc0c80fd9e15bd31feffbc6eb507fe240a6632a93b3a41e9c5a3490e9b702ecd"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/implement-output-2af5fb75a44afae94ad85a884cd76b3b534821e652e73c1f66175c3cbfd85616.json",
+      "bytes": 735,
+      "sha256": "2af5fb75a44afae94ad85a884cd76b3b534821e652e73c1f66175c3cbfd85616"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/implement-output-fc0c80fd9e15bd31feffbc6eb507fe240a6632a93b3a41e9c5a3490e9b702ecd.json",
+      "bytes": 1829,
+      "sha256": "fc0c80fd9e15bd31feffbc6eb507fe240a6632a93b3a41e9c5a3490e9b702ecd"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/implement.json",
+      "bytes": 1829,
+      "sha256": "fc0c80fd9e15bd31feffbc6eb507fe240a6632a93b3a41e9c5a3490e9b702ecd"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/task-evidence-check-a1-49406b8f1001f6822f10de951e1418f97934bc612687856a4ae9cbe73f560bc3.json",
+      "bytes": 1143,
+      "sha256": "49406b8f1001f6822f10de951e1418f97934bc612687856a4ae9cbe73f560bc3"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/artifacts/task-evidence-check-a2-21c74c5a8b5c76cc6bf17e4e6f20f619a3e393769a8babcf1af962e734f9dd6d.json",
+      "bytes": 1143,
+      "sha256": "21c74c5a8b5c76cc6bf17e4e6f20f619a3e393769a8babcf1af962e734f9dd6d"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/checks/check-attempt-1.json",
+      "bytes": 619,
+      "sha256": "e5dd898d7d3abc53e11643f193cacf645832c91e54d68d409e537ba0fcb2853f"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/checks/check-attempt-2.json",
+      "bytes": 666,
+      "sha256": "ce211650caf23cbfcd4f0dfc0fd79405170dca44310edc5141e88d94fba2f62c"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/criteria.md",
+      "bytes": 702,
+      "sha256": "7ec4a8808ab70db046a3ba979fe769954e11d721e9208feb7475102d901c4966"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/graph.json",
+      "bytes": 1181,
+      "sha256": "e958a7de1a10bdb6dec164decad61f9b360afabe5900131237a787b1b1560d77"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/check-attempt-1-detail-32d8e7baa09c4d94ba8d020c211792f05493a2a33442955206ef6e2bc288cba0.json",
+      "bytes": 444,
+      "sha256": "32d8e7baa09c4d94ba8d020c211792f05493a2a33442955206ef6e2bc288cba0"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/check-attempt-1-detail-4dabfdb88e6ee0881206c586f30fb7dd717b785c264086330545255e3d7cbe22.json",
+      "bytes": 1539,
+      "sha256": "4dabfdb88e6ee0881206c586f30fb7dd717b785c264086330545255e3d7cbe22"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/check-attempt-1-detail-67176e6d1f3429b74df7a86f1a1d46caa7c9a21006a0d29e6264c0735315cc3f.json",
+      "bytes": 398,
+      "sha256": "67176e6d1f3429b74df7a86f1a1d46caa7c9a21006a0d29e6264c0735315cc3f"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/check-attempt-1-detail-c69457e1383091a2bf12d91e3856b982b01471036fd2fd9b52e3cd0b2b68212e.json",
+      "bytes": 1563,
+      "sha256": "c69457e1383091a2bf12d91e3856b982b01471036fd2fd9b52e3cd0b2b68212e"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/check-attempt-1.json",
+      "bytes": 1563,
+      "sha256": "c69457e1383091a2bf12d91e3856b982b01471036fd2fd9b52e3cd0b2b68212e"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/check-attempt-2-detail-639fe4ae37c15cfd2ebd2629459e1f8aa8d56efd971838bbec4ef6dadcac3649.json",
+      "bytes": 398,
+      "sha256": "639fe4ae37c15cfd2ebd2629459e1f8aa8d56efd971838bbec4ef6dadcac3649"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/check-attempt-2-detail-6719a3959892c4d07af8d47ae736dffa63deca1208ee7b10801887d4f00cab15.json",
+      "bytes": 1586,
+      "sha256": "6719a3959892c4d07af8d47ae736dffa63deca1208ee7b10801887d4f00cab15"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/check-attempt-2-detail-bb3ad99b3139eb06fd55a740867641e7cb9884fc28f1e01e5579f5885763402e.json",
+      "bytes": 444,
+      "sha256": "bb3ad99b3139eb06fd55a740867641e7cb9884fc28f1e01e5579f5885763402e"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/check-attempt-2-detail-c7d9d78278eb19e3ebd57bbfcf7903affbcb0303dc154166489cfb937b196bce.json",
+      "bytes": 1610,
+      "sha256": "c7d9d78278eb19e3ebd57bbfcf7903affbcb0303dc154166489cfb937b196bce"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/check-attempt-2.json",
+      "bytes": 1610,
+      "sha256": "c7d9d78278eb19e3ebd57bbfcf7903affbcb0303dc154166489cfb937b196bce"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/check-failures-23b2bf8d9728e7dadd7676852835e7e156031f2e866c15b3190ffb6b6bbb7276.json",
+      "bytes": 398,
+      "sha256": "23b2bf8d9728e7dadd7676852835e7e156031f2e866c15b3190ffb6b6bbb7276"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/check-failures-c71bc736d349c4b6d7fd3bc5ac54d409bb88e193fea914a89d851a374959967f.json",
+      "bytes": 393,
+      "sha256": "c71bc736d349c4b6d7fd3bc5ac54d409bb88e193fea914a89d851a374959967f"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/check-failures.json",
+      "bytes": 393,
+      "sha256": "c71bc736d349c4b6d7fd3bc5ac54d409bb88e193fea914a89d851a374959967f"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/implement-attempt-1-detail-0a7412193322cd60e8dd0d55460da9d58c9effa1dd2a06e028a14631c37f4a60.json",
+      "bytes": 461,
+      "sha256": "0a7412193322cd60e8dd0d55460da9d58c9effa1dd2a06e028a14631c37f4a60"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/implement-attempt-1-detail-3d394c2570b20fc4b51f4dadb2727ea7b5b799331ed793d77ca7ba75a42ff75e.json",
+      "bytes": 6883,
+      "sha256": "3d394c2570b20fc4b51f4dadb2727ea7b5b799331ed793d77ca7ba75a42ff75e"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/implement-attempt-1-detail-7cbea960230ff2804bd40f16be10d85c22811ed5b87ea03a2645f6c85252f0e4.json",
+      "bytes": 415,
+      "sha256": "7cbea960230ff2804bd40f16be10d85c22811ed5b87ea03a2645f6c85252f0e4"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/implement-attempt-1.json",
+      "bytes": 6883,
+      "sha256": "3d394c2570b20fc4b51f4dadb2727ea7b5b799331ed793d77ca7ba75a42ff75e"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/implement-attempt-2-detail-594ebcf8725700a3128d5646466800c924b81a85b7598121efc4339f8125b1f3.json",
+      "bytes": 583,
+      "sha256": "594ebcf8725700a3128d5646466800c924b81a85b7598121efc4339f8125b1f3"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/implement-attempt-2-detail-f0e77e4ca51000eb012a6bc901f68ad2d6b544e03ffdba303d0d170aeddd887f.json",
+      "bytes": 9670,
+      "sha256": "f0e77e4ca51000eb012a6bc901f68ad2d6b544e03ffdba303d0d170aeddd887f"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/implement-attempt-2-detail-f37fba65c7bd507367688bcab0cf6cffd8c7dfeb6fba52e4955f86cae489a7fd.json",
+      "bytes": 629,
+      "sha256": "f37fba65c7bd507367688bcab0cf6cffd8c7dfeb6fba52e4955f86cae489a7fd"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/implement-attempt-2.json",
+      "bytes": 9670,
+      "sha256": "f0e77e4ca51000eb012a6bc901f68ad2d6b544e03ffdba303d0d170aeddd887f"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/implement-failures-23b2bf8d9728e7dadd7676852835e7e156031f2e866c15b3190ffb6b6bbb7276.json",
+      "bytes": 398,
+      "sha256": "23b2bf8d9728e7dadd7676852835e7e156031f2e866c15b3190ffb6b6bbb7276"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/history/implement-failures.json",
+      "bytes": 398,
+      "sha256": "23b2bf8d9728e7dadd7676852835e7e156031f2e866c15b3190ffb6b6bbb7276"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/progress.json",
+      "bytes": 24947,
+      "sha256": "d45c2268ef972970f71a2dd70f4fcdf24cf4d43b752d96208bad7fe4f7039360"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/progress.json.bak",
+      "bytes": 24411,
+      "sha256": "7ce7b6112a394d7c694c37af688e5fc0aab68b84517780ef737fbef563fc638a"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/sessions/check-a1.json",
+      "bytes": 510,
+      "sha256": "5aa1dffae60e6a30e473e97f7dfde4ff78a11f4614ecedd01151d199f27466c4"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/sessions/check-a2.json",
+      "bytes": 510,
+      "sha256": "9fbe27692014c7ade58a1a62c2bc9850921fe4194cddf86b8c32dcdd0eb1cabf"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/sessions/implement-a1.json",
+      "bytes": 514,
+      "sha256": "d4d66678999f8d7bc1f954f2aeb3519da76ca7af9a074bd75d62cc0c2e8be2ec"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-c-20261112220617-5d9d0db8e180/sessions/implement-a2.json",
+      "bytes": 514,
+      "sha256": "d447fa42fe3575288d926ba3c601f520849c00cfc4b4d8d2b10769e1071a3c8c"
+    },
+    {
+      "path": ".opencode/runs/_owners/363d55cddd677d9ebf3477a0acc1afe383407e7f1d700cc9c75dae23aef2620e.json",
+      "bytes": 282,
+      "sha256": "780b8de0f28a84b3c8e7b77e6dcfde80f3099e2bbfe8ddbb2cc7880e6ccba83c"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/56ba7943c18c20dfea5871016fc1c4e56a6a18e7d8f00002555c6ae1ed0e4c0a.txt",
+      "bytes": 9254,
+      "sha256": "56ba7943c18c20dfea5871016fc1c4e56a6a18e7d8f00002555c6ae1ed0e4c0a"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/8dd2bc2a930c4b3d1166e0815ed3cb849d79d294c9bde8b79e0a5a2391dd7bb1.txt",
+      "bytes": 2001,
+      "sha256": "8dd2bc2a930c4b3d1166e0815ed3cb849d79d294c9bde8b79e0a5a2391dd7bb1"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/d59bbec6843d9eab0f8617acf7365ad3a403720b6c323308eb3686cd59c2b3c6.txt",
+      "bytes": 9447,
+      "sha256": "d59bbec6843d9eab0f8617acf7365ad3a403720b6c323308eb3686cd59c2b3c6"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/fff4d65ae00ee485c40307f5342b2dcaea20d286b7b51fbf4d86a07701e05166.txt",
+      "bytes": 735,
+      "sha256": "fff4d65ae00ee485c40307f5342b2dcaea20d286b7b51fbf4d86a07701e05166"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/0a581fb450ae39efa7e5939ae0090b23f4de1779eb85661f74f74e9b0887a0c1.json",
+      "bytes": 565,
+      "sha256": "0a581fb450ae39efa7e5939ae0090b23f4de1779eb85661f74f74e9b0887a0c1"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/1cdb374feb13b9d095dfd89d405c53c9eedd8ef293b8e1859237b1514f2d540d.json",
+      "bytes": 564,
+      "sha256": "1cdb374feb13b9d095dfd89d405c53c9eedd8ef293b8e1859237b1514f2d540d"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/697915e68927f479f0a8436f2b876c7eac74833bb73aca0d042d91942d022d0a.json",
+      "bytes": 660,
+      "sha256": "697915e68927f479f0a8436f2b876c7eac74833bb73aca0d042d91942d022d0a"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/9152c23d2cec3dcac0e31579a4d8e5bc9b9918ed6fe8d6ee7d510006f72e0813.json",
+      "bytes": 659,
+      "sha256": "9152c23d2cec3dcac0e31579a4d8e5bc9b9918ed6fe8d6ee7d510006f72e0813"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/92bde6df3f3c7cfb787cddd910930225015d7c0182e1fe4a13615b9a9e5f8403.json",
+      "bytes": 720,
+      "sha256": "92bde6df3f3c7cfb787cddd910930225015d7c0182e1fe4a13615b9a9e5f8403"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/c1f5773fdb3bd2b8898f2faa0c8647a84f850bdb89d2b0481f833105b36cc5e3.json",
+      "bytes": 565,
+      "sha256": "c1f5773fdb3bd2b8898f2faa0c8647a84f850bdb89d2b0481f833105b36cc5e3"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/c2adde89e0752819cef448a51307d348c0827cd50a1987bcf82da5557f8c8f04.json",
+      "bytes": 659,
+      "sha256": "c2adde89e0752819cef448a51307d348c0827cd50a1987bcf82da5557f8c8f04"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/cc708562af114641745b78a3d7277e318b173f4af7de9e97e28d8531e873037a.json",
+      "bytes": 564,
+      "sha256": "cc708562af114641745b78a3d7277e318b173f4af7de9e97e28d8531e873037a"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/cdc3179896061aabfe86cd6c993293d8827b0fc6f14105d37b9fcca9ef76470f.json",
+      "bytes": 753,
+      "sha256": "cdc3179896061aabfe86cd6c993293d8827b0fc6f14105d37b9fcca9ef76470f"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/ef39247cc6e7f202af0bb350221cafff5709f25d1fb66bb3cce63003581be706.json",
+      "bytes": 1122,
+      "sha256": "ef39247cc6e7f202af0bb350221cafff5709f25d1fb66bb3cce63003581be706"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/763c932b123fa1b436bb523174b344ee2ff5df13643fbab75e16f6ede457a4ab.json",
+      "bytes": 3658,
+      "sha256": "a5dd24d4ec09ebc2dcec9ac6ecf418fbba38243b994dd3988d267ca95dfe02e6"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/9b0c8173ab1f690cdfd94029ec3ecc362e0806e59d0ef171b0de1570b7d690ee.json",
+      "bytes": 3658,
+      "sha256": "f0e2af182ec11804a0f929b688f1dce5c5e37e1ac6f1cbccda26fe336cf4480c"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/b7cbff73f31ab60ea750a61cef17fdbc245ecc7fe6c61036ee62866483352d3f.json",
+      "bytes": 12442,
+      "sha256": "8a0f21e7bc6decb649461ae11930a836c5e916f88f124f3e0c085ebfd6185abd"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/d6091ddb88a4a17080917151c9197d6e9324defe24aa962ab0174467fd2ac323.json",
+      "bytes": 10674,
+      "sha256": "6c35074333d025183af844e60d53d644044e58342be711d0f50177dca3b15475"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/f29a3e0af4d65ef75399d56ca5a95d33cca162a8e31163c9c08e9b6c57eeb485.json",
+      "bytes": 5412,
+      "sha256": "faef999f6a82fc7414b1ba7156663f2fec8b98dd9e0ad23a99913d8402b8a9d6"
+    },
+    {
+      "path": ".opencode/session-memory/heads/763c932b123fa1b436bb523174b344ee2ff5df13643fbab75e16f6ede457a4ab.json",
+      "bytes": 218,
+      "sha256": "e841e2149235ec613d2e8acd88a32828dcbb90b9c71496d18524b75960d2dda4"
+    },
+    {
+      "path": ".opencode/session-memory/heads/9b0c8173ab1f690cdfd94029ec3ecc362e0806e59d0ef171b0de1570b7d690ee.json",
+      "bytes": 218,
+      "sha256": "84177646ccf9f922e1cf42ee3beb9f1f7af0bfa9de9f3ddfcf6fb94bfcd1773b"
+    },
+    {
+      "path": ".opencode/session-memory/heads/b7cbff73f31ab60ea750a61cef17fdbc245ecc7fe6c61036ee62866483352d3f.json",
+      "bytes": 218,
+      "sha256": "d77a9ab3420b7eb1f4b28392ca632970a2c8932a5c8b633ea962322f5f5fd63e"
+    },
+    {
+      "path": ".opencode/session-memory/heads/d6091ddb88a4a17080917151c9197d6e9324defe24aa962ab0174467fd2ac323.json",
+      "bytes": 218,
+      "sha256": "aec2c118e4a18938506f5975b67859102b372ddefb46339cf6ef975b37322ebf"
+    },
+    {
+      "path": ".opencode/session-memory/heads/f29a3e0af4d65ef75399d56ca5a95d33cca162a8e31163c9c08e9b6c57eeb485.json",
+      "bytes": 218,
+      "sha256": "32637a045a5892f48fbd4bd799a75975f10346b748ae3421532d5ca8379a719a"
+    },
+    {
+      "path": ".opencode/session-memory/objects/2aedb03ae651c6a73d4b6ce3221539877345b083d6e94ec347974faf486a37c9.json",
+      "bytes": 1553,
+      "sha256": "2aedb03ae651c6a73d4b6ce3221539877345b083d6e94ec347974faf486a37c9"
+    },
+    {
+      "path": ".opencode/session-memory/objects/698ada11f74837786a305d4917452fcb106f2d776d1c0bcdce7171fff2d0482c.json",
+      "bytes": 2863,
+      "sha256": "698ada11f74837786a305d4917452fcb106f2d776d1c0bcdce7171fff2d0482c"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/763c932b123fa1b436bb523174b344ee2ff5df13643fbab75e16f6ede457a4ab.json",
+      "bytes": 372,
+      "sha256": "d656ce5dc09b22abbf135a5aa900c14b140718ac0a8f2c51628e5b559125f383"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/9b0c8173ab1f690cdfd94029ec3ecc362e0806e59d0ef171b0de1570b7d690ee.json",
+      "bytes": 372,
+      "sha256": "06f53f6a224aa8d43711512303dc7e1d6ae5a84aba677d4c14857d2101559a2f"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/b7cbff73f31ab60ea750a61cef17fdbc245ecc7fe6c61036ee62866483352d3f.json",
+      "bytes": 373,
+      "sha256": "a419ad6f3f3a919c008dcf1f7320f9b17bdec843fc90d50b8ecbda38e8a678a9"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/d6091ddb88a4a17080917151c9197d6e9324defe24aa962ab0174467fd2ac323.json",
+      "bytes": 372,
+      "sha256": "37c97d3f8d80840f752960f5c147084fd2c9d5582fa4cb4c58aa4c701d831d2e"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/f29a3e0af4d65ef75399d56ca5a95d33cca162a8e31163c9c08e9b6c57eeb485.json",
+      "bytes": 372,
+      "sha256": "1720e4ba544d90b6dc706c4b5f6972d7d834ef12d6ec262e4b43bee28941dc80"
+    },
+    {
+      "path": "data/inspection-records.json",
+      "bytes": 702,
+      "sha256": "ae8c396da3661e221e9716663c2cc79ce2715bff9d3d99de401093960709d14d"
+    },
+    {
+      "path": "package.json",
+      "bytes": 116,
+      "sha256": "a78a9ceb37d11a4b0e970b5cfd854e44f49f1563898501eeac5a3e51228acfd0"
+    },
+    {
+      "path": "src/wafer-count.cjs",
+      "bytes": 434,
+      "sha256": "0a6d8fef77e2df3f17355b5a7e8f11bbe2118c0463a764c6d558f7bbf6e26ba2"
+    },
+    {
+      "path": "src/wafer-view.cjs",
+      "bytes": 140,
+      "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+    },
+    {
+      "path": "test/wafer-count.test.cjs",
+      "bytes": 768,
+      "sha256": "a7719415e595d1bfd8656b74d05b7171a81ec4fc7c8369b6755a15ce96426eeb"
+    }
+  ],
+  "usage_monitors": {
+    "reportedTokens": 200000,
+    "reportedCostPerSuite": 5,
+    "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+  },
+  "measurement_limits": [
+    "actual provider invoice",
+    "hidden model calls not represented by session messages",
+    "operator minutes",
+    "production MCP cost/reuse",
+    "multi-hour reliability",
+    "hardware-normalized latency"
+  ]
+}
