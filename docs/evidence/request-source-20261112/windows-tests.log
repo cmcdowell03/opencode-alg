@@ -1,0 +1,166 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\architecture-audit.test.ts:
+(pass) architecture audit remediation > worker payload retains one authoritative task and preserves differing advisory inputs [4.09ms]
+(pass) architecture audit remediation > README, operations, and orchestrator help document the local-integrity authenticity boundary [1.24ms]
+(pass) architecture audit remediation > aggregate output and worker/checker prompt payloads have byte caps [9.35ms]
+(pass) architecture audit remediation > structured incomplete implementer output validates but never completes a node [457.50ms]
+(pass) architecture audit remediation > executor rejects a safe artifact path belonging to another run [402.64ms]
+(pass) architecture audit remediation > session sidecar is atomically bound before progress child-id persistence [205.49ms]
+(pass) architecture audit remediation > checker feedback targets only arbitrary direct dependencies [0.95ms]
+(pass) architecture audit remediation > tight global retry allocation is graph-ordered regardless failure completion speed [1893.13ms]
+(pass) architecture audit remediation > compaction selects exact-owner active state and formats deterministic bounded text [63.81ms]
+(pass) architecture audit remediation > compaction output join is capped across chunks [0.42ms]
+(pass) architecture audit remediation > listing, explicit access, and compaction never mutate another owner's runs [266.77ms]
+(pass) architecture audit remediation > disabled skill evolution does not inject SKILL.md into chat or compact context [15.83ms]
+(pass) architecture audit remediation > compacting hook logs run-store failures instead of swallowing them [9.78ms]
+(pass) architecture audit remediation > compacting hook includes skill-evolution pointers when the store has pending rows [518.38ms]
+(pass) architecture audit remediation > merged config role models are snapped once and project overrides win [158.21ms]
+(pass) architecture audit remediation > transfer tool validates target session fields before ownership mutation [242.95ms]
+(pass) architecture audit remediation > shell command timeout overrides preserve cwd across helper, run, and resume [1613.35ms]
+(pass) architecture audit remediation > criteria requires a planned run and lock=false replaces while leaving unlocked [350.30ms]
+(pass) architecture audit remediation > persistence preserves unknown non-owned artifact files [93.94ms]
+
+tests\headless-harness.test.ts:
+(pass) headless synthetic provider contract > checker fixture rejects absent or spoofed evidence and requires its exact selected source [0.32ms]
+(pass) headless synthetic provider contract > query evidence excludes admission but retains failed query outputs [0.22ms]
+(pass) headless synthetic provider contract > drives the host through workspace, investigation plan, and query tools [1.19ms]
+(pass) headless synthetic provider contract > compaction only repeats references observed in the host request [0.18ms]
+(pass) headless synthetic provider contract > follow-up claims recovery only when both persisted markers are in context [0.14ms]
+(pass) isolated host dependency setup uses the pinned SDK and refuses an existing target [39.05ms]
+
+tests\release-gate.test.ts:
+(pass) every release command has a deadline and failed commands retain diagnostics [151.63ms]
+(pass) release command launch errors and deadlines return failure diagnostics [645.69ms]
+(pass) release output overflow is bounded without killing a successful command [118.60ms]
+236 | describe("bounded release-gate evidence", () => {
+237 |   test("v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate", () => {
+238 |     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"))
+239 |     const lock = JSON.parse(readFileSync(join(ROOT, "package-lock.json"), "utf8"))
+240 |     expect(pkg.version).toBe("0.5.8")
+241 |     expect(lock.version).toBe("0.5.8")
+                               ^
+error: expect(received).toBe(expected)
+
+Expected: "0.5.8"
+Received: "0.5.7"
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\release-gate.test.ts:241:26)
+(fail) bounded release-gate evidence > v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate [1.94ms]
+(pass) bounded release-gate evidence > source identity and npm allowlist automatically include every skill-evolution runtime module [178.47ms]
+(pass) bounded release-gate evidence > strict schema rejects unknown or contradictory fields [9.32ms]
+(pass) bounded release-gate evidence > release-input identity binds same-length manager script, documentation, and test changes [96.95ms]
+(pass) bounded release-gate evidence > redacts credentials and bounds UTF-8 output tails [0.43ms]
+(pass) bounded release-gate evidence > default release identity still binds graders and plans excluded from deployment [167.09ms]
+(pass) bounded release-gate evidence > writes only strict bounded external evidence and artifact scanning detects caches [26.53ms]
+(pass) bounded release-gate evidence > release evidence UUID collision never overwrites the existing final artifact [43.86ms]
+(pass) bounded release-gate evidence > release evidence same-byte replacement before-final-check is preserved and rejected [27.57ms]
+(pass) bounded release-gate evidence > release evidence same-byte replacement after-final-check is preserved and rejected [36.95ms]
+(pass) bounded release-gate evidence > release evidence preserves a replaced temporary and rejects cleanup [38.49ms]
+(pass) bounded release-gate evidence > strict release verification rejects a same-byte final identity replacement [29.69ms]
+(pass) bounded release-gate evidence > semantically verifies retained evidence against the current source, package, live proof, path, and hash [2770.19ms]
+(pass) bounded release-gate evidence > semantic verification rejects coherent-looking contradictory or stale evidence [8411.48ms]
+(pass) bounded release-gate evidence > strict live semantics reject minimal, empty, wrong-tool, manifest, and registration evidence [1625.45ms]
+(pass) bounded release-gate evidence > resolves npm by fixed canonical siblings with spaces and never parses a malicious cmd shim [5.22ms]
+(pass) bounded release-gate evidence > rejects unresolvable or non-file npm shims and supports a resolved POSIX executable [1.89ms]
+(pass) bounded release-gate evidence > accepts only the canonical Node POSIX bin/npm to lib/npm CLI layout [0.99ms]
+(skip) bounded release-gate evidence > resolves a real POSIX npm symlink inside the Node installation
+(pass) bounded release-gate evidence > rejects an actual npm CLI directory junction/symlink escape [5.42ms]
+(pass) bounded release-gate evidence > deterministic realpath seam rejects independent node executable escape [0.60ms]
+(pass) bounded release-gate evidence > deterministic realpath seam rejects independent CLI escape [0.42ms]
+(pass) bounded release-gate evidence > complete package allowlist rejects extras, missing paths, duplicates, unsafe paths, and bad modes [95.01ms]
+
+tests\schema-retry-diagnostics.test.ts:
+(pass) schema-owned retry diagnostics > explorer exposes trusted path query [0.98ms]
+(pass) schema-owned retry diagnostics > explorer exposes trusted path map.0.role [0.52ms]
+(pass) schema-owned retry diagnostics > explorer exposes trusted path key_hits.0.note [0.91ms]
+(pass) schema-owned retry diagnostics > researcher exposes trusted path evidence.0.path [0.68ms]
+(pass) schema-owned retry diagnostics > researcher exposes trusted path options.0.pros.0 [0.74ms]
+(pass) schema-owned retry diagnostics > implementer exposes trusted path artifact_path [0.23ms]
+(pass) schema-owned retry diagnostics > implementer exposes trusted path blockers.0 [0.28ms]
+(pass) schema-owned retry diagnostics > implementer exposes trusted path commands_run.0.outcome [0.58ms]
+(pass) schema-owned retry diagnostics > checker exposes trusted path passed [0.23ms]
+(pass) schema-owned retry diagnostics > checker exposes trusted path notes [0.17ms]
+(pass) schema-owned retry diagnostics > shell exposes trusted path exit_code [0.73ms]
+(pass) schema-owned retry diagnostics > shell exposes trusted path stdout_tail [0.18ms]
+(pass) schema-owned retry diagnostics > shell exposes trusted path timed_out [0.15ms]
+(pass) schema-owned retry diagnostics > enum and size diagnostics remain useful without echoing supplied values [0.56ms]
+(pass) schema-owned retry diagnostics > unknown keys, values and cross-role field names are never diagnostic paths [0.93ms]
+(pass) schema-owned retry diagnostics > many nested issues stay within the existing persisted diagnostic limits [24.64ms]
+(pass) schema-owned retry diagnostics > semantic verdict and completion constraints still fail closed [1.08ms]
+(pass) schema-owned retry diagnostics > custom rule blockers_required_when_incomplete has fixed actionable guidance [0.21ms]
+(pass) schema-owned retry diagnostics > custom rule blockers_forbidden_when_done has fixed actionable guidance [0.07ms]
+(pass) schema-owned retry diagnostics > custom rule run_artifact_path has fixed actionable guidance [0.30ms]
+(pass) schema-owned retry diagnostics > custom rule project_relative_path has fixed actionable guidance [0.24ms]
+(pass) schema-owned retry diagnostics > custom rule text_trimmed has fixed actionable guidance [0.09ms]
+(pass) schema-owned retry diagnostics > custom rule failures_empty_when_passed has fixed actionable guidance [0.08ms]
+(pass) schema-owned retry diagnostics > custom rule failures_required_when_rejected has fixed actionable guidance [0.10ms]
+(pass) schema-owned retry diagnostics > custom rule score_matches_verdict has fixed actionable guidance [0.07ms]
+(pass) schema-owned retry diagnostics > custom rule shell_ok_matches_execution has fixed actionable guidance [0.17ms]
+(pass) schema-owned retry diagnostics > explorer aggregate limit names local UTF-8 byte policy [0.91ms]
+(pass) schema-owned retry diagnostics > researcher aggregate limit names local UTF-8 byte policy [1.38ms]
+(pass) schema-owned retry diagnostics > implementer aggregate limit names local UTF-8 byte policy [0.41ms]
+(pass) schema-owned retry diagnostics > checker aggregate limit names local UTF-8 byte policy [0.30ms]
+(pass) schema-owned retry diagnostics > shell aggregate limit names local UTF-8 byte policy [0.37ms]
+(pass) schema-owned retry diagnostics > child cannot inject a custom rule or override the byte limit through output keys [0.48ms]
+(pass) schema-owned retry diagnostics > schema_invalid selects guidance from outcome, not feedback text [0.36ms]
+(pass) schema-owned retry diagnostics > sdk_error selects guidance from outcome, not feedback text [0.07ms]
+(pass) schema-owned retry diagnostics > gate_failure selects guidance from outcome, not feedback text [0.05ms]
+(pass) schema-owned retry diagnostics > substantive_rejection selects guidance from outcome, not feedback text [0.04ms]
+(pass) schema-owned retry diagnostics > incomplete selects guidance from outcome, not feedback text [0.04ms]
+(pass) schema-owned retry diagnostics > %s selects guidance from outcome, not feedback text [0.05ms]
+(pass) schema-owned retry diagnostics > initial calls have no prior-failure heading [0.15ms]
+(pass) schema-owned retry diagnostics > safe schema feedback survives save/load/resume without replaying a successful sibling [1025.28ms]
+
+tests\task-admission.test.ts:
+(pass) tool task contract admission > planning captures the actual host user turn rather than trusting a lossy planner summary [131.55ms]
+(pass) tool task contract admission > new plans cannot silently omit contracts or original criteria [3.69ms]
+(pass) tool task contract admission > impossible producer is rejected without effective-permission or child calls [2.49ms]
+(pass) tool task contract admission > known writes admit compact work and keep source and contract through status [126.12ms]
+(pass) tool task contract admission > host denial blocks before creation and changed permissions block before execution [124.33ms]
+(pass) tool task contract admission > criteria cannot be weakened by the legacy unlock switch [109.60ms]
+
+tests\task-contract.test.ts:
+(pass) declared task admission > host user request survives persistence, compaction and both child handoffs without trusting a shortened summary [964.97ms]
+(pass) declared task admission > project deliverables reject research-only graphs and do not create durable work [0.88ms]
+(pass) declared task admission > routing uses declared work and uncertainty, not model/task-name keywords [0.25ms]
+(pass) declared task admission > missing checker, disconnected producer, execution and protected paths fail closed [0.25ms]
+(pass) declared task admission > typed paths cannot conflict or traverse; diagnostics do not echo unknown keys [0.54ms]
+(pass) declared task admission > capabilities recognize only uniform host decisions [0.32ms]
+(pass) declared task admission > original criteria and contract survive persistence and bounded context projection [91.07ms]
+(pass) declared task admission > removing an accepted contract cannot silently turn a new run into legacy [89.12ms]
+(pass) declared task admission > legacy persisted runs remain readable without invented admission [77.65ms]
+(pass) host-enforced task completion > passing model verdict cannot certify a missing declared file [478.72ms]
+(pass) host-enforced task completion > correct files pass; preparation contract is visible to workers and remains pinned [912.90ms]
+(pass) host-enforced task completion > claimed commands do not satisfy the native command requirement [459.18ms]
+(pass) host-enforced task completion > accepted verification gate cannot be replaced at run time [114.77ms]
+
+tests\task-evidence-integrity.test.ts:
+(pass) checker task evidence references survive attempt archiving and hydration; tampering fails closed [4677.71ms]
+
+tests\task-request.test.ts:
+(pass) host captured current task request > captures the requested user message and exact project query [0.65ms]
+(pass) host captured current task request > resolves only the exact user parent of a requested assistant message [0.31ms]
+(pass) host captured current task request > rejects mismatched session, message, and role without guessing history [0.34ms]
+(pass) host captured current task request > maps SDK failures and absent legacy methods to static unavailable reasons [0.23ms]
+(pass) host captured current task request > collects literal text in order without decoding task requirements [0.41ms]
+(pass) host captured current task request > declines recognized credentials entirely, including prefixed and encoded assignments [0.67ms]
+(pass) host captured current task request > accepts SDK envelopes with a null error and declines whitespace-only text [0.31ms]
+(pass) host captured current task request > enforces raw and retained byte limits without truncation, including Unicode [0.43ms]
+(pass) host captured current task request > bounds part count and distinguishes requests with no text [0.18ms]
+(pass) host captured current task request > snapshot schema rejects a bad digest and over-limit UTF-8 text [0.64ms]
+(pass) host captured current task request > times out and aborts the SDK signal without exposing rejection details [1516.53ms]
+(pass) host captured current task request > propagates tool cancellation to an in-flight SDK request [14.33ms]
+
+1 tests skipped:
+(skip) bounded release-gate evidence > resolves a real POSIX npm symlink inside the Node installation
+
+
+1 tests failed:
+(fail) bounded release-gate evidence > v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate [1.94ms]
+
+ 121 pass
+ 1 skip
+ 1 fail
+ 621 expect() calls
+Ran 123 tests across 8 files. [32.36s]

@@ -386,7 +386,7 @@ A durable failure register links incident → invariant → reproducer → fix c
 
 ### Delivery order and stop rules
 
-The next coding change is **P1**, with H0 developed in parallel: task-contract admission, original-criteria identity and compatible compact work. Then prove P2 on actual host compaction/restart, add P3's shared allowance, and run the bounded hard development pilot. Add P4 probes/adaptation one at a time in response to evidence. Do not expand graph complexity while basic admission, evidence recovery or metering is failing.
+P1 now has task-contract admission, criteria identity, compatible compact work and bounded current-user source capture. Deterministic P2 host compaction/restart checks pass; completed paired long-task behavioral exposure remains unqualified. The next implementation must close **P1 verification coverage before edits**, then add **P3's shared dispatch allowance**, with H0 service/oracle qualification in parallel. Reuse existing preservation snapshots and native receipts; a late read cannot supply an absent baseline. Do not turn a dispatch reservation into a claimed provider/token cap. Only after those gates close should the bounded hard development pilot run. Add P4 probes/adaptation one at a time in response to evidence. Do not expand graph complexity while admission, evidence recovery or metering is failing.
 
 A merge/release needs the repository's applicable full local checks and a clean candidate-specific installed-package verification on both platforms. A competitive advantage needs separate comparative evidence. These are different gates: do not merge broken mechanics because a model trial wins, and do not describe a mechanically green candidate as proven superior.
 

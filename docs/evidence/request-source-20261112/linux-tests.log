@@ -1,0 +1,197 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/architecture-audit.test.ts:
+(pass) architecture audit remediation > worker payload retains one authoritative task and preserves differing advisory inputs [0.94ms]
+(pass) architecture audit remediation > README, operations, and orchestrator help document the local-integrity authenticity boundary [14.78ms]
+(pass) architecture audit remediation > aggregate output and worker/checker prompt payloads have byte caps [10.17ms]
+(pass) architecture audit remediation > structured incomplete implementer output validates but never completes a node [287.14ms]
+(pass) architecture audit remediation > executor rejects a safe artifact path belonging to another run [240.94ms]
+(pass) architecture audit remediation > session sidecar is atomically bound before progress child-id persistence [140.53ms]
+(pass) architecture audit remediation > checker feedback targets only arbitrary direct dependencies [1.35ms]
+(pass) architecture audit remediation > tight global retry allocation is graph-ordered regardless failure completion speed [982.78ms]
+(pass) architecture audit remediation > compaction selects exact-owner active state and formats deterministic bounded text [35.65ms]
+(pass) architecture audit remediation > compaction output join is capped across chunks [0.42ms]
+(pass) architecture audit remediation > listing, explicit access, and compaction never mutate another owner's runs [144.43ms]
+(pass) architecture audit remediation > disabled skill evolution does not inject SKILL.md into chat or compact context [9.52ms]
+(pass) architecture audit remediation > compacting hook logs run-store failures instead of swallowing them [6.94ms]
+(pass) architecture audit remediation > compacting hook includes skill-evolution pointers when the store has pending rows [184.44ms]
+(pass) architecture audit remediation > merged config role models are snapped once and project overrides win [107.68ms]
+(pass) architecture audit remediation > transfer tool validates target session fields before ownership mutation [150.62ms]
+(pass) architecture audit remediation > shell command timeout overrides preserve cwd across helper, run, and resume [824.82ms]
+(pass) architecture audit remediation > criteria requires a planned run and lock=false replaces while leaving unlocked [225.01ms]
+(pass) architecture audit remediation > persistence preserves unknown non-owned artifact files [59.25ms]
+
+tests/headless-harness.test.ts:
+(pass) headless synthetic provider contract > checker fixture rejects absent or spoofed evidence and requires its exact selected source [0.40ms]
+(pass) headless synthetic provider contract > query evidence excludes admission but retains failed query outputs [0.37ms]
+(pass) headless synthetic provider contract > drives the host through workspace, investigation plan, and query tools [0.96ms]
+(pass) headless synthetic provider contract > compaction only repeats references observed in the host request [0.29ms]
+(pass) headless synthetic provider contract > follow-up claims recovery only when both persisted markers are in context [0.37ms]
+(pass) isolated host dependency setup uses the pinned SDK and refuses an existing target [27.53ms]
+
+tests/release-gate.test.ts:
+(pass) every release command has a deadline and failed commands retain diagnostics [67.37ms]
+(pass) release command launch errors and deadlines return failure diagnostics [510.58ms]
+(pass) release output overflow is bounded without killing a successful command [54.98ms]
+236 | describe("bounded release-gate evidence", () => {
+237 |   test("v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate", () => {
+238 |     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"))
+239 |     const lock = JSON.parse(readFileSync(join(ROOT, "package-lock.json"), "utf8"))
+240 |     expect(pkg.version).toBe("0.5.8")
+241 |     expect(lock.version).toBe("0.5.8")
+                               ^
+error: expect(received).toBe(expected)
+
+Expected: "0.5.8"
+Received: "0.5.7"
+
+      at <anonymous> (/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1/tests/release-gate.test.ts:241:26)
+(fail) bounded release-gate evidence > v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate [13.30ms]
+(pass) bounded release-gate evidence > source identity and npm allowlist automatically include every skill-evolution runtime module [2098.77ms]
+(pass) bounded release-gate evidence > strict schema rejects unknown or contradictory fields [5.68ms]
+(pass) bounded release-gate evidence > release-input identity binds same-length manager script, documentation, and test changes [3.19ms]
+(pass) bounded release-gate evidence > redacts credentials and bounds UTF-8 output tails [0.38ms]
+(pass) bounded release-gate evidence > default release identity still binds graders and plans excluded from deployment [7.68ms]
+(pass) bounded release-gate evidence > writes only strict bounded external evidence and artifact scanning detects caches [3.46ms]
+(pass) bounded release-gate evidence > release evidence UUID collision never overwrites the existing final artifact [3.27ms]
+(pass) bounded release-gate evidence > release evidence same-byte replacement before-final-check is preserved and rejected [2.21ms]
+(pass) bounded release-gate evidence > release evidence same-byte replacement after-final-check is preserved and rejected [1.78ms]
+(pass) bounded release-gate evidence > release evidence preserves a replaced temporary and rejects cleanup [2.21ms]
+(pass) bounded release-gate evidence > strict release verification rejects a same-byte final identity replacement [2.02ms]
+244 |     }
+245 |   }
+246 |   const sorted = [...paths].sort()
+247 |   if (JSON.stringify(sorted) !== JSON.stringify(expected)) throw new Error("npm pack inventory differs from the complete reviewed allowlist")
+248 |   if (files.some((file) => file.mode !== 420 && !(file.mode === 493 && ["scripts/alg.sh", "scripts/install.sh"].includes(file.path)))) {
+249 |     throw new Error("npm pack file modes must be 0644, or 0755 for the reviewed Bash launchers")
+                                                                                                     ^
+error: npm pack file modes must be 0644, or 0755 for the reviewed Bash launchers
+      at validatePackedInventory (/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1/scripts/release-gate.ts:249:96)
+      at semanticEvidence (/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1/tests/release-gate.test.ts:144:21)
+      at <anonymous> (/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1/tests/release-gate.test.ts:417:21)
+(fail) bounded release-gate evidence > semantically verifies retained evidence against the current source, package, live proof, path, and hash [4094.10ms]
+244 |     }
+245 |   }
+246 |   const sorted = [...paths].sort()
+247 |   if (JSON.stringify(sorted) !== JSON.stringify(expected)) throw new Error("npm pack inventory differs from the complete reviewed allowlist")
+248 |   if (files.some((file) => file.mode !== 420 && !(file.mode === 493 && ["scripts/alg.sh", "scripts/install.sh"].includes(file.path)))) {
+249 |     throw new Error("npm pack file modes must be 0644, or 0755 for the reviewed Bash launchers")
+                                                                                                     ^
+error: npm pack file modes must be 0644, or 0755 for the reviewed Bash launchers
+      at validatePackedInventory (/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1/scripts/release-gate.ts:249:96)
+      at semanticEvidence (/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1/tests/release-gate.test.ts:144:21)
+      at <anonymous> (/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1/tests/release-gate.test.ts:441:21)
+(fail) bounded release-gate evidence > semantic verification rejects coherent-looking contradictory or stale evidence [3981.77ms]
+244 |     }
+245 |   }
+246 |   const sorted = [...paths].sort()
+247 |   if (JSON.stringify(sorted) !== JSON.stringify(expected)) throw new Error("npm pack inventory differs from the complete reviewed allowlist")
+248 |   if (files.some((file) => file.mode !== 420 && !(file.mode === 493 && ["scripts/alg.sh", "scripts/install.sh"].includes(file.path)))) {
+249 |     throw new Error("npm pack file modes must be 0644, or 0755 for the reviewed Bash launchers")
+                                                                                                     ^
+error: npm pack file modes must be 0644, or 0755 for the reviewed Bash launchers
+      at validatePackedInventory (/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1/scripts/release-gate.ts:249:96)
+      at semanticEvidence (/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1/tests/release-gate.test.ts:144:21)
+      at <anonymous> (/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1/tests/release-gate.test.ts:482:5)
+(fail) bounded release-gate evidence > strict live semantics reject minimal, empty, wrong-tool, manifest, and registration evidence [4226.83ms]
+(pass) bounded release-gate evidence > resolves npm by fixed canonical siblings with spaces and never parses a malicious cmd shim [1.81ms]
+(pass) bounded release-gate evidence > rejects unresolvable or non-file npm shims and supports a resolved POSIX executable [0.94ms]
+(pass) bounded release-gate evidence > accepts only the canonical Node POSIX bin/npm to lib/npm CLI layout [0.46ms]
+(pass) bounded release-gate evidence > resolves a real POSIX npm symlink inside the Node installation [1.15ms]
+(pass) bounded release-gate evidence > rejects an actual npm CLI directory junction/symlink escape [1.16ms]
+(pass) bounded release-gate evidence > deterministic realpath seam rejects independent node executable escape [0.25ms]
+(pass) bounded release-gate evidence > deterministic realpath seam rejects independent CLI escape [0.09ms]
+(pass) bounded release-gate evidence > complete package allowlist rejects extras, missing paths, duplicates, unsafe paths, and bad modes [1165.09ms]
+
+tests/schema-retry-diagnostics.test.ts:
+(pass) schema-owned retry diagnostics > explorer exposes trusted path query [0.74ms]
+(pass) schema-owned retry diagnostics > explorer exposes trusted path map.0.role [0.52ms]
+(pass) schema-owned retry diagnostics > explorer exposes trusted path key_hits.0.note [1.12ms]
+(pass) schema-owned retry diagnostics > researcher exposes trusted path evidence.0.path [0.81ms]
+(pass) schema-owned retry diagnostics > researcher exposes trusted path options.0.pros.0 [10.03ms]
+(pass) schema-owned retry diagnostics > implementer exposes trusted path artifact_path [0.49ms]
+(pass) schema-owned retry diagnostics > implementer exposes trusted path blockers.0 [0.40ms]
+(pass) schema-owned retry diagnostics > implementer exposes trusted path commands_run.0.outcome [0.81ms]
+(pass) schema-owned retry diagnostics > checker exposes trusted path passed [0.43ms]
+(pass) schema-owned retry diagnostics > checker exposes trusted path notes [0.42ms]
+(pass) schema-owned retry diagnostics > shell exposes trusted path exit_code [1.17ms]
+(pass) schema-owned retry diagnostics > shell exposes trusted path stdout_tail [0.40ms]
+(pass) schema-owned retry diagnostics > shell exposes trusted path timed_out [0.40ms]
+(pass) schema-owned retry diagnostics > enum and size diagnostics remain useful without echoing supplied values [1.03ms]
+(pass) schema-owned retry diagnostics > unknown keys, values and cross-role field names are never diagnostic paths [0.84ms]
+(pass) schema-owned retry diagnostics > many nested issues stay within the existing persisted diagnostic limits [15.61ms]
+(pass) schema-owned retry diagnostics > semantic verdict and completion constraints still fail closed [0.98ms]
+(pass) schema-owned retry diagnostics > custom rule blockers_required_when_incomplete has fixed actionable guidance [0.42ms]
+(pass) schema-owned retry diagnostics > custom rule blockers_forbidden_when_done has fixed actionable guidance [0.34ms]
+(pass) schema-owned retry diagnostics > custom rule run_artifact_path has fixed actionable guidance [0.40ms]
+(pass) schema-owned retry diagnostics > custom rule project_relative_path has fixed actionable guidance [0.40ms]
+(pass) schema-owned retry diagnostics > custom rule text_trimmed has fixed actionable guidance [0.24ms]
+(pass) schema-owned retry diagnostics > custom rule failures_empty_when_passed has fixed actionable guidance [0.21ms]
+(pass) schema-owned retry diagnostics > custom rule failures_required_when_rejected has fixed actionable guidance [0.13ms]
+(pass) schema-owned retry diagnostics > custom rule score_matches_verdict has fixed actionable guidance [0.20ms]
+(pass) schema-owned retry diagnostics > custom rule shell_ok_matches_execution has fixed actionable guidance [0.34ms]
+(pass) schema-owned retry diagnostics > explorer aggregate limit names local UTF-8 byte policy [1.59ms]
+(pass) schema-owned retry diagnostics > researcher aggregate limit names local UTF-8 byte policy [1.59ms]
+(pass) schema-owned retry diagnostics > implementer aggregate limit names local UTF-8 byte policy [0.50ms]
+(pass) schema-owned retry diagnostics > checker aggregate limit names local UTF-8 byte policy [0.44ms]
+(pass) schema-owned retry diagnostics > shell aggregate limit names local UTF-8 byte policy [0.41ms]
+(pass) schema-owned retry diagnostics > child cannot inject a custom rule or override the byte limit through output keys [0.49ms]
+(pass) schema-owned retry diagnostics > schema_invalid selects guidance from outcome, not feedback text [0.39ms]
+(pass) schema-owned retry diagnostics > sdk_error selects guidance from outcome, not feedback text [0.15ms]
+(pass) schema-owned retry diagnostics > gate_failure selects guidance from outcome, not feedback text [0.13ms]
+(pass) schema-owned retry diagnostics > substantive_rejection selects guidance from outcome, not feedback text [0.11ms]
+(pass) schema-owned retry diagnostics > incomplete selects guidance from outcome, not feedback text [0.11ms]
+(pass) schema-owned retry diagnostics > %s selects guidance from outcome, not feedback text [0.10ms]
+(pass) schema-owned retry diagnostics > initial calls have no prior-failure heading [0.18ms]
+(pass) schema-owned retry diagnostics > safe schema feedback survives save/load/resume without replaying a successful sibling [489.40ms]
+
+tests/task-admission.test.ts:
+(pass) tool task contract admission > planning captures the actual host user turn rather than trusting a lossy planner summary [74.01ms]
+(pass) tool task contract admission > new plans cannot silently omit contracts or original criteria [4.07ms]
+(pass) tool task contract admission > impossible producer is rejected without effective-permission or child calls [3.11ms]
+(pass) tool task contract admission > known writes admit compact work and keep source and contract through status [66.15ms]
+(pass) tool task contract admission > host denial blocks before creation and changed permissions block before execution [63.28ms]
+(pass) tool task contract admission > criteria cannot be weakened by the legacy unlock switch [58.15ms]
+
+tests/task-contract.test.ts:
+(pass) declared task admission > host user request survives persistence, compaction and both child handoffs without trusting a shortened summary [449.94ms]
+(pass) declared task admission > project deliverables reject research-only graphs and do not create durable work [0.76ms]
+(pass) declared task admission > routing uses declared work and uncertainty, not model/task-name keywords [0.42ms]
+(pass) declared task admission > missing checker, disconnected producer, execution and protected paths fail closed [0.50ms]
+(pass) declared task admission > typed paths cannot conflict or traverse; diagnostics do not echo unknown keys [0.95ms]
+(pass) declared task admission > capabilities recognize only uniform host decisions [0.49ms]
+(pass) declared task admission > original criteria and contract survive persistence and bounded context projection [48.53ms]
+(pass) declared task admission > removing an accepted contract cannot silently turn a new run into legacy [43.88ms]
+(pass) declared task admission > legacy persisted runs remain readable without invented admission [36.56ms]
+(pass) host-enforced task completion > passing model verdict cannot certify a missing declared file [242.61ms]
+(pass) host-enforced task completion > correct files pass; preparation contract is visible to workers and remains pinned [394.62ms]
+(pass) host-enforced task completion > claimed commands do not satisfy the native command requirement [258.83ms]
+(pass) host-enforced task completion > accepted verification gate cannot be replaced at run time [61.59ms]
+
+tests/task-evidence-integrity.test.ts:
+(pass) checker task evidence references survive attempt archiving and hydration; tampering fails closed [2007.71ms]
+
+tests/task-request.test.ts:
+(pass) host captured current task request > captures the requested user message and exact project query [0.64ms]
+(pass) host captured current task request > resolves only the exact user parent of a requested assistant message [0.43ms]
+(pass) host captured current task request > rejects mismatched session, message, and role without guessing history [0.61ms]
+(pass) host captured current task request > maps SDK failures and absent legacy methods to static unavailable reasons [0.90ms]
+(pass) host captured current task request > collects literal text in order without decoding task requirements [0.80ms]
+(pass) host captured current task request > declines recognized credentials entirely, including prefixed and encoded assignments [1.04ms]
+(pass) host captured current task request > accepts SDK envelopes with a null error and declines whitespace-only text [0.46ms]
+(pass) host captured current task request > enforces raw and retained byte limits without truncation, including Unicode [0.66ms]
+(pass) host captured current task request > bounds part count and distinguishes requests with no text [0.45ms]
+(pass) host captured current task request > snapshot schema rejects a bad digest and over-limit UTF-8 text [1.03ms]
+(pass) host captured current task request > times out and aborts the SDK signal without exposing rejection details [1504.27ms]
+(pass) host captured current task request > propagates tool cancellation to an in-flight SDK request [6.08ms]
+
+4 tests failed:
+(fail) bounded release-gate evidence > v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate [13.30ms]
+(fail) bounded release-gate evidence > semantically verifies retained evidence against the current source, package, live proof, path, and hash [4094.10ms]
+(fail) bounded release-gate evidence > semantic verification rejects coherent-looking contradictory or stale evidence [3981.77ms]
+(fail) bounded release-gate evidence > strict live semantics reject minimal, empty, wrong-tool, manifest, and registration evidence [4226.83ms]
+
+ 119 pass
+ 4 fail
+ 571 expect() calls
+Ran 123 tests across 8 files. [28.73s]

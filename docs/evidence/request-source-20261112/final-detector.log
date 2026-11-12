@@ -1,0 +1,21 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\task-request.test.ts:
+(pass) host captured current task request > captures the requested user message and exact project query [4.39ms]
+(pass) host captured current task request > resolves only the exact user parent of a requested assistant message [0.29ms]
+(pass) host captured current task request > rejects mismatched session, message, and role without guessing history [0.34ms]
+(pass) host captured current task request > maps SDK failures and absent legacy methods to static unavailable reasons [0.25ms]
+(pass) host captured current task request > collects literal text in order without decoding task requirements [0.31ms]
+(pass) host captured current task request > declines recognized credentials entirely, including prefixed and encoded assignments [0.82ms]
+(pass) host captured current task request > retains public schema type declarations and explicit credential placeholders [0.44ms]
+(pass) host captured current task request > accepts SDK envelopes with a null error and declines whitespace-only text [0.23ms]
+(pass) host captured current task request > enforces raw and retained byte limits without truncation, including Unicode [0.45ms]
+(pass) host captured current task request > bounds part count and distinguishes requests with no text [0.15ms]
+(pass) host captured current task request > snapshot schema rejects a bad digest and over-limit UTF-8 text [1.02ms]
+(pass) host captured current task request > times out and aborts the SDK signal without exposing rejection details [1511.00ms]
+(pass) host captured current task request > propagates tool cancellation to an in-flight SDK request [13.63ms]
+
+ 13 pass
+ 0 fail
+ 58 expect() calls
+Ran 13 tests across 1 file. [1.61s]

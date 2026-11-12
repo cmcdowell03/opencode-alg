@@ -22,6 +22,21 @@ sensitive text is declined entirely; encoded strings are inspected without
 changing retained literals. Credential detection is heuristic, not a DLP
 guarantee. A turn containing only "continue" does not restore earlier task text.
 
+**Mechanical gate:** runtime `871868c` passes full local `bun run check` on
+Windows (1,378 tests, six platform skips, zero failures) and native Linux
+(1,368 tests, 16 platform skips, zero failures). Real OpenCode 1.19.5/1.18.35
+headless checks each retain captured user text and task digests through one
+compaction and two restarts, with result reuse and verified cleanup. All 132
+runtime inputs agree after line-ending normalization. The provider/service are
+synthetic; this does not change the paid comparison outcome. See the
+[qualified scope, failed invocations and exact receipts](evidence/request-source-20261112/README.md).
+
+The prospective report fixture now states distinct-defective-wafer numerator
+semantics explicitly, without changing the oracle or earlier results. Its 45
+existing checks pass on both platforms. Before another superiority cohort, close
+verification coverage before edits, shared dispatch allowance and independent
+service/oracle qualification; paired long-session exposure remains incomplete.
+
 ## 0.5.7 implementation — admission and trustworthy comparison apparatus
 
 The [fresh Terra control cohort](evidence/current-control-20261112/README.md)
