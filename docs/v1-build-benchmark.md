@@ -86,11 +86,34 @@ The default report arm loaded the skill successfully, created an ALG plan, and h
 
 The six trials recorded 98 assistant turns and 906,757 reported token components. All usage components were present in the persisted messages; host cost reported zero, which is not invoice evidence. The three token stops overshot the monitored threshold by 4,728, 8,122 and 10,981 components respectively while calls were in flight. Thresholds were not increased and failed trials were not replayed.
 
+### Terra follow-up
+
+At the user's request, `openai/gpt-6.1-terra` ran one separate six-trial cohort from commit `c096b6a`, using the same 0.5.4 runtime, harness, fixtures, oracle and budgets. No product or harness changes occurred during the run. Configured context/output caps remained 128,000/4,096; cumulative reported usage remained limited to 200,000 per trial across all agents and phases.
+
+| Task / configured agent | Artifact checks | Root/phase outcome | Wall seconds | Turns | Reported components | Durable graph outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| Code / Build | 8/8 | Passed | 53.90 | 6 | 42,123 | No ALG graph |
+| Code / default ALG | 8/8 | Token-budget stop | 171.08 | 20 | 211,205 | Checker rejected missing evidence; feedback attempt interrupted |
+| Code / targeted ALG | 8/8 | Passed | 140.49 | 19 | 199,134 | Four nodes passed on first attempts; graph done |
+| Report / targeted ALG | 4/5 | Token-budget stop after restart | 174.01 | 22 | 201,534 | Preparation graph done; phase-two graph interrupted |
+| Report / default ALG | 4/5 | Token-budget stop after restart | 157.31 | 20 | 202,811 | Preparation graph done; report absent |
+| Report / Build | 8/8 | Passed after restart | 75.78 | 10 | 64,821 | No ALG graph |
+
+Build completed 2/2 requested tasks. Default ALG completed 0/2 and targeted ALG 1/2 under the frozen limits. Both coding artifacts passed, and three internal ALG graphs completed: targeted coding and both preparation graphs. In the report rows, 4/5 means protected files and preparation passed while the final report was missing; it is not a partially correct report. The suite recorded 97 assistant turns and 921,628 reported components. Source/global configuration preservation and process/auth-copy cleanup passed for all six trials. Cost telemetry was zero, not invoice evidence.
+
+Terra's coding plans omitted the optional shell gate; schema validation therefore allowed the implementer to proceed to the checker without invoking the failing Windows helper. Default's checker read source and rejected unsupported test-execution/preservation claims. The implementer had actually run tests, but the default graph passed its summary rather than host-origin command receipts. Targeted's checker passed after inspecting files and accepting claimed verification. Its model-authored criteria were also different: default explicitly required running tests and boundary checks; targeted used broader verification wording. This uncontrolled criterion/evidence difference prevents attributing the single win to the targeted mandate.
+
+Both ALG report arms read the skill file directly, completed preparation, compacted and restarted. Neither produced the final report within budget. Direct skill reads are distinct from skill-tool loads; an empty skill-tool counter does not establish failure to consult the procedure. The interrupted phase-two graph was a new authorized phase, not demonstrated redundant planning. These outcomes identify workflow overhead and incomplete delivery, not evidence that compaction erased the saved preparation.
+
+The frozen primary `passed` flag measures independent artifact success plus root/phase completion without a stop; it does not itself require an ALG graph to be done. Graph/checker outcomes are therefore reported separately. [Terra raw receipts](evidence/build-20261112/terra-corrected/result.json) and [the root-cause analysis with model-agnostic repair priorities](v1-benchmark-failure-analysis.md) accompany this follow-up. No local Gemma or additional paid replay was used.
+
 ### Windows helper finding and next fixes
 
 A bounded local reproduction compiled the exact embedded helper source twice without executing either generated program. The PowerShell `Add-Type` route succeeded at source/output lengths 227/228 characters and failed at 291/292 characters with an output-filename-too-long/invalid diagnostic. [Short receipt](evidence/build-20261112/checks/helper-compile-short.json), [long receipt](evidence/build-20261112/checks/helper-compile-long.json).
 
 The original failed helper paths were also approximately 291/292 characters, making path length a plausible cause. The original compiler's stdout was discarded, so its exact diagnostic/backend is not established by the old receipt. The reproduction proves the fallback route's long-path limitation; it does not retroactively recover the missing diagnostic. The benchmark's deep isolated temporary directories exposed this condition, and the resulting retries limit any clean orchestration-overhead comparison.
+
+A subsequent selector-matched reproduction now confirms the same failure with production's selected .NET Framework `csc.exe`: 249/250-character source/output paths succeeded; 291/292 failed with `CS2021` on stdout and empty stderr. The exact helper bytes were unchanged, only two compiles ran, and neither executable was run. This reproduces the selected backend's defect and the reason its diagnostic was lost; the historical stdout itself remains unavailable. [New compiler receipt](evidence/build-20261112/checks/selected-csc-path-repro-d709bde3-4a59-47b5-a0b0-0ab806561d7f.json).
 
 Before claiming deployment readiness or choosing a graph strategy:
 

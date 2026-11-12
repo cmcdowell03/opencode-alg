@@ -20,7 +20,9 @@ PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experi
 
 ## Operator entry points
 
-The latest benchmark is a small feasibility study, not a promotion gate. Its independent artifact checks, graph/checker participation and within-budget workflow completion are separate outcomes. The runtime remains 0.5.4; later benchmark-harness fixes do not retrospectively change earlier model results. Further local Gemma use is suspended at the user's request; hosted Luna/Grok require explicit authorization and working provider authentication.
+The latest benchmark is a small feasibility study, not a promotion gate. Its independent artifact checks, graph/checker participation and within-budget root/phase completion are separate outcomes. The runtime remains 0.5.4; later benchmark-harness fixes do not retrospectively change earlier model results. Further local Gemma use is suspended at the user's request; hosted model runs require explicit authorization and working provider authentication.
+
+The authorized Terra follow-up completed six trials: Build passed both tasks; targeted ALG completed one full coding graph/task; default ALG completed neither task within budget. Both report preparation graphs completed and survived restart, but the final reports were absent at the cumulative cap. The [failure analysis](v1-benchmark-failure-analysis.md) distinguishes Windows helper setup/retry routing, missing checker evidence, model-written criterion differences, a plan-only handoff failure and measured usage overhead. It includes a successful short-path/failed long-path reproduction using the compiler selected by production. These are diagnosed product gaps, not new runtime fixes or evidence of general adversarial superiority.
 
 See [V1 investigation usage](v1-investigations.md), [deployment](deployment.md), and [headless acceptance](v1-headless-testing.md). Workspace and investigation features are opt-in. Enabling an adapter requires a qualified service profile with the actual endpoint's schemas and behavioral evidence; the synthetic test profile is not a production approval.
 

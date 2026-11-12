@@ -1,0 +1,8 @@
+{"at":"2026-11-12T05:52:35.726Z","phase":"initial","event":"start"}
+{"at":"2026-11-12T05:54:42.746Z","phase":"initial","event":"complete"}
+{"at":"2026-11-12T05:54:42.999Z","phase":"compaction","event":"start"}
+{"at":"2026-11-12T05:54:57.172Z","phase":"compaction","event":"complete"}
+{"at":"2026-11-12T05:54:57.361Z","event":"restart_stop","passed":true}
+{"at":"2026-11-12T05:55:01.938Z","phase":"followup","event":"start"}
+{"at":"2026-11-12T05:55:12.631Z","phase":"followup","event":"stopped","reason":"reported_token_limit"}
+{"at":"2026-11-12T05:55:12.633Z","event":"trial_error","reason":"reported_token_limit"}

@@ -1,0 +1,505 @@
+[
+  {
+    "arm": "1-wafer-count-commonjs-alg_default",
+    "outcome": "reported_token_limit",
+    "summary": {
+      "turns": {
+        "total": 22,
+        "finished": 20,
+        "error": 2
+      },
+      "tokens": {
+        "input": 83588,
+        "output": 4157,
+        "reasoning": 247,
+        "cacheRead": 116736,
+        "cacheWrite": 0,
+        "totalReported": 204728
+      },
+      "costReported": 0,
+      "tools": 35,
+      "skills": {},
+      "algTools": {
+        "alg_plan": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0
+        },
+        "alg_run": {
+          "total": 1,
+          "completed": 0,
+          "error": 1,
+          "pending": 0
+        }
+      }
+    },
+    "agents": [
+      {
+        "label": "primary",
+        "tokens": 17929,
+        "input": 9583,
+        "output": 154,
+        "cacheRead": 8192
+      },
+      {
+        "label": "child:explore:attempt1",
+        "tokens": 16757,
+        "input": 7387,
+        "output": 794,
+        "cacheRead": 8576
+      },
+      {
+        "label": "child:research:attempt1",
+        "tokens": 26108,
+        "input": 11110,
+        "output": 1430,
+        "cacheRead": 13568
+      },
+      {
+        "label": "child:implement:attempt1",
+        "tokens": 98255,
+        "input": 21667,
+        "output": 1196,
+        "cacheRead": 75392
+      },
+      {
+        "label": "child:implement:attempt2",
+        "tokens": 45679,
+        "input": 33841,
+        "output": 583,
+        "cacheRead": 11008
+      }
+    ],
+    "phases": [
+      {
+        "phase": "initial",
+        "tokens": 204728,
+        "turns": 22
+      }
+    ],
+    "readCalls": 16,
+    "duplicateReads": [
+      {
+        "file": "wafer-count.cjs",
+        "calls": 4,
+        "sessions": 4,
+        "interpretation": "cross-session reread; compatible with independent verification, not automatically redundant"
+      },
+      {
+        "file": "wafer-view.cjs",
+        "calls": 4,
+        "sessions": 4,
+        "interpretation": "cross-session reread; compatible with independent verification, not automatically redundant"
+      },
+      {
+        "file": "wafer-count.test.cjs",
+        "calls": 4,
+        "sessions": 4,
+        "interpretation": "cross-session reread; compatible with independent verification, not automatically redundant"
+      },
+      {
+        "file": "package.json",
+        "calls": 4,
+        "sessions": 4,
+        "interpretation": "cross-session reread; compatible with independent verification, not automatically redundant"
+      }
+    ]
+  },
+  {
+    "arm": "1-wafer-count-commonjs-alg_targeted",
+    "outcome": "reported_token_limit",
+    "summary": {
+      "turns": {
+        "total": 25,
+        "finished": 24,
+        "error": 1
+      },
+      "tokens": {
+        "input": 82206,
+        "output": 5491,
+        "reasoning": 105,
+        "cacheRead": 120320,
+        "cacheWrite": 0,
+        "totalReported": 208122
+      },
+      "costReported": 0,
+      "tools": 42,
+      "skills": {},
+      "algTools": {
+        "alg_plan": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0
+        },
+        "alg_run": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0
+        }
+      }
+    },
+    "agents": [
+      {
+        "label": "primary",
+        "tokens": 57315,
+        "input": 32217,
+        "output": 522,
+        "cacheRead": 24576
+      },
+      {
+        "label": "child:explore:attempt1",
+        "tokens": 23848,
+        "input": 10908,
+        "output": 908,
+        "cacheRead": 12032
+      },
+      {
+        "label": "child:research:attempt1",
+        "tokens": 30219,
+        "input": 12948,
+        "output": 1655,
+        "cacheRead": 15616
+      },
+      {
+        "label": "child:implement:attempt1",
+        "tokens": 56782,
+        "input": 16068,
+        "output": 1034,
+        "cacheRead": 39680
+      },
+      {
+        "label": "child:implement:attempt2",
+        "tokens": 39958,
+        "input": 10065,
+        "output": 1372,
+        "cacheRead": 28416
+      }
+    ],
+    "phases": [
+      {
+        "phase": "initial",
+        "tokens": 208122,
+        "turns": 25
+      }
+    ],
+    "readCalls": 14,
+    "duplicateReads": [
+      {
+        "file": "wafer-count.cjs",
+        "calls": 4,
+        "sessions": 4,
+        "interpretation": "cross-session reread; compatible with independent verification, not automatically redundant"
+      },
+      {
+        "file": "wafer-view.cjs",
+        "calls": 4,
+        "sessions": 4,
+        "interpretation": "cross-session reread; compatible with independent verification, not automatically redundant"
+      },
+      {
+        "file": "wafer-count.test.cjs",
+        "calls": 4,
+        "sessions": 4,
+        "interpretation": "cross-session reread; compatible with independent verification, not automatically redundant"
+      },
+      {
+        "file": "package.json",
+        "calls": 2,
+        "sessions": 2,
+        "interpretation": "cross-session reread; compatible with independent verification, not automatically redundant"
+      }
+    ]
+  },
+  {
+    "arm": "1-wafer-count-commonjs-build",
+    "outcome": "completed",
+    "summary": {
+      "turns": {
+        "total": 8,
+        "finished": 8,
+        "error": 0
+      },
+      "tokens": {
+        "input": 17744,
+        "output": 939,
+        "reasoning": 0,
+        "cacheRead": 39808,
+        "cacheWrite": 0,
+        "totalReported": 58491
+      },
+      "costReported": 0,
+      "tools": 10,
+      "skills": {},
+      "algTools": {
+        "alg_plan": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0
+        },
+        "alg_run": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0
+        }
+      }
+    },
+    "agents": [
+      {
+        "label": "primary",
+        "tokens": 58491,
+        "input": 17744,
+        "output": 939,
+        "cacheRead": 39808
+      }
+    ],
+    "phases": [
+      {
+        "phase": "initial",
+        "tokens": 58491,
+        "turns": 8
+      }
+    ],
+    "readCalls": 3,
+    "duplicateReads": []
+  },
+  {
+    "arm": "2-wafer-report-staged-alg_default",
+    "outcome": "preparation_milestone_not_reached",
+    "summary": {
+      "turns": {
+        "total": 6,
+        "finished": 6,
+        "error": 0
+      },
+      "tokens": {
+        "input": 22153,
+        "output": 656,
+        "reasoning": 0,
+        "cacheRead": 46336,
+        "cacheWrite": 0,
+        "totalReported": 69145
+      },
+      "costReported": 0,
+      "tools": 6,
+      "skills": {
+        "wafer-analysis": {
+          "attempted": 1,
+          "successful": 1,
+          "error": 0,
+          "pending": 0
+        }
+      },
+      "algTools": {
+        "alg_plan": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0
+        },
+        "alg_run": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0
+        }
+      }
+    },
+    "agents": [
+      {
+        "label": "primary",
+        "tokens": 69145,
+        "input": 22153,
+        "output": 656,
+        "cacheRead": 46336
+      }
+    ],
+    "phases": [
+      {
+        "phase": "initial",
+        "tokens": 69145,
+        "turns": 6
+      }
+    ],
+    "readCalls": 2,
+    "duplicateReads": []
+  },
+  {
+    "arm": "2-wafer-report-staged-alg_targeted",
+    "outcome": "reported_token_limit",
+    "summary": {
+      "turns": {
+        "total": 17,
+        "finished": 16,
+        "error": 1
+      },
+      "tokens": {
+        "input": 44852,
+        "output": 3234,
+        "reasoning": 207,
+        "cacheRead": 162688,
+        "cacheWrite": 0,
+        "totalReported": 210981
+      },
+      "costReported": 0,
+      "tools": 23,
+      "skills": {
+        "wafer-analysis": {
+          "attempted": 1,
+          "successful": 1,
+          "error": 0,
+          "pending": 0
+        }
+      },
+      "algTools": {
+        "alg_plan": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0
+        },
+        "alg_run": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0
+        }
+      }
+    },
+    "agents": [
+      {
+        "label": "primary",
+        "tokens": 210981,
+        "input": 44852,
+        "output": 3234,
+        "cacheRead": 162688
+      }
+    ],
+    "phases": [
+      {
+        "phase": "initial",
+        "tokens": 107820,
+        "turns": 8
+      },
+      {
+        "phase": "compaction",
+        "tokens": 8656,
+        "turns": 1
+      },
+      {
+        "phase": "followup",
+        "tokens": 94505,
+        "turns": 8
+      }
+    ],
+    "readCalls": 8,
+    "duplicateReads": [
+      {
+        "file": "system-export.json",
+        "calls": 2,
+        "sessions": 1,
+        "interpretation": "same-session exact-path reread"
+      },
+      {
+        "file": "manual-review.json",
+        "calls": 2,
+        "sessions": 1,
+        "interpretation": "same-session exact-path reread"
+      },
+      {
+        "file": "preparation.md",
+        "calls": 2,
+        "sessions": 1,
+        "interpretation": "same-session exact-path reread"
+      }
+    ]
+  },
+  {
+    "arm": "2-wafer-report-staged-build",
+    "outcome": "completed",
+    "summary": {
+      "turns": {
+        "total": 20,
+        "finished": 20,
+        "error": 0
+      },
+      "tokens": {
+        "input": 29337,
+        "output": 3453,
+        "reasoning": 132,
+        "cacheRead": 122368,
+        "cacheWrite": 0,
+        "totalReported": 155290
+      },
+      "costReported": 0,
+      "tools": 24,
+      "skills": {
+        "wafer-analysis": {
+          "attempted": 2,
+          "successful": 2,
+          "error": 0,
+          "pending": 0
+        }
+      },
+      "algTools": {
+        "alg_plan": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0
+        },
+        "alg_run": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0
+        }
+      }
+    },
+    "agents": [
+      {
+        "label": "primary",
+        "tokens": 155290,
+        "input": 29337,
+        "output": 3453,
+        "cacheRead": 122368
+      }
+    ],
+    "phases": [
+      {
+        "phase": "initial",
+        "tokens": 68459,
+        "turns": 9
+      },
+      {
+        "phase": "compaction",
+        "tokens": 4961,
+        "turns": 1
+      },
+      {
+        "phase": "followup",
+        "tokens": 81870,
+        "turns": 10
+      }
+    ],
+    "readCalls": 5,
+    "duplicateReads": [
+      {
+        "file": "system-export.json",
+        "calls": 2,
+        "sessions": 1,
+        "interpretation": "same-session exact-path reread"
+      },
+      {
+        "file": "manual-review.json",
+        "calls": 2,
+        "sessions": 1,
+        "interpretation": "same-session exact-path reread"
+      }
+    ]
+  }
+]

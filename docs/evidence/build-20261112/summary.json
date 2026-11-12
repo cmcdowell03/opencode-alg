@@ -6315,6 +6315,2446 @@
           "auth_copy_removed": true
         }
       ]
+    },
+    {
+      "cohort": "terra-corrected",
+      "model": "openai/gpt-6.1-terra",
+      "complete": true,
+      "fatal": null,
+      "configuration_unchanged": true,
+      "local_model_stopped": true,
+      "source_unchanged": true,
+      "trials": [
+        {
+          "caseId": "wafer-count-commonjs",
+          "arm": "build",
+          "status": "completed",
+          "passed": true,
+          "checks": [
+            {
+              "id": "protected:package.json",
+              "passed": true
+            },
+            {
+              "id": "protected:test/wafer-count.test.cjs",
+              "passed": true
+            },
+            {
+              "id": "protected:data/inspection-records.json",
+              "passed": true
+            },
+            {
+              "id": "visible-node-tests",
+              "passed": true
+            },
+            {
+              "id": "api-module-loads",
+              "passed": true
+            },
+            {
+              "id": "ui-module-loads",
+              "passed": true
+            },
+            {
+              "id": "distinct-ids-and-offset-window",
+              "passed": true
+            },
+            {
+              "id": "user-visible-count",
+              "passed": true
+            }
+          ],
+          "wall_ms": 53896,
+          "metrics": {
+            "sessions": {
+              "total": 1,
+              "roots": 1,
+              "children": 0
+            },
+            "assistantTurns": {
+              "total": 6,
+              "finished": 6,
+              "unfinished": 0,
+              "error": 0,
+              "modelIdentities": [
+                {
+                  "providerID": "openai",
+                  "modelID": "gpt-6.1-terra",
+                  "turns": 6
+                }
+              ]
+            },
+            "usage": {
+              "components": {
+                "input": {
+                  "reportedTotal": 7972,
+                  "reportedTurns": 6,
+                  "unknownTurns": 0
+                },
+                "output": {
+                  "reportedTotal": 1121,
+                  "reportedTurns": 6,
+                  "unknownTurns": 0
+                },
+                "reasoning": {
+                  "reportedTotal": 6,
+                  "reportedTurns": 6,
+                  "unknownTurns": 0
+                },
+                "cacheRead": {
+                  "reportedTotal": 33024,
+                  "reportedTurns": 6,
+                  "unknownTurns": 0
+                },
+                "cacheWrite": {
+                  "reportedTotal": 0,
+                  "reportedTurns": 6,
+                  "unknownTurns": 0
+                }
+              },
+              "totalReportedTokens": 42123,
+              "turns": {
+                "complete": 6,
+                "partial": 0,
+                "unknown": 0
+              },
+              "billing": "not_estimated"
+            },
+            "cost": {
+              "reportedTotal": 0,
+              "reportedTurns": 6,
+              "unknownTurns": 0,
+              "billing": "not_estimated"
+            },
+            "tools": {
+              "total": 11,
+              "completed": 11,
+              "error": 0,
+              "pending": 0,
+              "byName": {
+                "glob": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 267,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 267,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "bash": {
+                  "total": 4,
+                  "completed": 4,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 34272,
+                  "durationCalls": 4,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 4,
+                      "durationMsReported": 34272,
+                      "durationCalls": 4,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "read": {
+                  "total": 5,
+                  "completed": 5,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 379,
+                  "durationCalls": 5,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 5,
+                      "durationMsReported": 379,
+                      "durationCalls": 5,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "apply_patch": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 70,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 70,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                }
+              }
+            },
+            "repeatedExactToolInputs": {},
+            "skillLoads": {},
+            "algTools": {
+              "alg_plan": {
+                "total": 0,
+                "completed": 0,
+                "error": 0,
+                "pending": 0
+              },
+              "alg_run": {
+                "total": 0,
+                "completed": 0,
+                "error": 0,
+                "pending": 0
+              }
+            },
+            "observedErrors": {
+              "deniedTool": 0,
+              "stepExhaustion": 0
+            }
+          },
+          "recovery": {
+            "restarted": false,
+            "compactionRecovered": false
+          },
+          "alg_states": [],
+          "cleanup": true,
+          "metering_complete": true,
+          "auth_copy_removed": true
+        },
+        {
+          "caseId": "wafer-count-commonjs",
+          "arm": "alg_default",
+          "status": "reported_token_limit",
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:package.json",
+              "passed": true
+            },
+            {
+              "id": "protected:test/wafer-count.test.cjs",
+              "passed": true
+            },
+            {
+              "id": "protected:data/inspection-records.json",
+              "passed": true
+            },
+            {
+              "id": "visible-node-tests",
+              "passed": true
+            },
+            {
+              "id": "api-module-loads",
+              "passed": true
+            },
+            {
+              "id": "ui-module-loads",
+              "passed": true
+            },
+            {
+              "id": "distinct-ids-and-offset-window",
+              "passed": true
+            },
+            {
+              "id": "user-visible-count",
+              "passed": true
+            }
+          ],
+          "wall_ms": 171085,
+          "metrics": {
+            "sessions": {
+              "total": 6,
+              "roots": 1,
+              "children": 5
+            },
+            "assistantTurns": {
+              "total": 20,
+              "finished": 18,
+              "unfinished": 0,
+              "error": 2,
+              "modelIdentities": [
+                {
+                  "providerID": "openai",
+                  "modelID": "gpt-6.1-terra",
+                  "turns": 20
+                }
+              ]
+            },
+            "usage": {
+              "components": {
+                "input": {
+                  "reportedTotal": 92992,
+                  "reportedTurns": 20,
+                  "unknownTurns": 0
+                },
+                "output": {
+                  "reportedTotal": 5319,
+                  "reportedTurns": 20,
+                  "unknownTurns": 0
+                },
+                "reasoning": {
+                  "reportedTotal": 126,
+                  "reportedTurns": 20,
+                  "unknownTurns": 0
+                },
+                "cacheRead": {
+                  "reportedTotal": 112768,
+                  "reportedTurns": 20,
+                  "unknownTurns": 0
+                },
+                "cacheWrite": {
+                  "reportedTotal": 0,
+                  "reportedTurns": 20,
+                  "unknownTurns": 0
+                }
+              },
+              "totalReportedTokens": 211205,
+              "turns": {
+                "complete": 20,
+                "partial": 0,
+                "unknown": 0
+              },
+              "billing": "not_estimated"
+            },
+            "cost": {
+              "reportedTotal": 0,
+              "reportedTurns": 20,
+              "unknownTurns": 0,
+              "billing": "not_estimated"
+            },
+            "tools": {
+              "total": 44,
+              "completed": 41,
+              "error": 3,
+              "pending": 0,
+              "byName": {
+                "alg_context_status": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 296,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 296,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "alg_plan": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 9,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 9,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "alg_run": {
+                  "total": 1,
+                  "completed": 0,
+                  "error": 1,
+                  "pending": 0,
+                  "durationMsReported": 152866,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 1,
+                      "durationMsReported": 152866,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "task": {
+                  "total": 5,
+                  "completed": 3,
+                  "error": 2,
+                  "pending": 0,
+                  "durationMsReported": 149923,
+                  "durationCalls": 5,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 3,
+                      "durationMsReported": 105603,
+                      "durationCalls": 3,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 2,
+                      "durationMsReported": 44320,
+                      "durationCalls": 2,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "glob": {
+                  "total": 7,
+                  "completed": 7,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 1530,
+                  "durationCalls": 7,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 7,
+                      "durationMsReported": 1530,
+                      "durationCalls": 7,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "grep": {
+                  "total": 2,
+                  "completed": 2,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 471,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 2,
+                      "durationMsReported": 471,
+                      "durationCalls": 2,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "read": {
+                  "total": 18,
+                  "completed": 18,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 1781,
+                  "durationCalls": 18,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 18,
+                      "durationMsReported": 1781,
+                      "durationCalls": 18,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "bash": {
+                  "total": 8,
+                  "completed": 8,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 22201,
+                  "durationCalls": 8,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 8,
+                      "durationMsReported": 22201,
+                      "durationCalls": 8,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "apply_patch": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 23,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 23,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                }
+              }
+            },
+            "repeatedExactToolInputs": {
+              "glob": {
+                "distinctRepeatedInputs": 1,
+                "repeatedCalls": 4
+              },
+              "read": {
+                "distinctRepeatedInputs": 5,
+                "repeatedCalls": 13
+              }
+            },
+            "skillLoads": {},
+            "algTools": {
+              "alg_plan": {
+                "total": 1,
+                "completed": 1,
+                "error": 0,
+                "pending": 0
+              },
+              "alg_run": {
+                "total": 1,
+                "completed": 0,
+                "error": 1,
+                "pending": 0
+              }
+            },
+            "observedErrors": {
+              "deniedTool": 0,
+              "stepExhaustion": 0
+            }
+          },
+          "recovery": {
+            "restarted": false,
+            "compactionRecovered": false
+          },
+          "alg_states": [
+            {
+              "run_id": "fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580",
+              "status": "blocked",
+              "global_attempts": 5,
+              "nodes": [
+                {
+                  "id": "check",
+                  "status": "pending",
+                  "attempts": [
+                    {
+                      "outcome": "substantive_rejection",
+                      "failures": [
+                        "Test execution and boundary/offset verification are unverified: the output reports passing results but supplies ne…[truncated]"
+                      ],
+                      "session_id": "ses_e31b593feffe7t2Tzayg2Gutgy"
+                    }
+                  ]
+                },
+                {
+                  "id": "explore",
+                  "status": "done",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31b734a0ffeyU5aXmgWkqzJOw"
+                    }
+                  ]
+                },
+                {
+                  "id": "implement",
+                  "status": "pending",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31b65602ffeeTz4rlYKXGeYNB"
+                    },
+                    {
+                      "outcome": "sdk_error",
+                      "failures": [
+                        "{\"name\":\"AbortError\",\"message\":\"The operation was aborted.\",\"code\":20}"
+                      ],
+                      "session_id": "ses_e31b56459ffeZFAjBxyfdJi51l"
+                    }
+                  ]
+                },
+                {
+                  "id": "research",
+                  "status": "done",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31b6dc29ffeoEWzqPvj5RUGUW"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "cleanup": true,
+          "metering_complete": true,
+          "auth_copy_removed": true
+        },
+        {
+          "caseId": "wafer-count-commonjs",
+          "arm": "alg_targeted",
+          "status": "completed",
+          "passed": true,
+          "checks": [
+            {
+              "id": "protected:package.json",
+              "passed": true
+            },
+            {
+              "id": "protected:test/wafer-count.test.cjs",
+              "passed": true
+            },
+            {
+              "id": "protected:data/inspection-records.json",
+              "passed": true
+            },
+            {
+              "id": "visible-node-tests",
+              "passed": true
+            },
+            {
+              "id": "api-module-loads",
+              "passed": true
+            },
+            {
+              "id": "ui-module-loads",
+              "passed": true
+            },
+            {
+              "id": "distinct-ids-and-offset-window",
+              "passed": true
+            },
+            {
+              "id": "user-visible-count",
+              "passed": true
+            }
+          ],
+          "wall_ms": 140490,
+          "metrics": {
+            "sessions": {
+              "total": 5,
+              "roots": 1,
+              "children": 4
+            },
+            "assistantTurns": {
+              "total": 19,
+              "finished": 19,
+              "unfinished": 0,
+              "error": 0,
+              "modelIdentities": [
+                {
+                  "providerID": "openai",
+                  "modelID": "gpt-6.1-terra",
+                  "turns": 19
+                }
+              ]
+            },
+            "usage": {
+              "components": {
+                "input": {
+                  "reportedTotal": 76066,
+                  "reportedTurns": 19,
+                  "unknownTurns": 0
+                },
+                "output": {
+                  "reportedTotal": 4683,
+                  "reportedTurns": 19,
+                  "unknownTurns": 0
+                },
+                "reasoning": {
+                  "reportedTotal": 113,
+                  "reportedTurns": 19,
+                  "unknownTurns": 0
+                },
+                "cacheRead": {
+                  "reportedTotal": 118272,
+                  "reportedTurns": 19,
+                  "unknownTurns": 0
+                },
+                "cacheWrite": {
+                  "reportedTotal": 0,
+                  "reportedTurns": 19,
+                  "unknownTurns": 0
+                }
+              },
+              "totalReportedTokens": 199134,
+              "turns": {
+                "complete": 19,
+                "partial": 0,
+                "unknown": 0
+              },
+              "billing": "not_estimated"
+            },
+            "cost": {
+              "reportedTotal": 0,
+              "reportedTurns": 19,
+              "unknownTurns": 0,
+              "billing": "not_estimated"
+            },
+            "tools": {
+              "total": 37,
+              "completed": 37,
+              "error": 0,
+              "pending": 0,
+              "byName": {
+                "alg_context_status": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 323,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 323,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "alg_plan": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 8,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 8,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "alg_run": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 113876,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 113876,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "task": {
+                  "total": 4,
+                  "completed": 4,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 111931,
+                  "durationCalls": 4,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 4,
+                      "durationMsReported": 111931,
+                      "durationCalls": 4,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "glob": {
+                  "total": 5,
+                  "completed": 5,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 890,
+                  "durationCalls": 5,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 5,
+                      "durationMsReported": 890,
+                      "durationCalls": 5,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "grep": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 200,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 200,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "read": {
+                  "total": 17,
+                  "completed": 17,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 1577,
+                  "durationCalls": 17,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 17,
+                      "durationMsReported": 1577,
+                      "durationCalls": 17,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "bash": {
+                  "total": 4,
+                  "completed": 4,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 5513,
+                  "durationCalls": 4,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 4,
+                      "durationMsReported": 5513,
+                      "durationCalls": 4,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "apply_patch": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 24,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 24,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "alg_artifact": {
+                  "total": 2,
+                  "completed": 2,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 16,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 2,
+                      "durationMsReported": 16,
+                      "durationCalls": 2,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                }
+              }
+            },
+            "repeatedExactToolInputs": {
+              "glob": {
+                "distinctRepeatedInputs": 1,
+                "repeatedCalls": 3
+              },
+              "read": {
+                "distinctRepeatedInputs": 5,
+                "repeatedCalls": 12
+              }
+            },
+            "skillLoads": {},
+            "algTools": {
+              "alg_plan": {
+                "total": 1,
+                "completed": 1,
+                "error": 0,
+                "pending": 0
+              },
+              "alg_run": {
+                "total": 1,
+                "completed": 1,
+                "error": 0,
+                "pending": 0
+              }
+            },
+            "observedErrors": {
+              "deniedTool": 0,
+              "stepExhaustion": 0
+            }
+          },
+          "recovery": {
+            "restarted": false,
+            "compactionRecovered": false
+          },
+          "alg_states": [
+            {
+              "run_id": "fix-wafer-count-bug-in-the-small-20261112054702-ee81db49197e",
+              "status": "done",
+              "global_attempts": 4,
+              "nodes": [
+                {
+                  "id": "check",
+                  "status": "done",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31b2d701ffe6wblG1PseVm7Dy"
+                    }
+                  ]
+                },
+                {
+                  "id": "explore",
+                  "status": "done",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31b45c95ffeGYdMlHl5A533dI"
+                    }
+                  ]
+                },
+                {
+                  "id": "implement",
+                  "status": "done",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31b386ebffeuno9iwpEq33cA6"
+                    }
+                  ]
+                },
+                {
+                  "id": "research",
+                  "status": "done",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31b401edffes6YyWkOjJue61e"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "cleanup": true,
+          "metering_complete": true,
+          "auth_copy_removed": true
+        },
+        {
+          "caseId": "wafer-report-staged",
+          "arm": "alg_targeted",
+          "status": "reported_token_limit",
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+              "passed": true
+            },
+            {
+              "id": "protected:data/system-export.json",
+              "passed": true
+            },
+            {
+              "id": "protected:data/manual-review.json",
+              "passed": true
+            },
+            {
+              "id": "preparation-artifact",
+              "passed": true
+            },
+            {
+              "id": "report-json",
+              "passed": false,
+              "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\report.json'"
+            }
+          ],
+          "wall_ms": 174014,
+          "metrics": {
+            "sessions": {
+              "total": 6,
+              "roots": 1,
+              "children": 5
+            },
+            "assistantTurns": {
+              "total": 22,
+              "finished": 20,
+              "unfinished": 0,
+              "error": 2,
+              "modelIdentities": [
+                {
+                  "providerID": "openai",
+                  "modelID": "gpt-6.1-terra",
+                  "turns": 22
+                }
+              ]
+            },
+            "usage": {
+              "components": {
+                "input": {
+                  "reportedTotal": 97250,
+                  "reportedTurns": 22,
+                  "unknownTurns": 0
+                },
+                "output": {
+                  "reportedTotal": 4529,
+                  "reportedTurns": 22,
+                  "unknownTurns": 0
+                },
+                "reasoning": {
+                  "reportedTotal": 43,
+                  "reportedTurns": 22,
+                  "unknownTurns": 0
+                },
+                "cacheRead": {
+                  "reportedTotal": 99712,
+                  "reportedTurns": 22,
+                  "unknownTurns": 0
+                },
+                "cacheWrite": {
+                  "reportedTotal": 0,
+                  "reportedTurns": 22,
+                  "unknownTurns": 0
+                }
+              },
+              "totalReportedTokens": 201534,
+              "turns": {
+                "complete": 22,
+                "partial": 0,
+                "unknown": 0
+              },
+              "billing": "not_estimated"
+            },
+            "cost": {
+              "reportedTotal": 0,
+              "reportedTurns": 22,
+              "unknownTurns": 0,
+              "billing": "not_estimated"
+            },
+            "tools": {
+              "total": 30,
+              "completed": 28,
+              "error": 2,
+              "pending": 0,
+              "byName": {
+                "alg_context_status": {
+                  "total": 3,
+                  "completed": 3,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 772,
+                  "durationCalls": 3,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 3,
+                      "durationMsReported": 772,
+                      "durationCalls": 3,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "alg_plan": {
+                  "total": 2,
+                  "completed": 2,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 12,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 2,
+                      "durationMsReported": 12,
+                      "durationCalls": 2,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "alg_run": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 91039,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 91039,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "task": {
+                  "total": 5,
+                  "completed": 4,
+                  "error": 1,
+                  "pending": 0,
+                  "durationMsReported": 111834,
+                  "durationCalls": 5,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 4,
+                      "durationMsReported": 88949,
+                      "durationCalls": 4,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 1,
+                      "durationMsReported": 22885,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "glob": {
+                  "total": 6,
+                  "completed": 6,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 19342,
+                  "durationCalls": 6,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 6,
+                      "durationMsReported": 19342,
+                      "durationCalls": 6,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "read": {
+                  "total": 10,
+                  "completed": 10,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 521,
+                  "durationCalls": 10,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 10,
+                      "durationMsReported": 521,
+                      "durationCalls": 10,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "apply_patch": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 18,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 18,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "bash": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 1785,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 1785,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "alg_resume": {
+                  "total": 1,
+                  "completed": 0,
+                  "error": 1,
+                  "pending": 0,
+                  "durationMsReported": 23566,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 1,
+                      "durationMsReported": 23566,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                }
+              }
+            },
+            "repeatedExactToolInputs": {
+              "alg_context_status": {
+                "distinctRepeatedInputs": 1,
+                "repeatedCalls": 2
+              },
+              "glob": {
+                "distinctRepeatedInputs": 1,
+                "repeatedCalls": 4
+              },
+              "read": {
+                "distinctRepeatedInputs": 2,
+                "repeatedCalls": 6
+              }
+            },
+            "skillLoads": {},
+            "algTools": {
+              "alg_plan": {
+                "total": 2,
+                "completed": 2,
+                "error": 0,
+                "pending": 0
+              },
+              "alg_run": {
+                "total": 1,
+                "completed": 1,
+                "error": 0,
+                "pending": 0
+              }
+            },
+            "observedErrors": {
+              "deniedTool": 0,
+              "stepExhaustion": 0
+            }
+          },
+          "recovery": {
+            "restarted": true,
+            "compactionRecovered": true
+          },
+          "alg_states": [
+            {
+              "run_id": "complete-phase-two-synthetic-waf-20261112055152-ed62786a4ff8",
+              "status": "blocked",
+              "global_attempts": 1,
+              "nodes": [
+                {
+                  "id": "check",
+                  "status": "pending",
+                  "attempts": []
+                },
+                {
+                  "id": "explore",
+                  "status": "pending",
+                  "attempts": [
+                    {
+                      "outcome": "sdk_error",
+                      "failures": [
+                        "{\"name\":\"AbortError\",\"message\":\"The operation was aborted.\",\"code\":20}"
+                      ],
+                      "session_id": "ses_e31afebd4ffeJruH11bFsfRPD3"
+                    }
+                  ]
+                },
+                {
+                  "id": "implement",
+                  "status": "pending",
+                  "attempts": []
+                },
+                {
+                  "id": "research",
+                  "status": "pending",
+                  "attempts": []
+                }
+              ]
+            },
+            {
+              "run_id": "prepare-only-phase-one-of-the-sy-20261112054938-c12da077e8d4",
+              "status": "done",
+              "global_attempts": 4,
+              "nodes": [
+                {
+                  "id": "check",
+                  "status": "done",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31b0cd55ffeqDoLiBynfQ695Z"
+                    }
+                  ]
+                },
+                {
+                  "id": "explore",
+                  "status": "done",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31b1f615ffeWiuyQrYgeueA5M"
+                    }
+                  ]
+                },
+                {
+                  "id": "implement",
+                  "status": "done",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31b13e9affeiteSw06kP3aW4m"
+                    }
+                  ]
+                },
+                {
+                  "id": "research",
+                  "status": "done",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31b1a7f7ffeDVXNwJAV0KMX2f"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "cleanup": true,
+          "metering_complete": true,
+          "auth_copy_removed": true
+        },
+        {
+          "caseId": "wafer-report-staged",
+          "arm": "alg_default",
+          "status": "reported_token_limit",
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+              "passed": true
+            },
+            {
+              "id": "protected:data/system-export.json",
+              "passed": true
+            },
+            {
+              "id": "protected:data/manual-review.json",
+              "passed": true
+            },
+            {
+              "id": "preparation-artifact",
+              "passed": true
+            },
+            {
+              "id": "report-json",
+              "passed": false,
+              "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project\\report.json'"
+            }
+          ],
+          "wall_ms": 157308,
+          "metrics": {
+            "sessions": {
+              "total": 5,
+              "roots": 1,
+              "children": 4
+            },
+            "assistantTurns": {
+              "total": 20,
+              "finished": 19,
+              "unfinished": 0,
+              "error": 1,
+              "modelIdentities": [
+                {
+                  "providerID": "openai",
+                  "modelID": "gpt-6.1-terra",
+                  "turns": 20
+                }
+              ]
+            },
+            "usage": {
+              "components": {
+                "input": {
+                  "reportedTotal": 81389,
+                  "reportedTurns": 20,
+                  "unknownTurns": 0
+                },
+                "output": {
+                  "reportedTotal": 4498,
+                  "reportedTurns": 20,
+                  "unknownTurns": 0
+                },
+                "reasoning": {
+                  "reportedTotal": 60,
+                  "reportedTurns": 20,
+                  "unknownTurns": 0
+                },
+                "cacheRead": {
+                  "reportedTotal": 116864,
+                  "reportedTurns": 20,
+                  "unknownTurns": 0
+                },
+                "cacheWrite": {
+                  "reportedTotal": 0,
+                  "reportedTurns": 20,
+                  "unknownTurns": 0
+                }
+              },
+              "totalReportedTokens": 202811,
+              "turns": {
+                "complete": 20,
+                "partial": 0,
+                "unknown": 0
+              },
+              "billing": "not_estimated"
+            },
+            "cost": {
+              "reportedTotal": 0,
+              "reportedTurns": 20,
+              "unknownTurns": 0,
+              "billing": "not_estimated"
+            },
+            "tools": {
+              "total": 29,
+              "completed": 29,
+              "error": 0,
+              "pending": 0,
+              "byName": {
+                "alg_context_status": {
+                  "total": 2,
+                  "completed": 2,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 582,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 2,
+                      "durationMsReported": 582,
+                      "durationCalls": 2,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "alg_plan": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 7,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 7,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "alg_run": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 104735,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 104735,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "task": {
+                  "total": 4,
+                  "completed": 4,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 102825,
+                  "durationCalls": 4,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 4,
+                      "durationMsReported": 102825,
+                      "durationCalls": 4,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "glob": {
+                  "total": 6,
+                  "completed": 6,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 1057,
+                  "durationCalls": 6,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 6,
+                      "durationMsReported": 1057,
+                      "durationCalls": 6,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "read": {
+                  "total": 12,
+                  "completed": 12,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 805,
+                  "durationCalls": 12,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 12,
+                      "durationMsReported": 805,
+                      "durationCalls": 12,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "bash": {
+                  "total": 2,
+                  "completed": 2,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 2462,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 2,
+                      "durationMsReported": 2462,
+                      "durationCalls": 2,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "apply_patch": {
+                  "total": 1,
+                  "completed": 1,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 14,
+                  "durationCalls": 1,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 1,
+                      "durationMsReported": 14,
+                      "durationCalls": 1,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                }
+              }
+            },
+            "repeatedExactToolInputs": {
+              "alg_context_status": {
+                "distinctRepeatedInputs": 1,
+                "repeatedCalls": 1
+              },
+              "glob": {
+                "distinctRepeatedInputs": 1,
+                "repeatedCalls": 3
+              },
+              "read": {
+                "distinctRepeatedInputs": 3,
+                "repeatedCalls": 7
+              }
+            },
+            "skillLoads": {},
+            "algTools": {
+              "alg_plan": {
+                "total": 1,
+                "completed": 1,
+                "error": 0,
+                "pending": 0
+              },
+              "alg_run": {
+                "total": 1,
+                "completed": 1,
+                "error": 0,
+                "pending": 0
+              }
+            },
+            "observedErrors": {
+              "deniedTool": 0,
+              "stepExhaustion": 0
+            }
+          },
+          "recovery": {
+            "restarted": true,
+            "compactionRecovered": true
+          },
+          "alg_states": [
+            {
+              "run_id": "prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb",
+              "status": "done",
+              "global_attempts": 4,
+              "nodes": [
+                {
+                  "id": "check",
+                  "status": "done",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31adb456ffeOp1sGmmeXwwy1c"
+                    }
+                  ]
+                },
+                {
+                  "id": "explore",
+                  "status": "done",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31af0eafffee4xq9xVj2WHZjo"
+                    }
+                  ]
+                },
+                {
+                  "id": "implement",
+                  "status": "done",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31ae5b1cffetYaI7wyrB9mdx0"
+                    }
+                  ]
+                },
+                {
+                  "id": "research",
+                  "status": "done",
+                  "attempts": [
+                    {
+                      "outcome": "passed",
+                      "failures": [],
+                      "session_id": "ses_e31aec1f1ffeUXkm95DEA3yG5H"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "cleanup": true,
+          "metering_complete": true,
+          "auth_copy_removed": true
+        },
+        {
+          "caseId": "wafer-report-staged",
+          "arm": "build",
+          "status": "completed",
+          "passed": true,
+          "checks": [
+            {
+              "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+              "passed": true
+            },
+            {
+              "id": "protected:data/system-export.json",
+              "passed": true
+            },
+            {
+              "id": "protected:data/manual-review.json",
+              "passed": true
+            },
+            {
+              "id": "preparation-artifact",
+              "passed": true
+            },
+            {
+              "id": "arithmetic-distinct-wafers",
+              "passed": true
+            },
+            {
+              "id": "source-provenance",
+              "passed": true
+            },
+            {
+              "id": "conflict-and-uncertainty",
+              "passed": true
+            },
+            {
+              "id": "skill-procedure-and-scope",
+              "passed": true
+            }
+          ],
+          "wall_ms": 75785,
+          "metrics": {
+            "sessions": {
+              "total": 1,
+              "roots": 1,
+              "children": 0
+            },
+            "assistantTurns": {
+              "total": 10,
+              "finished": 10,
+              "unfinished": 0,
+              "error": 0,
+              "modelIdentities": [
+                {
+                  "providerID": "openai",
+                  "modelID": "gpt-6.1-terra",
+                  "turns": 10
+                }
+              ]
+            },
+            "usage": {
+              "components": {
+                "input": {
+                  "reportedTotal": 13975,
+                  "reportedTurns": 10,
+                  "unknownTurns": 0
+                },
+                "output": {
+                  "reportedTotal": 2186,
+                  "reportedTurns": 10,
+                  "unknownTurns": 0
+                },
+                "reasoning": {
+                  "reportedTotal": 20,
+                  "reportedTurns": 10,
+                  "unknownTurns": 0
+                },
+                "cacheRead": {
+                  "reportedTotal": 48640,
+                  "reportedTurns": 10,
+                  "unknownTurns": 0
+                },
+                "cacheWrite": {
+                  "reportedTotal": 0,
+                  "reportedTurns": 10,
+                  "unknownTurns": 0
+                }
+              },
+              "totalReportedTokens": 64821,
+              "turns": {
+                "complete": 10,
+                "partial": 0,
+                "unknown": 0
+              },
+              "billing": "not_estimated"
+            },
+            "cost": {
+              "reportedTotal": 0,
+              "reportedTurns": 10,
+              "unknownTurns": 0,
+              "billing": "not_estimated"
+            },
+            "tools": {
+              "total": 11,
+              "completed": 11,
+              "error": 0,
+              "pending": 0,
+              "byName": {
+                "skill": {
+                  "total": 2,
+                  "completed": 2,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 383,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 2,
+                      "durationMsReported": 383,
+                      "durationCalls": 2,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "glob": {
+                  "total": 2,
+                  "completed": 2,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 370,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 2,
+                      "durationMsReported": 370,
+                      "durationCalls": 2,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "read": {
+                  "total": 3,
+                  "completed": 3,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 542,
+                  "durationCalls": 3,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 3,
+                      "durationMsReported": 542,
+                      "durationCalls": 3,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "bash": {
+                  "total": 2,
+                  "completed": 2,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 1961,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 2,
+                      "durationMsReported": 1961,
+                      "durationCalls": 2,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                },
+                "apply_patch": {
+                  "total": 2,
+                  "completed": 2,
+                  "error": 0,
+                  "pending": 0,
+                  "durationMsReported": 29,
+                  "durationCalls": 2,
+                  "unknownDurationCalls": 0,
+                  "byStatus": {
+                    "completed": {
+                      "calls": 2,
+                      "durationMsReported": 29,
+                      "durationCalls": 2,
+                      "unknownDurationCalls": 0
+                    },
+                    "error": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    },
+                    "pending": {
+                      "calls": 0,
+                      "durationMsReported": 0,
+                      "durationCalls": 0,
+                      "unknownDurationCalls": 0
+                    }
+                  }
+                }
+              }
+            },
+            "repeatedExactToolInputs": {
+              "skill": {
+                "distinctRepeatedInputs": 1,
+                "repeatedCalls": 1
+              },
+              "glob": {
+                "distinctRepeatedInputs": 1,
+                "repeatedCalls": 1
+              }
+            },
+            "skillLoads": {
+              "wafer-analysis": {
+                "attempted": 2,
+                "successful": 2,
+                "error": 0,
+                "pending": 0
+              }
+            },
+            "algTools": {
+              "alg_plan": {
+                "total": 0,
+                "completed": 0,
+                "error": 0,
+                "pending": 0
+              },
+              "alg_run": {
+                "total": 0,
+                "completed": 0,
+                "error": 0,
+                "pending": 0
+              }
+            },
+            "observedErrors": {
+              "deniedTool": 0,
+              "stepExhaustion": 0
+            }
+          },
+          "recovery": {
+            "restarted": true,
+            "compactionRecovered": true
+          },
+          "alg_states": [],
+          "cleanup": true,
+          "metering_complete": true,
+          "auth_copy_removed": true
+        }
+      ]
     }
   ]
 }

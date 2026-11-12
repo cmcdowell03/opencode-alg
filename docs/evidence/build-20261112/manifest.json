@@ -1736,6 +1736,678 @@
       "sha256": "a97a7b16ea824b3f1ba151cb4b747cb31483edb4de42f3d223dc04926366f636"
     },
     {
+      "path": "terra-corrected/result.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\result.json",
+      "bytes": 243890,
+      "sha256": "7ca88f607a315b8594f249c0d916c8ba813863982a4812c759b5f6fbbaaf3b4f"
+    },
+    {
+      "path": "terra-corrected/plan.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\plan.json",
+      "bytes": 6588,
+      "sha256": "b56bb0b746f5c383228cc4c958388f32fbf4f4df6d0d7bf1c9c881b10dc42ebf"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/result.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\result.json",
+      "bytes": 37712,
+      "sha256": "2814a04eeb453dae60f9f42e9e898ab3d1a8181a3e6758e14a206a040c9a4f8b"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/messages.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\messages.json",
+      "bytes": 354673,
+      "sha256": "37c2506e7f4e6d6107eee9e3453f628fc5516f35e581211c8514e6f3c533e882"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/sessions.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\sessions.json",
+      "bytes": 15454,
+      "sha256": "b95a17ffe0d0247c0ffaf41f799624d5deb6bf9d4cf9086c4b626ebf031ccc3c"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/events.jsonl",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\events.jsonl",
+      "bytes": 258,
+      "sha256": "8a25280f4b96b3c199df306b4b0f4daabf071a86164355b6bc1d21e07cd0da3d"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/preflight.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\preflight.json",
+      "bytes": 44060,
+      "sha256": "74324fee35a83427c489493a199a4a69d6b4af9fe33db34ad4b0a804a4a8dccf"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/skills-preflight.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\skills-preflight.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/samples.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\samples.json",
+      "bytes": 17665,
+      "sha256": "486f8a03faf03b8b3b1060023b90cf61b88353406206f06462d823d7fffef785"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/artifacts/src/wafer-count.cjs",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\src\\wafer-count.cjs",
+      "bytes": 394,
+      "sha256": "6b17ead9fb07c8fd3b9a90b90b8dd89c4a2516439d9629ece08974ee3e94eb42"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/artifacts/src/wafer-view.cjs",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\src\\wafer-view.cjs",
+      "bytes": 140,
+      "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/check-a1-0df584e6.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\check-attempt-1-detail-0df584e6869e0a943e6986bf065988532bd460c1762ab7e733dfac2f85b18b60.json",
+      "bytes": 132,
+      "sha256": "0df584e6869e0a943e6986bf065988532bd460c1762ab7e733dfac2f85b18b60"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/check-a1-904fac24.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\check-attempt-1-detail-904fac24f0105f7fd0e1415158f3ac7de80fe3e356f554ba190676b1f617294a.json",
+      "bytes": 86,
+      "sha256": "904fac24f0105f7fd0e1415158f3ac7de80fe3e356f554ba190676b1f617294a"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/check-a1-b34d35b5.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\check-attempt-1-detail-b34d35b500c4d1a73fda99781a2018a82125c9f4d0bb4a3802a4d17cb03c6cea.json",
+      "bytes": 1199,
+      "sha256": "b34d35b500c4d1a73fda99781a2018a82125c9f4d0bb4a3802a4d17cb03c6cea"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/check-a1-fd511962.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\check-attempt-1-detail-fd511962061230b40cd31a3522dd8ed68ea13f1a9b249c6c46aec105c51380f5.json",
+      "bytes": 1223,
+      "sha256": "fd511962061230b40cd31a3522dd8ed68ea13f1a9b249c6c46aec105c51380f5"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/explore-a1-5c8995d5.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\explore-attempt-1-detail-5c8995d533883be2812c2cbadb2a23e32f475104318608ceb6dac5ea8d9cad08.json",
+      "bytes": 132,
+      "sha256": "5c8995d533883be2812c2cbadb2a23e32f475104318608ceb6dac5ea8d9cad08"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/explore-a1-b1ecbcc3.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\explore-attempt-1-detail-b1ecbcc3c25e29c7d977b8678838b7e2c41b69c5655ab7b7255d10de84e9b3a7.json",
+      "bytes": 86,
+      "sha256": "b1ecbcc3c25e29c7d977b8678838b7e2c41b69c5655ab7b7255d10de84e9b3a7"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/explore-a1-c0e96fe4.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\explore-attempt-1-detail-c0e96fe4ed445e7c70f2f49e875fbd8f97b541c3738ced585173e8aa49490ede.json",
+      "bytes": 1571,
+      "sha256": "c0e96fe4ed445e7c70f2f49e875fbd8f97b541c3738ced585173e8aa49490ede"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/implement-a1-39726f96.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\implement-attempt-1-detail-39726f964f8f10ff89e479b2c76edaa9b95c6da0ff8a2997ac83c2aa4f225d9b.json",
+      "bytes": 1192,
+      "sha256": "39726f964f8f10ff89e479b2c76edaa9b95c6da0ff8a2997ac83c2aa4f225d9b"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/implement-a1-8a7d12c6.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\implement-attempt-1-detail-8a7d12c62a24310d6b64f004a7903fc3562552f5bd0b518dde6dc384fcadc714.json",
+      "bytes": 86,
+      "sha256": "8a7d12c62a24310d6b64f004a7903fc3562552f5bd0b518dde6dc384fcadc714"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/implement-a1-a84ef953.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\implement-attempt-1-detail-a84ef95335cb5c836efaad29fcb5e9a097ed452fe237128237f0ecb265a94a1e.json",
+      "bytes": 132,
+      "sha256": "a84ef95335cb5c836efaad29fcb5e9a097ed452fe237128237f0ecb265a94a1e"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/implement-a2-239a01a8.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\implement-attempt-2-detail-239a01a8b000c23348de9cce43ada0ab32619f29632cd93dfa2088fc124431e3.json",
+      "bytes": 385,
+      "sha256": "239a01a8b000c23348de9cce43ada0ab32619f29632cd93dfa2088fc124431e3"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/implement-a2-331b1df0.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\implement-attempt-2-detail-331b1df09f1ad9977731100c7d35ac72e5c7d93ac02bf14eabfd21617e248fb2.json",
+      "bytes": 132,
+      "sha256": "331b1df09f1ad9977731100c7d35ac72e5c7d93ac02bf14eabfd21617e248fb2"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/implement-a2-930ce591.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\implement-attempt-2-detail-930ce591ed710aef2933e2de1fcdd3939d3ad43fa3757ca2c546a2e74ae683aa.json",
+      "bytes": 86,
+      "sha256": "930ce591ed710aef2933e2de1fcdd3939d3ad43fa3757ca2c546a2e74ae683aa"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/research-a1-06a20eac.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\research-attempt-1-detail-06a20eacb05af56c927ec9033ab08f8d6be21154322acf14b8ac70c9ba887844.json",
+      "bytes": 4481,
+      "sha256": "06a20eacb05af56c927ec9033ab08f8d6be21154322acf14b8ac70c9ba887844"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/research-a1-780de97b.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\research-attempt-1-detail-780de97b1b9ec79dfc10afb25e530568c3e130ce144e3f859447fb61bf587d62.json",
+      "bytes": 132,
+      "sha256": "780de97b1b9ec79dfc10afb25e530568c3e130ce144e3f859447fb61bf587d62"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_default/attempts/research-a1-c2dcdbd9.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_default\\project\\.opencode\\runs\\fix-wafer-count-bug-in-small-com-20261112054355-1d1328b0c580\\history\\research-attempt-1-detail-c2dcdbd9cc5d248e80e455e8447ff57b16dc51a1c9c0811f1be960c1c1404d50.json",
+      "bytes": 86,
+      "sha256": "c2dcdbd9cc5d248e80e455e8447ff57b16dc51a1c9c0811f1be960c1c1404d50"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/result.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\result.json",
+      "bytes": 34760,
+      "sha256": "929def80b4f58142cfe971844443a38d94decb7d9fab34398c485a7afefea421"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/messages.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\messages.json",
+      "bytes": 255454,
+      "sha256": "f2daf8395bccb378eacdab6e115c8f2ce4ddcccbc381b588b0d180a3ccd33ea7"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/sessions.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\sessions.json",
+      "bytes": 12546,
+      "sha256": "a54b646e7cfcdd7b2243d160c55c653533aae75205a2e84ef2bc551ce7d8521f"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/events.jsonl",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\events.jsonl",
+      "bytes": 139,
+      "sha256": "f9484cc3fc8ddafef84538067de49f5dc367d16daff4416b6f3de46a2397e71d"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/preflight.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\preflight.json",
+      "bytes": 44098,
+      "sha256": "f26e5dbd81c01a83749b3612bf8f9415846ea919248c551cae4adea4b39d0688"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/skills-preflight.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\skills-preflight.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/samples.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\samples.json",
+      "bytes": 15123,
+      "sha256": "29d4465629a9b3cf6a89bc4b05ca07acc5fdef746e0ec47b51a93c15af93752e"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/artifacts/src/wafer-count.cjs",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\project\\src\\wafer-count.cjs",
+      "bytes": 440,
+      "sha256": "f6efceea3a8a1a28ce331651700dd15d95c727bd68efe9a14f77942b7160f2c7"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/artifacts/src/wafer-view.cjs",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\project\\src\\wafer-view.cjs",
+      "bytes": 140,
+      "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/attempts/check-a1-24736640.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\project\\.opencode\\runs\\fix-wafer-count-bug-in-the-small-20261112054702-ee81db49197e\\history\\check-attempt-1-detail-247366404507575b84924f2257328b40173660c589b5c111b865f88ca21767b3.json",
+      "bytes": 132,
+      "sha256": "247366404507575b84924f2257328b40173660c589b5c111b865f88ca21767b3"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/attempts/check-a1-b7b865ab.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\project\\.opencode\\runs\\fix-wafer-count-bug-in-the-small-20261112054702-ee81db49197e\\history\\check-attempt-1-detail-b7b865abd1e889245d10e45298398acde3ad51308e005cf571e4aa9d51a8396e.json",
+      "bytes": 470,
+      "sha256": "b7b865abd1e889245d10e45298398acde3ad51308e005cf571e4aa9d51a8396e"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/attempts/check-a1-c4c47c76.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\project\\.opencode\\runs\\fix-wafer-count-bug-in-the-small-20261112054702-ee81db49197e\\history\\check-attempt-1-detail-c4c47c76ed2e790de0df5004d7a64c11aeaec74e38e67860f67d69f9e9af7744.json",
+      "bytes": 86,
+      "sha256": "c4c47c76ed2e790de0df5004d7a64c11aeaec74e38e67860f67d69f9e9af7744"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/attempts/explore-a1-5bae4b2c.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\project\\.opencode\\runs\\fix-wafer-count-bug-in-the-small-20261112054702-ee81db49197e\\history\\explore-attempt-1-detail-5bae4b2c4b5e048c5ad43c90eda769316ec0bf407a97a9f235138a1dfa31b331.json",
+      "bytes": 132,
+      "sha256": "5bae4b2c4b5e048c5ad43c90eda769316ec0bf407a97a9f235138a1dfa31b331"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/attempts/explore-a1-8bccf46e.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\project\\.opencode\\runs\\fix-wafer-count-bug-in-the-small-20261112054702-ee81db49197e\\history\\explore-attempt-1-detail-8bccf46e45257ffdb5ef3736b9bab0a26d377cb7ce4f3bbb010214cb3e63e1e4.json",
+      "bytes": 86,
+      "sha256": "8bccf46e45257ffdb5ef3736b9bab0a26d377cb7ce4f3bbb010214cb3e63e1e4"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/attempts/explore-a1-c4cd5357.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\project\\.opencode\\runs\\fix-wafer-count-bug-in-the-small-20261112054702-ee81db49197e\\history\\explore-attempt-1-detail-c4cd5357f9b78afbc234bca6581f663b5ab5ead6e607446e484d07ba55ce73af.json",
+      "bytes": 1630,
+      "sha256": "c4cd5357f9b78afbc234bca6581f663b5ab5ead6e607446e484d07ba55ce73af"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/attempts/implement-a1-29b03295.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\project\\.opencode\\runs\\fix-wafer-count-bug-in-the-small-20261112054702-ee81db49197e\\history\\implement-attempt-1-detail-29b03295d719541609f2e524b4985df711f2646cd190032bd687ebce2b69f786.json",
+      "bytes": 1105,
+      "sha256": "29b03295d719541609f2e524b4985df711f2646cd190032bd687ebce2b69f786"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/attempts/implement-a1-59dbf769.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\project\\.opencode\\runs\\fix-wafer-count-bug-in-the-small-20261112054702-ee81db49197e\\history\\implement-attempt-1-detail-59dbf76951d32f449cca7b6bce30aeca648610aab1eeabe72248a365364721eb.json",
+      "bytes": 86,
+      "sha256": "59dbf76951d32f449cca7b6bce30aeca648610aab1eeabe72248a365364721eb"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/attempts/implement-a1-e07457a0.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\project\\.opencode\\runs\\fix-wafer-count-bug-in-the-small-20261112054702-ee81db49197e\\history\\implement-attempt-1-detail-e07457a0a02597c51ac9a615b16e58c61461d68fad3997a71210211a9a40bb6e.json",
+      "bytes": 132,
+      "sha256": "e07457a0a02597c51ac9a615b16e58c61461d68fad3997a71210211a9a40bb6e"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/attempts/research-a1-37769440.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\project\\.opencode\\runs\\fix-wafer-count-bug-in-the-small-20261112054702-ee81db49197e\\history\\research-attempt-1-detail-37769440448b789437269ebc882222894d79e60da5a32e972398a1232a750eda.json",
+      "bytes": 4342,
+      "sha256": "37769440448b789437269ebc882222894d79e60da5a32e972398a1232a750eda"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/attempts/research-a1-719982d5.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\project\\.opencode\\runs\\fix-wafer-count-bug-in-the-small-20261112054702-ee81db49197e\\history\\research-attempt-1-detail-719982d5a143c80310fd181b584834675d52e798e7585e4cd073dd76e5c1100f.json",
+      "bytes": 86,
+      "sha256": "719982d5a143c80310fd181b584834675d52e798e7585e4cd073dd76e5c1100f"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-alg_targeted/attempts/research-a1-8855777c.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-alg_targeted\\project\\.opencode\\runs\\fix-wafer-count-bug-in-the-small-20261112054702-ee81db49197e\\history\\research-attempt-1-detail-8855777ce2b1a43347478e40cec26d024d1f48810ccb075407ebb5a7ba40fd20.json",
+      "bytes": 132,
+      "sha256": "8855777ce2b1a43347478e40cec26d024d1f48810ccb075407ebb5a7ba40fd20"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-build/result.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-build\\result.json",
+      "bytes": 7705,
+      "sha256": "78a287d9b163ca3c8632d39f228fe4e1be4654aa9088497bdf5e9c71f4cb88ff"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-build/messages.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-build\\messages.json",
+      "bytes": 47065,
+      "sha256": "f85895a8607b28223597e8ffe61e96dbb83d2642fcf3db6255bde69e9d291f13"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-build/sessions.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-build\\sessions.json",
+      "bytes": 918,
+      "sha256": "bcc744cfd55df80abf71bfaf04d94b98d336c3bd33c3fe2c4abf7a11ba6c3732"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-build/events.jsonl",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-build\\events.jsonl",
+      "bytes": 139,
+      "sha256": "c7a107d18ffd2a36c627ef86ee0edcfc192c380e971bb3f980173ae299641858"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-build/preflight.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-build\\preflight.json",
+      "bytes": 25130,
+      "sha256": "b2a29c3e24112e38de323fa7acfec12fdb08e2990b64563557e08cd69b076518"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-build/skills-preflight.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-build\\skills-preflight.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-build/samples.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-build\\samples.json",
+      "bytes": 5627,
+      "sha256": "b419d515a546621f97f4d49bad3af8dffc58080ce6a813323b82e3cde2114e80"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-build/artifacts/src/wafer-count.cjs",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-build\\project\\src\\wafer-count.cjs",
+      "bytes": 420,
+      "sha256": "13b5c02492c915d43ecb635e1157a56a6fca8b66e7bec45145540c24cddd268c"
+    },
+    {
+      "path": "terra-corrected/1-wafer-count-commonjs-build/artifacts/src/wafer-view.cjs",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\1-wafer-count-commonjs-build\\project\\src\\wafer-view.cjs",
+      "bytes": 140,
+      "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/result.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\result.json",
+      "bytes": 61690,
+      "sha256": "3e544bc98bdfa7a23318f72d0ab9e781cec247adcf5b416eb7ead78f8e10b441"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/messages.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\messages.json",
+      "bytes": 266387,
+      "sha256": "fbb044eda808f30ef6bdd1c2333a362fb9499788ed846050411965e7d93d64c8"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/sessions.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\sessions.json",
+      "bytes": 12539,
+      "sha256": "bef9b430cd1e5651e40e0329a9d638c82dd57e220ccbec16a9d86662ffcc01a3"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/events.jsonl",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\events.jsonl",
+      "bytes": 615,
+      "sha256": "7eadea67eebda66fa759a8d3d143e233530ac2447bf2be534e398e18326a2d3f"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/phase1.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\phase1.json",
+      "bytes": 25193,
+      "sha256": "48b7a87a6fd15c6b0f353760a6b5c889b064d87468bdbc373d337505cb4f83d4"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/preflight.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\preflight.json",
+      "bytes": 48249,
+      "sha256": "a3806a5fe2b3a9796e6f440f207de957881d8794e7b7bbab06fd89185b057c85"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/skills-preflight.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\skills-preflight.json",
+      "bytes": 547,
+      "sha256": "4c535751e292fa813354085487cd0119d9f5e9170f133a99aca9ce9127747ab9"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/samples.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\samples.json",
+      "bytes": 16323,
+      "sha256": "413881172cb257401afb28ae08214f05908e1873e206ece7dbd4d410bbb3963b"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/artifacts/preparation.md",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project\\preparation.md",
+      "bytes": 1722,
+      "sha256": "fc7a7bdc89487ca84b291e7573917408f3f8641427cedda0cdc41a0718036cb6"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/attempts/check-a1-2cc5ec93.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project\\.opencode\\runs\\prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb\\history\\check-attempt-1-detail-2cc5ec93d8516b9e1ecc615fbc3e99e085b6ccb5de848eb35cd4c09e4ed9b351.json",
+      "bytes": 391,
+      "sha256": "2cc5ec93d8516b9e1ecc615fbc3e99e085b6ccb5de848eb35cd4c09e4ed9b351"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/attempts/check-a1-79996984.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project\\.opencode\\runs\\prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb\\history\\check-attempt-1-detail-799969841c304aa26dd88353feb4751537cce2f3baebfaf3de36f0ff5211745d.json",
+      "bytes": 86,
+      "sha256": "799969841c304aa26dd88353feb4751537cce2f3baebfaf3de36f0ff5211745d"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/attempts/check-a1-ff664dc5.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project\\.opencode\\runs\\prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb\\history\\check-attempt-1-detail-ff664dc5c2b6d7c14bbd0cab1cca7c3b0ff53d13888fb3ab0b0fcca25116f323.json",
+      "bytes": 132,
+      "sha256": "ff664dc5c2b6d7c14bbd0cab1cca7c3b0ff53d13888fb3ab0b0fcca25116f323"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/attempts/explore-a1-3da52780.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project\\.opencode\\runs\\prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb\\history\\explore-attempt-1-detail-3da52780dddb534d0f805ecc31176b122ab8eee28e6e1b2d075e145992ae9599.json",
+      "bytes": 1663,
+      "sha256": "3da52780dddb534d0f805ecc31176b122ab8eee28e6e1b2d075e145992ae9599"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/attempts/explore-a1-dcbf85ab.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project\\.opencode\\runs\\prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb\\history\\explore-attempt-1-detail-dcbf85ab4e74f3318d59446ff6e5a1d3faa415c6d6512cd727b0cc810453ec8c.json",
+      "bytes": 132,
+      "sha256": "dcbf85ab4e74f3318d59446ff6e5a1d3faa415c6d6512cd727b0cc810453ec8c"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/attempts/explore-a1-de8eb181.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project\\.opencode\\runs\\prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb\\history\\explore-attempt-1-detail-de8eb18164ed3a77305c2b9960f0f9b939c2c13117a4c57b67a3c4d960ae06eb.json",
+      "bytes": 86,
+      "sha256": "de8eb18164ed3a77305c2b9960f0f9b939c2c13117a4c57b67a3c4d960ae06eb"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/attempts/implement-a1-885f82d2.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project\\.opencode\\runs\\prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb\\history\\implement-attempt-1-detail-885f82d25edfe1046682c99e9244a9aa7d72a8ea6378c65ea747aa1d49046487.json",
+      "bytes": 951,
+      "sha256": "885f82d25edfe1046682c99e9244a9aa7d72a8ea6378c65ea747aa1d49046487"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/attempts/implement-a1-ab747896.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project\\.opencode\\runs\\prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb\\history\\implement-attempt-1-detail-ab74789641c3cca923d4d0301ff251f0252cc3a08a44569c1ca56b23ee7585f9.json",
+      "bytes": 132,
+      "sha256": "ab74789641c3cca923d4d0301ff251f0252cc3a08a44569c1ca56b23ee7585f9"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/attempts/implement-a1-d3a8d920.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project\\.opencode\\runs\\prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb\\history\\implement-attempt-1-detail-d3a8d920e74ae0e819b2c39f1ac73cc353b63b6d547c1ea9a885e719281623de.json",
+      "bytes": 86,
+      "sha256": "d3a8d920e74ae0e819b2c39f1ac73cc353b63b6d547c1ea9a885e719281623de"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/attempts/research-a1-a1d3b5af.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project\\.opencode\\runs\\prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb\\history\\research-attempt-1-detail-a1d3b5af6ea6d90d671a28914d21e374da7d90a8da042d41df7c216fc75ccc30.json",
+      "bytes": 4066,
+      "sha256": "a1d3b5af6ea6d90d671a28914d21e374da7d90a8da042d41df7c216fc75ccc30"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/attempts/research-a1-a3a939aa.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project\\.opencode\\runs\\prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb\\history\\research-attempt-1-detail-a3a939aa7c554dac1df4e38b891b5c435c580483637b54b05c41682f29532739.json",
+      "bytes": 86,
+      "sha256": "a3a939aa7c554dac1df4e38b891b5c435c580483637b54b05c41682f29532739"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_default/attempts/research-a1-dadae506.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project\\.opencode\\runs\\prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb\\history\\research-attempt-1-detail-dadae5061aa933959ca2f59d78954f0420ab77462b66f2abe29a7e5dbf59b1d5.json",
+      "bytes": 132,
+      "sha256": "dadae5061aa933959ca2f59d78954f0420ab77462b66f2abe29a7e5dbf59b1d5"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/result.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\result.json",
+      "bytes": 66796,
+      "sha256": "e1339bc4b3767c49179ee30d78687c82035fbf15be270a1340aabd5891661e52"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/messages.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\messages.json",
+      "bytes": 304145,
+      "sha256": "e9f74f65f82aa142bb9993db6782ebc4f7fd3e237451fc9ddf0caaf78992c827"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/sessions.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\sessions.json",
+      "bytes": 15444,
+      "sha256": "f7a3108881b08650c4d954efd7f6a4b3f7067ab6ebc0aafcfbf51c935abbca1b"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/events.jsonl",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\events.jsonl",
+      "bytes": 615,
+      "sha256": "37528ce5f78b7cd0cb9a5bf3799e38574f35eb0fe32e38544b5d22fe13b27e44"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/phase1.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\phase1.json",
+      "bytes": 24795,
+      "sha256": "c5fb5a8682d4495185da21577b4960a79968fe1577d4c9be58273df7fa22652c"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/preflight.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\preflight.json",
+      "bytes": 48300,
+      "sha256": "fba98f2fa2c67df36f44b6492953e61fc83edf4e70aa04fba768fa70a0b196d4"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/skills-preflight.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\skills-preflight.json",
+      "bytes": 548,
+      "sha256": "43e4f50b5719e2255385300c9f38502ea4a0f758d68bd55c2509e29a07741638"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/samples.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\samples.json",
+      "bytes": 17784,
+      "sha256": "1797f7caf85f9f5c642796425b07696b9c698b1feb37641e091dbb403a4068ac"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/artifacts/preparation.md",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\preparation.md",
+      "bytes": 1805,
+      "sha256": "aa7d3e7904dea29ebda3049634051123f4be8eb1e51df57a6e0c0dd2e7f82eea"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/explore-a1-74d5ae1e.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\complete-phase-two-synthetic-waf-20261112055152-ed62786a4ff8\\history\\explore-attempt-1-detail-74d5ae1e2c841538f2d4b5700effd787f6efbf3ea8f60b2200a84f89130c925c.json",
+      "bytes": 385,
+      "sha256": "74d5ae1e2c841538f2d4b5700effd787f6efbf3ea8f60b2200a84f89130c925c"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/explore-a1-d89a48be.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\complete-phase-two-synthetic-waf-20261112055152-ed62786a4ff8\\history\\explore-attempt-1-detail-d89a48be47cf803a281087f2eb0ab7dcb62f233b1551bf54000c5d72b90d49a0.json",
+      "bytes": 86,
+      "sha256": "d89a48be47cf803a281087f2eb0ab7dcb62f233b1551bf54000c5d72b90d49a0"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/explore-a1-da080ad0.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\complete-phase-two-synthetic-waf-20261112055152-ed62786a4ff8\\history\\explore-attempt-1-detail-da080ad0450e95c69cf6db19bcac3765566b34f0f97fad29355839345a8cfedc.json",
+      "bytes": 132,
+      "sha256": "da080ad0450e95c69cf6db19bcac3765566b34f0f97fad29355839345a8cfedc"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/check-a1-00c1d5ad.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\prepare-only-phase-one-of-the-sy-20261112054938-c12da077e8d4\\history\\check-attempt-1-detail-00c1d5ada60481d5343da0f7faa69e4ec0cc1f6c61540bf63dc681bfbc90b3a8.json",
+      "bytes": 86,
+      "sha256": "00c1d5ada60481d5343da0f7faa69e4ec0cc1f6c61540bf63dc681bfbc90b3a8"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/check-a1-8d79ced4.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\prepare-only-phase-one-of-the-sy-20261112054938-c12da077e8d4\\history\\check-attempt-1-detail-8d79ced49d2cb2c4ea9eeb43bbb959e46dcad2656b303d02c2af52f29877d037.json",
+      "bytes": 132,
+      "sha256": "8d79ced49d2cb2c4ea9eeb43bbb959e46dcad2656b303d02c2af52f29877d037"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/check-a1-920a55f1.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\prepare-only-phase-one-of-the-sy-20261112054938-c12da077e8d4\\history\\check-attempt-1-detail-920a55f1b77807e2b9dab501955e240ffe1f9b5f8c7f3d940a22675672a14a7e.json",
+      "bytes": 371,
+      "sha256": "920a55f1b77807e2b9dab501955e240ffe1f9b5f8c7f3d940a22675672a14a7e"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/explore-a1-5bc96d64.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\prepare-only-phase-one-of-the-sy-20261112054938-c12da077e8d4\\history\\explore-attempt-1-detail-5bc96d648e7365f3765316e4eb796df3e137adc36682ba3d85d97c21042fac17.json",
+      "bytes": 86,
+      "sha256": "5bc96d648e7365f3765316e4eb796df3e137adc36682ba3d85d97c21042fac17"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/explore-a1-7b83b492.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\prepare-only-phase-one-of-the-sy-20261112054938-c12da077e8d4\\history\\explore-attempt-1-detail-7b83b492db6b709c3eff0f7897e3b7cfad2c15fc5b23c289936c5722060456cf.json",
+      "bytes": 1844,
+      "sha256": "7b83b492db6b709c3eff0f7897e3b7cfad2c15fc5b23c289936c5722060456cf"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/explore-a1-ee901371.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\prepare-only-phase-one-of-the-sy-20261112054938-c12da077e8d4\\history\\explore-attempt-1-detail-ee90137102841353df93f59e1f9c4c5ffae469348c00482425449c8ee30a51de.json",
+      "bytes": 132,
+      "sha256": "ee90137102841353df93f59e1f9c4c5ffae469348c00482425449c8ee30a51de"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/implement-a1-852f91d6.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\prepare-only-phase-one-of-the-sy-20261112054938-c12da077e8d4\\history\\implement-attempt-1-detail-852f91d65a58073be706578d5e7c3ad980d0c9ebc8387f56ca9c127a2902855c.json",
+      "bytes": 132,
+      "sha256": "852f91d65a58073be706578d5e7c3ad980d0c9ebc8387f56ca9c127a2902855c"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/implement-a1-8568df2b.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\prepare-only-phase-one-of-the-sy-20261112054938-c12da077e8d4\\history\\implement-attempt-1-detail-8568df2ba21ec611ccf059dd614b91f8994f9ee64c60af7f5cad27999913a85b.json",
+      "bytes": 86,
+      "sha256": "8568df2ba21ec611ccf059dd614b91f8994f9ee64c60af7f5cad27999913a85b"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/implement-a1-92daf825.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\prepare-only-phase-one-of-the-sy-20261112054938-c12da077e8d4\\history\\implement-attempt-1-detail-92daf8250386ec49c31c1c87aa31d9dcf506eef04ca090815509a26ee94ce436.json",
+      "bytes": 1078,
+      "sha256": "92daf8250386ec49c31c1c87aa31d9dcf506eef04ca090815509a26ee94ce436"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/research-a1-1d578c62.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\prepare-only-phase-one-of-the-sy-20261112054938-c12da077e8d4\\history\\research-attempt-1-detail-1d578c62286f19a5c34bacd743c6f140e2bef433adf5a9afa86606d0449565e5.json",
+      "bytes": 132,
+      "sha256": "1d578c62286f19a5c34bacd743c6f140e2bef433adf5a9afa86606d0449565e5"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/research-a1-5ca2d3f6.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\prepare-only-phase-one-of-the-sy-20261112054938-c12da077e8d4\\history\\research-attempt-1-detail-5ca2d3f63f4611144bb52aba2cd79173f379efd9eaa7c98075cc1672da9e9bad.json",
+      "bytes": 4298,
+      "sha256": "5ca2d3f63f4611144bb52aba2cd79173f379efd9eaa7c98075cc1672da9e9bad"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-alg_targeted/attempts/research-a1-c4b4565b.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_targeted\\project\\.opencode\\runs\\prepare-only-phase-one-of-the-sy-20261112054938-c12da077e8d4\\history\\research-attempt-1-detail-c4b4565b3c358645e2ed70bda9cfc9252e0e241a32471e5e6da0e00535ab48e9.json",
+      "bytes": 86,
+      "sha256": "c4b4565b3c358645e2ed70bda9cfc9252e0e241a32471e5e6da0e00535ab48e9"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-build/result.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-build\\result.json",
+      "bytes": 12254,
+      "sha256": "1915865e86aeb656a41dca2509c0db4b4766594a838ffe7596fda70ede79c0ea"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-build/messages.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-build\\messages.json",
+      "bytes": 70844,
+      "sha256": "7aadfb569c7d735740116b16afb6b12def8f47061dc853ede68cb840f13e4e9d"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-build/sessions.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-build\\sessions.json",
+      "bytes": 918,
+      "sha256": "c4a97d99eabdcfb080434336877429480c395c6a503b097d13cac861091d8d35"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-build/events.jsonl",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-build\\events.jsonl",
+      "bytes": 496,
+      "sha256": "fcc0bdbf1953e8df64906378fbd5f365dea9de20c97057ee1f45dd79636f69f5"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-build/phase1.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-build\\phase1.json",
+      "bytes": 3139,
+      "sha256": "fb88f248cc2c80972bc1e920ad9c3b0c4fe07d13b1a42b8586bff60cef6294a1"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-build/preflight.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-build\\preflight.json",
+      "bytes": 27551,
+      "sha256": "251082bba65f3b90c41f4ada02e2298e92081bdc2e8c7b662908c589c8ce45c9"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-build/skills-preflight.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-build\\skills-preflight.json",
+      "bytes": 541,
+      "sha256": "d4026efcfc71dc35325634ba7f216f69481a3ce5707b9e50c9a8848450d111ee"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-build/samples.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-build\\samples.json",
+      "bytes": 8247,
+      "sha256": "8dead37d55b95e67d6273ac9f246b84df5f60596172d3c4e26e7557ee44325dc"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-build/artifacts/preparation.md",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-build\\project\\preparation.md",
+      "bytes": 1825,
+      "sha256": "35cc828775535eba28851770ae348d6c99f4841551dccc065e99288c9a468f28"
+    },
+    {
+      "path": "terra-corrected/2-wafer-report-staged-build/artifacts/report.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-build\\project\\report.json",
+      "bytes": 723,
+      "sha256": "a8d59c700552f9d5a7eb461a939a2153695bf5c5646b1190fe10d55f6d793a87"
+    },
+    {
       "path": "checks/fixture-metrics-tests.log",
       "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\fixture-metrics-tests.log",
       "bytes": 1304,
@@ -1860,6 +2532,24 @@
       "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\compile-long-027caaa1-edc5-4601-88c7-22ccf002672c\\pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\\compile-receipt.json",
       "bytes": 2637,
       "sha256": "2abfea9b6e6ddb558e10b2a3bfa5896ec98ce0fd5b96aecf31d4ef3761e6b844"
+    },
+    {
+      "path": "checks/selected-csc-path-repro-d709bde3-4a59-47b5-a0b0-0ab806561d7f.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\selected-csc-path-repro-d709bde3-4a59-47b5-a0b0-0ab806561d7f.json",
+      "bytes": 7227,
+      "sha256": "d0f13d3358ec34ecd7d98cb831263e168f6f64a909855a7eed3bf05a8682da70"
+    },
+    {
+      "path": "checks/analyze-luna-usage.ts",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\analyze-luna-usage.ts",
+      "bytes": 6797,
+      "sha256": "64b14dc656a0391e38a7bb35b3b9809ad5286706544bf138974fa2594bda3f33"
+    },
+    {
+      "path": "checks/luna-usage-attribution.json",
+      "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\luna-usage-attribution.json",
+      "bytes": 11450,
+      "sha256": "b3460df4f81fe9728142303b99232e61d3f1eb2f8bcaa7b815916c1f31f555f6"
     }
   ]
 }
