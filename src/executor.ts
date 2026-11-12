@@ -460,6 +460,7 @@ async function runOneNode(
         ? previousAttempt.outcome : undefined
       const prompt = checker
         ? buildCheckerPrompt({
+            taskContract: run.task_contract,
             criteria: run.criteria.length ? run.criteria : ["Output must be complete and match the goal."],
             claimed: inputs.claimed ?? Object.fromEntries(Object.entries(inputs).filter(([key]) => !isCheckerEvidencePort(key))),
             evidence,

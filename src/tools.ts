@@ -47,6 +47,7 @@ import { hashObject } from "./session-memory/store.ts"
 import { canonicalJson } from "./persistence.ts"
 import { TaskContractInputSchema, parseTaskContractInput, taskTemplate, bindTaskContract, assertTaskState,
   assertTaskGraph, assertTaskHostCapabilities, taskContractSummary, type TaskContractInput } from "./task-contract.ts"
+import { captureTaskRequest } from "./task-request.ts"
 import type { SessionMemoryRuntime } from "./session-memory/runtime.ts"
 import { buildRunProgress, parseRunProgress, type AlgRunProgress } from "./run-progress.ts"
 import { createRunCardProjector, type RunCardProjector, type SubagentCardMode } from "./run-cards.ts"
@@ -876,9 +877,15 @@ export function createAlgTools(
           if (args.preserve_paths !== undefined && JSON.stringify(args.preserve_paths) !== JSON.stringify(taskInput.preserve_paths))
             throw new Error("task_preservation_mismatch: preserve_paths must match the task contract")
           if (taskInput.preserve_paths.length) graph = withPreservePaths(graph, project, taskInput.preserve_paths)
-          const taskContract = bindTaskContract(taskInput, args.goal, args.criteria ?? [], graph,
+          let taskContract = bindTaskContract(taskInput, args.goal, args.criteria ?? [], graph,
             { session_id: context.sessionID, message_id: context.messageID })
           await checkTaskCapabilities(taskInput, graph, directory, context.abort)
+          const requestSnapshot = await captureTaskRequest(client, {
+            sessionID: context.sessionID, messageID: context.messageID, directory, abort: context.abort,
+          })
+          if (context.abort.aborted) throw new Error("Task admission cancelled")
+          taskContract = bindTaskContract(taskInput, args.goal, args.criteria ?? [], graph,
+            { session_id: context.sessionID, message_id: context.messageID }, requestSnapshot)
           const preservationRequest = !taskInput.preserve_paths.length ? undefined : {
             node_id: graph.nodes.find((node) => node.agent === "implementer")!.id,
             paths: taskInput.preserve_paths,

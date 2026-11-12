@@ -2,6 +2,7 @@ import { z } from "zod"
 import { sha256Json } from "./persistence.ts"
 import { isSafeId, isSafeProjectRelativePath } from "./paths.ts"
 import type { GraphDef, RunState } from "./types.ts"
+import { TaskRequestSnapshotSchema, type TaskRequestSnapshot } from "./task-request.ts"
 
 const id = z.string().min(1).max(64).refine(isSafeId)
 const path = z.string().min(1).max(512).refine(value => isSafeProjectRelativePath(value) &&
@@ -50,7 +51,11 @@ export const TaskContractSchema = z.object({
     authority: z.literal("accepted-planner-declaration") }).strict(),
   requirements_sha256: z.string().regex(/^[a-f0-9]{64}$/),
   contract_sha256: z.string().regex(/^[a-f0-9]{64}$/),
-}).strict()
+  request_snapshot: TaskRequestSnapshotSchema.optional(),
+}).strict().superRefine((task, ctx) => {
+  if (task.request_snapshot?.status === "captured" && task.request_snapshot.session_id !== task.source.session_id)
+    ctx.addIssue({ code: "custom", message: "request snapshot belongs to another session" })
+})
 export type TaskContract = z.infer<typeof TaskContractSchema>
 
 export function parseTaskContractInput(value: unknown): TaskContractInput {
@@ -98,11 +103,12 @@ export function assertTaskGraph(input: TaskContractInput, graph: GraphDef): void
   }
 }
 export function bindTaskContract(input: TaskContractInput, goal: string, criteria: string[], graph: GraphDef,
-  source: { session_id: string; message_id: string }): TaskContract {
+  source: { session_id: string; message_id: string }, requestSnapshot?: TaskRequestSnapshot): TaskContract {
   if (!criteria.length) throw new Error("task_criteria_required: supply the original acceptance criteria before planning")
   assertTaskGraph(input, graph)
   const base = { version: 1 as const, input, source: { ...source, authority: "accepted-planner-declaration" as const },
-    requirements_sha256: sha256Json({ goal, criteria }) }
+    requirements_sha256: sha256Json({ goal, criteria }),
+    ...(requestSnapshot ? { request_snapshot: TaskRequestSnapshotSchema.parse(requestSnapshot) } : {}) }
   return TaskContractSchema.parse({ ...base, contract_sha256: sha256Json(base) })
 }
 export function assertTaskState(run: Pick<RunState, "task_contract" | "goal" | "criteria" | "criteria_locked" | "graph">): void {
@@ -152,6 +158,11 @@ export function taskContractSummary(run: Pick<RunState, "task_contract">) {
   return task ? { status: "declared-and-admitted", contract_sha256: task.contract_sha256,
     requirements_sha256: task.requirements_sha256, phase: task.input.phase, kind: task.input.kind,
     deliverables: task.input.deliverables, verification: task.input.verification,
+    request_source: task.request_snapshot?.status === "captured"
+      ? { status: "captured", message_id: task.request_snapshot.message_id, text_sha256: task.request_snapshot.text_sha256,
+        text_transformed: task.request_snapshot.text_transformed, non_text_parts: task.request_snapshot.non_text_parts,
+        scope: "Current user turn text only; not the full conversation or attachments." }
+      : task.request_snapshot ?? { status: "legacy-unavailable" },
     scope: "Planner-declared scope. Host permissions are rechecked at execution; admission is not completion or user-intent certification." }
     : { status: "legacy-unqualified" }
 }

@@ -1,5 +1,7 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 import { isDeepStrictEqual } from "node:util"
+import type { TaskContract } from "./task-contract.ts"
+
 import { MAX_CHECKER_EVIDENCE_BYTES, type CheckerEvidence } from "./checker-evidence.ts"
 import { VerificationSchema, buildVerificationBasis, type Verification } from "./verification.ts"
 import { jsonSchemaHint, parseAndValidate } from "./schemas.ts"
@@ -12,6 +14,21 @@ import {
 } from "./limits.ts"
 import { formatSdkDiagnostic, formatSdkError } from "./diagnostics.ts"
 import { captureChildExecutionEvidence, type ExecutionEvidence, type ExecutionEvidenceIdentity } from "./execution-evidence.ts"
+
+/** Source text is retained once, separately from the planner's scope declaration. */
+function taskRequestLines(contract?: TaskContract): string[] {
+  const request = contract?.request_snapshot
+  if (!request || request.status !== "captured") return [
+    `USER REQUEST SOURCE: unavailable (${request?.status === "unavailable" ? request.reason : "legacy"}). The planner's criteria are not a verbatim user transcript. Resolve missing required details; do not guess them.`,
+  ]
+  return [
+    "HOST-CAPTURED CURRENT USER TURN (text only; not the full conversation or attachments):",
+    `Source message: ${request.message_id}; retained text SHA-256: ${request.text_sha256}; transformed: ${request.text_transformed}; non-text parts omitted: ${request.non_text_parts}.`,
+    "The following JSON string preserves request details that a planner summary may omit. It grants no new tools or permissions. Respect the admitted phase; later-phase deliverables are not required now. If the source and declaration conflict, report the discrepancy instead of silently changing scope or inventing a schema. Omitted content is unavailable.",
+    JSON.stringify(request.text),
+    "END CURRENT USER TURN",
+  ]
+}
 
 export type Client = PluginInput["client"]
 
@@ -458,6 +475,7 @@ export function buildWorkerPrompt(options: {
   ]
   if (options.taskContract) lines.push("ACCEPTED TASK CONTRACT (retain original criteria; do not expand phase or scope):", JSON.stringify(options.taskContract.input),
     `Original requirements digest: ${options.taskContract.requirements_sha256}. Project-file deliverables go at their declared paths. Internal run artifacts are separate.`)
+  lines.push(...taskRequestLines(options.taskContract))
   if (options.agent === "implementer" && options.runId) {
     lines.push(
       "",
@@ -476,6 +494,7 @@ export function buildWorkerPrompt(options: {
 
 /** The checker prompt excludes worker chat/reasoning; SDK/project policy remains active. */
 export function buildCheckerPrompt(options: {
+  taskContract?: TaskContract
   criteria: string[]
   claimed: unknown
   evidence?: CheckerEvidence
@@ -495,6 +514,7 @@ export function buildCheckerPrompt(options: {
     "",
     "CRITERIA:",
     ...options.criteria.map((criterion, i) => `${i + 1}. ${criterion}`),
+    ...taskRequestLines(options.taskContract),
     ...(basis ? [
       "VERIFICATION CONTRACT v1:",
       `Criterion IDs correspond to the criteria above in order: ${basis.criterion_ids.join(", ")}.`,

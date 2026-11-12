@@ -1,6 +1,26 @@
 # V1 Phase One implementation status
 
-PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current pending candidate is 0.5.7 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as acceptance of the current candidate.
+PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current pending candidate is 0.5.8 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as acceptance of the current candidate.
+
+## 0.5.8 follow-up — preserve current user-request details
+
+The [verification-repair follow-up](evidence/evidence-repair-20261112/README.md)
+remains negative: Build completes both controls; ALG reaches its cumulative
+usage cutoff on both. The coding artifact passes independently, but checker
+evidence gaps strand it. The report loses the explicit user-provided schema in
+the planner-to-child handoff before compaction. Preserve these losses; they do
+not demonstrate improvement or a compaction-loss rate.
+
+The next candidate captures bounded, literal current-user-turn text through the
+host SDK, binds its identity and digest into the existing immutable task
+contract, and supplies it to workers and checkers. Compaction retains a pointer;
+resume uses the stored source. Coverage explicitly excludes earlier conversation,
+attachments and unavailable/oversized text. Older runs remain readable without
+invented source evidence. This is a handoff repair, not a shared task allowance
+or a claim that a planner perfectly preserves all user requirements. Recognized
+sensitive text is declined entirely; encoded strings are inspected without
+changing retained literals. Credential detection is heuristic, not a DLP
+guarantee. A turn containing only "continue" does not restore earlier task text.
 
 ## 0.5.7 implementation — admission and trustworthy comparison apparatus
 

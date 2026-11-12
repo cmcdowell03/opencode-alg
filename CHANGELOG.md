@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.8 candidate — preserve host user-request details across child handoffs
+
+- Planning captures bounded literal text from the current host user turn, using the calling assistant message's exact parent identity. The text and coverage metadata are bound into the existing task contract and survive persistence and resume. Recognized sensitive content is declined entirely, not rewritten; detection is heuristic, not a secret-free guarantee. Missing APIs, mismatched identities, oversized requests and attachments remain explicit limitations; this is not a transcript of the full conversation.
+- Workers and fresh checkers receive that source text as well as planner-declared criteria and the admitted phase. This addresses an observed report handoff where the parent omitted an explicit schema and its children incorrectly treated the schema as unavailable. It does not authorize later-phase work or grant tools.
+- Compaction carries a source digest and retrieval pointer, not another full transcript. New snapshots need the 0.5.8 reader; older compatible runs remain readable. No task-wide provider-call cap, superiority result or V2 implementation is claimed.
+
 ## 0.5.7 candidate — task admission and benchmark qualification
 
 - Follow-up to the current Build control: checker evidence trims bounded command output before sacrificing exact command/cwd/exit metadata; full durable receipts remain unchanged. Worker prompts deduplicate exact task copies, and role guidance asks for criterion-specific evidence before edits and verification-gap repair without unnecessary reimplementation. No criterion is waived.

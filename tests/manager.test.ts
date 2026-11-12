@@ -293,7 +293,7 @@ describe("v0.2 side-by-side release manager", () => {
     runManager({ command: "install", configDir: config, source }, { runner })
     const state = receipt(config)
     expect(state.generations[0]?.capabilities).toBeUndefined()
-    expect(state.generations[0]?.durable_state.compatible_package_versions).toEqual(["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1", "0.5.0", "0.5.1", "0.5.2", "0.5.3", "0.5.4", "0.5.5", "0.5.6", "0.5.7"])
+    expect(state.generations[0]?.durable_state.compatible_package_versions).toEqual(["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1", "0.5.0", "0.5.1", "0.5.2", "0.5.3", "0.5.4", "0.5.5", "0.5.6", "0.5.7", "0.5.8"])
     expect(runManager({ command: "doctor", configDir: config }, { runner }).capability_status).toMatchObject({
       status: "disabled", enabled: false, manifest: "not-recorded", runtime_check: "not-run",
     })

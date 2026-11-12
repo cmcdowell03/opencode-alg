@@ -19,10 +19,31 @@ function fixture() {
   const task = { version: 1 as const, kind: "project_change" as const, discovery: "not_required" as const, phase: "preparation" as const,
     deliverables: [{ destination: "project_file" as const, path: "preparation.md", producer_node: "implement" }],
     verification: { checker_node: "check", execution: "none" as const }, preserve_paths: [] }
-  return { project, tools, context, task, deny: () => { edit = "deny" }, calls: () => ({ childCalls, agentLookups }) }
+  return { project, tools, context, task, client, deny: () => { edit = "deny" }, calls: () => ({ childCalls, agentLookups }) }
 }
 function data(result: unknown): any { return JSON.parse((result as { output: string }).output) }
 describe("tool task contract admission", () => {
+  test("planning captures the actual host user turn rather than trusting a lossy planner summary", async () => {
+    const f = fixture(), lookups: string[] = []
+    const text = "Prepare only. Final schema: numerator, denominator, rate, window, sources, conflicts, limitations."
+    Object.assign(f.client.session, { message: async ({ path }: any) => {
+      lookups.push(path.messageID)
+      return { data: path.messageID === "message"
+        ? { info: { id: "message", sessionID: "owner", role: "assistant", parentID: "original-user" }, parts: [] }
+        : { info: { id: "original-user", sessionID: "owner", role: "user" }, parts: [{ type: "text", text }] } }
+    } })
+    const result = data(await f.tools.alg_plan.execute({ goal: "Prepare according to required schema", criteria: ["Write preparation.md"], task_contract: f.task }, f.context))
+    expect(result.error).toBeUndefined()
+    expect(lookups).toEqual(["message", "original-user"])
+    const saved = loadRunForOwner(f.project, result.run_id, "owner")!
+    expect(saved.task_contract!.request_snapshot).toMatchObject({ status: "captured", text, message_id: "original-user" })
+    expect(result.task_admission.request_source.status).toBe("captured")
+    Object.assign(f.client.session, { message: async () => { throw new Error("later source unavailable") } })
+    const status = data(await f.tools.alg_status.execute({ run_id: result.run_id, detail: "full" }, f.context))
+    expect(status.task_contract.request_snapshot).toEqual(saved.task_contract!.request_snapshot)
+    expect(f.calls().childCalls).toBe(0)
+  })
+
   test("new plans cannot silently omit contracts or original criteria", async () => {
     const f = fixture()
     expect(data(await f.tools.alg_plan.execute({ goal: "Write preparation" }, f.context)).error).toContain("task_contract_required")
@@ -45,6 +66,7 @@ describe("tool task contract admission", () => {
       task_contract: f.task }, f.context))
     expect(result.error).toBeUndefined(); expect(result.template).toBe("coding-compact")
     expect(result.task_admission.phase).toBe("preparation")
+    expect(result.task_admission.request_source).toEqual({ status: "unavailable", reason: "unsupported" })
     const run = loadRunForOwner(f.project, result.run_id, "owner")!
     expect(run.task_contract?.source).toEqual({ session_id: "owner", message_id: "message", authority: "accepted-planner-declaration" })
     const status = data(await f.tools.alg_status.execute({ run_id: result.run_id }, f.context))

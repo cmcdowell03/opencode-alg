@@ -14,3 +14,4 @@ scripts/verify-duckdb-manifest.ts text eol=lf
 capabilities/datascience/** text eol=lf
 capabilities/connectors/** text eol=lf
 docs/evidence/current-control-20261112/** -text
+docs/evidence/evidence-repair-20261112/** -text

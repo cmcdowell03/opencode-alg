@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test"
+import { createHash } from "node:crypto"
 import { existsSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { assertTaskGraph, assertTaskHostCapabilities, assertTaskState, bindTaskContract, parseTaskContractInput,
@@ -8,6 +9,7 @@ import { createRun, loadRun, persistRun } from "../src/store.ts"
 import { formatCompactionContext } from "../src/compaction.ts"
 import { executeRun } from "../src/executor.ts"
 import { taskEvidence } from "../src/task-evidence.ts"
+import { TaskRequestSnapshotSchema } from "../src/task-request.ts"
 import { executeContext, removeProject, tempProject } from "./helpers.ts"
 
 const projects: string[] = []
@@ -27,6 +29,37 @@ function fixture(input = contract()) {
 const output = { summary: ["done"], files_touched: ["result.json"], commands_run: [], risks: [], done: true }
 
 describe("declared task admission", () => {
+  test("host user request survives persistence, compaction and both child handoffs without trusting a shortened summary", async () => {
+    const root = project(), graph = getTemplate("coding-compact")
+    const text = "Prepare only. The later result requires fields numerator, denominator, rate, window, sources, conflicts, limitations. Do not write the final report yet."
+    const snapshot = TaskRequestSnapshotSchema.parse({ status: "captured", session_id: "session-owner", message_id: "user-original",
+      text, text_sha256: createHash("sha256").update(text).digest("hex"), text_transformed: false, non_text_parts: 0 })
+    if (snapshot.status !== "captured") throw new Error("fixture must capture the request")
+    const task = bindTaskContract(contract({ phase: "preparation" }), "Prepare using the required schema", ["Create result.json"], graph,
+      { session_id: "session-owner", message_id: "assistant-plan" }, snapshot)
+    const run = createRun({ goal: "Prepare using the required schema", criteria: ["Create result.json"], graph,
+      taskContract: task, projectDirectory: root, ownerSessionId: "session-owner" })
+    const restored = loadRun(root, run.run_id)!
+    expect(restored.task_contract?.request_snapshot).toEqual(snapshot)
+    const compact = formatCompactionContext(restored, 4096)
+    expect(compact).toContain(snapshot.text_sha256)
+    expect(compact).not.toContain(text)
+    const roles: string[] = []
+    await executeRun(restored, { ...executeContext(root), sessionRunner: async opts => {
+      roles.push(opts.agent)
+      expect(opts.userPrompt).toContain(JSON.stringify(text))
+      expect(opts.userPrompt).toContain("later-phase deliverables are not required now")
+      if (opts.agent === "implementer") writeFileSync(join(root, "result.json"), "{}")
+      return { session_id: "child", text: "", parsed: opts.agent === "checker" ? { passed: true, score: 10, failures: [] } : output }
+    } })
+    expect(roles).toEqual(["implementer", "checker"])
+    const mutated = loadRun(root, run.run_id)!
+    mutated.task_contract!.request_snapshot = { status: "unavailable", reason: "no_text" }
+    expect(() => assertTaskState(mutated)).toThrow("task_contract_drift")
+    expect(() => persistRun(mutated, root)).toThrow()
+    expect(loadRun(root, run.run_id)!.task_contract!.request_snapshot).toEqual(snapshot)
+  })
+
   test("project deliverables reject research-only graphs and do not create durable work", () => {
     const root = project(), input = contract({ deliverables: [{ destination: "project_file", path: "preparation.md", producer_node: "research" }] })
     expect(() => bindTaskContract(input, "Prepare", ["Write preparation.md"], getTemplate("research-diamond"),

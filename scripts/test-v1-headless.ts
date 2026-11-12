@@ -62,6 +62,7 @@ export const EvidenceSchema = z.object({
     run_id: z.string().nullable(), input: TaskContractInputSchema.nullable(), original_goal: z.string().nullable(), original_criteria: z.array(z.string().max(2000)).max(100),
     requirements_sha256: z.string().regex(/^[a-f0-9]{64}$/).nullable(), contract_sha256: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
     persisted_before_compaction: z.boolean(), persisted_after_compaction: z.boolean(), persisted_after_restart: z.boolean(), persisted_after_final_restart: z.boolean(), digests_stable: z.boolean(),
+    user_request_captured: z.boolean().optional(), user_request_sha256: z.string().regex(/^[a-f0-9]{64}$/).nullable().optional(),
   }).strict().optional(),
   source: z.object({ package_version: z.string(), root: z.string(), loaded_root: z.string(), sha256: z.string().regex(/^[a-f0-9]{64}$/), node: z.string(), bun: z.string().nullable() }).strict(),
   host: z.object({ executable: z.string(), version: z.string(), platform: z.string(), arch: z.string(), libc: z.string(), starts: z.number().int().min(0).max(3), restarts: z.number().int().min(0).max(2), pids: z.array(z.number().int().positive()).max(3), clean_exits: z.array(z.boolean()).max(3) }).strict(),
@@ -449,6 +450,8 @@ function resultCheckpoint(project: string, sessionId: string): { revision: numbe
 }
 
 interface PersistedTaskContractSnapshot {
+  userRequestMatches: boolean
+  userRequestSha256: string | null
   runId: string
   goal: string
   criteria: string[]
@@ -473,6 +476,10 @@ function readPersistedTaskContract(project: string): PersistedTaskContractSnapsh
         input: parsed.success ? parsed.data.input : null,
         requirementsSha256: parsed.success ? parsed.data.requirements_sha256 : null,
         contractSha256: parsed.success ? parsed.data.contract_sha256 : null,
+        userRequestMatches: parsed.success && parsed.data.request_snapshot?.status === "captured" &&
+          parsed.data.request_snapshot.text === HEADLESS_INITIAL_PROMPT && !parsed.data.request_snapshot.text_transformed &&
+          parsed.data.request_snapshot.non_text_parts === 0,
+        userRequestSha256: parsed.success && parsed.data.request_snapshot?.status === "captured" ? parsed.data.request_snapshot.text_sha256 : null,
         valid: parsed.success && JSON.stringify(parsed.data.input) === JSON.stringify(HEADLESS_TASK_CONTRACT),
       }
     } catch { /* malformed or unrelated run rows are not evidence */ }
@@ -483,7 +490,7 @@ function readPersistedTaskContract(project: string): PersistedTaskContractSnapsh
 function taskContractPersisted(snapshot: PersistedTaskContractSnapshot | null): snapshot is PersistedTaskContractSnapshot {
   return !!snapshot && snapshot.valid && snapshot.goal === HEADLESS_PLAN_GOAL &&
     JSON.stringify(snapshot.criteria) === JSON.stringify(HEADLESS_ORIGINAL_CRITERIA) &&
-    !!snapshot.requirementsSha256 && !!snapshot.contractSha256
+    !!snapshot.requirementsSha256 && !!snapshot.contractSha256 && snapshot.userRequestMatches && !!snapshot.userRequestSha256
 }
 
 function portNumber(address: string | undefined): number {
@@ -789,6 +796,8 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
       persisted_before_compaction: taskContractPersisted(taskContractBefore), persisted_after_compaction: taskContractPersisted(taskContractCompacted),
       persisted_after_restart: taskContractPersisted(taskContractAfterRestart), persisted_after_final_restart: taskContractPersisted(taskContractAfterFinalRestart),
       digests_stable: taskContractDigestsStable,
+      user_request_captured: taskContractBefore?.userRequestMatches === true,
+      user_request_sha256: taskContractBefore?.userRequestSha256 ?? null,
     }
     const wasPassed = failure === null && checkerProbe?.passed === true && taskAdmissionProbe?.passed === true && taskAdmissionProbe.child_calls === 0 && !credentialsInherited && globalConfigUnchanged && started.length === 3 && exited.filter(Boolean).length === 3 && pluginProofs.length === 3 && pluginProofs.every(Boolean) && taskContractDigestsStable &&
       ids.length === ALG_TOOL_IDS.length && ALG_TOOL_IDS.every((id) => ids.includes(id)) && initialToolCalls.includes("alg_context_status") && initialToolCalls.includes("alg_investigation") &&

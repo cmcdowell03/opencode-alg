@@ -86,6 +86,25 @@ Make a plan display its necessary calls and remaining verification allowance. Re
 
 A multi-phase task must keep one host-owned task identity, accepted contract and cumulative allowance through continuation. Design this as a compatible extension of the existing root/task records, not a new database or arbitrary nested run tree. New plans, retries, compaction or graph revisions cannot reset the allowance. Reuse the investigation ledger's existing job/cost reservations rather than adding competing remote accounting.
 
+V1 implementation boundary: reserve **child dispatches** through the existing
+root checkpoint lock before ALG launches them; a dispatch is not one provider
+request, because a child can execute multiple model/tool steps. Root planning
+and host compaction also occur outside ALG's dispatch boundary. Attribute those
+with deduplicated host observations and explicit missing/late usage, but do not
+call a polled cutoff a hard provider-call or invoice cap. A hard global request
+cap requires a verified pre-provider host gate covering root, child and summary
+requests; the installed V1 hook types alone do not establish that guarantee.
+Keep the external comparison cutoff and its overshoot receipts. Until a host
+gate is qualified, describe production limits as bounded ALG dispatch plus
+observed host usage. This is a V1 constraint, not authorization for V2 work.
+
+The latest controls also prioritize source fidelity before additional graphs:
+preserve bounded host user-turn text alongside the planner's declaration, and
+establish the required verification scope before edits. Missing field definitions
+in a child prompt are delegation loss even when the durable planner summary is
+perfectly preserved. A current-turn snapshot does not recover earlier context,
+and a late file read cannot manufacture a before-work preservation baseline.
+
 Start with accurately observable call/attempt and elapsed limits. Provider usage is a separately labelled, potentially delayed observation; unavailable billing is never zero. Define crash reconciliation and in-flight overshoot before treating usage as enforceable. A hard dollar ceiling needs an independently enforceable provider/account control, not the current zero-valued cost field.
 
 Acceptance: synthetic multi-phase continuations preserve the allowance, reserve final verification, avoid repeated compatible work and expose the exact reason for stopping. Report quality-versus-resource tradeoffs on the frozen easy controls before changing default graph selection.

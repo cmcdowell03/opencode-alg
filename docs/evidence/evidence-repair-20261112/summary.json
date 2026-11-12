@@ -1,0 +1,382 @@
+[
+  {
+    "arm": "1-wafer-count-commonjs-alg_default",
+    "status": "stopped",
+    "stop": "reported_component_limit",
+    "artifact_passed": true,
+    "scored_task_success": false,
+    "eligibility": {
+      "artifactOutcome": "passed",
+      "workflowEligible": false,
+      "operationalEligible": false,
+      "comparisonEligible": false,
+      "reasons": [
+        "workflow_incomplete",
+        "service_isolation_unqualified"
+      ]
+    },
+    "seconds": 113.062,
+    "turns": 19,
+    "usage": {
+      "components": {
+        "input": {
+          "reportedTotal": 66593,
+          "reportedTurns": 19,
+          "unknownTurns": 0
+        },
+        "output": {
+          "reportedTotal": 3707,
+          "reportedTurns": 19,
+          "unknownTurns": 0
+        },
+        "reasoning": {
+          "reportedTotal": 452,
+          "reportedTurns": 19,
+          "unknownTurns": 0
+        },
+        "cacheRead": {
+          "reportedTotal": 147200,
+          "reportedTurns": 19,
+          "unknownTurns": 0
+        },
+        "cacheWrite": {
+          "reportedTotal": 0,
+          "reportedTurns": 19,
+          "unknownTurns": 0
+        }
+      },
+      "totalReportedTokens": 217952,
+      "turns": {
+        "complete": 19,
+        "partial": 0,
+        "unknown": 0
+      },
+      "billing": "not_estimated",
+      "coverage": "observed_session_fields_only"
+    },
+    "requested_compaction": {
+      "requested": false,
+      "recoveryRequired": false,
+      "restarted": false,
+      "compactionRecovered": false,
+      "compaction": null,
+      "phase1": null
+    },
+    "census": {
+      "qualified": true,
+      "databaseSessions": 4,
+      "databaseMessages": 23,
+      "observedSessions": 4,
+      "observedMessages": 23,
+      "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+    },
+    "source_unchanged": true,
+    "cleanup": true,
+    "auth_removed": true
+  },
+  {
+    "arm": "1-wafer-count-commonjs-build",
+    "status": "completed",
+    "stop": null,
+    "artifact_passed": true,
+    "scored_task_success": true,
+    "eligibility": {
+      "artifactOutcome": "passed",
+      "workflowEligible": true,
+      "operationalEligible": false,
+      "comparisonEligible": false,
+      "reasons": [
+        "service_isolation_unqualified"
+      ]
+    },
+    "seconds": 37.284,
+    "turns": 6,
+    "usage": {
+      "components": {
+        "input": {
+          "reportedTotal": 7786,
+          "reportedTurns": 6,
+          "unknownTurns": 0
+        },
+        "output": {
+          "reportedTotal": 1164,
+          "reportedTurns": 6,
+          "unknownTurns": 0
+        },
+        "reasoning": {
+          "reportedTotal": 8,
+          "reportedTurns": 6,
+          "unknownTurns": 0
+        },
+        "cacheRead": {
+          "reportedTotal": 33408,
+          "reportedTurns": 6,
+          "unknownTurns": 0
+        },
+        "cacheWrite": {
+          "reportedTotal": 0,
+          "reportedTurns": 6,
+          "unknownTurns": 0
+        }
+      },
+      "totalReportedTokens": 42366,
+      "turns": {
+        "complete": 6,
+        "partial": 0,
+        "unknown": 0
+      },
+      "billing": "not_estimated",
+      "coverage": "observed_session_fields_only"
+    },
+    "requested_compaction": {
+      "requested": false,
+      "recoveryRequired": false,
+      "restarted": false,
+      "compactionRecovered": false,
+      "compaction": null,
+      "phase1": null
+    },
+    "census": {
+      "qualified": true,
+      "databaseSessions": 1,
+      "databaseMessages": 7,
+      "observedSessions": 1,
+      "observedMessages": 7,
+      "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+    },
+    "source_unchanged": true,
+    "cleanup": true,
+    "auth_removed": true
+  },
+  {
+    "arm": "2-wafer-report-staged-alg_default",
+    "status": "stopped",
+    "stop": "reported_component_limit",
+    "artifact_passed": false,
+    "scored_task_success": false,
+    "eligibility": {
+      "artifactOutcome": "failed",
+      "workflowEligible": false,
+      "operationalEligible": false,
+      "comparisonEligible": false,
+      "reasons": [
+        "workflow_incomplete",
+        "service_isolation_unqualified"
+      ]
+    },
+    "seconds": 136.969,
+    "turns": 20,
+    "usage": {
+      "components": {
+        "input": {
+          "reportedTotal": 74252,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "output": {
+          "reportedTotal": 4231,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "reasoning": {
+          "reportedTotal": 227,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "cacheRead": {
+          "reportedTotal": 127360,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "cacheWrite": {
+          "reportedTotal": 0,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        }
+      },
+      "totalReportedTokens": 206070,
+      "turns": {
+        "complete": 20,
+        "partial": 0,
+        "unknown": 0
+      },
+      "billing": "not_estimated",
+      "coverage": "observed_session_fields_only"
+    },
+    "requested_compaction": {
+      "requested": false,
+      "recoveryRequired": true,
+      "restarted": false,
+      "compactionRecovered": false,
+      "compaction": null,
+      "phase1": null
+    },
+    "census": {
+      "qualified": true,
+      "databaseSessions": 6,
+      "databaseMessages": 26,
+      "observedSessions": 6,
+      "observedMessages": 26,
+      "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+    },
+    "source_unchanged": true,
+    "cleanup": true,
+    "auth_removed": true
+  },
+  {
+    "arm": "2-wafer-report-staged-build",
+    "status": "completed",
+    "stop": null,
+    "artifact_passed": true,
+    "scored_task_success": true,
+    "eligibility": {
+      "artifactOutcome": "passed",
+      "workflowEligible": true,
+      "operationalEligible": false,
+      "comparisonEligible": false,
+      "reasons": [
+        "service_isolation_unqualified"
+      ]
+    },
+    "seconds": 73.14,
+    "turns": 11,
+    "usage": {
+      "components": {
+        "input": {
+          "reportedTotal": 14773,
+          "reportedTurns": 11,
+          "unknownTurns": 0
+        },
+        "output": {
+          "reportedTotal": 2674,
+          "reportedTurns": 11,
+          "unknownTurns": 0
+        },
+        "reasoning": {
+          "reportedTotal": 19,
+          "reportedTurns": 11,
+          "unknownTurns": 0
+        },
+        "cacheRead": {
+          "reportedTotal": 57344,
+          "reportedTurns": 11,
+          "unknownTurns": 0
+        },
+        "cacheWrite": {
+          "reportedTotal": 0,
+          "reportedTurns": 11,
+          "unknownTurns": 0
+        }
+      },
+      "totalReportedTokens": 74810,
+      "turns": {
+        "complete": 11,
+        "partial": 0,
+        "unknown": 0
+      },
+      "billing": "not_estimated",
+      "coverage": "observed_session_fields_only"
+    },
+    "requested_compaction": {
+      "requested": true,
+      "recoveryRequired": true,
+      "restarted": true,
+      "compactionRecovered": true,
+      "compaction": {
+        "request": {
+          "id": "c5c5cfd7319eb62e3ed75c6420843f77",
+          "requestedAt": "2026-11-12T22:34:41.451Z",
+          "rootSessionId": "ses_e2e1a4aedffequZCUyAQp7fAzu"
+        },
+        "requestAcceptance": "accepted",
+        "marker": {
+          "id": "msg_1d1e61db2001l8xNdlbW2EuuYf",
+          "sessionId": "ses_e2e1a4aedffequZCUyAQp7fAzu",
+          "matchesRequest": true,
+          "outcome": "new_and_persisted",
+          "creationTime": "created_after_request"
+        },
+        "summary": {
+          "id": "msg_1d1e61dba001ayayL021cumZ1M",
+          "parentID": "msg_1d1e61db2001l8xNdlbW2EuuYf",
+          "outcome": "terminal_linked"
+        },
+        "continuation": {
+          "status": "completed",
+          "userMessageID": "msg_1d1e654b30018OMjlUrrWMaPXw",
+          "assistantID": "msg_1d1e6be400015q2HB1K3gCUFk3",
+          "scorePassed": true,
+          "linked": true
+        },
+        "qualified": true
+      },
+      "phase1": {
+        "files": [
+          {
+            "path": ".opencode/skills/wafer-analysis/SKILL.md",
+            "bytes": 1270,
+            "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+          },
+          {
+            "path": "data/manual-review.json",
+            "bytes": 359,
+            "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+          },
+          {
+            "path": "data/system-export.json",
+            "bytes": 558,
+            "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+          },
+          {
+            "path": "preparation.md",
+            "bytes": 1970,
+            "sha256": "a609fc3c93644bab63aef00c32c570b07bff05d0164de29f10b9f3274d660e25"
+          }
+        ],
+        "at_ms": 26769,
+        "preparation_content": "# Wafer evidence report preparation\n\n## Reporting date and window\n\n- Reporting date: 2025-04-01 UTC, as stated by both sources.\n- Window: inclusive start `2025-04-01T00:00:00Z`; exclusive end `2025-04-02T00:00:00Z`; timezone `UTC`.\n- The source files specify a reporting date but provide no individual event timestamps, so the window relies on the source-level date.\n\n## Sources\n\n- Primary: `data/system-export.json`, source ID `SYS-APR-01` (synthetic system export).\n- Supplemental: `data/manual-review.json`, source ID `MR-APR-01` (synthetic manual review sheet).\n\n## Calculation plan\n\nUse the system export as primary. Count distinct system `wafer_id` values for the denominator and distinct wafers with a system defect for the numerator; repeated inspection events do not add wafers. The system has four distinct wafers (W11, W12, W13, W14); W12 is defective in both of its system events and counts once. Thus the planned numerator is 1, denominator is 4, and rate is 1 / 4 = 0.25. Manual review supplements the evidence and does not overwrite the system result.\n\n## Conflict\n\n- W13: system `defect` is `false`; manual `reviewer_defect` is `true`. Status: `unresolved`. The system observation remains primary for the calculation; the disagreement creates uncertainty about W13's defect status.\n\n## Planned report fields\n\n- `numerator`: 1; `denominator`: 4; `rate`: 0.25.\n- `window`: `{\"start\":\"2025-04-01T00:00:00Z\",\"endExclusive\":\"2025-04-02T00:00:00Z\",\"timezone\":\"UTC\"}`.\n- `sources`: `data/system-export.json` and `data/manual-review.json`.\n- `conflicts`: an entry with `wafer_id` `W13`, `system_defect` `false`, `manual_defect` `true`, and `status` `unresolved`.\n- `limitations`: include the exact sentence \"Synthetic analysis only; not process validation.\" Also note the source-level date without individual event timestamps and the unresolved W13 disagreement.\n\n## STOP\n\nPreparation only. Stop here; create `report.json` in the subsequent phase after restart.\n",
+        "report_absent": true,
+        "independent_score": {
+          "passed": true,
+          "checks": [
+            {
+              "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+              "passed": true
+            },
+            {
+              "id": "protected:data/system-export.json",
+              "passed": true
+            },
+            {
+              "id": "protected:data/manual-review.json",
+              "passed": true
+            },
+            {
+              "id": "preparation-artifact",
+              "passed": true
+            },
+            {
+              "id": "phase-one-report-absent",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "protectedFiles": 3,
+            "preparationBytes": 1970
+          }
+        }
+      }
+    },
+    "census": {
+      "qualified": true,
+      "databaseSessions": 1,
+      "databaseMessages": 14,
+      "observedSessions": 1,
+      "observedMessages": 14,
+      "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+    },
+    "source_unchanged": true,
+    "cleanup": true,
+    "auth_removed": true
+  }
+]
