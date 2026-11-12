@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url"
 import {
   ReleaseEvidenceSchema,
   RELEASE_COMMAND_IDS,
+  RELEASE_CONTROL_PATHS,
   RELEASE_COMMAND_DEADLINES_MS,
   runReleaseCommand,
   writeReleaseFailure,
@@ -311,6 +312,25 @@ describe("bounded release-gate evidence", () => {
     const tail = boundedReleaseTail(`token=secret ${"🙂".repeat(5000)}`, 128)
     expect(Buffer.byteLength(tail)).toBeLessThanOrEqual(128)
     expect(tail).not.toContain("token=secret")
+  })
+
+  test("default release identity still binds graders and plans excluded from deployment", () => {
+    const root = tempProject("alg-unpacked-release-controls-")
+    temporary.push(root)
+    const targets = ["scripts/hard-benchmark-fixtures.ts", "scripts/build-benchmark-fixtures.ts",
+      "scripts/build-benchmark.ts", "docs/v1-reliability-and-build-comparison-plan.md"]
+    for (const path of new Set([...RELEASE_CONTROL_PATHS, ...targets, "tests/fixture.test.ts", "package.json"])) {
+      mkdirSync(dirname(join(root, path)), { recursive: true })
+      writeFileSync(join(root, path), `reviewed:${path}:A\n`)
+    }
+    const baseline = computeReleaseInputIdentity(root, ["package.json"])
+    for (const path of targets) {
+      const before = readFileSync(join(root, path))
+      writeFileSync(join(root, path), before.toString().replace(/A\n$/, "B\n"))
+      expect(computeReleaseInputIdentity(root, ["package.json"]).sha256, path).not.toBe(baseline.sha256)
+      writeFileSync(join(root, path), before)
+    }
+    expect(computeReleaseInputIdentity(root, ["package.json"])).toEqual(baseline)
   })
 
   test("writes only strict bounded external evidence and artifact scanning detects caches", () => {

@@ -139,12 +139,17 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "docs/datalake-mcp-qualification.md",
 ] as const
 
-const RELEASE_CONTROL_PATHS = [
+export const RELEASE_CONTROL_PATHS = [
   "docs/alg-v1-design-index.md", "docs/alg-v1-applicability-measured-improvement-design.md", "docs/alg-v1-large-data-investigation-design.md", "docs/alg-v1-phase-one-investigation-plan.md", "docs/alg-v1-linux-bash-acceptance-plan.md", "docs/alg-v1-artifact-skill-extension.md", "docs/alg-v1-claude-review-reconciliation.md",
   "docs/skill-knowledge-graph-design.md", "docs/execution-recovery-contract.md",
   "docs/knowledge-environment-contract.md", "docs/context-decision-contract.md",
   "docs/coordination-improvement-contract.md", "docs/opencode-v2-design.md", "docs/incident-watcher-design.md",
   ".gitattributes", ".gitignore", ".npmignore", "docs/.npmignore", "scripts/.npmignore", "bun.lock", "package-lock.json", "tsconfig.json",
+  "scripts/adversarial-cases.ts", "scripts/adversarial-evaluation.ts",
+  "scripts/build-benchmark.ts", "scripts/build-benchmark-fixtures.ts", "scripts/build-benchmark-metrics.ts", "scripts/build-benchmark-transport.ts",
+  "scripts/hard-benchmark-fixtures.ts", "scripts/hard-benchmark-service.ts",
+  "docs/v1-adversarial-evaluation.md", "docs/v1-benchmark-failure-analysis.md", "docs/v1-build-benchmark.md",
+  "docs/v1-graph-evolution-adversarial-review.md", "docs/v1-reliability-and-build-comparison-plan.md",
 ] as const
 
 export function expectedPackedPaths(root = ROOT): string[] {
