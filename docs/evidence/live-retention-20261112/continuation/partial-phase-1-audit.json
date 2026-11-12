@@ -1,0 +1,187 @@
+{
+  "schema": "alg-retention-partial-artifact-audit-v1",
+  "at": "2026-11-12T21:29:05.292Z",
+  "resultSha256": "5b337f9c133a5fee5529ccf074e03491978e5b79ee09c193a83ba3a4cb32303d",
+  "phase": 1,
+  "phaseCompleted": false,
+  "stoppingReason": "observed_usage_component_threshold",
+  "source": "post-abort frozen artifact snapshot",
+  "compactionReceipt": {
+    "request": {
+      "id": "0aaa4221a314cf4a1e52b83e0bbf1b96",
+      "requestedAt": "2026-11-12T21:26:20.637Z",
+      "rootSessionId": "ses_e2e5f5106ffeIrUip3IUAYJMX0"
+    },
+    "requestAcceptance": "accepted",
+    "marker": {
+      "id": "msg_1d1a78ae4001ltpzVZGdSKU3IF",
+      "sessionId": "ses_e2e5f5106ffeIrUip3IUAYJMX0",
+      "matchesRequest": true,
+      "outcome": "new_and_persisted",
+      "creationTime": "created_after_request"
+    },
+    "summary": {
+      "id": "msg_1d1a78b9c001Ur43Hc82gHY2Fu",
+      "parentID": "msg_1d1a78ae4001ltpzVZGdSKU3IF",
+      "outcome": "terminal_linked"
+    },
+    "continuation": {
+      "status": "not_completed",
+      "linked": false
+    },
+    "qualified": false
+  },
+  "score": {
+    "passed": true,
+    "checks": [
+      {
+        "id": "criteria",
+        "category": "criteria",
+        "passed": true,
+        "expectedDigest": "ad9eeceae2f89e67dad951ffd742a9b47d9730a50ac4019e58e7e086d5ed46b6",
+        "observedDigest": "ad9eeceae2f89e67dad951ffd742a9b47d9730a50ac4019e58e7e086d5ed46b6"
+      },
+      {
+        "id": "phase",
+        "category": "phase",
+        "passed": true,
+        "expectedDigest": "912d9d2d3b8b7b7caf14879c8e98f0e861355b04a81e5c42db39a289dcf142c7",
+        "observedDigest": "912d9d2d3b8b7b7caf14879c8e98f0e861355b04a81e5c42db39a289dcf142c7"
+      },
+      {
+        "id": "skill",
+        "category": "skill",
+        "passed": true,
+        "expectedDigest": "161078e42e8fef3ba4b9c984035baa2e431a50b31a18ac95614cc6820394af13",
+        "observedDigest": "161078e42e8fef3ba4b9c984035baa2e431a50b31a18ac95614cc6820394af13"
+      },
+      {
+        "id": "source-summary",
+        "category": "source",
+        "passed": true,
+        "expectedDigest": "19ff2efb4cc430f6ed85e1cb26d430b17fb8dee82aa74afc27cc26cfa4cee2b2",
+        "observedDigest": "19ff2efb4cc430f6ed85e1cb26d430b17fb8dee82aa74afc27cc26cfa4cee2b2",
+        "basis": "independent raw-source gold plus isolated utility and node:test"
+      },
+      {
+        "id": "evidence-refs",
+        "category": "evidence",
+        "passed": true,
+        "expectedDigest": "61d32a0a3ac0fc174d9f784a1c0e20a97aa93fce880dc1cdcd0cf3fb3640a553",
+        "observedDigest": "61d32a0a3ac0fc174d9f784a1c0e20a97aa93fce880dc1cdcd0cf3fb3640a553"
+      },
+      {
+        "id": "pending-query",
+        "category": "pending_intent",
+        "passed": true,
+        "expectedDigest": "30168e38202d3b819447fd15575c31619e50ea1e99414b1e8e0b842653ad0d83",
+        "observedDigest": "30168e38202d3b819447fd15575c31619e50ea1e99414b1e8e0b842653ad0d83"
+      },
+      {
+        "id": "artifact-budget",
+        "category": "budget",
+        "passed": true,
+        "expectedDigest": "e951b74387cca0d616e6f235b8085ff31ce67d40c49609c86be6ac33adcc5a92",
+        "observedDigest": "e951b74387cca0d616e6f235b8085ff31ce67d40c49609c86be6ac33adcc5a92"
+      },
+      {
+        "id": "next-action",
+        "category": "next_action",
+        "passed": true,
+        "expectedDigest": "c8b20e5be8596d8d25f83d4f06cd8bb1b2d326302171d6f91b2b5c2887c53057",
+        "observedDigest": "c8b20e5be8596d8d25f83d4f06cd8bb1b2d326302171d6f91b2b5c2887c53057"
+      }
+    ],
+    "diagnostics": []
+  },
+  "delta": {
+    "comparable": [
+      {
+        "id": "criteria",
+        "category": "criteria",
+        "retained": true,
+        "beforeDigest": "ad9eeceae2f89e67dad951ffd742a9b47d9730a50ac4019e58e7e086d5ed46b6",
+        "afterDigest": "ad9eeceae2f89e67dad951ffd742a9b47d9730a50ac4019e58e7e086d5ed46b6",
+        "status": "retained"
+      },
+      {
+        "id": "skill",
+        "category": "skill",
+        "retained": true,
+        "beforeDigest": "161078e42e8fef3ba4b9c984035baa2e431a50b31a18ac95614cc6820394af13",
+        "afterDigest": "161078e42e8fef3ba4b9c984035baa2e431a50b31a18ac95614cc6820394af13",
+        "status": "retained"
+      },
+      {
+        "id": "source-summary",
+        "category": "source",
+        "retained": true,
+        "beforeDigest": "19ff2efb4cc430f6ed85e1cb26d430b17fb8dee82aa74afc27cc26cfa4cee2b2",
+        "afterDigest": "19ff2efb4cc430f6ed85e1cb26d430b17fb8dee82aa74afc27cc26cfa4cee2b2",
+        "status": "retained"
+      },
+      {
+        "id": "evidence-refs",
+        "category": "evidence",
+        "retained": true,
+        "beforeDigest": "61d32a0a3ac0fc174d9f784a1c0e20a97aa93fce880dc1cdcd0cf3fb3640a553",
+        "afterDigest": "61d32a0a3ac0fc174d9f784a1c0e20a97aa93fce880dc1cdcd0cf3fb3640a553",
+        "status": "retained"
+      },
+      {
+        "id": "pending-query",
+        "category": "pending_intent",
+        "retained": true,
+        "beforeDigest": "30168e38202d3b819447fd15575c31619e50ea1e99414b1e8e0b842653ad0d83",
+        "afterDigest": "30168e38202d3b819447fd15575c31619e50ea1e99414b1e8e0b842653ad0d83",
+        "status": "retained"
+      },
+      {
+        "id": "artifact-budget",
+        "category": "budget",
+        "retained": true,
+        "beforeDigest": "e951b74387cca0d616e6f235b8085ff31ce67d40c49609c86be6ac33adcc5a92",
+        "afterDigest": "e951b74387cca0d616e6f235b8085ff31ce67d40c49609c86be6ac33adcc5a92",
+        "status": "retained"
+      }
+    ],
+    "atRisk": 6,
+    "retained": 6,
+    "observedLosses": 0,
+    "interpretation": "Observable artifact/action compliance with durable files available; not hidden-context recall or a causal effect of compaction."
+  },
+  "skillAccesses": [
+    {
+      "sessionID": "ses_e2e5f5106ffeIrUip3IUAYJMX0",
+      "messageID": "msg_1d1a0bf630010YTy8usvf6ydaM",
+      "phase": "phase-0",
+      "tool": "skill",
+      "status": "completed",
+      "input": {
+        "name": "wafer-retention"
+      }
+    },
+    {
+      "sessionID": "ses_e2e5ebfc0ffeUY6B2ObtQGCJTm",
+      "messageID": "msg_1d1a14e38001yaBmiwcooqtkR7",
+      "phase": "phase-0",
+      "tool": "skill",
+      "status": "completed",
+      "input": {
+        "name": "wafer-retention"
+      }
+    },
+    {
+      "sessionID": "ses_e2e5d7083ffe2p1oWGVTKZz4Cg",
+      "messageID": "msg_1d1a2c1b2001vMbLLLySbQE7A4",
+      "phase": "phase-0",
+      "tool": "read",
+      "status": "completed",
+      "input": {
+        "filePath": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\live-retention-luna-20261112\\project\\.opencode\\skills\\wafer-retention\\SKILL.md"
+      }
+    }
+  ],
+  "interpretation": "Independent artifact audit after budget cancellation. This is partial exposure, not a completed continuation, hidden-context recall, or causal compaction-loss estimate.",
+  "artifactSha256": "6c695b28edb91303d40bde77a490eac498993004f58e32d9a4f87cd5ac9cec0c"
+}

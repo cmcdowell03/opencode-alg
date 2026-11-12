@@ -1,0 +1,1 @@
+{"status":"preflight_passed","stopReason":null,"completedPhases":0,"compactions":{"totalMarkers":0,"requestedLinked":0,"nativeLinked":0,"unlinked":0,"unknownOrigin":0},"restarts":0,"cleanup":true,"dbCensus":true}

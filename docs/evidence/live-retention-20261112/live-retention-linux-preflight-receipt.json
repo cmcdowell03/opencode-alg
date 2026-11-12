@@ -1,0 +1,58 @@
+{
+  "health": {
+    "healthy": true,
+    "version": "1.18.35"
+  },
+  "tools": [
+    "invalid",
+    "question",
+    "bash",
+    "read",
+    "glob",
+    "grep",
+    "edit",
+    "write",
+    "task",
+    "webfetch",
+    "todowrite",
+    "websearch",
+    "skill",
+    "apply_patch",
+    "alg_templates",
+    "alg_models",
+    "alg_criteria",
+    "alg_plan",
+    "alg_run",
+    "alg_status",
+    "alg_resume",
+    "alg_artifact",
+    "alg_transfer",
+    "alg_skill_evolution_status",
+    "alg_skill_evolution_audit",
+    "alg_skill_evolution_historical",
+    "alg_skill_evolution_review",
+    "alg_skill_evolution_promote",
+    "alg_skill_evolution_rollback",
+    "alg_skill",
+    "alg_memory_search",
+    "alg_memory_read",
+    "alg_context_status",
+    "alg_memory_propose",
+    "alg_investigation"
+  ],
+  "selected": {
+    "id": "gpt-6-luna",
+    "limit": {
+      "context": 1050000,
+      "input": 922000,
+      "output": 4096
+    }
+  },
+  "fixtureSkills": [
+    {
+      "name": "wafer-retention",
+      "path": ".opencode/skills/wafer-retention/SKILL.md",
+      "sha256": "c9f07f8803ed4a7a2c4c658826c3783ca759655166ac2c83d6bf7a190e50e5f1"
+    }
+  ]
+}

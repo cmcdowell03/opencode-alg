@@ -116,6 +116,7 @@ export async function runLiveRetention(config: Config) {
   const event = (value: unknown) => appendFileSync(join(root, "progress.jsonl"), scrub(JSON.stringify({ at: new Date().toISOString(), ...value as any })) + "\n")
   const put = (path: string, value: string) => { mkdirSync(dirname(join(project, path)), { recursive: true }); writeFileSync(join(project, path), value) }
   const sessions = new Map<string, any>(), messages = new Map<string, any>(), phases: any[] = [], requests: any[] = [], restarts: any[] = [], samples: any[] = [], hosts: any[] = []
+  const phasePromptsIssued = new Set<number>()
   if (continuation) {
     for (const s of JSON.parse(readFileSync(join(stateRoot, "sessions.json"), "utf8"))) sessions.set(s.id, s)
     for (const m of JSON.parse(readFileSync(join(stateRoot, "messages.json"), "utf8"))) messages.set(m.sessionID + ":" + m.info.id, m)
@@ -278,6 +279,7 @@ export async function runLiveRetention(config: Config) {
           }
         }
         const prompt = (i === 0 ? "Complete the staged mission using ALG implement/check graphs. Use the supplied project procedures. Work only inside this workspace; no installs, network or global configuration changes. Keep graph tasks small enough to finish each phase. Preserve the supplied sources and previous outputs.\n\n" : "") + fixture.phases[i]!.prompt
+        phasePromptsIssued.add(i)
         const outcome = await bounded(currentPhase, () => sendBenchmarkPrompt({ api: api!, sessionID: rootSession,
           body: { model: { providerID: config.providerID, modelID: config.modelID }, agent: "orchestrator", parts: [{ type: "text", text: prompt }] },
           deadline, cancelled: () => stopReason }))
@@ -312,6 +314,19 @@ export async function runLiveRetention(config: Config) {
     }
     if (existsSync(authCopy)) unlinkSync(authCopy)
     const endedAt = Date.now(), metric = summarizeSessionMetrics([...sessions.values()], [...messages.values()])
+    // Preserve useful partial artifacts after cancellation; never promote them
+    // into a completed continuation or count absent unfinished work as forgetting.
+    let partialArtifactAudit: unknown = null
+    const partialIndex = [...phasePromptsIssued].find(i => !phases.some(p => p.phase === i))
+    if (partialIndex !== undefined) {
+      try {
+        const score = await scoreRetentionPhase(project, partialIndex)
+        const before = phases.find(p => p.phase === partialIndex - 1)?.score
+        partialArtifactAudit = { phase: partialIndex, phaseCompleted: false, score, delta: before ? retentionDelta(before, score) : null,
+          interpretation: "Post-stop artifact compliance only. Missing or incorrect unfinished work does not establish compaction loss; this is not a completed workflow." }
+      } catch { partialArtifactAudit = { phase: partialIndex, phaseCompleted: false, error: "partial_artifact_audit_unavailable" } }
+      json(join(root, "partial-artifact-audit.json"), partialArtifactAudit)
+    }
     let dbCensus: any = { qualified: false, reason: "database_not_found" }
     const dbPath = join(stateRoot, "data/opencode/opencode.db")
     if (existsSync(dbPath)) {
@@ -342,7 +357,7 @@ export async function runLiveRetention(config: Config) {
       stopReason, startedAt, endedAt, activeWallMs: startedAt ? endedAt - startedAt : null, model: plan.model, rootSession, phases, protocolComplete,
       plannedPhases: fixture.phases.length, observedPhases: phases.length, compactions: observed, receipts, restarts, metrics: metric,
       rates: exposureQualified ? { basis: "observed bounded exposure; partial protocol permitted", requestedPerTaskHour: observed.requestedLinked / ((endedAt - startedAt) / 3_600_000), nativePerTaskHour: observed.nativeLinked / ((endedAt - startedAt) / 3_600_000), nativePer100AssistantTurns: metric.assistantTurns.total ? observed.nativeLinked * 100 / metric.assistantTurns.total : null } : null,
-      retention: aggregateRetention(phases, receipts),
+      retention: aggregateRetention(phases, receipts), partialArtifactAudit,
       dbCensus, finalCensus: final, cleanup, authCopyRemoved: !existsSync(authCopy), globalConfigurationUnchanged: snapshotGlobalOpenCodeConfig(globals, hmac).sha256 === globalBefore,
       sourceUnchanged: computeAlgSourceIdentity(repo).digest === source.digest, planSha256: sha(readFileSync(join(root, "plan.json"))),
       limits: LIVE_LIMITS, overshoot: { assistantTurns: Math.max(0, metric.assistantTurns.total - LIVE_LIMITS.assistantTurns), reportedUsageComponents: Math.max(0, metric.usage.totalReportedTokens - LIVE_LIMITS.reportedUsageComponents) },

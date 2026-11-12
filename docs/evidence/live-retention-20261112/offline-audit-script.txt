@@ -1,0 +1,22 @@
+import { readFileSync, writeFileSync } from "node:fs"
+import { resolve, join } from "node:path"
+import { createHash } from "node:crypto"
+import { scoreRetentionPhase } from "../opencode-alg-v1/scripts/live-retention-fixture.ts"
+import { retentionDelta } from "../opencode-alg-v1/scripts/live-retention.ts"
+const root = resolve(import.meta.dir, "live-retention-luna-20261112-continuation-2")
+const result = JSON.parse(readFileSync(join(root, "result.json"), "utf8"))
+const parent = resolve(import.meta.dir, "live-retention-luna-20261112")
+const score = await scoreRetentionPhase(join(parent, "project"), 1)
+const sha = (s:string|Buffer) => createHash("sha256").update(s).digest("hex")
+const messages = JSON.parse(readFileSync(join(root, "messages.json"), "utf8"))
+const accesses = messages.flatMap((m:any) => (m.parts ?? []).flatMap((p:any) =>
+  p.type === "tool" && (p.tool === "skill" || p.tool === "read" && /SKILL\.md/.test(JSON.stringify(p.state?.input)))
+  ? [{sessionID:m.sessionID,messageID:m.info.id,phase:m.benchmarkPhase,tool:p.tool,status:p.state?.status,input:p.state?.input}] : []))
+const report = { schema:"alg-retention-partial-artifact-audit-v1", at:new Date().toISOString(), resultSha256:sha(readFileSync(join(root,"result.json"))),
+  phase:1, phaseCompleted:false, stoppingReason:result.stopReason, source:"post-abort frozen artifact snapshot",
+  compactionReceipt:result.receipts[0], score, delta:retentionDelta(result.phases[0].score,score), skillAccesses:accesses,
+  interpretation:"Independent artifact audit after budget cancellation. This is partial exposure, not a completed continuation, hidden-context recall, or causal compaction-loss estimate.",
+  artifactSha256:sha(readFileSync(join(parent,"project/artifacts/phase-1.json"))) }
+writeFileSync(join(root,"partial-phase-1-audit.json"),JSON.stringify(report,null,2)+"\n",{flag:"wx"})
+console.log(JSON.stringify({score:score.passed,checks:score.checks.map(c=>({id:c.id,passed:c.passed})),delta:report.delta,skillAccesses:accesses}))
+

@@ -1,0 +1,31 @@
+fatal: detected dubious ownership in repository at '/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1'
+To add an exception for this directory, call:
+
+	git config --global --add safe.directory /mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1
+161 |     server = undefined
+162 |     if (!receipt.passed) throw Error("host_cleanup_failed")
+163 |   }
+164 |   const plan = {
+165 |     schema: "alg-live-retention-diagnostic-v1", createdAt: new Date().toISOString(), limits: LIVE_LIMITS, model: config.providerID + "/" + config.modelID,
+166 |     sourceCommit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: repo }).toString().trim(), runtimeDigest: source.digest,
+                        ^
+error: Command failed: git rev-parse HEAD
+fatal: detected dubious ownership in repository at '/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1'
+To add an exception for this directory, call:
+
+	git config --global --add safe.directory /mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1
+
+ signal: null,
+ status: 128,
+ output: [ null, "", "fatal: detected dubious ownership in repository at '/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1'\nTo add an exception for this directory, call:\n\n\tgit config --global --add safe.directory /mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1\n" ],
+    pid: 426,
+ stdout: "",
+ stderr: "fatal: detected dubious ownership in repository at '/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1'\nTo add an exception for this directory, call:\n\n\tgit config --global --add safe.directory /mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1\n",
+
+      at genericNodeError (node:child_process:998:13)
+      at checkExecSyncError (node:child_process:458:27)
+      at execFileSync (node:child_process:269:31)
+      at runLiveRetention (/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1/scripts/live-retention.ts:166:19)
+      at /mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1/scripts/live-retention.ts:309:9
+
+Bun v1.3.14 (Linux x64)
