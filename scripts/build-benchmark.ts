@@ -5,6 +5,7 @@ import { dirname, join, resolve } from "node:path"
 import { createHash, randomBytes } from "node:crypto"
 import { BENCHMARK_CASES, scoreBenchmarkCase, scoreBenchmarkPreparation } from "./build-benchmark-fixtures.ts"
 import { summarizeSessionMetrics } from "./build-benchmark-metrics.ts"
+import { sendBenchmarkPrompt } from "./build-benchmark-transport.ts"
 import { computeAlgSourceIdentity } from "../src/source-identity.ts"
 import { seedVerificationHostDependencies } from "./verification-host-dependencies.ts"
 import { verificationPluginConfiguration, realUserGlobalConfigRoots, snapshotGlobalOpenCodeConfig, stopCapturedProcess } from "./live-verify.ts"
@@ -12,7 +13,7 @@ import { verificationPluginConfiguration, realUserGlobalConfigRoots, snapshotGlo
 /** Local feasibility pilot. JSON config supplies paths/provider, never credential values. */
 interface Config {
   outputRoot: string; hostExecutable: string; providerID: string; modelID: string;
-  provider: Record<string, unknown>; authFile?: string; preflightOnly?: boolean;
+  provider: Record<string, unknown>; authFile?: string; preflightOnly?: boolean; caseIds?: string[];
   ollama?: { executable: string; models: string; model: string };
 }
 const ARMS = ["build", "alg_default", "alg_targeted"] as const
@@ -50,6 +51,8 @@ function files(root:string):Array<{path:string;bytes:number;sha256:string}>{
 
 export async function runBuildBenchmark(config:Config){
   const repo=resolve(import.meta.dir,".."),root=resolve(config.outputRoot)
+  if(config.caseIds && (!config.caseIds.length || new Set(config.caseIds).size!==config.caseIds.length || config.caseIds.some(id=>!BENCHMARK_CASES.some(c=>c.id===id))))throw Error("caseIds must select distinct known cases")
+  const selectedCases=BENCHMARK_CASES.map((fixture,index)=>({fixture,index})).filter(({fixture})=>!config.caseIds||config.caseIds.includes(fixture.id))
   if(existsSync(root))throw Error("Evidence destination exists; no implicit rerun")
   mkdirSync(root,{recursive:true})
   const initialIdentity=computeAlgSourceIdentity(repo), plugin=verificationPluginConfiguration(repo)
@@ -58,9 +61,9 @@ export async function runBuildBenchmark(config:Config){
   const json=(path:string,value:unknown)=>write(path,JSON.parse(scrub(JSON.stringify(value))))
   const suiteDeadline=Date.now()+LIMITS.suiteMs
   const protocol={schema:"alg-build-pilot-v1",started_at:new Date().toISOString(),source_commit:execFileSync("git",["rev-parse","HEAD"],{cwd:repo}).toString().trim(),source_sha256:initialIdentity.digest,
-    harness_sha256:sha(readFileSync(import.meta.filename)),fixtures_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-fixtures.ts"))),metrics_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-metrics.ts"))),
+    harness_sha256:sha(readFileSync(import.meta.filename)),fixtures_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-fixtures.ts"))),metrics_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-metrics.ts"))),transport_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-transport.ts"))),prompt_transport:"prompt_async",
     model:`${config.providerID}/${config.modelID}`,limits:LIMITS,preflight_only:!!config.preflightOnly,
-    cases:BENCHMARK_CASES.map((c,index)=>({id:c.id,criteria:c.criteria,initialPrompt:c.initialPrompt,followupPrompt:c.followupPrompt??null,fixture_files:Object.entries(c.files).map(([path,text])=>({path,sha256:sha(text)})),order:index%2?["alg_targeted","alg_default","build"]:ARMS})),
+    cases:selectedCases.map(({fixture:c,index})=>({id:c.id,criteria:c.criteria,initialPrompt:c.initialPrompt,followupPrompt:c.followupPrompt??null,fixture_files:Object.entries(c.files).map(([path,text])=>({path,sha256:sha(text)})),order:index%2?["alg_targeted","alg_default","build"]:ARMS})),
     interpretation:"Single-repeat feasibility pilot. Equal external budgets; ALG internal gates are diagnostics, never the independent oracle. Session-visible usage is not proof of complete provider billing. No superiority claim.",
     targeted_mandate:TARGETED,common_instruction:COMMON,unmeasured:["actual provider invoice","hidden model calls not represented by session messages","operator minutes","production MCP cost/reuse","multi-hour reliability","hardware-normalized latency"]}
   json(join(root,"plan.json"),protocol)
@@ -75,8 +78,7 @@ export async function runBuildBenchmark(config:Config){
       json(join(root,"local-model.json"),{details:metadata.details,capabilities:metadata.capabilities})
       if(!config.preflightOnly){const t=Date.now();const warm=await fetch(localBase+"/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:config.ollama.model,prompt:"",stream:false,keep_alive:"10m"}),signal:AbortSignal.timeout(240_000)}).then(r=>r.json()) as any;json(join(root,"preload.json"),{ms:Date.now()-t,done:warm.done,eval_count:warm.eval_count??0})}
     }
-    for(let caseIndex=0;caseIndex<BENCHMARK_CASES.length;caseIndex++)for(const arm of (caseIndex%2?[...ARMS].reverse():ARMS)){
-      const fixture=BENCHMARK_CASES[caseIndex]!
+    for(const {fixture,index:caseIndex} of selectedCases)for(const arm of (caseIndex%2?[...ARMS].reverse():ARMS)){
       if(Date.now()>=suiteDeadline||knownCost>=LIMITS.reportedCostPerSuite){results.push({caseId:fixture.id,arm,status:"unissued_suite_budget",passed:false});continue}
       const dir=join(root,`${caseIndex+1}-${fixture.id}-${arm}`),project=join(dir,"project"),env=isolatedEnv(dir),authCopy=join(dir,"data/opencode/auth.json")
       mkdirSync(project,{recursive:true});for(const [path,text] of Object.entries(fixture.files)){mkdirSync(dirname(join(project,path)),{recursive:true});writeFileSync(join(project,path),text)}
@@ -84,6 +86,7 @@ export async function runBuildBenchmark(config:Config){
       seedVerificationHostDependencies(join(dir,"config/opencode"),repo)
       if(config.authFile){const saved=JSON.parse(readFileSync(config.authFile,"utf8"));const auth=saved[config.providerID];if(!auth)throw Error("configured provider is not connected");for(const value of Object.values(auth))if(typeof value==="string"&&value.length>20)secrets.push(value);mkdirSync(dirname(authCopy),{recursive:true});authCopies.push(authCopy);writeFileSync(authCopy,JSON.stringify({[config.providerID]:auth}))}
       const model=`${config.providerID}/${config.modelID}`,agents:Record<string,unknown>={build:{model},general:{model},explore:{model},compaction:{model},summary:{model},title:{model}}
+      const requiredSkills=Object.keys(fixture.files).filter(path=>/^\.opencode\/skills\/[^/]+\/SKILL\.md$/.test(path)).map(path=>({name:path.split("/")[2]!,path:resolve(project,path)}))
       if(arm!=="build"){
         const dest=join(dir,"config/opencode/agents");mkdirSync(dest,{recursive:true})
         for(const role of ["orchestrator","explorer","researcher","implementer","checker"]){let text=readFileSync(join(repo,`agents/${role}.md`),"utf8");if(role==="checker"&&arm==="alg_targeted")text+="\n\n"+TARGETED+"\n";writeFileSync(join(dest,role+".md"),text);agents[role]={model}}
@@ -91,7 +94,7 @@ export async function runBuildBenchmark(config:Config){
       const provider=structuredClone(config.provider) as any
       if(localBase)provider[config.providerID].options.baseURL=localBase+"/v1"
       const configuration={plugin:arm==="build"?[]:[plugin.source.spec],autoupdate:false,share:"disabled",snapshot:false,model,small_model:model,
-        permission:{"*":"allow",external_directory:"deny",webfetch:"deny",websearch:"deny",question:"deny"},mcp:{},compaction:{auto:false,prune:false},provider,agent:agents}
+        permission:{"*":"allow",external_directory:"deny",webfetch:"deny",websearch:"deny",question:"deny"},mcp:{},skills:{paths:requiredSkills.length?[join(project,".opencode/skills")]:[]},compaction:{auto:false,prune:false},provider,agent:agents}
       json(join(dir,"opencode.json"),configuration);json(join(dir,"alg-options.json"),{skillEvolution:{enabled:false},sessionMemory:{mode:"assist"},workspace:{mode:"observe"}})
       let server:Tracked|undefined,api:(path:string,body?:unknown,ms?:number)=>Promise<any>,base="",rootSession="",stopReason:string|null=null
       const sessions=new Map<string,any>(),messages=new Map<string,any>(),samples:any[]=[],phases:any[]=[],processes:number[]=[],start=Date.now()
@@ -129,6 +132,7 @@ export async function runBuildBenchmark(config:Config){
           if(Date.now()>=deadline)stopReason??="trial_deadline";if(stopReason||error)break
         }
         if(stopReason||error){
+          stopReason??=String(error)
           const fresh=await api("/session",undefined,2500).catch(()=>[]);for(const s of fresh)sessions.set(s.id,s)
           await Promise.all([...sessions.values()].map(s=>api(`/session/${s.id}/abort`,{},2500).catch(()=>{})))
           await Promise.race([promise,sleep(1000)]);event({phase:label,event:"stopped",reason:stopReason??String(error)});throw Error(stopReason??String(error))
@@ -147,12 +151,27 @@ export async function runBuildBenchmark(config:Config){
         if(!availableAgents.some((a:any)=>a.name===(arm==="build"?"build":"orchestrator")))throw Error("primary agent missing")
         const checker=availableAgents.find((a:any)=>a.name==="checker")
         if(arm!=="build"&&(typeof checker?.prompt!=="string"||checker.prompt.includes(TARGETED)!==(arm==="alg_targeted")))throw Error("loaded checker mandate differs from arm")
+        const discoveredSkills=requiredSkills.length?await api!("/skill"):[]
+        const pathIdentity=(path:string)=>process.platform==="win32"?resolve(path).toLowerCase():resolve(path)
+        for(const expected of requiredSkills){
+          const skill=discoveredSkills.find((s:any)=>s.name===expected.name)
+          const body=readFileSync(expected.path,"utf8").replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/,"").trim()
+          if(!skill||typeof skill.location!=="string"||pathIdentity(skill.location)!==pathIdentity(expected.path)||typeof skill.content!=="string"||skill.content.trim()!==body)throw Error(`required fixture skill unavailable or changed:${expected.name}`)
+        }
         preflight={health:await api!("/global/health"),tools:registered,agents:availableAgents.map((a:any)=>({name:a.name,mode:a.mode,model:a.model??null,steps:a.steps??null,prompt_sha256:typeof a.prompt==="string"?sha(a.prompt):null,targeted_mandate:typeof a.prompt==="string"&&a.prompt.includes(TARGETED),permission:a.permission})),selected:{provider:config.providerID,model:config.modelID,limit:selected.limit},source_sha256:initialIdentity.digest,fixture_files:files(project)}
         json(join(dir,"preflight.json"),preflight)
+        json(join(dir,"skills-preflight.json"),discoveredSkills.map((s:any)=>({name:s.name,location:s.location,content_sha256:typeof s.content==="string"?sha(s.content):null})))
         if(!config.preflightOnly){
           activeStart=Date.now();deadline=Math.min(activeStart+LIMITS.trialMs,suiteDeadline)
           rootSession=(await api!("/session",{title:`Frozen benchmark ${fixture.id} ${arm}`})).id
-          const send=(prompt:string)=>api!(`/session/${rootSession}/message`,{model:{providerID:config.providerID,modelID:config.modelID},agent:arm==="build"?"build":"orchestrator",parts:[{type:"text",text:COMMON+"\n\n"+prompt}]},LIMITS.trialMs+30_000)
+          const send=async(prompt:string)=>{
+            const outcome=await sendBenchmarkPrompt({api:api!,sessionID:rootSession,body:{model:{providerID:config.providerID,modelID:config.modelID},agent:arm==="build"?"build":"orchestrator",parts:[{type:"text",text:COMMON+"\n\n"+prompt}]},deadline,cancelled:()=>stopReason})
+            if(outcome.status==="completed"||outcome.status==="model_error")return outcome.assistant
+            if(outcome.status==="incomplete")throw Error(`model_incomplete:${outcome.finish}`)
+            if(outcome.status==="deadline")throw Error("trial_deadline")
+            if(outcome.status==="cancelled")throw Error(outcome.reason)
+            throw Error(`${outcome.status}:${outcome.error}`)
+          }
           await bounded("initial",()=>send(fixture.initialPrompt))
           if(fixture.followupPrompt){
             const prepPath=join(project,"preparation.md")
@@ -189,7 +208,7 @@ export async function runBuildBenchmark(config:Config){
     let localStopped=true;if(local)localStopped=(await stopCapturedProcess(local)).passed
     for(const name of ["id_ed25519","id_ed25519.pub"]){const p=join(root,"local-service/home/.ollama",name);if(existsSync(p))unlinkSync(p)}
     const unchanged=snapshotGlobalOpenCodeConfig(globals,hmac).sha256===before
-    const result={schema:"alg-build-pilot-v1",complete:results.length===BENCHMARK_CASES.length*ARMS.length,fatal,model:protocol.model,limits:LIMITS,results,
+    const result={schema:"alg-build-pilot-v1",complete:results.length===selectedCases.length*ARMS.length,fatal,model:protocol.model,limits:LIMITS,results,
       known_reported_cost:knownCost,global_configuration_unchanged:unchanged,local_model_stopped:localStopped,source_unchanged:computeAlgSourceIdentity(repo).digest===initialIdentity.digest}
     json(join(root,"result.json"),result);console.log(JSON.stringify({terminal:true,model:protocol.model,trials:results.length,fatal,global_configuration_unchanged:unchanged,local_model_stopped:localStopped}));
     if(fatal||!unchanged||!localStopped||results.some(r=>r.cleanup===false))process.exitCode=1
