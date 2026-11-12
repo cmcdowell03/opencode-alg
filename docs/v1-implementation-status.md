@@ -1,6 +1,6 @@
 # V1 Phase One implementation status
 
-PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current candidate is 0.5.3 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier 0.5.1/0.5.2 receipts and statements below remain historical evidence for their named commits and are not relabeled as 0.5.3 acceptance.
+PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current candidate is 0.5.4 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier 0.5.1/0.5.2 receipts and statements below remain historical evidence for their named commits and are not relabeled as 0.5.3 acceptance.
 
 **Current disposition, 11 November 2026:** the earlier 80% estimate remains withdrawn. The confirmed ledger defects and the missing local workflow contracts are implemented. Native MCP translation is configurable and tested against fixtures, not verified against the real air-gapped datalake-mcp. The checker follow-up delivers selected evidence without changing saved investigation graphs. The PR remains unmerged: the loop fix has one successful bounded local-model session, while production service qualification, scientific usefulness and general long-session reliability remain unestablished.
 

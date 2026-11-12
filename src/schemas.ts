@@ -31,7 +31,9 @@ import {
   utf8Bytes,
 } from "./limits.ts"
 import { boundDiagnosticList, safeDiagnosticText } from "./diagnostics.ts"
-import { failureListCommitment } from "./persistence.ts"
+import { failureListCommitment, sha256Json } from "./persistence.ts"
+import { FindingSchema, VerificationSchema, VerificationBasisSchema, criteriaDigest, validateVerification } from "./verification.ts"
+import { GraphRevisionReceiptsSchema } from "./graph-revision.ts"
 
 // Code-owned vocabulary only. Never use an issue's raw message or submitted
 // values as retry guidance, even for a custom refinement.
@@ -167,6 +169,7 @@ const NodeDefSchema = z
     shell_gate: ShellGateSchema.optional(),
     isolated_check: z.boolean().optional(),
     feedback_to: safeId.optional(),
+    verification: VerificationSchema.optional(),
   })
   .strict()
 
@@ -241,6 +244,9 @@ export const GraphDefSchema: z.ZodType<GraphDef> = z
       }
       if (node.isolated_check && node.agent !== "checker") {
         ctx.addIssue({ code: "custom", path: ["nodes", i, "isolated_check"], message: "isolated_check is only valid for checker nodes" })
+      }
+      if (node.verification && node.agent !== "checker") {
+        ctx.addIssue({ code: "custom", path: ["nodes", i, "verification"], message: "verification is only valid for checker nodes" })
       }
       if (node.feedback_to) {
         const directDependencies = new Set(node.depends_on)
@@ -364,6 +370,7 @@ export const CheckOut = z
     failures: boundedStrings,
     score: z.number().int().min(0).max(10),
     notes: shortText.optional(),
+    findings: z.array(FindingSchema).min(1).max(100).optional(),
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -482,6 +489,7 @@ const FilesystemRootAuthorizationReferenceSchema: z.ZodType<FilesystemRootAuthor
   )
 
 const NodeAttemptDetailShape = {
+    verification_basis: VerificationBasisSchema.optional(),
     attempt: z.number().int().positive().max(10_000),
     status: z.enum(["pending", "ready", "running", "done", "failed", "skipped"]),
     session_id: sessionId.optional(),
@@ -682,6 +690,7 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
     criteria: boundedStrings,
     criteria_locked: z.boolean(),
     graph: GraphDefSchema,
+    graph_revisions: GraphRevisionReceiptsSchema.optional(),
     status: z.enum(["planning", "running", "done", "failed", "blocked"]),
     phase: z.string().min(1).max(128),
     nodes: z.record(safeId, NodeStateSchema),
@@ -701,6 +710,12 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
   })
   .strict()
   .superRefine((run, ctx) => {
+    if (run.graph_revisions?.length) {
+      if (run.graph_revisions.at(-1)!.graph_sha256 !== sha256Json(run.graph) ||
+        run.graph_revisions.some((receipt, index, receipts) => index > 0 && receipt.parent_sha256 !== receipts[index - 1]!.graph_sha256)) {
+        ctx.addIssue({ code: "custom", path: ["graph_revisions"], message: "graph revision chain must bind the current graph" })
+      }
+    }
     const definitions = new Map(run.graph.nodes.map((node) => [node.id, node]))
     const stateKeys = Object.keys(run.nodes)
     if (stateKeys.length !== definitions.size) {
@@ -740,6 +755,8 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
             expected_attempt: archivedAttempts + i + 1,
             mode: run.mode,
             requires_shell: def.agent === "shell" || def.loop?.gate === "shell" || def.loop?.gate === "all",
+            verification_required: !!def.verification,
+            verification_criteria: run.criteria,
           })
         } catch (error) {
           ctx.addIssue({
@@ -1079,6 +1096,8 @@ export interface PersistedAttemptContext {
   expected_attempt: number
   mode?: "live" | "dry"
   requires_shell?: boolean
+  verification_required?: boolean
+  verification_criteria?: string[]
 }
 
 /**
@@ -1091,6 +1110,17 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
   const issues: string[] = []
   const add = (message: string): void => { issues.push(message) }
   const { agent, run_id: runId, node_id: nodeId, expected_attempt: expected } = context
+  if (context.verification_required &&
+    (attempt.status !== "running" || attempt.session_id !== undefined || attempt.schema_ok !== undefined) &&
+    !attempt.verification_basis) add("launched verified checker attempt requires its persisted input basis")
+  if (attempt.verification_basis) {
+    const basis = attempt.verification_basis
+    if (agent !== "checker") add("verification basis requires a checker")
+    if (basis.evidence.some(entry => entry.source.run_id !== runId)) add("verification evidence belongs to another run")
+    if (context.verification_criteria && (basis.criteria_sha256 !== criteriaDigest(context.verification_criteria) ||
+      basis.criterion_ids.length !== Math.max(1, context.verification_criteria.length))) add("verification criteria changed")
+    if (attempt.output !== undefined && validateVerification(attempt.output, basis).length) add("checker output violates its persisted verification basis")
+  }
   const knownAgent = AlgAgentSchema.safeParse(agent)
   if (!knownAgent.success) add(`unknown ALG agent: ${agent}`)
   if (!isSafeId(runId) || !isSafeId(nodeId)) add("run/node identity is unsafe")

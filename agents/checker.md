@@ -58,6 +58,8 @@ Return **only** this JSON object:
 
 ### Scoring
 
+When the trusted task supplies `VERIFICATION CONTRACT v1`, also return `findings` with exactly one `{criterion_id, outcome, evidence_ids, reason}` per supplied criterion. Use only the supplied criterion/evidence IDs and keep each reason under 1000 characters. `supported` and `disconfirmed` require included evidence citations. Missing support is `unsupported`; conflicting or non-discriminating evidence is `inconclusive`. Pass only if every criterion is supported. An ID proves linkage, not truth or independence. This optional contract does not apply to private skill-evolution tasks.
+
 - `score`: integer 0–10
 - `passed` must equal `(score >= 7)`: use 7–10 for a pass and 0–6 for a rejection.
 - `passed: true` only if **every** hard criterion is met

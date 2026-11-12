@@ -709,6 +709,7 @@ const ATTEMPT_DETAIL_IDENTITY_FIELDS = [
   "schema_ok",
   "feedback_applied",
   "outcome",
+  "verification_basis",
 ] as const satisfies readonly (keyof NodeAttempt)[]
 
 function persistedAttemptContext(
@@ -726,6 +727,8 @@ function persistedAttemptContext(
     mode: state.mode,
     requires_shell: definition.agent === "shell" || definition.loop?.gate === "shell" ||
       definition.loop?.gate === "all",
+    verification_required: !!definition.verification,
+    verification_criteria: state.criteria,
   }
 }
 

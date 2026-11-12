@@ -27,6 +27,7 @@ import {
   parsePersistedAttemptDetail,
   parsePersistedNodeAttempt,
   parseRunState,
+  PersistedFailureListSchema,
   schemaForAgent,
 } from "./schemas.ts"
 import type { AttemptOutcomeCounts, GraphDef, NodeAttempt, RunDataReference, RunState } from "./types.ts"
@@ -89,6 +90,7 @@ interface TuiNode {
   attempts_visible: number
   attempt_history_ref?: TuiAttemptHistoryReference
   requires_shell: boolean
+  verification_required: boolean
 }
 
 interface TuiAttemptHistoryReference {
@@ -112,6 +114,7 @@ interface TuiRun {
   owner_session_id: string
   status: string
   mode?: "live" | "dry"
+  criteria?: string[]
   updated_at: string
   nodes: Record<string, TuiNode>
   graph: GraphDef
@@ -335,6 +338,11 @@ function parseOwnedRun(value: unknown, owner: string, directoryRunId: string): T
     model_entries_omitted: 0,
   }
   const graph = parseStrictGraph(value.graph, directoryRunId, truncation)
+  const parsedCriteria = value.criteria === undefined ? undefined : PersistedFailureListSchema.safeParse(value.criteria)
+  if (graph.nodes.some((definition) => definition.verification) && !parsedCriteria?.success) {
+    throw new Error(`Run ${directoryRunId} progress has invalid verification criteria`)
+  }
+  const criteria = parsedCriteria?.success ? parsedCriteria.data : undefined
   const graphById = new Map(graph.nodes.map((definition) => [definition.id, definition]))
   const stateIds = Object.keys(value.nodes)
   if (stateIds.length !== graphById.size || stateIds.some((id) => !graphById.has(id)) ||
@@ -379,6 +387,8 @@ function parseOwnedRun(value: unknown, owner: string, directoryRunId: string): T
           mode: value.mode === "live" || value.mode === "dry" ? value.mode : undefined,
           requires_shell: definition.agent === "shell" || definition.loop?.gate === "shell" ||
             definition.loop?.gate === "all",
+          verification_required: !!definition.verification,
+          verification_criteria: criteria,
         })
       } catch (error) {
         throw new Error(
@@ -413,6 +423,7 @@ function parseOwnedRun(value: unknown, owner: string, directoryRunId: string): T
       attempts_visible: node.attempts.length,
       requires_shell: definition.agent === "shell" || definition.loop?.gate === "shell" ||
         definition.loop?.gate === "all",
+      verification_required: !!definition.verification,
       ...(attemptHistoryReference ? { attempt_history_ref: attemptHistoryReference } : {}),
     }
   }
@@ -431,6 +442,7 @@ function parseOwnedRun(value: unknown, owner: string, directoryRunId: string): T
     owner_session_id: owner,
     status: previewField(value.status as string, MAX_TUI_ID_PREVIEW_BYTES, truncation),
     ...(value.mode === "live" || value.mode === "dry" ? { mode: value.mode } : {}),
+    ...(criteria ? { criteria } : {}),
     updated_at: previewField(value.updated_at as string, MAX_TUI_ID_PREVIEW_BYTES, truncation),
     nodes,
     nodes_total: nodeCount,
@@ -707,14 +719,7 @@ function parseArchivedAttemptForNode(
   const label = `${run.run_id}/${node.id}/${expected}`
   let parsed
   try {
-    parsed = parsePersistedNodeAttempt(value, {
-      agent: node.agent,
-      run_id: run.run_id,
-      node_id: node.id,
-      expected_attempt: expected,
-      mode: run.mode,
-      requires_shell: node.requires_shell,
-    })
+    parsed = parsePersistedNodeAttempt(value, attemptValidationContext(run, node, expected))
   } catch (error) {
     throw new Error(`Archived attempt ${label} violates the authoritative attempt schema: ${formatSdkError(error)}`)
   }
@@ -879,6 +884,8 @@ function attemptValidationContext(run: TuiRun, node: TuiNode, attempt: number) {
     expected_attempt: attempt,
     mode: run.mode,
     requires_shell: node.requires_shell,
+    verification_required: node.verification_required,
+    verification_criteria: run.criteria,
   }
 }
 
@@ -1023,6 +1030,7 @@ const ATTEMPT_DETAIL_IDENTITY_FIELDS = [
   "schema_ok",
   "feedback_applied",
   "outcome",
+  "verification_basis",
 ] as const satisfies readonly (keyof NodeAttempt)[]
 
 async function readValidatedAttemptDetail(

@@ -256,6 +256,7 @@ function projectAttempt(run: RunState, nodeId: string, attempt: NodeAttempt): No
       )
     : attempt.detail_ref
   const projected: NodeAttempt = {
+    ...(attempt.verification_basis ? { verification_basis: attempt.verification_basis } : {}),
     attempt: attempt.attempt,
     status: attempt.status,
     ...(attempt.session_id ? { session_id: attempt.session_id } : {}),

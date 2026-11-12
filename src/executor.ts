@@ -12,6 +12,7 @@ import {
 } from "./graph.ts"
 import { canonicalJson } from "./persistence.ts"
 import { buildCheckerEvidence, isCheckerEvidencePort } from "./checker-evidence.ts"
+import { buildVerificationBasis, validateVerification, effectiveCriteria } from "./verification.ts"
 import { assertManagedGraph, graphPolicy } from "./graph-policy.ts"
 import { parseAndValidate } from "./schemas.ts"
 import {
@@ -212,6 +213,8 @@ function dryOutput(definition: NodeDef, run: RunState): unknown {
     case "implementer":
       return { summary: [`Dry implement: ${run.goal}`], files_touched: [], commands_run: [], risks: [], done: true }
     case "checker":
+      if (definition.verification) return { passed: false, failures: ["Dry execution does not verify evidence"], score: 0,
+        findings: effectiveCriteria(run.criteria).map((_, i) => ({ criterion_id: `C${i + 1}`, outcome: "unsupported", evidence_ids: [], reason: "Dry execution supplies no verified observations" })) }
       return { passed: true, failures: [], score: 10, notes: "dry-run auto-pass" }
     case "shell":
       return {
@@ -276,6 +279,13 @@ async function runOneNode(
     log(options, `node ${definition.id} attempt ${attempt}/${localLimit}`)
 
     const inputs = wireInputs(definition, run)
+    const evidence = definition.agent === "checker"
+      ? buildCheckerEvidence(definition, run, graphPolicy(run.graph)?.checkerEvidencePorts?.[definition.id]) : undefined
+    if (definition.verification) {
+      attemptRecord.verification_basis = buildVerificationBasis(run.criteria, evidence)
+      // Persist the basis before any child/model call, including runners that fail before session creation.
+      await save(run, options)
+    }
     let sessionId: string | undefined
     let rawOutput: unknown
     let error: string | undefined
@@ -331,7 +341,8 @@ async function runOneNode(
         ? buildCheckerPrompt({
             criteria: run.criteria.length ? run.criteria : ["Output must be complete and match the goal."],
             claimed: inputs.claimed ?? Object.fromEntries(Object.entries(inputs).filter(([key]) => !isCheckerEvidencePort(key))),
-            evidence: buildCheckerEvidence(definition, run, graphPolicy(run.graph)?.checkerEvidencePorts?.[definition.id]),
+            evidence,
+            verification: definition.verification,
             priorFailures: state.attempts.at(-2)?.outcome === "substantive_rejection" ? [] : state.last_failures,
             priorOutcome,
           })
@@ -385,6 +396,10 @@ async function runOneNode(
       if (validation.ok) {
         schemaOk = true
         rawOutput = validation.data
+        if (definition.verification && attemptRecord.verification_basis) {
+          const bindingFailures = validateVerification(rawOutput, attemptRecord.verification_basis)
+          if (bindingFailures.length) { schemaOk = false; failures.push(...bindingFailures) }
+        }
         if (definition.agent === "implementer" && rawOutput && typeof rawOutput === "object") {
           const filesTouched = (rawOutput as { files_touched?: unknown }).files_touched
           if (Array.isArray(filesTouched)) {
@@ -496,7 +511,7 @@ async function runOneNode(
     if (passed) {
       state.status = "done"
       state.last_failures = []
-      if (definition.agent === "researcher" && run.criteria.length === 0) {
+      if (definition.agent === "researcher" && !run.criteria_locked && run.criteria.length === 0) {
         const criteria = (rawOutput as { acceptance_criteria: string[] }).acceptance_criteria
         run.criteria = [...criteria]
         run.criteria_locked = true
@@ -644,6 +659,11 @@ export function closeRun(run: RunState, reason: string): RunState {
 
 /** Execute topological waves under one exclusive per-run lease. */
 export async function executeRun(run: RunState, options: ExecuteOptions): Promise<RunState> {
+  if (run.graph_revisions?.length &&
+    (options.shellGateCmd !== undefined || options.shellGateCwd !== undefined ||
+      options.shellGateTimeoutMs !== undefined || (options.dry === true && run.mode === "live"))) {
+    throw new Error("Revised graph execution cannot override its shell gate or live mode")
+  }
   const operation = options.operation ?? "run"
   const filesystemRoot = assertFilesystemRootAuthorized(
     options.worktree,
@@ -719,6 +739,12 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
           run.summary = summarize(run)
           await save(run, options)
           throw error
+        }
+        if (batch.some((definition) => definition.verification) && !run.criteria_locked) {
+          // A researcher in this or a later wave cannot replace the criteria
+          // after a checker has committed its pre-call verification basis.
+          run.criteria = [...effectiveCriteria(run.criteria)]
+          run.criteria_locked = true
         }
         const reservations = batch.map((definition) => reserveAttempt(run, definition))
         // Persist every bounded-batch reservation before any child sidecar can

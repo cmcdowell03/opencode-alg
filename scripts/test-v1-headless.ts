@@ -43,6 +43,7 @@ export const PERSISTED_RESULT = sha256("ALG V1 deterministic local result fixtur
 
 const EvidenceSchema = z.object({
   checker_probe: z.object({ passed: z.boolean(), run_id: z.string(), attempts: z.number().int(), distinct_children: z.number().int(), host_verified_parents: z.number().int(),
+    verification_basis_recovered: z.boolean(),
     nodes: z.array(z.object({ id: z.string(), status: z.string(), outcome: z.string().nullable(), failures: z.array(z.string().max(2048)).max(3) })).max(3) }).nullable(),
   schema_version: z.literal(1), kind: z.literal("opencode-alg-v1-headless-acceptance"), generated_at: z.iso.datetime({ offset: true }),
   passed: z.boolean(), failure: z.string().max(2048).nullable(), evidence_path: z.string().min(1),

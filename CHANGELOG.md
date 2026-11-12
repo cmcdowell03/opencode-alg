@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.4 candidate — evidence-linked review and bounded graph revisions
+
+- Opt-in checker findings link each criterion to included evidence IDs, preserve unsupported/inconclusive outcomes, and save the input basis before child launch. Linkage is not proof of source truth or independence; legacy verdicts stay legacy.
+- Owned planning/blocked graphs can revise only unattempted pending work under the original scope and budgets. Existing verifiers and attempted work are frozen; canonical graph snapshots and revision receipts survive reload.
+- Adds a frozen synthetic paired evaluation of ordinary versus targeted falsification probes before an identical checker. Model trials are separately measured; the strategy is not automatically enabled or promoted.
+- New verification/revision fields require the 0.5.4 reader. Older run state remains readable; do not downgrade over newly written state. V1 only; no automatic remote query resubmission or V2 implementation.
+
 ## 0.5.3 candidate
 
 - Delivers explicitly selected checker evidence alongside claims, with source/attempt identity, byte digests and explicit omission/missing states. The compiled investigation policy preserves its legacy reconciliation input without changing persisted graph identity. Keeps unrelated wiring and worker transcripts outside the explicit checker payload.

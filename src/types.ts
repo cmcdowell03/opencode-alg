@@ -127,6 +127,8 @@ export interface NodeDef {
   isolated_check?: boolean
   /** Explicit node to reopen with this checker's failures. */
   feedback_to?: string
+  /** Opt-in criterion/evidence-linked checker output; legacy checkers retain their contract. */
+  verification?: import("./verification.ts").Verification
 }
 
 export interface GraphDef {
@@ -199,6 +201,8 @@ export interface FilesystemRootAuthorizationReference extends RunDataReference {
 }
 
 export interface NodeAttempt {
+  /** Frozen input commitments saved before the checker child starts. */
+  verification_basis?: import("./verification.ts").VerificationBasis
   attempt: number
   status: NodeStatus
   session_id?: string
@@ -295,6 +299,8 @@ export interface RunState {
   criteria: string[]
   criteria_locked: boolean
   graph: GraphDef
+  /** Only pending-node edits are supported; immutable snapshots remain run artifacts. */
+  graph_revisions?: import("./graph-revision.ts").GraphRevisionReceipt[]
   status: RunStatus
   phase: string
   nodes: Record<string, NodeState>

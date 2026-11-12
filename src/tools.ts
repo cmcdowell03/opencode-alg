@@ -1,14 +1,18 @@
 import { tool } from "@opencode-ai/plugin"
 import type { PluginInput, ToolContext } from "@opencode-ai/plugin"
+import { existsSync, readFileSync, statSync } from "node:fs"
 import { validateGraph } from "./graph.ts"
+import { graphSha256, reviseGraph, type GraphRevisionReceipt } from "./graph-revision.ts"
 import { closeRun, prepareRunForResume } from "./executor.ts"
 import { preflightShellGates, type GatePreflightReport } from "./shell-preflight.ts"
 import {
+  atomicWriteFile,
   createRun,
   hydrateRunFully,
   listOwnedRunEnvelopeResults,
   loadCommittedRunProjectionForOwner,
   readNodeArtifactOutput,
+  runContainedPath,
   runDir,
 } from "./store.ts"
 import { getTemplate, listTemplates } from "./templates.ts"
@@ -35,14 +39,34 @@ import {
   isFilesystemRoot,
 } from "./paths.ts"
 import { formatSdkError } from "./diagnostics.ts"
-import { serializedBytes, truncateUtf8, utf8Bytes } from "./limits.ts"
+import { MAX_GRAPH_STATE_BYTES, serializedBytes, truncateUtf8, utf8Bytes } from "./limits.ts"
 import { executeWithMemory } from "./session-memory/attempts.ts"
 import { hashObject } from "./session-memory/store.ts"
+import { canonicalJson } from "./persistence.ts"
 import type { SessionMemoryRuntime } from "./session-memory/runtime.ts"
 import { buildRunProgress, parseRunProgress, type AlgRunProgress } from "./run-progress.ts"
 import { createRunCardProjector, type RunCardProjector, type SubagentCardMode } from "./run-cards.ts"
 
 type Detail = "compact" | "full"
+
+function readGraphSnapshot(path: string): string {
+  const size = statSync(path).size
+  if (size > MAX_GRAPH_STATE_BYTES) throw new Error("graph snapshot exceeds the graph byte limit")
+  const text = readFileSync(path, "utf8")
+  if (utf8Bytes(text) > MAX_GRAPH_STATE_BYTES) throw new Error("graph snapshot exceeds the graph byte limit")
+  return text
+}
+
+function persistGraphSnapshot(project: string, runId: string, graph: GraphDef): string {
+  const digest = graphSha256(graph)
+  const path = runContainedPath(project, runId, "artifacts", `graph-${digest}.json`)
+  const serialized = canonicalJson(graph)
+  // Revision callers hold the run lease. Reuse the store's staged/fsynced commit,
+  // so interruption cannot publish a partial immutable graph at its final name.
+  if (!existsSync(path)) atomicWriteFile(path, serialized)
+  if (readGraphSnapshot(path) !== serialized) throw new Error("immutable graph snapshot content mismatch")
+  return digest
+}
 const PREVIEW_BYTES = 2_048
 const COMPACT_OUTPUT_BYTES = 64 * 1_024
 const COMPACT_TEXT_BYTES = 384
@@ -669,9 +693,9 @@ export function createAlgTools(
     }),
 
     alg_plan: tool({
-      description: "Create an owned ALG DAG. Identical investigation plans reuse the existing run, including completed runs; changing an attached investigation requires an explicit new task. Compact by default.",
+      description: "Create an owned ALG DAG or revise a bounded pending graph on an owned planning/blocked run using expected_graph_sha256. Identical investigation plans reuse the existing run, including completed runs; managed investigations cannot be revised. Compact by default.",
       args: {
-        goal: tool.schema.string().min(1).max(20_000),
+        goal: tool.schema.string().min(1).max(20_000).optional(),
         template: tool.schema.enum(["coding-diamond", "research-diamond", "data-investigation"]).optional(),
         operation: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/).optional().describe("Advisory workspace requirement lookup; covered data-investigation uses data.investigate.read."),
         criteria: tool.schema.array(tool.schema.string().min(1).max(2_000)).max(100).optional(),
@@ -680,16 +704,83 @@ export function createAlgTools(
         shell_timeout_ms: tool.schema.number().int().min(100).max(600_000).optional(),
         mode: tool.schema.enum(["live", "dry"]).optional(),
         graph_json: tool.schema.string().min(2).max(200_000).optional(),
+        revise_run_id: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/).optional(),
+        expected_graph_sha256: tool.schema.string().regex(/^[a-f0-9]{64}$/).optional(),
+        revision_reason: tool.schema.string().trim().min(1).max(500).optional(),
         allow_filesystem_root: tool.schema.boolean().optional().describe("Explicit one-call approval for planning at a filesystem root; does not authorize run/resume."),
         detail: tool.schema.enum(["compact", "full"]).optional(),
       },
       async execute(args, context) {
         try {
           const { project, directory } = roots(plugin, context)
-          // Authorize root scope before model-settings recovery/quarantine or
-          // run creation can touch the filesystem.
           const additionalFilesystemRoot = isAdditionalFilesystemRoot(project)
           assertFilesystemRootAuthorized(project, args.allow_filesystem_root, "plan", additionalFilesystemRoot)
+          if (args.revise_run_id !== undefined) {
+            if (!args.graph_json || !args.expected_graph_sha256 || !args.revision_reason) {
+              throw new Error("graph revision requires graph_json, expected_graph_sha256, and revision_reason")
+            }
+            if (args.goal !== undefined || args.criteria !== undefined || args.template !== undefined || args.mode !== undefined ||
+              args.operation !== undefined || args.shell_gate !== undefined || args.shell_cwd !== undefined || args.shell_timeout_ms !== undefined) {
+              throw new Error("graph revision changes only graph_json; run goal, criteria, mode, and execution scope are immutable")
+            }
+            let receipt: GraphRevisionReceipt | undefined
+            const revised = await mutateOwnedRunAsync(project, args.revise_run_id, context.sessionID, (fresh) => {
+              const revisionState = fresh as RunState & { graph_revisions?: GraphRevisionReceipt[] }
+              const history = revisionState.graph_revisions ?? []
+              if (history.length >= 16) throw new Error("graph revision history is full (maximum 16)")
+              const result = reviseGraph({
+                run: fresh,
+                graph: JSON.parse(args.graph_json!),
+                expectedGraphSha256: args.expected_graph_sha256!,
+                requestedBy: context.sessionID,
+                reason: args.revision_reason!,
+              })
+              preflightShellGates(result.graph, {
+                worktree: project,
+                directory: fresh.execution_directory ?? fresh.project_directory,
+                phase: "plan",
+                checkExecutables: fresh.mode !== "dry",
+              })
+              // Publish immutable content-addressed versions before the state CAS.
+              // An interrupted mutation can leave an unreferenced snapshot, never a false revision.
+              persistGraphSnapshot(project, fresh.run_id, fresh.graph)
+              persistGraphSnapshot(project, fresh.run_id, result.graph)
+              fresh.graph = result.graph
+              fresh.nodes = result.nodes
+              revisionState.graph_revisions = [...history, result.receipt]
+              receipt = result.receipt
+            })
+            return ok("alg plan", {
+              ...(args.detail === "full" ? {
+                run_id: revised.run_id,
+                template: revised.graph.name,
+                status: revised.status,
+                graph_sha256: graphSha256(revised.graph),
+                graph_revision: receipt,
+                graph: revised.graph,
+                nodes: revised.graph.nodes,
+                run: hydrateRunFully(revised),
+                path: runDir(project, revised.run_id),
+                next: nextAction(revised),
+              } : (() => {
+                const compacted = compactPlanNodes(revised)
+                return finalizeCompact({
+                  run_id: revised.run_id,
+                  template: revised.graph.name,
+                  status: revised.status,
+                  graph_sha256: graphSha256(revised.graph),
+                  graph_revision: receipt,
+                  nodes: compacted.nodes,
+                  truncation: compacted.truncation,
+                  path: runDir(project, revised.run_id),
+                  next: nextAction(revised),
+                })
+              })()),
+              }, { run_id: revised.run_id })
+          }
+          if (!args.goal) throw new Error("goal is required when creating a new run")
+          // Authorize root scope before model-settings recovery/quarantine or
+          // run creation can touch the filesystem.
           if (args.template === "data-investigation" && (args.graph_json || args.shell_gate)) {
             throw new Error("Phase 1 investigations require the unmodified fixed data-investigation template")
           }
@@ -721,7 +812,7 @@ export function createAlgTools(
           if (investigation && (!runtime.operations?.options.enabled || runtime.sessionMemory?.options.mode !== "assist")) throw new Error("data investigations require enabled configuration and session memory assist mode")
           const create = (runId?: string) => createRun({
             ...(runId ? { runId } : {}),
-            goal: args.goal,
+            goal: args.goal!,
             criteria: args.criteria ?? [],
             graph,
             projectDirectory: project,
@@ -734,10 +825,11 @@ export function createAlgTools(
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
           })
           const planned = investigation
-            ? await runtime.operations!.planInvestigation(context.sessionID, { goal: args.goal, criteria: args.criteria ?? [],
+            ? await runtime.operations!.planInvestigation(context.sessionID, { goal: args.goal!, criteria: args.criteria ?? [],
                 graph, directory, mode: args.mode ?? "live" }, create)
             : { run: create(), reused: false }
           const { run } = planned
+          const initialOrCurrentGraphSha256 = persistGraphSnapshot(project, run.run_id, run.graph)
           const investigationAttached = "attached" in planned ? planned.attached : undefined
           const planNext = investigation && investigationAttached === false && !["done", "failed"].includes(run.status)
             ? `This investigation is detached. Call alg_investigation with request={action:"attach",run_id:"${run.run_id}"} before alg_run or alg_resume; do not create another plan.`
@@ -747,6 +839,7 @@ export function createAlgTools(
           const compactedNodes = compactPlanNodes(run)
           const compact = finalizeCompact({
             run_id: run.run_id,
+            graph_sha256: initialOrCurrentGraphSha256,
             template: graph.name,
             plan_reused: planned.reused,
             investigation_attached: investigationAttached,
@@ -770,6 +863,7 @@ export function createAlgTools(
             "alg plan",
             detail === "full" ? {
               run_id: run.run_id,
+              graph_sha256: initialOrCurrentGraphSha256,
               template: graph.name,
               plan_reused: planned.reused,
               investigation_attached: investigationAttached,
@@ -962,6 +1056,8 @@ export function createAlgTools(
             owner_session_id: run.owner_session_id,
             status: run.status,
             phase: run.phase,
+            graph_sha256: graphSha256(run.graph),
+            graph_revision_count: (run as RunState & { graph_revisions?: GraphRevisionReceipt[] }).graph_revisions?.length ?? 0,
             criteria_locked: run.criteria_locked,
             mode: run.mode,
             revision: run.revision,
@@ -1096,9 +1192,10 @@ export function createAlgTools(
     }),
 
     alg_artifact: tool({
-      description: "Read compact artifact metadata/preview, or detail=full for complete typed content.",
+      description: "Read a node output or a content-addressed historical graph version from an owned run. Compact by default; detail=full returns complete content.",
       args: {
-        node_id: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
+        node_id: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/).optional(),
+        graph_sha256: tool.schema.string().regex(/^[a-f0-9]{64}$/).optional(),
         run_id: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/).optional(),
         detail: tool.schema.enum(["compact", "full"]).optional(),
       },
@@ -1107,9 +1204,36 @@ export function createAlgTools(
           const { project } = roots(plugin, context)
           const run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned run found.")
-          const node = run.nodes[args.node_id]
-          if (!node) throw new Error(`Unknown node ${args.node_id}`)
-          const output = readNodeArtifactOutput(run, args.node_id)
+          if ((args.graph_sha256 === undefined) === (args.node_id === undefined)) {
+            throw new Error("provide exactly one of node_id or graph_sha256")
+          }
+          if (args.graph_sha256 !== undefined) {
+            const accepted = new Set([graphSha256(run.graph), ...(run.graph_revisions ?? []).flatMap(receipt => [receipt.parent_sha256, receipt.graph_sha256])])
+            if (!accepted.has(args.graph_sha256)) throw new Error("graph snapshot is not an accepted revision of this run")
+            const path = runContainedPath(project, run.run_id, "artifacts", `graph-${args.graph_sha256}.json`)
+            const serialized = readGraphSnapshot(path)
+            const graph = validateGraph(JSON.parse(serialized))
+            if (graphSha256(graph) !== args.graph_sha256 || canonicalJson(graph) !== serialized) {
+              throw new Error("graph snapshot content does not match its requested digest")
+            }
+            const byteSize = utf8Bytes(serialized)
+            const preview = byteSize <= PREVIEW_BYTES
+              ? serialized
+              : `${truncateUtf8(serialized, PREVIEW_BYTES - utf8Bytes("…[truncated]"))}…[truncated]`
+            const metadata = {
+              run_id: run.run_id,
+              graph_sha256: args.graph_sha256,
+              artifact_path: `.opencode/runs/${run.run_id}/artifacts/graph-${args.graph_sha256}.json`,
+              byte_size: byteSize,
+            }
+            return ok("alg artifact", args.detail === "full"
+              ? { ...metadata, graph }
+              : finalizeCompact({ ...metadata, preview, preview_truncated: byteSize > PREVIEW_BYTES }))
+          }
+          const nodeId = args.node_id!
+          const node = run.nodes[nodeId]
+          if (!node) throw new Error(`Unknown node ${nodeId}`)
+          const output = readNodeArtifactOutput(run, nodeId)
           const serialized = JSON.stringify(output, null, 2)
           const byteSize = serializedBytes(output)
           const preview = utf8Bytes(serialized) <= PREVIEW_BYTES
@@ -1117,7 +1241,7 @@ export function createAlgTools(
             : `${truncateUtf8(serialized, PREVIEW_BYTES - utf8Bytes("…[truncated]"))}…[truncated]`
           const metadata = {
             run_id: run.run_id,
-            node_id: args.node_id,
+            node_id: nodeId,
             role: node.agent,
             status: node.status,
             attempts: node.current_attempt,
