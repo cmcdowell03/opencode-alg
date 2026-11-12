@@ -22,6 +22,8 @@ The affected suite covers gate recovery, execution/checker evidence, 100-attempt
 
 The [ordered V1 plan](v1-reliability-and-build-comparison-plan.md) starts with task-contract admission and compatible producer roles, then criteria provenance, measured overhead/shared allowance, and a frozen Build-versus-ALG comparison of interrupted expensive investigations. Those broader contracts are not implemented by this mechanical patch. Remaining harness work includes final usage reconciliation, stronger compaction receipts and explicit comparison eligibility. The PR stays draft; the actual air-gapped service remains unqualified. No V2, GitHub runners, Gemma, global configuration changes or merge.
 
+The subsequent design expansion defines H0/P1–P4 work packages and an intentionally difficult semiconductor investigation with incomplete metadata, misleading hypotheses, cross-repository work, lost acknowledgements and source drift. Independent oracle isolation, mutation qualification, full failure accounting and paired resource limits precede model trials. The old twenty-trial confirmation proposal is now a qualification rehearsal; a real superiority claim needs a separately frozen, powered confirmation with inaccessible fresh cases. These are planned acceptance gates, not completed features or new benchmark results. First implementation remains task admission and original-criteria authority, alongside harness qualification.
+
 ## 0.5.5 implementation — local repairs validated, workflow limits remain
 
 - Shell-runtime preparation and bounded Windows compiler diagnostics distinguish setup failure before command launch. An attempted node keeps aggregate `gate_failure` with diagnostic `setup_failed`; automatic implementer retries stop on that setup failure.

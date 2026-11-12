@@ -1,6 +1,8 @@
-# V1 reliability and comparison with native Build
+# V1 development and rigorous comparison with native Build
 
-Status: reviewed implementation plan, 12 November 2026. Baseline is PR #14 at `18e9cfe` (tested 0.5.5 runtime `373b8d0`). This document does not activate the planned runtime contracts or authorize new paid cohorts. V1 only; local Windows/PowerShell and native Ubuntu/Bash tests; no GitHub runners, Gemma, global configuration edits or merge.
+Status: expanded development and evaluation plan, 12 November 2026, following the request to make ALG demonstrably better on difficult work without false positives. Current baseline is PR #14 at `1f06455`, with 0.5.6 product repairs at `01e18ec`; the historical hosted comparison used 0.5.5 runtime `373b8d0`. This document does not activate the planned runtime contracts or launch model cohorts. V1 only; local Windows/PowerShell and native Ubuntu/Bash tests; no GitHub runners, Gemma, global configuration edits or merge.
+
+The sections below define the first product changes; the added **Development work packages**, **Hard benchmark specification**, and **Evidence and improvement rules** make their delivery and evaluation concrete. The earlier twenty-trial confirmation proposal is superseded by a qualification rehearsal and a separately powered, frozen confirmation. Small cohorts can find defects; they cannot promise a reliable superiority conclusion.
 
 ## Decision and evidence
 
@@ -68,7 +70,7 @@ File targets: `src/templates.ts`, matching `templates/*.json`, `agents/*.md`, wo
 
 ### Acceptance for this increment
 
-Before model inference, reject research-only graphs assigned `preparation.md` or `report.json` in the project root; accept compatible compact graphs. Exercise ordinary/custom graphs, explicit read-only responses, internal artifacts, absent/denied host capabilities and legacy runs. Enforce the same rules at admission, relevant revision and resume boundaries without consuming attempts or resetting budgets.
+Before child dispatch, attempt reservation or work side effects, reject research-only graphs assigned `preparation.md` or `report.json` in the project root; accept compatible compact graphs. A root model may already have spent calls proposing the plan; count those calls. Exercise ordinary/custom graphs, explicit read-only responses, internal artifacts, absent/denied host capabilities and legacy runs. Enforce the same rules at admission, relevant revision and resume boundaries without consuming child attempts or resetting budgets.
 
 Required preservation must retain the original before hash across retries; required execution must have a native or shell-gate receipt with honest missing metadata. No silent promotion of model claims. Criteria and deliverables survive compaction/restart byte-identically. Tests run locally on both operating systems; deterministic OpenCode host fixtures must cover the new tool arguments before any paid comparison.
 
@@ -128,7 +130,7 @@ The strongest candidate is an expensive investigation interrupted after remote a
 | --- | --- | --- | --- |
 | Existing small coding control | Same CommonJS defect and hidden tests | Correct artifact, protected files and completion within budget | None assumed; exposes orchestration tax |
 | Existing staged report control | Same skill, JSON contract and compaction/restart | Preparation boundary, valid final report and preserved sources | Retain contract/procedure without excessive machinery |
-| Expensive query with lost acknowledgement | Service accepts job, response is lost, host restarts at the service-side milestone | Correct final answer, one accepted semantic computation per authorized work identity, no duplicate charges | Existing intent/reservation/lookup ledger |
+| Expensive query with lost acknowledgement | Service accepts job, response is lost, host restarts at the service-side milestone | Correct final answer, no duplicate accepted computation/charge as independently defined from service scope and source revision | Existing intent/reservation/lookup ledger |
 | Multi-repository contract change | API/schema/client fixtures, one failed validation and already-correct sibling work | Hidden compatibility tests, unchanged protected inputs, bounded repeated work | Explicit dependencies and focused feedback |
 | Incomplete factory evidence | Synthetic 11k-entry metadata map, event logs, join-grain error, confounding and a stale source revision | Correct supported/unresolved conclusion, correct denominators/joins, cited current source versions, no unsupported causal claim | Bounded evidence, freshness checks and independent falsification |
 | Partial investigation across restart | Two completed branches, one transient service failure, restart before synthesis | Correct synthesis using retained compatible results; no needless repeat of accepted searches | Durable branch results and reconciliation |
@@ -143,7 +145,7 @@ For scientific cases, create matched negative controls: sufficient evidence for 
 2. **User-facing comparison:** native Build versus default ALG, both free to use their shipped capabilities, including native Build delegation, checkpoints and files. Same models, tasks, fixtures, equivalent service accounts in isolated matched namespaces, source visibility, explicit rules, budget and host version. Build receives the same raw recipe/job/lookup/validation/read primitives; ALG adds its implementation under test, not exclusive evidence. Report natural tasks and tasks with predeclared injected environmental faults separately; the latter are conditional stress comparisons, not estimates of everyday failure frequency.
 3. **Ablation after a signal:** same ALG graph/criteria with one component changed (durable reuse, compact selection, or targeted review). Do not mix all changes and credit a checker prompt for the result. The existing checker is already adversarial; “targeted” is an extra mandate.
 
-Inject environmental faults at externally recorded milestones, not at an ALG-specific node index. If one arm never reaches a milestone, record non-exposure and its actual task outcome; do not manufacture a comparable interruption. Use one scheduled compaction and one restart for each relevant task, without erasing native Build's durable files. Human/engineer checkpoints must be identical and predeclared; evaluate to the checkpoint or supply the same scripted operator decision to both, never grant ALG an exclusive approval.
+Inject environmental faults at externally recorded milestones, not at an ALG-specific node index. If one arm never reaches a milestone, record non-exposure and its actual task outcome; do not manufacture a comparable interruption or exclude the pair from its assigned scenario. Follow the per-track compaction/restart protocol below without erasing native Build's durable files. Human/engineer checkpoints must be identical and predeclared; evaluate to the checkpoint or supply the same scripted operator decision to both, never grant ALG an exclusive approval.
 
 Freeze original criteria and the external oracle. Internal model-authored criteria may vary in the user-facing track; report that fidelity rather than treating it as a controlled checker comparison. Disallow reading oracle files for both arms, not normal project inspection. Do not require Build to emit ALG's private schema or forbid it from implementing a competent recovery strategy.
 
@@ -151,16 +153,196 @@ Freeze original criteria and the external oracle. Internal model-authored criter
 
 1. Finish the mechanical fixes and deterministic admission/recovery matrix on Windows and Linux.
 2. Qualify host/skill/service discovery using the synthetic provider in both arms. Separate authentication/transport failures from model-quality outcomes.
-3. Freeze a **discovery pilot**: the six workloads above × two arms × one run = 12 trials, one fixed hosted model/configuration, alternating order, no targeted third arm. Keep the existing eight-minute/40-turn/200k reported-component thresholds for the continuity comparison; record overshoot and the limitations of that unit. They are monitored thresholds, not hard provider-call or invoice ceilings. Reserve allowance for both halves of a pair before issuing it, with no automatic replay or asymmetric budget top-up. Reaching a threshold is an outcome, not permission to enlarge it mid-cohort. No local Gemma.
-4. If a concrete benefit appears, freeze a separate **held-out confirmation** with fresh variants before running it: two variants of each of the four challenge families plus both controls = ten pairs/20 trials. The eight challenge pairs are held out; reused public controls are controls, not unseen tasks. No tuning on those outputs; retained losses and setup failures remain visible. This stage needs a separately reviewed spending plan; this document does not launch it.
-5. Report paired outcomes and uncertainty. A chosen example can illustrate an observed win but cannot establish superiority. For a formal superiority claim, predeclare the primary workload family/metric and require the paired confidence interval to exclude no benefit; otherwise describe results as promising, mixed or inconclusive. Cross-model generality requires a separately bounded second-model check after a signal, not silent model substitution.
+3. Freeze a **discovery pilot**: the six workloads above × two arms × one run = 12 trials, one fixed hosted model/configuration, seeded counterbalanced arm order, no targeted third arm. Keep the existing eight-minute/40-turn/200k reported-component thresholds for the continuity controls; freeze a separately named shared envelope for hard cases before issuance. Record overshoot and the limitations of that unit. Historical token thresholds are monitored, not hard provider-call or invoice ceilings. Reserve allowance for both halves of a pair and issue the pair before either arm plans or runs admission. No automatic replay or asymmetric budget top-up. Reaching a threshold is an outcome, not permission to enlarge it mid-cohort. No local Gemma.
+4. If a concrete benefit appears, freeze a **qualification rehearsal** with fresh variants: two variants of each of the four challenge families plus both controls = ten pairs/20 trials. The eight challenge pairs are fresh at issuance, but become development evidence once inspected. This establishes the apparatus and estimates variability; it is not a powered superiority claim. No tuning during the batch; retained losses and setup failures remain visible.
+5. Freeze a separate powered confirmation only after the work-package and evidence gates below pass. Fix the workload population, resource tiers, product/model identities, sample size, analysis and spending ceiling before issuing a trial. Confirmation data cannot tune the candidate being confirmed. The stronger requirements below replace the earlier assumption that twenty trials would suffice.
+6. Report paired outcomes and uncertainty. A chosen example can illustrate an observed win but cannot establish superiority. Cross-model generality requires a separately bounded second-model check after a signal, not silent model substitution. A blocked or inconclusive result is publishable; it is not authority to change the hypothesis, add attempts or enlarge the budget mid-cohort.
 
-Primary outcome: valid task completion under the fixed external resource allowance. For intentionally unresolved cases, a correctly bounded unresolved conclusion can be the required deliverable. Supplement with false acceptance/rejection, duplicate accepted computations, retained-work reuse, schema/parse/setup/capability failures, restart success, unknown-outcome recovery, tool/model calls, complete usage components and cost coverage, final-report contract violations, elapsed/active time, peak resource use and cleanup. Record actual graph/checker/reuse participation: an ALG-configured agent that solves a task directly without invoking those components does not demonstrate their benefit.
+Primary outcome: valid task completion under the fixed external resource allowance, over all issued pairs. Issue occurs before either arm's task planning/admission; admission rejection of an eligible task, timeout and budget exhaustion count as failures. Deliberately impossible admission fixtures qualify mechanics and are not in the competitive workload population. For intentionally unresolved cases, a correctly bounded unresolved conclusion can be the required deliverable. Supplement with false acceptance/rejection, duplicate accepted computations, retained-work reuse, schema/parse/setup/capability failures, restart success, unknown-outcome recovery, tool/model calls, complete usage components and cost coverage, final-report contract violations, elapsed/active time, peak resource use and cleanup. Record actual graph/checker/reuse participation: an ALG-configured agent that solves a task directly without invoking those components does not demonstrate their benefit.
 
-Do not use one blended score to hide a correctness loss behind speed. Report successful tasks and all admitted trials; count failed work in cost per verified outcome, and mark it undefined when no tasks pass. Compare data-service work units and reported model usage separately; if economics are modelled, show the explicit prices and break-even range instead of inventing invoice totals.
+Do not use one blended score to hide a correctness loss behind speed. Report successful tasks and all issued pairs, including unrun or unscorable arms; count failed work in cost per verified outcome, and mark it undefined when no tasks pass. Bound paired effects over genuinely unknown outcomes and do not declare a winner if those bounds change the conclusion. Compare data-service work units and reported model usage separately; if economics are modelled, show the explicit prices and break-even range instead of inventing invoice totals.
 
 ## First implementation slice and exit criteria
 
 The next product slice is **task-contract admission + capability-compatible compact routing + original-criteria provenance**, after any reproduced mechanical repair. It is not recursive graphs, automatic strategy promotion, a shared meta-brain, a new datalake engine or OpenCode V2.
 
 Exit when impossible writer/verification assignments are rejected before spending child calls, compatible plans preserve the accepted contract across resume, original criteria cannot be silently replaced by a research proposal, and both local host paths pass. Then add measured overhead/budget handling and qualify the comparative harness. Merge readiness still requires the PR's applicable local checks and an honest statement of unqualified offline-package/production-service boundaries; a hand-picked model win is not a release gate.
+
+
+## Development work packages
+
+The product objective is a higher rate of independently verified completion on difficult, multi-phase engineering and data investigations under the same total resource allowance. Reliable recovery and fewer repeated expensive operations are candidate mechanisms. General superiority on every task, every model or an actual factory is not the claim.
+
+Target a **15 percentage-point improvement** in verified completion on the declared difficult-workload population as a practically useful development objective and planning alternative. It is not a minimum observed effect used to select significant results, a lower-confidence-bound requirement, an observed effect or a guarantee. Positive benefit, meeting this development target and deployment eligibility are separate conclusions. Report absolute completion as well: a relative improvement from a very low success rate is not sufficient for release. Freeze the deployment acceptance floor and its workload scope before confirmation; do not choose it after seeing scores. Keep simple controls to detect unnecessary orchestration cost.
+
+| Package / sequence | Concrete delivery, reusing current code | Exit evidence |
+| --- | --- | --- |
+| H0 — trustworthy measurement, in parallel with P1 | Extend existing build-benchmark fixtures, transport and metrics; separate contestant, service and grader; qualify terminal compaction, final usage, cleanup and frozen identities | Deliberately wrong artifacts fail; equivalent valid artifacts pass; unavailable evidence cannot become zero/success; both native hosts pass deterministic fixtures |
+| P1 — task admission and scope | Typed contract in existing planning/run records; capability-compatible producer; original criteria and advisory findings separated; compact route exposed without overriding an explicit graph | Impossible plans spend zero child calls; valid project/read-only tasks work; revision/resume cannot change accepted scope; legacy behavior explicit |
+| P2 — durable continuation | Existing run/attempt, skill/context and investigation records project one active task with evidence, procedure versions, hypotheses, coverage, pending intent and next action | After compaction/restart, compatible results reused, changed results invalidated, unknown submissions reconciled and approval revocation enforced; no reset of attempts or job costs |
+| P3 — bounded execution and useful efficiency | Shared task identity and cumulative allowance; reserve final checking/reporting; request-level resource attribution and bounded evidence retrieval | Child/retry/compaction costs counted; late usage and overshoot explicit; expensive-work cap enforced at the service; repeated planning cannot replenish it |
+| P4 — stronger checking and bounded graph adaptation | Original-claim identity, hypothesis-specific probes, cited raw evidence/receipts, safe pending-node revisions and evidence-based template selection | Wrong-but-plausible answers rejected; correct and insufficient-evidence controls handled; bounded retries; no criterion weakening, completed-node rewrites or permissions expansion |
+| Q1 — headless platform qualification | Full plan → work → check → compaction/restart → continuation on the installed candidate in PowerShell and native Bash | Same source/package identities; real hooks exercised; archived receipts readable; no loss of committed results, explicit in-flight uncertainty, no orphaned owned processes or retained temporary auth; no model needed for mechanical cases |
+| E1 — difficult development cohorts | Twelve-trial discovery, then twenty-trial rehearsal, using the qualified harness and frozen per-batch candidate | Every issued attempt has an outcome and cost-coverage status; defects produce minimal regressions; no post-hoc grade/limit changes |
+| E2 — sealed confirmation | Independent fresh task instances, one fixed candidate/model configuration and preregistered analysis | Complete retained cohort; uncertainty and guardrails reported; superiority claimed only within the demonstrated scope |
+| E3 — portability and adoption | Separately bounded second-model confirmation, natural-use checks and package deployment qualification | No model-name routing; gains do not depend on fixture names or hidden hints; exact deployable artifact verified before adoption |
+
+P2 and H0 may proceed independently of P1 where interfaces already exist. P3 depends on the accepted task identity. P4 depends on P1's criterion authority and P2's evidence validity; it must not become a second orchestration framework. Run the small development pilot once H0/P1/P2/P3 and the existing checker qualify; do not wait for speculative graph features to begin learning. Add P4 features individually when evidence identifies a need. E2 waits for the final selected candidate and all applicable qualification checks.
+
+### P2: what must actually survive context loss
+
+A bounded context projection points to durable facts; it does not contain the whole knowledge map. Persist or reference:
+
+- The accepted task and phase, exact original criteria, project/environment identity, and current graph digest.
+- Required skill identity, content digest, applicability basis and approval/revocation state. After resume, revalidate and load the applicable version through existing tools; memory of a prior approval is insufficient.
+- Hypotheses and their status: proposed, tested, contradicted, unresolved, or supported within a stated scope. A model conclusion never turns into a verified fact merely because it was saved.
+- Completed query recipes, normalized parameters, source snapshot/revision, population/time window, result manifest/page references and coverage. A negative search records where it looked; it is not evidence that the entire lake lacks a relationship.
+- Pending remote intent/job identity and reservation, active leases, completed sibling outputs, uncertainty, and the next allowed action.
+- Cumulative attempts/calls/known service cost, missing telemetry and reserved verification allowance.
+
+Add only missing fields to the existing owner records. Keep the run, investigation ledger and skill approval source authoritative for their own domains. Do not duplicate them in a competing session database. Resume checks identity and freshness before projecting context. Retrieval on a changed task/phase or explicit invalidation is bounded; do not invoke an LLM on every token to maintain a world model.
+
+Distinguish harmless rereading of a small manifest from repeating an expensive accepted computation. Reuse requires compatible scope and source validity, not a similarity score. A changed source should invalidate only dependent results where dependencies are known; unknown dependencies require conservative revalidation. Do not invent automatic replay when an operation has an unknown side effect.
+
+Qualify the service's actual idempotency/lookup guarantee using an identity persisted before submission. If it cannot reconcile a lost acknowledgement, preserve the pending intent/reservation and expose a typed blocker. Likewise, check the authoritative skill approval state at the next governed action, including within a resumed session; unavailable approval state is a blocker. This is the V1 application boundary, not a claim to revoke a skill already copied into model context or prevent arbitrary shell actions outside governed paths.
+
+### P4: make graphs better without rewarding more agents
+
+Start with existing compact, diamond and fixed investigation templates. Model selection supplies a reason and admitted task contract; host policy rejects incompatibility. Add probes only for concrete uncertainty: contradictory observations, a risky join, a source change, unverified test execution or competing causal explanations. Bound probe count and cost before launch.
+
+A probe asks a falsifiable question and returns evidence, not revised acceptance criteria. A fresh final checker receives the original claim, required deliverables and independently accessible source/command evidence. It can request one bounded missing observation or return a precise blocker under existing attempt limits. Fresh sessions reduce shared history; they do not establish statistical independence from the implementer's model or evidence.
+
+Test adversarial checking on three kinds of cases: a real defect, a correct solution with a plausible distraction, and evidence that cannot resolve the claim. Measure false acceptance, false rejection and unnecessary repeated work. An always-rejecting checker fails the positive controls; a verbose skeptical memo does not count as defect detection. Compare ordinary versus added targeted review with the same total allowance and an external oracle.
+
+For custom graphs, reuse existing owner/digest-checked pending-node revisions. No revision may weaken original criteria, remove an established checker, rewrite attempted nodes or increase the task allowance. Managed data-investigation graphs remain fixed in this increment. Candidate templates and skills can be proposed from development failures with provenance and cost evidence; they cannot promote themselves or train on sealed confirmation results. Automatic graph promotion remains later V1 design, gated by an explicit future contract.
+
+## Hard benchmark specification
+
+Hardness must come from genuine dependencies, ambiguity and recovery requirements. Do not create difficulty through an impossible deadline, missing mandatory tools, an inaccessible necessary fact, arbitrary output spelling or a restriction applied only to Build.
+
+Before freezing a confirmation population, the fixture custodian must demonstrate a viable reference solution and recovery through the contestant-visible interface and Build-accessible primitives within the proposed allowance. This proves a feasible path, not that Build's model will choose it. Test alternate decompositions and identify which faults are realistic synthetic assumptions. Freeze family weights and fault mix before seeing holdout outcomes; a recovery-heavy selection supports a recovery-heavy claim.
+
+### Flagship scenario: an interrupted semiconductor defect investigation
+
+Give each arm the same engineering request: investigate a bounded particle/defect excursion, identify the best-supported explanation or the exact unresolved alternatives, provide a reproducible report, and complete a clearly scoped downstream correction when the case requires one.
+
+The synthetic workspace contains:
+
+- An approximately 11,000-entry catalog with incomplete enrichment and a much smaller coherent data fixture. Schemas, logs, lineage and data access are discoverable through the same documented MCP tools. Missing map edges can be established from evidence; their initial absence does not hide essential data.
+- Several repositories representing ingestion, an API and a client/report consumer. Some cases require a coordinated fix and compatibility tests; investigation-only cases do not silently acquire a coding requirement.
+- Wafer, lot, chamber, recipe and maintenance observations with declared units and times. Cases include duplicate event rows, time-zone boundaries, changing schemas, missing logs and plausible decoy correlations.
+- A service with recorded query work units, asynchronous status and lookup, result manifests, bounded pages, validity checks and reviewed refresh. Use the current datalake-mcp adapter contract and native mapping seam; a simulator does not qualify the real air-gapped service.
+
+Predeclare a small number of observable disruptions. Examples: accept one expensive query but lose the acknowledgement; restart after a durable partial result; change one source revision; revoke or update a procedure before a later action. Use service/host milestones shared by both arms. A necessary changed procedure is obtainable through the same source. If authorization cannot be obtained, a bounded stop can be the required outcome. No special operator assistance or secret recovery hints for ALG.
+
+Correct completion requires the externally specified analytical answer, valid source/time/population scope, uncertainty and contradictions, reproducible bounded query/result references, requested files, actual relevant validation and no prohibited mutation. A coding change cannot pass only because a report says tests ran. An investigation cannot pass only because its JSON matches a schema or its citation names a real file.
+
+Include matched cases where the apparent culprit is true, confounded, or not identifiable from available evidence. Require a supported conclusion when evidence is sufficient; require a discriminating next measurement when it is not. Do not demand a unique root cause from deliberately insufficient data or treat simulator causality as observable proof when the visible observations cannot identify it.
+
+The flagship combines multiple family stressors. Use it first as a development integration case, scored separately from the four-family primary cohort. Its score cannot be added to that primary result after observing it. To make it a future primary family, preregister the changed population and fresh instances.
+
+### Difficulty ladder
+
+| Tier | Purpose and workload | Advancement rule |
+| --- | --- | --- |
+| Controls | Existing small edit and staged report with original criteria and limits | Retain failures and overhead; do not discard because Build wins |
+| L1: bounded hard case | One deep multi-source problem with a misleading hypothesis or cross-repository contract | Tools and reference solution qualified; limited discovery budget; no injected restart needed |
+| L2: recovery and drift | L1 plus one accepted/lost response or one source invalidation, one compaction and one restart where specified | Both arms receive matched disruption and access; evidence freshness and duplicate work scored |
+| L3: sustained integration | Flagship with successive phases, changing evidence and multiple bounded context transitions | Separate long-session/resource envelope frozen before issuance; relevant recovery mechanisms already pass |
+
+Use one stressor at a time before compound L3 tests, so a failure can be attributed. Keep a natural-use track with native automatic compaction settings enabled equivalently; imposed compaction is a separate stress track. A log marker alone never certifies recovery.
+
+Each batch has one machine-readable protocol, validated before issuance:
+
+| Track | Resource envelope | Native compaction | Imposed transitions |
+| --- | --- | --- | --- |
+| Continuity controls | Historical eight minutes / 40 turns / 200k reported components, with monitored overshoot disclosed | Auto/prune disabled as in the historical harness | Coding: none; staged report: one requested compaction and one restart at the preparation milestone |
+| L1 natural hard cases | New shared hard-case envelope frozen on development evidence | Same enabled host settings for both arms | None; record naturally occurring compaction |
+| L2 recovery stress | Shared hard-case envelope, one cumulative allowance across recovery | Same enabled host settings for both arms | One requested compaction and one restart at declared milestones; native events counted separately |
+| L3 integration qualification | Separate bounded envelope below | Same enabled host settings for both arms | Up to six requested compactions and two restarts at frozen milestones; non-exposure retained |
+
+All tracks use seeded counterbalanced arm order; the seed and order are committed before execution. Record native and requested events separately, and never top up a run because natural compaction consumed allowance. The twelve-/twenty-trial batches freeze which hard cases use L1 or L2 before launch. L3 remains separate unless a later primary population explicitly includes it.
+
+L3 qualification initially proposes a **two-hour active-work cap, up to six requested compactions and two host restarts per arm**, under one cumulative model/service allowance. These are future upper bounds, not a command to run or to consume all of them. Stop terminal work immediately; idle waiting and repeated trivial prompts do not establish useful endurance. Choose workload volume and the finite resource allowance on development cases and freeze them before confirmation. If the case cannot reach the planned milestones, report non-exposure and outcome rather than forcing extra model calls. Do not extend the old eight-hour soak or start a new soak from this document.
+
+### Resource fairness
+
+Keep the earlier eight-minute/40-turn/200k reported-component envelope for the small continuity controls. A deliberately larger hard case may have a larger **new, prospectively named envelope shared by both arms**. This is a separate benchmark version, not a rescue of failed controls. Set it from known task work, development timing and the intended deployment constraint, then lock it. Neither arm receives an ad hoc top-up.
+
+Count all root, child, retry, checker, summary and compaction calls. Record tool/service work independently of model usage. Same provider/model/reasoning and output limits, effective permissions, skills, service concurrency/rate limits, context configuration, host version and external deadlines. Native Build retains its shipped delegation and durable files; ALG receives its additional plugin tools because that is the intervention. Neither receives an exclusive gold answer, source, cache or engineer decision.
+
+For confirmation, H0 must qualify an arm-neutral boundary that admits and stops host/provider requests and service work for both arms. ALG's internal task budget alone is not comparable enforcement. Freeze maximum in-flight requests, cancellation/grace behavior, and whether outputs completed after cutoff are ineligible or attributable to a pre-admitted request; apply the same rule to both. Charge and report all work, including late results. If complete token/cost limits cannot be enforced, claim equality only for the request, time, concurrency and service-work limits actually enforced; treat delayed/missing usage as telemetry, not a fictitious hard ceiling.
+
+Define duplicate work using external service-observed operations, scope, source revision and justified purpose, not ALG private work IDs or a required query decomposition. Qualify with an alternative valid query strategy, legitimate refresh, independent verification and a true repeat. Identical idempotent submit attempts need not be duplicate accepted computations. Report work units and charges so a different but correct decomposition is evaluated by actual resource use.
+
+Use a fresh matched namespace per arm; preserve it only within that trial. Separate setup/compilation from measured task time consistently and report cold/warm behavior. Freeze and disclose cache warm-up policy. Randomize order within paired trials, avoid overlapping competing trials on this host, and record load/provider changes. A changed model revision or configuration invalidates the predeclared cross-run comparability; split versions rather than silently pool them.
+
+A capacity or accuracy advantage must be assessed at equal external allowance. If cost efficiency is also claimed, require adequate billing coverage or report service work units and known model components separately. Never call a zero host-reported price free usage.
+
+## Independent oracle and anti-false-positive gates
+
+The benchmark is a measurement tool with its own failure modes. Its correctness is a prerequisite, not something an ALG pass proves.
+
+1. **Physical separation.** Keep gold labels, hidden tests, fault schedule and scoring code outside the contestant's accessible filesystem and credentials, using a real OS user/container boundary or an external grader. Prompt prohibitions, obscure paths and an OpenCode external-directory setting alone are not isolation from a shell. Do not leave generator seeds/gold answers in the contestant repo or inherited conversation. Both arms get the same allowed task information.
+2. **Independent reference.** Use a small transparent reference computation and independent invariants for the analytical answer, rather than sharing ALG's implementation with its oracle. Cross-check distinct-wafer counts, time intervals, joins and cost accounting by a second implementation/manual enumerated fixture. Test that required answers are identifiable from visible information.
+3. **Oracle mutation cases.** Seed wrong denominator, timezone edge, duplicate join, wrong source revision, invented citation, stale result, missing file, skipped command and modified protected input. Each must fail the relevant criterion. Seed equivalent valid representations and legitimate inconclusive answers; these must pass when the task allows them. A list of required words is not an analytical verifier.
+4. **All necessary criteria.** Pass requires all critical task criteria; unchanged protected files cannot compensate for a missing deliverable. Report artifact correctness, workflow completion, contract integrity, scientific adequacy, metering coverage and operational cleanup separately.
+5. **Externally observed actions.** The service ledger establishes accepted computations, idempotency and charges; the host establishes commands/exit state and compaction completion. Self-reported tool use, an ALG checker verdict, node success or JSON validity is not the external gold label.
+6. **Blinded discretionary review.** Automate objective checks. Where semantic review remains necessary, freeze a rubric, hide arm/model labels where possible, use two independent reviewers and adjudicate disagreement without knowing the aggregate winner. Keep uncertainty visible. An LLM grader can assist but cannot be the only authority for the primary pass.
+7. **Tamper qualification.** Try to read oracle/seed files, alter scorer inputs, forge receipts and bypass service counting in sacrificial fixtures. Inability to demonstrate isolation or immutable evidence blocks confirmation. Report oracle leakage; do not repair the leaked cohort into a clean result.
+8. **Apparatus failure injection.** Prove the runner handles unavailable skills, auth failure, late/missing usage, truncated streams, scorer failure, orphaned processes, source drift and absent compaction summaries. Unknown evidence remains unknown. Preserve exact source/harness/config/task/oracle/runtime hashes and all failed invocations.
+9. **No hidden exclusion.** Enumerate scheduled, issued, unissued, stopped, invalid and completed trials. After issuance, timeout, provider fault and ALG failure stay in the all-issued operational denominator. Validity and task quality are separate fields. A broken measurement can block inference but cannot selectively remove an ALG loss; publish best/worst-case bounds for unknown outcomes and do not declare a winner if they change the conclusion.
+10. **Equal operator boundary.** Freeze any approval/checkpoint decision and its trigger for both arms. Native Build is not failed for lacking ALG's private receipt schema. Extra manual recovery is measured as intervention, never silently supplied.
+
+For protected paths, the task must state whether it forbids final differences or any mutation. The existing two-file scorer checks final differences. If a future task forbids transient edits, qualify a host-observed write policy or trace for both arms; do not claim that comparing final hashes enforces that stronger rule.
+
+## Evidence and improvement rules
+
+### What “ALG is better” will mean
+
+The primary claim is scoped: **on the frozen difficult-workload distribution, with the specified model/host and equal total allowance, ALG completes more tasks correctly**. The mixture of the four challenge families, difficulty tiers and any fault exposure must be fixed before confirmation. A fault-heavy cohort establishes resilience under those faults, not their prevalence in ordinary work.
+
+Primary outcome is the paired difference in externally verified whole-task completion, counting all issued trials as above. Define pass before execution, including which cleanup/integrity conditions are mandatory and how unknown data affects inference. A useful unresolved result counts only on cases whose external specification calls for it. Record whether ALG's graph, reuse and checker mechanisms actually ran; a direct solution is still an arm outcome but does not demonstrate those mechanisms.
+
+Do not accept a speed or cost advantage that hides lower correctness. Also require the predeclared absolute completion floor and critical safety/integrity gates for a deployment recommendation. Any observed prohibited data mutation, cross-tenant leak or false certification of required execution blocks adoption until fixed and requalified. Zero observed violations is not a universal safety result.
+
+Keep easy-task completion and overhead as explicit guardrails. If ALG is worse on easy controls, document a narrower recommended scope or fix routing; do not average the regression away. Natural-use, injected-stress, different operating systems and different models are separate reported strata unless a pooling rule was frozen in advance.
+
+### Sample size, uncertainty and stopping
+
+The twelve-trial pilot and twenty-trial rehearsal diagnose behavior; neither can guarantee proof. Repeated prompts on the same seeded incident are not independent tasks. Choose independent incident seeds and meaningful variants; keep repeats nested under their incident and analyze the incident as the unit. Do not inflate the sample with nodes, attempts, assertions or repeated measurements of one case.
+
+Before a confirmation starts:
+
+- Freeze one primary population/metric, the minimum worthwhile effect, absolute completion floor, guardrails, exact analysis, trial count and maximum spend. Draw incidents from a declared distribution; a convenience collection of selected Build failures is not that population.
+- Calculate power across plausible paired discordance rates and a range of effect sizes using versioned code. A two-sided exact paired test with controlled type-I error and at least 80% planning power is the default target. Select the actual confidence-interval method and validate its coverage under the same dependence/stratification rules; do not treat independent-binomial intervals as paired evidence. Simulate the actual benefit/target/adoption decision rules under the frozen family mixture, rather than using power for rejecting zero as power for every deployment gate.
+- Illustrative calculation only: if independent pairs have ALG-only success probability 0.30 and Build-only success 0.15, exact conditional McNemar positive-rejection power at two-sided 0.05 is approximately 9% at 20 pairs, 45% at 80, 79% at 160 and 87% at 200. The calculation sums over discordant counts D distributed as Binomial(N, 0.45), and ALG wins conditional on D distributed as Binomial(D, 2/3); the rejection threshold is twice the upper Binomial(D, 1/2) tail at most 0.05, in ALG's direction. This is not an estimate from the small observed benchmark and does not license 400 model trials. It explains why a few favorable examples cannot prove a 15-point advantage. The actual confirmatory size may be larger, smaller, or unaffordable; then narrow the claim or report exploratory evidence.
+- Use one fixed sample and one final primary analysis. No repeated significance checks, stopping at the first win, automatic sample-size extension or trying models until one passes. Operational integrity/spending stop rules can end early, in which case inference is qualified and no positive efficacy claim is made.
+- Predeclare correction/gatekeeping for any additional confirmatory metrics, models or populations. Cost, latency, checker ablations and family slices are descriptive unless separately powered and controlled. A second model's win cannot rescue a failed primary result.
+- Limit this initiative to one primary confirmatory attempt unless a family-wise error budget of at most 0.05 across candidate attempts is allocated before the first one. If repeated candidate confirmation is intended, freeze a finite correction or alpha-spending rule and power each attempt at its allocated level. Restarting with a fresh 5% test after each failure until one wins is not permitted. A future replication or revised scope must disclose the earlier attempts and its own status.
+
+A positive-benefit claim requires the frozen primary analysis to reject no benefit in ALG's direction and its compatible paired interval to exclude zero. Report whether the point estimate reaches the fifteen-point development target, without converting that comparison into proof of a fifteen-point true gain. That stronger claim requires the lower bound to exceed fifteen points and a different power plan. Deployment eligibility separately requires the frozen absolute-completion and integrity guardrails. Report all three decisions, the estimate, interval, denominators, all discordant pairs and missingness.
+
+Confirmation fixtures and gold data remain inaccessible to the implementing agents until that evaluation is closed. If there is no separate custodian/isolation boundary, call the run development validation, not a blinded holdout. After inspection, those cases become regression/development evidence; future confirmation uses new sealed incidents. If an oracle defect is discovered, retain the original cohort, mark it invalid for the affected claim, fix/qualify the grader and freeze a new cohort. Never silently rescore the old data into a victory.
+
+### Failure-driven development loop
+
+For every unsuccessful or expensive development case:
+
+1. Preserve the trace and smallest reproducible evidence: task/graph revision, phase, source and skill versions, remote intent/result, attempt reason, resource observations and exact cutoff.
+2. Classify the host-observed cause: apparatus invalidity; admission/capability error; mechanical persistence/recovery failure; output contract; scientific/code error; checker false acceptance/rejection; avoidable repeated work; budget/overhead; provider availability. Do not label everything model variance.
+3. Reproduce mechanics with deterministic fixtures first, minimizing model calls. Define the invariant that should have held and the affected ownership boundary.
+4. Make the smallest model-agnostic repair in the owning component. Add a regression that fails before and passes after the fix, plus a neighboring negative case. Preserve earlier failure receipts.
+5. Run affected local Windows/Bash checks; broaden to full-suite and installed-package checks at candidate freeze. Use a development counterpart under unchanged criteria to assess behavioral improvements; report both versions and all attempts. Do not rewrite history or cherry-pick the best seed.
+6. Review cost and mechanism participation. If a feature consumes more calls without improving correct completion or required recovery, simplify, disable by default or remove it. A targeted checker is retained for demonstrated value, not because its output sounds skeptical.
+7. Freeze the candidate before confirmation. A material runtime, prompt, skill, model, graph policy, scorer or budget change starts a new cohort. Failed sealed cases can improve the next candidate but cannot also confirm it.
+
+A durable failure register links incident → invariant → reproducer → fix commit → local checks → development outcome → remaining uncertainty. Keep it in the existing evidence/report workflow, not another runtime store. Only observed failures and measured effects support promotion; the simulator's hidden labels, holdout answers and model names must never become production routing rules.
+
+### Delivery order and stop rules
+
+The next coding change is **P1**, with H0 developed in parallel: task-contract admission, original-criteria identity and compatible compact work. Then prove P2 on actual host compaction/restart, add P3's shared allowance, and run the bounded hard development pilot. Add P4 probes/adaptation one at a time in response to evidence. Do not expand graph complexity while basic admission, evidence recovery or metering is failing.
+
+A merge/release needs the repository's applicable full local checks and a clean candidate-specific installed-package verification on both platforms. A competitive advantage needs separate comparative evidence. These are different gates: do not merge broken mechanics because a model trial wins, and do not describe a mechanically green candidate as proven superior.
+
+This plan is complete when the work packages, their evidence gates and the comparative decision are recorded, including a legitimate mixed/negative/inconclusive conclusion. The development objective remains improvement; no rule requires the data to name ALG the winner.

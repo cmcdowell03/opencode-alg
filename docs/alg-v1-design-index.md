@@ -16,7 +16,7 @@ This index owns sequencing within this draft set. The existing four owner contra
 
 **Later V1 work.** Curated cases and useful candidates precede measured skill promotion. Selection and parameterization of existing templates precede free-form graph authoring and lifecycle-safe revisions. The requested artifact skill remains an optional extension. Recursive orchestrators, shared multi-user synchronization and new analytics engines are outside Phase One.
 
-**Reliability follow-up to PR #14.** Before further graph complexity or automatic promotion, complete the [task-admission and Build-comparison plan](v1-reliability-and-build-comparison-plan.md): fix reproduced mechanics, reject incompatible deliverable/worker assignments, preserve original criteria, measure overhead, then evaluate durable recovery on a frozen fair cohort. These are planned V1 follow-ups; the earlier post-repair benchmark does not establish superiority.
+**Reliability and comparative development follow-up to PR #14.** Follow the [V1 development and Build-comparison plan](v1-reliability-and-build-comparison-plan.md): qualify independent measurement alongside task admission; preserve criteria, skills and evidence across recovery; enforce a shared allowance; then improve checking and pending graph work only where measured failures justify it. The hard semiconductor investigation, controlled fault cases and ordinary controls have separate roles. Twelve-trial discovery and twenty-trial rehearsal precede a separately powered sealed confirmation; none is launched by this design. The earlier post-repair benchmark does not establish superiority. Difficulty must not come from exclusive ALG tools/data, broken prerequisites or selectively reported trials.
 
 The older umbrella's baseline/visibility and recovery work maps into Phase 1a/1b. Former A–E labels identify capability families, not another implementation order.
 
@@ -48,7 +48,7 @@ Do not reward faster unsupported causal claims, silence about missing procedures
 - [Claude review reconciliation](alg-v1-claude-review-reconciliation.md): agreements, qualifications and source provenance.
 - [Graph evolution and adversarial review](v1-graph-evolution-adversarial-review.md): implemented opt-in citation-linked verdicts, bounded pending-node graph revisions and paired probe evaluation; stronger provenance and automatic promotion remain design.
 - [Measured graph/review evaluation](v1-adversarial-evaluation.md): bounded Gemma/Luna comparisons, preserved failures, criterion ambiguity and exact local host/recovery evidence. Exploratory results do not authorize automatic promotion.
-- [Reliability and comparison with native Build](v1-reliability-and-build-comparison-plan.md): first task/capability admission increment, mechanical qualification, overhead/budget design, fair workload matrix and held-out decision rules.
+- [V1 development and rigorous comparison with native Build](v1-reliability-and-build-comparison-plan.md): work packages and exit gates, task/capability admission, durable evidence/skills, resource accounting, bounded graph improvement, hard semiconductor scenarios, independent oracle qualification and powered confirmation rules.
 
 ## Canonical documentation
 
