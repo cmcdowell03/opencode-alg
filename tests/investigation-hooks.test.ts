@@ -6,14 +6,14 @@ import { mutateOwnedRun } from "../src/ownership.ts"
 import { SessionMemoryRuntime } from "../src/session-memory/runtime.ts"
 import { createRun, findLatestRunForSession, loadRunForOwner } from "../src/store.ts"
 import { getTemplate } from "../src/templates.ts"
-import { executeContext, removeProject, singleImplementGraph, tempProject } from "./helpers.ts"
+import { executeContext, inertClient, removeProject, singleImplementGraph, tempProject, testTaskContract } from "./helpers.ts"
 
 const dirs: string[] = []
 afterEach(() => { for (const dir of dirs.splice(0)) removeProject(dir) })
 function fixture() { const path = tempProject("alg-investigation-hooks-"); dirs.push(path); return path }
 function plugin(path: string) {
   return { directory: path, worktree: path, project: { id: "fixture-project" }, client: {
-    app: { log: async () => ({ data: true }) }, session: {
+    app: { log: async () => ({ data: true }), agents: (inertClient() as any).app.agents }, session: {
       get: async (request: any) => ({ data: { id: request.path.id, projectID: "fixture-project", directory: path, title: "owner" } }),
       messages: async () => ({ data: [] }),
       create: async () => { throw new Error("unexpected child creation") },
@@ -24,6 +24,11 @@ function plugin(path: string) {
 function context(path: string) { return { sessionID: "owner", messageID: "m1", agent: "orchestrator", directory: path,
   worktree: path, abort: new AbortController().signal, ask: async () => {}, metadata: () => {} } as any }
 function output(value: unknown) { return JSON.parse((value as { output: string }).output) }
+const admission = { criteria: ["Keep causal claims bounded"], task_contract: testTaskContract({
+  kind: "read_only", discovery: "required", phase: "complete",
+  deliverables: [{ destination: "response", producer_node: "confirm" }],
+  verification: { checker_node: "check", execution: "none" }, preserve_paths: [],
+}) }
 
 describe("investigation host boundaries", () => {
   test("fixed template planning fails closed when disabled and rejects graph or gate overrides", async () => {
@@ -31,13 +36,16 @@ describe("investigation host boundaries", () => {
       investigation: { enabled: false }, skillEvolution: { enabled: false } } as any)
     try {
       const plan = hooks.tool!.alg_plan!
-      expect(output(await plan.execute({ goal: "Investigate particles", template: "data-investigation" }, context(path))).error).toContain("enabled configuration")
+      expect(output(await plan.execute({ ...admission, goal: "Investigate particles", template: "data-investigation" }, context(path))).error).toContain("enabled configuration")
       expect(findLatestRunForSession(path, "owner")).toBeNull()
-      expect(output(await plan.execute({ goal: "Investigate particles", template: "data-investigation", graph_json: JSON.stringify(getTemplate("data-investigation")) }, context(path))).error).toContain("unmodified fixed")
-      expect(output(await plan.execute({ goal: "Investigate particles", graph_json: JSON.stringify(getTemplate("data-investigation")) }, context(path))).error).toContain("built-in")
-      expect(output(await plan.execute({ goal: "Investigate particles", template: "data-investigation", shell_gate: "echo changed" }, context(path))).error).toContain("unmodified fixed")
+      expect(output(await plan.execute({ ...admission, goal: "Investigate particles", template: "data-investigation", graph_json: JSON.stringify(getTemplate("data-investigation")) }, context(path))).error).toContain("unmodified fixed")
+      expect(output(await plan.execute({ ...admission, goal: "Investigate particles", graph_json: JSON.stringify(getTemplate("data-investigation")) }, context(path))).error).toContain("built-in")
+      expect(output(await plan.execute({ ...admission, goal: "Investigate particles", template: "data-investigation", shell_gate: "echo changed" }, context(path))).error).toContain("unmodified fixed")
       expect(findLatestRunForSession(path, "owner")).toBeNull()
-      expect(output(await plan.execute({ goal: "Ordinary work", template: "coding-diamond" }, context(path))).run_id).toBeTruthy()
+      expect(output(await plan.execute({ goal: "Ordinary work", template: "coding-diamond", criteria: ["Create result.json"],
+        task_contract: testTaskContract({ kind: "project_change", discovery: "required", phase: "complete",
+          deliverables: [{ destination: "project_file", path: "result.json", producer_node: "implement" }],
+          verification: { checker_node: "check", execution: "none" }, preserve_paths: [] }) }, context(path))).run_id).toBeTruthy()
     } finally { await hooks.dispose?.() }
   })
 
@@ -45,12 +53,12 @@ describe("investigation host boundaries", () => {
     const path = fixture(), hooks = await server(plugin(path), { sessionMemory: { mode: "assist" },
       investigation: { enabled: true }, skillEvolution: { enabled: false } } as any)
     try {
-      const planned = output(await hooks.tool!.alg_plan!.execute({ goal: "Investigate particles", template: "data-investigation",
-        criteria: ["Keep causal claims bounded"] }, context(path)))
+      const planned = output(await hooks.tool!.alg_plan!.execute({ ...admission, goal: "Investigate particles", template: "data-investigation" }, context(path)))
       expect(planned.error).toBeUndefined()
       const id = planned.run_id as string
       expect(loadRunForOwner(path, id, "owner")?.investigation).toBeTruthy()
-      expect(output(await hooks.tool!.alg_criteria!.execute({ run_id: id, criteria: ["Changed"] }, context(path))).error).toContain("criteria are fixed")
+      expect(output(await hooks.tool!.alg_criteria!.execute({ run_id: id, criteria: ["Changed"] }, context(path))).error).toContain("task_contract_locked")
+      expect(loadRunForOwner(path, id, "owner")!.criteria).toEqual(admission.criteria)
       expect(output(await hooks.tool!.alg_run!.execute({ run_id: id, shell_gate: "echo changed" }, context(path))).error).toContain("fixed")
       expect(output(await hooks.tool!.alg_resume!.execute({ run_id: id, shell_gate: "echo changed" }, context(path))).error).toContain("fixed")
       expect(loadRunForOwner(path, id, "owner")?.global_attempts).toBe(0)
