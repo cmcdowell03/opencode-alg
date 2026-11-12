@@ -282,6 +282,23 @@ function finishReason(data: unknown): string | undefined {
  * Uses a fresh SDK child session per attempt. This isolates message history from
  * sibling attempts; OpenCode project/system policy and filesystem access still apply.
  */
+/** Share the complete role contract between real child calls and model evaluations. */
+export function withNodeOutputContract(agent: Exclude<AlgAgent, "shell">, userPrompt: string): string {
+  const promptLimit = agent === "checker" ? MAX_CHECKER_PROMPT_BYTES : MAX_WORKER_PROMPT_BYTES
+  assertTextBytes(userPrompt, promptLimit, `${agent} prompt`)
+  const fullPrompt = `${userPrompt}
+
+---
+OUTPUT CONTRACT (mandatory):
+Return a single JSON object matching this strict schema for agent "${agent}".
+No prose outside the JSON (markdown fences allowed).
+
+${jsonSchemaHint(agent)}
+`
+  assertTextBytes(fullPrompt, promptLimit, `${agent} full prompt`)
+  return fullPrompt
+}
+
 export async function runNodeSession(opts: NodePromptOpts): Promise<NodePromptResult> {
   let sessionId = ""
   let callbackFailed = false
@@ -289,18 +306,7 @@ export async function runNodeSession(opts: NodePromptOpts): Promise<NodePromptRe
   const stopChild = () => { stopping ??= stopChildSession(opts.client, sessionId, opts.directory) }
   try {
     if (opts.abort?.aborted) throw new Error("Execution cancelled before child launch")
-    const promptLimit = opts.agent === "checker" ? MAX_CHECKER_PROMPT_BYTES : MAX_WORKER_PROMPT_BYTES
-    assertTextBytes(opts.userPrompt, promptLimit, `${opts.agent} prompt`)
-    const fullPrompt = `${opts.userPrompt}
-
----
-OUTPUT CONTRACT (mandatory):
-Return a single JSON object matching this strict schema for agent "${opts.agent}".
-No prose outside the JSON (markdown fences allowed).
-
-${jsonSchemaHint(opts.agent)}
-`
-    assertTextBytes(fullPrompt, promptLimit, `${opts.agent} full prompt`)
+    const fullPrompt = withNodeOutputContract(opts.agent, opts.userPrompt)
 
     const created = await opts.client.session.create({
       // The "(@agent subagent)" suffix is what OpenCode's own child-session footer reads to label a subagent.

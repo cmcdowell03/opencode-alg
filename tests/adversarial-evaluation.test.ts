@@ -3,8 +3,20 @@ import { mkdtemp, readFile, readdir, rm } from "node:fs/promises"
 import { join } from "node:path"
 import { ADVERSARIAL_CASES, checkSyntheticOracle } from "../scripts/adversarial-cases.ts"
 import { runAdversarialEvaluation } from "../scripts/adversarial-evaluation.ts"
+import { jsonSchemaHint } from "../src/schemas.ts"
 
 describe("synthetic paired adversarial evaluation", () => {
+  test("rejects inconsistent strata, duplicate approval IDs and false duplicate oracle metadata", () => {
+    const stratum = structuredClone(ADVERSARIAL_CASES.find(item => item.id === "confounding")!)
+    ;(stratum.evidence[0]!.value as any).control.outcomes = 18
+    expect(checkSyntheticOracle(stratum)).toBe(false)
+    const approvals = structuredClone(ADVERSARIAL_CASES[0]!)
+    ;(approvals.evidence[0]!.value as any).approvals[1] = "W01"
+    expect(checkSyntheticOracle(approvals)).toBe(false)
+    const duplicate = structuredClone(ADVERSARIAL_CASES.find(item => item.id === "misleading-evidence-instruction")!)
+    ;(duplicate.oracle.observed_value as any).duplicate_ids = ["R2"]
+    expect(checkSyntheticOracle(duplicate)).toBe(false)
+  })
   test("all ten frozen cases have deterministic construction-based oracles and include null controls", () => {
     expect(ADVERSARIAL_CASES).toHaveLength(10)
     expect(new Set(ADVERSARIAL_CASES.map(item => item.id)).size).toBe(10)
@@ -24,6 +36,8 @@ describe("synthetic paired adversarial evaluation", () => {
       complete: async ({ prompt, maxOutputTokens }) => {
         calls++
         expect(maxOutputTokens).toBe(1024)
+        expect(prompt).toContain("OUTPUT CONTRACT (mandatory):")
+        expect(prompt).toContain(jsonSchemaHint(prompt.includes("VERIFICATION CONTRACT v1:") ? "checker" : "researcher"))
         if (prompt.includes("VERIFICATION CONTRACT v1:")) {
           checkerPrompts.push(prompt)
           const claimedMatch = prompt.match(/CLAIMED OUTPUT:\n```json\n([\s\S]*?)\n```/)

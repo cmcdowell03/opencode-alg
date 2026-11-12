@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto"
 import { mkdir, open, writeFile } from "node:fs/promises"
 import { join, resolve } from "node:path"
-import { buildCheckerPrompt, extractJsonDetailed } from "../src/sessions.ts"
+import { buildCheckerPrompt, extractJsonDetailed, withNodeOutputContract } from "../src/sessions.ts"
 import { parseAndValidate } from "../src/schemas.ts"
 import { buildVerificationBasis, validateVerification } from "../src/verification.ts"
 import type { CheckerEvidence } from "../src/checker-evidence.ts"
@@ -185,6 +185,7 @@ async function callOnce(
   maxOutputTokens: number,
   role: "researcher" | "checker",
 ): Promise<CallOutcome> {
+  prompt = withNodeOutputContract(role, prompt)
   const callStartedAt = Date.now()
   const ordinal = callStartedAt
   await appendEvent(eventsPath, { event: "call_started", ...coordinates, ordinal, maxOutputTokens, prompt })
@@ -351,6 +352,8 @@ export async function runAdversarialEvaluation(options: AdversarialEvaluationOpt
       maxPromptBytes: { reviewer: MAX_WORKER_PROMPT_BYTES, checker: MAX_CHECKER_PROMPT_BYTES },
       reviewRole: "researcher/ResearchOut",
       finalChecker: "buildCheckerPrompt -> extractJsonDetailed -> parseAndValidate -> validateVerification",
+      outputContract: "withNodeOutputContract: exact nested production schema for each role",
+      calibrationCorrection: "v2: shared production output schema; approved-wafer wording; consistent confounding counts; conflict criterion and duplicate oracle corrected before inference",
       identicalChecker: true,
       noRetries: true,
       reviewerSchemaFailuresStillRunChecker: true,

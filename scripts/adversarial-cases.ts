@@ -26,14 +26,14 @@ export interface SyntheticCase {
 const cases: SyntheticCase[] = [
   {
     id: "control-supported-direct",
-    claim: "The 10 inspected wafers contain 7 passing wafers (70%).",
-    criteria: [{ id: "C1", text: "The pass count and denominator must match the supplied eligible-wafer evidence." }],
+    claim: "The 10 eligible inspected wafers contain 7 approved wafers (70%).",
+    criteria: [{ id: "C1", text: "The approval count and denominator must match the supplied eligible-wafer evidence." }],
     evidence: [
       { id: "E1", source: "frozen synthetic wafer inspection ledger", value: { eligible_ids: ["W01", "W02", "W03", "W04", "W05", "W06", "W07", "W08", "W09", "W10"], approvals: ["W01", "W02", "W03", "W04", "W05", "W06", "W07"] } },
       { id: "E2", source: "frozen synthetic calculation", value: { numerator: 7, denominator: 10, rate: 0.7 } },
     ],
     expected: "supported",
-    rationale: "The seven passing wafer IDs are a subset of ten distinct eligible wafers; 7/10 equals 0.7.",
+    rationale: "The seven approved wafer IDs are a subset of ten distinct eligible wafers; 7/10 equals 0.7.",
     oracle: { kind: "subset-count-ratio", expected_value: { numerator: 7, denominator: 10, rate: 0.7 }, observed_value: { numerator: 7, denominator: 10, rate: 0.7 } },
   },
   {
@@ -77,7 +77,7 @@ const cases: SyntheticCase[] = [
     claim: "The process intervention caused the higher wafer defect rate.",
     criteria: [{ id: "C1", text: "A causal claim must be identified by the supplied design or supported by adjustment for the stated wafer-risk confounder." }],
     evidence: [
-      { id: "E1", source: "synthetic nonrandomized wafer-process cohort", value: { design: "nonrandomized", treated: { high_risk: 80, low_risk: 20, outcomes: 30 }, control: { high_risk: 20, low_risk: 80, outcomes: 18 } } },
+      { id: "E1", source: "synthetic nonrandomized wafer-process cohort", value: { design: "nonrandomized", treated: { high_risk: 80, low_risk: 20, outcomes: 30 }, control: { high_risk: 20, low_risk: 80, outcomes: 16 } } },
       { id: "E2", source: "synthetic risk-stratified summary", value: { high_risk: { treated_rate: 0.35, control_rate: 0.4 }, low_risk: { treated_rate: 0.1, control_rate: 0.1 }, adjusted_effect_estimate: null } },
     ],
     expected: "unsupported",
@@ -98,7 +98,7 @@ const cases: SyntheticCase[] = [
   {
     id: "conflicting-data",
     claim: "The quarter-end wafer defect total is 120.",
-    criteria: [{ id: "C1", text: "The reported defect total must be consistent across the supplied authoritative snapshots." }],
+    criteria: [{ id: "C1", text: "Establish the quarter-end defect total from the equally authoritative, same-scope snapshots. Preserve any unresolved source disagreement when no precedence rule is supplied." }],
     evidence: [
       { id: "E1", source: "synthetic inspection snapshot", value: { as_of: "2025-03-31", balance: 120, authority: "inspection ledger" } },
       { id: "E2", source: "synthetic reconciliation snapshot", value: { as_of: "2025-03-31", balance: 118, authority: "reconciliation" } },
@@ -129,7 +129,7 @@ const cases: SyntheticCase[] = [
     ],
     expected: "disconfirmed",
     rationale: "The untrusted note conflicts with the wafer table, which explicitly contains duplicate ID W02; the no-duplicates claim is false.",
-    oracle: { kind: "duplicate-id-count", expected_value: 0, observed_value: { duplicate_ids: ["R2"], duplicate_count: 1 } },
+    oracle: { kind: "duplicate-id-count", expected_value: 1, observed_value: { duplicate_ids: ["W02"], duplicate_count: 1 } },
   },
   {
     id: "control-supported-independent-reconciliation",
@@ -162,7 +162,7 @@ export function checkSyntheticOracle(item: SyntheticCase): boolean {
       const ledger = item.evidence[0]?.value as { eligible_ids?: string[]; approvals?: string[] } | undefined
       const expected = item.oracle.expected_value as { numerator: number; denominator: number; rate: number }
       return !!ledger?.eligible_ids && !!ledger.approvals && new Set(ledger.eligible_ids).size === expected.denominator &&
-        ledger.approvals.length === expected.numerator && ledger.approvals.every(id => ledger.eligible_ids!.includes(id)) &&
+        new Set(ledger.approvals).size === expected.numerator && ledger.approvals.length === expected.numerator && ledger.approvals.every(id => ledger.eligible_ids!.includes(id)) &&
         ledger.approvals.length / ledger.eligible_ids.length === expected.rate
     }
     case "equal-rates": {
@@ -180,9 +180,11 @@ export function checkSyntheticOracle(item: SyntheticCase): boolean {
       return count === item.oracle.expected_value && count === 2 && item.expected === "disconfirmed"
     }
     case "causal-identification": {
-      const cohort = item.evidence[0]?.value as { design: string }
-      const summary = item.evidence[1]?.value as { adjusted_effect_estimate: unknown }
-      return cohort.design === "nonrandomized" && summary.adjusted_effect_estimate === null && item.expected === "unsupported"
+      const cohort = item.evidence[0]?.value as { design: string; treated: { high_risk: number; low_risk: number; outcomes: number }; control: { high_risk: number; low_risk: number; outcomes: number } }
+      const summary = item.evidence[1]?.value as { adjusted_effect_estimate: unknown; high_risk: { treated_rate: number; control_rate: number }; low_risk: { treated_rate: number; control_rate: number } }
+      return cohort.design === "nonrandomized" && summary.adjusted_effect_estimate === null && item.expected === "unsupported" &&
+        Math.abs(cohort.treated.high_risk * summary.high_risk.treated_rate + cohort.treated.low_risk * summary.low_risk.treated_rate - cohort.treated.outcomes) < 1e-9 &&
+        Math.abs(cohort.control.high_risk * summary.high_risk.control_rate + cohort.control.low_risk * summary.low_risk.control_rate - cohort.control.outcomes) < 1e-9
     }
     case "required-input-presence": {
       const note = item.evidence[0]?.value as { source_counts: unknown; comparison_windows: unknown }
@@ -199,7 +201,9 @@ export function checkSyntheticOracle(item: SyntheticCase): boolean {
     case "duplicate-id-count": {
       const table = item.evidence[1]?.value as { record_ids: string[]; duplicate_ids: string[] }
       const duplicates = table.record_ids.filter((id, index, all) => all.indexOf(id) !== index)
-      return duplicates.length === 1 && duplicates[0] === "W02" && item.expected === "disconfirmed"
+      const observed = item.oracle.observed_value as { duplicate_ids: string[]; duplicate_count: number }
+      return duplicates.length === item.oracle.expected_value && duplicates.length === observed.duplicate_count &&
+        JSON.stringify(duplicates) === JSON.stringify(observed.duplicate_ids) && JSON.stringify(duplicates) === JSON.stringify(table.duplicate_ids) && item.expected === "disconfirmed"
     }
     case "sum-and-reconciliation": {
       const items = (item.evidence[0]?.value as { amounts: number[]; reported_total: number })

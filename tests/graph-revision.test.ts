@@ -6,7 +6,8 @@ import { createRun, loadRun, runDir } from "../src/store.ts"
 import { graphSha256, GraphRevisionReceiptSchema, reviseGraph } from "../src/graph-revision.ts"
 import { createAlgTools } from "../src/tools.ts"
 import type { GraphDef, RunState } from "../src/types.ts"
-import { inertClient, removeProject } from "./helpers.ts"
+import { inertClient, removeProject, executeContext } from "./helpers.ts"
+import { executeRun } from "../src/executor.ts"
 
 function tempProject(label = ".graph-revision-test-"): string {
   return realpathSync.native(mkdtempSync(join(process.cwd(), label)))
@@ -32,6 +33,48 @@ function fixture(definition = graph([
 }
 
 describe("bounded V1 graph revisions", () => {
+  test("reload and revision retain completed work and spend while adding a bounded probe", async () => {
+    const project = tempProject("alg-revision-resume-")
+    try {
+      const definition = graph([
+        { id: "work", agent: "implementer", depends_on: [] },
+        { id: "review", agent: "researcher", depends_on: ["work"] },
+      ])
+      const run = createRun({ goal: "reuse the expensive observation", criteria: ["immutable"], graph: definition,
+        projectDirectory: project, ownerSessionId: "owner" })
+      let workCalls = 0, otherCalls = 0
+      const runner = async (options: { agent: string }) => {
+        if (options.agent === "implementer") {
+          workCalls++
+          return { session_id: "observations", text: "", parsed: { summary: ["PINNED_OBSERVATION"], files_touched: [], commands_run: [], risks: [], done: true } }
+        }
+        otherCalls++
+        return { session_id: `review-${otherCalls}`, text: "", parsed: { answer: "Preserved observation", evidence: [], constraints: [], options: [], acceptance_criteria: ["immutable"], risks: [] } }
+      }
+      const options = { ...executeContext(project), parentSessionId: "owner", sessionRunner: runner }
+      const blocked = await executeRun(run, { ...options, maxWaves: 1 })
+      expect(blocked.status).toBe("blocked")
+      expect(blocked.global_attempts).toBe(1)
+      const tools = createAlgTools({ client: inertClient(), worktree: project, directory: project } as never)
+      const candidate = graph([
+        definition.nodes[0]!,
+        { id: "probe", agent: "researcher", depends_on: ["work"], inputs: { observation: "work" }, description: "Test one alternative using the existing observation" },
+        { ...definition.nodes[1]!, depends_on: ["work", "probe"], inputs: { observation: "work", probe: "probe" } },
+      ])
+      const response = JSON.parse((await tools.alg_plan.execute({ revise_run_id: run.run_id, expected_graph_sha256: graphSha256(definition),
+        graph_json: JSON.stringify(candidate), revision_reason: "Add one bounded alternative check" }, toolContext(project)) as { output: string }).output)
+      expect(response.error).toBeUndefined()
+      const reloaded = loadRun(project, run.run_id)!
+      expect(reloaded.global_attempts).toBe(1)
+      const completed = await executeRun(reloaded, options)
+      expect(completed.status).toBe("done")
+      expect(completed.global_attempts).toBe(3)
+      expect(completed.graph.max_global_attempts).toBe(4)
+      expect(completed.nodes.work!.current_attempt).toBe(1)
+      expect(workCalls).toBe(1)
+      expect(otherCalls).toBe(2)
+    } finally { removeProject(project) }
+  })
   test("changes pending nodes and adds bounded work without changing caps or run identity", () => {
     const f = fixture()
     try {
