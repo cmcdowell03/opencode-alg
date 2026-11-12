@@ -24,6 +24,8 @@ export interface BenchmarkToolMetrics {
 }
 
 export interface SessionMetricsSummary {
+  /** Bounded attribution rows; unavailable identity fields use explicit nulls. */
+  attribution: { rows: Array<{ sessionID: string; requestID: string | null; role: string | null; phase: string | null; providerID: string | null; modelID: string | null; assistantTurns: number; usageComplete: number; usagePartial: number; usageUnknown: number; reportedComponents: Record<string, number> }>; overflowMessages: number }
   sessions: { total: number; roots: number; children: number }
   assistantTurns: {
     total: number
@@ -43,6 +45,7 @@ export interface SessionMetricsSummary {
     totalReportedTokens: number
     turns: { complete: number; partial: number; unknown: number }
     billing: "not_estimated"
+    coverage: "observed_session_fields_only"
   }
   cost: { reportedTotal: number; reportedTurns: number; unknownTurns: number; billing: "not_estimated" }
   tools: {
@@ -62,7 +65,7 @@ export interface SessionMetricsSummary {
 }
 
 type SessionRow = { id: string; parentID?: string }
-type MessageRow = { sessionID: string; info: any; parts: any[] }
+type MessageRow = { sessionID: string; info: any; parts: any[]; benchmarkPhase?: string }
 
 const COMPONENTS = ["input", "output", "reasoning", "cacheRead", "cacheWrite"] as const
 type ComponentName = (typeof COMPONENTS)[number]
@@ -147,6 +150,7 @@ function makeToolMetrics(): BenchmarkToolMetrics {
 export function summarizeSessionMetrics(
   sessions: Array<{ id: string; parentID?: string }>,
   messages: Array<{ sessionID: string; info: any; parts: any[] }>,
+  options: { phaseBySession?: Readonly<Record<string, string>>; maxAttributionRows?: number } = {},
 ): SessionMetricsSummary {
   const uniqueSessions = new Map<string, SessionRow>()
   for (const session of sessions) if (typeof session?.id === "string" && session.id) uniqueSessions.set(session.id, session)
@@ -174,6 +178,8 @@ export function summarizeSessionMetrics(
   let reportedCost = 0, reportedCostTurns = 0, unknownCostTurns = 0
   let toolTotal = 0, toolCompleted = 0, toolError = 0, toolPending = 0
   let deniedTool = 0, stepExhaustion = 0
+  const attribution = new Map<string, SessionMetricsSummary["attribution"]["rows"][number]>()
+  let attributionOverflow = 0
 
   for (const message of latestMessages.values()) {
     const info = message.info ?? {}
@@ -214,6 +220,22 @@ export function summarizeSessionMetrics(
           components[name].reportedTurns++
           knownComponents++
         }
+      }
+      const safe = (value: unknown) => typeof value === "string" && value.length > 0 ? value.slice(0, 128) : null
+      const sessionID = message.sessionID.slice(0, 128), requestID = safe(info.parentID), role = safe(info.agent) ?? safe(info.role), phase = safe(message.benchmarkPhase) ?? safe(options.phaseBySession?.[message.sessionID])
+      const key = JSON.stringify([sessionID, requestID, role, phase, safe(providerID), safe(modelID)])
+      let row = attribution.get(key)
+      if (!row && attribution.size < (options.maxAttributionRows ?? 2048)) {
+        row = { sessionID, requestID, role, phase, providerID: safe(providerID), modelID: safe(modelID), assistantTurns: 0, usageComplete: 0, usagePartial: 0, usageUnknown: 0, reportedComponents: Object.fromEntries(COMPONENTS.map(name => [name, 0])) }
+        attribution.set(key, row)
+      }
+      if (!row) attributionOverflow++
+      else {
+        row.assistantTurns++
+        if (knownComponents === COMPONENTS.length) row.usageComplete++
+        else if (knownComponents === 0) row.usageUnknown++
+        else row.usagePartial++
+        for (const name of COMPONENTS) row.reportedComponents[name] = (row.reportedComponents[name] ?? 0) + (reportedValues[name] ?? 0)
       }
       if (knownComponents === COMPONENTS.length) completeUsageTurns++
       else if (knownComponents === 0) unknownUsageTurns++
@@ -296,6 +318,7 @@ export function summarizeSessionMetrics(
   const componentTotal = COMPONENTS.reduce((sum, name) => sum + components[name].reportedTotal, 0)
   const roots = [...uniqueSessions.values()].filter((session) => !session.parentID).length
   return {
+    attribution: { rows: [...attribution.values()], overflowMessages: attributionOverflow },
     sessions: { total: uniqueSessions.size, roots, children: uniqueSessions.size - roots },
     assistantTurns: {
       total: assistantTotal, finished, unfinished, error: assistantErrors,
@@ -306,6 +329,7 @@ export function summarizeSessionMetrics(
       totalReportedTokens: componentTotal,
       turns: { complete: completeUsageTurns, partial: partialUsageTurns, unknown: unknownUsageTurns },
       billing: "not_estimated",
+      coverage: "observed_session_fields_only",
     },
     cost: { reportedTotal: reportedCost, reportedTurns: reportedCostTurns, unknownTurns: unknownCostTurns, billing: "not_estimated" },
     tools: { total: toolTotal, completed: toolCompleted, error: toolError, pending: toolPending, byName: toolsByName },

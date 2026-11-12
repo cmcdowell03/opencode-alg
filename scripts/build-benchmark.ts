@@ -3,9 +3,12 @@ import { createServer } from "node:net"
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync, readdirSync, copyFileSync, unlinkSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { createHash, randomBytes } from "node:crypto"
+import type { SessionSummarizeResponses } from "@opencode-ai/sdk/client"
 import { BENCHMARK_CASES, scoreBenchmarkCase, scoreBenchmarkPreparation } from "./build-benchmark-fixtures.ts"
 import { summarizeSessionMetrics } from "./build-benchmark-metrics.ts"
 import { sendBenchmarkPrompt } from "./build-benchmark-transport.ts"
+import { hostRetentionEvents, measureBuildBenchmarkRetention } from "./build-benchmark-retention.ts"
+import { scheduleIssuedPairs, summarizeIssuedArms, finalCensus, compactionReceipt, compactionIsQualified, eligibility, type BenchmarkTrack } from "./build-benchmark-protocol.ts"
 import { computeAlgSourceIdentity } from "../src/source-identity.ts"
 import { seedVerificationHostDependencies } from "./verification-host-dependencies.ts"
 import { verificationPluginConfiguration, realUserGlobalConfigRoots, snapshotGlobalOpenCodeConfig, stopCapturedProcess } from "./live-verify.ts"
@@ -13,12 +16,11 @@ import { verificationPluginConfiguration, realUserGlobalConfigRoots, snapshotGlo
 /** Local feasibility pilot. JSON config supplies paths/provider, never credential values. */
 interface Config {
   outputRoot: string; hostExecutable: string; providerID: string; modelID: string;
-  provider: Record<string, unknown>; authFile?: string; preflightOnly?: boolean; caseIds?: string[];
+  provider: Record<string, unknown>; authFile?: string; preflightOnly?: boolean; caseIds?: string[]; track?: BenchmarkTrack;
   ollama?: { executable: string; models: string; model: string };
 }
-const ARMS = ["build", "alg_default", "alg_targeted"] as const
-type Arm = typeof ARMS[number]
-const LIMITS = { trialMs: 480_000, assistantTurns: 40, reportedTokens: 200_000, outputTokens: 4096, reportedCostPerSuite: 5, suiteMs: 55*60_000 }
+const LIMITS = { trialMs: 480_000, assistantTurns: 40, outputTokens: 4096, suiteMs: 55*60_000 }
+const USAGE_MONITORS = { reportedTokens: 200_000, reportedCostPerSuite: 5, enforcement: "telemetry_only_not_a_provider_or_invoice_ceiling" }
 const TARGETED = "Additional targeted falsification mandate: assess the original user deliverable, not whether a review memo sounds correct. Seek a concrete counterexample involving distinct entity counts, joins, UTC interval boundaries, denominators or conflicting sources when relevant. Read the actual artifact and supplied source. Preserve uncertainty when sources disagree. A useful criticism must cite the violated original criterion. Do not invent defects or new requirements."
 const COMMON = "Work only in this fixture workspace. Do not access credentials, change global configuration, install packages, or use network services. The available Node runtime and fixture files are sufficient. Preserve supplied evidence, skills and visible tests. Finish the requested artifact and explain the result honestly."
 const sha=(value:Buffer|string)=>createHash("sha256").update(value).digest("hex")
@@ -52,7 +54,11 @@ function files(root:string):Array<{path:string;bytes:number;sha256:string}>{
 export async function runBuildBenchmark(config:Config){
   const repo=resolve(import.meta.dir,".."),root=resolve(config.outputRoot)
   if(config.caseIds && (!config.caseIds.length || new Set(config.caseIds).size!==config.caseIds.length || config.caseIds.some(id=>!BENCHMARK_CASES.some(c=>c.id===id))))throw Error("caseIds must select distinct known cases")
-  const selectedCases=BENCHMARK_CASES.map((fixture,index)=>({fixture,index})).filter(({fixture})=>!config.caseIds||config.caseIds.includes(fixture.id))
+  const selectedCases=BENCHMARK_CASES.filter(fixture=>!config.caseIds||config.caseIds.includes(fixture.id))
+  const track=config.track??"default"
+  if(track!=="default"&&track!=="targeted_compatibility")throw Error("track must be default or targeted_compatibility")
+  const issuedCases=scheduleIssuedPairs(selectedCases,track)
+  const pairs=issuedCases.map(({pair})=>pair)
   if(existsSync(root))throw Error("Evidence destination exists; no implicit rerun")
   mkdirSync(root,{recursive:true})
   const initialIdentity=computeAlgSourceIdentity(repo), plugin=verificationPluginConfiguration(repo)
@@ -61,13 +67,18 @@ export async function runBuildBenchmark(config:Config){
   const json=(path:string,value:unknown)=>write(path,JSON.parse(scrub(JSON.stringify(value))))
   const suiteDeadline=Date.now()+LIMITS.suiteMs
   const protocol={schema:"alg-build-pilot-v1",started_at:new Date().toISOString(),source_commit:execFileSync("git",["rev-parse","HEAD"],{cwd:repo}).toString().trim(),source_sha256:initialIdentity.digest,
-    harness_sha256:sha(readFileSync(import.meta.filename)),fixtures_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-fixtures.ts"))),metrics_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-metrics.ts"))),transport_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-transport.ts"))),prompt_transport:"prompt_async",
-    model:`${config.providerID}/${config.modelID}`,limits:LIMITS,preflight_only:!!config.preflightOnly,
-    cases:selectedCases.map(({fixture:c,index})=>({id:c.id,criteria:c.criteria,initialPrompt:c.initialPrompt,followupPrompt:c.followupPrompt??null,fixture_files:Object.entries(c.files).map(([path,text])=>({path,sha256:sha(text)})),order:index%2?["alg_targeted","alg_default","build"]:ARMS})),
-    interpretation:"Single-repeat feasibility pilot. Equal external budgets; ALG internal gates are diagnostics, never the independent oracle. Session-visible usage is not proof of complete provider billing. No superiority claim.",
+    harness_sha256:sha(readFileSync(import.meta.filename)),protocol_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-protocol.ts"))),fixtures_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-fixtures.ts"))),metrics_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-metrics.ts"))),transport_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-transport.ts"))),prompt_transport:"prompt_async",
+    model:`${config.providerID}/${config.modelID}`,limits:LIMITS,preflight_only:!!config.preflightOnly,track,
+    pairs:issuedCases.map(({pair,order})=>({...pair,arms:[...pair.arms],order})),
+    cases:selectedCases.map(c=>({id:c.id,criteria:c.criteria,initialPrompt:c.initialPrompt,followupPrompt:c.followupPrompt??null,fixture_files:Object.entries(c.files).map(([path,text])=>({path,sha256:sha(text)}))})),
+    retention_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-retention.ts"))),
+    interpretation:"Single-repeat feasibility pilot. Equal externally enforced time and per-call output limits; the assistant-turn threshold is a polling-based observed cutoff subject to overshoot, not a hard request cap. ALG internal gates are diagnostics, never the independent oracle. Reported token/cost thresholds are monitors only, not provider-call, token, or invoice ceilings. Session-visible usage is not proof of complete provider billing. No superiority claim.",
+    enforcement:{time:"hard host deadline",output:"per-call configured limit",assistantTurns:"observed cutoff; polling overshoot possible",reportedTokens:"telemetry only",reportedCost:"telemetry only"},
+    usage_monitors:USAGE_MONITORS,
     targeted_mandate:TARGETED,common_instruction:COMMON,unmeasured:["actual provider invoice","hidden model calls not represented by session messages","operator minutes","production MCP cost/reuse","multi-hour reliability","hardware-normalized latency"]}
   json(join(root,"plan.json"),protocol)
-  const results:any[]=[],authCopies:string[]=[];let local:Tracked|undefined,localBase:string|undefined,knownCost=0,fatal:string|null=null
+  const results:any[]=pairs.flatMap(pair=>pair.arms.map(({arm})=>({pairId:pair.pairId,caseId:pair.caseId,arm,status:"issued_not_started",passed:false}))),authCopies:string[]=[];let local:Tracked|undefined,localBase:string|undefined,knownCost=0,fatal:string|null=null
+  const updateResult=(pairId:string,arm:string,patch:Record<string,unknown>)=>{const row=results.find(r=>r.pairId===pairId&&r.arm===arm);if(row)Object.assign(row,patch);const pair=pairs.find(p=>p.pairId===pairId);const pairArm=pair?.arms.find(a=>a.arm===arm);if(pairArm){const status=patch.status;if(status==="running")pairArm.status="running";else if(status==="completed"||status==="preflight_passed")pairArm.status="completed";else if(status==="issued_not_started")pairArm.status="issued_not_started";else if(status!==undefined)pairArm.status="stopped"}}
   try{
     if(config.ollama){
       const serviceRoot=join(root,"local-service"),env=isolatedEnv(serviceRoot),p=await freePort();localBase=`http://127.0.0.1:${p}`
@@ -78,8 +89,8 @@ export async function runBuildBenchmark(config:Config){
       json(join(root,"local-model.json"),{details:metadata.details,capabilities:metadata.capabilities})
       if(!config.preflightOnly){const t=Date.now();const warm=await fetch(localBase+"/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:config.ollama.model,prompt:"",stream:false,keep_alive:"10m"}),signal:AbortSignal.timeout(240_000)}).then(r=>r.json()) as any;json(join(root,"preload.json"),{ms:Date.now()-t,done:warm.done,eval_count:warm.eval_count??0})}
     }
-    for(const {fixture,index:caseIndex} of selectedCases)for(const arm of (caseIndex%2?[...ARMS].reverse():ARMS)){
-      if(Date.now()>=suiteDeadline||knownCost>=LIMITS.reportedCostPerSuite){results.push({caseId:fixture.id,arm,status:"unissued_suite_budget",passed:false});continue}
+    for(const {fixture,pair,index:caseIndex,order} of issuedCases)for(const arm of order){
+      if(Date.now()>=suiteDeadline){updateResult(pair.pairId,arm,{status:"stopped_before_start_suite_deadline",passed:false});continue}
       const dir=join(root,`${caseIndex+1}-${fixture.id}-${arm}`),project=join(dir,"project"),env=isolatedEnv(dir),authCopy=join(dir,"data/opencode/auth.json")
       mkdirSync(project,{recursive:true});for(const [path,text] of Object.entries(fixture.files)){mkdirSync(dirname(join(project,path)),{recursive:true});writeFileSync(join(project,path),text)}
       execFileSync("git",["init","-q"],{cwd:project});execFileSync("git",["add","."],{cwd:project});execFileSync("git",["-c","user.name=ALG Benchmark","-c","user.email=benchmark@localhost","commit","-qm","Frozen synthetic task"],{cwd:project})
@@ -96,21 +107,23 @@ export async function runBuildBenchmark(config:Config){
       const configuration={plugin:arm==="build"?[]:[plugin.source.spec],autoupdate:false,share:"disabled",snapshot:false,model,small_model:model,
         permission:{"*":"allow",external_directory:"deny",webfetch:"deny",websearch:"deny",question:"deny"},mcp:{},skills:{paths:requiredSkills.length?[join(project,".opencode/skills")]:[]},compaction:{auto:false,prune:false},provider,agent:agents}
       json(join(dir,"opencode.json"),configuration);json(join(dir,"alg-options.json"),{skillEvolution:{enabled:false},sessionMemory:{mode:"assist"},workspace:{mode:"observe"}})
+      const armConfigHash=sha(readFileSync(join(dir,"opencode.json")))
       let server:Tracked|undefined,api:(path:string,body?:unknown,ms?:number)=>Promise<any>,base="",rootSession="",stopReason:string|null=null
       const sessions=new Map<string,any>(),messages=new Map<string,any>(),samples:any[]=[],phases:any[]=[],processes:number[]=[],start=Date.now()
-      let activeStart=0,deadline=0,cleanup=true,meteringComplete=true,score:any=null,preflight:any=null,phase1:any=null,compactionRecovered=false,restarted=false,childBudgetOvershoot=0
+      updateResult(pair.pairId,arm,{status:"running"})
+      let activeStart=0,deadline=0,cleanup=true,meteringComplete=true,score:any=null,preflight:any=null,phase1:any=null,restarted=false,childBudgetOvershoot=0,finalCensusReceipt:any=null,currentPhase="setup"
+      let compactionInput: Parameters<typeof compactionReceipt>[0] | undefined
+      const rootMessages=()=>[...messages.values()].filter(message=>message.sessionID===rootSession)
       const event=(value:unknown)=>appendFileSync(join(dir,"events.jsonl"),scrub(JSON.stringify({at:new Date().toISOString(),...value as any}))+"\n")
       const collect=async(final=false)=>{
         const censusDeadline=final?Date.now()+5000:Math.min(Date.now()+10_000,deadline||Infinity)
         const remaining=()=>Math.max(1,censusDeadline-Date.now())
         const rows=await api("/session",undefined,remaining());let next=0
-        await Promise.all(Array.from({length:Math.min(3,rows.length)},async()=>{while(next<rows.length){const s=rows[next++];sessions.set(s.id,s);const history=await api(`/session/${s.id}/message`,undefined,remaining());for(const m of history)messages.set(s.id+":"+m.info.id,{sessionID:s.id,...m})}}))
+        await Promise.all(Array.from({length:Math.min(3,rows.length)},async()=>{while(next<rows.length){const s=rows[next++];sessions.set(s.id,s);const history=await api(`/session/${s.id}/message`,undefined,remaining());for(const m of history){const prior=messages.get(s.id+":"+m.info.id);messages.set(s.id+":"+m.info.id,{sessionID:s.id,...m,benchmarkPhase:prior?.benchmarkPhase??currentPhase})}}}))
         const metric=summarizeSessionMetrics([...sessions.values()],[...messages.values()])
         const turns=metric.assistantTurns.total,tokens=metric.usage.totalReportedTokens,cost=metric.cost.reportedTotal
         samples.push({at_ms:Date.now()-start,assistant_turns:turns,tokens,reported_cost:cost,sessions:sessions.size})
         if(turns>LIMITS.assistantTurns)stopReason??="assistant_turn_limit"
-        if(tokens>=LIMITS.reportedTokens)stopReason??="reported_token_limit"
-        if(knownCost+cost>=LIMITS.reportedCostPerSuite)stopReason??="reported_cost_limit"
         childBudgetOvershoot=Math.max(childBudgetOvershoot,turns-LIMITS.assistantTurns)
         return metric
       }
@@ -121,6 +134,7 @@ export async function runBuildBenchmark(config:Config){
         let ready=false;for(let i=0;i<150;i++){try{await api("/global/health",undefined,500);ready=true}catch{}if(ready)break;if(server.exit().observed)throw Error("host exited during startup");await sleep(300)}if(!ready)throw Error("host startup timeout")
       }
       const bounded=async(label:string,request:()=>Promise<any>)=>{
+        currentPhase=label
         if(Date.now()>=deadline)stopReason??="trial_deadline"
         if(stopReason)throw Error(stopReason)
         event({phase:label,event:"start"});const t=Date.now();let done=false,error:unknown,result:any
@@ -177,29 +191,64 @@ export async function runBuildBenchmark(config:Config){
             const prepPath=join(project,"preparation.md")
             phase1={files:files(project),at_ms:Date.now()-activeStart,preparation_content:existsSync(prepPath)?readFileSync(prepPath,"utf8").slice(0,16384):null,report_absent:!existsSync(join(project,"report.json")),independent_score:await scoreBenchmarkPreparation(project)};json(join(dir,"phase1.json"),phase1)
             if(!phase1.independent_score.passed||!phase1.report_absent)throw Error("preparation_milestone_not_reached")
-            await bounded("compaction",()=>api!(`/session/${rootSession}/summarize`,{providerID:config.providerID,modelID:config.modelID},LIMITS.trialMs))
+            const beforeSummary=await api!(`/session/${rootSession}/message`)
+            await bounded("compaction",async()=>{
+              const request={requestId:randomBytes(16).toString("hex"),requestedAt:new Date().toISOString(),rootSessionId:rootSession,
+                response:undefined as unknown,beforeMessages:beforeSummary,afterMessages:[],continuation:{status:"not_completed"}}
+              compactionInput=request
+              request.response=await api!(`/session/${rootSession}/summarize`,{providerID:config.providerID,modelID:config.modelID},LIMITS.trialMs) as SessionSummarizeResponses[200]
+              return request.response
+            })
             const stopped=await stopCapturedProcess(server!);cleanup&&=stopped.passed;event({event:"restart_stop",passed:stopped.passed});if(!stopped.passed)throw Error("restart cleanup failed")
-            await launchHost();restarted=true;const history=await api!(`/session/${rootSession}/message`);compactionRecovered=history.some((m:any)=>m.parts?.some((p:any)=>p.type==="compaction"));if(!compactionRecovered)throw Error("compaction not persisted across restart")
+            await launchHost();restarted=true
+            const request=compactionInput!
+            request.afterMessages=await api!(`/session/${rootSession}/message`)
             const followup=fixture.followupPrompt
-            await bounded("followup",()=>send(followup))
+            const continuation=await bounded("followup",()=>send(followup))
+            const continuationScore=await scoreBenchmarkCase(fixture.id,project).catch(()=>({passed:false}))
+            request.continuationMessages=rootMessages()
+            request.continuation={status:continuation?.info?.error?"error":"completed",
+              userMessageID:typeof continuation?.info?.parentID==="string"?continuation.info.parentID:undefined,
+              assistantID:typeof continuation?.info?.id==="string"?continuation.info.id:undefined,scorePassed:continuationScore.passed===true}
+            if(!compactionIsQualified(compactionReceipt(request)))throw Error("compaction request, summary, persisted marker, and continuation were not linked")
           }
         }
       }catch(error){stopReason??=error instanceof Error?error.message:String(error);event({event:"trial_error",reason:stopReason})}
       finally{
-        if(server){await collect(true).catch(()=>{meteringComplete=false;stopReason??="final_metering_incomplete"});const stopped=await stopCapturedProcess(server);cleanup&&=stopped.passed;json(join(dir,"host-log.json"),{stdout:server.stdout(),stderr:server.stderr()})}
+        if(server){
+          const census=async()=>{const metric=await collect(true);const status=await api("/session/status",undefined,1000);const active=[...sessions.keys()].filter(id=>status[id]&&status[id].type!=="idle").length;const pending=[...messages.values()].some((m:any)=>m.parts?.some((p:any)=>p.type==="tool"&&["pending","running"].includes(p.state?.status)));return{metrics:metric,activeSessions:active,pendingWork:pending,quiescent:active===0&&!pending}}
+          if(stopReason){await Promise.all([...sessions.keys()].map(id=>api(`/session/${id}/abort`,{},1000).catch(()=>null)));event({event:"final_cancel_requested",sessions:sessions.size})}
+          finalCensusReceipt=await finalCensus({graceMs:5000,pollMs:250,census})
+          if(finalCensusReceipt.outcome!=="quiescent"){
+            stopReason??="final_census_unresolved"
+            await Promise.all([...sessions.keys()].map(id=>api(`/session/${id}/abort`,{},1000).catch(()=>null)))
+            event({event:"final_census_abort",outcome:finalCensusReceipt.outcome,sessions:sessions.size})
+            finalCensusReceipt=await finalCensus({graceMs:1500,pollMs:250,census})
+          }
+          meteringComplete=finalCensusReceipt.outcome==="quiescent"
+          if(!meteringComplete)stopReason??="final_census_unresolved"
+          const stopped=await stopCapturedProcess(server);cleanup&&=stopped.passed;json(join(dir,"host-log.json"),{stdout:server.stdout(),stderr:server.stderr()})
+        }
         if(existsSync(authCopy))unlinkSync(authCopy)
         if(!config.preflightOnly)score=await scoreBenchmarkCase(fixture.id,project).catch(error=>({passed:false,scorer_error:String(error)}))
         const metric=summarizeSessionMetrics([...sessions.values()],[...messages.values()]) as any
-        const recordedCost=[...messages.values()].reduce((n,m)=>n+(m.info.role==="assistant"&&typeof m.info.cost==="number"?m.info.cost:0),0);knownCost+=recordedCost
+        knownCost+=metric.cost.reportedTotal
         json(join(dir,"messages.json"),[...messages.values()]);json(join(dir,"sessions.json"),[...sessions.values()]);json(join(dir,"samples.json"),samples)
         const stateFiles=files(project),algStates:any[]=[]
         for(const entry of stateFiles.filter(e=>/^\.opencode\/runs\/[^/]+\/progress\.json$/.test(e.path))){try{const state=JSON.parse(readFileSync(join(project,entry.path),"utf8"));algStates.push({run_id:state.run_id,status:state.status,global_attempts:state.global_attempts,nodes:Object.values(state.nodes??{}).map((n:any)=>({id:n.id,status:n.status,attempts:n.attempts?.map((a:any)=>({outcome:a.outcome,failures:a.failures,session_id:a.session_id}))}))})}catch{}}
-        const result={caseId:fixture.id,arm,status:config.preflightOnly?(stopReason?"preflight_failed":"preflight_passed"):(stopReason??"completed"),passed:!stopReason&&score?.passed===true,
+        const artifactPassed=score?.passed===true
+        const qualification=eligibility({artifactPassed,workflowComplete:!config.preflightOnly&&!stopReason,sourceIntegrity:computeAlgSourceIdentity(repo).digest===initialIdentity.digest,configIntegrity:snapshotGlobalOpenCodeConfig(globals,hmac).sha256===before&&sha(readFileSync(join(dir,"opencode.json")))===armConfigHash,cleanup:cleanup&&(!config.authFile||!existsSync(authCopy)),censusQuiescent:!config.preflightOnly&&finalCensusReceipt?.outcome==="quiescent",isolationQualified:false})
+        const compaction=compactionInput?compactionReceipt(compactionInput):null
+        const observedCompaction=compactionInput?compactionReceipt({...compactionInput,afterMessages:rootMessages()}):undefined
+        const retentionEvents=activeStart?hostRetentionEvents({taskId:`${pair.pairId}:${fixture.id}:${arm}`,sessions:[...sessions.values()],messages:[...messages.values()],startedAt:activeStart,endedAt:Date.now(),restarted,compactionReceipt:observedCompaction,censusComplete:false}):[]
+        const retention=measureBuildBenchmarkRetention(retentionEvents,[])
+        const result={pairId:pair.pairId,caseId:fixture.id,arm,status:config.preflightOnly?(stopReason?"preflight_failed":"preflight_passed"):(stopReason?"stopped":"completed"),stopReason,passed:artifactPassed,
           independent_score:score,metrics:metric,wall_ms:activeStart?Date.now()-activeStart:null,total_with_startup_ms:Date.now()-start,phases,rootSession,
-          recovery:{requested:!!fixture.followupPrompt,restarted,compactionRecovered,phase1},alg_states:algStates,budget_observed_overshoot:childBudgetOvershoot,
-          cleanup,metering_complete:meteringComplete,auth_copy_removed:!existsSync(authCopy),processes,source_unchanged:computeAlgSourceIdentity(repo).digest===initialIdentity.digest,
-          final_files:stateFiles,measurement_limits:protocol.unmeasured}
-        json(join(dir,"result.json"),result);results.push(result);console.log(JSON.stringify({case:fixture.id,arm,status:result.status,passed:result.passed,wall_ms:result.wall_ms}));
+          recovery:{requested:!!compactionInput,recoveryRequired:!!fixture.followupPrompt,restarted,compactionRecovered:compactionIsQualified(compaction),compaction,phase1},retention:retention.tasks[0]??{status:"unavailable_preflight"},alg_states:algStates,budget_observed_overshoot:childBudgetOvershoot,
+          cleanup,metering_complete:null,observed_metering_stable:meteringComplete,final_census:finalCensusReceipt,
+          coverage:{historical_message_pagination:"unchecked",provider_usage:"session_reported_fields_only",quiescent_snapshot:finalCensusReceipt?.outcome==="quiescent"},eligibility:qualification,auth_copy_removed:!existsSync(authCopy),processes,source_unchanged:computeAlgSourceIdentity(repo).digest===initialIdentity.digest,arm_config_sha256:armConfigHash,
+          final_files:stateFiles,usage_monitors:USAGE_MONITORS,measurement_limits:protocol.unmeasured}
+        json(join(dir,"result.json"),result);updateResult(pair.pairId,arm,result);console.log(JSON.stringify({case:fixture.id,arm,status:result.status,passed:result.passed,wall_ms:result.wall_ms}));
       }
     }
   }catch(error){fatal=error instanceof Error?error.message:String(error)}
@@ -208,8 +257,9 @@ export async function runBuildBenchmark(config:Config){
     let localStopped=true;if(local)localStopped=(await stopCapturedProcess(local)).passed
     for(const name of ["id_ed25519","id_ed25519.pub"]){const p=join(root,"local-service/home/.ollama",name);if(existsSync(p))unlinkSync(p)}
     const unchanged=snapshotGlobalOpenCodeConfig(globals,hmac).sha256===before
-    const result={schema:"alg-build-pilot-v1",complete:results.length===selectedCases.length*ARMS.length,fatal,model:protocol.model,limits:LIMITS,results,
-      known_reported_cost:knownCost,global_configuration_unchanged:unchanged,local_model_stopped:localStopped,source_unchanged:computeAlgSourceIdentity(repo).digest===initialIdentity.digest}
+    const armOutcomes=summarizeIssuedArms(results,config.preflightOnly?"preflight":"trial")
+    const result={schema:"alg-build-pilot-v1",...armOutcomes,fatal,model:protocol.model,limits:LIMITS,track,pairs,results,
+      known_reported_cost:knownCost,reported_cost_is_invoice:false,usage_monitors:USAGE_MONITORS,global_configuration_unchanged:unchanged,local_model_stopped:localStopped,source_unchanged:computeAlgSourceIdentity(repo).digest===initialIdentity.digest}
     json(join(root,"result.json"),result);console.log(JSON.stringify({terminal:true,model:protocol.model,trials:results.length,fatal,global_configuration_unchanged:unchanged,local_model_stopped:localStopped}));
     if(fatal||!unchanged||!localStopped||results.some(r=>r.cleanup===false))process.exitCode=1
   }

@@ -114,4 +114,12 @@ describe("reported session benchmark metrics", () => {
     expect(summary.usage.turns).toEqual({ complete: 0, partial: 0, unknown: 2 })
     expect(summary.cost.unknownTurns).toBe(2)
   })
+
+  test("bounds attribution while retaining request, session, role, phase and model identities", () => {
+    const row = Object.assign(assistant("a", { parentID: "request-1", agent: "checker", providerID: "p", modelID: "m", tokens: { input: 2 } }), { benchmarkPhase: "verification" })
+    const summary = summarizeSessionMetrics([{ id: "root" }], [row], { maxAttributionRows: 1 })
+    expect(summary.attribution.rows).toMatchObject([{ sessionID: "root", requestID: "request-1", role: "checker", phase: "verification",
+      providerID: "p", modelID: "m", assistantTurns: 1, usagePartial: 1 }])
+    expect(summary.attribution.overflowMessages).toBe(0)
+  })
 })
