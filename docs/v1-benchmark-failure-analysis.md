@@ -2,7 +2,7 @@
 
 This analysis separates artifact correctness, root-turn completion, graph completion, and benchmark limits. It uses the preserved Luna attempts and a separately bounded Terra cohort at the same product runtime. The original Gemma skill-discovery and synchronous-transport problems belong to the test apparatus and are already described in [the benchmark report](v1-build-benchmark.md).
 
-**Repair status, 0.5.5 candidate:** the recovery, evidence and planning repairs listed below are now implemented in the pending candidate and await aggregate candidate acceptance and prospective benchmark validation. The diagnosis and measured Luna/Terra results in this document describe the preserved earlier runtime. They are not rerun results, proof that these repairs improve completion/cost, or acceptance of a 0.5.5 offline package.
+**Repair status, 0.5.5 candidate:** the recovery, evidence and planning repairs are implemented in commits `f5f0929` and `373b8d0`. [Local validation and a separate prospective Windows/Linux Terra cohort](#post-repair-validation--windows-and-linux) are recorded below. The earlier diagnosis remains tied to its original runtime. Mechanical recovery checks pass; cumulative usage and inappropriate graph selection still prevent some whole tasks completing. No general completion/cost improvement or 0.5.5 offline-package acceptance is claimed.
 
 ## The confirmed failure chain
 
@@ -104,7 +104,7 @@ Across the six Luna/Terra coding trials, the independent code oracle passed ever
 
 The original analysis recorded diagnosis, reproducers and the bounded Terra experiment before these product repairs were implemented. Its historical tests/probes ran locally; no local Gemma inference, GitHub runners, V2 work, global configuration edits or merge occurred. The evidence and runtime identities remain unchanged.
 
-## Implemented 0.5.5 repairs — validation pending
+## Implemented 0.5.5 repairs
 
 | Diagnosed gap | Pending candidate implementation | Remaining boundary |
 | --- | --- | --- |
@@ -115,4 +115,72 @@ The original analysis recorded diagnosis, reproducers and the bounded Terra expe
 | Premature final answer after planning | Live work/artifact guidance proceeds to bounded `alg_run`, preserving plan-only/dry-run and reused-done behavior | Model-followed guidance; no automatic continuation loop or new permission |
 | Full diamond overhead on known small work | Opt-in `coding-compact`: implement → fresh checker, two attempts per node, four total, concurrency one | Original criteria and required verification remain authoritative; improved efficiency is not yet measured |
 
-Researcher suggestions do not silently become new hard acceptance criteria. The repair adds no V2 runtime and does not resolve real air-gapped service qualification. New benchmark outcomes will be recorded only after a separately measured prospective cohort; the historical failure counts, token sums, artifact results and compiler reproductions above are preserved.
+Researcher suggestions do not silently become new hard acceptance criteria. The repair adds no V2 runtime and does not resolve real air-gapped service qualification. The historical failure counts, token sums, artifact results and compiler reproductions above are preserved.
+
+## Post-repair validation — Windows and Linux
+
+Tested product: **0.5.5**, commit `373b8d04c22d82c9a04c65d99d87cb164d4dc955`. Documentation/evidence commits after this point do not change the runtime. Implementation includes the original host receipt through repeated gate-only recovery, a persisted recovery intent before gate launch, and clearing obsolete failure sidecar references when an interrupted attempt receives a replacement failure.
+
+All tests ran locally. Windows used PowerShell; Linux used native Ubuntu/glibc in the dedicated `ALG-V1-Ubuntu` WSL distro, Bash, and a native filesystem checkout. Both hosted-model cohorts used OpenCode **1.19.5**, Bun 1.3.14 and `openai/gpt-6.1-terra`. The Linux executable has an `.exe` filename but is the Linux binary. No local Gemma, GitHub runners, global configuration changes, V2 work or merge was used.
+
+### Regression and headless evidence
+
+| Check | Measured result |
+| --- | --- |
+| Native Linux final affected suite | 280 passed, ten Windows-only skips, zero failures; 3,575 assertions across 17 files, 61.97 s |
+| Windows final focused recovery/evidence suite | 22 passed, zero failures; 147 assertions across three files, 16.84 s |
+| Windows package/manager suite | 123 passed, one POSIX-only skip, zero failures; 925 assertions across five files, 1,419.67 s |
+| TypeScript | Passed on both platforms at the final implementation |
+| Windows and Linux OpenCode 1.19.5 headless checks | Both passed: 21 registered tools, three verified child-parent links, recovered checker basis, one real compaction and two restarts |
+| Headless remote-work reuse | One accepted synthetic job and one remote result-page read on each platform; recovered result revalidated after restart |
+| Additional Linux compatibility check | OpenCode 1.18.35 headless fixture also passed |
+| Runtime identity | All 129 inputs match after CRLF-to-LF normalization; 71 have different raw bytes. Raw digests remain distinct |
+| Isolation | Headless host/provider/MCP cleanup, temporary environment removal and unchanged user configuration all passed |
+
+The Windows package/manager invocation began before the final lockfile/lineage correction and completed after it; it is not a single full-suite run at the final commit. The earlier Windows core invocation remains **240 passed / one failed** (interrupted failure-sidecar replacement); scoped recovery checks passed after the fix. The earlier Linux invocation remains **278 passed / ten skipped / two failed** (lockfile version and repeated-recovery receipt lineage); the final 280-pass invocation includes both repairs. These overlapping sets must not be added into a unique test count. No full-repository all-green invocation or newly installed offline bundle is claimed.
+
+The Windows helper regressions cover a long TEMP root for which the old helper path exceeded the legacy compiler limit, successful execution with the compact helper path, and deeper-path failure retaining compiler stdout/identity. Unlimited Windows path support is not claimed. Other regressions exercise setup admission before model calls, cancellation, unchanged-file gate-only recovery, repeated/interrupted recovery, stale bases, original preservation hashes and ordinary retries after real test failure. Linux exercises the equivalent executor/evidence behavior with its native shell backend; it does not compile the Windows helper.
+
+Raw runtime digests:
+
+- Windows: `dec1c48b6190ab7031766373f45a2992f33e3291af9f5a5a289a39c26794ea83`.
+- Linux: `6e23a2b2fa0aa1078eb39d8cb24df613769535ccb31d718800530e28907d1e9d`.
+
+See [local check receipts](evidence/reliability-20261112/checks/), [runtime comparison](evidence/reliability-20261112/checks/final-runtime-comparison.json), and [byte manifest](evidence/reliability-20261112/manifest.json). Existing package/TUI/relocation receipts retain their older source identities.
+
+### Prospective Terra results
+
+One six-trial cohort per platform; no paid trial was replayed to improve its score. The same frozen harness and fixture hashes, initial prompts, three arms and external limits were used: eight minutes and 40 assistant turns per trial, 200,000 cumulative reported token components, 4,096 output tokens, and 55 minutes per suite. Usage includes cache reads, is polled between observations and can overshoot the threshold; it is not context occupancy or verified billing. Model-written graph choices and criteria were free to differ, and local test load was not controlled. This is not a causal OS, latency or adversarial-strategy ranking.
+
+| Platform / task | Arm | Whole task | Artifact oracle | Reported components | Wall seconds |
+| --- | --- | --- | --- | ---: | ---: |
+| Windows / coding | Build | Completed | Pass | 35,312 | 42.57 |
+| Windows / coding | Default ALG | Usage stop | Pass | 211,519 | 126.33 |
+| Windows / coding | Targeted ALG | Completed | Pass | 190,950 | 120.49 |
+| Windows / report | Build | Completed, contract failed | Fail | 72,782 | 71.42 |
+| Windows / report | Default ALG | Usage stop | Fail: no final report | 202,286 | 134.47 |
+| Windows / report | Targeted ALG | Usage stop | Fail: no final report | 211,427 | 111.74 |
+| Linux / coding | Build | Completed | Pass | 31,606 | 29.40 |
+| Linux / coding | Default ALG | Completed | Pass | 171,725 | 115.23 |
+| Linux / coding | Targeted ALG | Completed | Pass | 189,909 | 108.10 |
+| Linux / report | Build | Completed | Pass | 70,064 | 73.29 |
+| Linux / report | Default ALG | Usage stop | Fail: no final report | 212,640 | 134.98 |
+| Linux / report | Targeted ALG | Usage stop | Fail: no final report | 211,828 | 134.29 |
+
+Whole-task passes are Build/default/targeted **1/2, 0/2, 1/2 on Windows** and **2/2, 1/2, 1/2 on Linux**. All six coding artifacts passed. Windows Build's report computed the correct values, retained the conflict and exact scope warning, but supplied `limitations` as a string instead of the required array. The frozen oracle calls this `skill-procedure-and-scope`; it is an output-shape failure, not evidence that the scope warning or skill knowledge was absent. Its grade remains unchanged.
+
+What the new evidence establishes:
+
+- **Native verification receipts are present.** The default Windows coding implementer and both Linux coding implementers persisted four native command records with host-reported exit zero. Both Linux coding graphs and the targeted Windows coding graph finished all four nodes on their first attempts. The default Windows checker was interrupted by the external usage stop; that abort is not a new parser or helper failure.
+- **Graph choice remains unreliable.** Windows default report and Linux targeted report chose research graphs for a task requiring a root-level `preparation.md`. The researcher is restricted to run-artifact writes and cannot create that deliverable. Their checkers correctly rejected the missing file; retrying the same role cannot resolve the capability mismatch. This reproduced across operating systems and checker mandates.
+- **Preparation completion is not whole-task completion.** Windows targeted report finished its preparation graph but exhausted the shared budget before the restart phase. Linux default report finished preparation, recovered after actual compaction and one restart, then began a two-node implement/check continuation and hit the cumulative cap. No final report existed in any ALG report arm.
+- **None of these ALG trials stopped immediately after planning.** Planning proceeded into execution. This bounded observation does not prove the model will always follow the guidance.
+- **The optional gate and preservation requests were not exercised by the completed coding plans.** Their native commands provide execution evidence; the live cohort alone does not qualify Windows helper recovery or before/after preservation. Those mechanisms are supported by the targeted regressions, not inferred from tool completion.
+
+Both cohorts completed without a harness-fatal error, reported unchanged source/global configuration, and recorded successful host cleanup and removal of every temporary auth copy. All twelve known auth-copy locations were independently checked absent. Full local host transcripts are retained with hashes; published evidence includes plans, results, bounded durable attempt details, artifacts and test logs. See [Windows result](evidence/reliability-20261112/windows/result.json), [Linux result](evidence/reliability-20261112/linux/result.json) and [combined summary](evidence/reliability-20261112/summary.json).
+
+### Remaining work before claiming general reliability
+
+Keep the PR draft. The implemented fixes address deterministic setup/recovery and evidence-delivery defects, but do not establish reliable completion of arbitrary user tasks. The next bounded design change should make graph capabilities and requested deliverables explicit at admission: a worker set unable to write the requested artifact must trigger correction before any expensive child calls. That should use typed capability contracts, not model-name branches or guesses from isolated keywords.
+
+Task sizing also needs prospective evaluation: prefer the compact graph for already-understood edits, preserve the user's complete output contract, and account for all phases under one usage budget. The Linux continuation selected a two-node graph only after spending most of the budget on preparation; offering a compact template alone does not solve allocation. Any future comparison should freeze the original acceptance criteria and distinguish execution, artifact shape and scientific correctness. No new paid evaluation, automatic promotion, or production datalake qualification is implied by these results.

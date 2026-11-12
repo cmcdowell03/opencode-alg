@@ -54,7 +54,7 @@ The SDK/plugin dependency used to compile this package is pinned at `1.18.3`; th
 
 ## Pending 0.5.5 recovery and evidence
 
-The 0.5.5 candidate implements repairs identified by the [V1 benchmark failure analysis](docs/v1-benchmark-failure-analysis.md). Candidate acceptance and prospective benchmark validation are pending; historical results retain their tested versions. See [current V1 status](docs/v1-implementation-status.md) for qualification boundaries.
+The 0.5.5 candidate implements repairs identified by the [V1 benchmark failure analysis](docs/v1-benchmark-failure-analysis.md). Local Windows/Linux regressions and headless compaction/restart checks pass; the separate hosted Terra follow-up still exposes usage limits and incorrect task/template choices. Historical results retain their tested versions. See [current V1 status](docs/v1-implementation-status.md) for qualification boundaries.
 
 For a small code task with known files and clear criteria, explicitly select `template="coding-compact"`: implement → fresh checker, two attempts per node, four total attempts, concurrency one. `coding-diamond` remains the default for work needing exploration and research. A successful live plan is followed by bounded `alg_run` when the user requested work or an artifact. Explicit plan-only/dry-run requests and reused `done` runs retain their stop behavior; the guidance does not introduce automatic continuation loops or new permissions.
 

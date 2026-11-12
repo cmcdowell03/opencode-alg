@@ -1,0 +1,1513 @@
+{
+  "algorithm": "sha256",
+  "files": [
+    {
+      "path": "windows/plan.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/plan.json",
+      "bytes": 6588,
+      "sha256": "7e730ed3d39cfac5b995e4ebab773eb971c8a4dc4e7f8ca49ba32caea0b35aab"
+    },
+    {
+      "path": "windows/result.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/result.json",
+      "bytes": 184944,
+      "sha256": "52e4d9e9f5bb80a5d88e6ea2d2469afaa78230c1c4a3d85675aa0d544399ace3"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/result.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/result.json",
+      "bytes": 32674,
+      "sha256": "61b3afa6bbc59b4bdfbc2abc73d6ba1908d5f716e2d99916d01a2d96cd455258"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/events.jsonl",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/events.jsonl",
+      "bytes": 258,
+      "sha256": "b4b9ac1e36029739ca9893352fde8dbb50d3b56d2861769c319bcf60301e4f34"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/preflight.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/preflight.json",
+      "bytes": 44216,
+      "sha256": "69d8f7a7ea32096881c953f6139f97fd23774efa17249747cf60c6eefa3cac4b"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/skills-preflight.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/skills-preflight.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/samples.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/samples.json",
+      "bytes": 14398,
+      "sha256": "69f386227e34029631b1fa4f326b658cfef9571709397eeaf5591d02c2afa1fe"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/artifacts/src/wafer-count.cjs",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/project/src/wafer-count.cjs",
+      "bytes": 431,
+      "sha256": "d77b2717cbbbdde795c4279800fc139bdb86918445f04dd985fa8b8594f3a7c6"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/artifacts/src/wafer-view.cjs",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/project/src/wafer-view.cjs",
+      "bytes": 140,
+      "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/attempts/check-a1-58312121.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/check-attempt-1-detail-5831212138d8709be46840c97cd49dcaf6edd393e7f3e40d211522f8a4706aa6.json",
+      "bytes": 385,
+      "sha256": "5831212138d8709be46840c97cd49dcaf6edd393e7f3e40d211522f8a4706aa6"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/attempts/check-a1-6aa987ab.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/check-attempt-1-detail-6aa987ab9a45fbebc070498f95d94143f306a40800c4e3754d64475a0481e56e.json",
+      "bytes": 132,
+      "sha256": "6aa987ab9a45fbebc070498f95d94143f306a40800c4e3754d64475a0481e56e"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/attempts/check-a1-8745e241.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/check-attempt-1-detail-8745e241f049eb8aede1d9e008c1f27e4028496ff95a8599f8579d55d0413d79.json",
+      "bytes": 86,
+      "sha256": "8745e241f049eb8aede1d9e008c1f27e4028496ff95a8599f8579d55d0413d79"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/attempts/explore-a1-397a7024.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/explore-attempt-1-detail-397a702485f92e366788ab519653044fd2f35a8f3dba66758a5c6337d071f7f8.json",
+      "bytes": 1483,
+      "sha256": "397a702485f92e366788ab519653044fd2f35a8f3dba66758a5c6337d071f7f8"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/attempts/explore-a1-b0ec56ee.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/explore-attempt-1-detail-b0ec56ee88a053be28073cbbe30c6d9d972737e4a5b045ce8d60d21043a69bc7.json",
+      "bytes": 132,
+      "sha256": "b0ec56ee88a053be28073cbbe30c6d9d972737e4a5b045ce8d60d21043a69bc7"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/attempts/explore-a1-d7b9f3b9.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/explore-attempt-1-detail-d7b9f3b9ad09b10c0062f213c1f74a697a1b7961e580438557cb1f379e1f3225.json",
+      "bytes": 86,
+      "sha256": "d7b9f3b9ad09b10c0062f213c1f74a697a1b7961e580438557cb1f379e1f3225"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/attempts/implement-a1-1fd134c3.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/implement-attempt-1-detail-1fd134c38142b18923ddeadf2ec8c925abb8180fd64ac555b50d2f38c831ce79.json",
+      "bytes": 86,
+      "sha256": "1fd134c38142b18923ddeadf2ec8c925abb8180fd64ac555b50d2f38c831ce79"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/attempts/implement-a1-8debd87a.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/implement-attempt-1-detail-8debd87a8f0a82dd441d7b29f7991d917bea9ab543761a40781c61cf5aa227ef.json",
+      "bytes": 5426,
+      "sha256": "8debd87a8f0a82dd441d7b29f7991d917bea9ab543761a40781c61cf5aa227ef"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/attempts/implement-a1-a590708a.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/implement-attempt-1-detail-a590708af541caa466df67c626947e993abf08d4a0af5071dbdf7bcc9dd42311.json",
+      "bytes": 132,
+      "sha256": "a590708af541caa466df67c626947e993abf08d4a0af5071dbdf7bcc9dd42311"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/attempts/research-a1-16edd48e.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/research-attempt-1-detail-16edd48ed4f4b32af19ebaae9591cdb6b912f392e8beed534d8b59d219630e7a.json",
+      "bytes": 132,
+      "sha256": "16edd48ed4f4b32af19ebaae9591cdb6b912f392e8beed534d8b59d219630e7a"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/attempts/research-a1-44edbbeb.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/research-attempt-1-detail-44edbbebb4842a4e6f179f724fd12d3827b41a10c8acc913243da408d0cf05ac.json",
+      "bytes": 4194,
+      "sha256": "44edbbebb4842a4e6f179f724fd12d3827b41a10c8acc913243da408d0cf05ac"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_default/attempts/research-a1-6931d7e1.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/research-attempt-1-detail-6931d7e17fc3e4cd4af60ebf3837360fff747f193024618420289f5abc879d46.json",
+      "bytes": 86,
+      "sha256": "6931d7e17fc3e4cd4af60ebf3837360fff747f193024618420289f5abc879d46"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/result.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/result.json",
+      "bytes": 34915,
+      "sha256": "6528434c7fe0755861d919c023336ca0993e8d81463998ed5ec41bb33fce4359"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/events.jsonl",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/events.jsonl",
+      "bytes": 139,
+      "sha256": "ab5bef5cd043903fec059ee716a9b75ec3fea04ccfc47dae02d7711c3fdb2963"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/preflight.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/preflight.json",
+      "bytes": 44254,
+      "sha256": "847a7157f422c883456a3c443b70e6393a37b1dbef7c7362f9e83ee67386316e"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/skills-preflight.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/skills-preflight.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/samples.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/samples.json",
+      "bytes": 13891,
+      "sha256": "eca52dc5bf8404d98336f847eb3beed1e0193f9bb054a6b28ebd8b37033ca7cf"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/artifacts/src/wafer-count.cjs",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/project/src/wafer-count.cjs",
+      "bytes": 440,
+      "sha256": "f6efceea3a8a1a28ce331651700dd15d95c727bd68efe9a14f77942b7160f2c7"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/artifacts/src/wafer-view.cjs",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/project/src/wafer-view.cjs",
+      "bytes": 140,
+      "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/attempts/check-a1-151a1579.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-wafer-count-bug-in-small-com-20261112145220-6f84d1857045/history/check-attempt-1-detail-151a1579ce731499da6923cc4ea9a0bcb54d4e8cf1fdfc556770af860a50378e.json",
+      "bytes": 86,
+      "sha256": "151a1579ce731499da6923cc4ea9a0bcb54d4e8cf1fdfc556770af860a50378e"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/attempts/check-a1-7aaa7d1c.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-wafer-count-bug-in-small-com-20261112145220-6f84d1857045/history/check-attempt-1-detail-7aaa7d1cf14b7fdc31732f71f933392af54e464e4db01bfd041090ed74db1945.json",
+      "bytes": 132,
+      "sha256": "7aaa7d1cf14b7fdc31732f71f933392af54e464e4db01bfd041090ed74db1945"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/attempts/check-a1-deafebd8.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-wafer-count-bug-in-small-com-20261112145220-6f84d1857045/history/check-attempt-1-detail-deafebd810eecafbd7efe724a0f09b0a405ecdeacf1528709d87111e006590c8.json",
+      "bytes": 456,
+      "sha256": "deafebd810eecafbd7efe724a0f09b0a405ecdeacf1528709d87111e006590c8"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/attempts/explore-a1-1f8f84a1.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-wafer-count-bug-in-small-com-20261112145220-6f84d1857045/history/explore-attempt-1-detail-1f8f84a18d8c34b6e43281ed0487e29e26f4a3f455fdc5d88088dfcb2ef35baf.json",
+      "bytes": 132,
+      "sha256": "1f8f84a18d8c34b6e43281ed0487e29e26f4a3f455fdc5d88088dfcb2ef35baf"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/attempts/explore-a1-212d8d7a.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-wafer-count-bug-in-small-com-20261112145220-6f84d1857045/history/explore-attempt-1-detail-212d8d7a512b3db9326da602b4b0655deef87e985993c46d8e94c55191cfb35d.json",
+      "bytes": 1731,
+      "sha256": "212d8d7a512b3db9326da602b4b0655deef87e985993c46d8e94c55191cfb35d"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/attempts/explore-a1-2effec1d.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-wafer-count-bug-in-small-com-20261112145220-6f84d1857045/history/explore-attempt-1-detail-2effec1d917f95b2cd0ed9e969c436b87eb951142e34577944e0f68c13f960bd.json",
+      "bytes": 86,
+      "sha256": "2effec1d917f95b2cd0ed9e969c436b87eb951142e34577944e0f68c13f960bd"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/attempts/implement-a1-583e40b6.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-wafer-count-bug-in-small-com-20261112145220-6f84d1857045/history/implement-attempt-1-detail-583e40b64c14d4b353dc524ccd30e91c990eeded62f8741ed13fd5b336d430d6.json",
+      "bytes": 86,
+      "sha256": "583e40b64c14d4b353dc524ccd30e91c990eeded62f8741ed13fd5b336d430d6"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/attempts/implement-a1-72902af9.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-wafer-count-bug-in-small-com-20261112145220-6f84d1857045/history/implement-attempt-1-detail-72902af9be30bf1646fc4a587c6693ce8a36541e08f92117749e8dfc1b8c0eeb.json",
+      "bytes": 132,
+      "sha256": "72902af9be30bf1646fc4a587c6693ce8a36541e08f92117749e8dfc1b8c0eeb"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/attempts/implement-a1-a3503a28.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-wafer-count-bug-in-small-com-20261112145220-6f84d1857045/history/implement-attempt-1-detail-a3503a2875717a69452b645db81ab6f8e2b85bbd2a1c78ac8c4309e9267d0dc9.json",
+      "bytes": 4652,
+      "sha256": "a3503a2875717a69452b645db81ab6f8e2b85bbd2a1c78ac8c4309e9267d0dc9"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/attempts/research-a1-17241c6e.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-wafer-count-bug-in-small-com-20261112145220-6f84d1857045/history/research-attempt-1-detail-17241c6e3688806cd0cf04ab0243d5ccdde04a3d122ae3ca1f559a776fd4586f.json",
+      "bytes": 4373,
+      "sha256": "17241c6e3688806cd0cf04ab0243d5ccdde04a3d122ae3ca1f559a776fd4586f"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/attempts/research-a1-b87bbeb0.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-wafer-count-bug-in-small-com-20261112145220-6f84d1857045/history/research-attempt-1-detail-b87bbeb0c41150e44facb253ceec7e7cb4d364dab75aaa44ab2b02620495a994.json",
+      "bytes": 86,
+      "sha256": "b87bbeb0c41150e44facb253ceec7e7cb4d364dab75aaa44ab2b02620495a994"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-alg_targeted/attempts/research-a1-c9fd0af2.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-wafer-count-bug-in-small-com-20261112145220-6f84d1857045/history/research-attempt-1-detail-c9fd0af29b2cb6b0200be6c0d75e98932f844646843792f2d2ee7326e2c79730.json",
+      "bytes": 132,
+      "sha256": "c9fd0af29b2cb6b0200be6c0d75e98932f844646843792f2d2ee7326e2c79730"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-build/result.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-build/result.json",
+      "bytes": 7703,
+      "sha256": "69b1a82e11746065e2cd8b920770e48819674a0950f1f524ef8646c367e362e1"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-build/events.jsonl",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-build/events.jsonl",
+      "bytes": 139,
+      "sha256": "99b77b1149f129c4e03c18593d7a9dab0085ab1fe07ba09a6e5d76706af4318c"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-build/preflight.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-build/preflight.json",
+      "bytes": 25226,
+      "sha256": "b6bf6a5eef5a16d4d8d4e5d13f4acd1ac00050172be11813e6d63a3e0b1ad4be"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-build/skills-preflight.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-build/skills-preflight.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-build/samples.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-build/samples.json",
+      "bytes": 4916,
+      "sha256": "f0b3590351015e035a02a33cf8b5c49ccab861d62922ef1890f6c4fcc2947702"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-build/artifacts/src/wafer-count.cjs",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-build/project/src/wafer-count.cjs",
+      "bytes": 394,
+      "sha256": "6b17ead9fb07c8fd3b9a90b90b8dd89c4a2516439d9629ece08974ee3e94eb42"
+    },
+    {
+      "path": "windows/1-wafer-count-commonjs-build/artifacts/src/wafer-view.cjs",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-build/project/src/wafer-view.cjs",
+      "bytes": 140,
+      "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/result.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/result.json",
+      "bytes": 43008,
+      "sha256": "e899d77768a0fc3cbe12930c718d0873bc42dc91f8583ffb0689a3314344b469"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/events.jsonl",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/events.jsonl",
+      "bytes": 258,
+      "sha256": "1c18e4580761a5ecabc03017c53da937739d831459416b9d3cd3ca62cced0777"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/preflight.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/preflight.json",
+      "bytes": 48457,
+      "sha256": "c0df1e1e83266369fccdcaf2b4e97bdb001297441f0e563f822b5b679cbab9e8"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/skills-preflight.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/skills-preflight.json",
+      "bytes": 551,
+      "sha256": "eba1a35119967b562c7456352fe3f0b182f8721a887d14174660e289910ba9c9"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/samples.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/samples.json",
+      "bytes": 15158,
+      "sha256": "e443411cd7eb60a0885575900b6f029408d9c3ba694a87dfdcdd075f704a732c"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/artifacts/preparation.md",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/preparation.md",
+      "bytes": 2363,
+      "sha256": "b70fba915bb8d0b0a7581f36344e99b8b3e240dafed268d83919f0d7648bf7d6"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/check-a1-0da12867.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/check-attempt-1-detail-0da128679fb733d869aa778c762ee3cee4bfe503b9c86b690a3edc67de80013e.json",
+      "bytes": 800,
+      "sha256": "0da128679fb733d869aa778c762ee3cee4bfe503b9c86b690a3edc67de80013e"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/check-a1-5fdb9e6a.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/check-attempt-1-detail-5fdb9e6aa682d222a8bc6bd9493a1f96fa7898e7103a7a21466fcf1200ef0a19.json",
+      "bytes": 86,
+      "sha256": "5fdb9e6aa682d222a8bc6bd9493a1f96fa7898e7103a7a21466fcf1200ef0a19"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/check-a1-ee134a19.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/check-attempt-1-detail-ee134a19a2ced11e97822b867e0d11e99dd51d52648628a65625791d905c84a5.json",
+      "bytes": 132,
+      "sha256": "ee134a19a2ced11e97822b867e0d11e99dd51d52648628a65625791d905c84a5"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/check-a1-ee379cd8.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/check-attempt-1-detail-ee379cd81ad1a1ffd78cb9f3ad90ddb415f742a4cc011e78e158a6d244566730.json",
+      "bytes": 776,
+      "sha256": "ee379cd81ad1a1ffd78cb9f3ad90ddb415f742a4cc011e78e158a6d244566730"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/check-a2-42249f2e.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/check-attempt-2-detail-42249f2e10b7db14b5be7b6837ca70cf27899a8227c4600078c0b1e54dea3437.json",
+      "bytes": 86,
+      "sha256": "42249f2e10b7db14b5be7b6837ca70cf27899a8227c4600078c0b1e54dea3437"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/check-a2-728678bb.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/check-attempt-2-detail-728678bbd1f5b4a65ec371a334205a241ddfaa7bb8a0f9c7a46737e1a255d075.json",
+      "bytes": 385,
+      "sha256": "728678bbd1f5b4a65ec371a334205a241ddfaa7bb8a0f9c7a46737e1a255d075"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/check-a2-ab125d44.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/check-attempt-2-detail-ab125d44a7f80c1ff25dd9a99b4faf71ddb90e9efd3fa053a088290ec7211872.json",
+      "bytes": 132,
+      "sha256": "ab125d44a7f80c1ff25dd9a99b4faf71ddb90e9efd3fa053a088290ec7211872"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/explore_a-a1-20773a8c.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/explore_a-attempt-1-detail-20773a8ced8b26011944b97e1a2a48728811f3ab628aab55a9a25648758ad136.json",
+      "bytes": 1704,
+      "sha256": "20773a8ced8b26011944b97e1a2a48728811f3ab628aab55a9a25648758ad136"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/explore_a-a1-529bb699.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/explore_a-attempt-1-detail-529bb699ec43109f2dea3c573ebcc2ad0f9eb5f2abd4e115ca7a313bc4fa7d93.json",
+      "bytes": 132,
+      "sha256": "529bb699ec43109f2dea3c573ebcc2ad0f9eb5f2abd4e115ca7a313bc4fa7d93"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/explore_a-a1-a2e7e150.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/explore_a-attempt-1-detail-a2e7e150d505f1bd37c58809662a7d3960f75bc797e1255ea26e6b42f3123132.json",
+      "bytes": 86,
+      "sha256": "a2e7e150d505f1bd37c58809662a7d3960f75bc797e1255ea26e6b42f3123132"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/explore_b-a1-19c75bee.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/explore_b-attempt-1-detail-19c75bee678900d5558ee88cc5cb1513653639cbad31ab42aeeb661c8ccf7c8f.json",
+      "bytes": 1884,
+      "sha256": "19c75bee678900d5558ee88cc5cb1513653639cbad31ab42aeeb661c8ccf7c8f"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/explore_b-a1-a2e7e150.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/explore_b-attempt-1-detail-a2e7e150d505f1bd37c58809662a7d3960f75bc797e1255ea26e6b42f3123132.json",
+      "bytes": 86,
+      "sha256": "a2e7e150d505f1bd37c58809662a7d3960f75bc797e1255ea26e6b42f3123132"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/explore_b-a1-fd034dea.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/explore_b-attempt-1-detail-fd034deafcddea7bb04965d20af1aeb56cbee8c7481a18ea95a83249014f3446.json",
+      "bytes": 132,
+      "sha256": "fd034deafcddea7bb04965d20af1aeb56cbee8c7481a18ea95a83249014f3446"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/research-a1-8e9d527a.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/research-attempt-1-detail-8e9d527adf5f1f501f18987461d58cd656bc9393e3b8a3ce8f3ffe3abb707d3d.json",
+      "bytes": 86,
+      "sha256": "8e9d527adf5f1f501f18987461d58cd656bc9393e3b8a3ce8f3ffe3abb707d3d"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/research-a1-aa0db220.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/research-attempt-1-detail-aa0db2200f46e84e4af92f774720ce027f844dbbf1c68ba890587b239de1f6f0.json",
+      "bytes": 132,
+      "sha256": "aa0db2200f46e84e4af92f774720ce027f844dbbf1c68ba890587b239de1f6f0"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/research-a1-c5f7b118.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/research-attempt-1-detail-c5f7b1181033258302352d052125486be3931a469255bf92ead12f941ae686d6.json",
+      "bytes": 4421,
+      "sha256": "c5f7b1181033258302352d052125486be3931a469255bf92ead12f941ae686d6"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/research-a2-80a95027.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/research-attempt-2-detail-80a95027c96d5f828e4b8b26683923b4bbf2cf925f7e432e5a287ab3d29e6a87.json",
+      "bytes": 132,
+      "sha256": "80a95027c96d5f828e4b8b26683923b4bbf2cf925f7e432e5a287ab3d29e6a87"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/research-a2-8bbda752.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/research-attempt-2-detail-8bbda752f7462f0f939c59a6733a4ac0c9488bf089244157cccfbf50528f7d63.json",
+      "bytes": 4152,
+      "sha256": "8bbda752f7462f0f939c59a6733a4ac0c9488bf089244157cccfbf50528f7d63"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_default/attempts/research-a2-eb2452a8.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-first-phase-of-synthetic-20261112145631-245524d60278/history/research-attempt-2-detail-eb2452a8dc84a8576c96482620b16039cd3013aaa7890385ed06af9986e4c547.json",
+      "bytes": 86,
+      "sha256": "eb2452a8dc84a8576c96482620b16039cd3013aaa7890385ed06af9986e4c547"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/result.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/result.json",
+      "bytes": 35058,
+      "sha256": "6bdf19e2db5b96b354f5372cacfd713ff813b4b21488d078b8a7a397f971bb1d"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/events.jsonl",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/events.jsonl",
+      "bytes": 258,
+      "sha256": "e8ff3e03a57908fe239c2dacb8b5a2488facf811609a02973ba07a776b56ec74"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/preflight.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/preflight.json",
+      "bytes": 48508,
+      "sha256": "9b9f57a486900957a9c63a0471662edf3db55e47846fb2a6d42ab259a23345cc"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/skills-preflight.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/skills-preflight.json",
+      "bytes": 552,
+      "sha256": "f3003ef6082e69c687e75d20d3670da9313e06717cb7745536d24fe7d9dd8957"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/samples.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/samples.json",
+      "bytes": 12814,
+      "sha256": "d0881598329a68d6faeea9ccd246eba46f732acb9d3a257f2d12a83ff88fc310"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/artifacts/preparation.md",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/project/preparation.md",
+      "bytes": 2189,
+      "sha256": "f66d4c0593eef32f71c49cd5a41970ef68ad05a8dc6cf8699565adebdbda7f1d"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/attempts/check-a1-023d7767.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/complete-only-the-first-preparat-20261112145428-041a795fde28/history/check-attempt-1-detail-023d7767d4934a98e55cffe9496c96bb6886ebd6389e4b12c06c95cddbe59ea4.json",
+      "bytes": 132,
+      "sha256": "023d7767d4934a98e55cffe9496c96bb6886ebd6389e4b12c06c95cddbe59ea4"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/attempts/check-a1-7e1c319f.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/complete-only-the-first-preparat-20261112145428-041a795fde28/history/check-attempt-1-detail-7e1c319f3c11c94453d23cbca76e244e9d1e444a431cda0d6d50461cc8f982e8.json",
+      "bytes": 411,
+      "sha256": "7e1c319f3c11c94453d23cbca76e244e9d1e444a431cda0d6d50461cc8f982e8"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/attempts/check-a1-e45cb4be.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/complete-only-the-first-preparat-20261112145428-041a795fde28/history/check-attempt-1-detail-e45cb4beec9373e2216070653e7aa4632cc32aa6beb4af3833d72524ae7830c6.json",
+      "bytes": 86,
+      "sha256": "e45cb4beec9373e2216070653e7aa4632cc32aa6beb4af3833d72524ae7830c6"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/attempts/explore-a1-0d43aeef.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/complete-only-the-first-preparat-20261112145428-041a795fde28/history/explore-attempt-1-detail-0d43aeefec256a09a40bb7f0ec105f023242b1ee1fd8440b0a3b4b0ecea879af.json",
+      "bytes": 1744,
+      "sha256": "0d43aeefec256a09a40bb7f0ec105f023242b1ee1fd8440b0a3b4b0ecea879af"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/attempts/explore-a1-7925dfc5.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/complete-only-the-first-preparat-20261112145428-041a795fde28/history/explore-attempt-1-detail-7925dfc53e7d94d867cd7334ac16fefe2d08fc778de109cef14f38a9b1f3dd27.json",
+      "bytes": 86,
+      "sha256": "7925dfc53e7d94d867cd7334ac16fefe2d08fc778de109cef14f38a9b1f3dd27"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/attempts/explore-a1-9182e824.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/complete-only-the-first-preparat-20261112145428-041a795fde28/history/explore-attempt-1-detail-9182e8247dece34365aefb2d294d7ba64fe396bd872feeb8aec477fa87c90a5c.json",
+      "bytes": 132,
+      "sha256": "9182e8247dece34365aefb2d294d7ba64fe396bd872feeb8aec477fa87c90a5c"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/attempts/implement-a1-83ff9e47.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/complete-only-the-first-preparat-20261112145428-041a795fde28/history/implement-attempt-1-detail-83ff9e47d40ec75503165e15f4c0a13322d56702eefc08cc91351c83c6448bd4.json",
+      "bytes": 86,
+      "sha256": "83ff9e47d40ec75503165e15f4c0a13322d56702eefc08cc91351c83c6448bd4"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/attempts/implement-a1-91015c00.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/complete-only-the-first-preparat-20261112145428-041a795fde28/history/implement-attempt-1-detail-91015c00f1a2984381d52585d77ac3350e7f7458f855847d9ad9d8995d3221fa.json",
+      "bytes": 132,
+      "sha256": "91015c00f1a2984381d52585d77ac3350e7f7458f855847d9ad9d8995d3221fa"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/attempts/implement-a1-a738f1a6.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/complete-only-the-first-preparat-20261112145428-041a795fde28/history/implement-attempt-1-detail-a738f1a68f566cdd9be8f70c6f997619a0542fba8fdc62d05409d561a9256025.json",
+      "bytes": 2765,
+      "sha256": "a738f1a68f566cdd9be8f70c6f997619a0542fba8fdc62d05409d561a9256025"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/attempts/research-a1-06354ae9.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/complete-only-the-first-preparat-20261112145428-041a795fde28/history/research-attempt-1-detail-06354ae9c9259feeeda1109db8434626975d7b0015bdb34d506908c222c9d066.json",
+      "bytes": 4422,
+      "sha256": "06354ae9c9259feeeda1109db8434626975d7b0015bdb34d506908c222c9d066"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/attempts/research-a1-a035a351.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/complete-only-the-first-preparat-20261112145428-041a795fde28/history/research-attempt-1-detail-a035a35149157c07920faec3143736160ec4bec3fecd813a5580365f026f5541.json",
+      "bytes": 132,
+      "sha256": "a035a35149157c07920faec3143736160ec4bec3fecd813a5580365f026f5541"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-alg_targeted/attempts/research-a1-c1acc239.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/complete-only-the-first-preparat-20261112145428-041a795fde28/history/research-attempt-1-detail-c1acc239485436db6f7e72f355900c792c8fdd30757d83f6b80737fd90d61a1b.json",
+      "bytes": 86,
+      "sha256": "c1acc239485436db6f7e72f355900c792c8fdd30757d83f6b80737fd90d61a1b"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-build/result.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-build/result.json",
+      "bytes": 12605,
+      "sha256": "39e14e3b6e9f5fc55fb7ab7fbb0e68f0df81b621916829daeebf56e6c978b38f"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-build/events.jsonl",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-build/events.jsonl",
+      "bytes": 496,
+      "sha256": "23aed7eb75420786c01c763754ffeafc77348ca59b929854364499aa427c8f72"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-build/phase1.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-build/phase1.json",
+      "bytes": 3197,
+      "sha256": "4dacff296d765b0b924368c35cca0eccea886f6871fa9e71b2c1d5c80e5d1c96"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-build/preflight.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-build/preflight.json",
+      "bytes": 27679,
+      "sha256": "c09df44b19b83b93c90de9b29e4a648037790e52212c723bd5405b46039c1916"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-build/skills-preflight.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-build/skills-preflight.json",
+      "bytes": 545,
+      "sha256": "dfd801613291ff6bf2c02a1b600f726785450034b9ce2c14891b5dd8629f2bd3"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-build/samples.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-build/samples.json",
+      "bytes": 8495,
+      "sha256": "7e527e1ea4b0274cb3f3300b96a03b1d0904c315ab3f35eda331e424438dd003"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-build/artifacts/preparation.md",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-build/project/preparation.md",
+      "bytes": 1883,
+      "sha256": "f7a07594f2a6bf7ab719ff017641f4803145d05d62e315f4f7da88327d3fa179"
+    },
+    {
+      "path": "windows/2-wafer-report-staged-build/artifacts/report.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-build/project/report.json",
+      "bytes": 634,
+      "sha256": "99417a6b9a4352663ac67c13d1d4d906f222bd51aff5b7abc50edb5bc8fc9548"
+    },
+    {
+      "path": "linux/plan.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/plan.json",
+      "bytes": 6588,
+      "sha256": "286df2c8d341a5052b303faa27b9d24b575f372bcd27f8c664ff3c2bb722a3a7"
+    },
+    {
+      "path": "linux/result.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/result.json",
+      "bytes": 226818,
+      "sha256": "0ae5f9f82450dec590e658a18d6416e06454713873cdd745c54233d4ce7d8f4d"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/result.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/result.json",
+      "bytes": 46511,
+      "sha256": "cbafc79813775680ecf9298e92c2d87dfad23932782ed9fb45c8dfb033b4ecab"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/events.jsonl",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/events.jsonl",
+      "bytes": 258,
+      "sha256": "b0dc52274fec89687809227efc1026f23a8aebe5dad795cfb7c7f49f92f000fe"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/preflight.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/preflight.json",
+      "bytes": 43718,
+      "sha256": "464d1336e575c4bdff19f4a7aa43a0638566b279a45fa583bc9fe06484b6fbc1"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/skills-preflight.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/skills-preflight.json",
+      "bytes": 459,
+      "sha256": "14cbfb5d768a73eb3112757e47940620bdc078bb7c47264de4be5dd1f61817d4"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/samples.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/samples.json",
+      "bytes": 15619,
+      "sha256": "a83a889b7149733506616ac397891d16983a25733effdcd398f97479c7042641"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/artifacts/preparation.md",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/preparation.md",
+      "bytes": 2152,
+      "sha256": "091b899cd5c898b9bc0555fd4ca4e4fda89bdf56f0fa0392d9f8145a8519c8d9"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/explore_b-a1-a4dfade2.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/explore_b-attempt-1-detail-a4dfade2d8ea4697346640e0b22759954b72a9d2b6641662ee3ecb962b6a721f.json",
+      "bytes": 1703,
+      "sha256": "a4dfade2d8ea4697346640e0b22759954b72a9d2b6641662ee3ecb962b6a721f"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/explore_a-a1-bb0009f2.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/explore_a-attempt-1-detail-bb0009f22214d2966c68e76ca92dad8e1655dae7b5eeb2ea11531cde66013854.json",
+      "bytes": 1844,
+      "sha256": "bb0009f22214d2966c68e76ca92dad8e1655dae7b5eeb2ea11531cde66013854"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/research-a2-dcccb439.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/research-attempt-2-detail-dcccb439ea1c549ed6d40071237f3dbf87049de79850a499f6c613c9918cef72.json",
+      "bytes": 4023,
+      "sha256": "dcccb439ea1c549ed6d40071237f3dbf87049de79850a499f6c613c9918cef72"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/check-a1-1e9ecbce.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/check-attempt-1-detail-1e9ecbce6650dd2920feb3add0b7e26514526ff74d7a316b477d43ebdc67653a.json",
+      "bytes": 916,
+      "sha256": "1e9ecbce6650dd2920feb3add0b7e26514526ff74d7a316b477d43ebdc67653a"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/check-a1-8d3a9a33.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/check-attempt-1-detail-8d3a9a33e386a540a9c8d9eea35e0652bac76f62799db2ce50a503e3d9511ebe.json",
+      "bytes": 86,
+      "sha256": "8d3a9a33e386a540a9c8d9eea35e0652bac76f62799db2ce50a503e3d9511ebe"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/check-a1-9333450e.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/check-attempt-1-detail-9333450e35dad2c86a4932b15fa04901f75656c0f94b2023d9aceb9e06017016.json",
+      "bytes": 132,
+      "sha256": "9333450e35dad2c86a4932b15fa04901f75656c0f94b2023d9aceb9e06017016"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/research-a1-8604a2b5.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/research-attempt-1-detail-8604a2b51e5aa6d96d8bce7132ce93206061e15bd4ba7603078bf2f4ceb1065a.json",
+      "bytes": 132,
+      "sha256": "8604a2b51e5aa6d96d8bce7132ce93206061e15bd4ba7603078bf2f4ceb1065a"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/check-a1-7f6ccc53.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/check-attempt-1-detail-7f6ccc536748c3e5c56792243404d0d24223369f9264d137a09aaabed4b01193.json",
+      "bytes": 940,
+      "sha256": "7f6ccc536748c3e5c56792243404d0d24223369f9264d137a09aaabed4b01193"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/check-a2-a37f0605.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/check-attempt-2-detail-a37f06054085bfdaf4ca2411882b4406085bab3d61dc7cc49bac0508e5142e00.json",
+      "bytes": 86,
+      "sha256": "a37f06054085bfdaf4ca2411882b4406085bab3d61dc7cc49bac0508e5142e00"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/research-a2-4d82e479.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/research-attempt-2-detail-4d82e479db171704f150a038d7dd6c58ccf115a6ee997a328f12fcdf5f5f5ee4.json",
+      "bytes": 132,
+      "sha256": "4d82e479db171704f150a038d7dd6c58ccf115a6ee997a328f12fcdf5f5f5ee4"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/check-a2-8a5ba2e7.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/check-attempt-2-detail-8a5ba2e7050fb3326680ef94219c979499fbf5e9ce4c741d98474b65944b5837.json",
+      "bytes": 132,
+      "sha256": "8a5ba2e7050fb3326680ef94219c979499fbf5e9ce4c741d98474b65944b5837"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/explore_a-a1-5b04b9c5.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/explore_a-attempt-1-detail-5b04b9c51d0fbeffe99af340a568cc9497878c51d270c123fdd227dd9f12f780.json",
+      "bytes": 132,
+      "sha256": "5b04b9c51d0fbeffe99af340a568cc9497878c51d270c123fdd227dd9f12f780"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/research-a1-21658cab.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/research-attempt-1-detail-21658cab7df942e92e151b10d397aff996f14f8d0df127125356eec3dbf4878a.json",
+      "bytes": 3834,
+      "sha256": "21658cab7df942e92e151b10d397aff996f14f8d0df127125356eec3dbf4878a"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/research-a2-4ee93cf4.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/research-attempt-2-detail-4ee93cf4bc9fa3d2df6b8c5ccca849f85ed4cc01292d26113c8c928a0616c9a6.json",
+      "bytes": 86,
+      "sha256": "4ee93cf4bc9fa3d2df6b8c5ccca849f85ed4cc01292d26113c8c928a0616c9a6"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/explore_b-a1-c3d5d013.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/explore_b-attempt-1-detail-c3d5d0133b915a5323707d17512edf87b9a7ec98d4f85356775dc3d0275824ad.json",
+      "bytes": 132,
+      "sha256": "c3d5d0133b915a5323707d17512edf87b9a7ec98d4f85356775dc3d0275824ad"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/check-a2-5f4f6ddc.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/check-attempt-2-detail-5f4f6ddc73cf9d9bf1a9fe2292d868f524f3cb1a70356bdeae4a8671bcc1523a.json",
+      "bytes": 973,
+      "sha256": "5f4f6ddc73cf9d9bf1a9fe2292d868f524f3cb1a70356bdeae4a8671bcc1523a"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/explore_b-a1-0ce9a976.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/explore_b-attempt-1-detail-0ce9a9766ac5d043ad440a90c66584f17416cc261037839dce3076340de634d3.json",
+      "bytes": 86,
+      "sha256": "0ce9a9766ac5d043ad440a90c66584f17416cc261037839dce3076340de634d3"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/explore_a-a1-0ce9a976.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/explore_a-attempt-1-detail-0ce9a9766ac5d043ad440a90c66584f17416cc261037839dce3076340de634d3.json",
+      "bytes": 86,
+      "sha256": "0ce9a9766ac5d043ad440a90c66584f17416cc261037839dce3076340de634d3"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/check-a2-f3aea849.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/check-attempt-2-detail-f3aea8493d4f76c8d196314e5f261000fc1e8ba59b308b580b39ab0886283992.json",
+      "bytes": 997,
+      "sha256": "f3aea8493d4f76c8d196314e5f261000fc1e8ba59b308b580b39ab0886283992"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_targeted/attempts/research-a1-8fd292b9.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150424-cee0713bb997/history/research-attempt-1-detail-8fd292b9e102eb96e7e21aa418d2d7197af1a954a1ddf97a9e56fa495d0a8f28.json",
+      "bytes": 86,
+      "sha256": "8fd292b9e102eb96e7e21aa418d2d7197af1a954a1ddf97a9e56fa495d0a8f28"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-build/result.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-build/result.json",
+      "bytes": 7697,
+      "sha256": "b58a3127045503f9c96685acd5a52b375544c9566e10a28e51d903f99abbec32"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-build/events.jsonl",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-build/events.jsonl",
+      "bytes": 139,
+      "sha256": "f1e26928dd463d6be832e803322975284c9da487382693f056930b15c5183f40"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-build/preflight.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-build/preflight.json",
+      "bytes": 23020,
+      "sha256": "22382de258f47bead30b9e4b01265bbefcb4879eca567778485d525409bbca58"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-build/skills-preflight.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-build/skills-preflight.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-build/samples.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-build/samples.json",
+      "bytes": 3514,
+      "sha256": "d06615736db9498baa9234b4ca8eba36d137b21a927034eff0c4a66603a9a707"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-build/artifacts/src/wafer-count.cjs",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-build/project/src/wafer-count.cjs",
+      "bytes": 434,
+      "sha256": "0a6d8fef77e2df3f17355b5a7e8f11bbe2118c0463a764c6d558f7bbf6e26ba2"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-build/artifacts/src/wafer-view.cjs",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-build/project/src/wafer-view.cjs",
+      "bytes": 140,
+      "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/result.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/result.json",
+      "bytes": 34913,
+      "sha256": "6665c86e117b14472e7b2589dd79e59d4f171ad0fa02676535df2a7bec07eac2"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/events.jsonl",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/events.jsonl",
+      "bytes": 139,
+      "sha256": "173ed3825e0d29d6065f3ba62d32ca6c2dc4e982589fe82c45eb16703c87e3e2"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/preflight.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/preflight.json",
+      "bytes": 40635,
+      "sha256": "14ce099592a8bfb2dd1d699b3eac437808de2f6d6fa1a2a551503f754249257c"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/skills-preflight.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/skills-preflight.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/samples.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/samples.json",
+      "bytes": 13538,
+      "sha256": "5cf9e1850d2b576b449bd1861791013a67c6eca1594642e739715c1a0c861a2b"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/artifacts/src/wafer-count.cjs",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/project/src/wafer-count.cjs",
+      "bytes": 434,
+      "sha256": "0a6d8fef77e2df3f17355b5a7e8f11bbe2118c0463a764c6d558f7bbf6e26ba2"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/artifacts/src/wafer-view.cjs",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/project/src/wafer-view.cjs",
+      "bytes": 140,
+      "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/attempts/explore-a1-8b137243.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112150033-78ec6c3bc590/history/explore-attempt-1-detail-8b1372433ab78ee8dccefec77d1ea16c0bef75713ad3e7552c89fd01535256dc.json",
+      "bytes": 86,
+      "sha256": "8b1372433ab78ee8dccefec77d1ea16c0bef75713ad3e7552c89fd01535256dc"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/attempts/check-a1-6bcf1a98.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112150033-78ec6c3bc590/history/check-attempt-1-detail-6bcf1a98c1d2d2fcf389e1d42ca412740c854e6ac4b04bffe60c2d3d3f29adb3.json",
+      "bytes": 86,
+      "sha256": "6bcf1a98c1d2d2fcf389e1d42ca412740c854e6ac4b04bffe60c2d3d3f29adb3"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/attempts/explore-a1-87aa7dfe.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112150033-78ec6c3bc590/history/explore-attempt-1-detail-87aa7dfe3b530eb9876deb19fe53356f8e85cf039ce810da0d398b9c3b210671.json",
+      "bytes": 1552,
+      "sha256": "87aa7dfe3b530eb9876deb19fe53356f8e85cf039ce810da0d398b9c3b210671"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/attempts/check-a1-433331ec.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112150033-78ec6c3bc590/history/check-attempt-1-detail-433331ecd03ab1137df6a25038ea062c0ed7cb757058f30ef856eaaaff12afb6.json",
+      "bytes": 132,
+      "sha256": "433331ecd03ab1137df6a25038ea062c0ed7cb757058f30ef856eaaaff12afb6"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/attempts/implement-a1-e4ee7765.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112150033-78ec6c3bc590/history/implement-attempt-1-detail-e4ee7765b8058de7443cddef1c9fd3ae24a71d130ced21a1543663377c2d6920.json",
+      "bytes": 132,
+      "sha256": "e4ee7765b8058de7443cddef1c9fd3ae24a71d130ced21a1543663377c2d6920"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/attempts/implement-a1-4ad2d441.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112150033-78ec6c3bc590/history/implement-attempt-1-detail-4ad2d4410ab7df4042bd7636a9370c3b9b01f59ebc19a01620ddc38ef447a7e0.json",
+      "bytes": 86,
+      "sha256": "4ad2d4410ab7df4042bd7636a9370c3b9b01f59ebc19a01620ddc38ef447a7e0"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/attempts/research-a1-b7910752.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112150033-78ec6c3bc590/history/research-attempt-1-detail-b79107529ec4212fd856fecbde90834dacceae58920b833522639c4be21f88c6.json",
+      "bytes": 86,
+      "sha256": "b79107529ec4212fd856fecbde90834dacceae58920b833522639c4be21f88c6"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/attempts/check-a1-8d90ca34.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112150033-78ec6c3bc590/history/check-attempt-1-detail-8d90ca34a6f69351e0de0dfe99b5b2e4335f0e2d9eb951559c0e51b37b6c17d4.json",
+      "bytes": 481,
+      "sha256": "8d90ca34a6f69351e0de0dfe99b5b2e4335f0e2d9eb951559c0e51b37b6c17d4"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/attempts/explore-a1-d35b0905.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112150033-78ec6c3bc590/history/explore-attempt-1-detail-d35b09054e570f47365cb4ede908b3aafaa678f9609bcc3e71da32823eb3815c.json",
+      "bytes": 132,
+      "sha256": "d35b09054e570f47365cb4ede908b3aafaa678f9609bcc3e71da32823eb3815c"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/attempts/research-a1-98da3984.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112150033-78ec6c3bc590/history/research-attempt-1-detail-98da39840e4bdc2b50374143b2be28a801c7e8332e7a4ed3af66f818016046b6.json",
+      "bytes": 4199,
+      "sha256": "98da39840e4bdc2b50374143b2be28a801c7e8332e7a4ed3af66f818016046b6"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/attempts/implement-a1-d559d2b1.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112150033-78ec6c3bc590/history/implement-attempt-1-detail-d559d2b1043bc3c35c0e379dd60289ba6381d29bda70bb5753ca1c32d31cf97f.json",
+      "bytes": 3685,
+      "sha256": "d559d2b1043bc3c35c0e379dd60289ba6381d29bda70bb5753ca1c32d31cf97f"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_default/attempts/research-a1-82c43799.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/project/.opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112150033-78ec6c3bc590/history/research-attempt-1-detail-82c4379912286dd408e3eb3be0b2b691e3ee04b7105fdc4d57550b2878e6c518.json",
+      "bytes": 132,
+      "sha256": "82c4379912286dd408e3eb3be0b2b691e3ee04b7105fdc4d57550b2878e6c518"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/result.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/result.json",
+      "bytes": 34678,
+      "sha256": "0436900d8259124b4fc7873f88ea2280600c30e6aed4d31cc2310e97d5cec802"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/events.jsonl",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/events.jsonl",
+      "bytes": 139,
+      "sha256": "7cba4f159fca415fa47893a63d886f26b7c9e7d33c5b8a31afc06cd7254cc211"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/preflight.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/preflight.json",
+      "bytes": 40673,
+      "sha256": "0a6d35753394b1d39641e381e9fc2541685160bb07abf4a1e554bde828cd9cdf"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/skills-preflight.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/skills-preflight.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/samples.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/samples.json",
+      "bytes": 12699,
+      "sha256": "cbd5b42582e955cbe90180b585076d0ca65d9c88e4e8b970a69b1385141b9939"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/artifacts/src/wafer-count.cjs",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/project/src/wafer-count.cjs",
+      "bytes": 394,
+      "sha256": "6b17ead9fb07c8fd3b9a90b90b8dd89c4a2516439d9629ece08974ee3e94eb42"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/artifacts/src/wafer-view.cjs",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/project/src/wafer-view.cjs",
+      "bytes": 140,
+      "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/attempts/check-a1-9c8b342a.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-the-wafer-count-bug-in-this--20261112150231-7e41338607e0/history/check-attempt-1-detail-9c8b342ad70e9e1bda67f33de827383f283a71a9c47c11696b6727305b4e6d20.json",
+      "bytes": 465,
+      "sha256": "9c8b342ad70e9e1bda67f33de827383f283a71a9c47c11696b6727305b4e6d20"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/attempts/explore-a1-3bc2106c.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-the-wafer-count-bug-in-this--20261112150231-7e41338607e0/history/explore-attempt-1-detail-3bc2106c034d92d5c3517cb0eee462a85c23287a844f0f1e79a663bb6030102c.json",
+      "bytes": 86,
+      "sha256": "3bc2106c034d92d5c3517cb0eee462a85c23287a844f0f1e79a663bb6030102c"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/attempts/explore-a1-772de223.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-the-wafer-count-bug-in-this--20261112150231-7e41338607e0/history/explore-attempt-1-detail-772de223e21a1271c1256743aa71c68e9c263020eef46ff4e54506fc662651a2.json",
+      "bytes": 1348,
+      "sha256": "772de223e21a1271c1256743aa71c68e9c263020eef46ff4e54506fc662651a2"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/attempts/research-a1-f2ffa4b5.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-the-wafer-count-bug-in-this--20261112150231-7e41338607e0/history/research-attempt-1-detail-f2ffa4b5bfb8eb511ca50a4833b2c7eb0bece4c99c5416adc091e91a8ed0eab6.json",
+      "bytes": 132,
+      "sha256": "f2ffa4b5bfb8eb511ca50a4833b2c7eb0bece4c99c5416adc091e91a8ed0eab6"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/attempts/check-a1-a2ecfd07.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-the-wafer-count-bug-in-this--20261112150231-7e41338607e0/history/check-attempt-1-detail-a2ecfd07a8644a876c06f38cb916f1eb0022aa3f4d72fc5de5a88a97c42e634b.json",
+      "bytes": 132,
+      "sha256": "a2ecfd07a8644a876c06f38cb916f1eb0022aa3f4d72fc5de5a88a97c42e634b"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/attempts/explore-a1-dd57a79a.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-the-wafer-count-bug-in-this--20261112150231-7e41338607e0/history/explore-attempt-1-detail-dd57a79afbe0b213baa0e3c49592b2844ef6ff2e19d9f1c0b5a013acae0d0cbb.json",
+      "bytes": 132,
+      "sha256": "dd57a79afbe0b213baa0e3c49592b2844ef6ff2e19d9f1c0b5a013acae0d0cbb"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/attempts/research-a1-2460bf70.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-the-wafer-count-bug-in-this--20261112150231-7e41338607e0/history/research-attempt-1-detail-2460bf708ce4850f0b3c25882f9309b4f6a6cab45e209cc25f1b50c760a84b02.json",
+      "bytes": 86,
+      "sha256": "2460bf708ce4850f0b3c25882f9309b4f6a6cab45e209cc25f1b50c760a84b02"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/attempts/implement-a1-9f1db2a1.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-the-wafer-count-bug-in-this--20261112150231-7e41338607e0/history/implement-attempt-1-detail-9f1db2a15b4a250a4c5810df974d1c8ee913f5fd34fba8055ce93248181a5723.json",
+      "bytes": 132,
+      "sha256": "9f1db2a15b4a250a4c5810df974d1c8ee913f5fd34fba8055ce93248181a5723"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/attempts/research-a1-3ab187a3.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-the-wafer-count-bug-in-this--20261112150231-7e41338607e0/history/research-attempt-1-detail-3ab187a3193f3cc7a3855cb78e7ad2b13aa678e3d12c658cb4c7c286939ae034.json",
+      "bytes": 4329,
+      "sha256": "3ab187a3193f3cc7a3855cb78e7ad2b13aa678e3d12c658cb4c7c286939ae034"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/attempts/check-a1-0043ccf3.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-the-wafer-count-bug-in-this--20261112150231-7e41338607e0/history/check-attempt-1-detail-0043ccf3b445fcad3f730d79512fcfdbbdc780d289b573a05c97c03f884c12ed.json",
+      "bytes": 86,
+      "sha256": "0043ccf3b445fcad3f730d79512fcfdbbdc780d289b573a05c97c03f884c12ed"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/attempts/implement-a1-1ac94da6.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-the-wafer-count-bug-in-this--20261112150231-7e41338607e0/history/implement-attempt-1-detail-1ac94da6aaf026111cf764f4a93fea8389e4d24925e12bf66166cf0b475b4163.json",
+      "bytes": 5137,
+      "sha256": "1ac94da6aaf026111cf764f4a93fea8389e4d24925e12bf66166cf0b475b4163"
+    },
+    {
+      "path": "linux/1-wafer-count-commonjs-alg_targeted/attempts/implement-a1-aaa819f9.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/project/.opencode/runs/fix-the-wafer-count-bug-in-this--20261112150231-7e41338607e0/history/implement-attempt-1-detail-aaa819f901ea2484529698edc0955cd6c47a8937c67ef96f152d46403e757214.json",
+      "bytes": 86,
+      "sha256": "aaa819f901ea2484529698edc0955cd6c47a8937c67ef96f152d46403e757214"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/result.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/result.json",
+      "bytes": 68566,
+      "sha256": "4e18885baa22dfe77f0c923002efc2edd8f397d93da2d83d14f475d2925d335a"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/events.jsonl",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/events.jsonl",
+      "bytes": 615,
+      "sha256": "619a2a9c5a13e3aa064c89253fc81d7ab3db2798c92dc8e17ac19a80d1b687f9"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/phase1.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/phase1.json",
+      "bytes": 25354,
+      "sha256": "93389dde5fbd3ee2f2292a19d5e896cf676936cd3fc13f015cd3f07665d94bf7"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/preflight.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/preflight.json",
+      "bytes": 43667,
+      "sha256": "c516f040d27af3a1f9f44fc62a9b07e3faad4380ea127d3dd60c2b08c8485fb6"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/skills-preflight.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/skills-preflight.json",
+      "bytes": 458,
+      "sha256": "31f35b6b10741e83647fb1bf1fe976a536922acceba361e19607a0e82ebed4a8"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/samples.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/samples.json",
+      "bytes": 15724,
+      "sha256": "508f9a8487414ab973ae1d3f3b6e4762adce8d677540c487354b366896c53d12"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/artifacts/preparation.md",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/preparation.md",
+      "bytes": 2125,
+      "sha256": "b5ca2b7b15849cd3647fdba2052d4ebbc4e6cf7fbcd218b0c42a31718cc3e8fa"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/implement-a1-5d2b0e6e.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/complete-report-json-using-persi-20261112150833-acfc96f05f71/history/implement-attempt-1-detail-5d2b0e6e3bb273255513b6a3ab4115c197003d858bf59d99895ee2367a57a7c7.json",
+      "bytes": 132,
+      "sha256": "5d2b0e6e3bb273255513b6a3ab4115c197003d858bf59d99895ee2367a57a7c7"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/implement-a1-e2ef80e5.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/complete-report-json-using-persi-20261112150833-acfc96f05f71/history/implement-attempt-1-detail-e2ef80e54cb6bbb2a21b3afdca39bba4b95bb4cabda72d4af5bf5d9f3e7a81d7.json",
+      "bytes": 385,
+      "sha256": "e2ef80e54cb6bbb2a21b3afdca39bba4b95bb4cabda72d4af5bf5d9f3e7a81d7"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/implement-a1-73f88380.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/complete-report-json-using-persi-20261112150833-acfc96f05f71/history/implement-attempt-1-detail-73f883801df6a5a4d031e3ee65fa06085797d0c2670acc21816a9691f530a3b5.json",
+      "bytes": 86,
+      "sha256": "73f883801df6a5a4d031e3ee65fa06085797d0c2670acc21816a9691f530a3b5"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/research-a1-1cb97650.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150640-6d5bab8d2305/history/research-attempt-1-detail-1cb97650f7b1696c85f01408ff836073336b5f0e48400a12257ecdc9bdf4ba8c.json",
+      "bytes": 86,
+      "sha256": "1cb97650f7b1696c85f01408ff836073336b5f0e48400a12257ecdc9bdf4ba8c"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/explore-a1-f2e6b27d.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150640-6d5bab8d2305/history/explore-attempt-1-detail-f2e6b27dd9e9e44143a61126551f027dbd4496dfd9103cc93be07f896b3dbd39.json",
+      "bytes": 132,
+      "sha256": "f2e6b27dd9e9e44143a61126551f027dbd4496dfd9103cc93be07f896b3dbd39"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/research-a1-b934edae.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150640-6d5bab8d2305/history/research-attempt-1-detail-b934edae2b4401dce751cdb2dd7b44f44dd48e324d6043eed08e731faf547c80.json",
+      "bytes": 132,
+      "sha256": "b934edae2b4401dce751cdb2dd7b44f44dd48e324d6043eed08e731faf547c80"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/implement-a1-a7657638.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150640-6d5bab8d2305/history/implement-attempt-1-detail-a7657638220eb68b6b37a9d08bb51986a19d84ac25adf6a56a937ec8ed1d1888.json",
+      "bytes": 3566,
+      "sha256": "a7657638220eb68b6b37a9d08bb51986a19d84ac25adf6a56a937ec8ed1d1888"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/check-a1-50663cc7.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150640-6d5bab8d2305/history/check-attempt-1-detail-50663cc7d91b3830472ab3052210d78d8ac46f62db120fb0fc221a2ee4224653.json",
+      "bytes": 267,
+      "sha256": "50663cc7d91b3830472ab3052210d78d8ac46f62db120fb0fc221a2ee4224653"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/check-a1-432c93f0.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150640-6d5bab8d2305/history/check-attempt-1-detail-432c93f00db677a74e10e56cb74fe19fd541ed131ff97f0fae9047fa048a5d08.json",
+      "bytes": 86,
+      "sha256": "432c93f00db677a74e10e56cb74fe19fd541ed131ff97f0fae9047fa048a5d08"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/research-a1-97ebfe32.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150640-6d5bab8d2305/history/research-attempt-1-detail-97ebfe3250d2565af422abeba846cede79d93a05daba966f79676b34054dd6a8.json",
+      "bytes": 4401,
+      "sha256": "97ebfe3250d2565af422abeba846cede79d93a05daba966f79676b34054dd6a8"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/check-a1-8760437c.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150640-6d5bab8d2305/history/check-attempt-1-detail-8760437c0c7dc237a843bb73c6abbb3f3da01ae8bc289e0a6ec5b1e59c408e40.json",
+      "bytes": 132,
+      "sha256": "8760437c0c7dc237a843bb73c6abbb3f3da01ae8bc289e0a6ec5b1e59c408e40"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/implement-a1-0d11ded2.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150640-6d5bab8d2305/history/implement-attempt-1-detail-0d11ded2107e6edf992a374fe157247e0d610700f1b098e975dff982d8291933.json",
+      "bytes": 86,
+      "sha256": "0d11ded2107e6edf992a374fe157247e0d610700f1b098e975dff982d8291933"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/explore-a1-560d2af4.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150640-6d5bab8d2305/history/explore-attempt-1-detail-560d2af4a662ea9dbbed23bda5fb59faf6ca96dd75bd54243ead8c08dd0914e2.json",
+      "bytes": 1697,
+      "sha256": "560d2af4a662ea9dbbed23bda5fb59faf6ca96dd75bd54243ead8c08dd0914e2"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/implement-a1-385a9c79.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150640-6d5bab8d2305/history/implement-attempt-1-detail-385a9c79e2c60e9771ddada77d63d69c358355ec7afd111c158cf3ad7417561c.json",
+      "bytes": 132,
+      "sha256": "385a9c79e2c60e9771ddada77d63d69c358355ec7afd111c158cf3ad7417561c"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-alg_default/attempts/explore-a1-71d59712.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/runs/prepare-the-first-phase-of-the-s-20261112150640-6d5bab8d2305/history/explore-attempt-1-detail-71d59712ce2353843c02cb93cd20364fba7b615ea5ea5e64532242dc99e75b6c.json",
+      "bytes": 86,
+      "sha256": "71d59712ce2353843c02cb93cd20364fba7b615ea5ea5e64532242dc99e75b6c"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-build/result.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-build/result.json",
+      "bytes": 12336,
+      "sha256": "f2cf2081d2bbb2e03a58cc0cc8156c504cf2992f92c3bc341cd7c16d116cdd4f"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-build/events.jsonl",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-build/events.jsonl",
+      "bytes": 496,
+      "sha256": "6abbea6d80b1f250a9ddeb71d3aad429aff7a56359c7d264b6f928d4dafa2849"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-build/phase1.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-build/phase1.json",
+      "bytes": 3051,
+      "sha256": "c5ca8209e07ba64090a3eeb4fbd0e20bfd0c5ac7c1bca6cf10fb1e66df2bd182"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-build/preflight.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-build/preflight.json",
+      "bytes": 24729,
+      "sha256": "070a1054e97449e8860322606b5ffd5e32004bfaf50ad7a1a544f86c66057759"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-build/skills-preflight.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-build/skills-preflight.json",
+      "bytes": 452,
+      "sha256": "0df0169c747264dbf79ce887c20e4f4ab838c535dde935f0edb038d6af5d1505"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-build/samples.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-build/samples.json",
+      "bytes": 8608,
+      "sha256": "3039d9274a1901ac2e7f5ffe86ab77bc4736fcec055bdb389c37cc9233aeacf1"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-build/artifacts/preparation.md",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-build/project/preparation.md",
+      "bytes": 1742,
+      "sha256": "00f88191a9d54a158ad977f799802058e47490d847f012f56e49c2532ace1927"
+    },
+    {
+      "path": "linux/2-wafer-report-staged-build/artifacts/report.json",
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-build/project/report.json",
+      "bytes": 1019,
+      "sha256": "7db17d8e1a5075a7d8a9ba5b1ed85d23eb1ffe418a01305cc70510af33d254ea"
+    },
+    {
+      "path": "checks/final-cleanup-audit.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/final-cleanup-audit.json",
+      "bytes": 4588,
+      "sha256": "82a244c5323fe2695d5337cffa58432f8ec6fcaa9004fdb752795f2104906848"
+    },
+    {
+      "path": "checks/final-runtime-comparison.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/final-runtime-comparison.json",
+      "bytes": 38407,
+      "sha256": "fcaf553a6a3be82cb3d4704f28485c7ad78f16b31d5dd53422108a648429093b"
+    },
+    {
+      "path": "checks/final-typecheck.log",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/final-typecheck.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "checks/linux-commit.txt",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-commit.txt",
+      "bytes": 41,
+      "sha256": "a64e9fda7676d05602cc5d15056d520572b9b74c2e2a0b7ff09b2c22be580336"
+    },
+    {
+      "path": "checks/linux-core.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-core.json",
+      "bytes": 50,
+      "sha256": "b245e449a10199c49e480188d7cc1de494b979bba7333a1d7ac70d0752c60337"
+    },
+    {
+      "path": "checks/linux-core.log",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-core.log",
+      "bytes": 38260,
+      "sha256": "2c964e16783c64863ee6f6f0b617831591b58568c54a3f8ff5a6b4414c85558e"
+    },
+    {
+      "path": "checks/linux-final-commit.txt",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-final-commit.txt",
+      "bytes": 41,
+      "sha256": "651152d6c4ab5c6ff5a28b171013a89d8083bcd90b1ff37837d1d3d7a8156ff2"
+    },
+    {
+      "path": "checks/linux-final-core.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-final-core.json",
+      "bytes": 50,
+      "sha256": "426008e00df2ae2afcd3418d2c1da8046d440352bccd6edb4f2f71e420549b3d"
+    },
+    {
+      "path": "checks/linux-final-core.log",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-final-core.log",
+      "bytes": 36749,
+      "sha256": "22ee02fbde764268fd6af8ba572cd911c97d7bc004e1d63f9fb1c6012632fba4"
+    },
+    {
+      "path": "checks/linux-final-typecheck.log",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-final-typecheck.log",
+      "bytes": 66,
+      "sha256": "d773539b4007a1c6e881b39c4bad4ce65837992453c5228198f10bd7ca4677c6"
+    },
+    {
+      "path": "checks/linux-headless-1.19.5.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-headless-1.19.5.json",
+      "bytes": 6874,
+      "sha256": "6e3946c119d91cca03a669bbaba649214850e203ae2cb729db84bdb5fbf88b00"
+    },
+    {
+      "path": "checks/linux-headless-1.19.5.json.before-cleanup.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-headless-1.19.5.json.before-cleanup.json",
+      "bytes": 6876,
+      "sha256": "15d6f7a60e71f9febe6f05de1e8b49ce33dfd3a3add8c1bf851e18dfcead8c07"
+    },
+    {
+      "path": "checks/linux-headless-1.19.5.log",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-headless-1.19.5.log",
+      "bytes": 713,
+      "sha256": "e39360517ab289b0526c72c9aad4d275423f61d1c6e1b1ebbd2a3fd862b28c9b"
+    },
+    {
+      "path": "checks/linux-headless.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-headless.json",
+      "bytes": 6773,
+      "sha256": "6f557e9af31939f1afab989477de3667b0d432d79ee42ff5313504c40f6900a2"
+    },
+    {
+      "path": "checks/linux-headless.log",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-headless.log",
+      "bytes": 619,
+      "sha256": "28730fcf7628770e3d76ac38088441817dcbb013f17ac8ececdda5e08c6f5c1e"
+    },
+    {
+      "path": "checks/linux-host-install.log",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-host-install.log",
+      "bytes": 24,
+      "sha256": "8a84ab4de9360789aa1b5ac6a61bac50a550be8843ff4f3701734adddad4dd9b"
+    },
+    {
+      "path": "checks/linux-host-sha256.txt",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-host-sha256.txt",
+      "bytes": 144,
+      "sha256": "0923f4c0dc2df6321b8b2028ab5f83ccb8d27085c18bc1fd8804799e8c8c8418"
+    },
+    {
+      "path": "checks/linux-host-version.txt",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/linux-host-version.txt",
+      "bytes": 7,
+      "sha256": "841f2d85d1f778cce0cf76d32368c88845e6847016e1397568e46f5b0745608e"
+    },
+    {
+      "path": "checks/windows-core.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/windows-core.json",
+      "bytes": 99,
+      "sha256": "af5c06eb222b210b775a3b5fbd815c33375fd025eab33b5b82df85b5c922382e"
+    },
+    {
+      "path": "checks/windows-core.log",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/windows-core.log",
+      "bytes": 31864,
+      "sha256": "5f8c136a2339d3a1139d0b5101679ab81914c6294f22f682950d6a1575215f9a"
+    },
+    {
+      "path": "checks/windows-final-typecheck.log",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/windows-final-typecheck.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "checks/windows-headless.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/windows-headless.json",
+      "bytes": 6786,
+      "sha256": "b339c22a091827de4dcdf520a953b67bff227a2bc2b333774313ead8aa6ca069"
+    },
+    {
+      "path": "checks/windows-headless.json.before-cleanup.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/windows-headless.json.before-cleanup.json",
+      "bytes": 6788,
+      "sha256": "7a842527a46cb0dfa2de52682b69f90f2a48caf5c0a8a79f052ad5f68c8a241f"
+    },
+    {
+      "path": "checks/windows-headless.log",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/windows-headless.log",
+      "bytes": 716,
+      "sha256": "9082170b07947039396f051e0a82917917f7bea73d0df54084fc3c93221a57ce"
+    },
+    {
+      "path": "checks/windows-host.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/windows-host.json",
+      "bytes": 201,
+      "sha256": "f1a852dc7309423093984594b4f31afaa32cccc998dfacc83d7d8268111a9101"
+    },
+    {
+      "path": "checks/windows-lineage.log",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/windows-lineage.log",
+      "bytes": 2900,
+      "sha256": "925883e8c599ef7820eb0e2ba7f916fdd685b922ca277c09dfd0f8354d5eec2a"
+    },
+    {
+      "path": "checks/windows-package.json",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/windows-package.json",
+      "bytes": 698,
+      "sha256": "463da8bf8c30298bc63c521ce7c26dca4c828c27b8da221386a8fe95dfb27513"
+    },
+    {
+      "path": "checks/windows-package.log",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/windows-package.log",
+      "bytes": 17510,
+      "sha256": "18eb2b7a2da8b762ed4f5e6109816b3d07419ea343da37d6fd9ca51c8217efec"
+    },
+    {
+      "path": "checks/windows-recovery-recheck.log",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/windows-recovery-recheck.log",
+      "bytes": 2465,
+      "sha256": "8f03a7aac1c8ec8098f67798245cbc0f1ef066b9b1b58cd81e8cb6b2b5d11ba4"
+    },
+    {
+      "path": "checks/windows-typecheck.log",
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-20261112/windows-typecheck.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    }
+  ],
+  "local_transcripts": [
+    {
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/messages.json",
+      "bytes": 276479,
+      "sha256": "8ca3db4f7705ab7e683057b708844c3a2448e9525adaeb417843406520ad1b0a"
+    },
+    {
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_default/sessions.json",
+      "bytes": 12571,
+      "sha256": "55dfb97e7d38905786c3ace1ade40c80b31dab394f03cacc9f8f5809d8d15fdf"
+    },
+    {
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/messages.json",
+      "bytes": 260502,
+      "sha256": "19e25cede294aa3bb8055ac835f3a8cf3ff5e1b724ce8879499d44eb79e889e4"
+    },
+    {
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-alg_targeted/sessions.json",
+      "bytes": 12569,
+      "sha256": "4656310c4f01421b596f9c3e34e607071a14e5f0d026d7e70607e54c7a986e7b"
+    },
+    {
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-build/messages.json",
+      "bytes": 45752,
+      "sha256": "1b2042721aa3027d8131867f36e4059d6d98b99334b42e0ca5b65275ce6054d6"
+    },
+    {
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/1-wafer-count-commonjs-build/sessions.json",
+      "bytes": 922,
+      "sha256": "2a881b101869616aea0563e17612c3e1ffdc0819bf0267b5a3653e15676f62b5"
+    },
+    {
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/messages.json",
+      "bytes": 314808,
+      "sha256": "46d72c2a7e8039ab8b9b6dcf469611a84f1276bebff615e90be0fcdc4da92153"
+    },
+    {
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_default/sessions.json",
+      "bytes": 18355,
+      "sha256": "15e84a68a5caf71bc33d9ca69de3d8d88f8db8116903a5d38b547c83162d6c1b"
+    },
+    {
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/messages.json",
+      "bytes": 260708,
+      "sha256": "3e20a0e6fffde01fd598382f1c358b9b20b63c8cfcb63451878f849152623221"
+    },
+    {
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-alg_targeted/sessions.json",
+      "bytes": 12571,
+      "sha256": "7bb0d56924a88c847ebdf627c6ecd488b57b86377fe35fdd84929973b3886b4e"
+    },
+    {
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-build/messages.json",
+      "bytes": 83017,
+      "sha256": "085c1cad5d6871da837921a44fc05b232609d3c31bb9d94acc7ae207177b6445"
+    },
+    {
+      "source": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/reliability-terra-win-20261112/2-wafer-report-staged-build/sessions.json",
+      "bytes": 923,
+      "sha256": "650a686b1653cdbddebc80baa63c53ba0888220c0baf9a7cf6322a9ae1a79014"
+    },
+    {
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/messages.json",
+      "bytes": 354162,
+      "sha256": "2764ea37720cda5ef3873156f2b6b2f4c9af8e9ad347a0f8c599fb51138df5dc"
+    },
+    {
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_targeted/sessions.json",
+      "bytes": 18763,
+      "sha256": "b85b06f6d0d522f455ac463e1936b104dd822cb4d0929391b9490436c6fc7385"
+    },
+    {
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-build/messages.json",
+      "bytes": 41982,
+      "sha256": "b6743fa0046f9377cbfdbcf35139e1c445701f0784d5ca0e12ca2b38972ae33b"
+    },
+    {
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-build/sessions.json",
+      "bytes": 836,
+      "sha256": "acb9aa5b0b2564f62cfe2a632ccc284dbf3619335f77968d6f73b950d9d30faa"
+    },
+    {
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/messages.json",
+      "bytes": 227732,
+      "sha256": "679a5bc49f52d5ca80ea4fdeaf33efb95d5a86e4304f028d97ac6cbc98216aff"
+    },
+    {
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_default/sessions.json",
+      "bytes": 12119,
+      "sha256": "af619a9ae1bb6bfa4317e65ab633720dde1e1a8c06bf761043344266b6e40890"
+    },
+    {
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/messages.json",
+      "bytes": 240284,
+      "sha256": "d4d9bf5d24a72758ae4106c24ad27ac64d82ab7eab17d9ad7b1ef02186e5ec09"
+    },
+    {
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/1-wafer-count-commonjs-alg_targeted/sessions.json",
+      "bytes": 12126,
+      "sha256": "deea615a3fad039420f92be37a53f12c9a56e0c8d408ed09d3f81fe1039c0ce9"
+    },
+    {
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/messages.json",
+      "bytes": 303516,
+      "sha256": "0e9f37b187dc81e81eb206d7ba709452ae16c31190ed776ba95806c1dfe35977"
+    },
+    {
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/sessions.json",
+      "bytes": 14937,
+      "sha256": "477fd2c8caa5fcb1208194ec214e8ccfcd3b267750ee69fccfa1851bf2532ac3"
+    },
+    {
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-build/messages.json",
+      "bytes": 84107,
+      "sha256": "b077df9601c7f9fd28f338a292734962d32b4bc94d60f9c0f9f2139660b3f831"
+    },
+    {
+      "source": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-build/sessions.json",
+      "bytes": 833,
+      "sha256": "7f6c8d97fc0734b5c8129d3a2d35be3bd4cafe9d776f3cc80d889c1d8464bf52"
+    }
+  ]
+}

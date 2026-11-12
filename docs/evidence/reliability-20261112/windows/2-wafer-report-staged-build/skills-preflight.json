@@ -1,0 +1,12 @@
+[
+  {
+    "name": "customize-opencode",
+    "location": "<built-in>",
+    "content_sha256": "eda4eae3679562180d26a31817cb5b2c8c801599b85f80b2796beae5620bad66"
+  },
+  {
+    "name": "wafer-analysis",
+    "location": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\reliability-terra-win-20261112\\2-wafer-report-staged-build\\project\\.opencode\\skills\\wafer-analysis\\SKILL.md",
+    "content_sha256": "12970f2dd1b7006ffdc335a62aa790970b556dd3a4c0d92fce4d76d8b5484cd8"
+  }
+]

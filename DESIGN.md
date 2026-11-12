@@ -8,7 +8,7 @@
 
 This document is for users and maintainers who need both the reason ALG exists and the mechanics that make it work. Operational commands live in [the operations checklist](docs/operations.md); release proof and source-identity details live in [the release verification procedure](docs/release-verification.md).
 
-The pending **0.5.5 candidate** adds bounded shell-setup recovery, host execution/preservation evidence and compact-task planning guidance described below. These are implementation contracts awaiting aggregate candidate acceptance and prospective benchmark validation. Historical evidence retains its original runtime identity; this update supplies no new efficiency, model-quality, offline-deployment or air-gapped service qualification result and no V2 runtime.
+The pending **0.5.5 candidate** adds bounded shell-setup recovery, host execution/preservation evidence and compact-task planning guidance described below. Local Windows/Linux regression and headless checks validate the repaired mechanisms; the [prospective Terra cohort](docs/v1-benchmark-failure-analysis.md#post-repair-validation--windows-and-linux) still exposes cumulative-usage and task/template-selection failures. Historical evidence retains its original runtime identity. No general efficiency, model-quality, new offline-package or air-gapped service qualification is established; no V2 runtime is added.
 
 ## Contents
 
