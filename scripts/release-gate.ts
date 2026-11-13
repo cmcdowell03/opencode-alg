@@ -138,6 +138,7 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "scripts/build-benchmark-retention-boundaries.ts", "scripts/build-benchmark-retention-cli.ts",
   "docs/datalake-mcp-qualification.md",
   "docs/v1-action-evidence.md", "scripts/test-action-evidence-headless.ts",
+  "scripts/action-evidence-live-regression.ts",
 ] as const
 
 export const RELEASE_CONTROL_PATHS = [
