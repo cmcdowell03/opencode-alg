@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { tempProject, removeProject } from "./helpers.ts"
 import { gradeLiveActionEvidenceCase, parentDispatchReceipt, boundedPrivateHostEvidence, persistDiagnosticOutcome,
-  hostCleanupStatus, versionProbeDiagnostic } from "../scripts/action-evidence-live-regression.ts"
+  hostCleanupStatus, versionProbeDiagnostic, crosscheckProducerHostHistory, firstCommand } from "../scripts/action-evidence-live-regression.ts"
 
 function fixture(caseId: "correct" | "defective") {
   const intentHash = "1".repeat(64), terminalHash = "2".repeat(64), manifestHash = "3".repeat(64)
@@ -123,5 +123,41 @@ test("version probe diagnostics retain code/signal/category without raw errors o
     expect(receipt.error_category).toBe(category)
     expect(receipt.timeout_ms).toBe(30_000)
     expect(JSON.stringify(receipt)).not.toContain("private")
+  }
+})
+
+function nativeProducerFixture(caseId: "correct" | "defective", exit: number) {
+  const session = "assigned-producer", hash = (value: string) => createHash("sha256").update(value).digest("hex")
+  const history = Array.from({ length: 10 }, (_, i) => ({ info: { id: `message-${i}`, sessionID: session }, parts: [{
+    type: "tool", tool: "bash", id: `part-${i}`, callID: `call-${i}`, messageID: `message-${i}`, sessionID: session,
+    state: { status: "completed", input: { command: i === 0 ? firstCommand(caseId) : "node -e harmless" },
+      metadata: { exit: i === 0 ? exit : 0 }, output: i === 0 ? "ACTION_EVIDENCE_EARLY_MARKER_V1" : "late" },
+  }] }))
+  const producer = { child_session_id: session, first_call_id_sha256: hash("call-0"), first_command_sha256: hash(firstCommand(caseId)),
+    first_terminal: { tool_status: "completed", exit_code_status: "reported", exit_code: exit } }
+  return { history, producer }
+}
+
+test("native host consistency accepts positive zero and negative reported one or seven without assuming a normalization cause", () => {
+  for (const [caseId, code] of [["correct", 0], ["defective", 1], ["defective", 7]] as const) {
+    const data = nativeProducerFixture(caseId, code)
+    expect(crosscheckProducerHostHistory(data.history, data.producer, caseId)).toMatchObject({ passed: true,
+      observed_native_host_exit_code: code, journal_exit_code: code, declared_node_exit_code: caseId === "correct" ? 0 : 7,
+      metadata_fields: ["state.metadata.exit"], session_binding_exact: true, call_binding_exact: true, status_binding_exact: true })
+  }
+})
+
+test("native host consistency rejects negative zero, absent exit, and mismatched journal/session/call/command/status", () => {
+  const zero = nativeProducerFixture("defective", 0)
+  expect(crosscheckProducerHostHistory(zero.history, zero.producer, "defective")).toMatchObject({ passed: false, exit_matches_case: false })
+  for (const mismatch of ["missing-exit", "journal-exit", "session", "call", "command", "status"]) {
+    const data = nativeProducerFixture("defective", 1), first = data.history[0]!.parts[0]!
+    if (mismatch === "missing-exit") first.state.metadata = {} as any
+    if (mismatch === "journal-exit") data.producer.first_terminal.exit_code = 7
+    if (mismatch === "session") first.sessionID = "unrelated"
+    if (mismatch === "call") first.callID = "unrelated"
+    if (mismatch === "command") first.state.input.command = "node -e different"
+    if (mismatch === "status") first.state.status = "error"
+    expect(crosscheckProducerHostHistory(data.history, data.producer, "defective").passed).toBe(false)
   }
 })

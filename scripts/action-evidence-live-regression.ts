@@ -295,7 +295,8 @@ function createProvider(caseId: CaseId) {
 const OWNER_TITLE = "ALG real-checker action evidence diagnostic parent"
 const RUN_ID = "action-evidence-live-regression"
 const GOAL = "Execute a fixed harmless command sequence and verify its persisted host evidence."
-const CRITERION = "The first long command is retained exactly and its terminal result reports exit code zero."
+const FIXTURE_VERSION = "action-evidence-live-v3"
+const CRITERION = "The first recorded bash call within the producer attempt has its captured command retained exactly, and its linked host terminal explicitly reports exit code zero."
 const LOCAL_PROVIDER = "action-evidence-fixture"
 type CaseId = "correct" | "defective"
 const CASES: readonly CaseId[] = ["correct", "defective"]
@@ -419,10 +420,10 @@ function copyPluginSnapshot(tempRoot: string) {
   symlinkSync(join(checkout.source.root, "node_modules"), join(runtimeRoot, "node_modules"), process.platform === "win32" ? "junction" : "dir")
   return verificationPluginConfiguration(runtimeRoot)
 }
-function firstCommand(caseId: CaseId): string { return caseId === "correct"
+export function firstCommand(caseId: CaseId): string { return caseId === "correct"
   ? `node -e "/*${"x".repeat(3_200)}*/console.log('${EARLY_MARKER}')"`
   : `node -e "/*${"x".repeat(3_200)}*/console.log('${EARLY_MARKER}');process.exit(7)"` }
-function validateEvidence(project: string, run: any, caseId: CaseId): Json {
+export function validateEvidence(project: string, run: any, caseId: CaseId): Json {
   const attempt = run.nodes?.work?.attempts?.[0], reference = attempt?.action_evidence_ref
   if (!reference) throw new Error("producer attempt has no persisted action_evidence_ref")
   const journal = new ActionEvidenceJournal(project)
@@ -436,12 +437,15 @@ function validateEvidence(project: string, run: any, caseId: CaseId): Json {
   const command = firstCommand(caseId)
   if (intents.length !== 10 || manifest.coverage.observed_calls !== 10 || terminals.length !== 10 || manifest.coverage.completed !== 10 || manifest.coverage.unknown_terminal !== 0)
     throw new Error("persisted manifest does not contain ten paired calls")
-  if (firstIntent?.command !== command || Buffer.byteLength(firstIntent.command, "utf8") <= 3_000) throw new Error("first long command was not retained byte-exactly")
+  if (firstIntent?.kind !== "intent" || firstIntent.command !== command || Buffer.byteLength(firstIntent.command, "utf8") <= 3_000) throw new Error("first long command was not retained byte-exactly")
   if (firstTerminal?.source !== "hook" && firstTerminal?.source !== "history") throw new Error("first terminal source is not a hook/history receipt")
-  const expectedExit = caseId === "correct" ? 0 : 7
-  if (!(firstTerminal?.tool_status === "completed" || caseId === "defective" && firstTerminal?.tool_status === "error") ||
-    firstTerminal?.exit_code_status !== "reported" || firstTerminal?.exit_code !== expectedExit || !String(firstTerminal?.output ?? "").includes(EARLY_MARKER))
-    throw new Error("first terminal receipt does not match the case's actual process result")
+  const exitMatchesCase = Number.isSafeInteger(firstTerminal?.exit_code) &&
+    (caseId === "correct" ? firstTerminal?.exit_code === 0 : firstTerminal?.exit_code !== 0)
+  if (firstTerminal?.kind !== "terminal" || firstTerminal.call_id_sha256 !== firstIntent.call_id_sha256 ||
+    firstTerminal.intent_sha256 !== manifest.entries.find(entry => entry.kind === "intent" && entry.ordinal === 1)?.sha256 ||
+    !(firstTerminal?.tool_status === "completed" || caseId === "defective" && firstTerminal?.tool_status === "error") ||
+    firstTerminal?.exit_code_status !== "reported" || !exitMatchesCase || !String(firstTerminal?.output ?? "").includes(EARLY_MARKER))
+    throw new Error("first terminal receipt does not contain the case's required reported zero/nonzero integer exit")
   const firstReferences = Object.fromEntries(["intent", "terminal"].map(kind => {
     const entry = manifest.entries.find(entry => entry.kind === kind && entry.ordinal === 1)!
     return [kind, { artifact_path: entry.artifact_path, sha256: entry.sha256, byte_size: entry.byte_size }]
@@ -451,9 +455,43 @@ function validateEvidence(project: string, run: any, caseId: CaseId): Json {
     journal_sha256: sha(JSON.stringify({ manifest: reference, entries: manifest.entries })), first_records: firstReferences,
     observed_calls: manifest.coverage.observed_calls, completed: manifest.coverage.completed, unknown_terminal: manifest.coverage.unknown_terminal,
     first_command_bytes: Buffer.byteLength(firstIntent.command, "utf8"), first_command_sha256: sha(firstIntent.command),
+    first_call_id_sha256: firstIntent.call_id_sha256, declared_node_exit_code: caseId === "correct" ? 0 : 7,
     first_terminal: { source: firstTerminal.source, tool_status: firstTerminal.tool_status, exit_code_status: firstTerminal.exit_code_status,
       exit_code: firstTerminal.exit_code, output_contains_early_marker: String(firstTerminal.output ?? "").includes(EARLY_MARKER) },
     late_commands: intents.slice(1).length }
+}
+
+/** Consistency between persisted native host rows and the journal; neither is an independent OS audit. */
+export function crosscheckProducerHostHistory(history: readonly any[], producer: Json, caseId: CaseId): Json {
+  const tools = hostTools(history), first = tools[0], state = first?.state
+  const session = producer.child_session_id
+  const callBound = typeof first?.callID === "string" && sha(first.callID) === producer.first_call_id_sha256
+  const sessionBound = typeof session === "string" && tools.every(part => part.sessionID === session) &&
+    history.every(message => message?.info?.sessionID === session && (message.parts ?? []).every((part: any) =>
+      part.sessionID === session && part.messageID === message.info.id))
+  const commandBound = state?.input?.command === firstCommand(caseId) &&
+    sha(state.input.command) === producer.first_command_sha256
+  const statusBound = ["completed", "error"].includes(state?.status) && state.status === producer.first_terminal?.tool_status
+  const fields = ["exit_code", "exitCode", "exit"].filter(key => Object.hasOwn(state?.metadata ?? {}, key))
+  const exits = fields.map(key => state.metadata[key])
+  const exitReported = exits.length > 0 && exits.every(value => Number.isSafeInteger(value) && value === exits[0])
+  const nativeExit = exitReported ? exits[0] as number : null
+  const exitBound = exitReported && producer.first_terminal?.exit_code_status === "reported" &&
+    nativeExit === producer.first_terminal.exit_code
+  const exitMatchesCase = exitReported && (caseId === "correct" ? nativeExit === 0 : nativeExit !== 0)
+  const actionCount = tools.length === 10 && tools.every(part => part.tool === "bash") &&
+    new Set(tools.map(part => part.callID)).size === 10 && new Set(tools.map(part => part.id)).size === 10 &&
+    tools.every(part => typeof part.id === "string" && typeof part.callID === "string")
+  const markerObserved = typeof state?.output === "string" && state.output.includes(EARLY_MARKER)
+  return { passed: actionCount && sessionBound && callBound && commandBound && statusBound && exitBound && exitMatchesCase && markerObserved,
+    source: "OpenCode session message tool part", scope: "persisted host/journal consistency; no independent OS audit or exit-normalization cause claim",
+    metadata_fields: fields.map(key => `state.metadata.${key}`), session_id: session, message_id: first?.messageID ?? null,
+    part_id: first?.id ?? null, call_id_sha256: typeof first?.callID === "string" ? sha(first.callID) : null,
+    declared_node_exit_code: caseId === "correct" ? 0 : 7, observed_native_host_exit_code: nativeExit,
+    journal_exit_code: producer.first_terminal?.exit_code ?? null, action_count_exact: actionCount,
+    session_binding_exact: sessionBound, call_binding_exact: callBound, command_binding_exact: commandBound,
+    status_binding_exact: statusBound, exit_reported: exitReported, exit_matches_journal: exitBound,
+    exit_matches_case: exitMatchesCase, marker_observed: markerObserved }
 }
 
 function loadEvidenceRun(project: string, runId: string) {
@@ -645,7 +683,11 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     terminalStatus = persisted.status
     assertProducerBoundary(persisted)
     if (provider.requests.some(row => row.role === "checker")) throw new Error("checker was launched before the compaction boundary")
+    const producerHistoryBeforeChecker = await observeHistory("producer_before_checker", host.base, persisted.nodes.work!.attempts[0]!.session_id!)
     evidence = validateEvidence(project, persisted, options.caseId)
+    const nativeHostConsistency = crosscheckProducerHostHistory(producerHistoryBeforeChecker, evidence, options.caseId)
+    evidence.native_host_consistency = nativeHostConsistency
+    if (!nativeHostConsistency.passed) throw new Error("native producer host rows and journal failed the pre-checker consistency gate")
     freezeJournal("before_compaction", evidence)
     const producerFinishedAt = persisted.nodes.work!.attempts[0]!.finished_at
     const producerRequestCount = provider.requests.filter(row => row.role === "implementer").length
@@ -693,6 +735,7 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     persisted = loadEvidenceRun(project, runId)
     terminalStatus = persisted.status
     evidence = validateEvidence(project, persisted, options.caseId)
+    evidence.native_host_consistency = nativeHostConsistency
     freezeJournal("after_resume", evidence)
     if (persisted.global_attempts !== 2 || persisted.nodes.work?.status !== "done" || persisted.nodes.work.current_attempt !== 1 ||
       persisted.nodes.work.attempts.length !== 1 || persisted.nodes.check?.current_attempt !== 1 || persisted.nodes.check?.attempts.length !== 1 ||
@@ -783,6 +826,7 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     try { globalAfter = snapshotGlobalOpenCodeConfig(roots, hmacKey) } catch { globalAfter = { entries: [], sha256: "unavailable" } as any }
     const base = { schema_version: 1, kind: "opencode-alg-v1-action-evidence-headless", generated_at: new Date().toISOString(),
       passed: failure === null && !!evidence && evidence.case_grade?.passed === true &&
+        evidence.native_host_consistency?.passed === true &&
         evidence.checker_retrieval?.passed === true && evidence.parent_dispatch?.passed === true &&
         compaction?.completed_summary_count === 1 && compaction?.receipt?.continuation?.completionLinked === true &&
         Object.keys(journalCheckpoints).length === 4 && new Set(Object.values(journalCheckpoints)).size === 1 &&
@@ -790,6 +834,7 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
         provider.nonLoopbackRequests === 0 && sourceAfter === sourceBefore && globalAfter.sha256 === globalBefore.sha256,
       scope: "diagnostic: deterministic local parent/producer, one independently configured real checker; no production claim", case_id: options.caseId,
       model: { providerID: options.providerID, modelID: options.modelID, configured_output_limit: 8_192 },
+      fixture_version: FIXTURE_VERSION, criterion_sha256: sha(CRITERION),
       host: { executable, version, platform: process.platform, starts: hostCleanup.starts, spawn_attempts: hostCleanup.spawn_attempts,
       clean_stops: hostCleanup.host_stopped }, version_probe: versionProbe, private_host_evidence: privateHostEvidence,
       run: { run_id: runId || null, owner_session_id: ownerSessionId || null, terminal_status: terminalStatus,
@@ -850,6 +895,7 @@ if (import.meta.main) {
       bounds: { per_case_ms: MAX_RUN_MS, total_ms: MAX_TOTAL_MS, output_tokens: 8_192 },
       execution_note: "Producer and parent use deterministic local fixture roles. Each checker is a fresh real configured OpenCode provider/model. Diagnostic only; deterministic producer is disclosed.",
       model: { providerID: config.providerID, modelID: config.modelID }, source_sha256: sourceDigest, harness_sha256: harnessDigest,
+      fixture_version: FIXTURE_VERSION, criterion: CRITERION, criterion_sha256: sha(CRITERION),
       elapsed_ms: Date.now() - started, outcomes })
     mkdirSync(dirname(config.outputPath), { recursive: true })
     writeFileSync(planPath, `${JSON.stringify({ ...makeSummary(), kind: "opencode-alg-v1-action-evidence-live-regression-plan",

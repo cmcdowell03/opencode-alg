@@ -154,3 +154,21 @@ as a separately identified follow-up with the same 15-minute per-case and
 35-minute suite bounds. Retain the first outcomes permanently. A corrected
 collector cannot turn the first positive's inconclusive verdict into a pass.
 Only a terminal passing follow-up permits issuance of the sixteen-arm comparison.
+
+The follow-up at `1777e44` also failed. Its positive checker recognized the
+linked command and zero exit, but interpreted the unscoped phrase "first long
+command" as requiring proof of no earlier unobserved actions. The negative
+fixture stopped before checking because it required exit 7 while OpenCode
+reported exit 1 for the failing command. Both outcomes remain failed.
+
+A separately versioned diagnostic will therefore ask the bounded question
+explicitly: the first recorded bash call within the assigned producer attempt
+has its long command retained and reports exit zero. The negative must retain
+a reported nonzero result consistent with the original host tool history; the
+shell need not preserve the exact nested process's exit number. Missing exit
+metadata is unknown, never a successful negative control. This repairs the
+diagnostic's scope and platform assumptions rather than grading the earlier
+responses as correct. Qualify the native-history comparison locally, then issue
+the complete positive/negative pair under the same time bounds. Keep the
+sixteen-arm task contracts, scorer and allowances unchanged. This diagnostic
+cannot support a claim that wording alone improved model reliability.
