@@ -140,10 +140,11 @@ export function compactionReceipt(input: {
   const assistant = input.continuation.assistantID ? rootContinuation.find(message => messageIdentity(message) === input.continuation.assistantID) : undefined
   const userAt = hostTimestamp(user?.info?.time?.created)
   const assistantAt = assistant ? assistantCompleted(assistant) : undefined
-  const continuationLinked = !!summary && input.continuation.status === "completed" && input.continuation.scorePassed === true &&
+  const completionLinked = !!summary && input.continuation.status === "completed" &&
     user?.info?.role === "user" && !user.parts?.some(part => part?.type === "compaction") &&
     assistant?.info?.parentID === input.continuation.userMessageID && assistant?.info?.summary !== true &&
     userAt !== undefined && userAt >= summary.completedAt && assistantAt !== undefined && assistantAt >= userAt
+  const continuationLinked = completionLinked && input.continuation.scorePassed === true
   const creationTime = requestedMs === undefined ? "request_time_unverifiable" : diagnostic?.createdAt === undefined ? "timestamp_unavailable"
     : diagnostic.createdAt >= requestedMs ? "created_after_request" : "predates_request"
   return {
@@ -154,14 +155,27 @@ export function compactionReceipt(input: {
         diagnostic ? "new_but_unlinked" : "missing_or_historical_only", creationTime },
     summary: { id: summary?.id ?? null, parentID: summary ? matched!.id : null,
       outcome: summary ? "terminal_linked" : candidates.length ? "missing_errored_or_unlinked" : "missing" },
-    continuation: { ...input.continuation, linked: continuationLinked },
+    // Positive evidence of one new manual marker and its terminal, non-error summary.
+    // This is independent of request acknowledgement, continuation, and its score;
+    // it establishes neither a complete census nor behavioral eligibility for loss.
+    summaryExposureQualified: !!summary,
+    continuation: { ...input.continuation, completionLinked, linked: continuationLinked },
+    // Historical control verdict: accepted request AND linked, scored recovery.
     qualified: acceptance === "accepted" && continuationLinked,
   }
 }
 
-/** Runner integration should consume the receipt verdict, never private marker labels. */
+/** Historical control recovery verdict; never use it as a summary-exposure denominator. */
 export function compactionIsQualified(receipt: unknown): boolean {
   return !!receipt && typeof receipt === "object" && (receipt as { qualified?: unknown }).qualified === true
+}
+
+/** Positive observed-summary evidence only. False (including legacy receipts) is
+ * unqualified/unmeasured, not proof of no exposure. Native summaries remain in
+ * observeCompactionMarkers; census completeness is measured separately. */
+export function compactionSummaryExposureIsQualified(receipt: unknown): boolean {
+  return !!receipt && typeof receipt === "object" &&
+    (receipt as { summaryExposureQualified?: unknown }).summaryExposureQualified === true
 }
 
 export interface CensusState {

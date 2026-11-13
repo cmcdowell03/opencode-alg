@@ -58,7 +58,9 @@ export const EvidenceSchema = z.object({
   task_allowance_probe: z.object({ passed: z.boolean(), run_id: z.string(), task_id: z.string().regex(/^[a-f0-9]{64}$/),
     reserved_before_compaction: z.number().int(), reserved_after_restarts: z.number().int(), reserved_after_checker: z.number().int(),
     additional_dispatches_after_exhaustion: z.number().int(), checker_parent_verified: z.boolean(), scope: z.string().max(512),
-    scope_regression: AllowanceScopeEvidenceSchema.optional() }).strict().nullable().optional(),
+    scope_regression: AllowanceScopeEvidenceSchema.optional(),
+    wave_pause: z.object({ phase: z.literal("wave-limit"), guidance_verified: z.boolean(), attempts: z.number().int().nonnegative() }).strict().optional()
+  }).strict().nullable().optional(),
   task_scope_violation_probe: ScopeViolationEvidenceSchema.nullable().optional(),
   checker_probe: z.object({ passed: z.boolean(), run_id: z.string(), attempts: z.number().int(), distinct_children: z.number().int(), host_verified_parents: z.number().int(),
     verification_basis_recovered: z.boolean(),

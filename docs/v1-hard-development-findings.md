@@ -90,3 +90,54 @@ improves verified task completion. Independent confirmation still needs fresh
 cases, a qualified isolation boundary, and repeated-comparison rules. Long
 session measurement additionally needs observed compaction boundaries and
 independently scored obligations before and after each boundary.
+
+## Repair follow-up: completed, not a superiority result
+
+The prospectively frozen `aff2469` comparison issued all twelve arms. Eight
+completed; four stopped. The unchanged scores, safe provider-error projection,
+cleanup, coverage and usage are in
+[the follow-up evidence](evidence/hard-scope-20261113/README.md).
+No runtime-store scope blocker recurred in the five ALG graphs that started.
+Build has four recorded task successes versus ALG's three; only two ALG
+artifacts also have a completed internal graph. These distinctions must not
+be collapsed into a favorable leaderboard.
+
+The first ALG factory report adds two explanatory fields. All substantive
+checks pass, but the public contract never forbade extra fields. The future
+contract now explicitly lists output fields and closed nested shapes; added
+extra-field controls run through the shared scorer. Original evidence stays
+unchanged. A review of all four fixture families also disclosed the existing
+64 KiB output/source bounds, code-runner time/stdout limits, and restart-report
+precision/sorting. The accepted-query grader already allows a sufficient
+projection; the restart fixture's exact job scope describes preseeded host work,
+not a hidden choice the model must guess. Neither predicate was loosened.
+
+The accepted-query ALG artifact passes, but the orchestrator stops after two
+waves, with the producer and checker pending and two global attempts remaining.
+The executor previously returned the same `blocked` phase for this ordinary
+call boundary and a prerequisite failure; its next-action text said to resolve
+a prerequisite. The repair emits `phase=wave-limit` only when completed waves
+reach the call limit, usable attempts remain, and no cancellation, setup stop
+or pending SDK uncertainty exists. Guidance resumes the same owned run without
+refilling budgets. Every ordinary permission, task, evidence and allowance guard
+still runs on resume.
+
+This does not certify that the observed checker rejection was wrong. It lacked
+complete native command evidence, and the admitted review criterion also sought
+proof of operating restrictions throughout execution. Snapshot-based scope
+evidence cannot establish that stronger claim. Better criterion/evidence
+alignment remains a separate design issue; do not weaken checking to manufacture
+a win.
+
+The last pairs include three HTTP 429 usage-limit arms and one startup timeout.
+One ALG arm produced a passing artifact before provider failure; it remains a
+stopped, internally failed run. No extra paid run is used to replace these
+outcomes.
+
+Completed-summary exposure is now recorded independently of continuation
+completion/correctness. Missing and ambiguous scores remain explicit; legacy
+recovery fields retain their historical meaning. None of this cohort's eleven
+started arms had a compaction marker or obligation probes. The long-session
+stage must still establish pre-transition correctness, current truth, linked
+summary exposure and post-transition behavior, and report pruning/census
+unknowns. Passing recorder tests is not a retention result.

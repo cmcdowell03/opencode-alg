@@ -3,6 +3,7 @@ import { join } from "node:path"
 import { LIVE_LIMITS, aggregateRetention, observedStopReason, retentionDelta, retentionEvidenceQualified, summaryBoundaryQualified, verifyFixtureSkills, validateDiagnosticContinuation } from "../scripts/live-retention.ts"
 import type { RetentionCheck, RetentionScore } from "../scripts/live-retention-fixture.ts"
 import { summarizeSessionMetrics } from "../scripts/build-benchmark-metrics.ts"
+import { compactionReceipt } from "../scripts/build-benchmark-protocol.ts"
 
 const check = (id: string, expectedDigest: string, passed = true): RetentionCheck =>
   ({ id, category: "criteria", expectedDigest, observedDigest: passed ? "observed" : null, passed })
@@ -61,6 +62,39 @@ describe("live retention runner evidence guards", () => {
       atRisk: 3, observedLosses: 1, observedLossRate: 1 / 3, diagnosticAtRisk: 7, diagnosticObservedLosses: 3,
     })
     expect(aggregateRetention([{ phase: 0, delta: null }], []).observedLossRate).toBeNull()
+    expect(aggregateRetention(phases, [linked(true)]).summaryExposure).toMatchObject({
+      issuedReceipts: 1, observedBoundaries: 0, unqualifiedOrUnmeasuredReceipts: 1,
+    })
+  })
+
+  test("summary exposure retains failed, wrong, and missing continuations without changing historical fields", () => {
+    const at = 1_800_000_000_000
+    const receipt = (id: string, status: string, scorePassed: boolean, hasSummary = true) => {
+      const marker = { info: { id: `marker-${id}`, sessionID: "s1", time: { created: at + 1 } }, parts: [{ type: "compaction", auto: false }] }
+      const summary = { info: { id: `summary-${id}`, sessionID: "s1", role: "assistant", summary: true, parentID: `marker-${id}`, time: { completed: at + 2 } }, parts: [] }
+      return compactionReceipt({ requestId: id, requestedAt: new Date(at).toISOString(), rootSessionId: "s1", response: true,
+        beforeMessages: [], afterMessages: hasSummary ? [marker, summary] : [marker],
+        continuation: { status, scorePassed, userMessageID: `user-${id}`, assistantID: `answer-${id}` }, continuationMessages: [
+          { info: { id: `user-${id}`, sessionID: "s1", role: "user", time: { created: at + 3 } }, parts: [] },
+          { info: { id: `answer-${id}`, sessionID: "s1", role: "assistant", parentID: `user-${id}`, time: { completed: at + 4 } }, parts: [] },
+        ] })
+    }
+    const receipts = [receipt("failed", "failed", false), receipt("wrong", "completed", false),
+      receipt("missing", "not_completed", false), receipt("unlinked", "completed", true, false)]
+    expect(receipts.every(r => !r.qualified)).toBe(true)
+    const phases = [{ phase: 0, delta: null }, { phase: 1, delta: { atRisk: 3, observedLosses: 1 } },
+      { phase: 2, delta: { atRisk: 4, observedLosses: 2 } }, { phase: 4, delta: { atRisk: 5, observedLosses: 5 } }]
+    const result = aggregateRetention(phases, receipts)
+    expect(result).toMatchObject({ qualifiedBoundaries: 1, atRisk: 4, observedLosses: 2, observedLossRate: 0.5 })
+    expect(result.summaryExposure).toMatchObject({ issuedReceipts: 4, observedBoundaries: 3,
+      unqualifiedOrUnmeasuredReceipts: 1, scoredBoundaries: 2, missingOrAmbiguousScoreBoundaries: 1,
+      atRiskKnown: 7, observedLossesKnown: 3 })
+    expect(result.summaryExposure).not.toHaveProperty("observedLossRate")
+    // A null or duplicate score is missingness, never a zero-loss scored boundary.
+    for (const missing of [[{ phase: 3, delta: null }],
+      [{ phase: 3, delta: { atRisk: 10, observedLosses: 0 } }, { phase: 3, delta: { atRisk: 10, observedLosses: 10 } }]]) {
+      expect(aggregateRetention([...phases, ...missing], receipts).summaryExposure).toEqual(result.summaryExposure)
+    }
   })
 
   test("fixture skill discovery requires exact location and current body", () => {

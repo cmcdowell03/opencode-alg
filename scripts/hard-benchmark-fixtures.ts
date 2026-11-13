@@ -56,7 +56,8 @@ const rawPrimitives = `# Synthetic query service
 submit({idempotencyKey, sourceId, expectedRevision?, filter?, select?}) accepts an equality filter and optional top-level projection.
 Use lookup(idempotencyKey), status(jobId), manifest(jobId), sourceStatus(sourceId), currentRevision(sourceId), and readPage(jobId, cursor, limit).
 Use the returned cursor until there is no nextCursor. Current reads reject stale jobs. Report actual job IDs and result digests where requested.
-An acknowledgement can be lost after acceptance. Recover using lookup with the original caller key. Accepted work is charged by scanned source rows; reads and lookups are free.`
+An acknowledgement can be lost after acceptance. Recover using lookup with the original caller key. Accepted work is charged by scanned source rows; reads and lookups are free.
+Output reports must be JSON objects no larger than 65536 UTF-8 bytes. Keep additional explanation in your final response, outside the report.`
 
 function particleRows(window: string, total: number, failures: readonly number[]) {
   const rows = Array.from({ length: total }, (_, index) => ({
@@ -82,6 +83,7 @@ export function createAcceptedQueryLostAckFixture(seed = 0): CreatedHardFixture 
         aggregation: "Within the requested window, an observation is identified by (lot, observation) and is affected if any of its rows is affected.",
         reportPath: report,
         reportFields: ["numerator", "denominator", "rate", "affectedLots", "sourceRevision", "jobId", "resultDigest"],
+        objectPolicy: "The report object must contain exactly reportFields and no additional properties. Every nested object, if any, must contain exactly its declared keys and no additional properties.",
         reportFormat: { numerator: "Affected observation count as an integer", denominator: "Distinct observation count as an integer",
           rate: "Numerator divided by denominator as a JSON number, without rounding",
           affectedLots: "Sorted distinct affected lot IDs as an array of strings",
@@ -108,8 +110,10 @@ export function createPartialInvestigationRestartFixture(): CreatedHardFixture {
       "README.md": rawPrimitives + "\nThe checkpoint holds caller keys and source IDs. It contains no computed result. The service and checkpoint survive restart.\n",
       "sources/checkpoint.json": json(sources.map(source => ({ sourceId: source.sourceId, idempotencyKey: source.sourceId }))),
       "sources/report-contract.json": json({
+        reportFields: ["retained", "particle", "overlapLots", "unresolved", "causalIdentified"],
+        objectPolicy: "The report must contain exactly reportFields. Nested objects must contain exactly the keys in their declared shapes. No additional properties; contract metadata itself is not an output field.",
         retained: "{ [sourceId]: { jobId, sourceRevision, resultDigest } } for the two current jobs",
-        particle: "{ numerator, denominator, rate, affectedLots } (an observation is affected if any matching row is affected)",
+        particle: "{ numerator, denominator, rate, affectedLots }: integer observation counts, rate as numerator/denominator without rounding, and sorted distinct affected lot IDs. An observation is affected if any matching row is affected.",
         overlapLots: "Sorted distinct affected lots with at least one overlaps=true maintenance row",
         unresolved: "{ sourceId, revision, available: false }",
         causalIdentified: false,
@@ -153,11 +157,12 @@ export function render(rows: Inspection[]) {
 `
 
 export function createMultiRepoCompatibilityFixture(): CreatedHardFixture {
-  return created("multi-repo-compat-v1", "Repair the API and report consumer across the three repository roots. Emit validation.json with { api, client, eventCount } for the supplied ingestion rows.",
+  return created("multi-repo-compat-v1", "Repair the API and report consumer across the three repository roots. Emit validation.json as an object with exactly these keys and no additional properties: api, client, eventCount. Each api item must have exactly lotId, waferCount, defectRate; each client item must have exactly label, rate. These nested objects allow no additional properties.",
     ["Count each wafer once per lot. A wafer is defective if any row marks it defective.",
       "Return lots in ascending code-unit order as { lotId, waferCount, defectRate }. Preserve numeric precision.",
       "Render every lot, including zero rates, as { label, rate } using the API. Preserve the sibling eventCount export and avoid mutating inputs.",
-      "Only edit the API, report consumer and validation.json. Hidden runs will include new inputs."], {
+      "Only edit the API, report consumer and validation.json. Hidden runs will include new inputs.",
+      "Each edited source file and validation.json must be at most 65536 UTF-8 bytes. The local validation runner allows five seconds per invocation and at most 131072 stdout bytes; avoid top-level logging. Keep explanations in the final response."], {
       "README.md": "The roots are repos/ingestion, repos/api, and repos/client. The client imports @factory/api.",
       [ingestionPath]: json({ rows: [
         { lot_id: "B", wafer_id: "W1", defect: false },
@@ -265,6 +270,8 @@ const incidentPath = "evidence/incident.json"
 const catalogPath = "catalog/catalog.jsonl"
 const evidenceSources = ["inspections", "assignments", "maintenance"] as const
 const factoryContract = {
+  reportFields: ["window", "cleanings", "sources", "joinKey", "strata", "comparison", "conclusion", "nextMeasurement"],
+  objectPolicy: "The report must contain exactly reportFields. Nested objects must contain exactly the keys in their declared shapes. No additional properties; contract metadata itself is not an output field. Maximum report size: 65536 UTF-8 bytes. Put extra explanation in the final response.",
   window: "{ start, endExclusive } as UTC ISO strings. Start at the later of the last cleaning end for C1 and C2 at or before asOf.",
   cleanings: "{ C1: cleaning record ID, C2: cleaning record ID }",
   sources: "{ inspections, assignments, maintenance }, each { path, revision } from the current registry and catalog",

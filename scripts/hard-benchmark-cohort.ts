@@ -9,7 +9,7 @@ import type { BenchmarkCase } from "./build-benchmark-fixtures.ts"
 import { createHardBenchmarkFixtures, openHardFixtureService, type CreatedHardFixture } from "./hard-benchmark-fixtures.ts"
 import { scheduleIssuedPairs, type BenchmarkTrack } from "./build-benchmark-protocol.ts"
 import { createHardBenchmarkHttpClient, hardBenchmarkHostUsage, startHardBenchmarkHost } from "./hard-benchmark-host.ts"
-import { hardBenchmarkReferenceArm, hardBenchmarkNegativeArm, hardBenchmarkTamperArm, qualifyHardBenchmarkDevelopment, scoreHardDevelopmentFixture,
+import { hardBenchmarkReferenceArm, hardBenchmarkNegativeArm, hardBenchmarkTamperArm, hardBenchmarkExtraFieldArm, qualifyHardBenchmarkDevelopment, scoreHardDevelopmentFixture,
   type HardBenchmarkQualificationResult } from "./hard-benchmark-qualification.ts"
 export { scoreHardDevelopmentFixture } from "./hard-benchmark-qualification.ts"
 
@@ -109,13 +109,14 @@ const CheckSchema = z.object({ id: z.string().min(1).max(512), passed: z.boolean
 const GradeSchema = z.object({ passed: z.boolean(), checks: z.array(CheckSchema).min(1).max(8192),
   metrics: z.record(z.string(), z.union([z.string().max(8192), z.number().finite(), z.boolean()])) }).strict()
 const QualificationRowSchema = z.object({ fixtureId: z.string().min(1).max(256), family: z.string().min(1).max(128),
-  case: z.enum(["positive", "negative", "tamper"]), status: z.enum(["passed", "blocked", "failed"]),
+  case: z.enum(["positive", "negative", "tamper", "extra-field"]), status: z.enum(["passed", "blocked", "failed"]),
   passed: z.boolean(), expected: z.enum(["accept", "reject"]), grade: GradeSchema, isolation: z.literal(HARD_ISOLATION) }).strict()
 const QualificationResultSchema = z.object({ isolation: z.literal(HARD_ISOLATION), results: z.array(QualificationRowSchema).min(1).max(64),
   passed: z.boolean(), caseCount: z.number().int().nonnegative(), acceptedPositive: z.number().int().nonnegative(),
-  rejectedNegativeOrTamper: z.number().int().nonnegative(), blockedCases: z.number().int().nonnegative(), failedCases: z.number().int().nonnegative() }).strict()
+  rejectedNegativeOrTamper: z.number().int().nonnegative(), rejectedExtraField: z.number().int().nonnegative(),
+  blockedCases: z.number().int().nonnegative(), failedCases: z.number().int().nonnegative() }).strict()
 /** External qualification writes this receipt; the paid runner never manufactures qualification. */
-export const HardQualificationSchema = z.object({ schema: z.literal("alg-hard-development-qualification-v1"),
+export const HardQualificationSchema = z.object({ schema: z.literal("alg-hard-development-qualification-v2"),
   generated_at: z.iso.datetime({ offset: true }), identities: HardIdentitySchema,
   development: QualificationResultSchema, public_http: QualificationResultSchema }).strict()
 
@@ -135,8 +136,9 @@ export function validateHardQualification(raw: unknown, identities: z.infer<type
         new Set(row.grade.checks.map(check => check.id)).size !== row.grade.checks.length)
         throw new Error(`failed or inconsistent ${channel} qualification receipt`)
     }
-    if (seen.size !== selected.length * 3 || !result.passed || result.caseCount !== seen.size ||
-      result.acceptedPositive !== selected.length || result.rejectedNegativeOrTamper !== selected.length * 2 || result.blockedCases || result.failedCases)
+    if (seen.size !== selected.length * 4 || !result.passed || result.caseCount !== seen.size ||
+      result.acceptedPositive !== selected.length || result.rejectedNegativeOrTamper !== selected.length * 2 ||
+      result.rejectedExtraField !== selected.length || result.blockedCases || result.failedCases)
       throw new Error(`incomplete ${channel} qualification`)
   }
   return evidence
@@ -152,7 +154,8 @@ export async function qualifyHardBenchmarkCohortInputs(repo = resolve(import.met
   const development = await qualifyHardBenchmarkDevelopment(fixtures)
   const results: HardBenchmarkQualificationResult[] = []
   for (const fixture of fixtures.filter(needsHardService)) {
-    for (const [testCase, arm] of [["positive", hardBenchmarkReferenceArm], ["negative", hardBenchmarkNegativeArm], ["tamper", hardBenchmarkTamperArm]] as const) {
+    for (const [testCase, arm] of [["positive", hardBenchmarkReferenceArm], ["negative", hardBenchmarkNegativeArm],
+      ["tamper", hardBenchmarkTamperArm], ["extra-field", hardBenchmarkExtraFieldArm]] as const) {
       const directory = await mkdtemp(join(tmpdir(), "hard-http-qualification-"))
       let host: Awaited<ReturnType<typeof startHardBenchmarkHost>> | undefined
       try {
@@ -180,10 +183,11 @@ export async function qualifyHardBenchmarkCohortInputs(repo = resolve(import.met
     }
   }
   if (sha256Json(identities) !== sha256Json(hardBenchmarkIdentity(repo, fixtures))) throw new Error("qualification sources changed during execution")
-  return { schema: "alg-hard-development-qualification-v1" as const, generated_at: new Date().toISOString(), identities, development,
+  return { schema: "alg-hard-development-qualification-v2" as const, generated_at: new Date().toISOString(), identities, development,
     public_http: { isolation: HARD_ISOLATION, results, passed: results.every(row => row.status === "passed"), caseCount: results.length,
       acceptedPositive: results.filter(row => row.case === "positive" && row.grade.passed).length,
-      rejectedNegativeOrTamper: results.filter(row => row.case !== "positive" && !row.grade.passed).length,
+      rejectedNegativeOrTamper: results.filter(row => ["negative", "tamper"].includes(row.case) && !row.grade.passed).length,
+      rejectedExtraField: results.filter(row => row.case === "extra-field" && !row.grade.passed).length,
       blockedCases: results.filter(row => row.status === "blocked").length, failedCases: results.filter(row => row.status === "failed").length } }
 }
 

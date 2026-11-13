@@ -17,7 +17,7 @@ export interface HardBenchmarkArmContext {
 }
 
 export type HardBenchmarkArm = (context: HardBenchmarkArmContext) => Promise<FixtureSubmission>
-export type QualificationCase = "positive" | "negative" | "tamper"
+export type QualificationCase = "positive" | "negative" | "tamper" | "extra-field"
 
 /** An explicitly unavailable host runner, distinct from candidate code failing execution. */
 export class HardBenchmarkRunnerUnavailableError extends Error {}
@@ -263,6 +263,15 @@ export const hardBenchmarkTamperArm: HardBenchmarkArm = async context => {
   return { files: { ...good.files, "README.md": "tampered" } }
 }
 
+/** Starts from the valid reference output and adds one undeclared root property. */
+export const hardBenchmarkExtraFieldArm: HardBenchmarkArm = async context => {
+  const good = await hardBenchmarkReferenceArm(context)
+  const path = context.fixture.family === "multi-repo-compatibility" ? "validation.json" : "report.json"
+  const value = object(good.files[path])
+  value.__qualificationExtraField = true
+  return { files: { ...good.files, [path]: json(value) } }
+}
+
 export async function qualifyHardBenchmarkCase(
   fixture: CreatedHardFixture,
   arm: HardBenchmarkArm,
@@ -298,11 +307,13 @@ export async function qualifyHardBenchmarkDevelopment(fixtures: readonly Created
     rows.push(await qualifyHardBenchmarkCase(fixture, hardBenchmarkReferenceArm, "positive"))
     rows.push(await qualifyHardBenchmarkCase(fixture, hardBenchmarkNegativeArm, "negative"))
     rows.push(await qualifyHardBenchmarkCase(fixture, hardBenchmarkTamperArm, "tamper"))
+    rows.push(await qualifyHardBenchmarkCase(fixture, hardBenchmarkExtraFieldArm, "extra-field"))
   }
   return { isolation: "same-user-development-only-not-os-isolated" as const,
     results: rows, passed: rows.every(row => row.status === "passed"), caseCount: rows.length,
     acceptedPositive: rows.filter(row => row.case === "positive" && row.grade.passed).length,
-    rejectedNegativeOrTamper: rows.filter(row => row.case !== "positive" && !row.grade.passed).length,
+    rejectedNegativeOrTamper: rows.filter(row => ["negative", "tamper"].includes(row.case) && !row.grade.passed).length,
+    rejectedExtraField: rows.filter(row => row.case === "extra-field" && !row.grade.passed).length,
     blockedCases: rows.filter(row => row.status === "blocked").length,
     failedCases: rows.filter(row => row.status === "failed").length }
 }

@@ -98,6 +98,7 @@ describe("build benchmark retention measurement", () => {
     ]
     const request = compactionReceipt({ requestId: "request-1", requestedAt: new Date(800_000).toISOString(), rootSessionId: "s1", response: true,
       beforeMessages: [], afterMessages: messages, continuation: { status: "not_completed" } })
+    expect(request.summaryExposureQualified).toBe(false)
     const rows = hostRetentionEvents({ taskId, sessions: [{ id: "s1" }, { id: "s2", parentID: "s1" }], messages,
       startedAt: 500_000, endedAt: 2_000_000, restarted: true, censusComplete: false, compactionReceipt: request })
     const measured = run(rows)
@@ -129,6 +130,7 @@ test("root and child turns follow session ancestry, and accepted compaction coun
   const request = compactionReceipt({ requestId: "r", requestedAt: new Date(at).toISOString(), rootSessionId: "s1", response: true,
     beforeMessages: [], afterMessages: messages, continuation: { status: "not_completed" } })
   expect(request.qualified).toBe(false)
+  expect(request.summaryExposureQualified).toBe(true)
   const rows = hostRetentionEvents({ taskId, sessions: [{ id: "s1" }, { id: "s2", parentID: "s1" }], messages,
     startedAt: at, endedAt: at + 1000, compactionReceipt: request, censusComplete: false })
   expect(rows.find(event => event.type === "compaction" && event.stage === "succeeded")?.at).toBe(at + 200)
@@ -136,6 +138,27 @@ test("root and child turns follow session ancestry, and accepted compaction coun
   expect(measured.turns).toMatchObject({ assistantTurns: 3, byRole: { root: 1, child: 1, summary: 1 }, knownInputTokens: 20 })
   expect(measured.compactions.requested).toEqual({ attempts: 1, successful: 1, failed: 0, pending: 0, unverified: 0 })
   expect(measured.compactionRates.successful.per100AssistantTurns).toBeNull()
+})
+
+test("a wrong completed answer remains summary exposure with either complete or incomplete census", () => {
+  const at = 1_800_000_000_000
+  const messages = [
+    { info: { id: "marker", sessionID: "s1", role: "user", time: { created: at + 100 } }, parts: [{ type: "compaction", auto: false }] },
+    { info: { id: "summary", sessionID: "s1", role: "assistant", parentID: "marker", summary: true, time: { completed: at + 200 } }, parts: [] },
+    { info: { id: "user", sessionID: "s1", role: "user", time: { created: at + 300 } }, parts: [] },
+    { info: { id: "answer", sessionID: "s1", role: "assistant", parentID: "user", time: { completed: at + 400 } }, parts: [] },
+  ]
+  const request = compactionReceipt({ requestId: "r", requestedAt: new Date(at).toISOString(), rootSessionId: "s1", response: true,
+    beforeMessages: [], afterMessages: messages, continuationMessages: messages,
+    continuation: { status: "completed", userMessageID: "user", assistantID: "answer", scorePassed: false } })
+  expect(request).toMatchObject({ qualified: false, summaryExposureQualified: true, continuation: { completionLinked: true, linked: false } })
+  for (const censusComplete of [false, true]) {
+    const measured = run(hostRetentionEvents({ taskId, sessions: [{ id: "s1" }], messages,
+      startedAt: at, endedAt: at + 1000, censusComplete, compactionReceipt: request }))
+    expect(measured.compactions.requested).toEqual({ attempts: 1, successful: 1, failed: 0, pending: 0, unverified: 0 })
+    expect(measured.compactions.censusComplete).toBe(censusComplete)
+    expect(measured.compactionRates.successful.per100AssistantTurns).toBe(censusComplete ? 50 : null)
+  }
 })
 
 test("unlinked success is unverified, not an observed failed summary", () => {

@@ -285,10 +285,10 @@ describe("external development qualification evidence", () => {
   const fixtures = createHardBenchmarkFixtures()
   test("real admission qualification exercises the shared live scorer through direct and HTTP paths", async () => {
     const evidence = await qualifyHardBenchmarkCohortInputs(repo)
-    expect(evidence.development).toMatchObject({ passed: true, caseCount: 18, acceptedPositive: 6,
-      rejectedNegativeOrTamper: 12, blockedCases: 0, failedCases: 0 })
-    expect(evidence.public_http).toMatchObject({ passed: true, caseCount: 6, acceptedPositive: 2,
-      rejectedNegativeOrTamper: 4, blockedCases: 0, failedCases: 0 })
+    expect(evidence.development).toMatchObject({ passed: true, caseCount: 24, acceptedPositive: 6,
+      rejectedNegativeOrTamper: 12, rejectedExtraField: 6, blockedCases: 0, failedCases: 0 })
+    expect(evidence.public_http).toMatchObject({ passed: true, caseCount: 8, acceptedPositive: 2,
+      rejectedNegativeOrTamper: 4, rejectedExtraField: 2, blockedCases: 0, failedCases: 0 })
     const code = evidence.development.results.find(row => row.family === "multi-repo-compatibility" && row.case === "positive")!
     for (const id of ["code:executed-all-cases", "code:client-uses-api"])
       expect(code.grade.checks.find(check => check.id === id)?.passed).toBe(true)
@@ -296,15 +296,15 @@ describe("external development qualification evidence", () => {
   }, 60_000)
   function mockEvidence() {
     const result = (selected: typeof fixtures) => {
-      const results = selected.flatMap(f => (["positive", "negative", "tamper"] as const).map(kind => ({
+      const results = selected.flatMap(f => (["positive", "negative", "tamper", "extra-field"] as const).map(kind => ({
         fixtureId: f.contestant.id, family: f.contestant.family, case: kind, status: "passed" as const, passed: true,
         expected: kind === "positive" ? "accept" as const : "reject" as const, isolation: HARD_ISOLATION,
         grade: { passed: kind === "positive", checks: [{ id: "mock-local-schema-test", passed: kind === "positive" }], metrics: {} },
       })))
       return { isolation: HARD_ISOLATION, results, passed: true, caseCount: results.length, acceptedPositive: selected.length,
-        rejectedNegativeOrTamper: selected.length * 2, blockedCases: 0, failedCases: 0 }
+        rejectedNegativeOrTamper: selected.length * 2, rejectedExtraField: selected.length, blockedCases: 0, failedCases: 0 }
     }
-    return { schema: "alg-hard-development-qualification-v1" as const, generated_at: "2026-11-12T12:00:00Z",
+    return { schema: "alg-hard-development-qualification-v2" as const, generated_at: "2026-11-12T12:00:00Z",
       identities: hardBenchmarkIdentity(repo, fixtures), development: result(fixtures),
       public_http: result(fixtures.filter(f => ["accepted-query-lost-ack", "partial-investigation-restart"].includes(f.contestant.family))) }
   }

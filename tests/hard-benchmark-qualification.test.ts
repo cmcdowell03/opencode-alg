@@ -2,17 +2,18 @@ import { describe, expect, test } from "bun:test"
 import { createHardBenchmarkFixtures } from "../scripts/hard-benchmark-fixtures.ts"
 import {
   HardBenchmarkRunnerUnavailableError,
-  hardBenchmarkNegativeArm, hardBenchmarkReferenceArm, hardBenchmarkTamperArm,
+  hardBenchmarkNegativeArm, hardBenchmarkReferenceArm, hardBenchmarkTamperArm, hardBenchmarkExtraFieldArm,
   qualifyHardBenchmarkCase, qualifyHardBenchmarkDevelopment,
 } from "../scripts/hard-benchmark-qualification.ts"
 
 describe("arm-neutral hard benchmark development qualification", () => {
-  test("reference solutions pass and negative/tamper submissions fail for every frozen fixture", async () => {
+  test("reference solutions pass and negative/tamper/extra-field submissions fail for every frozen fixture", async () => {
     const result = await qualifyHardBenchmarkDevelopment(createHardBenchmarkFixtures())
     expect(result.isolation).toBe("same-user-development-only-not-os-isolated")
-    expect(result.caseCount).toBe(18)
+    expect(result.caseCount).toBe(24)
     expect(result.acceptedPositive).toBe(6)
     expect(result.rejectedNegativeOrTamper).toBe(12)
+    expect(result.rejectedExtraField).toBe(6)
     expect(result.blockedCases).toBe(0)
     expect(result.failedCases).toBe(0)
     expect(result.passed).toBe(true)
@@ -38,10 +39,15 @@ describe("arm-neutral hard benchmark development qualification", () => {
     for (const fixture of fixtures) {
       const negative = await qualifyHardBenchmarkCase(fixture, hardBenchmarkNegativeArm, "negative")
       const tamper = await qualifyHardBenchmarkCase(fixture, hardBenchmarkTamperArm, "tamper")
+      const extraField = await qualifyHardBenchmarkCase(fixture, hardBenchmarkExtraFieldArm, "extra-field")
       expect(negative.passed, `${fixture.contestant.id} negative`).toBe(true)
       expect(tamper.passed, `${fixture.contestant.id} tamper`).toBe(true)
       expect(negative.grade.passed).toBe(false)
       expect(tamper.grade.passed).toBe(false)
+      expect(extraField.passed, `${fixture.contestant.id} extra-field`).toBe(true)
+      expect(extraField.grade.passed).toBe(false)
+      const schemaCheck = fixture.contestant.family === "multi-repo-compatibility" ? "validation:schema" : "report:schema"
+      expect(extraField.grade.checks.find(check => check.id === schemaCheck)?.passed, fixture.contestant.id).toBe(false)
       const semanticCheck = fixture.contestant.family === "accepted-query-lost-ack" ? "report:denominator"
         : fixture.contestant.family === "partial-investigation-restart" ? "report:particle"
         : fixture.contestant.family === "factory-evidence" ? "report:conclusion" : "validation:eventCount"
@@ -71,7 +77,8 @@ describe("arm-neutral hard benchmark development qualification", () => {
 
   test("unavailable execution cannot qualify negative or tamper controls as rejected code", async () => {
     const fixture = createHardBenchmarkFixtures().find(item => item.contestant.family === "multi-repo-compatibility")!
-    for (const [testCase, arm] of [["negative", hardBenchmarkNegativeArm], ["tamper", hardBenchmarkTamperArm]] as const) {
+    for (const [testCase, arm] of [["negative", hardBenchmarkNegativeArm], ["tamper", hardBenchmarkTamperArm],
+      ["extra-field", hardBenchmarkExtraFieldArm]] as const) {
       const result = await qualifyHardBenchmarkCase(fixture, arm, testCase, { multiRepoRunner: null })
       expect(result.status).toBe("blocked")
       expect(result.passed).toBe(false)

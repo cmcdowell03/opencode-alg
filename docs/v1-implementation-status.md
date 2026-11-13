@@ -22,10 +22,18 @@ line-ending normalization. Package extraction and bounded compatibility
 activation passed on Windows; actual npm inventory matches 209 reviewed paths.
 [Final qualification and preserved failed gates](evidence/scope-runtime-20261113/README.md).
 
-The [new full development comparison](v1-hard-development-repair-followup.md)
-has passed its shared scorer qualification and all twelve no-generation preflight
-arms. Its model results are separate from these synthetic checks. No long-session
-information-loss or general superiority result exists.
+The [repair-follow-up comparison](evidence/hard-scope-20261113/README.md) is
+terminal: eight arms completed and four stopped. Frozen task-success flags are
+Build 4/6 and ALG 3/6; only two ALG artifacts also have a completed graph.
+One additional ALG failure exposed an undisclosed closed-object grader rule.
+The final pairs encountered HTTP 429 usage limits and a startup timeout.
+All issued outcomes remain recorded; no selective replay or regrading occurred.
+
+Follow-up changes distinguish an ordinary `wave-limit` pause from prerequisites,
+make future public output contracts explicit, and separate observed summary
+exposure from continuation success. Their local qualification is separate from
+the frozen paid cohort. No long-session information-loss or general superiority
+result exists.
 
 ## Priority clarification — capability before efficiency
 

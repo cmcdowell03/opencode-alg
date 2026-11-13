@@ -32,6 +32,26 @@ const payload = (boundaries: RetentionBoundary[], observations: RetentionBoundar
 })
 
 describe("per-compaction retention boundaries", () => {
+  test("completed summaries remain boundaries when later behavior is wrong or unobserved", () => {
+    const wrong = boundary("b1", "task", "s1", 10)
+    const missing = boundary("b2", "task", "s2", 20)
+    const report = measureRetentionBoundaries(payload([wrong, missing], [
+      observation("b1", "wrong-answer", "behavior", "incorrect", 13, { digest: d("f") }),
+    ]))
+    if (report.status !== "measured") throw new Error("expected measurements")
+    expect(report.boundaries.map(b => b.valid)).toEqual([true, true])
+    expect(report.boundaries.map(b => b.facts[0]?.assessment)).toEqual(["failure_observed", "unknown"])
+    expect(report.totals).toEqual({ boundaryCount: 2, obligationCount: 2, measured: 1, unknown: 1, invalidBoundaryCount: 0 })
+    // Missing census evidence prevents assessment, but never deletes the boundary.
+    wrong.boundaryCensusComplete = false
+    const incomplete = measureRetentionBoundaries(payload([wrong, missing], [
+      observation("b1", "wrong-answer", "behavior", "incorrect", 13, { digest: d("f") }),
+    ]))
+    if (incomplete.status !== "measured") throw new Error("expected measurements")
+    expect(incomplete.totals).toEqual({ boundaryCount: 2, obligationCount: 2, measured: 0, unknown: 2, invalidBoundaryCount: 1 })
+    expect(incomplete.issues.map(issue => issue.code)).toContain("boundary_census_incomplete")
+  })
+
   test("preserves first-boundary failure when the next boundary recovers", () => {
     const first = boundary("b1", "task", "s1", 10)
     const second = boundary("b2", "task", "s2", 20)

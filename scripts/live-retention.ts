@@ -7,7 +7,7 @@ import { freePort, launch, isolatedEnv } from "./build-benchmark.ts"
 import { liveRetentionFixture, phaseUpdates, scoreRetentionPhase, expectedRetentionChecks } from "./live-retention-fixture.ts"
 import { sendBenchmarkPrompt } from "./build-benchmark-transport.ts"
 import { summarizeSessionMetrics } from "./build-benchmark-metrics.ts"
-import { compactionReceipt, observeCompactionMarkers, finalCensus } from "./build-benchmark-protocol.ts"
+import { compactionReceipt, compactionSummaryExposureIsQualified, observeCompactionMarkers, finalCensus } from "./build-benchmark-protocol.ts"
 import { computeAlgSourceIdentity } from "../src/source-identity.ts"
 import { seedVerificationHostDependencies } from "./verification-host-dependencies.ts"
 import { verificationPluginConfiguration, realUserGlobalConfigRoots, snapshotGlobalOpenCodeConfig, stopCapturedProcess } from "./live-verify.ts"
@@ -36,7 +36,8 @@ export function retentionDelta(before: Awaited<ReturnType<typeof scoreRetentionP
     observedLosses: comparable.filter(c => !c.retained).length,
     interpretation: "Observable artifact/action compliance with durable files available; not hidden-context recall or a causal effect of compaction." }
 }
-type SummaryReceipt = { requestAcceptance: string; marker: { matchesRequest: boolean; outcome: string }; summary: { outcome: string }; continuation: { status: string } }
+type SummaryReceipt = { requestAcceptance: string; marker: { matchesRequest: boolean; outcome: string }; summary: { outcome: string }; continuation: { status: string }; summaryExposureQualified?: boolean }
+/** Historical diagnostic qualification, including completed continuation. */
 export function summaryBoundaryQualified(receipt: SummaryReceipt | undefined) {
   return receipt?.requestAcceptance === "accepted" && receipt.marker.matchesRequest === true &&
     receipt.marker.outcome === "new_and_persisted" && receipt.summary.outcome === "terminal_linked" &&
@@ -50,12 +51,24 @@ export function aggregateRetention(phases: readonly { phase: number; delta: { at
   const boundaries = phases.filter(p => p.phase > 0 && p.delta)
   const qualified = boundaries.filter(p => summaryBoundaryQualified(receipts[p.phase - 1]))
   const sum = (rows: typeof boundaries, key: "atRisk" | "observedLosses") => rows.reduce((total, p) => total + (p.delta?.[key] ?? 0), 0)
+  // Count from issued receipts, not only phases with a score: failed/missing
+  // continuations cannot erase a completed summary. Do not reinterpret legacy receipts.
+  const exposures = receipts.flatMap((receipt, index) => compactionSummaryExposureIsQualified(receipt) ? [index + 1] : [])
+  const scoredExposures = exposures.flatMap(phase => {
+    const matches = phases.filter(p => p.phase === phase)
+    return matches.length === 1 && matches[0]!.delta ? [matches[0]!] : []
+  })
   return { qualifiedBoundaries: qualified.length, unqualifiedBoundaries: boundaries.length - qualified.length,
     observedBoundaries: boundaries.length, plannedBoundaries: LIVE_LIMITS.requestedCompactions,
     atRisk: sum(qualified, "atRisk"), observedLosses: sum(qualified, "observedLosses"),
     observedLossRate: sum(qualified, "atRisk") > 0 ? sum(qualified, "observedLosses") / sum(qualified, "atRisk") : null,
     diagnosticAtRisk: sum(boundaries, "atRisk"), diagnosticObservedLosses: sum(boundaries, "observedLosses"),
-    basis: "Headline counts include only qualified requested-summary boundaries; diagnostics include all scored phase deltas.",
+    summaryExposure: { issuedReceipts: receipts.length, observedBoundaries: exposures.length,
+      unqualifiedOrUnmeasuredReceipts: receipts.length - exposures.length, scoredBoundaries: scoredExposures.length,
+      missingOrAmbiguousScoreBoundaries: exposures.length - scoredExposures.length,
+      atRiskKnown: sum(scoredExposures, "atRisk"), observedLossesKnown: sum(scoredExposures, "observedLosses"),
+      basis: "Observed completed summaries, independent of continuation success. Counts may be incomplete; census completeness and pre/post behavioral eligibility require separate evidence. No loss rate is computed here." },
+    basis: "Legacy completed-continuation diagnostics, not a summary-exposure denominator. summaryExposure retains failed or missing continuations; diagnostics include all scored phase deltas.",
     causalAttribution: "not_established", latentContextRecall: "not_measured", expensiveSearchRepetition: "not_measured_no_live_MCP" }
 }
 export function verifyFixtureSkills(discovered: unknown, project: string, files: Record<string, string>) {

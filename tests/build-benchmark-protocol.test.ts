@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { SessionSummarizeResponses } from "@opencode-ai/sdk/client"
-import { benchmarkObservedStop, reconcileHostCensus, compactionIsQualified, compactionReceipt, eligibility, finalCensus, issuePairs, scheduleIssuedPairs, summarizeIssuedArms } from "../scripts/build-benchmark-protocol.ts"
+import { benchmarkObservedStop, reconcileHostCensus, compactionIsQualified, compactionSummaryExposureIsQualified, compactionReceipt, eligibility, finalCensus, issuePairs, scheduleIssuedPairs, summarizeIssuedArms } from "../scripts/build-benchmark-protocol.ts"
 
 const followupHistory = (sessionID = "s1", userId = "followup-user", assistantId = "followup-assistant", parentID = userId) => [
   { info: { id: userId, sessionID, role: "user", time: { created: 1_800_000_000_300 } }, parts: [] },
@@ -69,7 +69,7 @@ describe("benchmark protocol integrity", () => {
     const input = { requestId: "request-2", requestedAt: "2027-01-15T08:00:00.050Z", rootSessionId: "s1", response: sdkResponse,
       beforeMessages: [old], afterMessages: [old, marker, summary], continuation, continuationMessages: followupHistory() }
     const receipt = compactionReceipt(input)
-    expect(receipt).toMatchObject({ qualified: true, requestAcceptance: "accepted", marker: { outcome: "new_and_persisted", creationTime: "created_after_request" },
+    expect(receipt).toMatchObject({ qualified: true, summaryExposureQualified: true, continuation: { completionLinked: true, linked: true }, requestAcceptance: "accepted", marker: { outcome: "new_and_persisted", creationTime: "created_after_request" },
       summary: { id: "summary-2", parentID: "marker-2", outcome: "terminal_linked" } })
     expect(compactionIsQualified(receipt)).toBe(true)
     expect(compactionIsQualified({ qualified: true, marker: { outcome: "new_and_persisted" } })).toBe(true)
@@ -89,11 +89,11 @@ describe("benchmark protocol integrity", () => {
       continuation: { status: "completed", userMessageID: "u", assistantID: "a", scorePassed: true },
       continuationMessages: followupHistory("s1", "u", "a") }
     const oldOnly = compactionReceipt({ ...base, afterMessages: [oldMarker] })
-    expect(oldOnly).toMatchObject({ qualified: false, marker: { outcome: "missing_or_historical_only" } })
+    expect(oldOnly).toMatchObject({ qualified: false, summaryExposureQualified: false, marker: { outcome: "missing_or_historical_only" } })
     const errored = { info: { id: "summary-error", sessionID: "s1", role: "assistant", parentID: "new-marker", summary: true, error: { name: "SyntheticError" }, time: { completed: 1_800_000_000_200 } }, parts: [] }
-    expect(compactionReceipt({ ...base, afterMessages: [oldMarker, newMarker, errored] })).toMatchObject({ qualified: false, summary: { outcome: "missing_errored_or_unlinked" } })
+    expect(compactionReceipt({ ...base, afterMessages: [oldMarker, newMarker, errored] })).toMatchObject({ qualified: false, summaryExposureQualified: false, summary: { outcome: "missing_errored_or_unlinked" } })
     const unlinked = { ...errored, info: { ...errored.info, id: "summary-unlinked", parentID: "other-marker", error: undefined } }
-    expect(compactionReceipt({ ...base, afterMessages: [oldMarker, newMarker, unlinked] })).toMatchObject({ qualified: false, summary: { outcome: "missing_errored_or_unlinked" } })
+    expect(compactionReceipt({ ...base, afterMessages: [oldMarker, newMarker, unlinked] })).toMatchObject({ qualified: false, summaryExposureQualified: false, summary: { outcome: "missing_errored_or_unlinked" } })
     const linked = { ...unlinked, info: { ...unlinked.info, parentID: "new-marker" } }
     const predatingMarker = { info: { id: "predating-marker", sessionID: "s1", time: { created: 1_800_000_000_000 } }, parts: [{ type: "compaction", auto: false }] }
     const predatingSummary = { ...linked, info: { ...linked.info, parentID: "predating-marker" } }
@@ -101,6 +101,46 @@ describe("benchmark protocol integrity", () => {
       marker: { id: "predating-marker", outcome: "predates_request", creationTime: "predates_request" } })
     expect(compactionReceipt({ ...base, response: false, afterMessages: [oldMarker, newMarker, linked] })).toMatchObject({ qualified: false, requestAcceptance: "rejected" })
     expect(compactionReceipt({ ...base, continuation: { ...base.continuation, scorePassed: false }, afterMessages: [oldMarker, newMarker, linked] })).toMatchObject({ qualified: false })
+  })
+
+  test("completed summaries remain exposure after failed, missing, or wrong continuations", () => {
+    const at = 1_800_000_000_000
+    const marker = { info: { id: "marker", sessionID: "s1", time: { created: at + 100 } }, parts: [{ type: "compaction", auto: false }] }
+    const summary = { info: { id: "summary", sessionID: "s1", role: "assistant", summary: true, parentID: "marker", time: { completed: at + 200 } }, parts: [] }
+    const input = { requestId: "request", requestedAt: new Date(at).toISOString(), rootSessionId: "s1", response: true,
+      beforeMessages: [], afterMessages: [marker, summary] }
+    const completed = { status: "completed", userMessageID: "followup-user", assistantID: "followup-assistant", scorePassed: true }
+    const failedHistory = followupHistory().map(message => message.info.role === "assistant"
+      ? { ...message, info: { ...message.info, error: { name: "SyntheticError" } } } : message)
+    const variants = [
+      { continuation: { ...completed, status: "failed" }, continuationMessages: failedHistory, completionLinked: false },
+      { continuation: { status: "not_completed" }, continuationMessages: [], completionLinked: false },
+      { continuation: { ...completed, scorePassed: false }, continuationMessages: followupHistory(), completionLinked: true },
+      { continuation: completed, continuationMessages: [], completionLinked: false },
+    ]
+    for (const { completionLinked, ...continuation } of variants) {
+      const receipt = compactionReceipt({ ...input, ...continuation })
+      expect(receipt).toMatchObject({ summaryExposureQualified: true, qualified: false,
+        continuation: { completionLinked, linked: false } })
+      expect(compactionSummaryExposureIsQualified(receipt)).toBe(true)
+      expect(compactionIsQualified(receipt)).toBe(false)
+    }
+    // An acknowledgement cannot erase independently observed summary completion.
+    for (const response of [false, undefined]) {
+      const receipt = compactionReceipt({ ...input, response, continuation: completed, continuationMessages: followupHistory() })
+      expect(compactionSummaryExposureIsQualified(receipt)).toBe(true)
+      expect(compactionIsQualified(receipt)).toBe(false)
+    }
+    for (const afterMessages of [[], [marker], [marker, { ...summary, info: { ...summary.info, sessionID: "other" } }],
+      [marker, summary, { ...marker, info: { ...marker.info, id: "ambiguous" } }]]) {
+      expect(compactionSummaryExposureIsQualified(compactionReceipt({ ...input, afterMessages,
+        continuation: completed, continuationMessages: followupHistory() }))).toBe(false)
+    }
+    // Historical control receipts are not silently relabeled as the new measurement.
+    expect(compactionIsQualified({ qualified: true })).toBe(true)
+    expect(compactionSummaryExposureIsQualified({ qualified: true })).toBe(false)
+    expect(compactionSummaryExposureIsQualified({ summaryExposureQualified: "true" })).toBe(false)
+    expect(compactionSummaryExposureIsQualified(undefined)).toBe(false)
   })
 
   test("final census waits within its grace and retains missing or in-flight usage as unknown", async () => {

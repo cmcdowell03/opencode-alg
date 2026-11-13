@@ -142,7 +142,9 @@ export async function startAllowanceHostProbe(baseUrl: string, project: string, 
   const first = allowanceCheckpoint(project, owner)
   const child = saved.nodes.work!.attempts[0]?.session_id
   const host = child ? await client.session.get({ path: { id: child }, query: { directory: project } }) : null
-  if (saved.status !== "blocked" || saved.global_attempts !== 1 || first.reserved !== 1 || first.max_dispatches !== 2 ||
+  if (saved.status !== "blocked" || saved.phase !== "wave-limit" ||
+    !work.next?.includes("continue with alg_resume") || !work.next?.includes(saved.run_id) ||
+    saved.global_attempts !== 1 || first.reserved !== 1 || first.max_dispatches !== 2 ||
     first.verification_reserve !== 1 || host?.data?.parentID !== owner || saved.nodes.work!.status !== "done" ||
     saved.nodes.check!.current_attempt !== 0) throw Error("Allowance probe did not reserve one actual child: " +
       JSON.stringify({ status: saved.status, phase: saved.phase, attempts: saved.global_attempts, first,
@@ -153,7 +155,9 @@ export async function startAllowanceHostProbe(baseUrl: string, project: string, 
   const scope = finishChangeScopeEvidence(project, PROBE_SCOPE, saved.task_baseline!.change_scope)
   if (!producerHook.passed || scope.status !== "within_scope" || scope.changed.length)
     throw Error("Producer host hooks or clean scope were not observed: " + JSON.stringify({ producerHook, scope }))
-  return { run_id: saved.run_id, reference: saved.task_allowance!, first, child_session_id: child!, producer_hook: producerHook }
+  return { run_id: saved.run_id, reference: saved.task_allowance!, first, child_session_id: child!, producer_hook: producerHook,
+    wave_pause: { phase: z.literal("wave-limit").parse(saved.phase), guidance_verified: work.next.includes("continue with alg_resume") && work.next.includes(saved.run_id),
+      attempts: saved.global_attempts } }
 }
 export async function finishAllowanceHostProbe(baseUrl: string, project: string, owner: string,
   before: Awaited<ReturnType<typeof startAllowanceHostProbe>>) {
@@ -196,7 +200,7 @@ export async function finishAllowanceHostProbe(baseUrl: string, project: string,
   return { passed, run_id: saved.run_id, task_id: final.task_id, reserved_before_compaction: before.first.reserved,
     reserved_after_restarts: recovered.reserved, reserved_after_checker: final.reserved,
     additional_dispatches_after_exhaustion: retry.global_attempts, checker_parent_verified: host?.data?.parentID === owner,
-    scope_regression: scopeRegression,
+    scope_regression: scopeRegression, wave_pause: before.wave_pause,
     scope: "Real SDK children and host-hook delivery writes after the original scope baseline, across one root compaction and two restarts; synthetic provider, no model-quality claim." }
 }
 

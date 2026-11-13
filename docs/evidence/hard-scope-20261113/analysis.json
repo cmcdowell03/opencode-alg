@@ -1,0 +1,575 @@
+{
+  "source_commit": "aff246995b763d871d1ebffda2ae8da91cc2ace7",
+  "qualification": "same-user development; not confirmation",
+  "aggregate": {
+    "build": {
+      "issued": 6,
+      "completed": 4,
+      "artifact_passed": 4,
+      "recorded_scored_task_success": 4,
+      "artifact_and_alg_done": null,
+      "reported_usage_components": 525331
+    },
+    "alg_default": {
+      "issued": 6,
+      "completed": 4,
+      "artifact_passed": 4,
+      "recorded_scored_task_success": 3,
+      "artifact_and_alg_done": 2,
+      "reported_usage_components": 1708693
+    }
+  },
+  "rows": [
+    {
+      "case": "factory-evidence-4ec5badaf7f2-v1",
+      "arm": "build",
+      "status": "completed",
+      "artifact_passed": true,
+      "recorded_scored_task_success": true,
+      "alg_statuses": [],
+      "artifact_and_alg_done": false,
+      "stop_reason": null,
+      "wall_ms": 42150,
+      "failed_checks": [],
+      "reported_usage_components": 124205,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "retention_status": null
+    },
+    {
+      "case": "factory-evidence-4ec5badaf7f2-v1",
+      "arm": "alg_default",
+      "status": "completed",
+      "artifact_passed": false,
+      "recorded_scored_task_success": false,
+      "alg_statuses": [
+        "done"
+      ],
+      "artifact_and_alg_done": false,
+      "stop_reason": null,
+      "wall_ms": 192195,
+      "failed_checks": [
+        "report:schema"
+      ],
+      "reported_usage_components": 461860,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "retention_status": null
+    },
+    {
+      "case": "multi-repo-compat-v1",
+      "arm": "build",
+      "status": "completed",
+      "artifact_passed": true,
+      "recorded_scored_task_success": true,
+      "alg_statuses": [],
+      "artifact_and_alg_done": false,
+      "stop_reason": null,
+      "wall_ms": 71968,
+      "failed_checks": [],
+      "reported_usage_components": 93457,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "retention_status": null
+    },
+    {
+      "case": "multi-repo-compat-v1",
+      "arm": "alg_default",
+      "status": "completed",
+      "artifact_passed": true,
+      "recorded_scored_task_success": true,
+      "alg_statuses": [
+        "done"
+      ],
+      "artifact_and_alg_done": true,
+      "stop_reason": null,
+      "wall_ms": 110390,
+      "failed_checks": [],
+      "reported_usage_components": 219249,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "retention_status": null
+    },
+    {
+      "case": "accepted-query-lost-ack-v1-0",
+      "arm": "build",
+      "status": "completed",
+      "artifact_passed": true,
+      "recorded_scored_task_success": true,
+      "alg_statuses": [],
+      "artifact_and_alg_done": false,
+      "stop_reason": null,
+      "wall_ms": 38002,
+      "failed_checks": [],
+      "reported_usage_components": 49565,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "retention_status": null
+    },
+    {
+      "case": "accepted-query-lost-ack-v1-0",
+      "arm": "alg_default",
+      "status": "completed",
+      "artifact_passed": true,
+      "recorded_scored_task_success": true,
+      "alg_statuses": [
+        "blocked"
+      ],
+      "artifact_and_alg_done": false,
+      "stop_reason": null,
+      "wall_ms": 97518,
+      "failed_checks": [],
+      "reported_usage_components": 226502,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "retention_status": null
+    },
+    {
+      "case": "factory-evidence-357ebc622173-v1",
+      "arm": "build",
+      "status": "completed",
+      "artifact_passed": true,
+      "recorded_scored_task_success": true,
+      "alg_statuses": [],
+      "artifact_and_alg_done": false,
+      "stop_reason": null,
+      "wall_ms": 68074,
+      "failed_checks": [],
+      "reported_usage_components": 258104,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "retention_status": null
+    },
+    {
+      "case": "factory-evidence-357ebc622173-v1",
+      "arm": "alg_default",
+      "status": "completed",
+      "artifact_passed": true,
+      "recorded_scored_task_success": true,
+      "alg_statuses": [
+        "done"
+      ],
+      "artifact_and_alg_done": true,
+      "stop_reason": null,
+      "wall_ms": 192063,
+      "failed_checks": [],
+      "reported_usage_components": 506210,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "retention_status": null
+    },
+    {
+      "case": "factory-evidence-cc6a0524ea56-v1",
+      "arm": "build",
+      "status": "stopped",
+      "artifact_passed": false,
+      "recorded_scored_task_success": false,
+      "alg_statuses": [],
+      "artifact_and_alg_done": false,
+      "stop_reason": "model_error:APIError",
+      "wall_ms": 72766,
+      "failed_checks": [
+        "report:schema",
+        "report:window",
+        "report:cleanings",
+        "report:sources",
+        "report:joinKey",
+        "report:strata",
+        "report:comparison",
+        "report:conclusion",
+        "report:nextMeasurement"
+      ],
+      "reported_usage_components": 0,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "retention_status": null
+    },
+    {
+      "case": "factory-evidence-cc6a0524ea56-v1",
+      "arm": "alg_default",
+      "status": "stopped",
+      "artifact_passed": true,
+      "recorded_scored_task_success": false,
+      "alg_statuses": [
+        "failed"
+      ],
+      "artifact_and_alg_done": false,
+      "stop_reason": "model_error:APIError",
+      "wall_ms": 580525,
+      "failed_checks": [],
+      "reported_usage_components": 294872,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "retention_status": null
+    },
+    {
+      "case": "partial-investigation-restart-v1",
+      "arm": "build",
+      "status": "stopped",
+      "artifact_passed": false,
+      "recorded_scored_task_success": false,
+      "alg_statuses": [],
+      "artifact_and_alg_done": false,
+      "stop_reason": "model_error:APIError",
+      "wall_ms": 79775,
+      "failed_checks": [
+        "service:retained:particle-window",
+        "service:retained:maintenance-alignment",
+        "service:rejected-stale-result",
+        "service:checked-current-unavailability",
+        "report:schema",
+        "report:retained",
+        "report:particle",
+        "report:overlapLots",
+        "report:unresolved",
+        "report:causalIdentified"
+      ],
+      "reported_usage_components": 0,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "retention_status": null
+    },
+    {
+      "case": "partial-investigation-restart-v1",
+      "arm": "alg_default",
+      "status": "stopped",
+      "artifact_passed": false,
+      "recorded_scored_task_success": false,
+      "alg_statuses": [],
+      "artifact_and_alg_done": false,
+      "stop_reason": "The operation timed out.",
+      "wall_ms": null,
+      "failed_checks": [
+        "service:retained:particle-window",
+        "service:retained:maintenance-alignment",
+        "service:rejected-stale-result",
+        "service:checked-current-unavailability",
+        "report:schema",
+        "report:retained",
+        "report:particle",
+        "report:overlapLots",
+        "report:unresolved",
+        "report:causalIdentified"
+      ],
+      "reported_usage_components": 0,
+      "compactions": null,
+      "retention_status": "unavailable_preflight"
+    }
+  ],
+  "provider_errors_safe_projection": [
+    {
+      "arm": "05-alg",
+      "name": "APIError",
+      "status_code": 429,
+      "usage_limit_message": true
+    },
+    {
+      "arm": "05-alg",
+      "name": "APIError",
+      "status_code": 429,
+      "usage_limit_message": true
+    },
+    {
+      "arm": "05-alg",
+      "name": "APIError",
+      "status_code": 429,
+      "usage_limit_message": true
+    },
+    {
+      "arm": "05-alg",
+      "name": "APIError",
+      "status_code": 429,
+      "usage_limit_message": true
+    },
+    {
+      "arm": "05-alg",
+      "name": "APIError",
+      "status_code": 429,
+      "usage_limit_message": true
+    },
+    {
+      "arm": "05-alg",
+      "name": "APIError",
+      "status_code": 429,
+      "usage_limit_message": true
+    },
+    {
+      "arm": "05-bld",
+      "name": "APIError",
+      "status_code": 429,
+      "usage_limit_message": true
+    },
+    {
+      "arm": "06-bld",
+      "name": "APIError",
+      "status_code": 429,
+      "usage_limit_message": true
+    }
+  ],
+  "cleanup": {
+    "all_receipts_passed": true,
+    "temporary_auth_files_found": 0
+  },
+  "interpretation": [
+    "All twelve issued arms retained. Original grades are unchanged.",
+    "01-alg fails an undisclosed exact-key rule: extra explanation fields, all other checks pass. Do not count it as an evidenced semantic checker false-pass.",
+    "03-alg produces a passing artifact but stops with pending checker repair after max_waves=2; two original global attempts remain.",
+    "05-alg has a correct artifact but its graph failed amid HTTP 429 usage-limit responses. 05-bld and 06-bld also hit HTTP 429; 06-alg timed out before a root session was created.",
+    "11 armed host censuses have zero observed compaction markers; the unstarted arm has no retention observation. No obligation probes or information-loss estimate.",
+    "Reported usage is session telemetry, including cached input, not provider invoice completeness.",
+    "No superiority conclusion, selective replay, score replacement, or second comparison on revised contracts."
+  ]
+}

@@ -369,6 +369,7 @@ function routingSummary(run: RunState) {
 
 function nextAction(run: RunState): string {
   if (run.status === "planning") return `Call alg_run with run_id=${run.run_id}; filesystem-root approval, if needed, must be explicit again.`
+  if (run.status === "blocked" && run.phase === "wave-limit") return `This call reached max_waves with unfinished work. For an authorized execution request, continue with alg_resume and run_id=${run.run_id}, then inspect its result. Keep the same run, original attempts, task allowance and permissions; per-call filesystem-root approval still applies. This pause is not completion or a prerequisite failure. Stop on cancellation, a real blocker or exhausted limits; do not replan to reset them.`
   if (run.status === "blocked") return `Inspect alg_status and the recorded blocker for run_id=${run.run_id}. Resolve its prerequisite before alg_resume; do not loop or reset attempts by replanning.`
   if (run.status === "running") return `Call alg_resume with run_id=${run.run_id} for another bounded synchronous wave set.`
   if (run.status === "done") return "The run is complete. Report its existing outcome and stop; do not plan or execute the same task again. Use alg_status/detail=full only if its recorded evidence is needed."

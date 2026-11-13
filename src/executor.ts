@@ -978,6 +978,7 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
       Math.min(options.maxConcurrency ?? run.graph.max_concurrency, run.graph.max_concurrency, 8),
     )
 
+    let completedWaves = 0
     for (let wave = 0; wave < maxWaves && !allTerminal(run); wave++) {
       if (options.toolContext.abort.aborted) {
         break
@@ -1120,6 +1121,7 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
       }
       finishGlobalLimit(run)
       await save(run, options)
+      completedWaves++
       if (run.global_attempts >= run.graph.max_global_attempts) break
     }
 
@@ -1132,7 +1134,15 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
       run.phase = run.status
     } else {
       run.status = "blocked"
-      run.phase = "blocked"
+      // A synchronous call boundary is not a missing prerequisite. Only mark a
+      // normal, actionable pause; cancellation, setup and uncertain SDK outcomes
+      // retain the conservative blocker path. Resume still reruns every guard.
+      const waveLimit = completedWaves === maxWaves && !options.toolContext.abort.aborted &&
+        setupStopped.size === 0 && run.global_attempts < run.graph.max_global_attempts &&
+        readyNodes(run).some(node => run.nodes[node.id]!.current_attempt < (node.loop?.max_attempts ?? 1)) &&
+        !Object.values(run.nodes).some(node => (node.status === "pending" || node.status === "ready") &&
+          node.attempts.at(-1)?.outcome === "sdk_error")
+      run.phase = waveLimit ? "wave-limit" : "blocked"
     }
     run.summary = summarize(run)
     const finalDrift = liveTask && run.status !== "failed" ? invalidateDriftedTaskCheck(run) : undefined
