@@ -7,6 +7,8 @@ import { resolveInputValue, validateGraph } from "../src/graph.ts"
 import { PersistedFailureListSchema } from "../src/schemas.ts"
 import { safeDiagnosticText } from "../src/diagnostics.ts"
 import { createAlgTools } from "../src/tools.ts"
+import { TaskAllowanceRuntime } from "../src/task-allowance.ts"
+import { MemoryStore } from "../src/session-memory/store.ts"
 import { executeContext, tempProject, removeProject, singleImplementGraph, testTaskContract } from "./helpers.ts"
 
 const output = { summary: ["complete"], files_touched: [], commands_run: [], risks: [], done: true }
@@ -57,7 +59,8 @@ test("plan and status expose the persisted child and relative-gate base", async 
     expect(status.execution_directory).toBe(directory)
     expect(status.shell_gate_base).toBe(directory)
     const run = disk(project, plan.run_id)
-    await executeRun(run, { ...executeContext(project), sessionRunner: async ({ agent }) => {
+    const allowance = new TaskAllowanceRuntime(new MemoryStore(project))
+    await executeRun(run, { ...executeContext(project), taskAllowance: allowance, sessionRunner: async ({ agent }) => {
       if (agent === "implementer") writeFileSync(join(project, "result.txt"), "synthetic declared deliverable")
       return { session_id: agent, text: "", parsed: agent === "checker"
         ? { passed: true, failures: [], score: 10 }
@@ -68,6 +71,7 @@ test("plan and status expose the persisted child and relative-gate base", async 
       return { cwd: directory, exit_code: 0, ok: true, stdout_tail: "", stderr_tail: "" }
     } })
     expect(disk(project, plan.run_id).status).toBe("done")
+    expect(allowance.status(run.task_allowance!).reserved).toBe(2) // The shell gate is not a child dispatch.
   } finally { removeProject(project) }
 }, 120_000)
 
