@@ -2,7 +2,8 @@ import { afterEach, describe, expect, test } from "bun:test"
 import { randomUUID } from "node:crypto"
 import { mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"
-import { BUILD_BENCHMARK_CONTROL_LIMITS } from "../scripts/build-benchmark.ts"
+import { BUILD_BENCHMARK_CONTROL_LIMITS, initializeBenchmarkWorkspaceGit } from "../scripts/build-benchmark.ts"
+import { execFileSync } from "node:child_process"
 import { BENCHMARK_CASES } from "../scripts/build-benchmark-fixtures.ts"
 import { createAcceptedQueryLostAckFixture, createHardBenchmarkFixtures } from "../scripts/hard-benchmark-fixtures.ts"
 import { benchmarkTaskPrompt, collectHardProject, collectHardRunProgress, HARD_COLLECTION_LIMITS, HARD_PROGRESS_LIMITS, HARD_ISOLATION, hardBenchmarkIdentity,
@@ -18,6 +19,16 @@ function project() {
   const path = join(temporaryRoot, "hard-cohort-unit-" + randomUUID())
   mkdirSync(path, { recursive: true }); roots.push(path); return path
 }
+test("disposable Git setup indexes long nested paths from a short working directory", () => {
+  const directory = project(), parts = ["bounded-path-segment"]
+  while (join(directory, ...parts, "README.md").length < 280) parts.push("bounded-path-segment")
+  mkdirSync(join(directory, ...parts), { recursive: true })
+  writeFileSync(join(directory, ...parts, "README.md"), "Frozen fixture\n")
+  initializeBenchmarkWorkspaceGit(directory)
+  expect(execFileSync("git", ["config", "--local", "core.longpaths"], { cwd: directory, encoding: "utf8" }).trim()).toBe("true")
+  expect(execFileSync("git", ["show", "HEAD:" + [...parts, "README.md"].join("/")], { cwd: directory, encoding: "utf8" })).toBe("Frozen fixture\n")
+  expect(execFileSync("git", ["status", "--porcelain"], { cwd: directory, encoding: "utf8" })).toBe("")
+})
 afterEach(() => {
   for (const path of roots.splice(0)) {
     const rel = relative(temporaryRoot, path)

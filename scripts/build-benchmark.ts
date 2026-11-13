@@ -58,6 +58,14 @@ function files(root:string):Array<{path:string;bytes:number;sha256:string}>{
   walk(root,"");return result
 }
 
+export function initializeBenchmarkWorkspaceGit(project: string): void {
+  execFileSync("git", ["-c", "core.longpaths=true", "init", "-q"], { cwd: project })
+  // Disposable repository only. Do not depend on or change the operator's global settings.
+  execFileSync("git", ["config", "--local", "core.longpaths", "true"], { cwd: project })
+  execFileSync("git", ["add", "."], { cwd: project })
+  execFileSync("git", ["-c", "user.name=ALG Benchmark", "-c", "user.email=benchmark@localhost", "commit", "-qm", "Frozen synthetic task"], { cwd: project })
+}
+
 export async function runBuildBenchmark(config:Config){
   const repo=resolve(import.meta.dir,".."),root=resolve(config.outputRoot)
   const selection=prepareBenchmarkWorkload(config,BENCHMARK_CASES,LIMITS),hard=selection.workload==="hard-development",limits=selection.limits
@@ -112,7 +120,9 @@ export async function runBuildBenchmark(config:Config){
     }
     for(const {fixture,pair,index:caseIndex,order} of issuedCases)for(const arm of order){
       if(Date.now()>=suiteDeadline){updateResult(pair.pairId,arm,{status:"stopped_before_start_suite_deadline",passed:false});continue}
-      const dir=join(root,`${caseIndex+1}-${fixture.id}-${arm}`),project=join(dir,"project"),authCopy=join(dir,"data/opencode/auth.json")
+      // Keep hard-arm paths equally short on Windows; case/arm identity lives in plan/result receipts.
+      const directoryName=hard?`${String(caseIndex+1).padStart(2,"0")}-${arm==="build"?"bld":"alg"}`:`${caseIndex+1}-${fixture.id}-${arm}`
+      const dir=join(root,directoryName),project=join(dir,"project"),authCopy=join(dir,"data/opencode/auth.json")
       const hardFixture=hard?selection.hardFixtures.find(record=>record.contestant.id===fixture.id)!:undefined
       let hardService:HardBenchmarkService|undefined,hardHost:Awaited<ReturnType<typeof startHardBenchmarkHost>>|undefined,server:Tracked|undefined
       let hostStopAttempted=false,hardCollection:ReturnType<typeof collectHardProject>|undefined,serviceStop:Promise<void>|undefined
@@ -124,7 +134,7 @@ export async function runBuildBenchmark(config:Config){
       try{
       const env=isolatedEnv(dir)
       mkdirSync(project,{recursive:true});for(const [path,text] of Object.entries(fixture.files)){mkdirSync(dirname(join(project,path)),{recursive:true});writeFileSync(join(project,path),text)}
-      execFileSync("git",["init","-q"],{cwd:project});execFileSync("git",["add","."],{cwd:project});execFileSync("git",["-c","user.name=ALG Benchmark","-c","user.email=benchmark@localhost","commit","-qm","Frozen synthetic task"],{cwd:project})
+      initializeBenchmarkWorkspaceGit(project)
       seedVerificationHostDependencies(join(dir,"config/opencode"),repo)
       if(config.authFile){const saved=JSON.parse(readFileSync(config.authFile,"utf8"));const auth=saved[config.providerID];if(!auth)throw Error("configured provider is not connected");for(const value of Object.values(auth))if(typeof value==="string"&&value.length>20)secrets.push(value);mkdirSync(dirname(authCopy),{recursive:true});authCopies.push(authCopy);writeFileSync(authCopy,JSON.stringify({[config.providerID]:auth}))}
       const model=`${config.providerID}/${config.modelID}`,agents:Record<string,unknown>={build:{model},general:{model},explore:{model},compaction:{model},summary:{model},title:{model}}
