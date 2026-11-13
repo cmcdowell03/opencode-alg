@@ -7,13 +7,13 @@
       "source": "l2-windows-final-tests.log",
       "sha256": "8805e753536ba6ca37134ebfb9f4da4af5bb332eb658814e662234db2172f5ce",
       "bytes": 27144,
-      "published": "l2-windows-final-tests.log"
+      "published": "hash-only-private-original"
     },
     {
       "source": "l2-b974cb2-windows-typecheck.log",
       "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f",
       "bytes": 67,
-      "published": "l2-b974cb2-windows-typecheck.log"
+      "published": "hash-only-private-original"
     },
     {
       "source": "l2-windows-headless-tools.json",
@@ -25,13 +25,13 @@
       "source": "l2-process-repair-windows-tests.log",
       "sha256": "32f7c1544ec37ad8c44140d078c061046e737f9feec9e907b654988d113ec4bf",
       "bytes": 10397,
-      "published": "l2-process-repair-windows-tests.log"
+      "published": "hash-only-private-original"
     },
     {
       "source": "l2-process-repair-windows-typecheck.log",
       "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f",
       "bytes": 67,
-      "published": "l2-process-repair-windows-typecheck.log"
+      "published": "hash-only-private-original"
     },
     {
       "source": "l2-windows-launch-repair-qualification.json",
@@ -49,13 +49,13 @@
       "source": "l2-addb744d4203-linux-tests.log",
       "sha256": "16c18788043dee1bd50b7f1da6abf04322bc41821f3c584b198f9c6f20cdd882",
       "bytes": 26623,
-      "published": "l2-addb744d4203-linux-tests.log"
+      "published": "hash-only-private-original"
     },
     {
       "source": "l2-addb744d4203-linux-typecheck.log",
       "sha256": "d773539b4007a1c6e881b39c4bad4ce65837992453c5228198f10bd7ca4677c6",
       "bytes": 66,
-      "published": "l2-addb744d4203-linux-typecheck.log"
+      "published": "hash-only-private-original"
     },
     {
       "source": "l2-addb744d4203-linux-headless.json",
@@ -865,31 +865,31 @@
       "source": "l2-followup-windows-tests.log",
       "sha256": "4b281c0c27098094c835ce27069c75637bedc784c69bde930e88c8ca4731f4cb",
       "bytes": 49142,
-      "published": "l2-followup-windows-tests.log"
+      "published": "hash-only-private-original"
     },
     {
       "source": "l2-followup-windows-typecheck.log",
       "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f",
       "bytes": 67,
-      "published": "l2-followup-windows-typecheck.log"
+      "published": "hash-only-private-original"
     },
     {
       "source": "l2-followup-windows-typecheck-sandbox-failed.log",
       "sha256": "7b7f57f82e9f1451cd29689ff22cadc066dc54a3c4626b389feb7de234ccff31",
       "bytes": 98,
-      "published": "l2-followup-windows-typecheck-sandbox-failed.log"
+      "published": "hash-only-private-original"
     },
     {
       "source": "l2-fd0b77441471-windows-headless-arguments-failed.log",
       "sha256": "bbe7edfe3ff096e4094aeb2b79f1115efa35d7d4177626a38864c2bed872043f",
       "bytes": 959,
-      "published": "l2-fd0b77441471-windows-headless-arguments-failed.log"
+      "published": "hash-only-private-original"
     },
     {
       "source": "l2-fd0b77441471-windows-headless.log",
       "sha256": "d90b990cfb1b3c82325520a7f79b6cde11701742dd4960f2431b8577084bb08e",
       "bytes": 2141,
-      "published": "l2-fd0b77441471-windows-headless.log"
+      "published": "hash-only-private-original"
     },
     {
       "source": "l2-fd0b77441471-windows-headless.json",
@@ -907,7 +907,7 @@
       "source": "l2-fd0b77441471-windows-headless-sequential.log",
       "sha256": "ff29c877d9a62d71d202efab742bd757fafa043182ebb68559ee0d74ae4d2389",
       "bytes": 286,
-      "published": "l2-fd0b77441471-windows-headless-sequential.log"
+      "published": "hash-only-private-original"
     },
     {
       "source": "l2-fd0b77441471-windows-headless-sequential.json",
@@ -931,13 +931,13 @@
       "source": "l2-fd0b77441471-linux-tests.log",
       "sha256": "dcc3de5fbfa4beb4a5c6921dcb962a40745c5d3c124a204b2f20a1416569eafc",
       "bytes": 48392,
-      "published": "l2-fd0b77441471-linux-tests.log"
+      "published": "hash-only-private-original"
     },
     {
       "source": "l2-fd0b77441471-linux-typecheck.log",
       "sha256": "d773539b4007a1c6e881b39c4bad4ce65837992453c5228198f10bd7ca4677c6",
       "bytes": 66,
-      "published": "l2-fd0b77441471-linux-typecheck.log"
+      "published": "hash-only-private-original"
     },
     {
       "source": "l2-fd0b77441471-linux-headless.json",

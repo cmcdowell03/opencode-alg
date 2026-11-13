@@ -51,13 +51,13 @@ Before another frozen paid comparison, qualify the repaired collector, exercise 
 
 Post-study code `fd0b77441471dfbb17b0ab47f99716914eef27ed` passed **367 tests, one opt-in skip, zero failures and 2,565 assertions on each platform**, plus typecheck. The skipped lifecycle was run explicitly: Windows 1.19.5 and native WSL 1.18.35 both completed Build/ALG four-write, handoff, summary and restart checks with cleanup and unchanged global configuration. Each platform also passed 80 HTTP scorer controls. This includes package checks and the existing 5,100-transaction context-delivery stress test; it is still an affected-test gate, not the full suite. Sol's final review was static and did not independently execute these tests.
 
-Failed setup attempts remain published. One sandboxed typecheck could not read its cwd and one lifecycle invocation supplied a relative output path; both failed before their intended checks began. A subsequent Windows Build lifecycle passed but the ALG `--version` probe exceeded its 15-second startup timeout. Cleanup passed. One sequential check of the unchanged candidate then passed both arms. **The timeout's cause is unestablished and the earlier receipt is not relabeled as a pass.** No paid model calls were repeated.
+Failed setup outcomes remain published in the structured gate, with raw local logs retained privately and hashed in the manifest. One sandboxed typecheck could not read its cwd and one lifecycle invocation supplied a relative output path; both failed before their intended checks began. A subsequent Windows Build lifecycle passed but the ALG `--version` probe exceeded its 15-second startup timeout. Cleanup passed. One sequential check of the unchanged candidate then passed both arms. **The timeout's cause is unestablished and the earlier receipt is not relabeled as a pass.** No paid model calls were repeated.
 
 - `cohort-plan.json`: frozen source/protocol identities and issued schedule.
 - `cohort-result.json`: original terminal outcomes, counters and conditional comparison projection.
 - `live-obligations-final.json`: original external freezes, observations and final census qualification.
 - `summary.json`: per-arm outcomes, obligation-level counts and transition checks derived from original terminal receipts.
-- `receipt-manifest.json`: hashes of original sources, including hash-only private message/service evidence. Credentials and raw private transcripts are not published.
+- `receipt-manifest.json`: hashes of original sources, including hash-only private message/service evidence and local test logs. Credentials, raw private transcripts and raw test logs are not published.
 - `preflight-history.json`: the original 14/16 setup pass and two failures remain unchanged; the repaired zero-generation preflight passed all 16 before this cohort.
 - `local-followup-gate.json`: exact post-study code identity, local test receipts and their scope. No paid replay validates those fixes.
 
