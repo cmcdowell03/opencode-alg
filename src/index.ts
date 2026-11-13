@@ -81,7 +81,7 @@ const server: Plugin = async (ctx, pluginOptions) => {
       project: pluginConfiguration.environmentMemory.project ?? ctx.project.id,
     })
     : null
-  const tools = createAlgTools(ctx, () => structuredClone(configuredModels), () => structuredClone(modelResolutions), { sessionMemory: memory, operations, subagentCards: pluginConfiguration.subagentCards })
+  const tools = createAlgTools(ctx, () => structuredClone(configuredModels), () => structuredClone(modelResolutions), { sessionMemory: memory, operations, subagentCards: pluginConfiguration.subagentCards, taskAllowancePolicy: pluginConfiguration.taskAllowance })
   const authorizeMemory = async (owner: string) => {
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout> | undefined

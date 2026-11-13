@@ -8,5 +8,8 @@
 /build-benchmark-transport.ts
 /hard-benchmark-fixtures.ts
 /hard-benchmark-service.ts
+/hard-benchmark-qualification.ts
+/hard-benchmark-host.ts
+/hard-benchmark-cohort.ts
 /live-retention.ts
 /live-retention-fixture.ts

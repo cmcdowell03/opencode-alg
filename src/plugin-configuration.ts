@@ -131,14 +131,15 @@ export function resolvePluginConfiguration(
   const env = environment.env ?? process.env
   const selected = chooseSidecar(root, env)
   const sidecar = selected.path ? parseSidecar(readSidecar(selected.path)) : {}
-  const sdkSections = [sdk.skillEvolution, sdk.sessionMemory, sdk.environmentMemory, sdk.subagentCards, sdk.contextBudget, sdk.workspace, sdk.investigation].filter((section) => section !== undefined).length
-  const sidecarSectionsUsed = (sdk.workspace === undefined && sidecar.workspace !== undefined) ||
+  const sdkSections = [sdk.taskAllowance, sdk.skillEvolution, sdk.sessionMemory, sdk.environmentMemory, sdk.subagentCards, sdk.contextBudget, sdk.workspace, sdk.investigation].filter((section) => section !== undefined).length
+  const sidecarSectionsUsed = (sdk.taskAllowance === undefined && sidecar.taskAllowance !== undefined) || (sdk.workspace === undefined && sidecar.workspace !== undefined) ||
     (sdk.investigation === undefined && sidecar.investigation !== undefined) || (sdk.skillEvolution === undefined && sidecar.skillEvolution !== undefined) ||
     (sdk.sessionMemory === undefined && sidecar.sessionMemory !== undefined) ||
     (sdk.environmentMemory === undefined && sidecar.environmentMemory !== undefined) ||
     (sdk.subagentCards === undefined && sidecar.subagentCards !== undefined) ||
     (sdk.contextBudget === undefined && sidecar.contextBudget !== undefined)
   const merged = {
+    taskAllowance: sdk.taskAllowance ?? sidecar.taskAllowance,
     workspace: sdk.workspace ?? sidecar.workspace,
     investigation: sdk.investigation ?? sidecar.investigation,
     skillEvolution: sdk.skillEvolution ?? sidecar.skillEvolution,

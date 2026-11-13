@@ -1,6 +1,6 @@
 # V1 Phase One implementation status
 
-PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current pending candidate is 0.5.9 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as acceptance of the current candidate.
+PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current pending candidate is 0.5.10 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as acceptance of the current candidate.
 
 ## Priority clarification — capability before efficiency
 
@@ -19,6 +19,45 @@ Shared accounting protects continuity and explicit hard limits; it should not
 make a soft planning estimate a premature terminal failure. These are prospective
 design priorities, not larger existing trial limits or a
 superiority result. No new paid cohort or V2 work is launched by this update.
+
+## 0.5.10 — shared dispatch allowance (qualification in progress)
+
+New live plans share a host-generated task identity in the existing root session
+checkpoint. Each run retains its own immutable phase contract; the task ledger
+retains the first contract hash and pinned policy. The default is 128 child
+dispatch reservations, with eight protected for nominated fresh checkers.
+Operator configuration may set at most 256 reservations and an optional elapsed
+wall-time limit including downtime. New planning, memory task resets, retries,
+compaction and configuration changes do not replenish an existing allowance.
+
+The checkpoint reservation commits before the run's attempt and before any child
+can launch. Interrupted reservations stay charged; a retry of an uncommitted
+attempt uses the same reservation key. A committed interrupted attempt retains
+its charge and a new attempt needs another reservation. Shell-only, dry and
+gate-only recovery work is not charged as child dispatch. This reuses the root
+checkpoint lock rather than adding another database or changing remote job cost
+accounting.
+
+The restart probe exposed a second boundary: a stopped host can leave a valid,
+unexpired 30-second checkpoint lease. Allowance mutation therefore needs bounded,
+cancellable waiting for the existing lock rules to permit recovery. Neither a
+restart nor a timeout authorizes early takeover of a live, remote or unverifiable
+owner. Failed fixture invocations remain in the qualification evidence.
+
+Transferred runs bind their recipient to the original task ledger; a recipient
+already bound to another task cannot silently merge or reset allowances. Transfer
+prepares this binding first; if ownership transfer subsequently fails, the binding
+remains conservative and grants no run ownership. Continuing in another session
+requires the existing ownership-transfer route; unrelated new sessions are not
+automatically inferred to be the same task. Old unbound runs remain explicitly
+legacy/unqualified. Model tools cannot refill or replace a task ledger.
+
+The unit is a reserved ALG child dispatch, not a provider request or a billed
+token. Unknown outcomes can make it conservative. Root planning, host compaction,
+the final root report and provider usage are outside enforcement; their usage is
+explicitly unavailable in the production allowance summary. The benchmark's
+external census remains separate. This is the first P3 dispatch boundary, not
+complete whole-host accounting or a hard invoice cap.
 
 ## 0.5.9 — scoped evidence before child execution
 

@@ -57,6 +57,7 @@ import { preflightShellGates } from "./shell-preflight.ts"
 import { gateRecoveryBasis, sameGateRecovery } from "./gate-recovery.ts"
 import { capturePreservationBasis, finishPreservationEvidence } from "./preservation-evidence.ts"
 import { fromShellGateEvidence } from "./execution-evidence.ts"
+import type { TaskAllowanceRuntime } from "./task-allowance.ts"
 
 export const MAX_RUN_SUMMARY_CHARS = 40_000
 const MAX_RUN_SUMMARY_BYTES = 40_000
@@ -66,6 +67,7 @@ const MAX_SUMMARY_FAILURE_ENTRIES = 2
 const MAX_SUMMARY_FAILURE_SIZE = 256
 
 export interface ExecuteOptions {
+  taskAllowance?: TaskAllowanceRuntime
   client: Client
   parentSessionId: string
   directory: string
@@ -898,6 +900,10 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     // Preserve the caller-visible RunState object identity used by existing
     // integrations while replacing its nested state with safely hydrated data.
     Object.assign(run, hydrated)
+    if (run.task_allowance) {
+      if (!options.taskAllowance) throw new Error("task_allowance_unavailable: bound tasks require their durable dispatch controller")
+      await options.taskAllowance.attach(run.owner_session_id, run.task_allowance, options.toolContext.abort)
+    }
     run.execution_directory = canonicalContainedDirectory(options.worktree,
       run.execution_directory ?? run.project_directory)
     options.directory = run.execution_directory
@@ -1029,6 +1035,27 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
           // after a checker has committed its pre-call verification basis.
           run.criteria = [...effectiveCriteria(run.criteria)]
           run.criteria_locked = true
+        }
+        // Charge prospective child dispatches under the root checkpoint lock first.
+        // A crash between this commit and the run commit leaves conservative charged
+        // reservations. Gate-only recovery and dry execution launch no model child.
+        if (run.task_allowance && !options.dry && run.mode !== "dry") {
+          let available = run.graph.max_global_attempts - run.global_attempts
+          const dispatches: Array<{ node: NodeDef; attempt: number }> = []
+          for (const definition of batch) {
+            const state = run.nodes[definition.id]!
+            if (state.current_attempt >= (definition.loop?.max_attempts ?? 1) || available <= 0) continue
+            available--
+            if (definition.agent !== "shell" && !gateRecoverySource(run, definition)) dispatches.push({ node: definition, attempt: state.current_attempt + 1 })
+          }
+          try { await options.taskAllowance!.reserve(run, dispatches, options.toolContext.abort) }
+          catch (error) {
+            run.status = "blocked"
+            run.phase = "task-allowance"
+            run.summary = capCompleteSummary(safeDiagnosticText(error instanceof Error ? error.message : "task allowance unavailable"))
+            await save(run, options)
+            return run
+          }
         }
         // Explicit preservation paths are hashed before reserving any model work;
         // missing/oversized/non-contained files block admission without spending an attempt.

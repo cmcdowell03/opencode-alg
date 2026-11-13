@@ -689,6 +689,33 @@ Schema-invalid explorer/worker/researcher output consumes that node's own attemp
 
 ## Ownership and transfer
 
+New live plans in candidate 0.5.10 also share a durable **task dispatch allowance**
+in their root checkpoint, even with skill memory disabled. The default allows
+128 reserved ALG child launches, with eight protected for nominated checkers.
+Planning another phase, retrying or compacting cannot refill it. The original
+run-level attempt limits still apply. Shell-only work, dry execution and reuse of
+an implementation for a gate-only retry consume no child dispatch. Reservations
+with an uncertain outcome remain charged.
+
+The SDK options or existing operator sidecar may supply:
+
+```json
+{"taskAllowance":{"max_dispatches":128,"verification_reserve":8}}
+```
+
+The maximum is 256; optional `max_elapsed_ms` limits elapsed wall time including
+downtime. Policy is pinned on first admission and is not changed by later config
+edits. Inspect `task_allowance_status` in `alg_plan`, `alg_status` or
+`alg_context_status`. Provider requests/tokens, root planning, compaction and the
+root's final report are outside this enforcement boundary. This is not a billing
+cap or a sandbox against an agent with filesystem access.
+
+Transfer of an allowance-bound run binds the recipient to the same root ledger;
+an already different task binding is rejected. A failed transfer can retain that
+prepared binding without granting run ownership. Continue existing work through
+the transfer route; an unlinked new session is not automatically recognized as
+the same task. Legacy saved runs remain explicitly unbound.
+
 A run belongs to the session that created it. Run/status/resume/artifact operations resolve only exactly owned runs, and list hides other sessions' runs. Discovery reads a bounded minimal owner discriminator before parsing remaining state: malformed exact-owner candidates become bounded compact errors or a precise full-list failure, while parseable other-owner bodies are neither parsed nor disclosed. A corrupt `progress.json` is quarantined through owner-facing tools only after that envelope confirms the requesting session is the owner; another session cannot trigger quarantine or derived-file changes. Use:
 
 ```text

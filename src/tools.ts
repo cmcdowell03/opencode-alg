@@ -43,7 +43,9 @@ import {
 import { formatSdkError } from "./diagnostics.ts"
 import { MAX_GRAPH_STATE_BYTES, serializedBytes, truncateUtf8, utf8Bytes } from "./limits.ts"
 import { executeWithMemory } from "./session-memory/attempts.ts"
-import { hashObject } from "./session-memory/store.ts"
+import { hashObject, MemoryStore } from "./session-memory/store.ts"
+import { TaskAllowanceRuntime } from "./task-allowance.ts"
+import type { TaskAllowancePolicy } from "./task-allowance-schema.ts"
 import { canonicalJson } from "./persistence.ts"
 import { TaskContractInputSchema, parseTaskContractInput, taskTemplate, bindTaskContract, assertTaskState,
   assertTaskGraph, assertTaskHostCapabilities, assertEvidencePlan, taskContractSummary, type TaskContractInput } from "./task-contract.ts"
@@ -154,6 +156,7 @@ function rootAuthorization(run: RunState, detail: Detail = "compact") {
 import type { OperationalRuntime } from "./operational-runtime.ts"
 
 export interface AlgToolRuntime {
+  taskAllowancePolicy?: TaskAllowancePolicy
   operations?: OperationalRuntime
   sessionMemory?: SessionMemoryRuntime
   /** "native" (default) mirrors worker attempts into the transcript as OpenCode subagent cards. */
@@ -453,6 +456,7 @@ function finalizeCompact(data: Record<string, unknown>): Record<string, unknown>
       requirements_sha256: candidate.task_admission.requirements_sha256, phase: candidate.task_admission.phase,
     } : undefined,
     plan_reused: candidate.plan_reused,
+    task_allowance_status: candidate.task_allowance_status,
     investigation_attached: candidate.investigation_attached,
     criteria_count: candidate.criteria_count,
     global_attempts: candidate.global_attempts,
@@ -473,6 +477,12 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value))
 }
 
+function allowanceStatus(run: RunState) {
+  if (!run.task_allowance) return { coverage: "legacy-or-dry-unbound", provider_usage: "unavailable" }
+  try { return new TaskAllowanceRuntime(new MemoryStore(run.project_directory)).status(run.task_allowance) }
+  catch { return { task_id: run.task_allowance.task_id, state: "unavailable", next: "Restore the root checkpoint; do not replan to reset allowance." } }
+}
+
 function runResponse(run: RunState, events: string[], detail: Detail) {
   if (detail === "full") {
     const full = hydrateRunFully(run)
@@ -485,6 +495,7 @@ function runResponse(run: RunState, events: string[], detail: Detail) {
     return {
       ...full,
       task_admission: taskContractSummary(full),
+      task_allowance_status: allowanceStatus(full),
       execution_directory: full.execution_directory ?? full.project_directory,
       shell_gate_base: full.execution_directory ?? full.project_directory,
       events: visibleEvents,
@@ -503,6 +514,7 @@ function runResponse(run: RunState, events: string[], detail: Detail) {
   return finalizeCompact({
     run_id: run.run_id,
     task_admission: taskContractSummary(run),
+    task_allowance_status: allowanceStatus(run),
     status: run.status,
     phase: run.phase,
     mode: run.mode,
@@ -905,8 +917,12 @@ export function createAlgTools(
           const operation = graphPolicy(graph)?.operation ?? args.operation ?? detectWorkspaceOperation("shell", { command: args.shell_gate })
           if (operation) await runtime.operations?.plan(context.sessionID, operation)
           if (investigation && (!runtime.operations?.options.enabled || runtime.sessionMemory?.options.mode !== "assist")) throw new Error("data investigations require enabled configuration and session memory assist mode")
+          const taskAllowance = args.mode === "dry" ? undefined : await new TaskAllowanceRuntime(
+            runtime.sessionMemory?.store ?? new MemoryStore(project), runtime.taskAllowancePolicy,
+          ).admit(context.sessionID, taskContract.contract_sha256, context.abort)
           const create = (runId?: string) => createRun({
             taskContract,
+            taskAllowance,
             ...(runId ? { runId } : {}),
             goal: args.goal!,
             criteria: args.criteria ?? [],
@@ -938,6 +954,7 @@ export function createAlgTools(
           const compact = finalizeCompact({
             run_id: run.run_id,
             task_admission: taskContractSummary(run),
+            task_allowance_status: allowanceStatus(run),
             graph_sha256: initialOrCurrentGraphSha256,
             template: graph.name,
             plan_reused: planned.reused,
@@ -964,6 +981,7 @@ export function createAlgTools(
             detail === "full" ? {
               run_id: run.run_id,
               task_admission: taskContractSummary(run),
+              task_allowance_status: allowanceStatus(run),
               graph_sha256: initialOrCurrentGraphSha256,
               template: graph.name,
               plan_reused: planned.reused,
@@ -1032,6 +1050,7 @@ export function createAlgTools(
           cards = runCards(run, project, context)
           const events: string[] = []
           const updated = await executeWithMemory(runtime.sessionMemory, run, {
+            taskAllowance: new TaskAllowanceRuntime(runtime.sessionMemory?.store ?? new MemoryStore(project), runtime.taskAllowancePolicy),
             client,
             parentSessionId: context.sessionID,
             directory,
@@ -1158,6 +1177,7 @@ export function createAlgTools(
             run_id: run.run_id,
             owner_session_id: run.owner_session_id,
             task_admission: taskContractSummary(run),
+            task_allowance_status: allowanceStatus(run),
             status: run.status,
             phase: run.phase,
             graph_sha256: graphSha256(run.graph),
@@ -1252,6 +1272,7 @@ export function createAlgTools(
           cards = runCards(run, project, context)
           const events: string[] = []
           const updated = await executeWithMemory(runtime.sessionMemory, run, {
+            taskAllowance: new TaskAllowanceRuntime(runtime.sessionMemory?.store ?? new MemoryStore(project), runtime.taskAllowancePolicy),
             client,
             parentSessionId: context.sessionID,
             directory,
@@ -1393,6 +1414,11 @@ export function createAlgTools(
             directory,
             args.new_owner_session_id,
           )
+          // Pin the recipient to the same root before ownership changes. If the
+          // transfer fails, the conservative binding remains; it grants no run ownership.
+          if (owned.task_allowance) await new TaskAllowanceRuntime(
+            runtime.sessionMemory?.store ?? new MemoryStore(project), runtime.taskAllowancePolicy,
+          ).attach(args.new_owner_session_id, owned.task_allowance, context.abort)
           const transferred = await transferRunOwnershipAsync(
             project,
             args.run_id,

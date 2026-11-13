@@ -313,6 +313,8 @@ export interface RunState {
   task_contract?: import("./task-contract.ts").TaskContract
   /** Immutable before-first-child evidence; absence on older runs is not a late baseline. */
   task_baseline?: import("./task-baseline.ts").TaskBaseline
+  /** Immutable reference to the root task's cumulative ALG dispatch allowance. */
+  task_allowance?: import("./task-allowance-schema.ts").TaskAllowanceReference
   graph: GraphDef
   /** Only pending-node edits are supported; immutable snapshots remain run artifacts. */
   graph_revisions?: import("./graph-revision.ts").GraphRevisionReceipt[]

@@ -9,13 +9,19 @@ import { BENCHMARK_CASES, scoreBenchmarkCase, scoreBenchmarkPreparation } from "
 import { summarizeSessionMetrics } from "./build-benchmark-metrics.ts"
 import { sendBenchmarkPrompt } from "./build-benchmark-transport.ts"
 import { hostRetentionEvents, measureBuildBenchmarkRetention } from "./build-benchmark-retention.ts"
-import { scheduleIssuedPairs, summarizeIssuedArms, finalCensus, compactionReceipt, compactionIsQualified, eligibility, benchmarkObservedStop, reconcileHostCensus, type BenchmarkTrack } from "./build-benchmark-protocol.ts"
+import { summarizeIssuedArms, finalCensus, compactionReceipt, compactionIsQualified, eligibility, benchmarkObservedStop, reconcileHostCensus, type BenchmarkArm, type BenchmarkTrack, type PairIssue } from "./build-benchmark-protocol.ts"
 import { computeAlgSourceIdentity } from "../src/source-identity.ts"
 import { seedVerificationHostDependencies } from "./verification-host-dependencies.ts"
 import { verificationPluginConfiguration, realUserGlobalConfigRoots, snapshotGlobalOpenCodeConfig, stopCapturedProcess } from "./live-verify.ts"
+import { benchmarkTaskPrompt, collectHardProject, collectHardRunProgress, hardBenchmarkIdentity, HARD_INTERPRETATION, HARD_ISOLATION, needsHardService,
+  prepareBenchmarkWorkload, readHardQualification, scheduleBenchmarkWorkload, terminalHardRows, type WorkloadOptions } from "./hard-benchmark-cohort.ts"
+import { openHardFixtureService, scoreHardFixture } from "./hard-benchmark-fixtures.ts"
+import type { HardBenchmarkService } from "./hard-benchmark-service.ts"
+import { startHardBenchmarkHost } from "./hard-benchmark-host.ts"
+import { sha256Json } from "../src/persistence.ts"
 
 /** Local feasibility pilot. JSON config supplies paths/provider, never credential values. */
-interface Config {
+export interface Config extends WorkloadOptions {
   outputRoot: string; hostExecutable: string; providerID: string; modelID: string;
   provider: Record<string, unknown>; authFile?: string; preflightOnly?: boolean; caseIds?: string[]; track?: BenchmarkTrack;
   ollama?: { executable: string; models: string; model: string };
@@ -54,34 +60,47 @@ function files(root:string):Array<{path:string;bytes:number;sha256:string}>{
 
 export async function runBuildBenchmark(config:Config){
   const repo=resolve(import.meta.dir,".."),root=resolve(config.outputRoot)
-  if(config.caseIds && (!config.caseIds.length || new Set(config.caseIds).size!==config.caseIds.length || config.caseIds.some(id=>!BENCHMARK_CASES.some(c=>c.id===id))))throw Error("caseIds must select distinct known cases")
-  const selectedCases=BENCHMARK_CASES.filter(fixture=>!config.caseIds||config.caseIds.includes(fixture.id))
+  const selection=prepareBenchmarkWorkload(config,BENCHMARK_CASES,LIMITS),hard=selection.workload==="hard-development",limits=selection.limits
+  const selectedCases=selection.cases
+  const hardIdentity=hard?hardBenchmarkIdentity(repo,selection.hardFixtures):undefined
+  const hardQualification=hard?readHardQualification(resolve(config.hardQualification!),hardIdentity!,selection.hardFixtures):undefined
   const track=config.track??"default"
   if(track!=="default"&&track!=="targeted_compatibility")throw Error("track must be default or targeted_compatibility")
-  const issuedCases=scheduleIssuedPairs(selectedCases,track)
-  const pairs=issuedCases.map(({pair})=>pair)
   if(existsSync(root))throw Error("Evidence destination exists; no implicit rerun")
   mkdirSync(root,{recursive:true})
   const initialIdentity=computeAlgSourceIdentity(repo), plugin=verificationPluginConfiguration(repo)
   const hmac=randomBytes(32), globals=realUserGlobalConfigRoots(), before=snapshotGlobalOpenCodeConfig(globals,hmac).sha256
   const secrets:string[]=[], scrub=(s:string)=>secrets.reduce((text,secret)=>text.replaceAll(secret,"[REDACTED]"),s)
   const json=(path:string,value:unknown)=>write(path,JSON.parse(scrub(JSON.stringify(value))))
-  const suiteDeadline=Date.now()+LIMITS.suiteMs
+  const suiteDeadline=Date.now()+limits.suiteMs
+  const usageMonitors=hard?{...USAGE_MONITORS,reportedTokens:limits.reportedComponents,reportedCostPerSuite:null}:USAGE_MONITORS
   const protocol={schema:"alg-build-pilot-v1",started_at:new Date().toISOString(),source_commit:execFileSync("git",["rev-parse","HEAD"],{cwd:repo}).toString().trim(),source_sha256:initialIdentity.digest,
     harness_sha256:sha(readFileSync(import.meta.filename)),protocol_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-protocol.ts"))),fixtures_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-fixtures.ts"))),metrics_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-metrics.ts"))),transport_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-transport.ts"))),prompt_transport:"prompt_async",
-    model:`${config.providerID}/${config.modelID}`,limits:LIMITS,preflight_only:!!config.preflightOnly,track,
-    pairs:issuedCases.map(({pair,order})=>({...pair,arms:[...pair.arms],order})),
+    model:`${config.providerID}/${config.modelID}`,limits,preflight_only:!!config.preflightOnly,track,
+    ...(hard?{workload:"hard-development",hard:{...hardIdentity,cohort_sha256:sha(readFileSync(join(repo,"scripts/hard-benchmark-cohort.ts"))),
+      host_executable_sha256:sha(readFileSync(config.hostExecutable)),qualification_evidence_sha256:hardQualification!.sha256,
+      order_seed:selection.orderSeed,order_algorithm:"sha256-sort-v1+alternating-arms-seed-bit",plan_sha256:selection.planSha256,
+      native_compaction:selection.compaction,requested_host_compaction:false,
+      service_instruction_exception:"Only the supplied per-arm fixture HTTP endpoint on 127.0.0.1 via Node fetch; no other network services.",
+      isolation:HARD_ISOLATION,confirmation_qualified:false,interpretation:HARD_INTERPRETATION}}:{}),
+    pairs:[] as Array<PairIssue & {order:BenchmarkArm[]}>,
     cases:selectedCases.map(c=>({id:c.id,criteria:c.criteria,initialPrompt:c.initialPrompt,followupPrompt:c.followupPrompt??null,fixture_files:Object.entries(c.files).map(([path,text])=>({path,sha256:sha(text)}))})),
     retention_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-retention.ts"))),
     retention_boundaries_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-retention-boundaries.ts"))),
     interpretation:"Single-repeat feasibility pilot. Equal externally enforced time and per-call output limits; assistant-turn and reported-component thresholds are cumulative polling-based cutoffs subject to overshoot across root/children/maintenance/phases, not hard provider-request or invoice caps. ALG internal gates are diagnostics, never the independent oracle. Reported cost is telemetry only. Session-visible usage is not proof of complete provider billing. No superiority claim.",
     enforcement:{time:"host deadline",output:"per-call configured limit",assistantTurns:"cumulative observed cutoff; polling overshoot possible",reportedTokens:"cumulative observed component cutoff; polling overshoot possible",reportedCost:"telemetry only"},
-    usage_monitors:USAGE_MONITORS,
+    usage_monitors:usageMonitors,
     targeted_mandate:TARGETED,common_instruction:COMMON,unmeasured:["actual provider invoice","hidden model calls not represented by session messages","operator minutes","production MCP cost/reuse","multi-hour reliability","hardware-normalized latency"]}
-  json(join(root,"plan.json"),protocol)
+  const issuedCases=scheduleBenchmarkWorkload(selection,track),pairs=issuedCases.map(({pair})=>pair)
+  protocol.pairs=issuedCases.map(({pair,order})=>({...pair,arms:[...pair.arms],order}))
+  const sourceUnchanged=()=>{try{return computeAlgSourceIdentity(repo).digest===initialIdentity.digest&&(!hard||
+    (sha256Json(hardBenchmarkIdentity(repo,selection.hardFixtures))===sha256Json(hardIdentity)&&
+    sha(readFileSync(import.meta.filename))===protocol.harness_sha256&&sha(readFileSync(join(repo,"scripts/hard-benchmark-cohort.ts")))===protocol.hard!.cohort_sha256))}catch{return false}}
   const results:any[]=pairs.flatMap(pair=>pair.arms.map(({arm})=>({pairId:pair.pairId,caseId:pair.caseId,arm,status:"issued_not_started",passed:false}))),authCopies:string[]=[];let local:Tracked|undefined,localBase:string|undefined,knownCost=0,fatal:string|null=null
   const updateResult=(pairId:string,arm:string,patch:Record<string,unknown>)=>{const row=results.find(r=>r.pairId===pairId&&r.arm===arm);if(row)Object.assign(row,patch);const pair=pairs.find(p=>p.pairId===pairId);const pairArm=pair?.arms.find(a=>a.arm===arm);if(pairArm){const status=patch.status;if(status==="running")pairArm.status="running";else if(status==="completed"||status==="preflight_passed")pairArm.status="completed";else if(status==="issued_not_started")pairArm.status="issued_not_started";else if(status!==undefined)pairArm.status="stopped"}}
   try{
+    json(join(root,"plan.json"),protocol)
+    if(hard){json(join(root,"hard-fixtures.json"),selection.hardFixtures);json(join(root,"hard-qualification.json"),hardQualification!.evidence)}
     if(config.ollama){
       const serviceRoot=join(root,"local-service"),env=isolatedEnv(serviceRoot),p=await freePort();localBase=`http://127.0.0.1:${p}`
       local=launch(config.ollama.executable,["serve"],serviceRoot,{...env,OLLAMA_HOST:`127.0.0.1:${p}`,OLLAMA_MODELS:config.ollama.models,OLLAMA_NO_CLOUD:"1",OLLAMA_NUM_PARALLEL:"1",OLLAMA_CONTEXT_LENGTH:"32768",OLLAMA_KEEP_ALIVE:"10m"})
@@ -93,7 +112,17 @@ export async function runBuildBenchmark(config:Config){
     }
     for(const {fixture,pair,index:caseIndex,order} of issuedCases)for(const arm of order){
       if(Date.now()>=suiteDeadline){updateResult(pair.pairId,arm,{status:"stopped_before_start_suite_deadline",passed:false});continue}
-      const dir=join(root,`${caseIndex+1}-${fixture.id}-${arm}`),project=join(dir,"project"),env=isolatedEnv(dir),authCopy=join(dir,"data/opencode/auth.json")
+      const dir=join(root,`${caseIndex+1}-${fixture.id}-${arm}`),project=join(dir,"project"),authCopy=join(dir,"data/opencode/auth.json")
+      const hardFixture=hard?selection.hardFixtures.find(record=>record.contestant.id===fixture.id)!:undefined
+      let hardService:HardBenchmarkService|undefined,hardHost:Awaited<ReturnType<typeof startHardBenchmarkHost>>|undefined,server:Tracked|undefined
+      let hostStopAttempted=false,hardCollection:ReturnType<typeof collectHardProject>|undefined,serviceStop:Promise<void>|undefined
+      const serviceReceipt:any={required:!!hardFixture&&needsHardService(hardFixture),started:false,stopped:false,ledger_before:null,ledger_after:null,errors:[] as string[]}
+      const stopService=()=>serviceStop??=(async()=>{
+        if(hardHost){try{await hardHost.stop();serviceReceipt.stopped=true}catch(error){serviceReceipt.errors.push(`service_stop:${String(error)}`)}}
+        if(hardService){try{serviceReceipt.ledger_after=await hardService.ledger()}catch(error){serviceReceipt.errors.push(`service_ledger_after:${String(error)}`)}}
+      })()
+      try{
+      const env=isolatedEnv(dir)
       mkdirSync(project,{recursive:true});for(const [path,text] of Object.entries(fixture.files)){mkdirSync(dirname(join(project,path)),{recursive:true});writeFileSync(join(project,path),text)}
       execFileSync("git",["init","-q"],{cwd:project});execFileSync("git",["add","."],{cwd:project});execFileSync("git",["-c","user.name=ALG Benchmark","-c","user.email=benchmark@localhost","commit","-qm","Frozen synthetic task"],{cwd:project})
       seedVerificationHostDependencies(join(dir,"config/opencode"),repo)
@@ -109,10 +138,10 @@ export async function runBuildBenchmark(config:Config){
       // OpenCode adds this metadata on startup when absent. Seed it before
       // hashing so benign host initialization cannot invalidate the arm.
       const configuration={$schema:"https://opencode.ai/config.json",plugin:arm==="build"?[]:[plugin.source.spec],autoupdate:false,share:"disabled",snapshot:false,model,small_model:model,
-        permission:{"*":"allow",external_directory:"deny",webfetch:"deny",websearch:"deny",question:"deny"},mcp:{},skills:{paths:requiredSkills.length?[join(project,".opencode/skills")]:[]},compaction:{auto:false,prune:false},provider,agent:agents}
+        permission:{"*":"allow",external_directory:"deny",webfetch:"deny",websearch:"deny",question:"deny"},mcp:{},skills:{paths:requiredSkills.length?[join(project,".opencode/skills")]:[]},compaction:selection.compaction,provider,agent:agents}
       json(join(dir,"opencode.json"),configuration);json(join(dir,"alg-options.json"),{skillEvolution:{enabled:false},sessionMemory:{mode:"assist"},workspace:{mode:"observe"}})
       const armConfigHash=sha(readFileSync(join(dir,"opencode.json")))
-      let server:Tracked|undefined,api:(path:string,body?:unknown,ms?:number)=>Promise<any>,base="",rootSession="",stopReason:string|null=null
+      let api:(path:string,body?:unknown,ms?:number)=>Promise<any>,base="",rootSession="",stopReason:string|null=null
       const sessions=new Map<string,any>(),messages=new Map<string,any>(),samples:any[]=[],phases:any[]=[],processes:number[]=[],start=Date.now()
       updateResult(pair.pairId,arm,{status:"running"})
       let activeStart=0,deadline=0,cleanup=true,meteringComplete=true,score:any=null,preflight:any=null,phase1:any=null,restarted=false,childBudgetOvershoot=0,finalCensusReceipt:any=null,currentPhase="setup"
@@ -128,8 +157,8 @@ export async function runBuildBenchmark(config:Config){
         const metric=summarizeSessionMetrics([...sessions.values()],[...messages.values()])
         const turns=metric.assistantTurns.total,tokens=metric.usage.totalReportedTokens,cost=metric.cost.reportedTotal
         samples.push({at_ms:Date.now()-start,assistant_turns:turns,tokens,reported_cost:cost,sessions:sessions.size})
-        if(activeStart)stopReason??=benchmarkObservedStop({now:Date.now(),deadline,assistantTurns:turns,reportedComponents:tokens},LIMITS)
-        childBudgetOvershoot=Math.max(childBudgetOvershoot,turns-LIMITS.assistantTurns)
+        if(activeStart)stopReason??=benchmarkObservedStop({now:Date.now(),deadline,assistantTurns:turns,reportedComponents:tokens},limits)
+        childBudgetOvershoot=Math.max(childBudgetOvershoot,turns-limits.assistantTurns)
         return metric
       }
       const launchHost=async()=>{
@@ -161,10 +190,16 @@ export async function runBuildBenchmark(config:Config){
         phases.push({phase:label,ms:Date.now()-t,completed:true});event({phase:label,event:"complete"});return result
       }
       try{
+        if(hardFixture&&needsHardService(hardFixture)){
+          hardService=await openHardFixtureService(hardFixture,join(dir,"service"))
+          serviceReceipt.ledger_before=await hardService.ledger()
+          hardHost=await startHardBenchmarkHost(hardService);serviceReceipt.started=true
+          json(join(dir,"service-before.json"),serviceReceipt.ledger_before)
+        }
         await launchHost();const registered=await api!("/experimental/tool/ids"),availableAgents=await api!("/agent"),providers=await api!("/provider")
         const selected=providers.all.find((p:any)=>p.id===config.providerID)?.models?.[config.modelID]
         if(!selected||!providers.connected.includes(config.providerID))throw Error("selected model unavailable")
-        if(selected.limit?.output!==LIMITS.outputTokens)throw Error("provider output limit differs from protocol")
+        if(selected.limit?.output!==limits.outputTokens)throw Error("provider output limit differs from protocol")
         if(arm==="build"&&registered.some((id:string)=>id.startsWith("alg_")))throw Error("ALG leaked into native baseline")
         if(arm!=="build"&&!registered.includes("alg_run"))throw Error("ALG absent from experimental arm")
         if(!availableAgents.some((a:any)=>a.name===(arm==="build"?"build":"orchestrator")))throw Error("primary agent missing")
@@ -177,14 +212,16 @@ export async function runBuildBenchmark(config:Config){
           const body=readFileSync(expected.path,"utf8").replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/,"").trim()
           if(!skill||typeof skill.location!=="string"||pathIdentity(skill.location)!==pathIdentity(expected.path)||typeof skill.content!=="string"||skill.content.trim()!==body)throw Error(`required fixture skill unavailable or changed:${expected.name}`)
         }
-        preflight={health:await api!("/global/health"),tools:registered,agents:availableAgents.map((a:any)=>({name:a.name,mode:a.mode,model:a.model??null,steps:a.steps??null,prompt_sha256:typeof a.prompt==="string"?sha(a.prompt):null,targeted_mandate:typeof a.prompt==="string"&&a.prompt.includes(TARGETED),permission:a.permission})),selected:{provider:config.providerID,model:config.modelID,limit:selected.limit},source_sha256:initialIdentity.digest,fixture_files:files(project)}
+        preflight={health:await api!("/global/health"),tools:registered,agents:availableAgents.map((a:any)=>({name:a.name,mode:a.mode,model:a.model??null,steps:a.steps??null,prompt_sha256:typeof a.prompt==="string"?sha(a.prompt):null,targeted_mandate:typeof a.prompt==="string"&&a.prompt.includes(TARGETED),permission:a.permission})),selected:{provider:config.providerID,model:config.modelID,limit:selected.limit},source_sha256:initialIdentity.digest,fixture_files:hardFixture?collectHardProject(project,hardFixture).manifest:files(project)}
         json(join(dir,"preflight.json"),preflight)
         json(join(dir,"skills-preflight.json"),discoveredSkills.map((s:any)=>({name:s.name,location:s.location,content_sha256:typeof s.content==="string"?sha(s.content):null})))
         if(!config.preflightOnly){
-          activeStart=Date.now();deadline=Math.min(activeStart+LIMITS.trialMs,suiteDeadline)
+          activeStart=Date.now();deadline=Math.min(activeStart+limits.trialMs,suiteDeadline)
           rootSession=(await api!("/session",{title:`Frozen benchmark ${fixture.id} ${arm}`})).id
           const send=async(prompt:string)=>{
-            const outcome=await sendBenchmarkPrompt({api:api!,sessionID:rootSession,body:{model:{providerID:config.providerID,modelID:config.modelID},agent:arm==="build"?"build":"orchestrator",parts:[{type:"text",text:COMMON+"\n\n"+prompt}]},deadline,cancelled:()=>stopReason})
+            const text=benchmarkTaskPrompt(COMMON,prompt,hardHost?.url)
+            if(hard)json(join(dir,`${currentPhase}-prompt.json`),{sha256:sha(text),text})
+            const outcome=await sendBenchmarkPrompt({api:api!,sessionID:rootSession,body:{model:{providerID:config.providerID,modelID:config.modelID},agent:arm==="build"?"build":"orchestrator",parts:[{type:"text",text}]},deadline,cancelled:()=>stopReason})
             if(outcome.status==="completed"||outcome.status==="model_error")return outcome.assistant
             if(outcome.status==="incomplete")throw Error(`model_incomplete:${outcome.finish}`)
             if(outcome.status==="deadline")throw Error("trial_deadline")
@@ -201,7 +238,7 @@ export async function runBuildBenchmark(config:Config){
               const request={requestId:randomBytes(16).toString("hex"),requestedAt:new Date().toISOString(),rootSessionId:rootSession,
                 response:undefined as unknown,beforeMessages:beforeSummary,afterMessages:[],continuation:{status:"not_completed"}}
               compactionInput=request
-              request.response=await api!(`/session/${rootSession}/summarize`,{providerID:config.providerID,modelID:config.modelID},LIMITS.trialMs) as SessionSummarizeResponses[200]
+              request.response=await api!(`/session/${rootSession}/summarize`,{providerID:config.providerID,modelID:config.modelID},limits.trialMs) as SessionSummarizeResponses[200]
               return request.response
             })
             const stopped=await stopCapturedProcess(server!);cleanup&&=stopped.passed;event({event:"restart_stop",passed:stopped.passed});if(!stopped.passed)throw Error("restart cleanup failed")
@@ -232,10 +269,19 @@ export async function runBuildBenchmark(config:Config){
           }
           meteringComplete=finalCensusReceipt.outcome==="quiescent"
           if(!meteringComplete)stopReason??="final_census_unresolved"
+          hostStopAttempted=true
           const stopped=await stopCapturedProcess(server);cleanup&&=stopped.passed;json(join(dir,"host-log.json"),{stdout:server.stdout(),stderr:server.stderr()})
         }
+        if(hard){await stopService();cleanup&&=serviceReceipt.errors.length===0&&(!hardHost||serviceReceipt.stopped)}
         if(existsSync(authCopy))unlinkSync(authCopy)
-        if(!config.preflightOnly)score=await scoreBenchmarkCase(fixture.id,project).catch(error=>({passed:false,scorer_error:String(error)}))
+        if(hardFixture){
+          try{
+            if(!cleanup)throw Error("contestant_or_service_cleanup_unresolved")
+            hardCollection=collectHardProject(project,hardFixture)
+            if(!config.preflightOnly)score=await scoreHardFixture(hardFixture,{files:hardCollection.files},hardService?{service:hardService}:{})
+          }catch(error){score={passed:false,scorer_error:String(error)};stopReason??="hard_independent_score_unavailable"}
+          json(join(dir,"hard-grader-receipt.json"),{score,collection:hardCollection?{manifest:hardCollection.manifest,excluded:hardCollection.excluded,bytes:hardCollection.bytes,limits:hardCollection.limits}:null,service:serviceReceipt})
+        }else if(!config.preflightOnly)score=await scoreBenchmarkCase(fixture.id,project).catch(error=>({passed:false,scorer_error:String(error)}))
         const metric=summarizeSessionMetrics([...sessions.values()],[...messages.values()]) as any
         let databaseCensus: ReturnType<typeof reconcileHostCensus> | {qualified:false;reason:string} = {qualified:false,reason:"unavailable"}
         let db:Database|undefined
@@ -247,39 +293,65 @@ export async function runBuildBenchmark(config:Config){
         } catch { databaseCensus={qualified:false,reason:"database_read_or_schema_unavailable"} } finally {db?.close()}
         knownCost+=metric.cost.reportedTotal
         json(join(dir,"messages.json"),[...messages.values()]);json(join(dir,"sessions.json"),[...sessions.values()]);json(join(dir,"samples.json"),samples)
-        const stateFiles=files(project),algStates:any[]=[]
-        for(const entry of stateFiles.filter(e=>/^\.opencode\/runs\/[^/]+\/progress\.json$/.test(e.path))){try{const state=JSON.parse(readFileSync(join(project,entry.path),"utf8"));algStates.push({run_id:state.run_id,status:state.status,global_attempts:state.global_attempts,nodes:Object.values(state.nodes??{}).map((n:any)=>({id:n.id,status:n.status,attempts:n.attempts?.map((a:any)=>({outcome:a.outcome,failures:a.failures,session_id:a.session_id}))}))})}catch{}}
+        const stateFiles=hard?hardCollection?.manifest??[]:files(project),algStates:any[]=[]
+        let algProgressCoverage="legacy_unbounded_collection"
+        if(hard){
+          try{const diagnostic=collectHardRunProgress(project);algStates.push(...diagnostic.states);algProgressCoverage=diagnostic.coverage}
+          catch(error){algProgressCoverage=`unavailable:${error instanceof Error?error.message:String(error)}`}
+        }else for(const entry of stateFiles.filter(e=>/^\.opencode\/runs\/[^/]+\/progress\.json$/.test(e.path))){try{const state=JSON.parse(readFileSync(join(project,entry.path),"utf8"));algStates.push({run_id:state.run_id,status:state.status,global_attempts:state.global_attempts,nodes:Object.values(state.nodes??{}).map((n:any)=>({id:n.id,status:n.status,attempts:n.attempts?.map((a:any)=>({outcome:a.outcome,failures:a.failures,session_id:a.session_id}))}))})}catch{}}
         const artifactPassed=score?.passed===true
-        const qualification=eligibility({artifactPassed,workflowComplete:!config.preflightOnly&&!stopReason,sourceIntegrity:computeAlgSourceIdentity(repo).digest===initialIdentity.digest,configIntegrity:snapshotGlobalOpenCodeConfig(globals,hmac).sha256===before&&sha(readFileSync(join(dir,"opencode.json")))===armConfigHash,cleanup:cleanup&&(!config.authFile||!existsSync(authCopy)),censusQuiescent:!config.preflightOnly&&finalCensusReceipt?.outcome==="quiescent",isolationQualified:false})
+        const qualification=eligibility({artifactPassed,workflowComplete:!config.preflightOnly&&!stopReason,sourceIntegrity:sourceUnchanged(),configIntegrity:snapshotGlobalOpenCodeConfig(globals,hmac).sha256===before&&sha(readFileSync(join(dir,"opencode.json")))===armConfigHash,cleanup:cleanup&&(!config.authFile||!existsSync(authCopy)),censusQuiescent:!config.preflightOnly&&finalCensusReceipt?.outcome==="quiescent",isolationQualified:false})
         const compaction=compactionInput?compactionReceipt(compactionInput):null
         const observedCompaction=compactionInput?compactionReceipt({...compactionInput,afterMessages:rootMessages()}):undefined
         const retentionEvents=activeStart?hostRetentionEvents({taskId:`${pair.pairId}:${fixture.id}:${arm}`,sessions:[...sessions.values()],messages:[...messages.values()],startedAt:activeStart,endedAt:Date.now(),restarted,compactionReceipt:observedCompaction,censusComplete:databaseCensus.qualified}):[]
         const retention=measureBuildBenchmarkRetention(retentionEvents,[])
         const result={pairId:pair.pairId,caseId:fixture.id,arm,status:config.preflightOnly?(stopReason?"preflight_failed":"preflight_passed"):(stopReason?"stopped":"completed"),stopReason,passed:artifactPassed,
           scored_task_success:artifactPassed&&!config.preflightOnly&&!stopReason&&qualification.workflowEligible&&cleanup&&databaseCensus.qualified&&
-            computeAlgSourceIdentity(repo).digest===initialIdentity.digest&&snapshotGlobalOpenCodeConfig(globals,hmac).sha256===before&&sha(readFileSync(join(dir,"opencode.json")))===armConfigHash,
+            sourceUnchanged()&&snapshotGlobalOpenCodeConfig(globals,hmac).sha256===before&&sha(readFileSync(join(dir,"opencode.json")))===armConfigHash,
           independent_score:score,metrics:metric,wall_ms:activeStart?Date.now()-activeStart:null,total_with_startup_ms:Date.now()-start,phases,rootSession,
-          recovery:{requested:!!compactionInput,recoveryRequired:!!fixture.followupPrompt,restarted,compactionRecovered:compactionIsQualified(compaction),compaction,phase1},retention:retention.tasks[0]??{status:"unavailable_preflight"},alg_states:algStates,budget_observed_overshoot:childBudgetOvershoot,
+          recovery:{requested:!!compactionInput,recoveryRequired:!!fixture.followupPrompt,restarted,compactionRecovered:compactionIsQualified(compaction),compaction,phase1},retention:retention.tasks[0]??{status:"unavailable_preflight"},alg_states:algStates,alg_progress_coverage:algProgressCoverage,budget_observed_overshoot:childBudgetOvershoot,
           retention_boundaries:retention.boundaryRetention,
           cleanup,metering_complete:null,observed_metering_stable:meteringComplete,final_census:finalCensusReceipt,
           coverage:{historical_message_pagination:databaseCensus.qualified?"IDs_reconciled_with_stopped_host_database":"unqualified",provider_usage:"session_reported_fields_only",quiescent_snapshot:finalCensusReceipt?.outcome==="quiescent"},databaseCensus,
-          reported_component_overshoot:Math.max(0,metric.usage.totalReportedTokens-LIMITS.reportedComponents),eligibility:qualification,auth_copy_removed:!existsSync(authCopy),processes,source_unchanged:computeAlgSourceIdentity(repo).digest===initialIdentity.digest,arm_config_sha256:armConfigHash,
-          final_files:stateFiles,usage_monitors:USAGE_MONITORS,measurement_limits:protocol.unmeasured}
+          reported_component_overshoot:Math.max(0,metric.usage.totalReportedTokens-limits.reportedComponents),eligibility:qualification,auth_copy_removed:!existsSync(authCopy),processes,source_unchanged:sourceUnchanged(),arm_config_sha256:armConfigHash,
+          final_files:stateFiles,usage_monitors:usageMonitors,measurement_limits:protocol.unmeasured}
         json(join(dir,"result.json"),result);updateResult(pair.pairId,arm,result);console.log(JSON.stringify({case:fixture.id,arm,status:result.status,passed:result.passed,wall_ms:result.wall_ms}));
+      }
+      }catch(error){
+        if(!hard)throw error
+        updateResult(pair.pairId,arm,{status:config.preflightOnly?"preflight_failed":"stopped",stopReason:String(error),passed:false,scored_task_success:false,setup_or_finalization_error:true,cleanup:false})
+      }finally{
+        if(hard){
+          if(server&&!hostStopAttempted){hostStopAttempted=true;try{const stopped=await stopCapturedProcess(server);if(!stopped.passed)serviceReceipt.errors.push("contestant_stop_failed")}catch(error){serviceReceipt.errors.push(`contestant_stop:${String(error)}`)}}
+          await stopService()
+          try{if(existsSync(authCopy))unlinkSync(authCopy)}catch(error){serviceReceipt.errors.push(`auth_cleanup:${String(error)}`)}
+          const row=results.find(r=>r.pairId===pair.pairId&&r.arm===arm)!
+          if(serviceReceipt.errors.length)updateResult(pair.pairId,arm,{status:config.preflightOnly?"preflight_failed":"stopped",passed:false,scored_task_success:false,cleanup:false})
+          Object.assign(row,{hard_service:serviceReceipt,isolation:HARD_ISOLATION,confirmation_qualified:false,
+            requested_host_compaction:false,native_compaction:selection.compaction,alg_state_diagnostics:"bounded_post_stop_private_progress_projection_excluded_from_grader",
+            compaction_evidence:{basis:"existing_metrics_and_retention_receipts",requested_boundary:"not_requested",information_loss:"not_measured"},
+            final_files_coverage:hardCollection?"complete_user_files_with_declared_runtime_exclusions":"unavailable_collection_or_setup_failure"})
+          json(join(dir,"service-receipt.json"),serviceReceipt);json(join(dir,"result.json"),row)
+        }
       }
     }
   }catch(error){fatal=error instanceof Error?error.message:String(error)}
   finally{
-    for(const path of authCopies)if(existsSync(path))unlinkSync(path)
-    let localStopped=true;if(local)localStopped=(await stopCapturedProcess(local)).passed
-    for(const name of ["id_ed25519","id_ed25519.pub"]){const p=join(root,"local-service/home/.ollama",name);if(existsSync(p))unlinkSync(p)}
-    const unchanged=snapshotGlobalOpenCodeConfig(globals,hmac).sha256===before
+    const suiteCleanupErrors:string[]=[]
+    for(const path of authCopies)try{if(existsSync(path))unlinkSync(path)}catch(error){if(!hard)throw error;suiteCleanupErrors.push(`auth_cleanup:${String(error)}`)}
+    let localStopped=true
+    try{if(local)localStopped=(await stopCapturedProcess(local)).passed}catch(error){if(!hard)throw error;localStopped=false;suiteCleanupErrors.push(`local_stop:${String(error)}`)}
+    for(const name of ["id_ed25519","id_ed25519.pub"]){const p=join(root,"local-service/home/.ollama",name);try{if(existsSync(p))unlinkSync(p)}catch(error){if(!hard)throw error;suiteCleanupErrors.push(`local_identity_cleanup:${String(error)}`)}}
+    let unchanged=false
+    try{unchanged=snapshotGlobalOpenCodeConfig(globals,hmac).sha256===before}catch(error){if(!hard)throw error;suiteCleanupErrors.push(`global_config_receipt:${String(error)}`)}
+    if(hard)for(const row of terminalHardRows(results,fatal??"cohort_terminated_before_completion",!!config.preflightOnly))updateResult(row.pairId,row.arm,row)
     const armOutcomes=summarizeIssuedArms(results,config.preflightOnly?"preflight":"trial")
-    const result={schema:"alg-build-pilot-v1",...armOutcomes,fatal,model:protocol.model,limits:LIMITS,track,pairs,results,
-      known_reported_cost:knownCost,reported_cost_is_invoice:false,usage_monitors:USAGE_MONITORS,global_configuration_unchanged:unchanged,local_model_stopped:localStopped,source_unchanged:computeAlgSourceIdentity(repo).digest===initialIdentity.digest}
+    const result={schema:"alg-build-pilot-v1",...armOutcomes,fatal,model:protocol.model,limits,track,pairs,results,
+      ...(hard?{workload:"hard-development",hard:protocol.hard,suite_cleanup_errors:suiteCleanupErrors}:{}),
+      known_reported_cost:knownCost,reported_cost_is_invoice:false,usage_monitors:usageMonitors,global_configuration_unchanged:unchanged,local_model_stopped:localStopped,source_unchanged:sourceUnchanged()}
     json(join(root,"result.json"),result);console.log(JSON.stringify({terminal:true,model:protocol.model,trials:results.length,fatal,global_configuration_unchanged:unchanged,local_model_stopped:localStopped}));
-    if(fatal||!unchanged||!localStopped||results.some(r=>r.cleanup===false))process.exitCode=1
+    if(fatal||!unchanged||!localStopped||suiteCleanupErrors.length||results.some(r=>r.cleanup===false)||(hard&&!sourceUnchanged()))process.exitCode=1
   }
 }
-export { freePort, launch, isolatedEnv }
+export { freePort, launch, isolatedEnv, LIMITS as BUILD_BENCHMARK_CONTROL_LIMITS }
 if(import.meta.main){if(!process.argv[2])throw Error("Usage: bun scripts/build-benchmark.ts <non-secret-config.json>");await runBuildBenchmark(JSON.parse(readFileSync(resolve(process.argv[2]),"utf8")))}

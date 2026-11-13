@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url"
 import { z } from "zod"
 import { checkerProbeResponse, runCheckerHeadlessProbe } from "./checker-headless-probe.ts"
 import { runTaskAdmissionHostProbe } from "./task-headless-probe.ts"
+import { allowanceProbeResponse, startAllowanceHostProbe, finishAllowanceHostProbe } from "./allowance-headless-probe.ts"
 import {
   ALG_TOOL_IDS,
   findSourceIdentityLine,
@@ -53,6 +54,9 @@ export const HEADLESS_TASK_CONTRACT: TaskContractInput = {
 export const HEADLESS_INITIAL_PROMPT = `${INITIAL_MARKER} Check workspace readiness, plan the fixed data-investigation template using the bounded local fixture, then query it with alg_investigation. Declare the task_contract and original criteria from this request. Once accepted, the original criteria are immutable across planning, compaction and restart; do not replace them with later suggestions. Do not claim a result unless the query tool returns one.`
 
 export const EvidenceSchema = z.object({
+  task_allowance_probe: z.object({ passed: z.boolean(), run_id: z.string(), task_id: z.string().regex(/^[a-f0-9]{64}$/),
+    reserved_before_compaction: z.number().int(), reserved_after_restarts: z.number().int(), reserved_after_checker: z.number().int(),
+    additional_dispatches_after_exhaustion: z.number().int(), checker_parent_verified: z.boolean(), scope: z.string().max(512) }).strict().nullable().optional(),
   checker_probe: z.object({ passed: z.boolean(), run_id: z.string(), attempts: z.number().int(), distinct_children: z.number().int(), host_verified_parents: z.number().int(),
     verification_basis_recovered: z.boolean(),
     nodes: z.array(z.object({ id: z.string(), status: z.string(), outcome: z.string().nullable(), failures: z.array(z.string().max(2048)).max(3) })).max(3) }).nullable(),
@@ -137,6 +141,8 @@ export function chooseSyntheticResponse(phase: HostRequestPhase, toolStep: numbe
   }
   const checkerResponse = checkerProbeResponse(latestUserText(body))
   if (checkerResponse !== undefined) return { kind: "text", text: checkerResponse, receipt }
+  const allowanceResponse = allowanceProbeResponse(latestUserText(body))
+  if (allowanceResponse !== undefined) return { kind: "text", text: allowanceResponse, receipt }
   if (phase === "initial" && toolStep === 0) return { kind: "tool", name: "alg_context_status", args: { operation: "headless-smoke" }, receipt }
   if (phase === "initial" && toolStep === 1) return { kind: "tool", name: "alg_plan", args: { goal: HEADLESS_PLAN_GOAL, template: "data-investigation", criteria: HEADLESS_ORIGINAL_CRITERIA, task_contract: HEADLESS_TASK_CONTRACT, detail: "compact" }, receipt }
   if (phase === "initial" && toolStep === 2) return { kind: "tool", name: "alg_investigation", args: { request: { action: "admit", input: queryPayload(), node_ids: [] } }, receipt }
@@ -570,6 +576,8 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
   let initialToolCalls: string[] = [], followupToolCalls: string[] = []
   let checkerProbe: Awaited<ReturnType<typeof runCheckerHeadlessProbe>> | null = null
   let taskAdmissionProbe: Awaited<ReturnType<typeof runTaskAdmissionHostProbe>> | null = null
+  let allowanceStart: Awaited<ReturnType<typeof startAllowanceHostProbe>> | null = null
+  let allowanceProbe: Awaited<ReturnType<typeof finishAllowanceHostProbe>> | null = null
   let initialCheckpoint: HeadlessAcceptanceEvidence["session"]["initial_memory_checkpoint"] = null
   let compactCheckpoint: HeadlessAcceptanceEvidence["session"]["compacted_memory_checkpoint"] = null
   let finalCheckpoint: HeadlessAcceptanceEvidence["session"]["final_memory_checkpoint"] = null
@@ -611,7 +619,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     if (plugin.source.digest !== checkoutPlugin.source.digest) throw new Error("runtime source changed while the immutable host snapshot was prepared")
     const probeAgents = join(configHome, "opencode", "agents")
     mkdirSync(probeAgents)
-    for (const role of ["implementer", "checker"]) copyFileSync(join(runtimeSourceRoot, "agents", `${role}.md`), join(probeAgents, `${role}.md`), constants.COPYFILE_EXCL)
+    for (const role of ["implementer", "researcher", "checker"]) copyFileSync(join(runtimeSourceRoot, "agents", `${role}.md`), join(probeAgents, `${role}.md`), constants.COPYFILE_EXCL)
     writeFileSync(join(projectRoot, "README.md"), "Synthetic headless host acceptance fixture.\n", { flag: "wx" })
     mkdirSync(join(projectRoot, ".opencode"), { recursive: true, mode: 0o700 })
     seedVerificationHostDependencies(join(projectRoot, ".opencode"), checkoutPlugin.source.root)
@@ -629,7 +637,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
       provider: { "alg-headless": { npm: "@ai-sdk/openai-compatible", name: "ALG deterministic local test", options: { baseURL: providerEndpoint }, models: { deterministic: { name: "Deterministic", limit: { context: 32768, output: 2048 } } } } },
     }
     writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, { flag: "wx", mode: 0o600 })
-    writeFileSync(sidecarPath, JSON.stringify({ sessionMemory: { mode: "assist" }, workspace: { mode: "observe" }, investigation: { enabled: true, costLimit: 10, adapter: mcpService.profile } }), { flag: "wx", mode: 0o600 })
+    writeFileSync(sidecarPath, JSON.stringify({ taskAllowance: { max_dispatches: 2, verification_reserve: 1 }, sessionMemory: { mode: "assist" }, workspace: { mode: "observe" }, investigation: { enabled: true, costLimit: 10, adapter: mcpService.profile } }), { flag: "wx", mode: 0o600 })
     const env = childEnvironment(temporaryRoot, projectRoot, configHome, configPath, sidecarPath)
     const credentialKeys = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "GOOGLE_API_KEY", "GEMINI_API_KEY", "OPENCODE_API_KEY"]
     credentialsInherited = credentialKeys.some((key) => Boolean(env[key]))
@@ -689,6 +697,11 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     const firstQueryResult = actualInvestigationResults.find((item) => item.status === "reusable")!
     validationCountAfterInitial = mcpService.counters.validationCalls
     if (!initialState.result_persisted) throw new Error("Session-memory result was not durably captured before compaction")
+    const hostAllowance = new MemoryStore(projectRoot).checkpoint(sessionId)?.task_allowance
+    if (!hostAllowance || hostAllowance.first_contract_sha256 !== taskContractBefore?.contractSha256 ||
+      hostAllowance.policy.max_dispatches !== 2 || hostAllowance.policy.verification_reserve !== 1 || hostAllowance.entries.length !== 0)
+      throw new Error("Installed host did not pin the original task's 2/1 allowance before the direct probe")
+    allowanceStart = await startAllowanceHostProbe(first.base, projectRoot, sessionId)
     provider.setPhase("compaction")
     compactionSawInitial = provider.requests.some((item) => item.phase === "compaction" && item.saw_initial_reference && item.saw_initial_result)
     await jsonRequest<boolean>(`${first.base}/session/${encodeURIComponent(sessionId)}/summarize?${query}`, "POST", { providerID: "alg-headless", modelID: "deterministic" }, WAIT_MS)
@@ -756,6 +769,8 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     if (!taskContractPersisted(taskContractAfterFinalRestart)) throw new Error("Task contract or original criteria disappeared after final host restart")
     await runFollowup(third.base, 2)
     provider.setPhase("background")
+    allowanceProbe = await finishAllowanceHostProbe(third.base, projectRoot, sessionId, allowanceStart!)
+    if (!allowanceProbe.passed) throw new Error("Actual child allowance did not survive compaction/restarts or stop exhausted work")
     const probeParent = await jsonRequest<any>(`${third.base}/session?${query}`, "POST", { title: "Isolated checker evidence fixture" })
     if (typeof probeParent.value?.id !== "string") throw new Error("Checker probe parent session was not created")
     checkerProbe = await runCheckerHeadlessProbe(third.base, projectRoot, probeParent.value.id)
@@ -800,7 +815,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
       user_request_captured: taskContractBefore?.userRequestMatches === true,
       user_request_sha256: taskContractBefore?.userRequestSha256 ?? null,
     }
-    const wasPassed = failure === null && checkerProbe?.passed === true && taskAdmissionProbe?.passed === true && taskAdmissionProbe.child_calls === 0 && !credentialsInherited && globalConfigUnchanged && started.length === 3 && exited.filter(Boolean).length === 3 && pluginProofs.length === 3 && pluginProofs.every(Boolean) && taskContractDigestsStable &&
+    const wasPassed = failure === null && allowanceProbe?.passed === true && checkerProbe?.passed === true && taskAdmissionProbe?.passed === true && taskAdmissionProbe.child_calls === 0 && !credentialsInherited && globalConfigUnchanged && started.length === 3 && exited.filter(Boolean).length === 3 && pluginProofs.length === 3 && pluginProofs.every(Boolean) && taskContractDigestsStable &&
       ids.length === ALG_TOOL_IDS.length && ALG_TOOL_IDS.every((id) => ids.includes(id)) && initialToolCalls.includes("alg_context_status") && initialToolCalls.includes("alg_investigation") &&
       followupToolCalls.filter((name) => name === "alg_investigation").length === 2 && planToolSeen && queryToolSeen && providerStopped && mcpStopped &&
       provider.nonLoopbackRequests === 0 && mcpService.counters.nonLoopbackRequests === 0 && mcpService.counters.submitCalls === 1 && mcpService.counters.acceptedRemoteJobs === 1 &&
@@ -810,6 +825,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
       schema_version: 1, kind: "opencode-alg-v1-headless-acceptance", generated_at: new Date().toISOString(), passed: wasPassed,
       checker_probe: checkerProbe,
       task_admission_probe: taskAdmissionProbe,
+      task_allowance_probe: allowanceProbe,
       failure: globalConfigUnchanged ? failure : "real-user OpenCode configuration changed during the isolated host run",
       evidence_path: evidencePath, task_contract: taskContractEvidence,
       source: { package_version: plugin.package_version, root: checkoutPlugin.source.root, loaded_root: plugin.source.root, sha256: plugin.source.digest, node: process.versions.node, bun: process.versions.bun ?? null },

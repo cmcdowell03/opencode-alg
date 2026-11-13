@@ -1144,6 +1144,7 @@ export function readNodeArtifactOutput(state: RunState, nodeId: string): unknown
 
 export function createRun(options: {
   taskContract?: import("./task-contract.ts").TaskContract
+  taskAllowance?: import("./task-allowance-schema.ts").TaskAllowanceReference
   goal: string
   criteria: string[]
   graph: GraphDef | unknown
@@ -1205,6 +1206,7 @@ export function createRun(options: {
     criteria: options.criteria,
     criteria_locked: options.criteria.length > 0,
     ...(options.taskContract ? { task_contract: options.taskContract } : {}),
+    ...(options.taskAllowance ? { task_allowance: options.taskAllowance } : {}),
     graph,
     status: "planning",
     phase: "plan",
@@ -1845,6 +1847,8 @@ function reconcileDerivedFilesUnlocked(state: RunState): void {
  * wholly new full-SHA reference tree, children before parent archives.
  */
 function prepareRunForImmutableCommit(candidate: RunState, current: RunState): RunState {
+  if (!isDeepStrictEqual(candidate.task_allowance, current.task_allowance))
+    throw new StoreError("task allowance reference is immutable; it cannot be added, removed or replaced on an existing run")
   if (JSON.stringify(candidate.task_contract) !== JSON.stringify(current.task_contract))
     throw new StoreError("accepted task contract is immutable; it cannot be added, removed or replaced on an existing run")
   if ((current.task_baseline && !isDeepStrictEqual(candidate.task_baseline, current.task_baseline)) ||

@@ -39,6 +39,7 @@ import { FindingSchema, VerificationSchema, VerificationBasisSchema, criteriaDig
 import { GraphRevisionReceiptsSchema } from "./graph-revision.ts"
 import { TaskContractSchema, assertTaskState } from "./task-contract.ts"
 import { TaskBaselineSchema, assertTaskBaseline } from "./task-baseline.ts"
+import { TaskAllowanceReferenceSchema } from "./task-allowance-schema.ts"
 import { MAX_TASK_EVIDENCE_BYTES } from "./task-evidence.ts"
 
 // Code-owned vocabulary only. Never use an issue's raw message or submitted
@@ -704,6 +705,7 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
     criteria: boundedStrings,
     criteria_locked: z.boolean(),
     task_contract: TaskContractSchema.optional(),
+    task_allowance: TaskAllowanceReferenceSchema.optional(),
     task_baseline: TaskBaselineSchema.optional(),
     graph: GraphDefSchema,
     graph_revisions: GraphRevisionReceiptsSchema.optional(),
@@ -727,6 +729,8 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
   .strict()
   .superRefine((run, ctx) => {
     try { assertTaskState(run) } catch { ctx.addIssue({ code: "custom", path: ["task_contract"], message: "task contract requirements or graph binding invalid" }) }
+    if (run.task_allowance && !run.task_contract)
+      ctx.addIssue({ code: "custom", path: ["task_allowance"], message: "task allowance requires an admitted contract" })
     if (run.task_baseline) {
       try {
         if (!run.task_contract) throw new Error("missing contract")

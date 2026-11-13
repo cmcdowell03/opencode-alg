@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { isSafeId, isSafeProjectRelativePath } from "../paths.ts"
+import { TaskAllowanceReferenceSchema, TaskAllowanceStateSchema } from "../task-allowance-schema.ts"
 
 export const Hash = z.string().regex(/^[a-f0-9]{64}$/)
 export const Id = z.string().refine(isSafeId)
@@ -127,6 +128,8 @@ export const CheckpointSchema = z.object({
     request_sha256: Hash,
   }).strict().optional(),
   investigation_node: Id.optional(),
+  task_allowance_ref: TaskAllowanceReferenceSchema.optional(),
+  task_allowance: TaskAllowanceStateSchema.optional(),
   delegation: z.object({ parent_owner: SessionId, parent_checkpoint: Hash, role: z.enum(["worker", "checker"]) }).strict().nullable(),
 }).strict()
 export type Checkpoint = z.infer<typeof CheckpointSchema>

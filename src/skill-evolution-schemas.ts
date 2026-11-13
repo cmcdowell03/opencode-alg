@@ -5,6 +5,7 @@ import { serializedBytes, utf8Bytes } from "./limits.ts"
 import { MemoryOptionsSchema } from "./session-memory/schemas.ts"
 import { EnvironmentMemoryOptionsSchema } from "./environment-memory/runtime.ts"
 import { ContextBudgetOptionsSchema } from "./context-budget.ts"
+import { TaskAllowancePolicySchema } from "./task-allowance-schema.ts"
 
 export const SKILL_EVOLUTION_SCHEMA_VERSION = 1 as const
 export const SKILL_EVOLUTION_MAX_CONTENT_BYTES = 64 * 1024
@@ -193,6 +194,7 @@ export const SkillEvolutionOptionsSchema = z.object({
 })
 
 export const AlgPluginOptionsSchema = z.object({
+  taskAllowance: TaskAllowancePolicySchema.optional(),
   workspace: WorkspaceOptionsSchema.optional(),
   investigation: InvestigationOptionsSchema.optional(),
   skillEvolution: SkillEvolutionOptionsSchema.optional(),

@@ -49,7 +49,7 @@ export const ReleaseEvidenceSchema = z.object({
   schema_version: z.literal(6),
   kind: z.literal("opencode-alg-release-gate"),
   generated_at: z.iso.datetime({ offset: true }),
-  package_version: z.literal("0.5.9"),
+  package_version: z.literal("0.5.10"),
   source: z.object({ sha256: Sha, files: z.number().int().positive(), bytes: z.number().int().positive() }).strict(),
   release_inputs: z.object({ sha256: Sha, files: z.number().int().positive(), bytes: z.number().int().positive() }).strict(),
   commands: z.array(CommandEvidenceSchema).length(RELEASE_COMMAND_IDS.length),
@@ -133,7 +133,7 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "scripts/environment-memory-cli.ts", "scripts/environment-memory-benchmark.ts", "scripts/snapshot-upgrade.ts",
   "scripts/offline-diagnostics.ts", "scripts/deployment.ts", "scripts/prepare-deployment.ts",
   "scripts/investigation-cli.ts", "scripts/qualify-investigation.ts", "scripts/verification-host-dependencies.ts", "scripts/test-v1-headless.ts",
-  "scripts/checker-headless-probe.ts", "scripts/task-headless-probe.ts",
+  "scripts/checker-headless-probe.ts", "scripts/task-headless-probe.ts", "scripts/allowance-headless-probe.ts",
   "scripts/build-benchmark-protocol.ts", "scripts/build-benchmark-retention.ts",
   "scripts/build-benchmark-retention-boundaries.ts", "scripts/build-benchmark-retention-cli.ts",
   "docs/datalake-mcp-qualification.md",
@@ -148,9 +148,11 @@ export const RELEASE_CONTROL_PATHS = [
   "scripts/adversarial-cases.ts", "scripts/adversarial-evaluation.ts",
   "scripts/build-benchmark.ts", "scripts/build-benchmark-fixtures.ts", "scripts/build-benchmark-metrics.ts", "scripts/build-benchmark-transport.ts",
   "scripts/hard-benchmark-fixtures.ts", "scripts/hard-benchmark-service.ts",
+  "scripts/hard-benchmark-qualification.ts", "scripts/hard-benchmark-host.ts", "scripts/hard-benchmark-cohort.ts",
   "scripts/live-retention.ts", "scripts/live-retention-fixture.ts",
   "docs/v1-adversarial-evaluation.md", "docs/v1-benchmark-failure-analysis.md", "docs/v1-build-benchmark.md",
   "docs/v1-graph-evolution-adversarial-review.md", "docs/v1-reliability-and-build-comparison-plan.md",
+  "docs/v1-hard-development-cohort-protocol.md",
 ] as const
 
 export function expectedPackedPaths(root = ROOT): string[] {
@@ -832,7 +834,7 @@ export async function runReleaseGate(args = process.argv.slice(2)): Promise<{ ev
   }, ROOT)
   if (!sameEvidenceIdentity(liveArtifact.identity, live.evidence_identity)) throw new Error("Retained live evidence identity differs from live summary")
   const evidence = ReleaseEvidenceSchema.parse({
-    schema_version: 6, kind: "opencode-alg-release-gate", generated_at: new Date().toISOString(), package_version: "0.5.9",
+    schema_version: 6, kind: "opencode-alg-release-gate", generated_at: new Date().toISOString(), package_version: "0.5.10",
     source: { sha256: source.digest, files: source.file_count, bytes: source.total_bytes }, release_inputs: releaseInputsAfter, commands,
     totals: { ...bunTotals, ...managerTotals, ...pythonTotals, ...duckdbPythonTotals },
     excel: { manifest_sha256: manifest.manifest_sha256, lock_sha256: manifest.files.lock, version: wrapperCheck.version, tool_count: wrapperCheck.tool_count, eof_stdout_bytes: eofStdoutBytes },

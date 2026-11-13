@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.10 candidate — cumulative task dispatch allowance
+
+- Bind new live plans to a host-owned task allowance in the existing root checkpoint, including when skill memory is off. Further phases, replanning, retries and transferred runs retain that identity and its pinned limits.
+- Reserve child launches before persisting run attempts or creating children. Uncertain reservations remain charged. Gate-only recovery, shell-only nodes and dry execution do not launch children and consume no dispatch allowance.
+- Keep a protected share for the task's nominated fresh checker. Status and compaction expose the task identity and retrieval route. This bounds ALG dispatch reservations, not root planning, compaction, provider requests, tokens or invoice cost.
+- Wait cancellably for an abandoned checkpoint lease to expire after a host restart, preserving existing ownership rules and never replaying a potentially committed reservation.
+- Add same-user development qualification of hard-case reference solutions, negative controls and artifact tampering. These are apparatus checks, not a blinded holdout or evidence of ALG superiority.
+
 ## 0.5.9 candidate — collect scoped verification evidence before child work
 
 - New plans map each original criterion to declared observations. The checker still judges whether those observations are relevant and sufficient; declarations cannot certify intent or truth.

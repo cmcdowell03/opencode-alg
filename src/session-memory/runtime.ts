@@ -13,6 +13,7 @@ import { mentionsSkill, isCompletedUserTurn, completedTurn } from "../turn-bound
 import { redactEvidenceText } from "../skill-evolution-evidence.ts"
 import { truncateUtf8 } from "../limits.ts"
 import { InvestigationStore } from "../investigation/index.ts"
+import { TaskAllowanceRuntime } from "../task-allowance.ts"
 
 export class SessionMemoryRuntime {
   readonly deliveryUnavailable = new Set<string>()
@@ -214,12 +215,16 @@ export class SessionMemoryRuntime {
     this.update(owner, (value) => ({ ...value, deleted: true, skills: [], pins: [], environment: null, goal: "", constraints: [], completed: [], next_step: "" }))
   }
   status(owner: string) {
-    if (!this.enabled) return { mode: "off", initialized: false }
     const checkpoint = this.store.checkpoint(owner)
+    const task_allowance_status = checkpoint?.task_allowance_ref ? (() => {
+      try { return new TaskAllowanceRuntime(this.store).status(checkpoint.task_allowance_ref!) }
+      catch { return { task_id: checkpoint.task_allowance_ref!.task_id, state: "unavailable" } }
+    })() : undefined
+    if (!this.enabled) return { mode: "off", initialized: false, ...(task_allowance_status ? { task_allowance_status } : {}) }
     let delivery: ReturnType<MemoryStore["delivery"]> = null
     let deliveryError = this.deliveryUnavailable.has(owner)
     try { delivery = this.store.delivery(owner) } catch { deliveryError = true }
-    return { mode: this.options.mode, initialized: checkpoint !== null, checkpoint, receipt: this.store.contextReceipt(owner), origin: localOrigin(),
+    return { mode: this.options.mode, initialized: checkpoint !== null, checkpoint, task_allowance_status, receipt: this.store.contextReceipt(owner), origin: localOrigin(),
       delivery_error: deliveryError ? "unavailable" : null,
       delivery: delivery ? { id: delivery.id, request_id: delivery.value.request_id, hook: delivery.value.hook,
         state: delivery.value.state, request_correlation: delivery.value.request_correlation,
