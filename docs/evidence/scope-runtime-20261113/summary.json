@@ -1,0 +1,26 @@
+{
+  "source_commit": "73370efe5bd88d55a7bb5a2b37567130bd5139c3",
+  "linux_full_check": {
+    "pass": 1475,
+    "skip": 16,
+    "fail": 0
+  },
+  "runtime_files_normalized_equal": 136,
+  "windows_source_sha256": "abe814d668ce4a174d2e1b465836c7ab0210c7828d58b2c82422e4db2166c0d1",
+  "linux_source_sha256": "f91e081787de32629c358bbd98dae80c8248e0f104243b1ca4767bf62c3fba0f",
+  "windows_host": "1.19.5",
+  "linux_host": "1.18.35",
+  "actual_scope_hooks_and_negative_drift": true,
+  "compactions_per_host": 1,
+  "restarts_per_host": 2,
+  "preflight_arms_passed": 12,
+  "cleanup_and_global_config_checks": true,
+  "limitations": [
+    "Synthetic provider verifies mechanics, not model quality or information-loss rates.",
+    "Initial ccf61aa Windows and 4a9d5b1 Linux gates failed and are preserved; not counted as passes.",
+    "Windows host runtime is identical to final candidate; package fixes affect installer/metadata only.",
+    "Windows focused checks overlap and are not a full Windows suite.",
+    "No new offline transfer bundle, native natural-compaction soak or remote datalake acceptance.",
+    "All 17 compatibility versions retained, bounded at 64; old readers cannot load v2 scope baselines."
+  ]
+}

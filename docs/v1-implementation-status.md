@@ -14,8 +14,18 @@ ALG pass versus a Build failure. See the [full findings and limitations](v1-hard
 
 New scope baselines now pin narrowly defined project-root runtime stores as
 exclusions. Explicit and protected paths still count; old baselines are never
-rebased. Actual-host regression and final candidate qualification are required
-before another paid comparison. No long-session information-loss result exists.
+rebased. Candidate `73370ef` passed the full native Linux gate: **1,475 passed,
+16 platform skips, zero failures**. Windows and Linux actual hosts both passed
+memory-hook scope recovery, negative user-file drift without checker dispatch,
+one requested compaction and two restarts. All 136 runtime files match after
+line-ending normalization. Package extraction and bounded compatibility
+activation passed on Windows; actual npm inventory matches 209 reviewed paths.
+[Final qualification and preserved failed gates](evidence/scope-runtime-20261113/README.md).
+
+The [new full development comparison](v1-hard-development-repair-followup.md)
+has passed its shared scorer qualification and all twelve no-generation preflight
+arms. Its model results are separate from these synthetic checks. No long-session
+information-loss or general superiority result exists.
 
 ## Priority clarification — capability before efficiency
 

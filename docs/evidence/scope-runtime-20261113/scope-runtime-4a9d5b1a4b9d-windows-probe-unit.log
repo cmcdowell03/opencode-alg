@@ -1,0 +1,16 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\allowance-headless-probe.test.ts:
+(pass) probe declares bounded root-wide scope in every phase and keeps its fresh checker [53.68ms]
+(pass) both scope cases use the existing local synthetic response before phase-specific behavior [4.71ms]
+(pass) recorder binds real persisted baseline, child delegation and emitted delivery receipt [3929.03ms]
+(pass) scope success alone cannot attest absent host delivery writes [2679.39ms]
+(pass) compaction delivery is not mislabeled as a child's system hook [3329.23ms]
+(pass) recorder rejects an older delivery or a different baseline identity [2909.59ms]
+(pass) report accepts old receipts without new fields and validates new bounded fields when present [7.41ms]
+(pass) SDK transport calibration retains 2/1 exhaustion and independently blocks user drift without a fourth prompt [7012.76ms]
+
+ 8 pass
+ 0 fail
+ 55 expect() calls
+Ran 8 tests across 1 file. [21.30s]
