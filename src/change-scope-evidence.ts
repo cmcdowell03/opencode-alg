@@ -6,7 +6,11 @@ import { isSafeProjectRelativePath, resolveContainedPath } from "./paths.ts"
 import { projectFileDigest } from "./preservation-evidence.ts"
 import { sha256Json } from "./persistence.ts"
 
-export const CHANGE_SCOPE_EXCLUSIONS = [".git", "node_modules", ".opencode/runs"] as const
+/** Persisted v1 policy: never broaden it while comparing an older baseline. */
+export const LEGACY_CHANGE_SCOPE_EXCLUSIONS = [".git", "node_modules", ".opencode/runs"] as const
+/** Project-root host stores only; skills, workspace configuration and unknown .opencode paths are user scope. */
+export const CHANGE_SCOPE_RUNTIME_EXCLUSIONS = [".opencode/session-memory", ".opencode/skill-evolution", ".opencode/experience"] as const
+export const CHANGE_SCOPE_EXCLUSIONS = [...LEGACY_CHANGE_SCOPE_EXCLUSIONS, ...CHANGE_SCOPE_RUNTIME_EXCLUSIONS] as const
 export const CHANGE_SCOPE_MAX_FILES = 256
 export const CHANGE_SCOPE_MAX_FILE_BYTES = 1024 * 1024
 export const CHANGE_SCOPE_MAX_TOTAL_BYTES = 16 * 1024 * 1024
@@ -22,7 +26,7 @@ export const ChangeScopeInputSchema = z.object({
   allowed_paths: z.array(z.string().min(1).max(512).refine(safeFilePath)).max(64),
   max_changed_files: z.number().int().min(0).max(64),
 }).strict().superRefine((scope, ctx) => {
-  if ([...scope.roots, ...scope.allowed_paths].some(excludedPath))
+  if ([...scope.roots, ...scope.allowed_paths].some(path => excludedPath(path)))
     ctx.addIssue({ code: "custom", message: "declared paths must not be excluded" })
   const roots = scope.roots.map(pathKey)
   for (let i = 0; i < roots.length; i++) {
@@ -50,11 +54,17 @@ const ScopeFileSchema = z.object({
   sha256: z.string().regex(/^[a-f0-9]{64}$/),
 }).strict()
 
+export const ChangeScopeExclusionsSchema = z.array(z.enum(CHANGE_SCOPE_EXCLUSIONS))
+  .min(LEGACY_CHANGE_SCOPE_EXCLUSIONS.length).max(CHANGE_SCOPE_EXCLUSIONS.length)
+  .refine(items => LEGACY_CHANGE_SCOPE_EXCLUSIONS.every((item, index) => items[index] === item) &&
+    items.every((item, index) => index === 0 || CHANGE_SCOPE_EXCLUSIONS.indexOf(items[index - 1]!) < CHANGE_SCOPE_EXCLUSIONS.indexOf(item)),
+  "exclusions must retain the legacy prefix and ordered runtime subset")
+
 export const ChangeScopeBasisSchema = z.object({
-  version: z.literal(1),
+  version: z.union([z.literal(1), z.literal(2)]),
   scope_sha256: z.string().regex(/^[a-f0-9]{64}$/),
   files: z.array(ScopeFileSchema).max(CHANGE_SCOPE_MAX_FILES),
-  exclusions: z.array(z.enum(CHANGE_SCOPE_EXCLUSIONS)).length(CHANGE_SCOPE_EXCLUSIONS.length),
+  exclusions: ChangeScopeExclusionsSchema,
 }).strict().superRefine((basis, ctx) => {
   if (new Set(basis.files.map(file => pathKey(file.path))).size !== basis.files.length) {
     ctx.addIssue({ code: "custom", path: ["files"], message: "duplicate manifest path" })
@@ -62,8 +72,8 @@ export const ChangeScopeBasisSchema = z.object({
   if (basis.files.some((file, index) => index > 0 && basis.files[index - 1]!.path >= file.path)) {
     ctx.addIssue({ code: "custom", path: ["files"], message: "manifest paths must be sorted" })
   }
-  if (basis.exclusions.some((item, index) => item !== CHANGE_SCOPE_EXCLUSIONS[index])) {
-    ctx.addIssue({ code: "custom", path: ["exclusions"], message: "exclusions must match the fixed ordered list" })
+  if (basis.version === 1 && basis.exclusions.length !== LEGACY_CHANGE_SCOPE_EXCLUSIONS.length) {
+    ctx.addIssue({ code: "custom", path: ["exclusions"], message: "v1 exclusions must match the original fixed list" })
   }
 })
 export type ChangeScopeBasis = z.infer<typeof ChangeScopeBasisSchema>
@@ -120,10 +130,20 @@ function isPathWithin(root: string, path: string): boolean {
   return root === "." || path === root || path.startsWith(`${root}/`)
 }
 
-function excludedPath(path: string): boolean {
+function excludedPath(path: string, exclusions: readonly string[] = LEGACY_CHANGE_SCOPE_EXCLUSIONS): boolean {
   const parts = path.split("/").map(part => platform === "win32" ? part.toLowerCase() : part)
   return parts.includes(".git") || parts.includes("node_modules") ||
-    parts.some((part, index) => part === ".opencode" && parts[index + 1] === "runs")
+    parts.some((part, index) => part === ".opencode" && parts[index + 1] === "runs") ||
+    CHANGE_SCOPE_RUNTIME_EXCLUSIONS.some(root => exclusions.includes(root) && isPathWithin(root, pathKey(path)))
+}
+
+/** Pin a bounded policy before work. Explicit descendants opt their whole runtime store back into observation. */
+export function changeScopeExclusions(scope: ChangeScopeInput, declaredPaths: readonly string[] = []) {
+  // At most 8 preservation paths plus 16 project-file deliverables in a task contract.
+  const declaredFiles = z.array(z.string().min(1).max(512).refine(safeFilePath)).max(24).parse(declaredPaths)
+  const explicit = [...scope.roots.filter(root => root !== "."), ...scope.allowed_paths, ...declaredFiles].map(pathKey)
+  return [...LEGACY_CHANGE_SCOPE_EXCLUSIONS, ...CHANGE_SCOPE_RUNTIME_EXCLUSIONS.filter(root =>
+    !explicit.some(path => isPathWithin(root, path)))]
 }
 
 function containedEntry(root: string, path: string): string {
@@ -133,7 +153,7 @@ function containedEntry(root: string, path: string): string {
   return join(root, path)
 }
 
-function readScopeFiles(root: string, scope: ChangeScopeInput): ChangeScopeBasis["files"] {
+function readScopeFiles(root: string, scope: ChangeScopeInput, exclusions: readonly string[]): ChangeScopeBasis["files"] {
   let fileCount = 0
   let byteCount = 0
   let entryCount = 0
@@ -157,7 +177,7 @@ function readScopeFiles(root: string, scope: ChangeScopeInput): ChangeScopeBasis
 
   const visit = (relativePath: string, depth = 0) => {
     if (depth > CHANGE_SCOPE_MAX_DEPTH) throw new ScopeCaptureError("limits_exceeded")
-    if (excludedPath(relativePath)) return
+    if (excludedPath(relativePath, exclusions)) return
     let absolutePath: string
     try { absolutePath = containedEntry(root, relativePath) }
     catch { throw new ScopeCaptureError("unsafe_entry") }
@@ -188,7 +208,7 @@ function readScopeFiles(root: string, scope: ChangeScopeInput): ChangeScopeBasis
     for (const entry of entries) {
       const child = relativePath === "." ? entry : `${relativePath}/${entry}`
       if (!isSafeProjectRelativePath(child)) throw new ScopeCaptureError("unsafe_entry")
-      if (excludedPath(child)) continue
+      if (excludedPath(child, exclusions)) continue
       let childAbsolute: string
       try { childAbsolute = containedEntry(root, child) }
       catch { throw new ScopeCaptureError("unsafe_entry") }
@@ -232,11 +252,12 @@ function readScopeFiles(root: string, scope: ChangeScopeInput): ChangeScopeBasis
  * symlink safety against concurrent changes beyond the checks performed while
  * walking and hashing.
  */
-export function captureChangeScopeBasis(root: string, rawScope: unknown): ChangeScopeBasis {
+export function captureChangeScopeBasis(root: string, rawScope: unknown, declaredPaths: readonly string[] = []): ChangeScopeBasis {
   const scope = ChangeScopeInputSchema.parse(rawScope)
+  const exclusions = changeScopeExclusions(scope, declaredPaths)
   try {
-    const files = readScopeFiles(root, scope)
-    return ChangeScopeBasisSchema.parse({ version: 1, scope_sha256: sha256Json(scope), files, exclusions: [...CHANGE_SCOPE_EXCLUSIONS] })
+    const files = readScopeFiles(root, scope, exclusions)
+    return ChangeScopeBasisSchema.parse({ version: 2, scope_sha256: sha256Json(scope), files, exclusions })
   } catch (error) {
     if (error instanceof ScopeCaptureError) throw new Error(`change_scope_${error.code}`)
     throw new Error("change_scope_unsafe_entry")
@@ -257,15 +278,17 @@ export function finishChangeScopeEvidence(root: string, rawScope: unknown, rawBa
   if (!baselineParsed.success) return unavailable(scopeHash, baselineHash, "invalid_baseline")
   const basis = baselineParsed.data
   if (basis.scope_sha256 !== scopeHash) return unavailable(scopeHash, baselineHash, "scope_mismatch")
-  if (basis.files.some(file => excludedPath(file.path) || !scopeParsed.data.roots.some(root => {
+  if (basis.version === 2 && basis.exclusions.some(item => !changeScopeExclusions(scopeParsed.data).includes(item)))
+    return unavailable(scopeHash, baselineHash, "invalid_baseline")
+  if (basis.files.some(file => excludedPath(file.path, basis.exclusions) || !scopeParsed.data.roots.some(root => {
     const rootKey = pathKey(root)
     const fileKey = pathKey(file.path)
     return rootKey === "." || isPathWithin(rootKey, fileKey)
   }))) return unavailable(scopeHash, baselineHash, "invalid_baseline")
   try {
-    const current = readScopeFiles(root, scopeParsed.data)
-    const afterBasis = ChangeScopeBasisSchema.parse({ version: 1, scope_sha256: scopeHash, files: current,
-      exclusions: [...CHANGE_SCOPE_EXCLUSIONS] })
+    const current = readScopeFiles(root, scopeParsed.data, basis.exclusions)
+    const afterBasis = ChangeScopeBasisSchema.parse({ version: basis.version, scope_sha256: scopeHash, files: current,
+      exclusions: [...basis.exclusions] })
     const before = new Map(basis.files.map(file => [pathKey(file.path), file]))
     const after = new Map(current.map(file => [pathKey(file.path), file]))
     const paths = new Set([...before.keys(), ...after.keys()])

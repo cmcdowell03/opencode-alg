@@ -5,6 +5,7 @@ import { platform } from "node:process"
 import { join } from "node:path"
 import {
   captureChangeScopeBasis,
+  CHANGE_SCOPE_EXCLUSIONS,
   ChangeScopeBasisSchema,
   ChangeScopeEvidenceSchema,
   ChangeScopeInputSchema,
@@ -122,7 +123,8 @@ test("fixed exclusions are explicit and changes beneath them are invisible", () 
     writeFileSync(join(root, ".opencode", "runs", "run-a", "evidence.json"), "run")
     const input = { roots: ["."], allowed_paths: [], max_changed_files: 0 }
     const basis = captureChangeScopeBasis(root, input)
-    expect(basis.exclusions).toEqual([".git", "node_modules", ".opencode/runs"])
+    expect(basis.version).toBe(2)
+    expect(basis.exclusions).toEqual([...CHANGE_SCOPE_EXCLUSIONS])
     expect(basis.files.map(file => file.path)).toEqual(["src/main.ts"])
     writeFileSync(join(root, ".git", "config"), "changed git")
     writeFileSync(join(root, "node_modules", "pkg", "index.js"), "changed package")

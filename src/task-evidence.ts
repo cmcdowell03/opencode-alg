@@ -4,7 +4,7 @@ import { isSafeProjectRelativePath } from "./paths.ts"
 import type { RunState } from "./types.ts"
 import type { TaskContract } from "./task-contract.ts"
 import { projectFileDigest, finishPreservationEvidence } from "./preservation-evidence.ts"
-import { finishChangeScopeEvidence, CHANGE_SCOPE_EXCLUSIONS } from "./change-scope-evidence.ts"
+import { finishChangeScopeEvidence, ChangeScopeExclusionsSchema } from "./change-scope-evidence.ts"
 import { assertTaskBaseline, type TaskBaseline } from "./task-baseline.ts"
 
 export const MAX_TASK_EVIDENCE_BYTES = 32 * 1024
@@ -16,7 +16,8 @@ const ScopeProjectionSchema = z.object({
   changed_count: z.number().int().min(0).max(512), changed_sha256: digest,
   changed_sample: z.array(z.object({ path: safePath, kind: z.enum(["added", "modified", "deleted"]) }).strict()).max(8),
   omitted_changes: z.number().int().min(0).max(512),
-  exclusions: z.tuple([z.literal(".git"), z.literal("node_modules"), z.literal(".opencode/runs")]),
+  exclusions: ChangeScopeExclusionsSchema,
+  exclusion_policy_version: z.literal(2).optional(),
 }).strict().superRefine((value, ctx) => {
   if (value.changed_sample.length + value.omitted_changes !== value.changed_count ||
     (value.status !== "unavailable") !== !!value.after_sha256)
@@ -55,7 +56,9 @@ export function assertTaskEvidence(value: unknown, contract: TaskContract, runId
     if (!baseline) throw new Error("task evidence requires its original baseline")
     assertTaskBaseline(baseline, contract)
     if (evidence.baseline_sha256 !== sha256Json(baseline) ||
-      (input.change_scope && evidence.change_scope?.before_sha256 !== sha256Json(baseline.change_scope)))
+      (input.change_scope && (evidence.change_scope?.before_sha256 !== sha256Json(baseline.change_scope) ||
+        sha256Json(evidence.change_scope?.exclusions) !== sha256Json(baseline.change_scope?.exclusions) ||
+        evidence.change_scope?.exclusion_policy_version !== (baseline.change_scope?.version === 2 ? 2 : undefined))))
       throw new Error("task evidence baseline identity mismatch")
   }
   if (evidence.contract_sha256 !== contract.contract_sha256 || evidence.requirements_sha256 !== contract.requirements_sha256 ||
@@ -167,7 +170,8 @@ export function taskEvidence(run: Pick<RunState, "task_contract" | "task_baselin
     change_scope = { scope_sha256: observedScope.scope_sha256, before_sha256: observedScope.before_sha256,
       ...(observedScope.after_sha256 ? { after_sha256: observedScope.after_sha256 } : {}),
       status: observedScope.status, changed_count: observedScope.changed.length, changed_sha256: sha256Json(observedScope.changed),
-      changed_sample, omitted_changes: observedScope.changed.length - changed_sample.length, exclusions: [...CHANGE_SCOPE_EXCLUSIONS] }
+      changed_sample, omitted_changes: observedScope.changed.length - changed_sample.length, exclusions: [...baseline!.change_scope!.exclusions],
+      ...(baseline!.change_scope!.version === 2 ? { exclusion_policy_version: 2 as const } : {}) }
   }
   if (input.change_scope && change_scope?.status !== "within_scope")
     failures.push("task_change_scope_unverified: scoped content changes exceeded the declaration or could not be observed; inspect scope evidence before repair")
