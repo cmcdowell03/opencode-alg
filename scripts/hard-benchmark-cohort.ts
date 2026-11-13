@@ -8,6 +8,7 @@ import { sha256Json } from "../src/persistence.ts"
 import type { BenchmarkCase } from "./build-benchmark-fixtures.ts"
 import { createHardBenchmarkFixtures, openHardFixtureService, type CreatedHardFixture } from "./hard-benchmark-fixtures.ts"
 import { scheduleIssuedPairs, type BenchmarkTrack } from "./build-benchmark-protocol.ts"
+import { createLongSessionCases, type LongCase } from "./build-benchmark-long-fixtures.ts"
 import { createHardBenchmarkHttpClient, hardBenchmarkHostUsage, startHardBenchmarkHost } from "./hard-benchmark-host.ts"
 import { hardBenchmarkReferenceArm, hardBenchmarkNegativeArm, hardBenchmarkTamperArm, hardBenchmarkExtraFieldArm, qualifyHardBenchmarkDevelopment, scoreHardDevelopmentFixture,
   type HardBenchmarkQualificationResult } from "./hard-benchmark-qualification.ts"
@@ -15,19 +16,20 @@ export { scoreHardDevelopmentFixture } from "./hard-benchmark-qualification.ts"
 
 export type BenchmarkLimits = { trialMs: number; assistantTurns: number; reportedComponents: number; outputTokens: number; suiteMs: number }
 // Validation ceilings only. There is deliberately no prospective hard protocol default.
-export const HardLimitsSchema = z.object({
+export const BenchmarkEnvelopeSchema = z.object({
   trialMs: z.number().int().min(1_000).max(86_400_000),
   assistantTurns: z.number().int().min(1).max(10_000),
   reportedComponents: z.number().int().min(1).max(100_000_000),
   outputTokens: z.number().int().min(1).max(131_072),
   suiteMs: z.number().int().min(1_000).max(604_800_000),
-}).strict().refine(limits => limits.suiteMs >= limits.trialMs * 12,
+}).strict()
+export const HardLimitsSchema = BenchmarkEnvelopeSchema.refine(limits => limits.suiteMs >= limits.trialMs * 12,
   "hard suiteMs must accommodate all twelve issued arm time envelopes")
 const OrderSeedSchema = z.number().int().min(0).max(0xffff_ffff)
 export const HARD_ISOLATION = "same-user-development-only-not-os-isolated" as const
 export const HARD_INTERPRETATION = "DEVELOPMENT ONLY; same user; NOT OS ISOLATED; unqualified for confirmation. Native auto/prune compaction is enabled prospectively; hard L1 requests no host compaction. Existing telemetry distinguishes observed markers, linked completed summaries and continuation evidence. No forced boundary implies no information-loss estimate, not zero loss. The preseeded service restart is not model compaction."
 export interface WorkloadOptions {
-  workload?: "controls" | "hard-development"
+  workload?: "controls" | "hard-development" | "long-session"
   caseIds?: string[]
   track?: "default" | "targeted_compatibility"
   hardLimits?: BenchmarkLimits
@@ -54,28 +56,34 @@ export function hardRunnerCase(fixture: CreatedHardFixture): BenchmarkCase {
 /** Select and freeze the cases before the existing runner issues any pairs. */
 export function prepareBenchmarkWorkload(options: WorkloadOptions, controls: readonly BenchmarkCase[], controlLimits: BenchmarkLimits) {
   const workload = options.workload ?? "controls"
-  if (workload !== "controls" && workload !== "hard-development") throw new Error("unknown benchmark workload")
+  if (!["controls", "hard-development", "long-session"].includes(workload)) throw new Error("unknown benchmark workload")
   if (workload === "controls") {
     if (options.hardLimits !== undefined || options.orderSeed !== undefined || options.hardQualification !== undefined)
       throw new Error("hard envelope overrides are forbidden for controls")
     if (options.caseIds && (!options.caseIds.length || new Set(options.caseIds).size !== options.caseIds.length ||
       options.caseIds.some(id => !controls.some(c => c.id === id)))) throw new Error("caseIds must select distinct known cases")
     return { workload, limits: { ...controlLimits }, cases: controls.filter(c => !options.caseIds || options.caseIds.includes(c.id)),
-      compaction: { auto: false, prune: false }, hardFixtures: [] as readonly CreatedHardFixture[], orderSeed: undefined, reverseFirstArm: false, planSha256: undefined }
+      compaction: { auto: false, prune: false }, hardFixtures: [] as readonly CreatedHardFixture[], longCases: [] as readonly LongCase[], orderSeed: undefined, reverseFirstArm: false, planSha256: undefined }
   }
-  if (options.caseIds !== undefined) throw new Error("hard-development always selects all six fixtures; caseIds is controls-only")
+  if (options.caseIds !== undefined) throw new Error(workload === "long-session"
+    ? "long-session always selects all eight paired cells; caseIds is controls-only"
+    : "hard-development always selects all six cases; caseIds is controls-only")
   if (options.track !== undefined && options.track !== "default") throw new Error("hard-development requires the default Build/ALG pair")
   if (typeof options.hardQualification !== "string" || !options.hardQualification.trim()) throw new Error("hardQualification evidence path is required")
-  const limits = HardLimitsSchema.parse(options.hardLimits), orderSeed = OrderSeedSchema.parse(options.orderSeed)
-  const hardFixtures = freeze(structuredClone(createHardBenchmarkFixtures()))
+  const longCases = freeze(workload === "long-session" ? createLongSessionCases() : [] as LongCase[])
+  const limits = workload === "long-session" ? BenchmarkEnvelopeSchema.parse(options.hardLimits) : HardLimitsSchema.parse(options.hardLimits)
+  if (workload === "long-session" && limits.suiteMs < limits.trialMs * longCases.length * 2)
+    throw new Error("long-session suiteMs must accommodate every scheduled arm")
+  const orderSeed = OrderSeedSchema.parse(options.orderSeed)
+  const hardFixtures = freeze(structuredClone(workload === "long-session" ? longCases.map(c => c.fixture) : createHardBenchmarkFixtures()))
   const cases = hardFixtures.map(hardRunnerCase).sort((a, b) => {
     const left = sha256Json({ orderSeed, id: a.id }), right = sha256Json({ orderSeed, id: b.id })
     return left < right ? -1 : left > right ? 1 : a.id.localeCompare(b.id)
   })
   const reverseFirstArm = (Number.parseInt(sha256Json({ orderSeed, purpose: "first-arm" }).slice(0, 8), 16) & 1) === 1
   const compaction = { auto: true, prune: true }
-  const planSha256 = sha256Json({ workload, limits, orderSeed, reverseFirstArm, cases, hardFixtures, compaction })
-  return freeze({ workload, limits, cases, hardFixtures, orderSeed, reverseFirstArm, planSha256, compaction })
+  const planSha256 = sha256Json({ workload, limits, orderSeed, reverseFirstArm, cases, hardFixtures, ...(workload === "long-session" ? { longCases } : {}), compaction })
+  return freeze({ workload, limits, cases, hardFixtures, longCases, orderSeed, reverseFirstArm, planSha256, compaction })
 }
 
 export function scheduleBenchmarkWorkload(selection: ReturnType<typeof prepareBenchmarkWorkload>, track: BenchmarkTrack) {

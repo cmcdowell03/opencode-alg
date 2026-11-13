@@ -124,6 +124,106 @@ describe("hard benchmark public loopback HTTP host (same-user development)", () 
     } finally { await host.stop() }
   }))
 
+  test("private observer records actual HTTP envelopes for success, lost ACK, replay and rejected calls", () => withDirectory(async directory => {
+    const fixture = createAcceptedQueryLostAckFixture(5), service = await openHardFixtureService(fixture, directory)
+    const operations: import("../scripts/hard-benchmark-host.ts").HardHostOperation[] = []
+    const host = await startHardBenchmarkHost(service, { onOperation: operation => { operations.push(operation) } })
+    try {
+      const request = JSON.parse(fixture.contestant.files["sources/request.json"]!)
+      const query = { sourceId: request.sourceId, expectedRevision: request.revision, idempotencyKey: request.idempotencyKey,
+        filter: { window: request.window } }
+      const lost = await post(host.url, "/submit", query)
+      const lookup = await post(host.url, "/lookup", { idempotencyKey: request.idempotencyKey })
+      const replay = await post(host.url, "/submit", query)
+      const invalid = await post(host.url, "/ledger", { unexpected: true })
+      const denied = await post(host.url, "/evidence", {})
+      const malformed = await fetch(host.url + "/ledger", { method: "POST", headers: { "content-type": "application/json" }, body: "{" })
+      expect([lost.status, lookup.status, replay.status, invalid.status, denied.status, malformed.status]).toEqual([503, 200, 200, 400, 404, 400])
+      expect(host.auditComplete).toBe(true)
+      expect(operations.map(row => row.sequence)).toEqual([1, 2, 3, 4, 5, 6])
+      expect(operations.map(row => row.path)).toEqual(["/submit", "/lookup", "/submit", "/ledger", "/evidence", "/ledger"])
+      expect(operations.map(row => row.status)).toEqual([503, 200, 200, 400, 404, 400])
+      expect(operations[0]!.response).toMatchObject({ ok: false, error: { code: "ACK_LOST_AFTER_ACCEPTANCE" } })
+      expect(operations[2]!.response).toMatchObject({ ok: true, value: { jobId: (await lookup.json()).value.jobId } })
+      expect(operations[3]!.args).toEqual({ unexpected: true })
+      expect(operations[4]!.args).toBeNull()
+      expect(operations[5]!.args).toBeNull()
+      expect(operations.every(row => row.completedAt >= row.startedAt)).toBe(true)
+      expect((await service.ledger()).acceptedComputations).toBe(1)
+    } finally { await host.stop() }
+  }))
+
+  test("observer failure and operation overflow fail closed and expose incomplete coverage", () => withDirectory(async directory => {
+    const service = new HardBenchmarkService(directory, options)
+    await service.ledger()
+    const failed = await startHardBenchmarkHost(service, { onOperation: () => { throw new Error("private sink unavailable") } })
+    try {
+      const response = await post(failed.url, "/submit", query)
+      expect(response.status).toBe(500)
+      expect(await response.json()).toMatchObject({ ok: false, error: { code: "AUDIT_OBSERVER_FAILED" } })
+      expect(failed.auditComplete).toBe(false)
+      const later = await post(failed.url, "/ledger", {})
+      expect(later.status).toBe(503)
+      expect((await service.ledger()).acceptedComputations).toBe(1)
+    } finally { await failed.stop() }
+
+    const recorded: number[] = []
+    const limited = await startHardBenchmarkHost(service, { maxOperations: 1, onOperation: operation => { recorded.push(operation.sequence) } })
+    try {
+      expect((await post(limited.url, "/ledger", {})).status).toBe(200)
+      const overflow = await post(limited.url, "/ledger", {})
+      expect(overflow.status).toBe(503)
+      expect(await overflow.json()).toMatchObject({ ok: false, error: { code: "AUDIT_INCOMPLETE" } })
+      expect(recorded).toEqual([1])
+      expect(limited.auditComplete).toBe(false)
+    } finally { await limited.stop() }
+  }))
+
+  test("observer receives the bounded response envelope actually sent", () => withDirectory(async directory => {
+    const service = new HardBenchmarkService(directory, options)
+    await service.ledger()
+    const oversized = { ...await service.ledger(), large: "x".repeat(HARD_BENCHMARK_HOST_LIMITS.responseBytes) }
+    service.ledger = async () => oversized
+    const operations: import("../scripts/hard-benchmark-host.ts").HardHostOperation[] = []
+    const host = await startHardBenchmarkHost(service, { onOperation: operation => { operations.push(operation) } })
+    try {
+      const response = await post(host.url, "/ledger", {})
+      const body = await response.json()
+      expect(response.status).toBe(500)
+      expect(body).toMatchObject({ ok: false, error: { code: "RESPONSE_TOO_LARGE" } })
+      expect(operations).toHaveLength(1)
+      expect(operations[0]).toMatchObject({ status: 500, response: body })
+      expect(host.auditComplete).toBe(true)
+    } finally { await host.stop() }
+  }))
+
+  test("audit completeness stays false for in-flight requests and sequences concurrent completions", () => withDirectory(async directory => {
+    const service = new HardBenchmarkService(directory, options)
+    await service.ledger()
+    const observed: number[] = []
+    let releaseFirst!: () => void, secondObserved!: () => void
+    const firstGate = new Promise<void>(resolve => { releaseFirst = resolve })
+    const secondGate = new Promise<void>(resolve => { secondObserved = resolve })
+    const host = await startHardBenchmarkHost(service, { onOperation: async operation => {
+      if (operation.sequence === 1) await firstGate
+      observed.push(operation.sequence)
+      if (operation.sequence === 2) secondObserved()
+    } })
+    try {
+      const first = post(host.url, "/ledger", {})
+      const second = post(host.url, "/ledger", {})
+      await secondGate
+      expect(host.auditPending).toBeGreaterThan(0)
+      expect(host.auditComplete).toBe(false)
+      releaseFirst()
+      expect((await Promise.all([first, second])).map(response => response.status)).toEqual([200, 200])
+      expect(observed).toEqual([2, 1])
+      expect([...observed].sort((a, b) => a - b)).toEqual([1, 2])
+      expect(host.auditPending).toBe(0)
+      expect(host.auditComplete).toBe(true)
+    } finally { releaseFirst(); await host.stop() }
+  }))
+
   test("HTTP proxy preserves native lost-ACK, stale-source and unavailable-source errors", () => withService({ ...options,
     faults: { loseAcknowledgement: { idempotencyKey: query.idempotencyKey } },
   }, async (service, host) => {
@@ -154,7 +254,7 @@ describe("hard benchmark public loopback HTTP host (same-user development)", () 
 
   test("only exact public POST routes exist and prohibited routes cannot change state", () => withService(options, async (service, host) => {
     const before = await service.evidence()
-    for (const path of ["/", "/evidence", "/replaceSource", "/admin", "/stop", "/constructor", "/__proto__", "/ledger/", "/ledger?method=evidence"]) {
+    for (const path of ["/", "/evidence", "/audit", "/replaceSource", "/admin", "/stop", "/constructor", "/__proto__", "/ledger/", "/ledger?method=evidence"]) {
       const response = await post(host.url, path, {})
       expect(response.status).toBe(404)
       expect(await response.json()).toMatchObject({ ok: false, error: { code: "NOT_FOUND" } })

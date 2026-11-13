@@ -486,13 +486,16 @@ Freeze expected obligations and the independently scored previous artifacts befo
 
 This measures observable task compliance with durable mission files available. It does not measure hidden context contents, establish compaction as the cause of an error, test expensive MCP searches, or demonstrate superiority to Build. Report actual task duration, observed natural/requested events, restarts and scored boundary exposure. A completed short task is not a multi-hour soak. This development diagnostic does not replace the hard paired comparison or relax its confirmation gates.
 
-### Next L2 design: separate exposure, handoff and restart
+### L2 implementation: separate exposure, handoff and restart
 
 The [prospective L2 draft](evidence/hard-scope-20261113/l2-design-draft.md)
 separates requested compaction from restart and controller handoff, keeps
 failed continuations in the exposure record, and requires independently
 established pre-transition behavior. It specifies missingness, common-eligible
 obligations, native pruning and root-versus-session-tree accounting. It is not a
-frozen or executed study. Commit `5500ad6` implements the independent summary
-exposure fields only; the remaining milestone schedule and live obligation
-collector still need implementation and local qualification before paid use.
+frozen or executed study. Commit `5500ad6` introduced independent summary
+exposure. The [V1 long-session workload](v1-long-session-benchmark.md) now
+implements the paired schedule, private live obligation collector, native
+service action evidence and common-eligible reporting. Source-bound local
+qualification and real-model execution are separate gates; implementation
+alone supplies no measured information-loss rate or superiority result.

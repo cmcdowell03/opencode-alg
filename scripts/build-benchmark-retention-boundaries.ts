@@ -39,9 +39,42 @@ const Snapshot = z.object({
   facts: z.array(z.object({ obligationId: Id, digest: Digest }).strict()).max(MAX_ROWS),
 }).strict()
 
+export const RetentionGradingEvidenceSchema = z.object({ evidenceId: Id, digest: Digest, truthDigest: Digest }).strict()
+export type RetentionGradingEvidence = z.infer<typeof RetentionGradingEvidenceSchema>
+
+/** All relevant actions, truth changes and transitions must appear, including ungraded ones.
+ * A null obligationId applies to every obligation; response rows count controller responses. */
+export const RetentionPreBehaviorEventSchema = z.object({
+  eventId: Id, sessionId: Id, at: Time, obligationId: Id.nullable(),
+  kind: z.enum(["behavior", "action", "truth_change", "transition", "response"]),
+  truthDigest: Digest.nullable(), outcome: z.enum(["correct", "incorrect", "inaccessible", "unknown"]).nullable(),
+  independentlyEvaluated: z.boolean(), governedActionExposed: z.boolean().nullable(),
+  evidenceId: Id, digest: Digest,
+}).strict()
+export type RetentionPreBehaviorEvent = z.infer<typeof RetentionPreBehaviorEventSchema>
+export const RetentionPreBehaviorSchema = z.object({
+  startAt: Time, endAt: Time, complete: z.boolean(), evidenceId: Id, digest: Digest,
+  events: z.array(RetentionPreBehaviorEventSchema).max(MAX_ROWS),
+}).strict()
+export type RetentionPreBehavior = z.infer<typeof RetentionPreBehaviorSchema>
+
+/** sessionId/before identify the source; post observations/after identify the recipient. */
+export const RetentionLineageSchema = z.object({
+  eventId: Id, sourceSessionId: Id, recipientSessionId: Id, at: Time, evidenceId: Id, digest: Digest,
+}).strict()
+export type RetentionLineage = z.infer<typeof RetentionLineageSchema>
+export const RetentionPruneEvidenceSchema = z.object({
+  observable: z.boolean(),
+  receipt: z.object({ eventId: Id, sessionId: Id, at: Time, evidenceId: Id, digest: Digest,
+    affectedMessageIds: z.array(Id).max(MAX_ROWS), affectedToolIds: z.array(Id).max(MAX_ROWS),
+    removedTokens: Time.nullable(),
+  }).strict().nullable(),
+}).strict()
+export type RetentionPruneEvidence = z.infer<typeof RetentionPruneEvidenceSchema>
+
 export const RetentionBoundarySchema = z.object({
   boundaryId: Id, taskId: Id, sessionId: Id, requestId: Id,
-  transition: z.enum(["compaction", "reassignment", "restart"]),
+  transition: z.enum(["compaction", "reassignment", "restart", "control", "prune"]),
   compactionMode: z.enum(["native", "requested", "unknown"]).nullable(),
   frozenAt: Time,
   transitionAt: Time,
@@ -57,6 +90,9 @@ export const RetentionBoundarySchema = z.object({
   boundaryCensusComplete: z.boolean(),
   useWindow: z.object({ startAt: Time, endAt: Time, complete: z.boolean() }).strict().nullable(),
   nextTaskBoundaryAt: Time.nullable().optional(),
+  preBehavior: RetentionPreBehaviorSchema.optional(),
+  lineage: RetentionLineageSchema.optional(),
+  pruneEvidence: RetentionPruneEvidenceSchema.optional(),
 }).strict()
 export type RetentionBoundary = z.infer<typeof RetentionBoundarySchema>
 
@@ -69,6 +105,7 @@ export const RetentionBoundaryObservationSchema = z.object({
   governedActionExposed: z.boolean().nullable(),
   independentlyEvaluated: z.boolean(),
   workUnits: z.number().finite().nonnegative().nullable(),
+  gradingEvidence: RetentionGradingEvidenceSchema.optional(),
 }).strict()
 export type RetentionBoundaryObservation = z.infer<typeof RetentionBoundaryObservationSchema>
 
@@ -83,6 +120,116 @@ type Issue = { code: string; boundaryId?: string; eventId?: string; detail: stri
 type Layer = "durable" | "context" | "retrieval" | "use" | "behavior" | "repeat_work"
 
 function distinct(items: string[]): boolean { return new Set(items).size === items.length }
+
+type BehaviorState = { state: "correct" | "incorrect" | "unknown"; reason: string; evidenceId: string | null }
+export type RetentionBehavioralClassification = "pre_correct_post_failure" | "pre_correct_retained" | "pre_correct_post_unknown" |
+  "pre_incorrect_post_failure" | "pre_incorrect_recovered" | "pre_incorrect_post_unknown" | "pre_unknown"
+const unknownBehavior = (reason: string): BehaviorState => ({ state: "unknown", reason, evidenceId: null })
+
+function lineageValid(b: RetentionBoundary): boolean {
+  return b.transition === "reassignment" && !!b.lineage && b.lineage.sourceSessionId === b.sessionId &&
+    b.lineage.recipientSessionId !== b.sessionId && b.lineage.at === b.transitionAt
+}
+function transitionObserved(b: RetentionBoundary): boolean {
+  if (b.frozenAt > b.transitionAt || retentionFrozenSetDigest(b) !== b.frozenSetDigest) return false
+  if (b.transition === "compaction") return b.summarySucceeded && b.requestAt !== null && b.summaryAt !== null &&
+    b.frozenAt <= b.requestAt && b.requestAt <= b.transitionAt && b.transitionAt <= b.summaryAt &&
+    b.summaryEvidence?.requestId === b.requestId && b.summaryEvidence.taskId === b.taskId &&
+    b.summaryEvidence.sessionId === b.sessionId && b.summaryEvidence.observedAt === b.summaryAt &&
+    b.summaryEvidence.frozenSetDigest === b.frozenSetDigest
+  if (b.requestAt !== null || b.summaryAt !== null || b.summarySucceeded || b.summaryEvidence !== null || b.compactionMode !== null) return false
+  if (b.transition === "reassignment") return lineageValid(b)
+  if (b.transition === "prune") return b.pruneEvidence?.observable === true &&
+    b.pruneEvidence.receipt?.sessionId === b.sessionId && b.pruneEvidence.receipt.at === b.transitionAt
+  return true // Explicit control/restart checkpoint, not a claimed context change.
+}
+
+function preBehaviorState(b: RetentionBoundary, o: RetentionBoundaryObligation, previous: RetentionBoundary | undefined): BehaviorState {
+  const trace = b.preBehavior
+  if (!trace) return unknownBehavior("pre_behavior_missing")
+  if (!trace.complete || trace.startAt > trace.endAt || b.frozenAt > trace.endAt || trace.endAt !== b.transitionAt ||
+    trace.endAt - trace.startAt > 120_000) return unknownBehavior("pre_interval_incomplete_or_out_of_bounds")
+  if (!distinct(trace.events.map(e => e.eventId))) return unknownBehavior("pre_event_identity_ambiguous")
+  const ids = new Set(b.obligations.map(obligation => obligation.obligationId))
+  if (trace.events.some(e => e.sessionId !== b.sessionId || e.at < trace.startAt || e.at >= trace.endAt ||
+    (e.obligationId !== null && !ids.has(e.obligationId)))) return unknownBehavior("pre_event_out_of_scope")
+  if (trace.events.filter(e => e.kind === "response").length > 2) return unknownBehavior("pre_response_limit")
+  const relevant = trace.events.filter(e => e.kind !== "response" && (e.obligationId === null || e.obligationId === o.obligationId))
+    .sort((a, c) => a.at - c.at)
+  const latest = relevant.at(-1)
+  if (!latest) return unknownBehavior("pre_behavior_missing")
+  if (relevant.length > 1 && relevant.at(-2)!.at === latest.at) return unknownBehavior("latest_pre_event_ambiguous")
+  if (latest.kind !== "behavior" || latest.obligationId !== o.obligationId) return unknownBehavior("pre_action_truth_or_transition_gap")
+  if (latest.at > b.frozenAt || (previous && latest.at < (previous.summaryAt ?? previous.transitionAt)))
+    return unknownBehavior("pre_behavior_not_current_at_freeze")
+  if (!latest.independentlyEvaluated || latest.truthDigest !== o.expectedDigest)
+    return unknownBehavior("pre_grade_unverified_or_truth_changed")
+  if (o.disposition !== "required" && latest.governedActionExposed !== true) return unknownBehavior("pre_negative_control_unexposed")
+  if (latest.outcome === "correct" || latest.outcome === "incorrect" || latest.outcome === "inaccessible")
+    return { state: latest.outcome === "correct" ? "correct" : "incorrect", reason: "latest_independent_pre_behavior", evidenceId: latest.evidenceId }
+  return unknownBehavior("latest_pre_behavior_unknown")
+}
+
+function postBehaviorState(b: RetentionBoundary, o: RetentionBoundaryObligation, rows: RetentionBoundaryObservation[], valid: boolean): BehaviorState {
+  if (!valid) return unknownBehavior("post_window_unverified")
+  const negative = o.disposition !== "required"
+  if (negative && !(b.useWindow?.complete && b.useWindow.startAt === (b.summaryAt ?? b.transitionAt) &&
+    b.useWindow.endAt === b.after.observedAt)) return unknownBehavior("post_negative_control_trace_incomplete")
+  const actions = rows.filter(r => r.kind === "behavior" || (negative && r.kind === "use"))
+  const preEvidenceIds = new Set(b.preBehavior?.events.map(e => e.evidenceId))
+  const verified = (r: RetentionBoundaryObservation) => r.independentlyEvaluated && r.gradingEvidence?.truthDigest === o.expectedDigest &&
+    !preEvidenceIds.has(r.gradingEvidence.evidenceId) &&
+    (!negative || r.governedActionExposed === true)
+  // Keep the first verified failure even when later retrieval/behavior recovers.
+  const failed = actions.find(r => verified(r) && (["incorrect", "inaccessible"].includes(r.outcome) ||
+    (negative && r.kind === "use" && r.outcome === "used" && (o.disposition !== "superseded" || r.digest === o.expectedDigest))))
+  if (failed) return { state: "incorrect", reason: "independent_post_failure", evidenceId: failed.gradingEvidence!.evidenceId }
+  const latest = actions.at(-1)
+  if (!latest) return unknownBehavior("post_behavior_missing")
+  if (actions.length > 1 && actions.at(-2)!.at === latest.at) return unknownBehavior("latest_post_event_ambiguous")
+  if (!verified(latest)) return unknownBehavior("latest_post_grade_unverified_or_unexposed")
+  if ((latest.outcome === "correct" && (negative || latest.digest === o.expectedDigest)) ||
+    (negative && latest.kind === "use" && latest.outcome === "not_used"))
+    return { state: "correct", reason: "independent_post_correct", evidenceId: latest.gradingEvidence!.evidenceId }
+  return unknownBehavior("latest_post_behavior_unknown")
+}
+
+function measureBehavioralRegression(b: RetentionBoundary, rows: Map<string, RetentionBoundaryObservation[]>, previous: RetentionBoundary | undefined, valid: boolean, preIdentityValid: boolean) {
+  const observed = transitionObserved(b)
+  const frozenSetValid = retentionFrozenSetDigest(b) === b.frozenSetDigest
+  const obligations = b.obligations.map(o => {
+    // Eligibility uses frozen/pre evidence only. Failed or unobserved interventions
+    // cannot remove a pre-correct obligation from the paired eligibility set.
+    const pre = !preIdentityValid ? unknownBehavior("boundary_identity_ambiguous") : !frozenSetValid
+      ? unknownBehavior("frozen_set_digest_mismatch") : retentionObligationDigest(o) !== o.frozenBy.digest
+      ? unknownBehavior("obligation_digest_mismatch") : preBehaviorState(b, o, previous)
+    const post = postBehaviorState(b, o, rows.get(o.obligationId) ?? [], valid && observed)
+    const classification: RetentionBehavioralClassification = pre.state === "unknown" ? "pre_unknown" : pre.state === "correct"
+      ? post.state === "incorrect" ? "pre_correct_post_failure" : post.state === "correct" ? "pre_correct_retained" : "pre_correct_post_unknown"
+      : post.state === "incorrect" ? "pre_incorrect_post_failure" : post.state === "correct" ? "pre_incorrect_recovered" : "pre_incorrect_post_unknown"
+    return { obligationId: o.obligationId, truthDigest: o.expectedDigest, pre, post, classification }
+  })
+  const counts = {
+    preCorrect: obligations.filter(o => o.pre.state === "correct").length,
+    exposedPreCorrect: observed ? obligations.filter(o => o.pre.state === "correct").length : 0,
+    preIncorrect: obligations.filter(o => o.pre.state === "incorrect").length,
+    preUnknown: obligations.filter(o => o.pre.state === "unknown").length,
+    regressions: obligations.filter(o => o.classification === "pre_correct_post_failure").length,
+    retained: obligations.filter(o => o.classification === "pre_correct_retained").length,
+    unknownFollowup: obligations.filter(o => o.classification === "pre_correct_post_unknown").length,
+  }
+  const scored = counts.regressions + counts.retained
+  return { exposure: { transition: b.transition, status: observed ? "observed" as const : "unknown" as const,
+      pruningObservability: b.pruneEvidence ? b.pruneEvidence.observable ? "observable" as const : "unobservable" as const : "unknown" as const },
+    sourceSessionId: b.sessionId, recipientSessionId: lineageValid(b) ? b.lineage!.recipientSessionId : b.sessionId,
+    obligations, counts,
+    missingness: { eligible: counts.preCorrect, scored, unknown: counts.unknownFollowup,
+      observedRegressionRate: scored ? counts.regressions / scored : null,
+      lowerBound: counts.preCorrect ? counts.regressions / counts.preCorrect : null,
+      upperBound: counts.preCorrect ? (counts.regressions + counts.unknownFollowup) / counts.preCorrect : null },
+    interpretation: "Conditional post-transition behavioral regression, not causal information loss. Eligibility uses frozen/pre evidence; unobserved exposure and unknown follow-up remain in bounds. exposedPreCorrect counts only observed transitions. Pre-incorrect and pre-unknown obligations remain separate." }
+}
+export type RetentionBehavioralRegression = ReturnType<typeof measureBehavioralRegression>
 
 /**
  * Measure only explicitly supplied boundary snapshots and observations. This is
@@ -99,6 +246,11 @@ export function measureRetentionBoundaries(raw: unknown) {
     status: "invalid_input" as const,
     issues: [{ code: "aggregate_limit", detail: `Aggregate obligations (${totalObligations}) or snapshot facts (${totalSnapshotFacts}) exceed bounded limits.` }],
   }
+  const totalBehaviorRows = observations.length + boundaries.reduce((n, b) => n + (b.preBehavior?.events.length ?? 0), 0)
+  const totalPruneRefs = boundaries.reduce((n, b) => n + (b.pruneEvidence?.receipt?.affectedMessageIds.length ?? 0) +
+    (b.pruneEvidence?.receipt?.affectedToolIds.length ?? 0), 0)
+  if (totalBehaviorRows > MAX_ROWS || totalPruneRefs > MAX_ROWS) return { status: "invalid_input" as const,
+    issues: [{ code: "aggregate_limit", detail: "Combined pre/post behavior rows or prune references exceed bounded limits." }] }
   const issues: Issue[] = []
   const ids = boundaries.map(b => b.boundaryId)
   const eventIds = observations.map(o => o.eventId)
@@ -131,6 +283,11 @@ export function measureRetentionBoundaries(raw: unknown) {
     for (const o of b.obligations) if (retentionObligationDigest(o) !== o.frozenBy.digest)
       flag("obligation_digest_mismatch", `Frozen obligation ${o.obligationId} does not match its canonical value.`)
     if (!b.boundaryCensusComplete) flag("boundary_census_incomplete", "The boundary census must be complete to assess retention.")
+    if (b.lineage && !lineageValid(b)) flag("lineage_identity_conflict", "Lineage must link the reassignment source to a distinct recipient at this transition.")
+    if (b.pruneEvidence?.receipt && (b.transition !== "prune" || !b.pruneEvidence.observable ||
+      b.pruneEvidence.receipt.sessionId !== b.sessionId || b.pruneEvidence.receipt.at !== b.transitionAt))
+      flag("prune_identity_conflict", "An observed prune receipt must identify this prune transition and session.")
+    const postSessionId = lineageValid(b) ? b.lineage!.recipientSessionId : b.sessionId
     if (b.transition === "compaction") {
       if (b.compactionMode === null) flag("compaction_mode_missing", "Compaction mode must be explicitly native, requested, or unknown.")
       if (b.requestAt === null || b.summaryAt === null || !b.summarySucceeded || b.summaryEvidence === null)
@@ -186,7 +343,7 @@ export function measureRetentionBoundaries(raw: unknown) {
     for (const o of localObs) {
       let usable = true
       if ((eventIdCounts.get(o.eventId) ?? 0) > 1) usable = false
-      if (o.taskId !== b.taskId || o.sessionId !== b.sessionId) { flag("observation_scope_conflict", `Observation ${o.eventId} task/session differs from its boundary.`); usable = false }
+      if (o.taskId !== b.taskId || o.sessionId !== postSessionId) { flag("observation_scope_conflict", `Observation ${o.eventId} task/session differs from its boundary.`); usable = false }
       if (!obligationSet.has(o.obligationId)) { flag("observation_scope_conflict", `Observation ${o.eventId} references undeclared obligation ${o.obligationId}.`); usable = false }
       if (o.at < (b.summaryAt ?? b.transitionAt) || o.at > b.after.observedAt || (nextAt !== undefined && o.at >= nextAt)) {
         flag("observation_time_out_of_scope", `Observation ${o.eventId} is outside this boundary's after window.`)
@@ -244,8 +401,13 @@ export function measureRetentionBoundaries(raw: unknown) {
       noFailureObserved: reportFacts.filter(f => f.assessment === "no_failure_observed").length,
       coverage: reportFacts.length ? checked / reportFacts.length : null,
     }
+    const valid = !globalConflict && localIssues.length === 0
+    const extended = b.preBehavior !== undefined || b.lineage !== undefined || b.pruneEvidence !== undefined ||
+      b.transition === "control" || b.transition === "prune" || localObs.some(o => o.gradingEvidence !== undefined)
     return { boundaryId: b.boundaryId, taskId: b.taskId, sessionId: b.sessionId, transition: b.transition, compactionMode: b.compactionMode,
-      valid: !globalConflict && localIssues.length === 0, issues: localIssues, counts, facts: reportFacts }
+      valid, issues: localIssues, counts, facts: reportFacts,
+      ...(extended ? { behavioralRegression: measureBehavioralRegression(b, byObligation, previous, valid,
+        ids.filter(id => id === b.boundaryId).length === 1 && distinct(obligationIds)) } : {}) }
   })
   return {
     status: (boundaries.length ? "measured" : "unavailable") as "measured" | "unavailable",

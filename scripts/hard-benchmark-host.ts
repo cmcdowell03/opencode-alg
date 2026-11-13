@@ -4,8 +4,22 @@ import {
 import type { HardBenchmarkServiceClient } from "./hard-benchmark-qualification.ts"
 
 export const HARD_BENCHMARK_HOST_LIMITS = Object.freeze({ requestBytes: 64 * 1024, responseBytes: 128 * 1024 })
+export const HARD_BENCHMARK_AUDIT_LIMITS = Object.freeze({ operations: 10_000 })
 const routes = new Set(["/submit", "/lookup", "/status", "/manifest", "/readPage", "/sourceStatus", "/currentRevision", "/ledger"])
 type Arguments = Record<string, unknown>
+export interface HardHostOperation {
+  sequence: number
+  startedAt: number
+  completedAt: number
+  path: string
+  args: Record<string, unknown> | null
+  status: number
+  response: { ok: boolean; value?: unknown; error?: PublicError }
+}
+export interface HardHostAuditObserver {
+  onOperation: (operation: HardHostOperation) => void | Promise<void>
+  maxOperations?: number
+}
 type PublicError = { code: string; name: string; message: string; idempotencyKey?: string; sourceId?: string;
   expected?: string; current?: string; revision?: string }
 
@@ -45,12 +59,22 @@ function errorResponse(error: unknown): { status: number; error: PublicError } {
   return { status: 500, error: { name: "Error", code: "INTERNAL_ERROR", message: "Service operation failed." } }
 }
 
-function reply(status: number, envelope: unknown): Response {
-  let body = JSON.stringify(envelope)
+function boundedEnvelope(status: number, envelope: { ok: boolean; value?: unknown; error?: PublicError }) {
+  let body: string
+  try { body = JSON.stringify(envelope) }
+  catch { status = 500; envelope = { ok: false, error: { name: "Error", code: "INTERNAL_ERROR", message: "Service operation failed." } }; body = JSON.stringify(envelope) }
   if (Buffer.byteLength(body) > HARD_BENCHMARK_HOST_LIMITS.responseBytes) {
     status = 500
-    body = JSON.stringify({ ok: false, error: { name: "HttpError", code: "RESPONSE_TOO_LARGE", message: "Service response exceeds the byte limit." } })
+    envelope = { ok: false, error: { name: "HttpError", code: "RESPONSE_TOO_LARGE", message: "Service response exceeds the byte limit." } }
+    body = JSON.stringify(envelope)
   }
+  return { status, envelope, body }
+}
+
+function reply(status: number, envelope: { ok: boolean; value?: unknown; error?: PublicError }): Response {
+  const bounded = boundedEnvelope(status, envelope)
+  status = bounded.status
+  const body = bounded.body
   return new Response(body, { status, headers: { "content-type": "application/json; charset=utf-8", "content-length": String(Buffer.byteLength(body)),
     "cache-control": "no-store", "x-content-type-options": "nosniff", ...(status === 405 ? { allow: "POST" } : {}),
     ...(status >= 400 ? { connection: "close" } : {}) } })
@@ -128,27 +152,68 @@ function dispatch(service: HardBenchmarkService, path: string, args: Arguments):
 }
 
 /** SAME USER DEVELOPMENT ONLY. Each arm needs its own service state and host; this is not an OS isolation boundary. */
-export async function startHardBenchmarkHost(service: HardBenchmarkService): Promise<{ url: string; stop: () => Promise<void> }> {
+export async function startHardBenchmarkHost(service: HardBenchmarkService, observer?: HardHostAuditObserver): Promise<{
+  url: string; stop: () => Promise<void>; readonly auditComplete?: boolean; readonly auditPending?: number
+}> {
+  const maxOperations = observer?.maxOperations ?? HARD_BENCHMARK_AUDIT_LIMITS.operations
+  if (!Number.isInteger(maxOperations) || maxOperations < 1 || maxOperations > HARD_BENCHMARK_AUDIT_LIMITS.operations)
+    throw new RangeError("invalid private host audit operation bound")
+  let sequence = 0, pendingRequests = 0, auditComplete = true
   const server = Bun.serve({
     hostname: "127.0.0.1", port: 0, development: false, idleTimeout: 5,
     // Stream admission below enforces the smaller public JSON limit before any service call.
     fetch: async request => {
+      const startedAt = Date.now()
+      let path = "<invalid-url>", args: Arguments | null = null
+      const requestSequence = ++sequence
+      pendingRequests++
       try {
-        const url = new URL(request.url), path = url.pathname
+      if (observer && (!auditComplete || requestSequence > maxOperations)) {
+        auditComplete = false
+        return reply(503, { ok: false, error: { name: "HttpError", code: "AUDIT_INCOMPLETE", message: "Private operation audit is unavailable." } })
+      }
+      let status: number, envelope: { ok: boolean; value?: unknown; error?: PublicError }
+      try {
+        const url = new URL(request.url)
+        path = url.pathname
         if (url.search) throw new HttpError(404, "NOT_FOUND", "Unknown operation.")
         if (!routes.has(path)) throw new HttpError(404, "NOT_FOUND", "Unknown operation.")
         if (request.method !== "POST") throw new HttpError(405, "METHOD_NOT_ALLOWED", "Use POST for this operation.")
-        const args = await readArguments(request)
-        return reply(200, { ok: true, value: (await dispatch(service, path, args)) ?? null })
+        args = await readArguments(request)
+        envelope = { ok: true, value: (await dispatch(service, path, args)) ?? null }
+        status = 200
       } catch (error) {
         const failure = errorResponse(error)
-        return reply(failure.status, { ok: false, error: failure.error })
+        status = failure.status
+        envelope = { ok: false, error: failure.error }
       }
+      const bounded = boundedEnvelope(status, envelope!)
+      if (observer) {
+        const operation: HardHostOperation = { sequence: requestSequence, startedAt, completedAt: Date.now(), path,
+          args: args === null ? null : structuredClone(args), status: bounded.status, response: JSON.parse(bounded.body) }
+        try { await observer.onOperation(operation) }
+        catch {
+          auditComplete = false
+          return reply(500, { ok: false, error: { name: "HttpError", code: "AUDIT_OBSERVER_FAILED", message: "Private operation audit failed." } })
+        }
+      }
+      return new Response(bounded.body, { status: bounded.status, headers: { "content-type": "application/json; charset=utf-8",
+        "content-length": String(Buffer.byteLength(bounded.body)), "cache-control": "no-store", "x-content-type-options": "nosniff",
+        ...(bounded.status === 405 ? { allow: "POST" } : {}),
+        ...(bounded.status >= 400 ? { connection: "close" } : {}) } })
+      } finally { pendingRequests-- }
     },
     error: () => reply(500, { ok: false, error: { name: "Error", code: "INTERNAL_ERROR", message: "Service operation failed." } }),
   })
   let stopped: Promise<void> | undefined
-  return { url: `http://127.0.0.1:${server.port}`, stop: () => stopped ??= server.stop(true) }
+  const host: { url: string; stop: () => Promise<void>; readonly auditComplete?: boolean; readonly auditPending?: number } = {
+    url: `http://127.0.0.1:${server.port}`, stop: () => stopped ??= server.stop(true),
+  }
+  if (observer) {
+    Object.defineProperty(host, "auditPending", { enumerable: true, get: () => pendingRequests })
+    Object.defineProperty(host, "auditComplete", { enumerable: true, get: () => auditComplete && sequence <= maxOperations && pendingRequests === 0 })
+  }
+  return host
 }
 
 function baseUrl(url: string): string {

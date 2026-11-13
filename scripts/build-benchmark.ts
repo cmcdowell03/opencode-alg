@@ -19,6 +19,14 @@ import { openHardFixtureService } from "./hard-benchmark-fixtures.ts"
 import type { HardBenchmarkService } from "./hard-benchmark-service.ts"
 import { startHardBenchmarkHost } from "./hard-benchmark-host.ts"
 import { sha256Json } from "../src/persistence.ts"
+import { runLongSession, reconcileLongSummary, type LongSessionEvidence } from "./build-benchmark-long-session.ts"
+import { gradeLongCheckpoint } from "./build-benchmark-long-fixtures.ts"
+import { readLongQualification, longBenchmarkIdentity } from "./build-benchmark-long-qualification.ts"
+import { observeCompactionMarkers } from "./build-benchmark-protocol.ts"
+import type { HardHostOperation } from "./hard-benchmark-host.ts"
+import { createAlgTools } from "../src/tools.ts"
+import { listOwnedRunEnvelopeResults } from "../src/store.ts"
+import { summarizeLongSessionCohort } from "./build-benchmark-long-report.ts"
 
 /** Local feasibility pilot. JSON config supplies paths/provider, never credential values. */
 export interface Config extends WorkloadOptions {
@@ -178,10 +186,11 @@ export function initializeBenchmarkWorkspaceGit(project: string): void {
 
 export async function runBuildBenchmark(config:Config){
   const repo=resolve(import.meta.dir,".."),root=resolve(config.outputRoot)
-  const selection=prepareBenchmarkWorkload(config,BENCHMARK_CASES,LIMITS),hard=selection.workload==="hard-development",limits=selection.limits
+  const selection=prepareBenchmarkWorkload(config,BENCHMARK_CASES,LIMITS),hard=selection.workload!=="controls",long=selection.workload==="long-session",limits=selection.limits
   const selectedCases=selection.cases
   const hardIdentity=hard?hardBenchmarkIdentity(repo,selection.hardFixtures):undefined
-  const hardQualification=hard?readHardQualification(resolve(config.hardQualification!),hardIdentity!,selection.hardFixtures):undefined
+  const longIdentity=long?longBenchmarkIdentity(repo):undefined
+  const hardQualification=long?readLongQualification(resolve(config.hardQualification!),longIdentity!):hard?readHardQualification(resolve(config.hardQualification!),hardIdentity!,selection.hardFixtures):undefined
   const track=config.track??"default"
   if(track!=="default"&&track!=="targeted_compatibility")throw Error("track must be default or targeted_compatibility")
   if(existsSync(root))throw Error("Evidence destination exists; no implicit rerun")
@@ -195,10 +204,10 @@ export async function runBuildBenchmark(config:Config){
   const protocol={schema:"alg-build-pilot-v1",started_at:new Date().toISOString(),source_commit:execFileSync("git",["rev-parse","HEAD"],{cwd:repo}).toString().trim(),source_sha256:initialIdentity.digest,
     harness_sha256:sha(readFileSync(import.meta.filename)),protocol_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-protocol.ts"))),fixtures_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-fixtures.ts"))),metrics_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-metrics.ts"))),transport_sha256:sha(readFileSync(join(repo,"scripts/build-benchmark-transport.ts"))),prompt_transport:"prompt_async",
     model:`${config.providerID}/${config.modelID}`,limits,preflight_only:!!config.preflightOnly,track,
-    ...(hard?{workload:"hard-development",hard:{...hardIdentity,cohort_sha256:sha(readFileSync(join(repo,"scripts/hard-benchmark-cohort.ts"))),
+    ...(hard?{workload:selection.workload,hard:{...hardIdentity,...(long?{long_identity:longIdentity}:{}),cohort_sha256:sha(readFileSync(join(repo,"scripts/hard-benchmark-cohort.ts"))),
       host_executable_sha256:sha(readFileSync(config.hostExecutable)),qualification_evidence_sha256:hardQualification!.sha256,
       order_seed:selection.orderSeed,order_algorithm:"sha256-sort-v1+alternating-arms-seed-bit",plan_sha256:selection.planSha256,
-      native_compaction:selection.compaction,requested_host_compaction:false,
+      native_compaction:selection.compaction,requested_host_compaction:long,
       service_instruction_exception:"Only the supplied per-arm fixture HTTP endpoint on 127.0.0.1 via Node fetch; no other network services.",
       isolation:HARD_ISOLATION,confirmation_qualified:false,interpretation:HARD_INTERPRETATION}}:{}),
     pairs:[] as Array<PairIssue & {order:BenchmarkArm[]}>,
@@ -213,6 +222,7 @@ export async function runBuildBenchmark(config:Config){
   protocol.pairs=issuedCases.map(({pair,order})=>({...pair,arms:[...pair.arms],order}))
   const sourceUnchanged=()=>{try{return computeAlgSourceIdentity(repo).digest===initialIdentity.digest&&(!hard||
     (sha256Json(hardBenchmarkIdentity(repo,selection.hardFixtures))===sha256Json(hardIdentity)&&
+    (!long||sha256Json(longBenchmarkIdentity(repo))===sha256Json(longIdentity))&&
     sha(readFileSync(import.meta.filename))===protocol.harness_sha256&&sha(readFileSync(join(repo,"scripts/hard-benchmark-cohort.ts")))===protocol.hard!.cohort_sha256))}catch{return false}}
   const results:any[]=pairs.flatMap(pair=>pair.arms.map(({arm})=>({pairId:pair.pairId,caseId:pair.caseId,arm,status:"issued_not_started",passed:false}))),authCopies:string[]=[];let local:Tracked|undefined,localBase:string|undefined,knownCost=0,fatal:string|null=null
   const updateResult=(pairId:string,arm:string,patch:Record<string,unknown>)=>{const row=results.find(r=>r.pairId===pairId&&r.arm===arm);if(row)Object.assign(row,patch);const pair=pairs.find(p=>p.pairId===pairId);const pairArm=pair?.arms.find(a=>a.arm===arm);if(pairArm){const status=patch.status;if(status==="running")pairArm.status="running";else if(status==="completed"||status==="preflight_passed")pairArm.status="completed";else if(status==="issued_not_started")pairArm.status="issued_not_started";else if(status!==undefined)pairArm.status="stopped"}}
@@ -234,6 +244,11 @@ export async function runBuildBenchmark(config:Config){
       const directoryName=hard?`${String(caseIndex+1).padStart(2,"0")}-${arm==="build"?"bld":"alg"}`:`${caseIndex+1}-${fixture.id}-${arm}`
       const dir=join(root,directoryName),project=join(dir,"project"),authCopy=join(dir,"data/opencode/auth.json")
       const hardFixture=hard?selection.hardFixtures.find(record=>record.contestant.id===fixture.id)!:undefined
+      const longCase=long?selection.longCases.find(record=>record.fixture.contestant.id===fixture.id)!:undefined
+      let longEvidence:LongSessionEvidence|undefined
+      let longGradedFilesDigest:string|null=null
+      const operations:HardHostOperation[]=[]
+      let operationBytes=0
       let hardService:HardBenchmarkService|undefined,hardHost:Awaited<ReturnType<typeof startHardBenchmarkHost>>|undefined,server:Tracked|undefined
       let hostStopAttempted=false,hardCollection:ReturnType<typeof collectHardProject>|undefined,serviceStop:Promise<void>|undefined
       const serviceReceipt:any={required:!!hardFixture&&needsHardService(hardFixture),started:false,stopped:false,ledger_before:null,ledger_after:null,errors:[] as string[]}
@@ -283,7 +298,7 @@ export async function runBuildBenchmark(config:Config){
         const port=await freePort(),password=randomBytes(24).toString("hex");secrets.push(password,Buffer.from("opencode:"+password).toString("base64"));base=`http://127.0.0.1:${port}`
         server=launch(config.hostExecutable,["serve","--hostname","127.0.0.1","--port",String(port)],project,{...env,OPENCODE_SERVER_PASSWORD:password});if(server.child.pid)processes.push(server.child.pid)
         api=async(path,body,ms=15_000,signal)=>{const url=new URL(path,base);url.searchParams.set("directory",project);const r=await fetch(url,{method:body===undefined?"GET":"POST",headers:{"Content-Type":"application/json",Authorization:"Basic "+Buffer.from("opencode:"+password).toString("base64")},body:body===undefined?undefined:JSON.stringify(body),signal:signal??AbortSignal.timeout(ms)});if(!r.ok)throw Error(`host_http_${r.status}:${path}`);const text=await r.text();return text?JSON.parse(text):null}
-        let ready=false;for(let i=0;i<150;i++){try{await api("/global/health",undefined,500);ready=true}catch{}if(ready)break;if(server.exit().observed)throw Error("host exited during startup");await sleep(300)}if(!ready)throw Error("host startup timeout")
+        let ready=false;for(let i=0;i<150;i++){if(activeStart&&Date.now()>=deadline)throw Error("trial_deadline");try{await api("/global/health",undefined,500);ready=true}catch{}if(ready)break;if(server.exit().observed)throw Error("host exited during startup");await sleep(300)}if(!ready)throw Error("host startup timeout")
       }
       const bounded=async(label:string,request:()=>Promise<any>)=>{
         currentPhase=label
@@ -311,7 +326,13 @@ export async function runBuildBenchmark(config:Config){
         if(hardFixture&&needsHardService(hardFixture)){
           hardService=await openHardFixtureService(hardFixture,join(dir,"service"))
           serviceReceipt.ledger_before=await hardService.ledger()
-          hardHost=await startHardBenchmarkHost(hardService);serviceReceipt.started=true
+          hardHost=await startHardBenchmarkHost(hardService,long?{onOperation(operation){
+            const line=JSON.stringify(operation)+"\n"
+            operationBytes+=Buffer.byteLength(line)
+            if(operationBytes>64*1024*1024)throw Error("private_operation_evidence_overflow")
+            appendFileSync(join(dir,"service-operations.jsonl"),line);operations.push(operation)
+            operations.sort((a,b)=>a.sequence-b.sequence)
+          }}:undefined);serviceReceipt.started=true
           json(join(dir,"service-before.json"),serviceReceipt.ledger_before)
         }
         await launchHost();const registered=await api!("/experimental/tool/ids"),availableAgents=await api!("/agent"),providers=await api!("/provider")
@@ -346,8 +367,82 @@ export async function runBuildBenchmark(config:Config){
             if(outcome.status==="cancelled")throw Error(outcome.reason)
             throw Error(`${outcome.status}:${outcome.error}`)
           }
-          await bounded("initial",()=>send(fixture.initialPrompt))
-          if(fixture.followupPrompt){
+          if(longCase){
+            let longSummary: {id:string;completedAt:number;digest:string}|null=null
+            // Restart deliberately makes the host unreachable. Do not treat that
+            // planned interval as a failed census; retain the original deadline.
+            const transition=async(label:string,work:()=>Promise<unknown>)=>{
+              currentPhase=label
+              if(stopReason||Date.now()>=deadline)throw Error(stopReason??"trial_deadline")
+              const started=Date.now();event({phase:label,event:"start"})
+              const value=await work()
+              if(Date.now()>=deadline)throw Error("trial_deadline")
+              await collect();if(stopReason)throw Error(stopReason)
+              phases.push({phase:label,ms:Date.now()-started,completed:true});event({phase:label,event:"complete"})
+              return value
+            }
+            await runLongSession(longCase,`${pair.pairId}:${fixture.id}:${arm}`,{
+              sessionId:()=>rootSession,sequence:()=>operations.at(-1)?.sequence??0,
+              auditComplete:()=>hardHost?.auditComplete===true,censusComplete:()=>lastCensusCoverage?.complete===true,
+              nativeMarkers:()=>observeCompactionMarkers([...messages.values()]).filter(marker=>marker.auto===true).map(marker=>marker.id),
+              send:(phase,prompt)=>bounded(phase,()=>send(prompt)),
+              grade:async(phase,nonce,fromSequence)=>{
+                const snapshot=collectHardProject(project,longCase.fixture)
+                const grade=await gradeLongCheckpoint(longCase,snapshot.files,
+                  {phase,nonce,fromSequence,service:hardService!,operations,auditComplete:hardHost?.auditComplete===true})
+                longGradedFilesDigest=sha256Json(snapshot.files)
+                json(join(dir,`${phase}-graded-files.json`),{sha256:longGradedFilesDigest,manifest:snapshot.manifest})
+                return grade
+              },
+              persist(value){longEvidence=value;json(join(dir,"live-obligations.json"),value)},
+              reassign:()=>transition("handoff",async()=>{
+                const source=rootSession,target=await api("/session",{title:`Benchmark handoff ${fixture.id} ${arm}`},Math.max(1,Math.min(15000,deadline-Date.now())))
+                const transfers:unknown[]=[]
+                if(arm!=="build"){
+                  const sourceInfo=await api(`/session/${source}`)
+                  if(sourceInfo?.projectID!==target.projectID)throw Error("handoff_project_identity_changed")
+                  const owned=listOwnedRunEnvelopeResults(project,source)
+                  if(owned.errors.length||owned.scan_truncated)throw Error("handoff_owned_run_census_incomplete")
+                  const tool=createAlgTools({directory:project,worktree:project,project:{id:sourceInfo.projectID},
+                    client:{session:{get:async(args:any)=>({data:await api(`/session/${args.path.id}`,undefined,
+                      Math.max(1,Math.min(10000,deadline-Date.now())),args.signal)})}}} as any).alg_transfer
+                  for(const run of owned.envelopes){
+                    if(Date.now()>=deadline)throw Error("trial_deadline")
+                    const receipt=await tool.execute({run_id:run.run_id,new_owner_session_id:target.id},
+                      {sessionID:source,directory:project,worktree:project,abort:AbortSignal.timeout(Math.max(1,Math.min(10_000,deadline-Date.now())))} as any)
+                    transfers.push(receipt)
+                    if(typeof receipt==="string"||receipt.metadata?.error)throw Error("handoff_run_transfer_rejected")
+                  }
+                }
+                rootSession=target.id;await collect()
+                return {sourceSessionId:source,recipientSessionId:rootSession,transfers}
+              }),
+              restart:()=>transition("restart",async()=>{
+                const stopped=await stopCapturedProcess(server!);cleanup&&=stopped.passed
+                if(!stopped.passed)throw Error("restart cleanup failed")
+                await launchHost();restarted=true;await collect()
+                return {sessionId:rootSession,stopped,processes:[...processes]}
+              }),
+              compact:async(requestId,requestedAt)=>{
+                longSummary=null
+                const beforeMessages=rootMessages(),request={requestId,requestedAt:new Date(requestedAt).toISOString(),rootSessionId:rootSession,
+                  response:undefined as unknown,beforeMessages,afterMessages:[] as any[],continuation:{status:"not_completed"}}
+                compactionInput=request
+                try{await bounded("compaction",async()=>request.response=await api(`/session/${rootSession}/summarize`,
+                  {providerID:config.providerID,modelID:config.modelID},Math.max(1,deadline-Date.now())))}
+                finally{
+                  await collect().catch(()=>{})
+                  request.afterMessages=rootMessages()
+                  const receipt=compactionReceipt(request)
+                  const marker=observeCompactionMarkers(request.afterMessages).find(marker=>marker.summary?.id===receipt.summary.id)
+                  if(receipt.summaryExposureQualified&&marker?.summary)longSummary={id:marker.summary.id,
+                    completedAt:marker.summary.completedAt,digest:sha256Json(marker)}
+                  json(join(dir,"long-compaction.json"),receipt)
+                }
+              },summary:()=>longSummary,
+            })
+          }else await bounded("initial",()=>send(fixture.initialPrompt))
+          if(!longCase&&fixture.followupPrompt){
             const prepPath=join(project,"preparation.md")
             phase1={files:files(project),at_ms:Date.now()-activeStart,preparation_content:existsSync(prepPath)?readFileSync(prepPath,"utf8").slice(0,16384):null,report_absent:!existsSync(join(project,"report.json")),independent_score:await scoreBenchmarkPreparation(project)};json(join(dir,"phase1.json"),phase1)
             if(!phase1.independent_score.passed||!phase1.report_absent)throw Error("preparation_milestone_not_reached")
@@ -395,7 +490,18 @@ export async function runBuildBenchmark(config:Config){
           try{
             if(!cleanup)throw Error("contestant_or_service_cleanup_unresolved")
             hardCollection=collectHardProject(project,hardFixture)
-            if(!config.preflightOnly)score=await scoreHardDevelopmentFixture(hardFixture,{files:hardCollection.files},{service:hardService})
+            if(!config.preflightOnly){
+              if(longCase){
+                const last=longEvidence?.checkpoints.at(-1)
+                const finalGrade=last?.phase==="qr"&&last.status==="completed"?await gradeLongCheckpoint(longCase,hardCollection.files,
+                  {phase:last.phase,nonce:last.nonce,fromSequence:last.fromSequence,service:hardService!,operations,auditComplete:hardHost?.auditComplete===true}):null
+                const finalFilesMatch=sha256Json(hardCollection.files)===longGradedFilesDigest
+                score={passed:longEvidence?.passed===true&&finalFilesMatch&&finalGrade?.passed===true,
+                  final_graded_files_match:finalFilesMatch,final_service_audit_complete:hardHost?.auditComplete===true,final_grade:finalGrade,
+                  checkpoints:longEvidence?.checkpoints??[],complete:longEvidence?.complete??false}
+                if(longEvidence)longEvidence.passed&&=score.passed
+              }else score=await scoreHardDevelopmentFixture(hardFixture,{files:hardCollection.files},{service:hardService})
+            }
           }catch(error){score={passed:false,scorer_error:String(error)};stopReason??="hard_independent_score_unavailable"}
           json(join(dir,"hard-grader-receipt.json"),{score,collection:hardCollection?{manifest:hardCollection.manifest,excluded:hardCollection.excluded,bytes:hardCollection.bytes,limits:hardCollection.limits}:null,service:serviceReceipt})
         }else if(!config.preflightOnly)score=await scoreBenchmarkCase(fixture.id,project).catch(error=>({passed:false,scorer_error:String(error)}))
@@ -420,14 +526,32 @@ export async function runBuildBenchmark(config:Config){
         const qualification=eligibility({artifactPassed,workflowComplete:!config.preflightOnly&&!stopReason,sourceIntegrity:sourceUnchanged(),configIntegrity:snapshotGlobalOpenCodeConfig(globals,hmac).sha256===before&&sha(readFileSync(join(dir,"opencode.json")))===armConfigHash,cleanup:cleanup&&(!config.authFile||!existsSync(authCopy)),censusQuiescent:!config.preflightOnly&&finalCensusReceipt?.outcome==="quiescent",isolationQualified:false})
         const compaction=compactionInput?compactionReceipt(compactionInput):null
         const observedCompaction=compactionInput?compactionReceipt({...compactionInput,afterMessages:rootMessages()}):undefined
-        const retentionEvents=activeStart?hostRetentionEvents({taskId:`${pair.pairId}:${fixture.id}:${arm}`,sessions:[...sessions.values()],messages:[...messages.values()],startedAt:activeStart,endedAt:Date.now(),restarted,compactionReceipt:observedCompaction,censusComplete:databaseCensus.qualified}):[]
-        const retention=measureBuildBenchmarkRetention(retentionEvents,[])
+        const retentionEvents=activeStart?hostRetentionEvents({taskId:`${pair.pairId}:${fixture.id}:${arm}`,sessions:[...sessions.values()],messages:[...messages.values()],startedAt:activeStart,endedAt:Date.now(),restarted:long?false:restarted,compactionReceipt:observedCompaction,censusComplete:databaseCensus.qualified}):[]
+        if(longEvidence){
+          if(compactionInput&&observedCompaction?.summaryExposureQualified){
+            const marker=observeCompactionMarkers([...messages.values()]).find(marker=>marker.sessionId===compactionInput!.rootSessionId&&marker.summary?.id===observedCompaction.summary.id)
+            if(marker?.summary)reconcileLongSummary(longEvidence,{requestId:compactionInput.requestId,sessionId:compactionInput.rootSessionId,
+              id:marker.summary.id,completedAt:marker.summary.completedAt,digest:sha256Json(marker),observedAt:Date.now()})
+          }
+          // A final census failure cannot leave provisional live measurements qualified.
+          if(!databaseCensus.qualified)for(const boundary of longEvidence.retention.boundaries)boundary.boundaryCensusComplete=false
+          for(const boundary of longEvidence.retention.boundaries){
+            const completed=longEvidence.transitions.find(t=>t.phase===boundary.boundaryId.split(":").at(-1))?.status==="completed"
+            if(completed&&(boundary.transition==="reassignment"||boundary.transition==="restart"))retentionEvents.push({
+              eventId:`${boundary.boundaryId}:lineage`,at:boundary.transitionAt,taskId:boundary.taskId,sessionId:boundary.sessionId,
+              type:"session_lineage",kind:boundary.transition==="restart"?"restarted":"reassigned",
+              fromSessionId:boundary.sessionId,toSessionId:boundary.lineage?.recipientSessionId??boundary.sessionId})
+          }
+          json(join(dir,"live-obligations-final.json"),longEvidence)
+        }
+        const retention=measureBuildBenchmarkRetention(retentionEvents,[],longEvidence?.retention)
         const result={pairId:pair.pairId,caseId:fixture.id,arm,status:config.preflightOnly?(stopReason?"preflight_failed":"preflight_passed"):(stopReason?"stopped":"completed"),stopReason,passed:artifactPassed,
           scored_task_success:artifactPassed&&!config.preflightOnly&&!stopReason&&qualification.workflowEligible&&cleanup&&databaseCensus.qualified&&
             sourceUnchanged()&&snapshotGlobalOpenCodeConfig(globals,hmac).sha256===before&&sha(readFileSync(join(dir,"opencode.json")))===armConfigHash,
           independent_score:score,metrics:metric,wall_ms:activeStart?Date.now()-activeStart:null,total_with_startup_ms:Date.now()-start,phases,rootSession,
           recovery:{requested:!!compactionInput,recoveryRequired:!!fixture.followupPrompt,restarted,compactionRecovered:compactionIsQualified(compaction),compaction,phase1},retention:retention.tasks[0]??{status:"unavailable_preflight"},alg_states:algStates,alg_progress_coverage:algProgressCoverage,budget_observed_overshoot:childBudgetOvershoot,
           retention_boundaries:retention.boundaryRetention,
+          ...(long?{live_obligations:longEvidence??null}:{}),
           cleanup,metering_complete:null,observed_metering_stable:meteringComplete,final_census:finalCensusReceipt,
           coverage:{historical_message_pagination:databaseCensus.qualified?"IDs_reconciled_with_stopped_host_database":"unqualified",provider_usage:"session_reported_fields_only",quiescent_snapshot:finalCensusReceipt?.outcome==="quiescent"},databaseCensus,
           reported_component_overshoot:Math.max(0,metric.usage.totalReportedTokens-limits.reportedComponents),eligibility:qualification,auth_copy_removed:!existsSync(authCopy),processes,source_unchanged:sourceUnchanged(),arm_config_sha256:armConfigHash,
@@ -445,8 +569,8 @@ export async function runBuildBenchmark(config:Config){
           const row=results.find(r=>r.pairId===pair.pairId&&r.arm===arm)!
           if(serviceReceipt.errors.length)updateResult(pair.pairId,arm,{status:config.preflightOnly?"preflight_failed":"stopped",passed:false,scored_task_success:false,cleanup:false})
           Object.assign(row,{hard_service:serviceReceipt,isolation:HARD_ISOLATION,confirmation_qualified:false,
-            requested_host_compaction:false,native_compaction:selection.compaction,alg_state_diagnostics:"bounded_post_stop_private_progress_projection_excluded_from_grader",
-            compaction_evidence:{basis:"existing_metrics_and_retention_receipts",requested_boundary:"not_requested",information_loss:"not_measured"},
+            requested_host_compaction:longCase?.cell.compact??false,native_compaction:selection.compaction,alg_state_diagnostics:"bounded_post_stop_private_progress_projection_excluded_from_grader",
+            compaction_evidence:{basis:long?"independently_graded_live_obligations_and_private_service_trace":"existing_metrics_and_retention_receipts",requested_boundary:longCase?.cell.compact?"assigned":"not_requested",information_loss:long?"see_conditional_behavioral_regression_and_missingness_bounds":"not_measured"},
             final_files_coverage:hardCollection?"complete_user_files_with_declared_runtime_exclusions":"unavailable_collection_or_setup_failure"})
           json(join(dir,"service-receipt.json"),serviceReceipt);json(join(dir,"result.json"),row)
         }
@@ -464,7 +588,8 @@ export async function runBuildBenchmark(config:Config){
     if(hard)for(const row of terminalHardRows(results,fatal??"cohort_terminated_before_completion",!!config.preflightOnly))updateResult(row.pairId,row.arm,row)
     const armOutcomes=summarizeIssuedArms(results,config.preflightOnly?"preflight":"trial")
     const result={schema:"alg-build-pilot-v1",...armOutcomes,fatal,model:protocol.model,limits,track,pairs,results,
-      ...(hard?{workload:"hard-development",hard:protocol.hard,suite_cleanup_errors:suiteCleanupErrors}:{}),
+      ...(hard?{workload:selection.workload,hard:protocol.hard,suite_cleanup_errors:suiteCleanupErrors}:{}),
+      ...(long?{long_session_comparison:summarizeLongSessionCohort(results)}:{}),
       known_reported_cost:knownCost,reported_cost_is_invoice:false,usage_monitors:usageMonitors,global_configuration_unchanged:unchanged,local_model_stopped:localStopped,source_unchanged:sourceUnchanged()}
     json(join(root,"result.json"),result);console.log(JSON.stringify({terminal:true,model:protocol.model,trials:results.length,fatal,global_configuration_unchanged:unchanged,local_model_stopped:localStopped}));
     if(fatal||!unchanged||!localStopped||suiteCleanupErrors.length||results.some(r=>r.cleanup===false)||(hard&&!sourceUnchanged()))process.exitCode=1

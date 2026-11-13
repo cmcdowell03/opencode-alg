@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { measureRetentionBoundaries, retentionFrozenSetDigest, retentionObligationDigest, type RetentionBoundary, type RetentionBoundaryObservation } from "../scripts/build-benchmark-retention-boundaries.ts"
+import { measureRetentionBoundaries, retentionFrozenSetDigest, retentionObligationDigest, type RetentionBoundary, type RetentionBoundaryObservation, type RetentionPreBehaviorEvent } from "../scripts/build-benchmark-retention-boundaries.ts"
 
 const d = (c: string) => c.repeat(64)
 const basis = { phase: "execute", skillId: null, skillVersion: null, sourceRef: "src:v1", evidenceRef: null,
@@ -29,6 +29,242 @@ function observation(boundaryId: string, eventId: string, kind: RetentionBoundar
 }
 const payload = (boundaries: RetentionBoundary[], observations: RetentionBoundaryObservation[] = []) => ({
   schema: "build-benchmark-retention-boundaries/v1" as const, boundaries, observations,
+})
+
+function preEvent(b: RetentionBoundary, more: Partial<RetentionPreBehaviorEvent> = {}): RetentionPreBehaviorEvent {
+  return { eventId: `pre-${b.boundaryId}`, sessionId: b.sessionId, at: b.frozenAt, obligationId: "goal", kind: "behavior",
+    truthDigest: d("a"), outcome: "correct", independentlyEvaluated: true, governedActionExposed: true,
+    evidenceId: `grade-pre-${b.boundaryId}`, digest: d("d"), ...more }
+}
+function withPre(b = boundary("b")): RetentionBoundary {
+  b.preBehavior = { startAt: b.frozenAt - 5, endAt: b.transitionAt, complete: true,
+    evidenceId: `trace-${b.boundaryId}`, digest: d("d"), events: [preEvent(b)] }
+  return b
+}
+function graded(b: RetentionBoundary, outcome: "correct" | "incorrect" | "inaccessible" | "unknown", more: Partial<RetentionBoundaryObservation> = {}) {
+  return observation(b.boundaryId, `post-${b.boundaryId}`, "behavior", outcome, b.after.observedAt, {
+    taskId: b.taskId, sessionId: b.lineage?.recipientSessionId ?? b.sessionId,
+    digest: outcome === "correct" ? d("a") : d("f"), governedActionExposed: true,
+    gradingEvidence: { evidenceId: `grade-post-${b.boundaryId}`, digest: d("d"), truthDigest: d("a") }, ...more,
+  })
+}
+function measured(boundaries: RetentionBoundary[], observations: RetentionBoundaryObservation[] = []) {
+  const report = measureRetentionBoundaries(payload(boundaries, observations))
+  if (report.status !== "measured") throw new Error(`expected measurements: ${JSON.stringify(report)}`)
+  return report
+}
+function transition(kind: "control" | "prune" | "reassignment" | "restart") {
+  const b = withPre()
+  b.transition = kind; b.compactionMode = null; b.requestAt = null; b.summaryAt = null
+  b.summarySucceeded = false; b.summaryEvidence = null
+  return b
+}
+
+describe("optional pre/post behavioral regression", () => {
+  test("legacy output and frozen hashes do not change when optional evidence is added or absent", () => {
+    const b = boundary("b"), obs = observation("b", "old", "behavior", "incorrect", 13, { digest: d("f") })
+    const before = measured([b], [obs])
+    expect(before.boundaries[0]).not.toHaveProperty("behavioralRegression")
+    const setHash = retentionFrozenSetDigest(b), obligationHash = retentionObligationDigest(b.obligations[0]!)
+    withPre(b)
+    const after = measured([b], [obs])
+    const { behavioralRegression, ...legacy } = after.boundaries[0]!
+    expect(legacy).toEqual(before.boundaries[0]!)
+    expect(after.totals).toEqual(before.totals)
+    expect(retentionFrozenSetDigest(b)).toBe(setHash)
+    expect(retentionObligationDigest(b.obligations[0]!)).toBe(obligationHash)
+    expect(behavioralRegression?.obligations[0]).toMatchObject({ classification: "pre_correct_post_unknown" })
+    expect(legacy.facts[0]?.assessment).toBe("failure_observed")
+  })
+
+  test("retains failed and missing follow-up in the exposed pre-correct set and missingness bounds", () => {
+    const b = withPre()
+    b.obligations = [obligation(), obligation("retained"), obligation("missing")]
+    b.before.facts = b.after.facts = b.obligations.map(o => ({ obligationId: o.obligationId, digest: o.expectedDigest }))
+    b.preBehavior!.events = b.obligations.map(o => preEvent(b, { eventId: `pre-${o.obligationId}`, obligationId: o.obligationId }))
+    freeze(b)
+    const r = measured([b], [graded(b, "incorrect"), graded(b, "correct", { eventId: "retained", obligationId: "retained" })]).boundaries[0]!
+    expect(r.behavioralRegression?.exposure.status).toBe("observed")
+    expect(r.behavioralRegression?.obligations.map(o => o.classification)).toEqual([
+      "pre_correct_post_failure", "pre_correct_retained", "pre_correct_post_unknown",
+    ])
+    expect(r.behavioralRegression?.counts).toEqual({ preCorrect: 3, exposedPreCorrect: 3, preIncorrect: 0, preUnknown: 0, regressions: 1, retained: 1, unknownFollowup: 1 })
+    expect(r.behavioralRegression?.missingness).toEqual({ eligible: 3, scored: 2, unknown: 1,
+      observedRegressionRate: 0.5, lowerBound: 1 / 3, upperBound: 2 / 3 })
+    expect(r.facts.map(f => f.assessment)).toEqual(["failure_observed", "no_failure_observed", "unknown"])
+    const missing = measured([withPre()]).boundaries[0]!.behavioralRegression!
+    expect(missing.missingness).toEqual({ eligible: 1, scored: 0, unknown: 1, observedRegressionRate: null, lowerBound: 0, upperBound: 1 })
+  })
+
+  test("failed or missing intervention evidence cannot change frozen pre-correct eligibility", () => {
+    const summary = withPre(), handoff = transition("reassignment")
+    handoff.lineage = { eventId: "handoff", sourceSessionId: "s1", recipientSessionId: "recipient",
+      at: handoff.transitionAt, evidenceId: "transfer", digest: d("d") }
+    const cases: Array<{ original: RetentionBoundary; alter: (b: RetentionBoundary) => void }> = [
+      { original: summary, alter: b => { b.summarySucceeded = false } },
+      { original: summary, alter: b => { b.summaryEvidence = null } },
+      { original: summary, alter: b => { b.summaryEvidence!.sessionId = "foreign" } },
+      { original: summary, alter: b => { b.summaryAt = null; b.summarySucceeded = false; b.summaryEvidence = null } },
+      { original: handoff, alter: b => { delete b.lineage } },
+      { original: handoff, alter: b => { b.lineage!.sourceSessionId = "foreign" } },
+    ]
+    for (const { original, alter } of cases) {
+      const before = measured([original], [graded(original, "correct")]).boundaries[0]!.behavioralRegression!
+      const failed = structuredClone(original); alter(failed)
+      const after = measured([failed], [graded(failed, "incorrect")]).boundaries[0]!.behavioralRegression!
+      expect(before.counts).toMatchObject({ preCorrect: 1, exposedPreCorrect: 1, retained: 1 })
+      expect(after.obligations[0]!.pre).toEqual(before.obligations[0]!.pre)
+      expect(after.obligations[0]!.classification).toBe("pre_correct_post_unknown")
+      expect(after.exposure.status).toBe("unknown")
+      expect(after.counts).toEqual({ preCorrect: 1, exposedPreCorrect: 0, preIncorrect: 0, preUnknown: 0,
+        regressions: 0, retained: 0, unknownFollowup: 1 })
+      expect(after.missingness).toEqual({ eligible: 1, scored: 0, unknown: 1, observedRegressionRate: null, lowerBound: 0, upperBound: 1 })
+    }
+  })
+
+  test("post evidence conflicts keep pre eligibility, while corrupt frozen evidence does not qualify", () => {
+    const b = withPre(), post = graded(b, "correct")
+    const conflicting = measured([b], [post, post]).boundaries[0]!
+    expect(conflicting.valid).toBe(false)
+    expect(conflicting.behavioralRegression?.counts).toMatchObject({ preCorrect: 1, exposedPreCorrect: 1, unknownFollowup: 1 })
+    for (const alter of [
+      (copy: RetentionBoundary) => { copy.frozenSetDigest = d("f") },
+      (copy: RetentionBoundary) => { copy.obligations[0]!.frozenBy.digest = d("f") },
+    ]) {
+      const corrupt = structuredClone(b); alter(corrupt)
+      expect(measured([corrupt], [post]).boundaries[0]!.behavioralRegression!.counts).toMatchObject({
+        preCorrect: 0, exposedPreCorrect: 0, preUnknown: 1,
+      })
+    }
+  })
+
+  test("uses latest pre behavior, never first observed or last correct, and preserves recovery/relapse", () => {
+    for (const outcome of ["incorrect", "inaccessible", "unknown"] as const) {
+      const b = withPre()
+      b.preBehavior!.events = [preEvent(b, { eventId: "earlier", at: 8 }), preEvent(b, { outcome })]
+      const r = measured([b], [graded(b, "incorrect")]).boundaries[0]!.behavioralRegression!
+      expect(r.obligations[0]?.classification).toBe(outcome === "unknown" ? "pre_unknown" : "pre_incorrect_post_failure")
+      expect(r.counts.regressions).toBe(0)
+    }
+    const b = withPre()
+    b.preBehavior!.events.unshift(preEvent(b, { eventId: "old-failure", at: 8, outcome: "incorrect" }))
+    expect(measured([b], [graded(b, "incorrect")]).boundaries[0]!.behavioralRegression!.counts.regressions).toBe(1)
+    b.preBehavior!.events.at(-1)!.outcome = "incorrect"
+    expect(measured([b], [graded(b, "correct")]).boundaries[0]!.behavioralRegression!.obligations[0]?.classification).toBe("pre_incorrect_recovered")
+  })
+
+  test("truth, action, transition, coverage, timing, and grading gaps cannot reuse a stale pre-success", () => {
+    const alterations: Array<(b: RetentionBoundary) => void> = [
+      b => { b.preBehavior!.complete = false },
+      b => { b.preBehavior!.endAt-- },
+      b => { b.preBehavior!.startAt = 0 },
+      b => { b.preBehavior!.events[0]!.independentlyEvaluated = false },
+      b => { b.preBehavior!.events[0]!.truthDigest = d("f") },
+      b => { b.preBehavior!.events[0]!.sessionId = "foreign" },
+      b => { b.preBehavior!.events.push({ ...b.preBehavior!.events[0]! }) },
+      b => { b.preBehavior!.events[0]!.at = b.transitionAt },
+      ...(["action", "truth_change", "transition"] as const).map(kind => (b: RetentionBoundary) => {
+        b.preBehavior!.events[0]!.at -= 2
+        b.preBehavior!.events.push(preEvent(b, { eventId: kind, kind, obligationId: null, outcome: null }))
+      }),
+      b => { b.preBehavior!.events.push(...[1, 2, 3].map(n => preEvent(b, { eventId: `response-${n}`, kind: "response", obligationId: null }))) },
+    ]
+    for (const alter of alterations) {
+      const b = withPre(boundary("b", "task", "s1", 200_000)); alter(b)
+      const r = measured([b], [graded(b, "incorrect")]).boundaries[0]!
+      expect(r.behavioralRegression?.obligations[0]?.classification).toBe("pre_unknown")
+      expect(r.behavioralRegression?.missingness.observedRegressionRate).toBeNull()
+      expect(r.facts[0]?.assessment).toBe("failure_observed")
+    }
+    const first = boundary("first"), second = withPre(boundary("b2", "task", "s2", 20))
+    second.preBehavior!.startAt = 5; second.preBehavior!.events[0]!.at = 10
+    expect(measured([first, second], [graded(second, "incorrect")]).boundaries[1]!.behavioralRegression!.obligations[0]?.pre.reason)
+      .toBe("pre_behavior_not_current_at_freeze")
+  })
+
+  test("negative controls require exposed choices and complete traces; old misuse diagnostics remain", () => {
+    const b = withPre()
+    b.obligations = [obligation("goal", "revoked")]; freeze(b)
+    const bad = graded(b, "incorrect")
+    let r = measured([b], [bad]).boundaries[0]!
+    expect(r.facts[0]?.assessment).toBe("failure_observed")
+    expect(r.behavioralRegression?.obligations[0]?.classification).toBe("pre_correct_post_unknown")
+    b.useWindow = { startAt: b.summaryAt!, endAt: b.after.observedAt, complete: true }
+    expect(measured([b], [bad]).boundaries[0]!.behavioralRegression!.counts.regressions).toBe(1)
+    expect(measured([b], [graded(b, "correct", { governedActionExposed: false })]).boundaries[0]!.behavioralRegression!.counts.unknownFollowup).toBe(1)
+    expect(measured([b], [graded(b, "correct")]).boundaries[0]!.behavioralRegression!.counts.retained).toBe(1)
+    b.preBehavior!.events[0]!.governedActionExposed = false
+    expect(measured([b], [bad]).boundaries[0]!.behavioralRegression!.counts.preUnknown).toBe(1)
+  })
+
+  test("post failure survives recovery; ungraded/latest wrong-truth evidence cannot prove retention", () => {
+    const b = withPre()
+    const early = graded(b, "incorrect", { eventId: "failure", at: b.summaryAt! })
+    expect(measured([b], [early, graded(b, "correct")]).boundaries[0]!.behavioralRegression!.counts.regressions).toBe(1)
+    for (const patch of [{ gradingEvidence: undefined }, { independentlyEvaluated: false },
+      { gradingEvidence: { evidenceId: b.preBehavior!.events[0]!.evidenceId, digest: d("d"), truthDigest: d("a") } },
+      { gradingEvidence: { evidenceId: "wrong-truth", digest: d("d"), truthDigest: d("f") } }]) {
+      const r = measured([b], [graded(b, "correct", patch)]).boundaries[0]!
+      expect(r.behavioralRegression?.counts.unknownFollowup).toBe(1)
+      expect(r.facts[0]?.assessment).toBe(patch.independentlyEvaluated === false ? "unknown" : "no_failure_observed")
+    }
+    b.boundaryCensusComplete = false
+    const r = measured([b], [graded(b, "incorrect")]).boundaries[0]!.behavioralRegression!
+    expect(r.exposure.status).toBe("observed")
+    expect(r.counts).toMatchObject({ preCorrect: 1, unknownFollowup: 1, regressions: 0 })
+  })
+
+  test("reassignment grades source before and recipient after without merging session authority", () => {
+    const b = transition("reassignment")
+    b.lineage = { eventId: "handoff", sourceSessionId: "s1", recipientSessionId: "recipient", at: b.transitionAt, evidenceId: "handoff-receipt", digest: d("d") }
+    const r = measured([b], [graded(b, "incorrect")]).boundaries[0]!
+    expect(r.valid).toBe(true)
+    expect(r.behavioralRegression).toMatchObject({ sourceSessionId: "s1", recipientSessionId: "recipient", counts: { regressions: 1 } })
+    const wrong = measured([b], [graded(b, "correct", { sessionId: "s1" })]).boundaries[0]!
+    expect(wrong.valid).toBe(false)
+    expect(wrong.behavioralRegression?.counts.unknownFollowup).toBe(1)
+    b.lineage.sourceSessionId = "foreign"
+    expect(measured([b]).boundaries[0]!.behavioralRegression!.exposure.status).toBe("unknown")
+    delete b.lineage
+    expect(measured([b]).boundaries[0]!.behavioralRegression!.counts).toMatchObject({ preCorrect: 1, exposedPreCorrect: 0, unknownFollowup: 1 })
+  })
+
+  test("control and restart are separate checkpoints; observed pruning needs a real receipt, never a summary", () => {
+    for (const kind of ["control", "restart"] as const) {
+      const b = transition(kind)
+      const r = measured([b], [graded(b, "correct")]).boundaries[0]!
+      expect(r.valid).toBe(true)
+      expect(r.behavioralRegression?.exposure).toEqual({ transition: kind, status: "observed", pruningObservability: "unknown" })
+      expect(r.behavioralRegression?.counts.retained).toBe(1)
+    }
+    const b = transition("prune")
+    for (const evidence of [undefined, { observable: false, receipt: null }, { observable: true, receipt: null }]) {
+      b.pruneEvidence = evidence
+      const unknown = measured([b], [graded(b, "correct")]).boundaries[0]!.behavioralRegression!
+      expect(unknown.exposure.status).toBe("unknown")
+      expect(unknown.counts).toMatchObject({ preCorrect: 1, exposedPreCorrect: 0, unknownFollowup: 1 })
+    }
+    b.pruneEvidence = { observable: true, receipt: { eventId: "prune-1", sessionId: "s1", at: b.transitionAt,
+      evidenceId: "host-prune", digest: d("d"), affectedMessageIds: ["old-tool-message"], affectedToolIds: [], removedTokens: null } }
+    const r = measured([b], [graded(b, "incorrect")]).boundaries[0]!
+    expect(r.valid).toBe(true)
+    expect(r.behavioralRegression?.exposure).toEqual({ transition: "prune", status: "observed", pruningObservability: "observable" })
+    expect(r.behavioralRegression?.counts.regressions).toBe(1)
+    b.summarySucceeded = true
+    expect(measured([b]).boundaries[0]!.behavioralRegression!.exposure.status).toBe("unknown")
+  })
+
+  test("optional evidence stays strict and aggregate row limits include pre-traces", () => {
+    const b = withPre()
+    const malformed = structuredClone(b) as any
+    malformed.preBehavior.events[0].digest = "not-a-hash"
+    expect(measureRetentionBoundaries(payload([malformed])).status).toBe("invalid_input")
+    const extra = { ...b, preBehavior: { ...b.preBehavior!, forgedAuthority: true } }
+    expect(measureRetentionBoundaries(payload([extra])).status).toBe("invalid_input")
+    b.preBehavior!.events = Array.from({ length: 5000 }, (_, i) => preEvent(b, { eventId: `e-${i}` }))
+    const overflow = measureRetentionBoundaries(payload([b], [graded(b, "correct")]))
+    expect(overflow).toMatchObject({ status: "invalid_input", issues: [{ code: "aggregate_limit" }] })
+  })
 })
 
 describe("per-compaction retention boundaries", () => {

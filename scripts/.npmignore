@@ -13,3 +13,9 @@
 /hard-benchmark-cohort.ts
 /live-retention.ts
 /live-retention-fixture.ts
+/build-benchmark-long-fixtures.ts
+/build-benchmark-long-session.ts
+/build-benchmark-long-qualification.ts
+/build-benchmark-long-reference.ts
+/build-benchmark-long-report.ts
+/test-long-session-headless.ts
