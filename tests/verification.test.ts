@@ -91,6 +91,16 @@ describe("opt-in verification", () => {
     expect(() => buildCheckerPrompt({ criteria: [], claimed: {}, verification: { version: 1, mandate: "x".repeat(2_001) } })).toThrow()
     expect(() => validateGraph({ name: "bad", nodes: [{ id: "work", agent: "researcher", depends_on: [], verification: { version: 1 } }] })).toThrow()
   })
+  test("trusted action-evidence guidance explains bounded pair, exit and command semantics", () => {
+    const prompt = buildCheckerPrompt({ criteria: ["Run the prescribed command successfully"], claimed: {}, actionEvidenceAvailable: true })
+    expect(prompt).toContain("A terminal intent_sha256 references the retained intent record")
+    expect(prompt).toContain("Ordinal is before-hook order within this child attempt")
+    expect(prompt).toContain("tool_status=completed means the tool finished")
+    expect(prompt).toContain("nonzero code contradicts a zero-exit requirement; unavailable means the exit result is unknown")
+    expect(prompt).toContain("command_redacted=false and command_source_truncated=false")
+    expect(prompt).toContain("equality to a required command needs a separately prescribed command")
+    expect(prompt).toContain("exactly-once submission or causation")
+  })
   test("executor persists basis before launch, informs retry, and recovers bound output", async () => {
     const project = tempProject()
     try {

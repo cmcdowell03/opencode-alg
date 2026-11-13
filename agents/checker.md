@@ -46,6 +46,15 @@ Only inspected pages support their returned `R` citation IDs. A page is a byte
 fragment, and a manifest is a pointer, not proof. Redaction, capture gaps and
 unfinished intents remain explicit uncertainty. A shell exit is not proof that
 a remote service accepted a job or accepted it exactly once.
+For a linked action pair, `terminal.intent_sha256` references the retained
+intent record; matching bound identity, ordinal and `call_id_sha256` bind it to
+that captured call. Ordinal is before-hook order within the child attempt (1 is
+the first observed hook call), not evidence of universal absence. `completed`
+means the tool finished; an explicitly reported exit code is the process
+result, so nonzero contradicts a zero-exit criterion while unavailable remains
+unknown. A fully read command with both command loss flags false establishes
+only its retained host-input string; equality requires a separately prescribed
+command to compare. Missing pages, redaction and truncation remain uncertainty.
 For verified graphs, use `inconclusive` when required evidence is unavailable;
 reserve `disconfirmed`/`unsupported` for observed defects or unmet requirements.
 Never ask a worker to repeat side effects merely to replace missing evidence.

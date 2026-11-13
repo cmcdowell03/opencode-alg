@@ -54,7 +54,7 @@ export function evidencePage(project: string, runId: string, reference: RunDataR
   const content = data.subarray(offset, end).toString("utf8")
   const receipt = retrievedVerificationEvidence(reference, offset, content)
   return { receipt, content, next_offset: end < data.length ? end : null,
-    scope: "Retained JSON byte fragment; missing/redacted/source-truncated data and remote effects are not established by a citation." }
+    scope: "Retained JSON byte fragment; linked-pair hashes bind this captured call. Ordinal is observed before-hook order within the child attempt, not universal absence. Missing pages, redaction/truncation and remote effects remain unestablished." }
 }
 
 /** Active checker capability. No owner lookup bypass, arbitrary paths or caller-supplied receipts. */
@@ -80,7 +80,7 @@ export class EvidenceRetrieval {
       return { run_id: grant.runId, sources: { omitted: grant.sources.omitted, unavailable: grant.sources.unavailable },
         records: grant.records.slice(offset, offset + 16).map(record => ({ ...record, record_id: record.reference.sha256 })),
         next_offset: offset + 16 < grant.records.length ? offset + 16 : null,
-        warning: "Index pointers are not findings. Read exact pages; a shell exit is not proof of remote acceptance or exactly-once submission." }
+        warning: "Index pointers are not findings; read exact pages. Linked-pair hashes bind one captured call; ordinal is observed before-hook order within the child attempt, not universal absence. Pages do not establish remote effects." }
     }
     const record = grant.records.find(record => record.reference.sha256 === request.record_id)
     if (!record) throw new Error("record is not assigned to this checker")

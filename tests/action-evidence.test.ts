@@ -3,6 +3,7 @@ import { mkdirSync, readdirSync, symlinkSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, test } from "bun:test"
 import { ActionEvidenceJournal, ACTION_EVIDENCE_MAX_COMMAND_BYTES, ACTION_EVIDENCE_MAX_OUTPUT_BYTES, readActionManifest, readActionRecord, type ActionEvidenceIdentity } from "../src/action-evidence.ts"
+import { EvidenceRetrieval, evidencePage } from "../src/evidence-retrieval.ts"
 import { tempProject, removeProject } from "./helpers.ts"
 
 const identity: ActionEvidenceIdentity = { run_id: "run-action", node_id: "worker", attempt: 2 }
@@ -11,6 +12,46 @@ const hash = (value: string) => createHash("sha256").update(value).digest("hex")
 const evidenceDir = (project: string, session: string) => join(project, ".opencode", "runs", identity.run_id, "artifacts", "action-evidence", hash(session))
 
 describe("durable action evidence", () => {
+  test.each([
+    ["zero", { exit_code: 0 }, "reported", 0],
+    ["nonzero", { exit_code: 7 }, "reported", 7],
+    ["unavailable", {}, "unavailable", undefined],
+  ] as const)("links terminal evidence for %s exit metadata without changing its meaning", (_label, metadata, exitCodeStatus, exitCode) => {
+    const project = tempProject("action-evidence-linked-")
+    try {
+      const journal = new ActionEvidenceJournal(project), session = "child_linked"
+      journal.bind(session, identity)
+      const row = call(session, "linked-call")
+      const intentRef = journal.before(row, { command: "bun test" })!
+      const terminalRef = journal.after(row, { output: "finished", metadata })!
+      const intent = journal.readRecord(intentRef, { ...identity, child_session_id: session })
+      const terminal = journal.readRecord(terminalRef, { ...identity, child_session_id: session })
+      expect(intent).toMatchObject({ kind: "intent", ordinal: 1, command: "bun test", command_redacted: false, command_source_truncated: false })
+      expect(terminal).toMatchObject({ kind: "terminal", ordinal: 1, intent_sha256: intentRef.sha256,
+        call_id_sha256: intent.kind === "intent" ? intent.call_id_sha256 : "", tool_status: "completed", exit_code_status: exitCodeStatus })
+      if (terminal.kind === "terminal") expect(terminal.exit_code).toBe(exitCode)
+      expect(() => readActionManifest(project, journal.finish(session), identity)).not.toThrow()
+    } finally { removeProject(project) }
+  })
+
+  test("keeps retrieval index and page scope reminders concise and uncertainty-bounded", () => {
+    const project = tempProject("action-evidence-retrieval-scope-")
+    try {
+      const journal = new ActionEvidenceJournal(project), session = "child_scope"
+      journal.bind(session, identity)
+      const intent = journal.before(call(session, "scope-call"), { command: "echo observed" })!
+      const retrieval = new EvidenceRetrieval(project)
+      retrieval.grant("checker_scope", identity.run_id, { version: 1, journals: [], omitted: 0, unavailable: 0 }, [
+        { reference: intent, node_id: identity.node_id, attempt: identity.attempt, kind: "intent", ordinal: intent.ordinal },
+      ])
+      const index = retrieval.execute("checker_scope", { evidence: "index" })
+      expect("warning" in index && index.warning).toContain("Linked-pair hashes bind one captured call")
+      const page = evidencePage(project, identity.run_id, { artifact_path: intent.artifact_path, sha256: intent.sha256, byte_size: intent.byte_size })
+      expect(page.scope).toContain("Retained JSON byte fragment")
+      expect(page.scope).toContain("Missing pages, redaction/truncation")
+    } finally { removeProject(project) }
+  })
+
   test("writes intent before terminal, retains cwd and exact metadata exit code, and pages through verified references", () => {
     const project = tempProject("action-evidence-")
     try {

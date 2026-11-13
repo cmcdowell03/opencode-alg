@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto"
-import { spawn, spawnSync } from "node:child_process"
+import { spawn } from "node:child_process"
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http"
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -9,7 +9,9 @@ import { isDeepStrictEqual } from "node:util"
 import { createRun, hydrateRunFully, loadRun } from "../src/store.ts"
 import { ActionEvidenceJournal } from "../src/action-evidence.ts"
 import { evidencePage } from "../src/evidence-retrieval.ts"
-import { validateOpenCodeVersion, realUserGlobalConfigRoots, snapshotGlobalOpenCodeConfig, verificationPluginConfiguration } from "./live-verify.ts"
+import { validateOpenCodeVersion, realUserGlobalConfigRoots, snapshotGlobalOpenCodeConfig, verificationPluginConfiguration,
+  runVersionCommand, VersionCommandError, type VersionCommandEvidence } from "./live-verify.ts"
+import { redactEvolutionText } from "../src/skill-evolution-redaction.ts"
 import { resolveOpenCodeExecutable } from "./host-executable.ts"
 import { seedVerificationHostDependencies } from "./verification-host-dependencies.ts"
 import { compactionReceipt, observeCompactionMarkers } from "./build-benchmark-protocol.ts"
@@ -17,6 +19,7 @@ import { compactionReceipt, observeCompactionMarkers } from "./build-benchmark-p
 const MAX_RUN_MS = 15 * 60_000
 const MAX_TOTAL_MS = 35 * 60_000
 const REQUEST_MS = 12_000
+const VERSION_PROBE_MS = 30_000
 const BODY_LIMIT = 8 * 1024 * 1024
 const EARLY_MARKER = "ACTION_EVIDENCE_EARLY_MARKER_V1"
 const LATE_MARKER = "ACTION_EVIDENCE_LATE_MARKER_V1"
@@ -67,13 +70,69 @@ function isolatedEnv(root: string): NodeJS.ProcessEnv {
     OPENCODE_DISABLE_AUTOUPDATE: "1", OPENCODE_DISABLE_TELEMETRY: "1", DO_NOT_TRACK: "1", NO_COLOR: "1",
   })
 }
-function trackedSpawn(exe: string, args: string[], cwd: string, env: NodeJS.ProcessEnv) {
-  const child = spawn(exe, args, { cwd, env, shell: false, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] })
+function trackedSpawn(exe: string, args: string[], cwd: string, env: NodeJS.ProcessEnv, detached = false) {
+  const child = spawn(exe, args, { cwd, env, detached, shell: false, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] })
   let stdout = "", stderr = "", exited = child.exitCode !== null
   child.stdout?.on("data", (b: Buffer) => { stdout = (stdout + b.toString("utf8")).slice(-16_384) })
   child.stderr?.on("data", (b: Buffer) => { stderr = (stderr + b.toString("utf8")).slice(-16_384) })
   child.once("close", () => { exited = true }); child.once("error", () => { exited = true })
-  return { child, stdout: () => stdout, stderr: () => stderr, exited: () => exited || child.exitCode !== null }
+  return { child, stdout: () => stdout, stderr: () => stderr, exited: () => exited || child.exitCode !== null,
+    exit: () => ({ observed: exited || child.exitCode !== null, code: child.exitCode, signal: child.signalCode }) }
+}
+
+/** Private parsed host data, redacted before truncation; never emitted to stdout or supplied to the checker. */
+export function boundedPrivateHostEvidence(value: unknown, secrets: readonly string[], maximum = 512 * 1024) {
+  const original = JSON.stringify(value)
+  const redacted = redactEvolutionText(secrets.reduce((text, secret) => secret.length >= 6
+    ? text.replaceAll(secret, "[REDACTED]").replaceAll(JSON.stringify(secret).slice(1, -1), "[REDACTED]") : text, original))
+  const bytes = Buffer.from(redacted)
+  let end = Math.min(bytes.length, maximum)
+  while (end > 0 && end < bytes.length && (bytes[end]! & 0xc0) === 0x80) end--
+  return { source_bytes: Buffer.byteLength(original), redacted: redacted !== original, truncated: end < bytes.length,
+    retained_bytes: end, retained_sha256: sha(bytes.subarray(0, end)), json_text: bytes.subarray(0, end).toString("utf8") }
+}
+
+export function versionProbeDiagnostic(evidence: VersionCommandEvidence, elapsedMs: number) {
+  return { timeout_ms: evidence.timeout_ms, elapsed_ms: elapsedMs, exit_code: evidence.exit_code, exit_signal: evidence.exit_signal,
+    exit_observed: evidence.exit_observed, cleanup_passed: evidence.cleanup.passed,
+    error_category: evidence.timed_out ? "timeout" : evidence.root_pid === null ? "spawn_failure" : !evidence.cleanup.passed ? "cleanup_failure" :
+      !evidence.exit_observed ? "exit_unobserved" : evidence.exit_signal ? "signal" : evidence.exit_code !== 0 ? "nonzero_exit" :
+        !evidence.passed ? "probe_error" : null }
+}
+
+export function hostCleanupStatus(processes: readonly { pid: number | null; exited: boolean }[]) {
+  const starts = processes.filter(row => row.pid !== null).length
+  return { starts, spawn_attempts: processes.length, host_stopped: starts === 0 ? null : processes.every(row => row.exited),
+    host_cleanup_required: starts > 0, host_cleanup_passed: processes.every(row => row.exited) }
+}
+
+export function persistDiagnosticOutcome(base: Json, outputPath: string, tempRoot: string): Json {
+  mkdirSync(dirname(outputPath), { recursive: true })
+  const checkpointPath = `${outputPath}.before-cleanup.json`
+  if (existsSync(outputPath) || existsSync(checkpointPath)) throw new Error("refusing to overwrite an existing case receipt")
+  const provisional = { ...base, passed: false, evaluation_passed: base.passed,
+    cleanup: { ...base.cleanup, temporary_environment_removed: false, retained_failure_workspace: tempRoot } }
+  // Publish observations before any removal; refuse reuse of an issued case's receipt.
+  writeFileSync(checkpointPath, `${JSON.stringify(provisional, null, 2)}\n`, { flag: "wx", mode: 0o600 })
+  let finalizationStage = "workspace_cleanup"
+  try {
+    if (base.passed === true) rmSync(tempRoot, { recursive: true, force: true })
+    finalizationStage = "receipt_publication"
+    const removed = !existsSync(tempRoot)
+    const completed = { ...base, passed: base.passed === true && removed, cleanup: { ...base.cleanup,
+      temporary_environment_removed: removed, retained_failure_workspace: removed ? null : tempRoot } }
+    writeFileSync(outputPath, `${JSON.stringify(completed, null, 2)}\n`, { flag: "wx", mode: 0o600 })
+    return completed
+  } catch (error) {
+    // The immutable checkpoint retains every observation even if cleanup or publication fails.
+    const code = (error as NodeJS.ErrnoException)?.code
+    const removed = !existsSync(tempRoot)
+    const failed = { ...provisional, cleanup: { ...provisional.cleanup, temporary_environment_removed: removed,
+      retained_failure_workspace: removed ? null : tempRoot }, retained_receipt: checkpointPath,
+      finalization_failure: { stage: finalizationStage, code: typeof code === "string" && /^[A-Z0-9_]+$/.test(code) ? code : "UNKNOWN" } }
+    try { writeFileSync(outputPath, `${JSON.stringify(failed, null, 2)}\n`, { flag: "wx", mode: 0o600 }) } catch { /* immutable checkpoint remains */ }
+    return failed
+  }
 }
 async function stopProcess(processInfo: ReturnType<typeof trackedSpawn>): Promise<boolean> {
   if (!processInfo.exited()) {
@@ -336,8 +395,10 @@ async function api(base: string, project: string, path: string, method = "GET", 
   return readJson(await fetch(url, { method, headers: body === undefined ? undefined : { "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(assertDeadline(deadline, requestTimeoutMs)) }))
 }
-async function startHost(executable: string, project: string, env: NodeJS.ProcessEnv, deadline: number) {
+async function startHost(executable: string, project: string, env: NodeJS.ProcessEnv, deadline: number,
+  onSpawn: (processInfo: ReturnType<typeof trackedSpawn>) => void) {
   const port = await freePort(), processInfo = trackedSpawn(executable, ["serve", "--hostname", "127.0.0.1", "--port", String(port)], project, env)
+  onSpawn(processInfo)
   const base = `http://127.0.0.1:${port}`
   while (Date.now() < deadline) {
     if (processInfo.exited()) throw new Error("OpenCode exited before readiness")
@@ -414,7 +475,7 @@ async function sessionHistory(base: string, project: string, session: string, de
 function hostTools(history: readonly any[]): any[] {
   return history.flatMap(message => (message.parts ?? []).filter((part: any) => part?.type === "tool"))
 }
-function parentDispatchReceipt(before: any[], compacted: any[], resumed: any[], emissions: ProviderEmission[],
+export function parentDispatchReceipt(before: any[], compacted: any[], resumed: any[], emissions: ProviderEmission[],
   run: ReturnType<typeof loadEvidenceRun>): Json {
   // Incoming provider histories include native task cards. Only responses we emitted are model dispatches.
   const parentEmissions = emissions.filter(row => row.role === "parent")
@@ -434,7 +495,8 @@ function parentDispatchReceipt(before: any[], compacted: any[], resumed: any[], 
       // Exact native projector identity, completed attempt, parent message and child binding; arbitrary task calls fail.
       return attempt?.attempt === 1 && (attempt.status === "done" || nodeId === "check" && attempt.status === "failed") && dispatch &&
         part.callID === `call_alg_${sha(`${run.run_id}\0${nodeId}\0${attempt.attempt}`).slice(0, 24)}` &&
-        part.sessionID === run.owner_session_id && part.messageID === dispatch.messageID && part.state?.status === "completed" &&
+        part.sessionID === run.owner_session_id && part.messageID === dispatch.messageID &&
+        part.state?.status === (attempt.status === "done" ? "completed" : "error") &&
         isDeepStrictEqual(part.state.input, { description: nodeId,
           prompt: `ALG run ${run.run_id}, node ${nodeId}, attempt ${attempt.attempt}.`, subagent_type: node!.agent }) &&
         part.state.metadata?.sessionId === attempt.session_id && part.state.metadata?.parentSessionId === run.owner_session_id
@@ -443,6 +505,7 @@ function parentDispatchReceipt(before: any[], compacted: any[], resumed: any[], 
     return { alg_run: actual.filter(part => part.tool === "alg_run").length,
       alg_resume: actual.filter(part => part.tool === "alg_resume").length, task_cards: cards.length,
       total_tool_parts: parts.length, unexpected_tool_parts: unknown,
+      dispatches_match: matchedDispatches,
       passed: matchedDispatches && unknown === 0 && new Set(cards.map(part => part.callID)).size === cards.length &&
         parts.every(part => typeof part.id === "string") && new Set(parts.map(part => part.id)).size === parts.length }
   }
@@ -453,7 +516,7 @@ function parentDispatchReceipt(before: any[], compacted: any[], resumed: any[], 
   return { passed: emissionMatch && runCountsMatch && beforeCompaction.passed && afterCompaction.passed && afterResume.passed,
     before_compaction: beforeCompaction, after_compaction: afterCompaction, after_resume: afterResume,
     emitted_parent_tool_calls: parentEmissions.length, emitted_alg_calls: parentEmissions.filter(row => row.tool === "alg_run" || row.tool === "alg_resume").length,
-    provider_call_ids_match: emissionMatch && beforeCompaction.passed && afterCompaction.passed && afterResume.passed,
+    provider_call_ids_match: emissionMatch && beforeCompaction.dispatches_match && afterCompaction.dispatches_match && afterResume.dispatches_match,
     global_attempts: run.global_attempts,
     producer_attempts: run.nodes.work?.current_attempt, checker_attempts: run.nodes.check?.current_attempt }
 }
@@ -502,8 +565,17 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
   const env = isolatedEnv(join(tempRoot, "isolated-env")), provider = createProvider(options.caseId)
   let providerConfig: Json = {}, authCopyPath: string | null = null, authSecrets: string[] = []
   let host: Awaited<ReturnType<typeof startHost>> | undefined, providerStopped = false, hostStopped = false
+  const hostProcesses: ReturnType<typeof trackedSpawn>[] = []
+  const privateHostEvidence: Json = {}
+  let versionProbe: ReturnType<typeof versionProbeDiagnostic> | null = null
+  let versionProcess: ReturnType<typeof trackedSpawn> | undefined
+  const observeHistory = async (label: string, base: string, session: string, until = deadline) => {
+    const rows = await sessionHistory(base, project, session, until)
+    privateHostEvidence[label] = boundedPrivateHostEvidence(rows, authSecrets)
+    return rows
+  }
   let ownerSessionId = "", runId = "", terminalStatus = "unknown", restartVerified = false
-  let evidence: Json | null = null, failure: string | null = null, failureRun: Json | null = null, outputPersisted = false, temporaryRemoved = false
+  let evidence: Json | null = null, failure: string | null = null, failureRun: Json | null = null
   let compaction: Json | null = null
   const journalCheckpoints: Record<string, string> = {}
   const freezeJournal = (phase: string, observed: Json) => {
@@ -527,9 +599,19 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
       mkdirSync(dirname(authCopyPath), { recursive: true })
       writeFileSync(authCopyPath, JSON.stringify({ [options.providerID]: selectedAuth }), { flag: "wx", mode: 0o600 })
     }
-    const versionProbe = spawnSync(executable, ["--version"], { cwd: project, env, encoding: "utf8", timeout: 10_000, windowsHide: true })
-    if (versionProbe.error || versionProbe.status !== 0) throw new Error("OpenCode version probe failed")
-    version = `${versionProbe.stdout ?? ""} ${versionProbe.stderr ?? ""}`.match(/\b\d+\.\d+\.\d+\b/)?.[0] ?? "unknown"
+    const probeStarted = Date.now(), probeTimeout = assertDeadline(deadline, VERSION_PROBE_MS)
+    versionProcess = trackedSpawn(executable, ["--version"], project, env, process.platform !== "win32")
+    let probeEvidence: VersionCommandEvidence
+    try {
+      // Supplying our captured process keeps the existing credential-free environment intact.
+      probeEvidence = await runVersionCommand(executable, project, { captured: versionProcess, timeoutMs: probeTimeout })
+    } catch (error) {
+      if (error instanceof VersionCommandError) versionProbe = versionProbeDiagnostic(error.evidence, Date.now() - probeStarted)
+      throw new Error("OpenCode version probe failed; inspect safe version_probe diagnostics")
+    }
+    versionProbe = versionProbeDiagnostic(probeEvidence, Date.now() - probeStarted)
+    if (versionProbe.error_category !== null) throw new Error("OpenCode version probe failed; inspect safe version_probe diagnostics")
+    version = `${probeEvidence.stdout} ${probeEvidence.stderr}`.match(/\b\d+\.\d+\.\d+\b/)?.[0] ?? "unknown"
     if (version === "unknown" || !validateOpenCodeVersion(version).compatible) throw new Error("OpenCode host version is outside the supported V1 range")
     const checkout = verificationPluginConfiguration()
     seedVerificationHostDependencies(join(env.XDG_CONFIG_HOME!, "opencode"), checkout.source.root)
@@ -540,7 +622,7 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     seedVerificationHostDependencies(join(project, ".opencode"), checkout.source.root)
     const endpoint = await provider.listen(); writeConfig(env.OPENCODE_CONFIG!, endpoint, plugin.source.spec, options.providerID, options.modelID, providerConfig)
     writeFileSync(env.OPENCODE_ALG_CONFIG!, JSON.stringify({ skillEvolution: { enabled: false }, sessionMemory: { mode: "off" }, workspace: { mode: "observe" } }), { flag: "wx", mode: 0o600 })
-    host = await startHost(executable, project, env, deadline)
+    host = await startHost(executable, project, env, deadline, child => hostProcesses.push(child))
     const created = await api(host.base, project, "/session", "POST", { title: OWNER_TITLE }, deadline)
     ownerSessionId = typeof created?.id === "string" ? created.id : ""
     if (!ownerSessionId) throw new Error("OpenCode did not create the parent host session")
@@ -567,7 +649,7 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     freezeJournal("before_compaction", evidence)
     const producerFinishedAt = persisted.nodes.work!.attempts[0]!.finished_at
     const producerRequestCount = provider.requests.filter(row => row.role === "implementer").length
-    const beforeMessages = await sessionHistory(host.base, project, ownerSessionId, deadline)
+    const beforeMessages = await observeHistory("parent_before_compaction", host.base, ownerSessionId)
     if (observeCompactionMarkers(beforeMessages).length !== 0) throw new Error("unexpected compaction before the requested checkpoint")
     const requestId = randomUUID(), requestedAt = new Date().toISOString()
     compaction = { requested_at: requestedAt, completed_summary_count: 0 }
@@ -577,7 +659,7 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     let afterMessages: any[] = [], summaryReceipt: ReturnType<typeof compactionReceipt> | undefined
     const summaryDeadline = Math.min(deadline, Date.now() + 15_000)
     do {
-      afterMessages = await sessionHistory(host.base, project, ownerSessionId, summaryDeadline)
+      afterMessages = await observeHistory("parent_after_compaction", host.base, ownerSessionId, summaryDeadline)
       summaryReceipt = compactionReceipt({ requestId, requestedAt, rootSessionId: ownerSessionId, response: summaryResponse,
         beforeMessages, afterMessages, continuation: { status: "not_completed" } })
       if (summaryReceipt.summaryExposureQualified) break
@@ -620,7 +702,7 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     if (!(Date.parse(checkerAttempt.started_at) >= summaryMarker.summary!.completedAt))
       throw new Error("checker started before the actual parent summary completed")
     compaction.checker_started_at = checkerAttempt.started_at
-    const checkerHistory = await sessionHistory(host.base, project, checkerAttempt.session_id!, deadline)
+    const checkerHistory = await observeHistory("checker", host.base, checkerAttempt.session_id!)
     evidence.checker_provider_id = options.providerID
     evidence.checker_model_id = options.modelID
     evidence.checker_retrieval = validateCheckerRetrieval(project, persisted, evidence, checkerHistory)
@@ -628,7 +710,7 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
       checker_output: checkerAttempt.output, retrieved: checkerAttempt.retrieved_evidence ?? [], checker_history: checkerHistory })
     const providerRoles = provider.requests.map(row => row.role)
     if (!providerRoles.includes("parent") || !providerRoles.includes("implementer") || providerRoles.includes("unknown")) throw new Error("deterministic producer/parent provider did not observe the expected roles")
-    const history = await sessionHistory(host.base, project, ownerSessionId, deadline)
+    const history = await observeHistory("parent_after_resume", host.base, ownerSessionId)
     evidence.parent_dispatch = parentDispatchReceipt(beforeMessages, afterMessages, history, provider.emissions, persisted)
     const continuationUser = history.find(message => message.info?.role === "user" &&
       message.parts?.some((part: any) => part.type === "text" && part.text?.includes(RESUME_MARKER)))
@@ -639,7 +721,7 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     const resumedMarkers = observeCompactionMarkers(history)
     compaction.completed_summary_count_after_resume = resumedMarkers.filter(marker => marker.summary).length
     if (!isDeepStrictEqual(resumedMarkers, markers)) throw new Error("unexpected additional or altered compaction after resume")
-    const producerHistory = await sessionHistory(host.base, project, evidence.child_session_id, deadline), producerTools = hostTools(producerHistory)
+    const producerHistory = await observeHistory("producer", host.base, evidence.child_session_id), producerTools = hostTools(producerHistory)
     if (producerTools.length !== 10 || producerTools.some((part, index) => part.tool !== "bash" ||
       !(part.state?.status === "completed" || options.caseId === "defective" && index === 0 && part.state?.status === "error")) ||
       producerTools[0]?.state?.input?.command !== firstCommand(options.caseId)) throw new Error("producer host history does not contain exactly the original ten completed commands")
@@ -650,7 +732,7 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     hostStopped = await stopProcess(host.processInfo)
     if (!hostStopped) throw new Error("first host did not stop before restart")
     host = undefined
-    host = await startHost(executable, project, env, deadline)
+    host = await startHost(executable, project, env, deadline, child => hostProcesses.push(child))
     const restored = await api(host.base, project, `/session/${encodeURIComponent(ownerSessionId)}`, "GET", undefined, deadline)
     persisted = loadEvidenceRun(project, runId)
     if (restored?.id !== ownerSessionId || !["done", "failed"].includes(persisted?.status ?? "")) throw new Error("session/run did not reload after OpenCode server restart")
@@ -658,9 +740,9 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     freezeJournal("after_restart", afterRestart)
     if (afterRestart.manifest_sha256 !== evidence.manifest_sha256 || afterRestart.first_command_sha256 !== evidence.first_command_sha256) throw new Error("persisted action evidence changed across server restart")
     const restartedChecker = validateCheckerRetrieval(project, persisted, afterRestart,
-      await sessionHistory(host.base, project, persisted.nodes.check!.attempts[0]!.session_id!, deadline))
+      await observeHistory("checker_after_restart", host.base, persisted.nodes.check!.attempts[0]!.session_id!))
     if (!isDeepStrictEqual(restartedChecker, evidence.checker_retrieval)) throw new Error("checker page receipts changed across server restart")
-    const restartedMarkers = observeCompactionMarkers(await sessionHistory(host.base, project, ownerSessionId, deadline))
+    const restartedMarkers = observeCompactionMarkers(await observeHistory("parent_after_restart", host.base, ownerSessionId))
     compaction.completed_summary_count_after_restart = restartedMarkers.filter(marker => marker.summary).length
     if (!isDeepStrictEqual(restartedMarkers, markers) || provider.requests.length !== providerRequestsBeforeRestart)
       throw new Error("restart changed compaction identity or issued additional model work")
@@ -687,7 +769,14 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     } catch { failureRun = { status: terminalStatus, unavailable: true } }
   }
   finally {
-    if (host) { hostStopped = await stopProcess(host.processInfo); host = undefined }
+    for (const child of hostProcesses) await stopProcess(child)
+    host = undefined
+    const hostCleanup = hostCleanupStatus(hostProcesses.map(child => ({ pid: child.child.pid ?? null, exited: child.exited() })))
+    hostStopped = hostCleanup.host_cleanup_passed
+    if (versionProcess && !versionProcess.exited()) await stopProcess(versionProcess)
+    if (versionProcess) privateHostEvidence.version_process = boundedPrivateHostEvidence({ stdout_tail: versionProcess.stdout(), stderr_tail: versionProcess.stderr() }, authSecrets)
+    privateHostEvidence.host_processes = boundedPrivateHostEvidence(hostProcesses.map(child => ({ pid: child.child.pid ?? null,
+      ...child.exit(), stdout_tail: child.stdout(), stderr_tail: child.stderr() })), authSecrets)
     try { await provider.close(); providerStopped = true } catch { providerStopped = false }
     if (authCopyPath) try { rmSync(authCopyPath, { force: true }) } catch { /* retain safe failure evidence */ }
     try { sourceAfter = verificationPluginConfiguration().source.digest } catch { sourceAfter = "unavailable" }
@@ -697,11 +786,13 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
         evidence.checker_retrieval?.passed === true && evidence.parent_dispatch?.passed === true &&
         compaction?.completed_summary_count === 1 && compaction?.receipt?.continuation?.completionLinked === true &&
         Object.keys(journalCheckpoints).length === 4 && new Set(Object.values(journalCheckpoints)).size === 1 &&
-        restartVerified && hostStopped && providerStopped && provider.nonLoopbackRequests === 0 && sourceAfter === sourceBefore && globalAfter.sha256 === globalBefore.sha256,
+        restartVerified && hostStopped && providerStopped && (!authCopyPath || !existsSync(authCopyPath)) &&
+        provider.nonLoopbackRequests === 0 && sourceAfter === sourceBefore && globalAfter.sha256 === globalBefore.sha256,
       scope: "diagnostic: deterministic local parent/producer, one independently configured real checker; no production claim", case_id: options.caseId,
       model: { providerID: options.providerID, modelID: options.modelID, configured_output_limit: 8_192 },
-      host: { executable, version, platform: process.platform, starts: restartVerified ? 2 : 1,
-      clean_stops: hostStopped }, run: { run_id: runId || null, owner_session_id: ownerSessionId || null, terminal_status: terminalStatus,
+      host: { executable, version, platform: process.platform, starts: hostCleanup.starts, spawn_attempts: hostCleanup.spawn_attempts,
+      clean_stops: hostCleanup.host_stopped }, version_probe: versionProbe, private_host_evidence: privateHostEvidence,
+      run: { run_id: runId || null, owner_session_id: ownerSessionId || null, terminal_status: terminalStatus,
         graph_done: terminalStatus === "done", evidence, failure_state: failureRun }, compaction, journal_checkpoints: journalCheckpoints,
       provider: { producer_endpoint: "loopback-only", checker_provider: options.providerID, request_count: provider.requests.length, requests: provider.requests.slice(0, 64),
         emitted_tools: provider.emissions,
@@ -711,31 +802,11 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
       isolation: { credentials_inherited: false, real_user_global_config_unchanged: globalAfter.sha256 === globalBefore.sha256,
         global_config_before_sha256: globalBefore.sha256, global_config_after_sha256: globalAfter.sha256,
         plugin_source_before_sha256: sourceBefore, plugin_source_after_sha256: sourceAfter },
-      cleanup: { host_stopped: hostStopped, provider_stopped: providerStopped, isolated_auth_copy_removed: false, temporary_environment_removed: false,
-        retained_failure_workspace: failure ? tempRoot : null }, failure }
-    try {
-      mkdirSync(dirname(outputPath), { recursive: true })
-      const staged = `${outputPath}.${randomUUID()}.partial`
-      writeFileSync(staged, `${JSON.stringify(base, null, 2)}\n`, { flag: "wx", mode: 0o600 })
-      // Remove only the exclusively-created temporary root, after all owned processes stopped.
-      if (!failure && hostStopped && providerStopped) rmSync(tempRoot, { recursive: true, force: true })
-      temporaryRemoved = !existsSync(tempRoot)
-      const completed = { ...base, passed: base.passed && temporaryRemoved, cleanup: { ...base.cleanup,
-        isolated_auth_copy_removed: !authCopyPath || !existsSync(authCopyPath), temporary_environment_removed: temporaryRemoved } }
-      const replacement = `${outputPath}.${randomUUID()}.final`
-      writeFileSync(replacement, `${JSON.stringify(completed, null, 2)}\n`, { flag: "wx", mode: 0o600 })
-      if (existsSync(outputPath)) throw new Error("refusing to overwrite an existing receipt")
-      renameSync(replacement, outputPath)
-      rmSync(staged, { force: true })
-      outputPersisted = true
-      return completed
-    } catch {
-      // A failed cleanup/publication retains the original terminal evidence and owned directory for diagnosis.
-    }
+      cleanup: { ...hostCleanup, provider_stopped: providerStopped, isolated_auth_copy_removed: !authCopyPath || !existsSync(authCopyPath),
+        version_process_stopped: !versionProcess || versionProcess.exited(), temporary_environment_removed: false,
+        retained_failure_workspace: tempRoot }, failure }
+    return persistDiagnosticOutcome(base, outputPath, tempRoot)
   }
-  if (!outputPersisted) throw new Error("headless receipt could not be persisted")
-  const final = JSON.parse(readFileSync(outputPath, "utf8"))
-  return { ...final, cleanup: { ...final.cleanup, isolated_auth_copy_removed: !authCopyPath || !existsSync(authCopyPath), temporary_environment_removed: temporaryRemoved } }
 }
 
 interface CliOptions { hostExecutable: string; outputPath: string; providerID: string; modelID: string; providerConfigPath: string; authFile?: string }
@@ -805,7 +876,7 @@ if (import.meta.main) {
         Object.assign(outcome, { status: result.passed ? "completed_pass" : result.failure ? "completed_harness_failure" : "completed_checker_or_grade_failure",
           passed: result.passed, observed_verdict: result.run?.evidence?.case_grade?.observed_verdict ?? "missing", failure: result.failure ?? null })
         if (!sourceUnchanged()) throw new Error("frozen diagnostic source changed during case")
-        if (!result.cleanup?.host_stopped || !result.cleanup?.provider_stopped || !result.cleanup?.isolated_auth_copy_removed ||
+        if (!result.cleanup?.host_cleanup_passed || !result.cleanup?.version_process_stopped || !result.cleanup?.provider_stopped || !result.cleanup?.isolated_auth_copy_removed ||
           result.isolation?.real_user_global_config_unchanged !== true)
           haltReason = "prior_case_isolation_or_cleanup_unresolved"
       } catch (error) {

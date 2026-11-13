@@ -1,5 +1,10 @@
 import { expect, test } from "bun:test"
-import { gradeLiveActionEvidenceCase } from "../scripts/action-evidence-live-regression.ts"
+import { createHash } from "node:crypto"
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { join } from "node:path"
+import { tempProject, removeProject } from "./helpers.ts"
+import { gradeLiveActionEvidenceCase, parentDispatchReceipt, boundedPrivateHostEvidence, persistDiagnosticOutcome,
+  hostCleanupStatus, versionProbeDiagnostic } from "../scripts/action-evidence-live-regression.ts"
 
 function fixture(caseId: "correct" | "defective") {
   const intentHash = "1".repeat(64), terminalHash = "2".repeat(64), manifestHash = "3".repeat(64)
@@ -43,4 +48,80 @@ test("live action-evidence grader rejects a missing page or an unregistered forg
   output.findings[0]!.evidence_ids[0] = `R${"f".repeat(64)}`
   expect(gradeLiveActionEvidenceCase({ ...forged, checker_output: output })).toMatchObject({ passed: false,
     citations_bound_to_original_pages: false })
+})
+
+test("failed synthetic task cards are recognized only with exact dispatch, attempt, state and child bindings", () => {
+  const run: any = { run_id: "neutral-run", owner_session_id: "owner", global_attempts: 2, nodes: {
+    work: { agent: "implementer", status: "done", current_attempt: 1, attempts: [{ attempt: 1, status: "done", session_id: "worker" }] },
+    check: { agent: "checker", status: "failed", current_attempt: 1, attempts: [{ attempt: 1, status: "failed", session_id: "checker" }] },
+  } }
+  const emissions: any[] = ["alg_run", "alg_resume"].map((tool, i) => ({ role: "parent", tool, call_id: `dispatch-${i}`, run_id: run.run_id, max_waves: 1 }))
+  const dispatches = emissions.map((emitted, i) => ({ type: "tool", id: `part-${i}`, tool: emitted.tool, callID: emitted.call_id,
+    sessionID: "owner", messageID: `message-${i}`, state: { status: "completed", input: { run_id: run.run_id, max_waves: 1 } } }))
+  const cards = ["work", "check"].map((id, i) => ({ type: "tool", id: `card-${i}`, tool: "task", sessionID: "owner", messageID: `message-${i}`,
+    callID: `call_alg_${createHash("sha256").update(`${run.run_id}\0${id}\0${1}`).digest("hex").slice(0, 24)}`,
+    state: { status: i ? "error" : "completed", input: { description: id, prompt: `ALG run ${run.run_id}, node ${id}, attempt 1.`, subagent_type: run.nodes[id].agent },
+      metadata: { sessionId: run.nodes[id].attempts[0].session_id, parentSessionId: "owner" } } }))
+  const before = [{ parts: [dispatches[0], cards[0]] }]
+  const after = [{ parts: [dispatches[0], cards[0], dispatches[1], cards[1]] }]
+  expect(parentDispatchReceipt(before, before, after, emissions, run)).toMatchObject({ passed: true, provider_call_ids_match: true,
+    after_resume: { task_cards: 2, unexpected_tool_parts: 0, alg_run: 1, alg_resume: 1 } })
+  for (const change of ["child", "state", "call", "parent-message"]) {
+    const forged = structuredClone(after), card = forged[0]!.parts[3] as any
+    if (change === "child") card.state.metadata.sessionId = "unrelated"
+    if (change === "state") card.state.status = "completed"
+    if (change === "call") card.callID = "model-issued-task"
+    if (change === "parent-message") card.messageID = "unrelated"
+    expect(parentDispatchReceipt(before, before, forged, emissions, run)).toMatchObject({ passed: false, provider_call_ids_match: true,
+      after_resume: { unexpected_tool_parts: 1 } })
+  }
+})
+
+test("failed grades and caught failures retain private workspaces and bounded host observations", () => {
+  const root = tempProject("alg-live-retention-")
+  try {
+    for (const failure of [null, "apparatus failure"]) {
+      const directory = join(root, failure ? "caught" : "grade"), workspace = join(directory, "workspace"), receipt = join(directory, "receipt.json")
+      mkdirSync(workspace, { recursive: true }); writeFileSync(join(workspace, "journal.json"), "original journal")
+      const data = fixture("correct")
+      const output = { ...data.checker_output, passed: false, findings: [{ ...data.checker_output.findings[0]!, outcome: "inconclusive" }] }
+      const base = { passed: gradeLiveActionEvidenceCase({ ...data, checker_output: output }).passed, failure, cleanup: {},
+        private_host_evidence: { checker: boundedPrivateHostEvidence(data.checker_history, []) } }
+      const retained = persistDiagnosticOutcome(base, receipt, workspace)
+      expect(retained).toMatchObject({ passed: false, cleanup: { temporary_environment_removed: false, retained_failure_workspace: workspace } })
+      expect(readFileSync(join(workspace, "journal.json"), "utf8")).toBe("original journal")
+      expect(JSON.parse(readFileSync(receipt, "utf8")).private_host_evidence).toEqual(base.private_host_evidence)
+      expect(() => persistDiagnosticOutcome({ ...base, passed: true }, receipt, workspace)).toThrow()
+      expect(existsSync(workspace)).toBe(true)
+    }
+    const workspace = join(root, "success"); mkdirSync(workspace)
+    expect(persistDiagnosticOutcome({ passed: true, cleanup: {} }, join(root, "success.json"), workspace)).toMatchObject({
+      passed: true, cleanup: { temporary_environment_removed: true, retained_failure_workspace: null } })
+    expect(existsSync(workspace)).toBe(false)
+  } finally { removeProject(root) }
+})
+
+test("private evidence is redacted before byte truncation and no-host cleanup is not a failed stop", () => {
+  const secret = "synthetic-sensitive-fixture-value"
+  const captured = boundedPrivateHostEvidence({ text: `${secret}${"é".repeat(100)}` }, [secret], 32)
+  expect(captured.truncated).toBe(true)
+  expect(captured.redacted).toBe(true)
+  expect(captured.retained_bytes).toBeLessThanOrEqual(32)
+  expect(captured.json_text).not.toContain(secret.slice(0, 8))
+  expect(hostCleanupStatus([])).toMatchObject({ starts: 0, host_stopped: null, host_cleanup_required: false, host_cleanup_passed: true })
+  expect(hostCleanupStatus([{ pid: 42, exited: false }])).toMatchObject({ starts: 1, host_stopped: false, host_cleanup_passed: false })
+})
+
+test("version probe diagnostics retain code/signal/category without raw errors or output", () => {
+  const probe: any = { timeout_ms: 30_000, root_pid: 42, passed: true, exit_code: 0, exit_signal: null, exit_observed: true,
+    cleanup: { passed: true }, stdout: "private output", stderr: "private error", wait_error: "private detail" }
+  for (const [patch, category] of [
+    [{}, null], [{ timed_out: true }, "timeout"], [{ root_pid: null }, "spawn_failure"],
+    [{ exit_code: 7 }, "nonzero_exit"], [{ exit_signal: "SIGTERM" }, "signal"], [{ cleanup: { passed: false } }, "cleanup_failure"],
+  ] as const) {
+    const receipt = versionProbeDiagnostic({ ...probe, ...patch }, 30_001)
+    expect(receipt.error_category).toBe(category)
+    expect(receipt.timeout_ms).toBe(30_000)
+    expect(JSON.stringify(receipt)).not.toContain("private")
+  }
 })

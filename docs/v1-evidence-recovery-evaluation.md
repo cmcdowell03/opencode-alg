@@ -131,3 +131,26 @@ from packaged installation. No GitHub runners or production datalake calls.
 Keep PR #14 draft until the real-model regression, necessary mechanical repairs
 and package acceptance are resolved. A merge decision and an ALG superiority
 claim are separate decisions; neither is licensed by a single favorable case.
+
+## Issued diagnostic and follow-up (2026-11-13)
+
+The first two-case diagnostic at `a32d61b` did not qualify. The positive case
+used the configured Luna checker, retrieved and cited both complete original
+records, and returned `inconclusive` because it did not recognize the retained
+intent/terminal linkage. The negative case failed its host-version probe before
+any checker call. Neither case is a pass. The positive receipt also exposed a
+collector assumption about failed task visibility cards. Its structured receipt
+survived, but the harness erroneously removed its workspace after a grade failure;
+claims about the discarded raw history cannot be independently extended.
+
+The follow-up will clarify the existing generic host-evidence contract, repair
+the diagnostic's failure retention and collector, and record safe host-probe
+diagnostics. The relationship is already validated by the journal reader; this
+change adds no authority for remote effects or semantic correctness. Expected
+verdicts remain outside checker context and the original criteria remain fixed.
+
+After local qualification and a committed source freeze, issue both cases again
+as a separately identified follow-up with the same 15-minute per-case and
+35-minute suite bounds. Retain the first outcomes permanently. A corrected
+collector cannot turn the first positive's inconclusive verdict into a pass.
+Only a terminal passing follow-up permits issuance of the sixteen-arm comparison.
