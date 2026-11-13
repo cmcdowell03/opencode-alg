@@ -3,6 +3,7 @@ import { existsSync } from "node:fs"
 import { join } from "node:path"
 import { createAlgTools } from "../src/tools.ts"
 import { loadRunForOwner } from "../src/store.ts"
+import type { TaskContractInput } from "../src/task-contract.ts"
 import { removeProject, tempProject } from "./helpers.ts"
 
 const projects: string[] = []
@@ -11,14 +12,18 @@ function fixture() {
   const project = tempProject("alg-admission-tools-"); projects.push(project)
   let edit: "allow" | "deny" = "allow", childCalls = 0, agentLookups = 0
   const client = { app: { log: async () => ({}), agents: async () => { agentLookups++; return {
-    data: [{ name: "implementer", tools: { edit: true, bash: true }, permission: { edit, bash: { "*": "allow" } } }] } } },
+    data: [
+      { name: "implementer", tools: { edit: true, bash: true }, permission: { edit, bash: { "*": "allow" } } },
+      { name: "checker", tools: { read: true }, permission: { read: "allow" } },
+    ] } } },
     session: { create: async () => { childCalls++; throw Error("unexpected model call") } } }
   const tools = createAlgTools({ client, directory: project, worktree: project } as never)
   const context = { sessionID: "owner", messageID: "message", agent: "orchestrator", directory: project, worktree: project,
     abort: new AbortController().signal, metadata: () => {}, ask: async () => {} } as any
   const task = { version: 1 as const, kind: "project_change" as const, discovery: "not_required" as const, phase: "preparation" as const,
     deliverables: [{ destination: "project_file" as const, path: "preparation.md", producer_node: "implement" }],
-    verification: { checker_node: "check", execution: "none" as const }, preserve_paths: [] }
+    verification: { checker_node: "check", execution: "none" as const }, preserve_paths: [],
+    evidence_plan: [{ criterion: 1, observations: [{ kind: "deliverable" as const, index: 0 }] }] }
   return { project, tools, context, task, client, deny: () => { edit = "deny" }, calls: () => ({ childCalls, agentLookups }) }
 }
 function data(result: unknown): any { return JSON.parse((result as { output: string }).output) }
@@ -48,6 +53,10 @@ describe("tool task contract admission", () => {
     const f = fixture()
     expect(data(await f.tools.alg_plan.execute({ goal: "Write preparation" }, f.context)).error).toContain("task_contract_required")
     expect(data(await f.tools.alg_plan.execute({ goal: "Write preparation", task_contract: f.task }, f.context)).error).toContain("task_criteria_required")
+    const withoutEvidence: TaskContractInput = structuredClone(f.task)
+    delete withoutEvidence.evidence_plan
+    expect(data(await f.tools.alg_plan.execute({ goal: "Write preparation", criteria: ["Create preparation.md"],
+      task_contract: withoutEvidence }, f.context)).error).toContain("task_evidence_plan_required")
     expect(f.calls()).toEqual({ childCalls: 0, agentLookups: 0 })
     expect(existsSync(join(f.project, ".opencode", "runs"))).toBe(false)
   })
@@ -63,7 +72,10 @@ describe("tool task contract admission", () => {
   test("known writes admit compact work and keep source and contract through status", async () => {
     const f = fixture()
     const result = data(await f.tools.alg_plan.execute({ goal: "Write preparation", criteria: ["Create preparation.md", "Stop before the report"],
-      task_contract: f.task }, f.context))
+      task_contract: { ...f.task, evidence_plan: [
+        { criterion: 1, observations: [{ kind: "deliverable", index: 0 }] },
+        { criterion: 2, observations: [{ kind: "review", rationale: "The fixture verifies planning stops before report generation." }] },
+      ] } }, f.context))
     expect(result.error).toBeUndefined(); expect(result.template).toBe("coding-compact")
     expect(result.task_admission.phase).toBe("preparation")
     expect(result.task_admission.request_source).toEqual({ status: "unavailable", reason: "unsupported" })

@@ -125,18 +125,20 @@ test.each(["valid", "missing", "tampered", "wrong-contract"] as const)(
       version: 1, kind: "read_only", discovery: "required", phase: "complete",
       deliverables: [{ destination: "response", producer_node: "research" }],
       verification: { checker_node: "check", execution: "none" }, preserve_paths: [],
+      evidence_plan: [{ criterion: 1, observations: [{ kind: "deliverable", index: 0 }] }],
     }, goal, criteria, graph, { session_id: "parent", message_id: "origin" })
     const states = initNodeStates(graph)
     states.research!.status = "done"
     states.research!.output = { answer: "fixture" }
-    const observed = taskEvidence({ task_contract: taskContract, graph, nodes: states, run_id: runId, project_directory: "C:/fixture" })!
+    const taskBaseline = { version: 1 as const, contract_sha256: taskContract.contract_sha256 }
+    const observed = taskEvidence({ task_contract: taskContract, task_baseline: taskBaseline, graph, nodes: states, run_id: runId, project_directory: "C:/fixture" })!
     const evidence = variant === "wrong-contract" ? { ...observed, contract_sha256: "0".repeat(64) } : observed
     const sha256 = sha256Json(evidence)
     const reference = { artifact_path: `.opencode/runs/${runId}/artifacts/task-evidence-check-a1-${sha256}.json`,
       sha256, byte_size: serializedBytes(evidence) }
     const date = "2026-08-09T14:00:00.000Z"
     const progress = { run_id: runId, owner_session_id: "parent", status: "done", mode: "live", goal, criteria,
-      criteria_locked: true, updated_at: date, graph, task_contract: taskContract, nodes: {
+      criteria_locked: true, updated_at: date, graph, task_contract: taskContract, task_baseline: taskBaseline, nodes: {
         research: { id: "research", agent: "researcher", status: "done", attempts: [] },
         check: { id: "check", agent: "checker", status: "done", attempts: [{ attempt: 1, status: "done",
           started_at: date, finished_at: date, session_id: "checker-child", task_evidence_ref: reference, failures: [],

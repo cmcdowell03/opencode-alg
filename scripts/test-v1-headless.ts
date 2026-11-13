@@ -48,6 +48,7 @@ export const HEADLESS_TASK_CONTRACT: TaskContractInput = {
   version: 1, kind: "read_only", discovery: "required", phase: "complete",
   deliverables: [{ destination: "response", producer_node: "confirm" }],
   verification: { checker_node: "check", execution: "none" }, preserve_paths: [],
+  evidence_plan: [{ criterion: 1, observations: [{ kind: "deliverable", index: 0 }] }],
 }
 export const HEADLESS_INITIAL_PROMPT = `${INITIAL_MARKER} Check workspace readiness, plan the fixed data-investigation template using the bounded local fixture, then query it with alg_investigation. Declare the task_contract and original criteria from this request. Once accepted, the original criteria are immutable across planning, compaction and restart; do not replace them with later suggestions. Do not claim a result unless the query tool returns one.`
 

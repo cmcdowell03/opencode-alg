@@ -27,6 +27,10 @@ function fixture(root: string, options: { local?: number; global?: number; execu
     version: 1, kind: "project_change", discovery: "not_required", phase: "complete",
     deliverables: [{ destination: "project_file", path: options.deliverable ?? "result.json", producer_node: "implement" }],
     preserve_paths: [], verification: { checker_node: "check", execution, ...(execution === "none" ? {} : { execution_node: "implement" }) },
+    evidence_plan: [{ criterion: 1, observations: [
+      { kind: "deliverable", index: 0 },
+      ...(execution === "none" ? [] : [{ kind: "execution" as const }]),
+    ] }],
   }, goal, criteria, graph, { session_id: ownerSessionId, message_id: "accepted" })
   return createRun({ goal, criteria, graph, taskContract, projectDirectory: root, ownerSessionId })
 }

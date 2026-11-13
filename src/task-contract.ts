@@ -3,10 +3,22 @@ import { sha256Json } from "./persistence.ts"
 import { isSafeId, isSafeProjectRelativePath } from "./paths.ts"
 import type { GraphDef, RunState } from "./types.ts"
 import { TaskRequestSnapshotSchema, type TaskRequestSnapshot } from "./task-request.ts"
+import { ChangeScopeInputSchema } from "./change-scope-evidence.ts"
 
 const id = z.string().min(1).max(64).refine(isSafeId)
 const path = z.string().min(1).max(512).refine(value => isSafeProjectRelativePath(value) &&
   !/^\.opencode\/runs(?:\/|$)/i.test(value))
+const observation = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("deliverable"), index: z.number().int().min(0).max(15) }).strict(),
+  z.object({ kind: z.literal("execution") }).strict(),
+  z.object({ kind: z.literal("preservation"), paths: z.array(path).min(1).max(8) }).strict(),
+  z.object({ kind: z.literal("change_scope") }).strict(),
+  z.object({ kind: z.literal("review"), rationale: z.string().trim().min(1).max(500) }).strict(),
+])
+const EvidencePlanSchema = z.array(z.object({
+  criterion: z.number().int().min(1).max(64),
+  observations: z.array(observation).min(1).max(8),
+}).strict()).min(1).max(64)
 /** Declared scope, not an assertion that the planner understood the user's request. */
 export const TaskContractInputSchema = z.object({
   version: z.literal(1),
@@ -30,7 +42,12 @@ export const TaskContractInputSchema = z.object({
       ctx.addIssue({ code: "custom", message: "execution_node is required only for execution evidence" })
   }),
   preserve_paths: z.array(path).max(8),
+  // Optional only for compatibility with already admitted runs. New plans require it.
+  evidence_plan: EvidencePlanSchema.optional(),
+  change_scope: ChangeScopeInputSchema.optional(),
 }).strict().superRefine((task, ctx) => {
+  if (task.evidence_plan && Buffer.byteLength(JSON.stringify(task), "utf8") > 16 * 1024)
+    ctx.addIssue({ code: "custom", message: "new task declaration exceeds 16 KiB; keep the evidence plan bounded" })
   const paths = task.deliverables.flatMap(d => d.path ? [d.path] : [])
   const declaredPaths = [...paths, ...task.preserve_paths].map(item => process.platform === "win32" ? item.toLowerCase() : item)
   if (declaredPaths.some((item, index) => declaredPaths.slice(index + 1)
@@ -105,6 +122,7 @@ export function assertTaskGraph(input: TaskContractInput, graph: GraphDef): void
 export function bindTaskContract(input: TaskContractInput, goal: string, criteria: string[], graph: GraphDef,
   source: { session_id: string; message_id: string }, requestSnapshot?: TaskRequestSnapshot): TaskContract {
   if (!criteria.length) throw new Error("task_criteria_required: supply the original acceptance criteria before planning")
+  assertEvidencePlan(input, criteria.length)
   assertTaskGraph(input, graph)
   const base = { version: 1 as const, input, source: { ...source, authority: "accepted-planner-declaration" as const },
     requirements_sha256: sha256Json({ goal, criteria }),
@@ -119,6 +137,25 @@ export function assertTaskState(run: Pick<RunState, "task_contract" | "goal" | "
     contract.requirements_sha256 !== sha256Json({ goal: run.goal, criteria: run.criteria }))
     throw new Error("task_contract_drift: original criteria, goal and contract are immutable")
   assertTaskGraph(contract.input, run.graph)
+  assertEvidencePlan(contract.input, run.criteria.length)
+}
+
+/** Validates declared observation coverage, not the semantic adequacy of that declaration. */
+export function assertEvidencePlan(input: TaskContractInput, count: number, required = false): void {
+  const plan = input.evidence_plan
+  if (!plan) {
+    if (required || input.change_scope) throw new Error("task_evidence_plan_required: map each original criterion to observations before planning")
+    return
+  }
+  if (plan.length !== count || plan.some((row, index) => row.criterion !== index + 1))
+    throw new Error("task_evidence_coverage: include exactly one ordered row per original criterion")
+  for (const row of plan) for (const item of row.observations) {
+    if ((item.kind === "deliverable" && !input.deliverables[item.index]) ||
+      (item.kind === "execution" && input.verification.execution === "none") ||
+      (item.kind === "preservation" && (new Set(item.paths).size !== item.paths.length || item.paths.some(p => !input.preserve_paths.includes(p)))) ||
+      (item.kind === "change_scope" && !input.change_scope))
+      throw new Error("task_evidence_binding: observation must name a declared deliverable, command, protected path or change scope")
+  }
 }
 
 export type HostCapability = "allow" | "deny" | "ask" | "unknown"
@@ -141,9 +178,13 @@ export function uniformCapability(permission: unknown, name: string): HostCapabi
   return "unknown"
 }
 export function assertTaskHostCapabilities(input: TaskContractInput, graph: GraphDef, agents: unknown): void {
-  const requirements: Array<{ node: string; capability: "edit" | "bash" }> = input.deliverables
+  const requirements: Array<{ node: string; capability: "edit" | "bash" | "read" | "glob" }> = input.deliverables
     .filter(d => d.destination !== "response").map(d => ({ node: d.producer_node, capability: "edit" }))
   if (input.verification.execution === "host_command") requirements.push({ node: input.verification.execution_node!, capability: "bash" })
+  if (input.evidence_plan && (input.deliverables.some(d => d.destination !== "response") ||
+    input.preserve_paths.length || input.change_scope))
+    requirements.push({ node: input.verification.checker_node, capability: "read" })
+  if (input.change_scope) requirements.push({ node: input.verification.checker_node, capability: "glob" })
   for (const requirement of requirements) {
     const role = graph.nodes.find(n => n.id === requirement.node)?.agent
     const matches = Array.isArray(agents) ? agents.filter(a => a && a.name === role) : []
@@ -158,6 +199,8 @@ export function taskContractSummary(run: Pick<RunState, "task_contract">) {
   return task ? { status: "declared-and-admitted", contract_sha256: task.contract_sha256,
     requirements_sha256: task.requirements_sha256, phase: task.input.phase, kind: task.input.kind,
     deliverables: task.input.deliverables, verification: task.input.verification,
+    evidence_plan: task.input.evidence_plan ?? "legacy-unqualified",
+    change_scope: task.input.change_scope,
     request_source: task.request_snapshot?.status === "captured"
       ? { status: "captured", message_id: task.request_snapshot.message_id, text_sha256: task.request_snapshot.text_sha256,
         text_transformed: task.request_snapshot.text_transformed, non_text_parts: task.request_snapshot.non_text_parts,

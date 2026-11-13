@@ -33,7 +33,8 @@ describe("headless synthetic provider contract", () => {
     expect(plan).toMatchObject({ kind: "tool", name: "alg_plan", args: {
       goal: "Run bounded synthetic data investigation acceptance", template: "data-investigation", criteria: ["Use only deterministic local fixture data"],
       task_contract: { version: 1, kind: "read_only", discovery: "required", phase: "complete",
-        deliverables: [{ destination: "response", producer_node: "confirm" }], verification: { checker_node: "check", execution: "none" }, preserve_paths: [] },
+        deliverables: [{ destination: "response", producer_node: "confirm" }], verification: { checker_node: "check", execution: "none" }, preserve_paths: [],
+        evidence_plan: [{ criterion: 1, observations: [{ kind: "deliverable", index: 0 }] }] },
     } })
     expect(HEADLESS_TASK_CONTRACT).toEqual(plan.args!.task_contract)
     expect(HEADLESS_INITIAL_PROMPT).toContain("original criteria are immutable")

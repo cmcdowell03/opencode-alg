@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.9 candidate — collect scoped verification evidence before child work
+
+- New plans map each original criterion to declared observations. The checker still judges whether those observations are relevant and sufficient; declarations cannot certify intent or truth.
+- Capture bounded protected-file hashes and optional directory content inventories before the first ALG child, commit them in the existing run store, and reuse them across retry, compaction and restart. Never invent a missing prior state after work starts.
+- Compare added/modified/deleted files against explicit allowed paths and a change count; retain scope/exclusion metadata and before/after identities. Missing or violated scope blocks checker admission and automatic producer repair. Content drift after checking requires fresh verification.
+- Collection stays inside declared project paths with explicit size limits and uniform host read/glob permission checks. This does not audit prior root-agent actions, external/global configuration, transient writes, permissions, or concurrent writers. Older contracts remain readable and explicitly lack the new coverage qualification. New records require the 0.5.9 reader.
+- V1 only, model agnostic. No new paid comparison, V2 work or superiority claim.
+
 ## 0.5.8 candidate — preserve host user-request details across child handoffs
 
 - Planning captures bounded literal text from the current host user turn, using the calling assistant message's exact parent identity. The text and coverage metadata are bound into the existing task contract and survive persistence and resume. Recognized sensitive content is declined entirely, not rewritten; detection is heuristic, not a secret-free guarantee. Missing APIs, mismatched identities, oversized requests and attachments remain explicit limitations; this is not a transcript of the full conversation.

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test"
 import { createHash } from "node:crypto"
 import { existsSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { assertTaskGraph, assertTaskHostCapabilities, assertTaskState, bindTaskContract, parseTaskContractInput,
+import { assertEvidencePlan, assertTaskGraph, assertTaskHostCapabilities, assertTaskState, bindTaskContract, parseTaskContractInput,
   taskTemplate, uniformCapability, type TaskContractInput } from "../src/task-contract.ts"
 import { getTemplate } from "../src/templates.ts"
 import { createRun, loadRun, persistRun } from "../src/store.ts"
@@ -18,7 +18,8 @@ function project() { const value = tempProject("alg-contract-"); projects.push(v
 export function contract(overrides: Partial<TaskContractInput> = {}): TaskContractInput {
   return { version: 1, kind: "project_change", discovery: "not_required", phase: "complete",
     deliverables: [{ destination: "project_file", path: "result.json", producer_node: "implement" }],
-    verification: { checker_node: "check", execution: "none" }, preserve_paths: [], ...overrides }
+    verification: { checker_node: "check", execution: "none" }, preserve_paths: [],
+    evidence_plan: [{ criterion: 1, observations: [{ kind: "deliverable", index: 0 }] }], ...overrides }
 }
 function fixture(input = contract()) {
   const root = project(), graph = getTemplate("coding-compact"), goal = "Create the declared result", criteria = ["Produce result.json"]
@@ -89,15 +90,34 @@ describe("declared task admission", () => {
     try { parseTaskContractInput({ ...contract(), "attacker-string": true }); throw Error("expected rejection") }
     catch (e) { expect(String(e)).not.toContain("attacker-string") }
   })
+  test("evidence plans cover criteria in order and bind observations to declared inputs", () => {
+    const base = contract()
+    const withoutEvidence = structuredClone(base)
+    delete withoutEvidence.evidence_plan
+    expect(() => assertEvidencePlan(withoutEvidence, 1, true)).toThrow("task_evidence_plan_required")
+    expect(() => assertEvidencePlan({ ...base, evidence_plan: [
+      { criterion: 2, observations: [{ kind: "review", rationale: "fixture review" }] },
+    ] }, 1, true)).toThrow("task_evidence_coverage")
+    expect(() => assertEvidencePlan({ ...base, evidence_plan: [
+      { criterion: 1, observations: [{ kind: "execution" }] },
+    ] }, 1, true)).toThrow("task_evidence_binding")
+    expect(() => assertEvidencePlan({ ...base, evidence_plan: [
+      { criterion: 1, observations: [{ kind: "deliverable", index: 1 }] },
+    ] }, 1, true)).toThrow("task_evidence_binding")
+    expect(() => parseTaskContractInput({ ...base, evidence_plan: [
+      { criterion: 1, observations: [{ kind: "review", rationale: "   " }] },
+    ] })).toThrow("task_contract_invalid")
+  })
   test("capabilities recognize only uniform host decisions", () => {
     const graph = getTemplate("coding-compact")
-    expect(() => assertTaskHostCapabilities(contract(), graph, [{ name: "implementer", permission: { edit: "allow" } }])).not.toThrow()
+    const checker = { name: "checker", tools: { read: true }, permission: { read: "allow" } }
+    expect(() => assertTaskHostCapabilities(contract(), graph, [{ name: "implementer", permission: { edit: "allow" } }, checker])).not.toThrow()
     for (const value of ["deny", "ask", undefined]) {
-      expect(() => assertTaskHostCapabilities(contract(), graph, [{ name: "implementer", permission: { edit: value } }])).toThrow("task_host_capability")
+      expect(() => assertTaskHostCapabilities(contract(), graph, [{ name: "implementer", permission: { edit: value } }, checker])).toThrow("task_host_capability")
     }
     expect(uniformCapability([{ permission: "edit", pattern: "*", action: "allow" }], "edit")).toBe("allow")
     expect(uniformCapability([{ permission: "edit", pattern: "*", action: "allow" }, { permission: "edit", pattern: "secret/*", action: "deny" }], "edit")).toBe("unknown")
-    expect(() => assertTaskHostCapabilities(contract(), graph, [{ name: "implementer", tools: { edit: false }, permission: { edit: "allow" } }])).toThrow("deny")
+    expect(() => assertTaskHostCapabilities(contract(), graph, [{ name: "implementer", tools: { edit: false }, permission: { edit: "allow" } }, checker])).toThrow("deny")
   })
   test("original criteria and contract survive persistence and bounded context projection", () => {
     const { root, run, task } = fixture(contract({ phase: "preparation" }))
@@ -119,6 +139,14 @@ describe("declared task admission", () => {
     const run = createRun({ goal: "legacy", criteria: [], graph: getTemplate("coding-compact"), projectDirectory: root, ownerSessionId: "session-owner" })
     expect(loadRun(root, run.run_id)!.task_contract).toBeUndefined()
     expect(formatCompactionContext(run)).toContain("legacy-unqualified")
+  })
+  test("older directly bound contracts may retain an absent evidence plan", () => {
+    const root = project(), input = structuredClone(contract())
+    delete input.evidence_plan
+    const goal = "Create the declared result", criteria = ["Produce result.json"], graph = getTemplate("coding-compact")
+    const task = bindTaskContract(input, goal, criteria, graph, { session_id: "session-owner", message_id: "legacy-direct" })
+    const run = createRun({ goal, criteria, graph, taskContract: task, projectDirectory: root, ownerSessionId: "session-owner" })
+    expect(loadRun(root, run.run_id)!.task_contract!.input.evidence_plan).toBeUndefined()
   })
 })
 

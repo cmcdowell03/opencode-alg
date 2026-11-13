@@ -729,7 +729,7 @@ const ATTEMPT_DETAIL_IDENTITY_FIELDS = [
 export function writeTaskEvidence(state: RunState, nodeId: string, attempt: number, evidence: TaskEvidence): RunDataReference {
   if (!state.task_contract || state.task_contract.input.verification.checker_node !== nodeId)
     throw new StoreError("task evidence must belong to the admitted checker")
-  assertTaskEvidence(evidence, state.task_contract, state.run_id)
+  assertTaskEvidence(evidence, state.task_contract, state.run_id, state.task_baseline)
   const byte_size = serializedBytes(evidence), sha256 = sha256Json(evidence)
   if (byte_size > MAX_TASK_EVIDENCE_BYTES) throw new StoreError("task evidence exceeds byte limit")
   const name = `task-evidence-${nodeId}-a${attempt}-${sha256}.json`
@@ -856,7 +856,7 @@ function hydrateAttemptData(
     if (!state.task_contract || state.task_contract.input.verification.checker_node !== nodeId)
       throw new StoreError("task evidence must belong to the admitted checker")
     try {
-      assertTaskEvidence(readAndVerifyReference(state, complete.task_evidence_ref, true), state.task_contract, state.run_id)
+      assertTaskEvidence(readAndVerifyReference(state, complete.task_evidence_ref, true), state.task_contract, state.run_id, state.task_baseline)
     } catch (cause) {
       throw new StoreError("task evidence integrity or contract binding failed", { cause })
     }
@@ -1847,6 +1847,9 @@ function reconcileDerivedFilesUnlocked(state: RunState): void {
 function prepareRunForImmutableCommit(candidate: RunState, current: RunState): RunState {
   if (JSON.stringify(candidate.task_contract) !== JSON.stringify(current.task_contract))
     throw new StoreError("accepted task contract is immutable; it cannot be added, removed or replaced on an existing run")
+  if ((current.task_baseline && !isDeepStrictEqual(candidate.task_baseline, current.task_baseline)) ||
+    (!current.task_baseline && candidate.task_baseline && (current.global_attempts > 0 || candidate.global_attempts > 0)))
+    throw new StoreError("task baseline is immutable and must be committed before any attempt")
   // `candidate` is already the detached result of the precommit structured-clone
   // guard and schema parsing. It is safe to materialize retained references in
   // place instead of performing another full graph clone.

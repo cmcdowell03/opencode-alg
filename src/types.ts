@@ -311,6 +311,8 @@ export interface RunState {
   criteria_locked: boolean
   /** Accepted declared deliverables and original requirements; absent on legacy runs. */
   task_contract?: import("./task-contract.ts").TaskContract
+  /** Immutable before-first-child evidence; absence on older runs is not a late baseline. */
+  task_baseline?: import("./task-baseline.ts").TaskBaseline
   graph: GraphDef
   /** Only pending-node edits are supported; immutable snapshots remain run artifacts. */
   graph_revisions?: import("./graph-revision.ts").GraphRevisionReceipt[]

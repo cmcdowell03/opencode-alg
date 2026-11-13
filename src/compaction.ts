@@ -1,5 +1,6 @@
 import type { RunState } from "./types.ts"
 import { truncateUtf8, utf8Bytes } from "./limits.ts"
+import { sha256Json } from "./persistence.ts"
 
 export const MAX_COMPACTION_CONTEXT_BYTES = 16 * 1024
 export const MAX_COMPACTION_OUTPUT_BYTES = 32 * 1024
@@ -60,6 +61,7 @@ function renderRunSummary(run: RunState, detail: RunSummaryDetail): string {
     ...(run.task_contract ? [`- task_contract: ${run.task_contract.contract_sha256}; phase=${run.task_contract.input.phase}; requirements=${run.task_contract.requirements_sha256}`,
       "- Reuse the accepted task via alg_status; advisory findings cannot replace its criteria. A preparation phase stops at its declared deliverables."] : ["- task_admission: legacy-unqualified"]),
     ...requestSourcePointer(run),
+    ...(run.task_baseline ? [`- task_baseline: ${sha256Json(run.task_baseline)}; immutable before-first-child observations in alg_status(detail=full).task_baseline; do not recapture.`] : []),
     "- continue with alg_resume; alg_status and alg_artifact hold the authoritative details.",
     `- path: .opencode/runs/${run.run_id}/`,
     "",
@@ -117,6 +119,7 @@ export function formatCompactionContext(run: RunState, maximumBytes?: number): s
     ...(run.task_contract ? [`- task_contract: ${run.task_contract.contract_sha256}; phase=${run.task_contract.input.phase}; requirements=${run.task_contract.requirements_sha256}`] : ["- task_admission: legacy-unqualified"]),
     ...requestSourcePointer(run),
     "- criteria:",
+    ...(run.task_baseline ? [`- task_baseline: ${sha256Json(run.task_baseline)}; immutable before-first-child observations in alg_status(detail=full).task_baseline; do not recapture.`] : []),
     ...(run.criteria.length
       ? run.criteria.slice(0, COMPACTION_CRITERIA_COUNT).map((criterion) =>
           `  - ${cap(criterion, COMPACTION_CRITERION_CHARS)}`)

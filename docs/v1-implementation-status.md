@@ -1,6 +1,6 @@
 # V1 Phase One implementation status
 
-PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current pending candidate is 0.5.8 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as acceptance of the current candidate.
+PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current pending candidate is 0.5.9 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as acceptance of the current candidate.
 
 ## Priority clarification — capability before efficiency
 
@@ -12,13 +12,44 @@ keeps historical small-budget controls intact and gives future hard-task studies
 realistic, equally available headroom. Verified completion at that ceiling is
 primary; time/cost and quality-versus-resource curves are separate results.
 
-Next, establish criterion-specific verification coverage before writes, preserve
-durable progress, and route repairs according to their cause. A missing original
+The current increment establishes declared criterion coverage and bounded
+before-first-child observations. Further work must route repairs according to their cause. A missing original
 baseline cannot be repaired by spending more turns on already-correct code.
 Shared accounting protects continuity and explicit hard limits; it should not
 make a soft planning estimate a premature terminal failure. These are prospective
-design priorities, not new runtime behavior, larger existing trial limits, or a
+design priorities, not larger existing trial limits or a
 superiority result. No new paid cohort or V2 work is launched by this update.
+
+## 0.5.9 — scoped evidence before child execution
+
+New `alg_plan` calls require an ordered evidence-plan row for every original
+criterion. Rows bind to declared deliverables, native execution, protected files,
+an optional directory change scope, or substantive review with a rationale.
+The host checks binding and completeness; the checker still evaluates semantic
+coverage, test relevance and truth. A planner can misunderstand a criterion;
+structural admission does not eliminate that risk.
+
+Before reserving the first child, execution captures and separately commits
+`task_baseline` in the existing run store. Protected file hashes and optional
+directory manifests survive retries and restarts unchanged. Compaction includes
+a digest and full-status retrieval pointer. A missing baseline after work began
+cannot be collected retroactively. A failed collection spends no child attempt.
+
+`change_scope` declares roots, allowed changed files, and a maximum change count.
+The census is bounded to 256 regular files, 1 MiB per file and 16 MiB total;
+`.git`, `node_modules` and `.opencode/runs` are explicit exclusions. Host task
+evidence includes before/after identities, total changed count, and a bounded
+sample with omission count. Unexpected additions/deletions/modifications block
+fresh checking. Scope failures do not reopen a correct producer on resume.
+The checker must be uniformly permitted to read, and to glob for directory
+scope collection; unknown/scoped permissions remain unresolved.
+
+This observes content before **ALG child execution**, not prior root-agent edits
+or the beginning of the entire conversation. It does not scan global settings,
+prove transient-write absence, provide a filesystem-atomic snapshot, attribute
+concurrent edits, or certify scope outside declared roots. Exact relevant command
+matching and generic observation-only repair remain outstanding. No general
+superiority or long-session information-loss result follows from these changes.
 
 ## 0.5.8 follow-up — preserve current user-request details
 

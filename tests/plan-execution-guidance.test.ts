@@ -13,22 +13,27 @@ afterEach(() => { for (const project of projects.splice(0)) removeProject(projec
 function fixture() {
   const project = tempProject("alg-plan-guidance-")
   projects.push(project)
-  const tools = createAlgTools({ directory: project, worktree: project, client: inertClient() } as never)
+  const client = inertClient() as any
+  client.app.agents = async () => ({ data: [
+    { name: "implementer", tools: { edit: true, bash: true }, permission: { edit: "allow", bash: "allow" } },
+    { name: "checker", tools: { read: true, glob: true }, permission: { read: "allow", glob: "allow" } },
+  ], error: undefined })
+  const tools = createAlgTools({ directory: project, worktree: project, client } as never)
   const context = { sessionID: "owner", messageID: "plan", agent: "orchestrator", directory: project,
     worktree: project, abort: new AbortController().signal, metadata: () => {}, ask: async () => {} } as any
   return { project, tools, context }
 }
 function output(value: unknown): any { return JSON.parse((value as { output: string }).output) }
-const codingTask = (preserve_paths: string[] = [], phase: "preparation" | "complete" = "complete", discovery: "required" | "not_required" = "not_required") => testTaskContract({ kind: "project_change", discovery, phase,
+const codingTask = (preserve_paths: string[] = [], phase: "preparation" | "complete" = "complete", discovery: "required" | "not_required" = "not_required", criterionCount = 1) => testTaskContract({ kind: "project_change", discovery, phase,
   deliverables: [{ destination: "project_file", producer_node: "implement", path: phase === "preparation" ? "preparation.md" : "result.txt" }],
-  verification: { checker_node: "check", execution: "none" }, preserve_paths })
+  verification: { checker_node: "check", execution: "none" }, preserve_paths }, criterionCount)
 describe("plan execution intent", () => {
   for (const detail of ["compact", "full"] as const) {
     test(`${detail} live plan directs requested artifacts to bounded execution without executing during planning`, async () => {
       const f = fixture()
       const criteria = ["Write preparation.md", "Stop before creating report.json"]
       const plan = output(await f.tools.alg_plan.execute({ goal: "Create the preparation artifact", criteria, detail,
-        task_contract: codingTask([], "preparation", "required") }, f.context))
+        task_contract: codingTask([], "preparation", "required", criteria.length) }, f.context))
       expect(plan).toMatchObject({ status: "planning", mode: "live", plan_reused: false, template: "coding-diamond" })
       expect(plan.next).toContain("has not executed the requested work")
       expect(plan.next).toContain(`call alg_run with run_id=${plan.run_id} before your final response`)
@@ -84,7 +89,7 @@ describe("opt-in coding-compact workflow", () => {
     const f = fixture()
     const criteria = ["Count distinct IDs", "Preserve the visible test file"]
     const plan = output(await f.tools.alg_plan.execute({ goal: "Small known count fix", criteria,
-      template: "coding-compact", shell_gate: "node --version", mode: "dry", task_contract: codingTask() }, f.context))
+      template: "coding-compact", shell_gate: "node --version", mode: "dry", task_contract: codingTask([], "complete", "not_required", criteria.length) }, f.context))
     expect(plan.error).toBeUndefined()
     const run = loadRunForOwner(f.project, plan.run_id, "owner")!
     expect(run.graph).toMatchObject({ max_global_attempts: 4, max_concurrency: 1 })

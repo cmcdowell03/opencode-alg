@@ -38,6 +38,7 @@ import { failureListCommitment, sha256Json } from "./persistence.ts"
 import { FindingSchema, VerificationSchema, VerificationBasisSchema, criteriaDigest, validateVerification } from "./verification.ts"
 import { GraphRevisionReceiptsSchema } from "./graph-revision.ts"
 import { TaskContractSchema, assertTaskState } from "./task-contract.ts"
+import { TaskBaselineSchema, assertTaskBaseline } from "./task-baseline.ts"
 import { MAX_TASK_EVIDENCE_BYTES } from "./task-evidence.ts"
 
 // Code-owned vocabulary only. Never use an issue's raw message or submitted
@@ -703,6 +704,7 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
     criteria: boundedStrings,
     criteria_locked: z.boolean(),
     task_contract: TaskContractSchema.optional(),
+    task_baseline: TaskBaselineSchema.optional(),
     graph: GraphDefSchema,
     graph_revisions: GraphRevisionReceiptsSchema.optional(),
     status: z.enum(["planning", "running", "done", "failed", "blocked"]),
@@ -725,6 +727,12 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
   .strict()
   .superRefine((run, ctx) => {
     try { assertTaskState(run) } catch { ctx.addIssue({ code: "custom", path: ["task_contract"], message: "task contract requirements or graph binding invalid" }) }
+    if (run.task_baseline) {
+      try {
+        if (!run.task_contract) throw new Error("missing contract")
+        assertTaskBaseline(run.task_baseline, run.task_contract)
+      } catch { ctx.addIssue({ code: "custom", path: ["task_baseline"], message: "task baseline does not bind its contract" }) }
+    }
     if (run.graph_revisions?.length) {
       if (run.graph_revisions.at(-1)!.graph_sha256 !== sha256Json(run.graph) ||
         run.graph_revisions.some((receipt, index, receipts) => index > 0 && receipt.parent_sha256 !== receipts[index - 1]!.graph_sha256)) {

@@ -16,6 +16,7 @@ import { buildVerificationBasis, validateVerification, effectiveCriteria } from 
 import { assertManagedGraph, graphPolicy } from "./graph-policy.ts"
 import { assertTaskState } from "./task-contract.ts"
 import { taskEvidence, type TaskEvidence } from "./task-evidence.ts"
+import { captureTaskBaseline } from "./task-baseline.ts"
 import { parseAndValidate } from "./schemas.ts"
 import {
   acquireRunLock,
@@ -834,6 +835,8 @@ function reopenTaskPrerequisites(run: RunState): { producers: Set<string>; block
   const producers = new Set(evidence.deliverables
     .filter(item => item.status === "unavailable" || item.status === "producer_incomplete")
     .map(item => item.producer_node))
+  if (evidence.failures.some(f => f.startsWith("task_baseline_missing") || f.startsWith("task_change_scope_unverified")))
+    return { producers: new Set(), blocked: "task_baseline_or_scope_unverified: inspect original evidence and restore declared scope; do not rerun a producer to manufacture before-work proof" }
   if (evidence.execution === "unavailable") producers.add(input.verification.execution_node!)
   for (const id of producers) {
     if (run.nodes[id]?.status !== "done") producers.delete(id)
@@ -900,6 +903,25 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     options.directory = run.execution_directory
     const committedPhase = await awaitLock(() => assertAdmittedGateExecution(run, options))
     const liveTask = !options.dry && run.mode !== "dry" && !!run.task_contract
+    if (liveTask && run.task_contract!.input.evidence_plan && !run.task_baseline) {
+      // This is before every child, including discovery workers. Planning itself remains read-only.
+      if (run.global_attempts > 0) {
+        run.status = "blocked"
+        run.phase = "task-baseline"
+        run.summary = "task_baseline_missing: prior work exists; a late snapshot cannot establish the original state"
+        await save(run, options)
+        return run
+      }
+      try { run.task_baseline = captureTaskBaseline(run.project_directory, run.task_contract!) }
+      catch {
+        run.status = "blocked"
+        run.phase = "task-baseline"
+        run.summary = "task_baseline_unavailable: required bounded before-work observations could not be collected; no child was dispatched"
+        await save(run, options)
+        return run
+      }
+      await save(run, options) // Separate durable boundary: the following reservation cannot precede this commit.
+    }
     const initialDrift = liveTask ? invalidateDriftedTaskCheck(run) : undefined
     if (initialDrift || (liveTask && taskDriftExhausted(run))) {
       run.status = "blocked"
@@ -992,7 +1014,7 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
             if (prior?.preservation_evidence && JSON.stringify(prior.preservation_evidence.files.map(file => file.path)) !== JSON.stringify(paths)) {
               throw new Error("Preservation path set changed after its original basis was captured")
             }
-            return prior?.preservation_evidence
+            return (paths === undefined ? undefined : run.task_baseline?.preservation) ?? prior?.preservation_evidence
               ?? capturePreservationBasis(options.worktree, paths)
           })
         } catch (error) {

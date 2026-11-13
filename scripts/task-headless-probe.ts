@@ -19,7 +19,8 @@ export async function runTaskAdmissionHostProbe(baseUrl: string, project: string
     abort: AbortSignal.timeout(15_000), metadata: () => {}, ask: async () => { throw new Error("admission probe must not request permissions") } } as any
   const task: TaskContractInput = { version: 1, kind: "project_change", discovery: "not_required", phase: "preparation",
     deliverables: [{ destination: "project_file", path: "admission-probe.json", producer_node: "implement" }],
-    verification: { checker_node: "check", execution: "host_command", execution_node: "implement" }, preserve_paths: [] }
+    verification: { checker_node: "check", execution: "host_command", execution_node: "implement" }, preserve_paths: [],
+    evidence_plan: [{ criterion: 1, observations: [{ kind: "deliverable", index: 0 }, { kind: "execution" }] }] }
   const unpack = (result: unknown) => JSON.parse((result as { output: string }).output)
   const criteria = ["Prepare admission-probe.json and execute its validation; do not continue to a final report"]
   const plan = unpack(await tools.alg_plan.execute({ goal: "Synthetic task admission only", criteria, task_contract: task }, context))

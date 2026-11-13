@@ -46,7 +46,7 @@ import { executeWithMemory } from "./session-memory/attempts.ts"
 import { hashObject } from "./session-memory/store.ts"
 import { canonicalJson } from "./persistence.ts"
 import { TaskContractInputSchema, parseTaskContractInput, taskTemplate, bindTaskContract, assertTaskState,
-  assertTaskGraph, assertTaskHostCapabilities, taskContractSummary, type TaskContractInput } from "./task-contract.ts"
+  assertTaskGraph, assertTaskHostCapabilities, assertEvidencePlan, taskContractSummary, type TaskContractInput } from "./task-contract.ts"
 import { captureTaskRequest } from "./task-request.ts"
 import type { SessionMemoryRuntime } from "./session-memory/runtime.ts"
 import { buildRunProgress, parseRunProgress, type AlgRunProgress } from "./run-progress.ts"
@@ -610,7 +610,9 @@ export function createAlgTools(
 ) {
   const { client } = plugin
   const checkTaskCapabilities = async (input: TaskContractInput, graph: GraphDef, directory: string, signal: AbortSignal) => {
-    if (!input.deliverables.some(d => d.destination === "project_file") && input.verification.execution !== "host_command") return
+    if (!input.deliverables.some(d => d.destination === "project_file" ||
+      (input.evidence_plan && d.destination === "run_artifact")) && input.verification.execution !== "host_command" &&
+      !input.change_scope && !(input.evidence_plan && input.preserve_paths.length)) return
     const controller = new AbortController()
     const abort = () => controller.abort()
     signal.addEventListener("abort", abort, { once: true })
@@ -762,14 +764,14 @@ export function createAlgTools(
     }),
 
     alg_plan: tool({
-      description: "Admit an owned ALG DAG; new plans require task_contract and original criteria. Declare deliverable producer node IDs, phase, verification and protected paths. Missing template selects by declared work/discovery: coding-compact for known project changes, research-diamond for read-only work. Planning does not execute. Follow requested live work with alg_run; stop at explicit preparation/plan-only boundaries or reused done runs. Revisions retain the accepted task contract.",
+      description: "Admit an owned ALG DAG; new plans require task_contract and original criteria. Declare deliverable producers, phase, verification, protected paths and one evidence_plan row per original criterion before execution. Missing template selects by declared work/discovery: coding-compact for known project changes, research-diamond for read-only work. Planning does not execute. Follow requested live work with alg_run; stop at explicit preparation/plan-only boundaries or reused done runs. Revisions retain the accepted task contract.",
       args: {
         goal: tool.schema.string().min(1).max(20_000).optional(),
-        task_contract: TaskContractInputSchema.optional().describe("Required for new plans, omitted for graph revision. Version 1, kind read_only/project_change/mixed, discovery required/not_required, phase preparation/complete, deliverables [{destination:response/run_artifact/project_file,producer_node,path only for project_file}], verification {checker_node,execution:none/host_command/shell_gate,execution_node only if execution required}, preserve_paths []. Names refer to selected graph nodes."),
+        task_contract: TaskContractInputSchema.optional().describe("Required for new plans, omitted for graph revision. Version 1, kind read_only/project_change/mixed, discovery required/not_required, phase preparation/complete, deliverables [{destination:response/run_artifact/project_file,producer_node,path only for project_file}], verification {checker_node,execution:none/host_command/shell_gate,execution_node only if execution required}, preserve_paths [], evidence_plan [{criterion:1,observations:[{kind:deliverable,index:0}]}] with one ordered row per criterion. Other observation kinds: execution, preservation with paths, change_scope, review with rationale. Optional change_scope {roots:[src],allowed_paths:[src/file.ts],max_changed_files:1}. Names refer to graph nodes; review declarations are not proof."),
         template: tool.schema.enum(["coding-diamond", "coding-compact", "research-diamond", "data-investigation"]).optional(),
         operation: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/).optional().describe("Advisory workspace requirement lookup; covered data-investigation uses data.investigate.read."),
         criteria: tool.schema.array(tool.schema.string().min(1).max(2_000)).max(100).optional().describe("Original user requirements. Research proposals and suggested verification methods remain advisory unless explicitly adopted by the user."),
-        preserve_paths: preservePathsSchema.optional().describe("Optional 1–8 distinct existing project-relative files the user explicitly requires unchanged (512 chars each, forward slashes). Requests host pre/post snapshots on the first implementer; planning does not capture evidence or add criteria."),
+        preserve_paths: preservePathsSchema.optional().describe("Optional 1–8 distinct existing project-relative files the user explicitly requires unchanged (512 chars each, forward slashes). New contracts capture host hashes before any child; planning does not capture evidence or add criteria."),
         shell_gate: tool.schema.string().min(1).max(8_192).optional().describe("Executable validation command, not prose or tool permissions. Windows uses cmd.exe, not PowerShell."),
         shell_cwd: tool.schema.string().trim().min(1).max(1_024).optional().describe("Existing gate directory inside the project, relative to the pinned execution directory. Requires shell_gate."),
         shell_timeout_ms: tool.schema.number().int().min(100).max(600_000).optional(),
@@ -879,6 +881,7 @@ export function createAlgTools(
           if (taskInput.preserve_paths.length) graph = withPreservePaths(graph, project, taskInput.preserve_paths)
           let taskContract = bindTaskContract(taskInput, args.goal, args.criteria ?? [], graph,
             { session_id: context.sessionID, message_id: context.messageID })
+          assertEvidencePlan(taskInput, args.criteria!.length, true)
           await checkTaskCapabilities(taskInput, graph, directory, context.abort)
           const requestSnapshot = await captureTaskRequest(client, {
             sessionID: context.sessionID, messageID: context.messageID, directory, abort: context.abort,
@@ -889,7 +892,7 @@ export function createAlgTools(
           const preservationRequest = !taskInput.preserve_paths.length ? undefined : {
             node_id: graph.nodes.find((node) => node.agent === "implementer")!.id,
             paths: taskInput.preserve_paths,
-            scope: "Optional host pre/post snapshot request. Planning validates paths only; preservation must be established from recorded execution evidence.",
+            scope: "Host before-first-child snapshot request. Planning validates paths only; preservation requires recorded execution evidence.",
           }
           const gatePreflight = preflightShellGates(graph, { worktree: project, directory,
             phase: "plan", checkExecutables: args.mode !== "dry" })

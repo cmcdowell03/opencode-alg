@@ -43,6 +43,7 @@ import {
 import { canonicalDirectory, hostProjectDirectory, isSafeProjectRelativePath } from "./paths.ts"
 import { buildRunProgress, type AlgRunProgress } from "./run-progress.ts"
 import { assertTaskState, TaskContractSchema, type TaskContract } from "./task-contract.ts"
+import { TaskBaselineSchema, assertTaskBaseline, type TaskBaseline } from "./task-baseline.ts"
 import { assertTaskEvidence, MAX_TASK_EVIDENCE_BYTES } from "./task-evidence.ts"
 
 const MAX_RECENT_RUNS = 20
@@ -121,6 +122,7 @@ interface TuiRun {
   mode?: "live" | "dry"
   criteria?: string[]
   task_contract?: TaskContract
+  task_baseline?: TaskBaseline
   updated_at: string
   nodes: Record<string, TuiNode>
   graph: GraphDef
@@ -350,11 +352,16 @@ function parseOwnedRun(value: unknown, owner: string, directoryRunId: string): T
   }
   const criteria = parsedCriteria?.success ? parsedCriteria.data : undefined
   let taskContract: TaskContract | undefined
+  let taskBaseline: TaskBaseline | undefined
   if (value.task_contract !== undefined) {
     try {
       taskContract = TaskContractSchema.parse(value.task_contract)
       if (typeof value.goal !== "string" || !criteria || value.criteria_locked !== true) throw new Error("invalid requirements")
       assertTaskState({ task_contract: taskContract, goal: value.goal, criteria, criteria_locked: true, graph })
+      if (value.task_baseline !== undefined) {
+        taskBaseline = TaskBaselineSchema.parse(value.task_baseline)
+        assertTaskBaseline(taskBaseline, taskContract)
+      }
     } catch {
       throw new Error(`Run ${directoryRunId} progress has invalid task admission metadata`)
     }
@@ -461,6 +468,7 @@ function parseOwnedRun(value: unknown, owner: string, directoryRunId: string): T
     ...(value.mode === "live" || value.mode === "dry" ? { mode: value.mode } : {}),
     ...(criteria ? { criteria } : {}),
     ...(taskContract ? { task_contract: taskContract } : {}),
+    ...(taskBaseline ? { task_baseline: taskBaseline } : {}),
     updated_at: previewField(value.updated_at as string, MAX_TUI_ID_PREVIEW_BYTES, truncation),
     nodes,
     nodes_total: nodeCount,
@@ -1183,7 +1191,7 @@ function navigateValidatedAttempt(
           throw new Error("Task evidence belongs to an unadmitted checker")
         const evidence = await readValidatedNestedReference(api, run, node, complete, complete.task_evidence_ref, cache,
           "task evidence", MAX_TASK_EVIDENCE_BYTES, false)
-        assertTaskEvidence(evidence.value, run.task_contract, run.run_id)
+        assertTaskEvidence(evidence.value, run.task_contract, run.run_id, run.task_baseline)
       }
       const output = projected.output_ref
         ? await readValidatedAttemptOutput(

@@ -629,6 +629,7 @@ describe("architecture audit remediation", () => {
           deliverables: [{ destination: "project_file", producer_node: "implement", path: "snapshot.json" }],
           verification: { checker_node: "check", execution: "none" },
           preserve_paths: [],
+          evidence_plan: [{ criterion: 1, observations: [{ kind: "deliverable", index: 0 }] }],
         },
         mode: "dry",
       }, toolContext(project))

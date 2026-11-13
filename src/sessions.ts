@@ -514,6 +514,8 @@ export function buildCheckerPrompt(options: {
     "",
     "CRITERIA:",
     ...options.criteria.map((criterion, i) => `${i + 1}. ${criterion}`),
+    ...(options.taskContract ? ["ACCEPTED EVIDENCE COVERAGE (declaration, not proof of adequacy):", JSON.stringify(options.taskContract.input),
+      "Match each criterion to its declared observations. Deliverable existence, a command exit, and content digests establish only their recorded scope. Review rows still require substantive evidence. Missing before-work coverage cannot be repaired by taking a new baseline."] : []),
     ...taskRequestLines(options.taskContract),
     ...(basis ? [
       "VERIFICATION CONTRACT v1:",
@@ -538,6 +540,7 @@ export function buildCheckerPrompt(options: {
       evidence,
       "Sources identify the current run's selected inputs; hashes identify JSON bytes, not correctness or independent verification.",
       "omitted values/entries are byte/count limited; unavailable values were not resolved. Neither is negative evidence or proof of success.",
+      "If host_task is omitted, read its exact referenced artifact within your permissions before using its observations. If it cannot be retrieved, report missing evidence; the reference alone cannot support a pass.",
       "Check the referenced source within your permissions when necessary. If a hard criterion remains unverified, reject with the specific missing evidence; do not invent a defect.",
       "",
     ]),

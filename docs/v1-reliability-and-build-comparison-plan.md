@@ -134,6 +134,50 @@ Start with accurately observable call/attempt and elapsed limits. Provider usage
 
 Acceptance: synthetic multi-phase continuations preserve the allowance, reserve final verification, avoid repeated compatible work and expose the exact reason for stopping. Report quality-versus-resource tradeoffs on the frozen easy controls before changing default graph selection.
 
+## First verification-coverage increment (0.5.9)
+
+Reuse the immutable task contract and transactional run store. New `alg_plan`
+admissions require one ordered `evidence_plan` row per original criterion, with
+typed references to deliverables, execution, protected paths, change scope or
+substantive review. Host validation establishes declaration coverage and valid
+references, not that the planner selected the right proof. A review rationale
+does not waive a preservation, validation or scientific requirement. The fresh
+checker receives the declaration and observations separately and checks adequacy.
+
+At execution admission, before **any ALG child** or attempt reservation, collect
+and separately commit a bounded `task_baseline`. Protected paths retain their
+original hashes; optional `change_scope` retains a deterministic file census.
+Retry and resume reuse that record. A previous attempt with no baseline blocks;
+neither a late read nor a model claim can invent the earlier state. This boundary
+does not cover root-agent edits made before the run or actions elsewhere.
+
+The optional scope declares existing project-relative directory roots, allowed
+changed paths and a maximum change count. It observes regular-file content only:
+256 files, 1 MiB/file, 16 MiB total, 4,096 directory entries, depth 32, and a
+192 KiB total baseline cap. Explicit exclusions are `.git`, `node_modules` and
+`.opencode/runs`; an explicitly excluded root is rejected, never certified as
+empty. Symlink entries and nested-root symlink ancestors are rejected. These
+checks do not create an atomic filesystem snapshot or prove no transient writes.
+Global configuration and external resources need separately qualified evidence;
+this increment does not scan them. Effective uniform checker read permission
+is required for snapshots and glob for directory census; existing scoped or
+unknown decisions block rather than being reinterpreted.
+
+Before checking, compare additions, modifications and deletions with the accepted
+scope. Task evidence carries baseline/content identities, change count, a bounded
+sample and explicit omission count. Post-check changes invalidate the verdict
+even when the set of changed paths stays the same. Missing/violated scope blocks
+automatic producer reopening: inspection or restoration comes first. Existing
+gate-only recovery remains; generic observation-only probe repair, exact relevant
+command matching and broader criterion-specific collection are still future work.
+
+Local deterministic tests must cover early discovery changes, missing prior
+state, immutable/recovered baselines, scope limits and exclusions, allowed and
+prohibited edits, and post-check drift on both Windows and Linux. Real OpenCode
+headless checks qualify host wiring and compaction/restart mechanics separately
+from model behavior. Keep the earlier paid losses unchanged. This increment
+does not qualify the service/oracle apparatus or launch a superiority cohort.
+
 ## Mechanical failure qualification
 
 Maintain a deterministic local matrix alongside model trials:

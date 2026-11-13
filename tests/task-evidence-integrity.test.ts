@@ -24,10 +24,14 @@ test("checker task evidence references survive attempt archiving and hydration; 
     const taskContract = bindTaskContract({ version: 1, kind: "project_change", discovery: "not_required", phase: "complete",
       deliverables: [{ destination: "project_file", path: projectFile, producer_node: "implement" }],
       verification: { checker_node: "check", execution: "none" }, preserve_paths: [],
+      evidence_plan: [{ criterion: 1, observations: [{ kind: "deliverable", index: 0 }] }],
     }, goal, criteria, graph, { session_id: "session-owner", message_id: "accepted" })
     const run = createRun({ goal, criteria, graph, taskContract, projectDirectory: root, ownerSessionId: "session-owner" })
     let version = 0
     const sessionRunner = async ({ agent, title }: NodePromptOpts) => {
+      expect(loadRun(root, run.run_id)!.task_baseline).toEqual({
+        version: 1, contract_sha256: taskContract.contract_sha256,
+      })
       if (agent === "implementer") writeFileSync(join(root, projectFile), `revision-${++version}`)
       return { session_id: title, text: "", parsed: agent === "implementer" ? implemented : checked }
     }
