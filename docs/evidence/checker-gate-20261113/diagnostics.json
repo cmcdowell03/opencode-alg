@@ -1,0 +1,320 @@
+{
+  "schema_version": 1,
+  "kind": "v1-real-checker-qualification-summary",
+  "candidate_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+  "runtime_commit": "1777e44354cf6f817de7882a11472b2adc9b766a",
+  "diagnostic_issued_cases": 6,
+  "real_checker_cases": 4,
+  "paired_cohort_issued": false,
+  "paired_cohort_status": "not_issued_failed_admission_gate",
+  "rounds": [
+    {
+      "id": "r1",
+      "source_commit": "a32d61ba410e6dcc7919aa62bb8cb4984795205a",
+      "passed": false,
+      "complete": true,
+      "fixture_version": "legacy-unversioned-diagnostic",
+      "criterion_sha256": null,
+      "model": {
+        "providerID": "openai",
+        "modelID": "gpt-6-luna"
+      },
+      "elapsed_ms": 38116,
+      "bounds": {
+        "per_case_ms": 900000,
+        "total_ms": 2100000,
+        "output_tokens": 8192
+      },
+      "summary_sha256": "fe1eb25e5108bbecaa0d2ffe1f3e4957be8c4995a1ee4239f68ac1b3b0e43f31",
+      "plan_sha256": "c51f861e08ce05014ecc466da823f9ce46d835e5aa85227b01abe9f49a465d05",
+      "cases": [
+        {
+          "case_id": "correct",
+          "passed": false,
+          "failure": null,
+          "receipt_sha256": "ac1cca538bc8176414d71ebaa9119c53b07248b52268b532e0e4cb7ecac71f03",
+          "host_version": "1.19.5",
+          "checker_observed": true,
+          "declared_node_exit": null,
+          "captured_host_exit": 0,
+          "native_host_consistency": null,
+          "captured_actions": 10,
+          "first_command_bytes": 3260,
+          "exact_original_pages": true,
+          "page_count": 2,
+          "observed_verdict": "reject",
+          "checker_outcome": "evidence_unavailable",
+          "finding_outcomes": [
+            "inconclusive"
+          ],
+          "findings": [
+            {
+              "criterion_id": "C1",
+              "outcome": "inconclusive",
+              "reason": "The first retained intent is a long node command ending in ACTION_EVIDENCE_EARLY_MARKER_V1; its terminal record reports exit code 0 and the same marker. However, the intent and terminal retain only a call_id hash, so they cannot be matched to one another or establish that this was the required first long command."
+            }
+          ],
+          "producer_attempts": 1,
+          "checker_attempts": 1,
+          "parent_dispatch_verified": false,
+          "requested_summaries": 1,
+          "journal_boundary_count": 4,
+          "journal_unchanged": true,
+          "restart_verified": true,
+          "host_stopped": true,
+          "auth_copy_removed": true,
+          "failure_workspace_retained": false,
+          "global_config_unchanged": true,
+          "plugin_source_unchanged": true
+        },
+        {
+          "case_id": "defective",
+          "passed": false,
+          "failure": "Error: OpenCode version probe failed",
+          "receipt_sha256": "f6c1d4de83a7323723aa1398d9486efb5980d5ced9d1a66b2b59b907bdeb13d3",
+          "host_version": "unknown",
+          "checker_observed": false,
+          "declared_node_exit": null,
+          "captured_host_exit": null,
+          "native_host_consistency": null,
+          "captured_actions": null,
+          "first_command_bytes": null,
+          "exact_original_pages": null,
+          "page_count": null,
+          "observed_verdict": "missing",
+          "checker_outcome": null,
+          "finding_outcomes": [],
+          "findings": [],
+          "producer_attempts": null,
+          "checker_attempts": null,
+          "parent_dispatch_verified": null,
+          "requested_summaries": 0,
+          "journal_boundary_count": 0,
+          "journal_unchanged": false,
+          "restart_verified": false,
+          "host_stopped": false,
+          "auth_copy_removed": true,
+          "failure_workspace_retained": true,
+          "global_config_unchanged": true,
+          "plugin_source_unchanged": true
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "source_commit": "1777e44354cf6f817de7882a11472b2adc9b766a",
+      "passed": false,
+      "complete": true,
+      "fixture_version": "legacy-unversioned-diagnostic",
+      "criterion_sha256": null,
+      "model": {
+        "providerID": "openai",
+        "modelID": "gpt-6-luna"
+      },
+      "elapsed_ms": 55804,
+      "bounds": {
+        "per_case_ms": 900000,
+        "total_ms": 2100000,
+        "output_tokens": 8192
+      },
+      "summary_sha256": "fd3eb077c2acada52c66d4454304d472c5ebde3abc3b0637d4e4f235dd100e7e",
+      "plan_sha256": "f1633b28d792a3ca49a7939811376465080bb921b6f6b763e20eccd426450e99",
+      "cases": [
+        {
+          "case_id": "correct",
+          "passed": false,
+          "failure": null,
+          "receipt_sha256": "e95cb2866eb3a015cff61cedccbb72911ee417f09c3da6e84d81dcb65a6777f6",
+          "host_version": "1.19.5",
+          "checker_observed": true,
+          "declared_node_exit": null,
+          "captured_host_exit": 0,
+          "native_host_consistency": null,
+          "captured_actions": 10,
+          "first_command_bytes": 3260,
+          "exact_original_pages": true,
+          "page_count": 2,
+          "observed_verdict": "reject",
+          "checker_outcome": "evidence_unavailable",
+          "finding_outcomes": [
+            "inconclusive"
+          ],
+          "findings": [
+            {
+              "criterion_id": "C1",
+              "outcome": "inconclusive",
+              "reason": "The retained ordinal-1 command is long and its linked terminal reports exit code 0, but ordinal 1 means only the first observed hook call in this attempt. The evidence cannot establish it was the first long command overall."
+            }
+          ],
+          "producer_attempts": 1,
+          "checker_attempts": 1,
+          "parent_dispatch_verified": true,
+          "requested_summaries": 1,
+          "journal_boundary_count": 4,
+          "journal_unchanged": true,
+          "restart_verified": true,
+          "host_stopped": true,
+          "auth_copy_removed": true,
+          "failure_workspace_retained": true,
+          "global_config_unchanged": true,
+          "plugin_source_unchanged": true
+        },
+        {
+          "case_id": "defective",
+          "passed": false,
+          "failure": "Error: first terminal receipt does not match the case's actual process result",
+          "receipt_sha256": "dbfcb2143256093cb87d0dec250850c2dbf290c8986b7e3685066540e758067d",
+          "host_version": "1.19.5",
+          "checker_observed": false,
+          "declared_node_exit": null,
+          "captured_host_exit": null,
+          "native_host_consistency": null,
+          "captured_actions": null,
+          "first_command_bytes": null,
+          "exact_original_pages": null,
+          "page_count": null,
+          "observed_verdict": "missing",
+          "checker_outcome": null,
+          "finding_outcomes": [],
+          "findings": [],
+          "producer_attempts": null,
+          "checker_attempts": null,
+          "parent_dispatch_verified": null,
+          "requested_summaries": 0,
+          "journal_boundary_count": 0,
+          "journal_unchanged": false,
+          "restart_verified": false,
+          "host_stopped": true,
+          "auth_copy_removed": true,
+          "failure_workspace_retained": true,
+          "global_config_unchanged": true,
+          "plugin_source_unchanged": true
+        }
+      ]
+    },
+    {
+      "id": "v3",
+      "source_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+      "passed": false,
+      "complete": true,
+      "fixture_version": "action-evidence-live-v3",
+      "criterion_sha256": "e661c10f0bdf86eda7cb2ae08ceab5bf0c0f0da81a290cfcec1dc1ae4fd03b1f",
+      "model": {
+        "providerID": "openai",
+        "modelID": "gpt-6-luna"
+      },
+      "elapsed_ms": 68341,
+      "bounds": {
+        "per_case_ms": 900000,
+        "total_ms": 2100000,
+        "output_tokens": 8192
+      },
+      "summary_sha256": "85a32c528e31b6de8690002f0d9704d7890db13b356c86ea2d57cb91214b91ba",
+      "plan_sha256": "3db395781d640231287e73a62fc1024b274de106145ce98a4b09c222d4608adf",
+      "cases": [
+        {
+          "case_id": "correct",
+          "passed": false,
+          "failure": null,
+          "receipt_sha256": "3ca6210c1dd197657669e14f6252e5f72a01a67cb97f9c236b8c6de52bd58854",
+          "host_version": "1.19.5",
+          "checker_observed": true,
+          "declared_node_exit": 0,
+          "captured_host_exit": 0,
+          "native_host_consistency": {
+            "passed": true,
+            "declared_node_exit": 0,
+            "observed_host_exit": 0,
+            "command_binding": true,
+            "call_binding": true,
+            "session_binding": true,
+            "exit_matches_journal": true
+          },
+          "captured_actions": 10,
+          "first_command_bytes": 3260,
+          "exact_original_pages": true,
+          "page_count": 2,
+          "observed_verdict": "reject",
+          "checker_outcome": "substantive_rejection",
+          "finding_outcomes": [
+            "disconfirmed"
+          ],
+          "findings": [
+            {
+              "criterion_id": "C1",
+              "outcome": "disconfirmed",
+              "reason": "Ordinal 1 intent retains a command ending in ACTION_EVIDENCE_EARLY_MARKER_V1, while the linked terminal reports exit 0 but its output is ACTION_EVIDENCE_EARLY_MARKER_V1; wait—the retained command's marker matches that output, so the pair supports the requirement."
+            }
+          ],
+          "producer_attempts": 1,
+          "checker_attempts": 1,
+          "parent_dispatch_verified": true,
+          "requested_summaries": 1,
+          "journal_boundary_count": 4,
+          "journal_unchanged": true,
+          "restart_verified": true,
+          "host_stopped": true,
+          "auth_copy_removed": true,
+          "failure_workspace_retained": true,
+          "global_config_unchanged": true,
+          "plugin_source_unchanged": true
+        },
+        {
+          "case_id": "defective",
+          "passed": true,
+          "failure": null,
+          "receipt_sha256": "3826df57a6b6969edb578ef1bd55994905ff099589fcb94e9051ad05dbfa39c1",
+          "host_version": "1.19.5",
+          "checker_observed": true,
+          "declared_node_exit": 7,
+          "captured_host_exit": 1,
+          "native_host_consistency": {
+            "passed": true,
+            "declared_node_exit": 7,
+            "observed_host_exit": 1,
+            "command_binding": true,
+            "call_binding": true,
+            "session_binding": true,
+            "exit_matches_journal": true
+          },
+          "captured_actions": 10,
+          "first_command_bytes": 3276,
+          "exact_original_pages": true,
+          "page_count": 2,
+          "observed_verdict": "reject",
+          "checker_outcome": "substantive_rejection",
+          "finding_outcomes": [
+            "disconfirmed"
+          ],
+          "findings": [
+            {
+              "criterion_id": "C1",
+              "outcome": "disconfirmed",
+              "reason": "Ordinal 1 identifies the first observed bash call; its retained command is complete, and the linked terminal explicitly reports exit_code 1, contradicting the required zero exit."
+            }
+          ],
+          "producer_attempts": 1,
+          "checker_attempts": 1,
+          "parent_dispatch_verified": true,
+          "requested_summaries": 1,
+          "journal_boundary_count": 4,
+          "journal_unchanged": true,
+          "restart_verified": true,
+          "host_stopped": true,
+          "auth_copy_removed": true,
+          "failure_workspace_retained": false,
+          "global_config_unchanged": true,
+          "plugin_source_unchanged": true
+        }
+      ]
+    }
+  ],
+  "interpretation": [
+    "V3 is the valid scoped diagnostic: negative passed, positive falsely rejected. The gate failed.",
+    "Earlier rounds remain failed; fixture corrections do not regrade them.",
+    "Fresh-checker semantic errors do not establish compaction-caused information loss.",
+    "No new Build/ALG comparison or superiority result exists.",
+    "The native-host comparison establishes host/journal consistency, not an independent OS audit.",
+    "Raw host history, auth and private workspace paths are excluded from this summary."
+  ]
+}
