@@ -163,6 +163,15 @@ this increment does not scan them. Effective uniform checker read permission
 is required for snapshots and glob for directory census; existing scoped or
 unknown decisions block rather than being reinterpreted.
 
+Qualification must respect V1 rule ordering: a final exact capability-wide rule
+supersedes earlier scoped defaults. The observed host supplied `*.env` ask rules
+before the installed checker's final read-all allowance. Treating every earlier
+scoped rule as permanently unresolved falsely rejected that agent. The predicate
+recognizes only the final uniform decision; a later scoped or unknown capability
+pattern still fails closed. This follows the ordered evaluation in the
+[upstream V1 permission implementation](https://github.com/anomalyco/opencode/blob/v1.2.27/packages/opencode/src/permission/service.ts#L237)
+and is checked against actual local V1 host responses, without changing config.
+
 Before checking, compare additions, modifications and deletions with the accepted
 scope. Task evidence carries baseline/content identities, change count, a bounded
 sample and explicit omission count. Post-check changes invalidate the verdict

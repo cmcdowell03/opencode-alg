@@ -7,10 +7,15 @@ import type { TaskContractInput } from "../src/task-contract.ts"
 export async function runTaskAdmissionHostProbe(baseUrl: string, project: string, parentSessionId: string) {
   const client = createOpencodeClient({ baseUrl })
   let lookups = 0, childCalls = 0
+  let checkerReadRules: unknown = null
   const agents = client.app.agents.bind(client.app)
   client.app.agents = (async (...args: Parameters<typeof agents>) => {
     lookups++
-    return agents(...args)
+    const response = await agents(...args)
+    const checker = response.data?.find(agent => agent.name === "checker")
+    const permissions: unknown = checker?.permission // Legacy SDK typing predates the V1 host ruleset array.
+    checkerReadRules = Array.isArray(permissions) ? permissions.filter(rule => rule?.permission === "read" || rule?.permission === "*") : null
+    return response
   }) as typeof client.app.agents
   client.session.create = (async () => { childCalls++; throw new Error("admission probe must not create a child") }) as typeof client.session.create
   const tools = createAlgTools({ client, directory: project, worktree: project } as any,
@@ -24,7 +29,7 @@ export async function runTaskAdmissionHostProbe(baseUrl: string, project: string
   const unpack = (result: unknown) => JSON.parse((result as { output: string }).output)
   const criteria = ["Prepare admission-probe.json and execute its validation; do not continue to a final report"]
   const plan = unpack(await tools.alg_plan.execute({ goal: "Synthetic task admission only", criteria, task_contract: task }, context))
-  if (plan.error) throw new Error(`Host task admission failed: ${plan.error}`)
+  if (plan.error) throw new Error(`Host task admission failed: ${plan.error}; isolated checker read rules: ${JSON.stringify(checkerReadRules)}`)
   const saved = loadRunForOwner(project, plan.run_id, parentSessionId)!
   const unlock = unpack(await tools.alg_criteria.execute({ run_id: plan.run_id, criteria: ["Weakened"], lock: false }, context))
   const incompatible = unpack(await tools.alg_plan.execute({ goal: "Synthetic incompatible plan", criteria, template: "research-diamond",

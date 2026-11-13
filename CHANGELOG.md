@@ -7,6 +7,7 @@
 - Compare added/modified/deleted files against explicit allowed paths and a change count; retain scope/exclusion metadata and before/after identities. Missing or violated scope blocks checker admission and automatic producer repair. Content drift after checking requires fresh verification.
 - Collection stays inside declared project paths with explicit size limits and uniform host read/glob permission checks. This does not audit prior root-agent actions, external/global configuration, transient writes, permissions, or concurrent writers. Older contracts remain readable and explicitly lack the new coverage qualification. New records require the 0.5.9 reader.
 - V1 only, model agnostic. No new paid comparison, V2 work or superiority claim.
+- Real V1 host qualification exposed default scoped read rules preceding the checker's final uniform allowance. Capability admission now honors that final all-resource decision; a later scoped/unknown rule still blocks qualification. No permissions are added or changed.
 
 ## 0.5.8 candidate — preserve host user-request details across child handoffs
 

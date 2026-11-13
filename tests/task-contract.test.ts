@@ -117,6 +117,17 @@ describe("declared task admission", () => {
     }
     expect(uniformCapability([{ permission: "edit", pattern: "*", action: "allow" }], "edit")).toBe("allow")
     expect(uniformCapability([{ permission: "edit", pattern: "*", action: "allow" }, { permission: "edit", pattern: "secret/*", action: "deny" }], "edit")).toBe("unknown")
+    const defaults = [{ permission: "*", pattern: "*", action: "allow" },
+      { permission: "read", pattern: "*.env", action: "ask" }, { permission: "read", pattern: "*.env.*", action: "ask" }]
+    for (const action of ["allow", "deny", "ask"] as const)
+      expect(uniformCapability([...defaults, { permission: "read", pattern: "*", action }], "read")).toBe(action)
+    expect(uniformCapability([...defaults, { permission: "read", pattern: "*", action: "allow" },
+      { permission: "read", pattern: "private/*", action: "deny" }], "read")).toBe("unknown")
+    expect(uniformCapability([...defaults, { permission: "read", pattern: "*", action: "allow" },
+      { permission: "r*", pattern: "*", action: "deny" }], "read")).toBe("unknown")
+    expect(uniformCapability([{ permission: "read", pattern: "file", action: "allow" }], "read")).toBe("unknown")
+    expect(uniformCapability([{ permission: "read", pattern: "*", action: "allow" },
+      { permission: "READ", pattern: "*", action: "deny" }], "read")).toBe(process.platform === "win32" ? "deny" : "allow")
     expect(() => assertTaskHostCapabilities(contract(), graph, [{ name: "implementer", tools: { edit: false }, permission: { edit: "allow" } }, checker])).toThrow("deny")
   })
   test("original criteria and contract survive persistence and bounded context projection", () => {

@@ -56,7 +56,7 @@ function scope(overrides: Record<string, unknown> = {}) {
 test("scope schema bounds and rejects unsafe, duplicate, overlapping, or out-of-root paths", () => {
   expect(ChangeScopeInputSchema.safeParse({ roots: ["."], allowed_paths: [], max_changed_files: 0 }).success).toBe(true)
   expect(ChangeScopeInputSchema.safeParse(scope({ roots: ["src", "src/lib"] })).success).toBe(false)
-  expect(ChangeScopeInputSchema.safeParse(scope({ roots: ["Src", "src/lib"] })).success).toBe(platform !== "win32")
+  expect(ChangeScopeInputSchema.safeParse(scope({ roots: ["Src", "src/lib"], allowed_paths: [] })).success).toBe(platform !== "win32")
   expect(ChangeScopeInputSchema.safeParse(scope({ roots: ["src", "src"] })).success).toBe(false)
   expect(ChangeScopeInputSchema.safeParse(scope({ allowed_paths: ["other/file.ts"] })).success).toBe(false)
   expect(ChangeScopeInputSchema.safeParse(scope({ roots: ["../src"] })).success).toBe(false)

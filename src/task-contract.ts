@@ -159,15 +159,28 @@ export function assertEvidencePlan(input: TaskContractInput, count: number, requ
 }
 
 export type HostCapability = "allow" | "deny" | "ask" | "unknown"
-/** Only uniform host decisions are recognized. Scoped/wildcard decisions stay unknown. */
+/** Recognize only a final uniform host decision; never evaluate scoped resource patterns. */
 export function uniformCapability(permission: unknown, name: string): HostCapability {
   const action = (value: unknown): HostCapability => value === "allow" || value === "deny" || value === "ask" ? value : "unknown"
   if (Array.isArray(permission)) {
-    if (permission.some(rule => !rule || typeof rule.permission !== "string" ||
-      (rule.permission !== "*" && /[*?]/.test(rule.permission)))) return "unknown"
-    const relevant = permission.filter(r => r.permission === name || r.permission === "*")
-    if (!relevant.length || relevant.some(r => r.pattern !== "*")) return "unknown"
-    return action(relevant.at(-1)?.action)
+    if (permission.some(rule => !rule || typeof rule.permission !== "string" || typeof rule.pattern !== "string" ||
+      action(rule.action) === "unknown")) return "unknown"
+    // V1 effective rules are ordered: the last match wins. An exact final
+    // capability-wide rule supersedes earlier scoped defaults (e.g. *.env ask).
+    // A later scoped or unknown capability pattern still prevents qualification.
+    for (let index = permission.length - 1; index >= 0; index--) {
+      const rule = permission[index]
+      // The V1 host matches permission names case-insensitively on Windows.
+      const exactPermission = process.platform === "win32"
+        ? rule.permission.toLowerCase() === name.toLowerCase()
+        : rule.permission === name
+      if (!exactPermission && rule.permission !== "*") {
+        if (/[*?]/.test(rule.permission)) return "unknown"
+        continue
+      }
+      return rule.pattern === "*" ? action(rule.action) : "unknown"
+    }
+    return "unknown"
   }
   if (!permission || typeof permission !== "object") return "unknown"
   if (!Object.hasOwn(permission, name)) return "unknown"
