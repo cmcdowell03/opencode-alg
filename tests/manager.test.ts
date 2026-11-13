@@ -27,7 +27,7 @@ import {
   type CommandResult,
   type CommandRunner,
 } from "../scripts/manager-core.ts"
-import { ManagerReceiptSchema } from "../scripts/manager-schema.ts"
+import { DurableStateCompatibilitySchema, MAX_COMPATIBLE_PACKAGE_VERSIONS, ManagerReceiptSchema } from "../scripts/manager-schema.ts"
 import { decodeConfigBytes, encodeConfigText } from "../src/config-editor.ts"
 import { removeProject, tempProject } from "./helpers.ts"
 
@@ -36,6 +36,7 @@ const sandboxes: string[] = []
 
 function isNpmRequest(request: CommandRequest): boolean {
   return /^npm(?:\.cmd)?$/i.test(request.command) ||
+    (/[\\/]node_modules[\\/]npm[\\/]bin[\\/]npm-cli\.js$/i.test(request.command) && request.args.includes("ci")) ||
     (request.args.some((arg) => /[\\/]node_modules[\\/]npm[\\/]bin[\\/]npm-cli\.js$/i.test(arg)) && request.args.includes("ci"))
 }
 
@@ -88,10 +89,11 @@ class LocalGitRunner implements CommandRunner {
     if (isNpmRequest(request)) {
       if (this.failDependencies) return { exitCode: 17, stdout: "", stderr: this.dependencyError }
       if (!request.cwd) throw new Error("npm fixture requires cwd")
-      for (const dependency of ["@opencode-ai/plugin", "jsonc-parser", "zod"]) {
+      const declared = JSON.parse(readFileSync(join(request.cwd, "package.json"), "utf8")) as { dependencies?: Record<string, string> }
+      for (const dependency of Object.keys(declared.dependencies ?? {})) {
         const directory = join(request.cwd, "node_modules", ...dependency.split("/"))
         mkdirSync(directory, { recursive: true })
-        writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: dependency, version: "1.0.0" })}\n`)
+        writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: dependency, version: declared.dependencies![dependency] })}\n`)
         writeFileSync(join(directory, "index.js"), `export const dependency = ${JSON.stringify(dependency)}\n`)
       }
       return { exitCode: 0, stdout: "", stderr: "" }
@@ -283,6 +285,32 @@ describe("bounded production dependency identity", () => {
 })
 
 describe("v0.2 side-by-side release manager", () => {
+  test.each([MAX_COMPATIBLE_PACKAGE_VERSIONS, MAX_COMPATIBLE_PACKAGE_VERSIONS + 1])("bounded compatibility history: %i versions are validated before activation", (count) => {
+    const source = sourceFixture(), config = tempProject("alg-manager-compatibility-bound-")
+    sandboxes.push(config)
+    const packagePath = join(source, "package.json")
+    const pkg = JSON.parse(readFileSync(packagePath, "utf8"))
+    const historic = [...pkg.opencodeAlg.durableState.compatiblePackageVersions]
+    const versions = [...historic, ...Array.from({ length: count - historic.length }, (_, index) => `9.0.${index}`)]
+    pkg.opencodeAlg.durableState.compatiblePackageVersions = versions
+    writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`)
+    advanceToV02(source)
+    const runner = new LocalGitRunner()
+    const declaration = { format: "alg-run-state", current_schema: 2, compatible_schemas: [1, 2], compatible_package_versions: versions }
+    if (count <= MAX_COMPATIBLE_PACKAGE_VERSIONS) {
+      expect(DurableStateCompatibilitySchema.parse(declaration).compatible_package_versions).toEqual(versions)
+      runManager({ command: "install", configDir: config, source }, { runner })
+      expect(receipt(config).generations[0]!.durable_state.compatible_package_versions).toEqual(versions)
+      expect(() => runManager({ command: "doctor", configDir: config }, { runner })).not.toThrow()
+    } else {
+      expect(DurableStateCompatibilitySchema.safeParse(declaration).success).toBe(false)
+      expect(() => runManager({ command: "install", configDir: config, source }, { runner })).toThrow("compatible_package_versions")
+      expect(existsSync(join(config, "opencode.jsonc"))).toBe(false)
+      expect(existsSync(join(config, ".opencode-alg", "receipt.json"))).toBe(false)
+      expect(runner.requests.some(isNpmRequest)).toBe(false)
+    }
+  }, 60_000)
+
   test("deliberately accepts an old v0.1 generation and receipt with no capability fields", () => {
     const source = sourceFixture(false)
     const config = tempProject("alg-manager-old-no-capability-")
@@ -291,12 +319,12 @@ describe("v0.2 side-by-side release manager", () => {
     runManager({ command: "install", configDir: config, source }, { runner })
     const state = receipt(config)
     expect(state.generations[0]?.capabilities).toBeUndefined()
-    expect(state.generations[0]?.durable_state.compatible_package_versions).toEqual(["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1"])
+    expect(state.generations[0]?.durable_state.compatible_package_versions).toEqual(["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1", "0.5.0", "0.5.1", "0.5.2", "0.5.3", "0.5.4", "0.5.5", "0.5.6", "0.5.7", "0.5.8", "0.5.9", "0.5.10", "0.5.11", "0.5.12"])
     expect(runManager({ command: "doctor", configDir: config }, { runner }).capability_status).toMatchObject({
       status: "disabled", enabled: false, manifest: "not-recorded", runtime_check: "not-run",
     })
     expect(runner.requests.some((request) => request.command === "uv" || request.args[1] === "--check")).toBe(false)
-  }, 20_000)
+  }, 60_000)
 
   test("custom and skip agent ownership cannot be laundered by exact target bytes; force explicitly adopts", () => {
     const source = sourceFixture()
@@ -1182,13 +1210,15 @@ describe("v0.2 side-by-side release manager", () => {
     const serverPath = join(config, "opencode.jsonc")
     const receiptBefore = readFileSync(receiptPath)
     const serverBefore = readFileSync(serverPath)
+    const targetTag = target.tag
+    if (!targetTag) throw new Error("Git fixture generation must retain its exact tag")
     const restore = () => {
       for (const path of ["package.json", "package-lock.json", "src/index.ts"]) {
         git(target.package_root, "update-index", "--no-skip-worktree", path)
       }
       git(target.package_root, "reset", "--hard", target.commit)
       git(target.package_root, "clean", "-fd")
-      git(target.package_root, "tag", "-f", target.tag, target.commit)
+      git(target.package_root, "tag", "-f", targetTag, target.commit)
       git(target.package_root, "remote", "set-url", "origin", state.trusted_remote)
       rmSync(join(target.package_root, "node_modules", "zod", "dependency-drift.js"), { force: true })
     }
@@ -1199,7 +1229,7 @@ describe("v0.2 side-by-side release manager", () => {
       ["tag drift", () => {
         git(target.package_root, "-c", "user.name=ALG Test", "-c", "user.email=alg@example.invalid", "commit", "--allow-empty", "-m", "unexpected tag target")
         const wrong = git(target.package_root, "rev-parse", "HEAD")
-        git(target.package_root, "tag", "-f", target.tag, wrong)
+        git(target.package_root, "tag", "-f", targetTag, wrong)
         git(target.package_root, "reset", "--hard", target.commit)
       }],
       ["package drift hidden from status", () => {
@@ -1602,7 +1632,10 @@ describe("v0.2 side-by-side release manager", () => {
     expect(() => serializeManagerJson({ value: "x".repeat(MANAGER_JSON_MAX_BYTES) })).toThrow("exceeds")
   }, 30_000)
 
-  test("receipt claim/publish races preserve third-party bytes and crash recovery is deterministic", () => {
+  // Each boundary starts from the same installed receipt. Keep the 60s limit
+  // per independent scenario instead of charging four Windows filesystem-heavy
+  // updates and repairs to one test's clock.
+  test.each(["before-commit", "after-claim", "claim-crash", "publish-crash"] as const)("receipt claim/publish boundary %s preserves bytes and recovers deterministically", (boundary) => {
     const source = sourceFixture()
     const config = tempProject("alg-receipt-claim-races-")
     sandboxes.push(config)
@@ -1613,40 +1646,37 @@ describe("v0.2 side-by-side release manager", () => {
     const before = readFileSync(receiptPath)
     const third = Buffer.from('{"third_party":true}\n')
 
-    expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
-      runner,
-      faults: { beforeReceiptCommit(path) { writeFileSync(path, third) } },
-    })).toThrow("derivation baseline")
-    expect(readFileSync(receiptPath)).toEqual(third)
-    expect(readdirSync(transactionRoot)).toEqual([])
-    writeFileSync(receiptPath, before)
-
-    expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
-      runner,
-      faults: { afterReceiptClaim(path) { writeFileSync(path, third) } },
-    })).toThrow("Third-party receipt was preserved")
-    expect(readFileSync(receiptPath)).toEqual(third)
-    expect(readdirSync(transactionRoot)).toHaveLength(1)
-    rmSync(receiptPath)
-    runManager({ command: "doctor", configDir: config, repairJournal: true }, { runner })
-    expect(readFileSync(receiptPath)).toEqual(before)
-
-    expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
-      runner,
-      faults: { afterReceiptClaim() { throw new SimulatedManagerCrashError("claim crash") } },
-    })).toThrow("claim crash")
-    expect(existsSync(receiptPath)).toBe(false)
-    expect(readdirSync(transactionRoot)).toHaveLength(1)
-    runManager({ command: "doctor", configDir: config, repairJournal: true }, { runner })
-    expect(readFileSync(receiptPath)).toEqual(before)
-
-    expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
-      runner,
-      faults: { afterReceiptPublish() { throw new SimulatedManagerCrashError("publish crash") } },
-    })).toThrow("publish crash")
-    expect(receipt(config).installed).toBe(true)
-    runManager({ command: "doctor", configDir: config, repairJournal: true }, { runner })
-    expect(readdirSync(transactionRoot)).toEqual([])
+    if (boundary === "before-commit") {
+      expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
+        runner, faults: { beforeReceiptCommit(path) { writeFileSync(path, third) } },
+      })).toThrow("derivation baseline")
+      expect(readFileSync(receiptPath)).toEqual(third)
+      expect(readdirSync(transactionRoot)).toEqual([])
+    } else if (boundary === "after-claim") {
+      expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
+        runner, faults: { afterReceiptClaim(path) { writeFileSync(path, third) } },
+      })).toThrow("Third-party receipt was preserved")
+      expect(readFileSync(receiptPath)).toEqual(third)
+      expect(readdirSync(transactionRoot)).toHaveLength(1)
+      rmSync(receiptPath)
+      runManager({ command: "doctor", configDir: config, repairJournal: true }, { runner })
+      expect(readFileSync(receiptPath)).toEqual(before)
+    } else if (boundary === "claim-crash") {
+      expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
+        runner, faults: { afterReceiptClaim() { throw new SimulatedManagerCrashError("claim crash") } },
+      })).toThrow("claim crash")
+      expect(existsSync(receiptPath)).toBe(false)
+      expect(readdirSync(transactionRoot)).toHaveLength(1)
+      runManager({ command: "doctor", configDir: config, repairJournal: true }, { runner })
+      expect(readFileSync(receiptPath)).toEqual(before)
+    } else {
+      expect(() => runManager({ command: "update", configDir: config, source, agentPolicy: "skip" }, {
+        runner, faults: { afterReceiptPublish() { throw new SimulatedManagerCrashError("publish crash") } },
+      })).toThrow("publish crash")
+      expect(receipt(config).installed).toBe(true)
+      runManager({ command: "doctor", configDir: config, repairJournal: true }, { runner })
+      expect(readdirSync(transactionRoot)).toEqual([])
+    }
   }, 60_000)
 
   test.each(["different", "same-bytes"] as const)("pre-created %s claim is never overwritten or deleted and blocks recovery", (variant) => {

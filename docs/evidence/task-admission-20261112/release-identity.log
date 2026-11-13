@@ -1,0 +1,23 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\release-gate.test.ts:
+235 | describe("bounded release-gate evidence", () => {
+236 |   test("v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate", () => {
+237 |     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"))
+238 |     const lock = JSON.parse(readFileSync(join(ROOT, "package-lock.json"), "utf8"))
+239 |     expect(pkg.version).toBe("0.5.7")
+240 |     expect(lock.version).toBe("0.5.7")
+                               ^
+error: expect(received).toBe(expected)
+
+Expected: "0.5.7"
+Received: "0.5.6"
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\release-gate.test.ts:240:26)
+(fail) bounded release-gate evidence > v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate [3.93ms]
+
+ 0 pass
+ 24 filtered out
+ 1 fail
+ 2 expect() calls
+Ran 1 test across 1 file. [137.00ms]

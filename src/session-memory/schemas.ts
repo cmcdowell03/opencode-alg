@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { isSafeId, isSafeProjectRelativePath } from "../paths.ts"
+import { TaskAllowanceReferenceSchema, TaskAllowanceStateSchema } from "../task-allowance-schema.ts"
 
 export const Hash = z.string().regex(/^[a-f0-9]{64}$/)
 export const Id = z.string().refine(isSafeId)
@@ -116,6 +117,19 @@ export const CheckpointSchema = z.object({
   observed_opening: z.string().max(2000).optional(),
   source_cursor: z.string().max(256).nullable(), deleted: z.boolean(),
   result_after: z.number().int().nonnegative().optional(),
+  workspace_operation: Id.optional(),
+  investigation: z.object({ schema_version: z.literal(1), project_id: Hash, owner_id: SessionId, run_id: Id }).strict().optional(),
+  /** Crash-replayable local ledger detachment after a new task clears the active pointer. */
+  investigation_detach_pending: z.object({ schema_version: z.literal(1), project_id: Hash,
+    owner_id: SessionId, run_id: Id }).strict().optional(),
+  /** One investigation admission per task epoch, retained through explicit detach. */
+  investigation_plan: z.object({
+    reference: z.object({ schema_version: z.literal(1), project_id: Hash, owner_id: SessionId, run_id: Id }).strict(),
+    request_sha256: Hash,
+  }).strict().optional(),
+  investigation_node: Id.optional(),
+  task_allowance_ref: TaskAllowanceReferenceSchema.optional(),
+  task_allowance: TaskAllowanceStateSchema.optional(),
   delegation: z.object({ parent_owner: SessionId, parent_checkpoint: Hash, role: z.enum(["worker", "checker"]) }).strict().nullable(),
 }).strict()
 export type Checkpoint = z.infer<typeof CheckpointSchema>

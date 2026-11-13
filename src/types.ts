@@ -48,6 +48,7 @@ export const ALG_TOOL_IDS = [
   "alg_memory_read",
   "alg_context_status",
   "alg_memory_propose",
+  "alg_investigation",
 ] as const
 
 export function algServerStartupMessage(skillEvolutionEnabled: boolean): string {
@@ -126,6 +127,8 @@ export interface NodeDef {
   isolated_check?: boolean
   /** Explicit node to reopen with this checker's failures. */
   feedback_to?: string
+  /** Opt-in criterion/evidence-linked checker output; legacy checkers retain their contract. */
+  verification?: import("./verification.ts").Verification
 }
 
 export interface GraphDef {
@@ -157,6 +160,7 @@ export type AttemptOutcome =
   | "substantive_rejection"
   | "incomplete"
   | "gate_failure"
+  | "evidence_unavailable"
 
 /** Exact outcome distribution for a validated archived attempt prefix. */
 export interface AttemptOutcomeCounts {
@@ -167,6 +171,8 @@ export interface AttemptOutcomeCounts {
   incomplete: number
   gate_failure: number
   legacy_unknown: number
+  /** Absent on legacy archives; zero is not serialized for compatibility. */
+  evidence_unavailable?: number
 }
 
 export interface AttemptHistoryReference extends RunDataReference {
@@ -198,6 +204,25 @@ export interface FilesystemRootAuthorizationReference extends RunDataReference {
 }
 
 export interface NodeAttempt {
+  /** Immutable host action journal, independent of the prompt preview. */
+  action_evidence_ref?: RunDataReference
+  /** Frozen, related producer journals assigned before this checker starts. */
+  action_evidence_sources?: import("./evidence-retrieval.ts").EvidenceSources
+  /** Exact pages actually delivered by the scoped evidence tool. */
+  retrieved_evidence?: import("./verification.ts").RetrievedVerificationEvidence[]
+  /** Exact host task observations used by this checker; immutable contained sidecar. */
+  task_evidence_ref?: RunDataReference
+  /** Host observations, never populated from the worker's claimed JSON. */
+  execution_evidence?: import("./execution-evidence.ts").ExecutionEvidence
+  gate_evidence?: import("./execution-evidence.ts").ExecutionEvidence
+  preservation_evidence?: import("./preservation-evidence.ts").PreservationEvidence
+  /** Gate infrastructure failed before command launch; do not request code repair. */
+  shell_setup_failed?: true
+  gate_recovery?: import("./gate-recovery.ts").GateRecovery
+  /** An explicit resume reran only the gate against bound output/files. */
+  reused_output_from?: number
+  /** Frozen input commitments saved before the checker child starts. */
+  verification_basis?: import("./verification.ts").VerificationBasis
   attempt: number
   status: NodeStatus
   session_id?: string
@@ -293,7 +318,15 @@ export interface RunState {
   goal: string
   criteria: string[]
   criteria_locked: boolean
+  /** Accepted declared deliverables and original requirements; absent on legacy runs. */
+  task_contract?: import("./task-contract.ts").TaskContract
+  /** Immutable before-first-child evidence; absence on older runs is not a late baseline. */
+  task_baseline?: import("./task-baseline.ts").TaskBaseline
+  /** Immutable reference to the root task's cumulative ALG dispatch allowance. */
+  task_allowance?: import("./task-allowance-schema.ts").TaskAllowanceReference
   graph: GraphDef
+  /** Only pending-node edits are supported; immutable snapshots remain run artifacts. */
+  graph_revisions?: import("./graph-revision.ts").GraphRevisionReceipt[]
   status: RunStatus
   phase: string
   nodes: Record<string, NodeState>
@@ -311,6 +344,7 @@ export interface RunState {
   filesystem_root_authorizations_omitted?: number
   /** SDK child sessions isolate history, not project/system policy or filesystem access. */
   session_isolation: "sdk-child-session"
+  investigation?: { schema_version: 1; project_id: string; owner_id: string; run_id: string }
   summary?: string
   /** Truthful aggregate metadata for bounded progress-state projection. */
   state_projection?: StateProjectionMetadata

@@ -78,6 +78,25 @@ function snapshotDirectory(root: string): Record<string, string> {
 }
 
 describe("architecture audit remediation", () => {
+  test("worker payload retains one authoritative task and preserves differing advisory inputs", () => {
+    const goal = "Preserve the existing interface while correcting the aggregate"
+    const criteria = ["Keep the field types unchanged", "Run the existing acceptance command"]
+    const inputs = { goal, criteria: [...criteria], advisory_criteria: ["Consider another optional test"] }
+    const before = structuredClone(inputs)
+    const prompt = buildWorkerPrompt({ goal, criteria, agent: "implementer", inputs, priorFailures: [] })
+    expect(prompt.split(goal)).toHaveLength(2)
+    for (const criterion of criteria) expect(prompt.split(criterion)).toHaveLength(2)
+    expect(prompt).toContain("Wired goal and criteria reuse the exact authoritative text above.")
+    expect(prompt).toContain("Consider another optional test")
+    expect(inputs).toEqual(before)
+
+    const distinct = buildWorkerPrompt({ goal, criteria, agent: "researcher",
+      inputs: { goal: "Investigate a narrower dependency", criteria: [...criteria].reverse() }, priorFailures: [] })
+    expect(distinct).not.toContain("reuse the exact authoritative")
+    expect(distinct).toContain("Investigate a narrower dependency")
+    expect(distinct).toContain(JSON.stringify([...criteria].reverse()))
+  })
+
   test("README, operations, and orchestrator help document the local-integrity authenticity boundary", () => {
     const documents = [
       new URL("../README.md", import.meta.url),
@@ -585,7 +604,7 @@ describe("architecture audit remediation", () => {
       })
 
       const plugin = {
-        client: { app: { log: async () => ({ data: true, error: undefined }) } },
+        client: inertClient(),
         project: { id: "project-id" },
         directory: project,
         worktree: project,
@@ -601,7 +620,17 @@ describe("architecture audit remediation", () => {
       } as never)
       const planned = await hooks.tool!.alg_plan!.execute({
         goal: "snapshot",
-        criteria: [],
+        criteria: ["Snapshot effective role models without execution"],
+        task_contract: {
+          version: 1,
+          kind: "project_change",
+          discovery: "required",
+          phase: "complete",
+          deliverables: [{ destination: "project_file", producer_node: "implement", path: "snapshot.json" }],
+          verification: { checker_node: "check", execution: "none" },
+          preserve_paths: [],
+          evidence_plan: [{ criterion: 1, observations: [{ kind: "deliverable", index: 0 }] }],
+        },
         mode: "dry",
       }, toolContext(project))
       const runId = toolOutput(planned).run_id
@@ -740,12 +769,9 @@ describe("architecture audit remediation", () => {
         worktree: project,
       } as never
       const tools = createAlgTools(plugin)
-      const plannedResult = await tools.alg_plan.execute({
-        goal: "shell overrides",
-        graph_json: JSON.stringify(graph),
-        mode: "dry",
-      }, toolContext(project))
-      const runId = toolOutput(plannedResult).run_id
+      const legacy = createRun({ goal: "shell overrides", criteria: [], graph, projectDirectory: project,
+        ownerSessionId: "owner", mode: "dry" })
+      const runId = legacy.run_id
       await tools.alg_run.execute({
         run_id: runId,
         dry: true,
@@ -786,12 +812,9 @@ describe("architecture audit remediation", () => {
       expect(toolOutput(missing).error).toContain("Call alg_plan first")
       expect(listRuns(project, "owner")).toHaveLength(0)
 
-      const planned = await tools.alg_plan.execute({
-        goal: "criteria",
-        criteria: ["original"],
-        mode: "dry",
-      }, toolContext(project))
-      const runId = toolOutput(planned).run_id
+      const legacy = createRun({ goal: "criteria", criteria: ["original"], graph: getTemplate("coding-diamond"),
+        projectDirectory: project, ownerSessionId: "owner", mode: "dry" })
+      const runId = legacy.run_id
       const locked = await tools.alg_criteria.execute({
         run_id: runId,
         criteria: ["replacement"],

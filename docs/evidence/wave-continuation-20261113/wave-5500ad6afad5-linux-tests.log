@@ -1,0 +1,153 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/allowance-headless-probe.test.ts:
+(pass) probe declares bounded root-wide scope in every phase and keeps its fresh checker [28.02ms]
+(pass) both scope cases use the existing local synthetic response before phase-specific behavior [1.65ms]
+(pass) recorder binds real persisted baseline, child delegation and emitted delivery receipt [1206.56ms]
+(pass) scope success alone cannot attest absent host delivery writes [842.37ms]
+(pass) compaction delivery is not mislabeled as a child's system hook [928.06ms]
+(pass) recorder rejects an older delivery or a different baseline identity [889.36ms]
+(pass) report accepts old receipts without new fields and validates new bounded fields when present [5.17ms]
+(pass) SDK transport calibration retains 2/1 exhaustion and independently blocks user drift without a fourth prompt [3684.57ms]
+
+tests/live-retention-runner.test.ts:
+(pass) live retention runner evidence guards > apparatus continuation cannot reset time or usage or replay already compacted work [2.90ms]
+(pass) live retention runner evidence guards > observed stop thresholds include equality and wall expiry [0.75ms]
+(pass) live retention runner evidence guards > vanished and duplicate checks count as loss; changed expectations leave the denominator [1.76ms]
+(pass) live retention runner evidence guards > rates require complete, linked, quiescent, persisted evidence [0.81ms]
+(pass) live retention runner evidence guards > headline retention excludes unqualified summary boundaries but preserves their diagnostic losses [1.14ms]
+(pass) live retention runner evidence guards > summary exposure retains failed, wrong, and missing continuations without changing historical fields [3.57ms]
+(pass) live retention runner evidence guards > fixture skill discovery requires exact location and current body [2.34ms]
+
+tests/build-benchmark-protocol.test.ts:
+(pass) benchmark protocol integrity > observed cumulative limits stop at equality including maintenance and resumed-phase usage [1.46ms]
+(pass) benchmark protocol integrity > database census requires exact session/message IDs, ownership, uniqueness and quiescence [8.21ms]
+(pass) benchmark protocol integrity > issues matched default Build/ALG pairs and isolates targeted compatibility as opt-in [0.79ms]
+(pass) benchmark protocol integrity > binds a non-contiguous case subset to its own pairs and execution order [0.71ms]
+(pass) benchmark protocol integrity > keeps every upfront-issued arm in the denominator when the suite stops before its launch [0.66ms]
+(pass) benchmark protocol integrity > separates preflight rows from issued trials and closes a terminal stopped trial [0.43ms]
+(pass) benchmark protocol integrity > accepts the SDK boolean only with a new marker, linked terminal summary, and scored continuation [2.76ms]
+(pass) benchmark protocol integrity > rejects old markers, errored or unlinked summaries, rejected acceptance, and unscored continuation [1.40ms]
+(pass) benchmark protocol integrity > completed summaries remain exposure after failed, missing, or wrong continuations [3.76ms]
+(pass) benchmark protocol integrity > final census waits within its grace and retains missing or in-flight usage as unknown [4.13ms]
+(pass) benchmark protocol integrity > census needs two consecutive stable quiet samples with known absence of pending work [1.11ms]
+(pass) benchmark protocol integrity > artifact outcome is independent from workflow and operational eligibility [0.46ms]
+
+tests/hard-benchmark-fixtures.test.ts:
+(pass) hard benchmark grading against raw evidence and executed work > public fixtures contain raw evidence and contracts with distinct private grader records [48.62ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives accepted-query results from paged rows after lost ack (seed %s) [324.17ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives accepted-query results from paged rows after lost ack (seed %s) [298.31ms]
+(pass) hard benchmark grading against raw evidence and executed work > irrelevant projection and literal out-of-scope writes cannot earn credit [270.48ms]
+(pass) hard benchmark grading against raw evidence and executed work > executes visible and hidden repo cases and rejects report-only submissions [550.07ms]
+(pass) hard benchmark grading against raw evidence and executed work > hidden cases reject sibling regressions, reimplemented clients and scope violations [394.09ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives true-effect from matched evidence despite identical crude totals [72.43ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives confounded from matched evidence despite identical crude totals [57.60ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives insufficient from matched evidence despite identical crude totals [51.25ms]
+(pass) hard benchmark grading against raw evidence and executed work > factory window accepts equivalent UTC precision and explicit zero offset [140.76ms]
+(pass) hard benchmark grading against raw evidence and executed work > factory window rejects shifted, non-UTC and invalid endpoints without calendar normalization [226.82ms]
+(pass) hard benchmark grading against raw evidence and executed work > rejects plausible keywords, stale citations, wrong UTC edges, wrong strata and vague follow-up [78.69ms]
+(pass) hard benchmark grading against raw evidence and executed work > restart preserves only current complete jobs and requires observed unavailability [463.36ms]
+
+tests/wave-continuation.test.ts:
+(pass) a bounded checker repair continues the same durable run without replaying or refunding attempts [1521.28ms]
+(pass) a cancel stop is not advertised as a wave pause [434.39ms]
+(pass) a sdk stop is not advertised as a wave pause [371.62ms]
+(pass) a prerequisite stop is not advertised as a wave pause [224.08ms]
+(pass) an exhausted global allowance remains terminal at the wave boundary [436.16ms]
+(pass) a shell setup failure at a wave boundary still requires prerequisite repair [456.60ms]
+
+tests/build-benchmark-retention.test.ts:
+(pass) build benchmark retention measurement > aggregates compaction exposure across a stable task and session lineage [13.30ms]
+(pass) build benchmark retention measurement > distinguishes changed criteria, stale skills, pending loss, and retrieval after context omission [9.26ms]
+(pass) build benchmark retention measurement > does not infer avoidability from equivalent keys and treats incomplete census as unknown exposure [3.34ms]
+(pass) build benchmark retention measurement > a complete zero-exposure census is zero and incomplete telemetry never fills missing denominators [0.52ms]
+(pass) build benchmark retention measurement > an incomplete census publishes observed counts without rates or assumed failures [2.49ms]
+(pass) compaction intervals retain one task timeline after reassignment [3.26ms]
+(pass) root and child turns follow session ancestry, and accepted compaction counts despite failed recovery [1.74ms]
+(pass) a wrong completed answer remains summary exposure with either complete or incomplete census [1.86ms]
+(pass) unlinked success is unverified, not an observed failed summary [0.91ms]
+(pass) only repeated accepted work can be a classified duplicate and only cross-boundary repeats count after compaction [1.43ms]
+
+tests/build-benchmark-retention-boundaries.test.ts:
+(pass) per-compaction retention boundaries > completed summaries remain boundaries when later behavior is wrong or unobserved [13.54ms]
+(pass) per-compaction retention boundaries > preserves first-boundary failure when the next boundary recovers [0.96ms]
+(pass) per-compaction retention boundaries > distinguishes durable presence, context omission, retrieval, and behavior [0.89ms]
+(pass) per-compaction retention boundaries > missing or incomplete evidence is unknown rather than a zero or pass [0.88ms]
+(pass) per-compaction retention boundaries > requires actual governed action exposure to assess prohibited or revoked use [2.31ms]
+(pass) per-compaction retention boundaries > uses exact snapshots; a complete empty snapshot differs from an absent snapshot [0.78ms]
+(pass) per-compaction retention boundaries > reports stale retrieval even if later behavior is correct [0.61ms]
+(pass) per-compaction retention boundaries > separates reassignment from compaction and scopes unrelated task/session evidence [0.77ms]
+(pass) per-compaction retention boundaries > flags invalid time order and prevents observations crossing the next task boundary [1.07ms]
+(pass) per-compaction retention boundaries > empty input is unavailable, and schema rejects model-authored provenance and unknown fields [2.00ms]
+(pass) per-compaction retention boundaries > flags summary evidence that does not bind the externally frozen obligation set [0.87ms]
+(pass) per-compaction retention boundaries > matching caller hash fields cannot substitute for canonical frozen values [1.32ms]
+(pass) per-compaction retention boundaries > failed summary, partial census, ambiguous identity, and model-only behavior cannot clear retention [2.72ms]
+(pass) per-compaction retention boundaries > interleaved tasks cannot hide the next task boundary or union snapshots [1.36ms]
+(pass) per-compaction retention boundaries > global duplicate evidence invalidates every affected report [2.05ms]
+(pass) per-compaction retention boundaries > revoked use needs a complete exposed window to clear, while observed misuse remains a failure [2.83ms]
+
+tests/hard-benchmark-qualification.test.ts:
+(pass) arm-neutral hard benchmark development qualification > reference solutions pass and negative/tamper/extra-field submissions fail for every frozen fixture [2573.06ms]
+(pass) arm-neutral hard benchmark development qualification > arm receives a contestant-only snapshot and no grader-evidence methods [159.05ms]
+(pass) arm-neutral hard benchmark development qualification > individual negative and tamper controls fail closed [1691.62ms]
+(pass) arm-neutral hard benchmark development qualification > only an explicit unavailable runner blocks a positive code qualification [40.72ms]
+(pass) arm-neutral hard benchmark development qualification > unavailable execution cannot qualify negative or tamper controls as rejected code [34.15ms]
+(pass) arm-neutral hard benchmark development qualification > equivalent factory stratum order remains valid [59.85ms]
+(pass) arm-neutral hard benchmark development qualification > factory reference matches hand-enumerated seed-zero strata and outcomes [49.44ms]
+
+tests/task-recovery.test.ts:
+(pass) an explicit resume repairs a missing file without rerunning completed unrelated work [1552.63ms]
+(pass) missing native evidence can be repaired by a new scoped producer attempt [1062.32ms]
+(pass) explicit prerequisite repair respects the original budget {"local":1} [550.40ms]
+(pass) explicit prerequisite repair respects the original budget {"global":2} [530.22ms]
+(pass) prerequisite repair refuses a project deliverable redirected outside the worktree [521.49ms]
+(pass) persistent missing evidence does not trigger a producer/checker prompt loop [782.10ms]
+(pass) existing-file drift reopens only the checker and its descendants [1591.68ms]
+(pass) same-command cwd/timeout repair requires an actual setup failure (%s) [1193.40ms]
+(pass) same-command cwd/timeout repair requires an actual setup failure (%s) [634.82ms]
+
+tests/executor.test.ts:
+(pass) executor semantics > global attempts are enforced and zero is rejected by graph validation [571.45ms]
+(pass) executor semantics > terminal failed dependencies deterministically skip descendants [385.67ms]
+(pass) executor semantics > explicit checker metadata routes generic feedback without resetting history [1265.53ms]
+(pass) executor semantics > schema-valid checker pass with a failed shell gate retries only the checker [1036.54ms]
+(pass) executor semantics > exactly 100 checker failures plus a shell failure persist within the cap and retry only the checker [1153.30ms]
+(pass) executor semantics > maximum valid graph and failure history reaches a bounded final save and reload [17216.25ms]
+(pass) executor semantics > maximum executor error is prefixed within the persisted field cap [319.80ms]
+
+tests/task-allowance-execution.test.ts:
+(pass) phases, beginTask, compaction and a fresh controller share one allowance [1762.55ms]
+(pass) a saved reservation before attempt persistence is reused, never double charged [842.27ms]
+(pass) an interrupted committed attempt remains charged while a retry consumes another dispatch [924.52ms]
+(pass) a transferred run and subsequent phase retain the original root ledger [1730.19ms]
+(pass) gate-only recovery consumes no child allowance and leaves the final checker reserved [1440.02ms]
+(pass) bound runs fail closed without a controller and their binding cannot be erased [155.70ms]
+(pass) concurrent real-store runs cannot dispatch past the shared bound [1573.30ms]
+(pass) checkpoint write failure cannot create a run attempt or child [295.68ms]
+(pass) new tool plans share a task reference with memory disabled and surface its status [245.27ms]
+
+tests/hard-benchmark-cohort.test.ts:
+(pass) disposable Git setup indexes long nested paths from a short working directory [86.58ms]
+(pass) live hard development code scoring > the default path executes reference code and the API dependency probe [229.83ms]
+(pass) live hard development code scoring > missing or unavailable runners are explicit apparatus errors; executed code errors remain failures [4.67ms]
+(pass) live hard development code scoring > the local child runner bounds output and terminates nonreturning candidate code [5095.79ms]
+(pass) hard development prospective selection > historic controls retain limits, subset order, arm order and disabled native compaction [1.22ms]
+(pass) hard development prospective selection > hard admission requires explicit bounded limits, seed, qualification and the complete six cases [53.74ms]
+(pass) hard development prospective selection > seeded fixture and alternating arm order are bound before all twelve issues [132.65ms]
+(pass) hard development prospective selection > case conversion supplies original criteria and never serializes the grader [13.39ms]
+(pass) hard development prospective selection > both service arms receive an explicit report destination and public format [15.53ms]
+(pass) hard development prospective selection > the common service exception and Node fetch usage are identical for both arms [0.52ms]
+(pass) hard development prospective selection > fatal termination keeps all issued arms with terminal error receipts [44.39ms]
+(pass) bounded complete hard project collection > progress collection tolerates real native card metadata but rejects unknown unsafe namespaces [60.62ms]
+(pass) bounded complete hard project collection > post-stop runtime progress is bounded and remains outside grader input [5.24ms]
+(pass) bounded complete hard project collection > preserves protected evidence and unknown writes while excluding only known runtime metadata [3.05ms]
+(pass) bounded complete hard project collection > a fixture file under a runtime name remains visible with all sibling writes [1.46ms]
+(pass) bounded complete hard project collection > symlinks, oversized and non-UTF8 files reject collection instead of hiding writes [4.86ms]
+(pass) external development qualification evidence > real admission qualification exercises the shared live scorer through direct and HTTP paths [3099.63ms]
+(pass) external development qualification evidence > identities bind frozen fixtures and all host, grader, service, qualification and runner inputs [31.49ms]
+(pass) external development qualification evidence > strict receipt parsing recomputes coverage and grade agreement instead of trusting passed [14.03ms]
+
+ 123 pass
+ 0 fail
+ 789 expect() calls
+Ran 123 tests across 12 files. [67.97s]

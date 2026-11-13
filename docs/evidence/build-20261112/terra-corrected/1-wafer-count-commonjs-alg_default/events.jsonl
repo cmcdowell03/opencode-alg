@@ -1,0 +1,3 @@
+{"at":"2026-11-12T05:43:44.397Z","phase":"initial","event":"start"}
+{"at":"2026-11-12T05:46:32.152Z","phase":"initial","event":"stopped","reason":"reported_token_limit"}
+{"at":"2026-11-12T05:46:32.162Z","event":"trial_error","reason":"reported_token_limit"}

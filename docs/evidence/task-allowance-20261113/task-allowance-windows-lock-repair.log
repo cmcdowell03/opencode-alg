@@ -1,0 +1,50 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\filesystem-mutex.test.ts:
+(pass) restart-safe short filesystem mutexes > automatic heartbeat protects a long critical section beyond the short lease [4246.74ms]
+(pass) restart-safe short filesystem mutexes > a contended waiter does not starve the current holder's release claim [63.71ms]
+(pass) restart-safe short filesystem mutexes > execution guard, mirror, and model locks recover only expired proven-dead owners [89.09ms]
+(pass) restart-safe short filesystem mutexes > expired live owners and malformed or remote owners fail closed [32.32ms]
+(pass) restart-safe short filesystem mutexes > renew CAS cannot overwrite a replacement installed at the commit gap [28.10ms]
+(pass) restart-safe short filesystem mutexes > release CAS cannot delete a replacement installed at the remove gap [31.91ms]
+(pass) long workspace paths preserve bounded mutation owner labels through acquire, renew and takeover [39.37ms]
+
+tests\headless-harness.test.ts:
+(pass) headless synthetic provider contract > checker fixture rejects absent or spoofed evidence and requires its exact selected source [1.62ms]
+(pass) headless synthetic provider contract > query evidence excludes admission but retains failed query outputs [0.52ms]
+(pass) headless synthetic provider contract > drives the host through workspace, investigation plan, and query tools [2.00ms]
+(pass) headless synthetic provider contract > compaction only repeats references observed in the host request [0.20ms]
+(pass) headless synthetic provider contract > follow-up claims recovery only when both persisted markers are in context [0.10ms]
+(pass) isolated host dependency setup uses the pinned SDK and refuses an existing target [11.97ms]
+
+tests\task-allowance-execution.test.ts:
+(pass) phases, beginTask, compaction and a fresh controller share one allowance [2336.74ms]
+(pass) a saved reservation before attempt persistence is reused, never double charged [1058.92ms]
+(pass) an interrupted committed attempt remains charged while a retry consumes another dispatch [1340.84ms]
+(pass) a transferred run and subsequent phase retain the original root ledger [2044.13ms]
+(pass) gate-only recovery consumes no child allowance and leaves the final checker reserved [1465.40ms]
+(pass) bound runs fail closed without a controller and their binding cannot be erased [141.09ms]
+(pass) concurrent real-store runs cannot dispatch past the shared bound [1927.09ms]
+(pass) checkpoint write failure cannot create a run attempt or child [367.84ms]
+(pass) new tool plans share a task reference with memory disabled and surface its status [350.62ms]
+
+tests\task-allowance.test.ts:
+(pass) bounded task allowance > policy defaults, strict keys, and reserve equality [1.11ms]
+(pass) bounded task allowance > admission binds one root task and survives task replan/beginTask transitions [2.04ms]
+(pass) bounded task allowance > charges producers while retaining the final checker reserve; batch is all-or-none [5.96ms]
+(pass) bounded task allowance > original isolated checker is verification even without node.verification; shell is excluded [1.45ms]
+(pass) bounded task allowance > concurrent runs serialize against the shared root ledger [2.01ms]
+(pass) bounded task allowance > continuation attaches one hop, cannot replace allowance, and missing roots fail closed [1.81ms]
+(pass) bounded task allowance > delegated and deleted roots cannot admit; mode-off storage needs no other database [0.77ms]
+(pass) bounded task allowance > elapsed limits and backwards clocks reject without changing reservations [2.35ms]
+(pass) bounded task allowance > state bounds, unique keys, immutable headers, and append-only entries [1.81ms]
+(pass) bounded task allowance > replay cannot change a charged reservation from producer to verification [1.87ms]
+(pass) bounded task allowance > real MemoryStore persists root and alias ledgers through task replan [333.79ms]
+(pass) bounded task allowance > an unexpired dead writer remains protected until its short lease expires [1011.20ms]
+(pass) bounded task allowance > live writer cancellation stops waiting without a charge; later retry is idempotent [430.59ms]
+(pass) bounded task allowance > contention reported after checkpoint mutation is never blindly replayed [17.79ms]
+
+ 36 pass
+ 0 fail
+ 158 expect() calls
+Ran 36 tests across 4 files. [17.81s]

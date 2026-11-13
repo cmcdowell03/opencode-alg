@@ -1,0 +1,73 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/build-benchmark-metrics.test.ts:
+(pass) reported session benchmark metrics > deduplicates polled message updates and aggregates usage, costs, models, sessions and calls [2.77ms]
+(pass) reported session benchmark metrics > keeps unknown usage and cost distinct from reported zeros and only counts fixed error signals [0.96ms]
+(pass) reported session benchmark metrics > counts only exact observed step and denial markers and handles absent model/token fields [0.32ms]
+(pass) reported session benchmark metrics > bounds attribution while retaining request, session, role, phase and model identities [0.29ms]
+
+tests/build-benchmark-protocol.test.ts:
+(pass) benchmark protocol integrity > issues matched default Build/ALG pairs and isolates targeted compatibility as opt-in [0.52ms]
+(pass) benchmark protocol integrity > binds a non-contiguous case subset to its own pairs and execution order [0.36ms]
+(pass) benchmark protocol integrity > keeps every upfront-issued arm in the denominator when the suite stops before its launch [0.26ms]
+(pass) benchmark protocol integrity > separates preflight rows from issued trials and closes a terminal stopped trial [0.20ms]
+(pass) benchmark protocol integrity > accepts the SDK boolean only with a new marker, linked terminal summary, and scored continuation [1.68ms]
+(pass) benchmark protocol integrity > rejects old markers, errored or unlinked summaries, rejected acceptance, and unscored continuation [0.72ms]
+(pass) benchmark protocol integrity > final census waits within its grace and retains missing or in-flight usage as unknown [1.58ms]
+(pass) benchmark protocol integrity > census needs two consecutive stable quiet samples with known absence of pending work [0.84ms]
+(pass) benchmark protocol integrity > artifact outcome is independent from workflow and operational eligibility [0.26ms]
+
+tests/hard-benchmark-fixtures.test.ts:
+(pass) hard benchmark grading against raw evidence and executed work > public fixtures contain raw evidence and contracts with distinct private grader records [22.97ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives accepted-query results from paged rows after lost ack (seed %s) [264.13ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives accepted-query results from paged rows after lost ack (seed %s) [252.06ms]
+(pass) hard benchmark grading against raw evidence and executed work > irrelevant projection and literal out-of-scope writes cannot earn credit [223.24ms]
+(pass) hard benchmark grading against raw evidence and executed work > executes visible and hidden repo cases and rejects report-only submissions [153.55ms]
+(pass) hard benchmark grading against raw evidence and executed work > hidden cases reject sibling regressions, reimplemented clients and scope violations [137.13ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives true-effect from matched evidence despite identical crude totals [28.91ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives confounded from matched evidence despite identical crude totals [24.75ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives insufficient from matched evidence despite identical crude totals [23.38ms]
+(pass) hard benchmark grading against raw evidence and executed work > rejects plausible keywords, stale citations, wrong UTC edges, wrong strata and vague follow-up [35.67ms]
+(pass) hard benchmark grading against raw evidence and executed work > restart preserves only current complete jobs and requires observed unavailability [275.27ms]
+
+tests/build-benchmark-retention.test.ts:
+(pass) build benchmark retention measurement > aggregates compaction exposure across a stable task and session lineage [5.63ms]
+(pass) build benchmark retention measurement > distinguishes changed criteria, stale skills, pending loss, and retrieval after context omission [3.67ms]
+(pass) build benchmark retention measurement > does not infer avoidability from equivalent keys and treats incomplete census as unknown exposure [1.23ms]
+(pass) build benchmark retention measurement > a complete zero-exposure census is zero and incomplete telemetry never fills missing denominators [0.41ms]
+(pass) build benchmark retention measurement > an incomplete census publishes observed counts without rates or assumed failures [1.70ms]
+(pass) root and child turns follow session ancestry, and accepted compaction counts despite failed recovery [0.93ms]
+(pass) only repeated accepted work can be a classified duplicate and only cross-boundary repeats count after compaction [0.76ms]
+
+tests/hard-benchmark-service.test.ts:
+(pass) durable benchmark query service > commits acceptance and lost-ack receipt before returning the fault, across a process restart [105.00ms]
+(pass) durable benchmark query service > normalizes query identity, rejects collisions and never trusts caller-declared cost [38.07ms]
+(pass) durable benchmark query service > across independent handles, same-key replay shares the one accepted job [30.10ms]
+(pass) durable benchmark query service > a rejected database commit leaves neither a ghost acceptance nor consumed faults [94.71ms]
+(pass) durable benchmark query service > pins manifests, rejects stale current reads and keeps explicit snapshots available [93.32ms]
+(pass) durable benchmark query service > enforces count and byte limits, job-bound cursors, and complete distinct read coverage [126.35ms]
+(pass) durable benchmark query service > oversized results and unavailable sources cannot create accepted jobs [97.77ms]
+
+tests/task-evidence-integrity.test.ts:
+(pass) checker task evidence references survive attempt archiving and hydration; tampering fails closed [2558.29ms]
+
+tests/build-benchmark-transport.test.ts:
+(pass) OpenCode async prompt transport > does not accept a summary as the answer or a length stop as successful completion [2.99ms]
+(pass) OpenCode async prompt transport > distinguishes a post-dispatch poll error and never resubmits [0.64ms]
+(pass) OpenCode async prompt transport > does not treat prompt_async acknowledgement as completion and reaches deadline with no new root [90.07ms]
+(pass) OpenCode async prompt transport > ignores old messages and tool-calls intermediary, then accepts reasoning-only completed assistant [3.14ms]
+(pass) OpenCode async prompt transport > returns matching model errors as terminal failures [0.52ms]
+(pass) OpenCode async prompt transport > stops after cancellation is observed during a poll [0.61ms]
+
+tests/headless-harness.test.ts:
+(pass) headless synthetic provider contract > checker fixture rejects absent or spoofed evidence and requires its exact selected source [0.35ms]
+(pass) headless synthetic provider contract > query evidence excludes admission but retains failed query outputs [0.44ms]
+(pass) headless synthetic provider contract > drives the host through workspace, investigation plan, and query tools [1.14ms]
+(pass) headless synthetic provider contract > compaction only repeats references observed in the host request [0.23ms]
+(pass) headless synthetic provider contract > follow-up claims recovery only when both persisted markers are in context [0.23ms]
+(pass) isolated host dependency setup uses the pinned SDK and refuses an existing target [4.01ms]
+
+ 51 pass
+ 0 fail
+ 255 expect() calls
+Ran 51 tests across 8 files. [5.26s]

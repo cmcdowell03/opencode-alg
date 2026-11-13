@@ -1,0 +1,36 @@
+[
+  {
+    "id": "ses_e3206754cffekjRJBiQ5vx9CdT",
+    "slug": "misty-harbor",
+    "projectID": "46ee5dea3387a0602723ee0cc3feb0406715da8a",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-luna-20261112\\2-wafer-report-staged-alg_default\\project",
+    "path": "",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "title": "Frozen benchmark wafer-report-staged alg_default",
+    "agent": "orchestrator",
+    "model": {
+      "id": "gpt-6-luna",
+      "providerID": "openai",
+      "variant": "default"
+    },
+    "version": "1.18.35",
+    "time": {
+      "created": 1794457045684,
+      "updated": 1794457045953
+    }
+  }
+]

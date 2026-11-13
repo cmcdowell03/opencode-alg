@@ -1,5 +1,9 @@
 import { isAbsolute } from "node:path"
+import { createHash } from "node:crypto"
 import { z } from "zod"
+import { GateRecoverySchema } from "./gate-recovery.ts"
+import { ExecutionEvidenceSchema } from "./execution-evidence.ts"
+import { PreservationEvidenceSchema } from "./preservation-evidence.ts"
 import { ALG_AGENTS, MODEL_AGENTS } from "./types.ts"
 import type {
   AlgAgent,
@@ -31,7 +35,16 @@ import {
   utf8Bytes,
 } from "./limits.ts"
 import { boundDiagnosticList, safeDiagnosticText } from "./diagnostics.ts"
-import { failureListCommitment } from "./persistence.ts"
+import { failureListCommitment, sha256Json } from "./persistence.ts"
+import { FindingSchema, VerificationSchema, VerificationBasisSchema, RetrievedVerificationEvidenceSchema, criteriaDigest, validateVerification, classifyVerificationEvidenceGap } from "./verification.ts"
+import { hasMechanicalAssessment } from "./checker-consistency.ts"
+import { EvidenceSourcesSchema } from "./evidence-retrieval.ts"
+import { ACTION_EVIDENCE_MAX_MANIFEST_BYTES } from "./action-evidence.ts"
+import { GraphRevisionReceiptsSchema } from "./graph-revision.ts"
+import { TaskContractSchema, assertTaskState } from "./task-contract.ts"
+import { TaskBaselineSchema, assertTaskBaseline } from "./task-baseline.ts"
+import { TaskAllowanceReferenceSchema } from "./task-allowance-schema.ts"
+import { MAX_TASK_EVIDENCE_BYTES } from "./task-evidence.ts"
 
 // Code-owned vocabulary only. Never use an issue's raw message or submitted
 // values as retry guidance, even for a custom refinement.
@@ -44,7 +57,7 @@ const OUTPUT_RULE_HINTS = {
   failures_empty_when_passed: "passed=true requires failures=[]. If criteria are unmet, report passed=false and specific failures.",
   failures_required_when_rejected: "passed=false requires at least one specific failure.",
   score_matches_verdict: "passed must equal (score >= 7); use score 0-6 for rejection and 7-10 for a pass, reflecting the actual assessment.",
-  shell_ok_matches_execution: "ok must equal (exit_code === 0 && !timed_out && !cancelled && !termination_failed).",
+  shell_ok_matches_execution: "ok must equal (exit_code === 0 && !timed_out && !cancelled && !termination_failed && !setup_failed).",
   output_byte_limit: "Reduce the complete serialized UTF-8 JSON output to the stated byte limit without changing facts.",
   json_serializable: "Return a JSON-serializable object.",
 } as const
@@ -167,6 +180,7 @@ const NodeDefSchema = z
     shell_gate: ShellGateSchema.optional(),
     isolated_check: z.boolean().optional(),
     feedback_to: safeId.optional(),
+    verification: VerificationSchema.optional(),
   })
   .strict()
 
@@ -241,6 +255,9 @@ export const GraphDefSchema: z.ZodType<GraphDef> = z
       }
       if (node.isolated_check && node.agent !== "checker") {
         ctx.addIssue({ code: "custom", path: ["nodes", i, "isolated_check"], message: "isolated_check is only valid for checker nodes" })
+      }
+      if (node.verification && node.agent !== "checker") {
+        ctx.addIssue({ code: "custom", path: ["nodes", i, "verification"], message: "verification is only valid for checker nodes" })
       }
       if (node.feedback_to) {
         const directDependencies = new Set(node.depends_on)
@@ -364,6 +381,7 @@ export const CheckOut = z
     failures: boundedStrings,
     score: z.number().int().min(0).max(10),
     notes: shortText.optional(),
+    findings: z.array(FindingSchema).min(1).max(100).optional(),
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -392,10 +410,11 @@ export const ShellOut = z
     timed_out: z.boolean().optional(),
     cancelled: z.boolean().optional(),
     termination_failed: z.boolean().optional(),
+    setup_failed: z.boolean().optional(),
   })
   .strict()
   .superRefine((value, ctx) => {
-    if (value.ok !== (value.exit_code === 0 && !value.timed_out && !value.cancelled && !value.termination_failed)) {
+    if (value.ok !== (value.exit_code === 0 && !value.timed_out && !value.cancelled && !value.termination_failed && !value.setup_failed)) {
       ctx.addIssue({ code: "custom", path: ["ok"], message: "ok must reflect exit_code/timeout/cancellation",
         params: outputRuleParams("shell_ok_matches_execution") })
     }
@@ -429,6 +448,7 @@ const AttemptOutcomeCountsSchema: z.ZodType<AttemptOutcomeCounts> = z.object({
   incomplete: z.number().int().nonnegative().max(100),
   gate_failure: z.number().int().nonnegative().max(100),
   legacy_unknown: z.number().int().nonnegative().max(100),
+  evidence_unavailable: z.number().int().nonnegative().max(100).optional(),
 }).strict()
 
 const AttemptHistoryReferenceSchema: z.ZodType<AttemptHistoryReference> = z.object({
@@ -482,6 +502,17 @@ const FilesystemRootAuthorizationReferenceSchema: z.ZodType<FilesystemRootAuthor
   )
 
 const NodeAttemptDetailShape = {
+    action_evidence_ref: RunDataReferenceBaseSchema.optional(),
+    action_evidence_sources: EvidenceSourcesSchema.optional(),
+    retrieved_evidence: z.array(RetrievedVerificationEvidenceSchema).max(32).optional(),
+    task_evidence_ref: RunDataReferenceBaseSchema.optional(),
+    execution_evidence: ExecutionEvidenceSchema.optional(),
+    gate_evidence: ExecutionEvidenceSchema.optional(),
+    preservation_evidence: PreservationEvidenceSchema.optional(),
+    shell_setup_failed: z.literal(true).optional(),
+    gate_recovery: GateRecoverySchema.optional(),
+    reused_output_from: z.number().int().positive().optional(),
+    verification_basis: VerificationBasisSchema.optional(),
     attempt: z.number().int().positive().max(10_000),
     status: z.enum(["pending", "ready", "running", "done", "failed", "skipped"]),
     session_id: sessionId.optional(),
@@ -494,7 +525,7 @@ const NodeAttemptDetailShape = {
     schema_ok: z.boolean().optional(),
     error: shortText.optional(),
     feedback_applied: z.boolean().optional(),
-    outcome: z.enum(["passed", "schema_invalid", "sdk_error", "substantive_rejection", "incomplete", "gate_failure"]).optional(),
+    outcome: z.enum(["passed", "schema_invalid", "sdk_error", "substantive_rejection", "incomplete", "gate_failure", "evidence_unavailable"]).optional(),
 } as const
 
 /** Canonical full attempt detail. Projection references/commitments/omissions are never valid here. */
@@ -681,7 +712,11 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
     goal: text,
     criteria: boundedStrings,
     criteria_locked: z.boolean(),
+    task_contract: TaskContractSchema.optional(),
+    task_allowance: TaskAllowanceReferenceSchema.optional(),
+    task_baseline: TaskBaselineSchema.optional(),
     graph: GraphDefSchema,
+    graph_revisions: GraphRevisionReceiptsSchema.optional(),
     status: z.enum(["planning", "running", "done", "failed", "blocked"]),
     phase: z.string().min(1).max(128),
     nodes: z.record(safeId, NodeStateSchema),
@@ -695,11 +730,27 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
     filesystem_root_authorizations_ref: FilesystemRootAuthorizationReferenceSchema.optional(),
     filesystem_root_authorizations_omitted: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).optional(),
     session_isolation: z.literal("sdk-child-session"),
+    investigation: z.object({ schema_version: z.literal(1), project_id: z.string().regex(/^[a-f0-9]{64}$/), owner_id: sessionId, run_id: safeId }).strict().optional(),
     summary: z.string().max(50_000).optional(),
     state_projection: StateProjectionMetadataSchema.optional(),
   })
   .strict()
   .superRefine((run, ctx) => {
+    try { assertTaskState(run) } catch { ctx.addIssue({ code: "custom", path: ["task_contract"], message: "task contract requirements or graph binding invalid" }) }
+    if (run.task_allowance && !run.task_contract)
+      ctx.addIssue({ code: "custom", path: ["task_allowance"], message: "task allowance requires an admitted contract" })
+    if (run.task_baseline) {
+      try {
+        if (!run.task_contract) throw new Error("missing contract")
+        assertTaskBaseline(run.task_baseline, run.task_contract)
+      } catch { ctx.addIssue({ code: "custom", path: ["task_baseline"], message: "task baseline does not bind its contract" }) }
+    }
+    if (run.graph_revisions?.length) {
+      if (run.graph_revisions.at(-1)!.graph_sha256 !== sha256Json(run.graph) ||
+        run.graph_revisions.some((receipt, index, receipts) => index > 0 && receipt.parent_sha256 !== receipts[index - 1]!.graph_sha256)) {
+        ctx.addIssue({ code: "custom", path: ["graph_revisions"], message: "graph revision chain must bind the current graph" })
+      }
+    }
     const definitions = new Map(run.graph.nodes.map((node) => [node.id, node]))
     const stateKeys = Object.keys(run.nodes)
     if (stateKeys.length !== definitions.size) {
@@ -731,6 +782,14 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
         ctx.addIssue({ code: "custom", path: ["nodes", id, "current_attempt"], message: "node exceeded local attempt limit" })
       }
       state.attempts.forEach((attempt, i) => {
+        if (attempt.reused_output_from !== undefined) {
+          const source = state.attempts.find(candidate => candidate.attempt === attempt.reused_output_from)
+          if (source && (!source.shell_setup_failed || source.schema_ok !== true ||
+            !isDeepStrictEqual(source.gate_recovery, attempt.gate_recovery) ||
+            !isDeepStrictEqual(source.execution_evidence, attempt.execution_evidence))) {
+            ctx.addIssue({ code: "custom", path: ["nodes", id, "attempts", i], message: "gate-only recovery source/basis/evidence mismatch" })
+          }
+        }
         try {
           parsePersistedNodeAttempt(attempt, {
             agent: def.agent,
@@ -739,6 +798,9 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
             expected_attempt: archivedAttempts + i + 1,
             mode: run.mode,
             requires_shell: def.agent === "shell" || def.loop?.gate === "shell" || def.loop?.gate === "all",
+            verification_required: !!def.verification,
+            verification_criteria: run.criteria,
+            task_evidence_required: run.mode !== "dry" && run.task_contract?.input.verification.checker_node === id,
           })
         } catch (error) {
           ctx.addIssue({
@@ -1078,6 +1140,10 @@ export interface PersistedAttemptContext {
   expected_attempt: number
   mode?: "live" | "dry"
   requires_shell?: boolean
+  verification_required?: boolean
+  verification_criteria?: string[]
+  /** Undefined for consumers without the run contract context. */
+  task_evidence_required?: boolean
 }
 
 /**
@@ -1090,6 +1156,57 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
   const issues: string[] = []
   const add = (message: string): void => { issues.push(message) }
   const { agent, run_id: runId, node_id: nodeId, expected_attempt: expected } = context
+  const taskRef = attempt.task_evidence_ref
+  const actionRef = attempt.action_evidence_ref
+  const sessionHash = attempt.session_id ? createHash("sha256").update(attempt.session_id).digest("hex") : undefined
+  if (actionRef && (agent === "checker" || agent === "shell" || !attempt.session_id ||
+    actionRef.artifact_path !== `.opencode/runs/${runId}/artifacts/action-evidence/${sessionHash}/manifest-${actionRef.sha256}.json` ||
+    actionRef.byte_size > ACTION_EVIDENCE_MAX_MANIFEST_BYTES)) {
+    add("action evidence reference must bind a worker session and bounded run manifest")
+  }
+  if (attempt.action_evidence_sources) {
+    if (agent !== "checker") add("action evidence sources require a checker")
+    for (const source of attempt.action_evidence_sources.journals) {
+      const sourceHash = createHash("sha256").update(source.child_session_id).digest("hex")
+      if (source.run_id !== runId || source.node_id === nodeId ||
+        source.reference.artifact_path !== `.opencode/runs/${runId}/artifacts/action-evidence/${sourceHash}/manifest-${source.reference.sha256}.json`) {
+        add("action evidence source identity is invalid")
+      }
+    }
+  }
+  if (attempt.retrieved_evidence && (agent !== "checker" || !attempt.action_evidence_sources ||
+    (attempt.retrieved_evidence.length > 0 && !attempt.session_id))) {
+    add("retrieved evidence requires a bound checker source set")
+  }
+  if (taskRef && (agent !== "checker" || context.task_evidence_required === false || taskRef.byte_size > MAX_TASK_EVIDENCE_BYTES ||
+    taskRef.artifact_path !== `.opencode/runs/${runId}/artifacts/task-evidence-${nodeId}-a${expected}-${taskRef.sha256}.json`))
+    add("task evidence reference must bind the admitted checker attempt and bounded content")
+  const launched = attempt.session_id !== undefined || attempt.status === "done" || attempt.outcome !== undefined || attempt.schema_ok === true
+  if (context.task_evidence_required && launched && !taskRef) add("launched admitted checker requires its task evidence reference")
+  if (context.verification_required && launched && !attempt.verification_basis)
+    add("launched verified checker attempt requires its persisted input basis")
+  if (hasMechanicalAssessment(attempt.output) && !attempt.verification_basis)
+    add("mechanical assessment requires a persisted verification basis")
+  if (attempt.verification_basis) {
+    const basis = attempt.verification_basis
+    const pin = basis.claimed_submission
+    if (pin) {
+      const reference = parseInputExpression(pin.reference)
+      if (pin.run_id !== runId || pin.node_id === nodeId || reference.kind !== "reference" || reference.node !== pin.node_id)
+        add("claimed submission pin must bind another node in this run")
+    }
+    const taskEntries = basis.evidence.filter(entry => entry.source.kind === "host_task")
+    if (taskRef ? taskEntries.length !== 1 || taskEntries[0]!.source.reference !== taskRef.artifact_path ||
+      taskEntries[0]!.source.attempt !== expected || taskEntries[0]!.json_sha256 !== taskRef.sha256 ||
+      taskEntries[0]!.json_bytes !== taskRef.byte_size || taskEntries[0]!.status === "unavailable" : taskEntries.length > 0) {
+      add("checker verification basis must bind the same task evidence reference")
+    }
+    if (agent !== "checker") add("verification basis requires a checker")
+    if (basis.evidence.some(entry => entry.source.run_id !== runId)) add("verification evidence belongs to another run")
+    if (context.verification_criteria && (basis.criteria_sha256 !== criteriaDigest(context.verification_criteria) ||
+      basis.criterion_ids.length !== Math.max(1, context.verification_criteria.length))) add("verification criteria changed")
+    if (attempt.output !== undefined && validateVerification(attempt.output, basis, attempt.retrieved_evidence).length) add("checker output violates its persisted verification basis")
+  }
   const knownAgent = AlgAgentSchema.safeParse(agent)
   if (!knownAgent.success) add(`unknown ALG agent: ${agent}`)
   if (!isSafeId(runId) || !isSafeId(nodeId)) add("run/node identity is unsafe")
@@ -1191,10 +1308,33 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
     add("recorded error requires sdk_error outcome")
   }
   if ((attempt.outcome === "substantive_rejection" || attempt.outcome === "incomplete" ||
-    attempt.outcome === "gate_failure") && attempt.schema_ok !== true) {
+    attempt.outcome === "gate_failure" || attempt.outcome === "evidence_unavailable") && attempt.schema_ok !== true) {
     add(`${attempt.outcome} outcome requires schema_ok=true`)
   }
   const liveShellGate = context.requires_shell === true && context.mode !== "dry"
+  if (attempt.shell_setup_failed && (!liveShellGate || attempt.outcome !== "gate_failure" || attempt.shell_ok !== false)) {
+    add("shell_setup_failed requires a live failed shell gate")
+  }
+  if (attempt.gate_recovery && ((!attempt.shell_setup_failed && attempt.reused_output_from === undefined) || !knownAgent.success || knownAgent.data !== "implementer")) {
+    add("gate recovery requires an implementer setup failure")
+  }
+  if (attempt.reused_output_from !== undefined &&
+    (!liveShellGate || !knownAgent.success || knownAgent.data !== "implementer" ||
+      attempt.reused_output_from >= attempt.attempt || attempt.session_id !== undefined)) {
+    add("gate-only recovery must reference an earlier implementer attempt without creating a child")
+  }
+  if (attempt.reused_output_from !== undefined && !attempt.gate_recovery) add("gate-only recovery requires its persisted basis")
+  for (const [kind, receipt] of [["native", attempt.execution_evidence], ["gate", attempt.gate_evidence]] as const) {
+    if (!receipt) continue
+    if (receipt.run_id !== runId || receipt.node_id !== nodeId) add("execution receipt belongs to another run/node")
+    if (kind === "gate" && receipt.attempt !== attempt.attempt) add("gate receipt belongs to another attempt")
+    if (kind === "native") {
+      if (attempt.reused_output_from === undefined && (receipt.attempt !== attempt.attempt || receipt.child_session_id !== attempt.session_id)) {
+        add("native execution receipt belongs to another attempt/session")
+      }
+      if (attempt.reused_output_from !== undefined && receipt.attempt > attempt.reused_output_from) add("reused execution receipt cannot come from a later attempt")
+    }
+  }
   if (attempt.outcome === "gate_failure" &&
     (!liveShellGate || attempt.shell_ok !== false)) {
     add("gate_failure outcome requires an actual live shell/all graph gate and shell_ok=false")
@@ -1207,6 +1347,14 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
       (attempt.output !== undefined && (attempt.output as { passed?: unknown })?.passed !== false))) {
     add("substantive_rejection requires validated passed=false checker output")
   }
+  if (attempt.outcome === "evidence_unavailable" &&
+    (!knownAgent.success || knownAgent.data !== "checker" || attempt.schema_ok !== true ||
+      (!attempt.verification_basis && !attempt.detail_ref) ||
+      (attempt.output === undefined && !attempt.output_ref && !attempt.detail_ref) ||
+      (attempt.output !== undefined && ((attempt.output as { passed?: unknown }).passed !== false ||
+        !classifyVerificationEvidenceGap(attempt.output))))) {
+    add("evidence_unavailable requires a validated inconclusive checker finding")
+  }
   if (knownAgent.success && knownAgent.data === "checker" && attempt.output !== undefined) {
     const checkerPassed = (attempt.output as { passed?: unknown }).passed === true
     const rejected = !checkerPassed
@@ -1218,7 +1366,7 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
       add("passed=true checker gate_failure requires a proved shell gate failure")
     }
     if (rejected && !shellFailed && attempt.error === undefined && attempt.status === "failed" && attempt.outcome !== undefined &&
-      attempt.outcome !== "substantive_rejection") {
+      attempt.outcome !== "substantive_rejection" && attempt.outcome !== "evidence_unavailable") {
       add("validated passed=false checker output requires substantive_rejection outcome")
     }
     if (!rejected && attempt.outcome === "substantive_rejection") {
@@ -1252,6 +1400,19 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
 export function parsePersistedAttemptDetail(raw: unknown, context: PersistedAttemptContext): NodeAttempt {
   const detail = PersistedAttemptDetailSchema.parse(raw)
   return parsePersistedNodeAttempt(detail, context)
+}
+
+/** V3 alone declares evidence externalized; full detail must validate before use/navigation. */
+export function parseCompactArchivedAttempt(raw: unknown, context: PersistedAttemptContext): NodeAttempt {
+  const attempt = parsePersistedNodeAttempt(raw, { ...context, verification_required: false })
+  if (!attempt.detail_ref || !attempt.detail_ref.artifact_path.endsWith(`-${attempt.detail_ref.sha256}.json`)) {
+    throw new Error("compact archive requires an immutable attempt detail reference")
+  }
+  if (attempt.execution_evidence !== undefined || attempt.gate_evidence !== undefined ||
+    attempt.preservation_evidence !== undefined || attempt.verification_basis !== undefined) {
+    throw new Error("compact archive cannot contain inline evidence or verification basis")
+  }
+  return attempt
 }
 
 /** Models copy the JSON Schema `$schema` marker into their answers; it is metadata, never output content. */

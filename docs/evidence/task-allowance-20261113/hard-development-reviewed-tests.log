@@ -1,0 +1,58 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\build-benchmark-metrics.test.ts:
+(pass) reported session benchmark metrics > deduplicates polled message updates and aggregates usage, costs, models, sessions and calls [2.56ms]
+(pass) reported session benchmark metrics > keeps unknown usage and cost distinct from reported zeros and only counts fixed error signals [0.92ms]
+(pass) reported session benchmark metrics > counts only exact observed step and denial markers and handles absent model/token fields [0.17ms]
+(pass) reported session benchmark metrics > bounds attribution while retaining request, session, role, phase and model identities [0.10ms]
+
+tests\build-benchmark-protocol.test.ts:
+(pass) benchmark protocol integrity > observed cumulative limits stop at equality including maintenance and resumed-phase usage [0.15ms]
+(pass) benchmark protocol integrity > database census requires exact session/message IDs, ownership, uniqueness and quiescence [0.32ms]
+(pass) benchmark protocol integrity > issues matched default Build/ALG pairs and isolates targeted compatibility as opt-in [0.39ms]
+(pass) benchmark protocol integrity > binds a non-contiguous case subset to its own pairs and execution order [0.14ms]
+(pass) benchmark protocol integrity > keeps every upfront-issued arm in the denominator when the suite stops before its launch [0.11ms]
+(pass) benchmark protocol integrity > separates preflight rows from issued trials and closes a terminal stopped trial [0.06ms]
+(pass) benchmark protocol integrity > accepts the SDK boolean only with a new marker, linked terminal summary, and scored continuation [1.46ms]
+(pass) benchmark protocol integrity > rejects old markers, errored or unlinked summaries, rejected acceptance, and unscored continuation [0.36ms]
+(pass) benchmark protocol integrity > final census waits within its grace and retains missing or in-flight usage as unknown [1.05ms]
+(pass) benchmark protocol integrity > census needs two consecutive stable quiet samples with known absence of pending work [0.35ms]
+(pass) benchmark protocol integrity > artifact outcome is independent from workflow and operational eligibility [0.08ms]
+
+tests\hard-benchmark-cohort.test.ts:
+(pass) hard development prospective selection > historic controls retain limits, subset order, arm order and disabled native compaction [0.67ms]
+(pass) hard development prospective selection > hard admission requires explicit bounded limits, seed, qualification and the complete six cases [37.93ms]
+(pass) hard development prospective selection > seeded fixture and alternating arm order are bound before all twelve issues [78.01ms]
+(pass) hard development prospective selection > case conversion supplies original criteria and never serializes the grader [17.10ms]
+(pass) hard development prospective selection > the common service exception and Node fetch usage are identical for both arms [0.62ms]
+(pass) hard development prospective selection > fatal termination keeps all issued arms with terminal error receipts [27.83ms]
+(pass) bounded complete hard project collection > post-stop runtime progress is bounded and remains outside grader input [15.25ms]
+(pass) bounded complete hard project collection > preserves protected evidence and unknown writes while excluding only known runtime metadata [26.48ms]
+(pass) bounded complete hard project collection > a fixture file under a runtime name remains visible with all sibling writes [12.11ms]
+(pass) bounded complete hard project collection > symlinks, oversized and non-UTF8 files reject collection instead of hiding writes [7.71ms]
+(pass) external development qualification evidence > identities bind frozen fixtures and all host, grader, service, qualification and runner inputs [20.09ms]
+(pass) external development qualification evidence > strict receipt parsing recomputes coverage and grade agreement instead of trusting passed [22.64ms]
+
+tests\hard-benchmark-host.test.ts:
+(pass) hard benchmark public loopback HTTP host (same-user development) > healthy public reference passes unchanged scorer: accepted lost ACK [59.57ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > healthy public reference passes unchanged scorer: accepted lost ACK alternate seed [54.96ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > healthy public reference passes unchanged scorer: partial restart with stale evidence [93.44ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > native Node fetch recovers a lost ACK, avoids repeat charges, obeys work limit and produces a passing report [246.46ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > HTTP proxy preserves native lost-ACK, stale-source and unavailable-source errors [97.21ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > only exact public POST routes exist and prohibited routes cannot change state [28.76ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > malformed, oversized and chunked oversized bodies fail before service work [27.95ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > response limit permits bounded pages and fails closed on oversized or internal host output [37.63ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > per-arm endpoints keep distinct state; stop is idempotent and closes incomplete requests [54.89ms]
+
+tests\hard-benchmark-qualification.test.ts:
+(pass) arm-neutral hard benchmark development qualification > reference solutions pass and negative/tamper submissions fail for every frozen fixture [893.64ms]
+(pass) arm-neutral hard benchmark development qualification > arm receives a contestant-only snapshot and no grader-evidence methods [53.98ms]
+(pass) arm-neutral hard benchmark development qualification > individual negative and tamper controls fail closed [519.25ms]
+(pass) arm-neutral hard benchmark development qualification > only an explicit unavailable runner blocks a positive code qualification [13.54ms]
+(pass) arm-neutral hard benchmark development qualification > equivalent factory stratum order remains valid [24.16ms]
+(pass) arm-neutral hard benchmark development qualification > factory reference matches hand-enumerated seed-zero strata and outcomes [26.39ms]
+
+ 42 pass
+ 0 fail
+ 417 expect() calls
+Ran 42 tests across 5 files. [2.67s]

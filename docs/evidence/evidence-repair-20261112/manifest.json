@@ -1,0 +1,85 @@
+{
+  "source": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\evidence-repair-terra-20261112",
+  "files": [
+    {
+      "path": "1-wafer-count-commonjs-alg_default/alg-progress.json",
+      "bytes": 24470,
+      "sha256": "2ec0acb2a19795a41da2a482f18efe2e87c5b1d5d69014926dcf0ecda6457765"
+    },
+    {
+      "path": "1-wafer-count-commonjs-alg_default/result.json",
+      "bytes": 38276,
+      "sha256": "b47f8c9800a39da32c31babafae261b82e144edeba6d016191166240fd1906a1"
+    },
+    {
+      "path": "1-wafer-count-commonjs-build/result.json",
+      "bytes": 13397,
+      "sha256": "d254356693b66db037167080f1d936d88fd6d851652b9dd6e1029e29afd299f3"
+    },
+    {
+      "path": "2-wafer-report-staged-alg_default/preparation.md",
+      "bytes": 2327,
+      "sha256": "52ce35b8dc63c05192795815fc5a3104f160bec6ea089798d654f94fdbb9adca"
+    },
+    {
+      "path": "2-wafer-report-staged-alg_default/alg-progress.json",
+      "bytes": 18830,
+      "sha256": "3ab3b7a07b13047735afd0a4403317d465e93169757879ff1006b027d93871d1"
+    },
+    {
+      "path": "2-wafer-report-staged-alg_default/result.json",
+      "bytes": 48836,
+      "sha256": "38a488b0924b175b99b1e56e02c4652ff2896c983bd9d8b79d30e2876fb9d0f2"
+    },
+    {
+      "path": "2-wafer-report-staged-build/preparation.md",
+      "bytes": 1970,
+      "sha256": "a609fc3c93644bab63aef00c32c570b07bff05d0164de29f10b9f3274d660e25"
+    },
+    {
+      "path": "2-wafer-report-staged-build/report.json",
+      "bytes": 747,
+      "sha256": "8c9302dfbe3e966c2fec5a8a45c4ce374b40ed91fdc763e68059811c8aabdcb6"
+    },
+    {
+      "path": "2-wafer-report-staged-build/result.json",
+      "bytes": 20813,
+      "sha256": "355fec03d6d4caad0f738ac1d63a97866c3329f194d1d7fb93b514580b74f5bc"
+    },
+    {
+      "path": "checks/headless-preflight.json",
+      "bytes": 24907,
+      "sha256": "028b69242ff9b1009a969a3f5c3fb2fd55737b1718036ff0f038457e343a3015"
+    },
+    {
+      "path": "checks/linux.log",
+      "bytes": 17606,
+      "sha256": "e351ac46305cb5f54ac7644414aae0966429b18255c72da24d151e38ead5d2b1"
+    },
+    {
+      "path": "checks/typecheck.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "checks/windows.log",
+      "bytes": 17630,
+      "sha256": "1cd1562e9f7d60c20f33711a68f608a559bc3183a3b495b4616a5a4f7a5779dd"
+    },
+    {
+      "path": "plan.json",
+      "bytes": 8331,
+      "sha256": "78949700a5f38bbf56173d657861f8dae3ce4fa81f16f7a6b8736dd1b29b06e9"
+    },
+    {
+      "path": "result.json",
+      "bytes": 137344,
+      "sha256": "11cc796bb7b932aa6d3a72d2630532c9efa0c8778cf516254bf5e4e320801e2d"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 12638,
+      "sha256": "949525d8f25127d63a3943a07d3edd1a14766fa8ffba7b0888df99a765fd0413"
+    }
+  ]
+}

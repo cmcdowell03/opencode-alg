@@ -1,0 +1,32 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\hard-benchmark-cohort.test.ts:
+57 |   const walk=(dir:string,prefix:string)=>{for(const e of readdirSync(dir,{withFileTypes:true})){if(e.name===".git"||e.name==="node_modules")continue;const p=join(dir,e.name),rel=prefix+e.name;if(e.isDirectory())walk(p,rel+"/");else if(e.isFile()){const b=readFileSync(p);result.push({path:rel,bytes:b.length,sha256:sha(b)})}}}
+58 |   walk(root,"");return result
+59 | }
+60 | 
+61 | export function initializeBenchmarkWorkspaceGit(project: string): void {
+62 |   execFileSync("git", ["-c", "core.longpaths=true", "init", "-q"], { cwd: project })
+       ^
+error: ENOENT: no such file or directory, uv_spawn 'git'
+      at execFileSync (node:child_process:271:14)
+      at initializeBenchmarkWorkspaceGit (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\scripts\build-benchmark.ts:62:3)
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\hard-benchmark-cohort.test.ts:27:3)
+(fail) disposable Git setup handles long Windows paths without changing global policy [20.33ms]
+(pass) hard development prospective selection > historic controls retain limits, subset order, arm order and disabled native compaction [1.20ms]
+(pass) hard development prospective selection > hard admission requires explicit bounded limits, seed, qualification and the complete six cases [48.53ms]
+(pass) hard development prospective selection > seeded fixture and alternating arm order are bound before all twelve issues [109.24ms]
+(pass) hard development prospective selection > case conversion supplies original criteria and never serializes the grader [17.23ms]
+(pass) hard development prospective selection > the common service exception and Node fetch usage are identical for both arms [0.61ms]
+(pass) hard development prospective selection > fatal termination keeps all issued arms with terminal error receipts [27.71ms]
+(pass) bounded complete hard project collection > post-stop runtime progress is bounded and remains outside grader input [18.41ms]
+(pass) bounded complete hard project collection > preserves protected evidence and unknown writes while excluding only known runtime metadata [38.87ms]
+(pass) bounded complete hard project collection > a fixture file under a runtime name remains visible with all sibling writes [21.83ms]
+(pass) bounded complete hard project collection > symlinks, oversized and non-UTF8 files reject collection instead of hiding writes [13.61ms]
+(pass) external development qualification evidence > identities bind frozen fixtures and all host, grader, service, qualification and runner inputs [38.11ms]
+(pass) external development qualification evidence > strict receipt parsing recomputes coverage and grade agreement instead of trusting passed [42.06ms]
+
+ 12 pass
+ 1 fail
+ 167 expect() calls
+Ran 13 tests across 1 file. [571.00ms]

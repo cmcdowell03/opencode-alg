@@ -1,0 +1,32 @@
+{
+  "schema": "alg-evidence-manifest-v1",
+  "suite_commit": "23fffd886122266101889d6599cb3432af67a848",
+  "host_commit": "d3776b0b918413c74f2014f49169ac02f86fc7cb",
+  "payloads": [
+    {
+      "path": "linux.json",
+      "bytes": 6960,
+      "sha256": "67659fe9ab5393048e3ca4ccb62f8997491f4ee93f5a7acc6cf82fbf4334db49"
+    },
+    {
+      "path": "private-evidence-hashes.json",
+      "bytes": 9767,
+      "sha256": "a60f76827f6bf0ef0b9e189fec7304c568f346c057fe23d194ea24105d85027d"
+    },
+    {
+      "path": "runtime-identity.json",
+      "bytes": 20024,
+      "sha256": "c1110984bdd4def6c1f510225463046186f064f23fe070354f5f81fabe5fd52e"
+    },
+    {
+      "path": "test-results.json",
+      "bytes": 927,
+      "sha256": "0b711c2d4b1edbfddf0fcea3adba6de70cf169b225d24ce756ae74736baaacbe"
+    },
+    {
+      "path": "windows.json",
+      "bytes": 6959,
+      "sha256": "c8b92385af12d6dc60057aac8c3e7e3d7916a466b153a04c45fa8ae4e54a99f0"
+    }
+  ]
+}

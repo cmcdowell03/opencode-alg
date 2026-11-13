@@ -1,0 +1,1645 @@
+{
+  "health": {
+    "healthy": true,
+    "version": "1.19.5"
+  },
+  "tools": [
+    "invalid",
+    "question",
+    "bash",
+    "read",
+    "glob",
+    "grep",
+    "edit",
+    "write",
+    "task",
+    "webfetch",
+    "todowrite",
+    "websearch",
+    "skill",
+    "apply_patch",
+    "alg_templates",
+    "alg_models",
+    "alg_criteria",
+    "alg_plan",
+    "alg_run",
+    "alg_status",
+    "alg_resume",
+    "alg_artifact",
+    "alg_transfer",
+    "alg_skill_evolution_status",
+    "alg_skill_evolution_audit",
+    "alg_skill_evolution_historical",
+    "alg_skill_evolution_review",
+    "alg_skill_evolution_promote",
+    "alg_skill_evolution_rollback",
+    "alg_skill",
+    "alg_memory_search",
+    "alg_memory_read",
+    "alg_context_status",
+    "alg_memory_propose",
+    "alg_investigation"
+  ],
+  "agents": [
+    {
+      "name": "build",
+      "mode": "primary",
+      "model": {
+        "modelID": "gpt-6.1-terra",
+        "providerID": "openai"
+      },
+      "steps": null,
+      "prompt_sha256": null,
+      "targeted_mandate": false,
+      "permission": [
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "doom_loop",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/tmp/opencode/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/skills/wafer-analysis/*",
+          "action": "allow"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_enter",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_exit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.*",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.example",
+          "action": "allow"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "plan_enter",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "webfetch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "websearch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        }
+      ]
+    },
+    {
+      "name": "checker",
+      "mode": "subagent",
+      "model": {
+        "modelID": "gpt-6.1-terra",
+        "providerID": "openai"
+      },
+      "steps": 12,
+      "prompt_sha256": "16b6f48ccb0f5c0884dee911721bdce3dd7c9bfa4692a7470731429c5d5c989e",
+      "targeted_mandate": false,
+      "permission": [
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "doom_loop",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/tmp/opencode/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/skills/wafer-analysis/*",
+          "action": "allow"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_enter",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_exit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.*",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.example",
+          "action": "allow"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "webfetch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "websearch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "edit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "bash",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "task",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "grep",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "glob",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        }
+      ]
+    },
+    {
+      "name": "compaction",
+      "mode": "primary",
+      "model": {
+        "modelID": "gpt-6.1-terra",
+        "providerID": "openai"
+      },
+      "steps": null,
+      "prompt_sha256": "552db0de0af1873a8acd4a631e2548345d4c43192de1d9be69c8feab4b41f80c",
+      "targeted_mandate": false,
+      "permission": [
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "doom_loop",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/tmp/opencode/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/skills/wafer-analysis/*",
+          "action": "allow"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_enter",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_exit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.*",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.example",
+          "action": "allow"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "webfetch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "websearch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        }
+      ]
+    },
+    {
+      "name": "explore",
+      "mode": "subagent",
+      "model": {
+        "modelID": "gpt-6.1-terra",
+        "providerID": "openai"
+      },
+      "steps": null,
+      "prompt_sha256": "97c4780dea390f347fed0879fb30aaa08c0fc65c8cad0f6c1aec02ca6fd91e13",
+      "targeted_mandate": false,
+      "permission": [
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "doom_loop",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/tmp/opencode/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/skills/wafer-analysis/*",
+          "action": "allow"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_enter",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_exit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.*",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.example",
+          "action": "allow"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "grep",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "glob",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "list",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "bash",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "webfetch",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "websearch",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/tmp/opencode/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/skills/wafer-analysis/*",
+          "action": "allow"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "webfetch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "websearch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        }
+      ]
+    },
+    {
+      "name": "explorer",
+      "mode": "subagent",
+      "model": {
+        "modelID": "gpt-6.1-terra",
+        "providerID": "openai"
+      },
+      "steps": 12,
+      "prompt_sha256": "6f8b865999d5eb12eaa88d5eb8c1b547eee279b8bacc00b7acfbb5b604b45f3f",
+      "targeted_mandate": false,
+      "permission": [
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "doom_loop",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/tmp/opencode/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/skills/wafer-analysis/*",
+          "action": "allow"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_enter",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_exit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.*",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.example",
+          "action": "allow"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "webfetch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "websearch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "edit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "bash",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "task",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "grep",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "glob",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        }
+      ]
+    },
+    {
+      "name": "general",
+      "mode": "subagent",
+      "model": {
+        "modelID": "gpt-6.1-terra",
+        "providerID": "openai"
+      },
+      "steps": null,
+      "prompt_sha256": null,
+      "targeted_mandate": false,
+      "permission": [
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "doom_loop",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/tmp/opencode/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/skills/wafer-analysis/*",
+          "action": "allow"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_enter",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_exit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.*",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.example",
+          "action": "allow"
+        },
+        {
+          "permission": "todowrite",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "webfetch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "websearch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        }
+      ]
+    },
+    {
+      "name": "implementer",
+      "mode": "subagent",
+      "model": {
+        "modelID": "gpt-6.1-terra",
+        "providerID": "openai"
+      },
+      "steps": 30,
+      "prompt_sha256": "14888c583ac0e9598013127e1c078b6f431d39a7c207c3efbae3c0180b75e090",
+      "targeted_mandate": false,
+      "permission": [
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "doom_loop",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/tmp/opencode/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/skills/wafer-analysis/*",
+          "action": "allow"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_enter",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_exit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.*",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.example",
+          "action": "allow"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "webfetch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "websearch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "edit",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "bash",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "grep",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "glob",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "task",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        }
+      ]
+    },
+    {
+      "name": "orchestrator",
+      "mode": "primary",
+      "model": {
+        "modelID": "gpt-6.1-terra",
+        "providerID": "openai"
+      },
+      "steps": 40,
+      "prompt_sha256": "9d38dc5712471a1550a80cc2dc4b6b79f5e281403e44e6bb20da99b641365ed7",
+      "targeted_mandate": false,
+      "permission": [
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "doom_loop",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/tmp/opencode/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/skills/wafer-analysis/*",
+          "action": "allow"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_enter",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_exit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.*",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.example",
+          "action": "allow"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "webfetch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "websearch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "edit",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "bash",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "task",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        }
+      ]
+    },
+    {
+      "name": "plan",
+      "mode": "primary",
+      "model": null,
+      "steps": null,
+      "prompt_sha256": null,
+      "targeted_mandate": false,
+      "permission": [
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "doom_loop",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/tmp/opencode/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/skills/wafer-analysis/*",
+          "action": "allow"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_enter",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_exit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.*",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.example",
+          "action": "allow"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "plan_exit",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "task",
+          "pattern": "general",
+          "action": "deny"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/plans/*",
+          "action": "allow"
+        },
+        {
+          "permission": "edit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "edit",
+          "pattern": ".opencode/plans/*.md",
+          "action": "allow"
+        },
+        {
+          "permission": "edit",
+          "pattern": "../data/opencode/plans/*.md",
+          "action": "allow"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "webfetch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "websearch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        }
+      ]
+    },
+    {
+      "name": "researcher",
+      "mode": "subagent",
+      "model": {
+        "modelID": "gpt-6.1-terra",
+        "providerID": "openai"
+      },
+      "steps": 24,
+      "prompt_sha256": "114a71456c252185163dd5b239990fb86778e24d1f34f8a9313172a3482cfe4a",
+      "targeted_mandate": false,
+      "permission": [
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "doom_loop",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/tmp/opencode/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/skills/wafer-analysis/*",
+          "action": "allow"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_enter",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_exit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.*",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.example",
+          "action": "allow"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "webfetch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "websearch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "edit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "edit",
+          "pattern": ".opencode/runs/**",
+          "action": "allow"
+        },
+        {
+          "permission": "edit",
+          "pattern": "**/.opencode/runs/**",
+          "action": "allow"
+        },
+        {
+          "permission": "bash",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "grep",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "glob",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "webfetch",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "websearch",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "task",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        }
+      ]
+    },
+    {
+      "name": "summary",
+      "mode": "primary",
+      "model": {
+        "modelID": "gpt-6.1-terra",
+        "providerID": "openai"
+      },
+      "steps": null,
+      "prompt_sha256": "307314eb41cc38a90881ae9f26e0402ceeed04e71046014486a9908ad4520233",
+      "targeted_mandate": false,
+      "permission": [
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "doom_loop",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/tmp/opencode/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/skills/wafer-analysis/*",
+          "action": "allow"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_enter",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_exit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.*",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.example",
+          "action": "allow"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "webfetch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "websearch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        }
+      ]
+    },
+    {
+      "name": "title",
+      "mode": "primary",
+      "model": {
+        "modelID": "gpt-6.1-terra",
+        "providerID": "openai"
+      },
+      "steps": null,
+      "prompt_sha256": "e7a6848eba328f28c7e870874cf0591e4edbaf90d7602ad8fdfe90601c6e656f",
+      "targeted_mandate": false,
+      "permission": [
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "doom_loop",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "ask"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/tmp/opencode/*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/project/.opencode/skills/wafer-analysis/*",
+          "action": "allow"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_enter",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "plan_exit",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "read",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.*",
+          "action": "ask"
+        },
+        {
+          "permission": "read",
+          "pattern": "*.env.example",
+          "action": "allow"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "*",
+          "pattern": "*",
+          "action": "allow"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "webfetch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "websearch",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "question",
+          "pattern": "*",
+          "action": "deny"
+        },
+        {
+          "permission": "external_directory",
+          "pattern": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-alg_default/data/opencode/tool-output/*",
+          "action": "allow"
+        }
+      ]
+    }
+  ],
+  "selected": {
+    "provider": "openai",
+    "model": "gpt-6.1-terra",
+    "limit": {
+      "context": 128000,
+      "input": 922000,
+      "output": 4096
+    }
+  },
+  "source_sha256": "6e23a2b2fa0aa1078eb39d8cb24df613769535ccb31d718800530e28907d1e9d",
+  "fixture_files": [
+    {
+      "path": "data/manual-review.json",
+      "bytes": 359,
+      "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+    },
+    {
+      "path": "data/system-export.json",
+      "bytes": 558,
+      "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+    },
+    {
+      "path": ".opencode/skills/wafer-analysis/SKILL.md",
+      "bytes": 1270,
+      "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+    }
+  ]
+}

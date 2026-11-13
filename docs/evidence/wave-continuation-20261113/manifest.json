@@ -1,0 +1,111 @@
+{
+  "source_commit": "5500ad6afad56b5ccc3bfdd0b90c568b3413a56d",
+  "runtime_files_lf_equal": 136,
+  "files": [
+    {
+      "path": "repair-windows-measurement.log",
+      "bytes": 10200,
+      "sha256": "5467f2d47748ce568e7a8c96c056ca0ce9079decb4edcf31ebece4749ad92ecb"
+    },
+    {
+      "path": "repair-windows-wave.log",
+      "bytes": 6727,
+      "sha256": "a41ec0153b1aa5cc73558d0897071ca567e4e6083cd0da742a304d8a8c9cff1c"
+    },
+    {
+      "path": "repair-windows-final-focused.log",
+      "bytes": 8610,
+      "sha256": "30169cb269d98d54d822db668cb20fc21d0d305199a63e0cf352caac6f726c7e"
+    },
+    {
+      "path": "repair-final-typecheck.log",
+      "bytes": 1584,
+      "sha256": "25b616dc9eba6f9fe2423e82e4f016ea4b0f02d7179e7b17d4b0ecc6d33cc31e"
+    },
+    {
+      "path": "repair-final-typecheck-2.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "repair-hard-qualification-v2.json",
+      "bytes": 79780,
+      "sha256": "251ae385c21ac88b5496578fbb99ae2e0a70ef977360593241bb234aaab34573"
+    },
+    {
+      "path": "wave-5500ad6-windows-headless.json",
+      "bytes": 13779,
+      "sha256": "da94d16cd42c768523202ecec2d16bb9dd1f434e7ca15b19031c00eead4fb17f"
+    },
+    {
+      "path": "wave-5500ad6-windows-headless.log",
+      "bytes": 793,
+      "sha256": "64fb03d83700cc3c0e65ffdeffedb91a4bad7273dc1c64c0ce2e62b9a7c63565"
+    },
+    {
+      "path": "wave-5500ad6-windows-identity.json",
+      "bytes": 34759,
+      "sha256": "92a57727609b8189b1daeb9d44d60c5f4f5c2c598c8cc265852f0ff153ec487f"
+    },
+    {
+      "path": "wave-5500ad6-windows-package.log",
+      "bytes": 358,
+      "sha256": "ee1cb3df51b248543dec1bed1b9f2f1ea2cfe07caf6559e02af3c441a8c6a7fc"
+    },
+    {
+      "path": "wave-5500ad6afad5-linux-typecheck.log",
+      "bytes": 66,
+      "sha256": "d773539b4007a1c6e881b39c4bad4ce65837992453c5228198f10bd7ca4677c6"
+    },
+    {
+      "path": "wave-5500ad6afad5-linux-tests.log",
+      "bytes": 15978,
+      "sha256": "f7add769c1adc53ace3ec00b0cbf4f743f04f7a22b13e0d1dc8d50541b642c99"
+    },
+    {
+      "path": "wave-5500ad6afad5-linux-headless.json",
+      "bytes": 13556,
+      "sha256": "b14c39fa2c7ca874128a1f924a180a85eff084caec5dc3ddb88de136809c8fd9"
+    },
+    {
+      "path": "wave-5500ad6afad5-linux-headless.log",
+      "bytes": 790,
+      "sha256": "b55ba59f5a0aa93194bc3ce618481a664035e547f99d10f32a8e0b90a3f5ea88"
+    },
+    {
+      "path": "wave-5500ad6afad5-linux-identity.json",
+      "bytes": 33864,
+      "sha256": "1d282dd33b0b4bafa5b751c8f731812f08d9d6a4347e5ba9383710744ec77184"
+    },
+    {
+      "path": "wave-5500ad6afad5-linux-gate.json",
+      "bytes": 211,
+      "sha256": "ffc94ec7db03c868657d27fcdca7e762bb8035856573bdfe43280833d0736c12"
+    },
+    {
+      "path": "wave-5500ad6-linux-setup-failure.json",
+      "bytes": 511,
+      "sha256": "37cff4d8fe7959119ce4b9e8a8f51243971522e4c2f33628162fec2709f17351"
+    },
+    {
+      "path": "qualify-wave-linux.sh",
+      "bytes": 2437,
+      "sha256": "5b991998bc326739db1a8390f57d66027f097fbe7f4bb2367259caad64b0cef3"
+    },
+    {
+      "path": "collect-wave-evidence.py",
+      "bytes": 4230,
+      "sha256": "ba529cd0b459926b9100c8c1f2ec48d08019935603ee8e8c873fcb1732ee1de6"
+    }
+  ],
+  "failed_checks_preserved": [
+    "repair-windows-wave.log",
+    "repair-final-typecheck.log",
+    "wave-5500ad6-linux-setup-failure.json"
+  ],
+  "initial_measurement_checks": [
+    "repair-windows-measurement.log"
+  ],
+  "collection_note": "The initial substring scan matched the sk- suffix inside a synthetic task- run ID; the second matched the scanner's own literal sentinel. Receipt/log scans now require a token boundary; the two authored helper source files were reviewed as code. Existing partial payloads were compared byte-for-byte before collection resumed. No test or model was rerun for this archive repair.",
+  "interpretation": "Final focused/local host qualification, not a new full suite or paid behavior comparison."
+}

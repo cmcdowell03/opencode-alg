@@ -12,7 +12,7 @@ interface EnvironmentMemoryToolPort {
 }
 
 export function createMemoryTools(runtime: SessionMemoryRuntime, authorize: (owner: string) => Promise<void>, environment?: EnvironmentMemoryToolPort,
-  deployment?: () => unknown, contextBudget?: (owner: string) => unknown) {
+  deployment?: () => unknown, contextBudget?: (owner: string) => unknown, operational?: (owner: string, operation?: string) => unknown) {
   const run = async (context: ToolContext, action: (owner: string) => unknown, status = false) => {
     try {
       if (canonicalDirectory(hostProjectDirectory(context.worktree, context.directory)) !== runtime.store.project) throw new Error("foreign tool project")
@@ -71,13 +71,14 @@ export function createMemoryTools(runtime: SessionMemoryRuntime, authorize: (own
           node.kind === "result" ? { node, answer: runtime.store.readArtifact(node.payload.artifact), authority: false } : { node, authority: false }
       }),
     }),
-    alg_context_status: tool({ description: "Inspect durable task bindings, coverage, context budget and the last assembly receipt without modifying memory.", args: {},
+    alg_context_status: tool({ description: "Inspect durable task bindings, coverage, context budget and the last assembly receipt without modifying memory.", args: { operation: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/).optional() },
       execute: async (_args, context) => run(context, (owner) => ({
         ...runtime.status(owner),
         ...(environment ? { environment_memory: environment.status(owner) } : {}),
         // How the last model call's allowance was sized from the model's window, and what each part used.
         ...(contextBudget ? { context_budget: contextBudget(owner) } : {}),
         ...(deployment ? { deployment: deployment() } : {}),
+        ...(operational ? { operational: operational(owner, _args.operation) } : {}),
       }), true),
     }),
     alg_memory_propose: tool({ description: availability + "Store an unverified private memory proposal. Cannot publish, bind environments, approve permissions or mark a solution verified.",

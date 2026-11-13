@@ -1,0 +1,181 @@
+{
+  "recorded_at": "2026-11-12T15:13:37.776Z",
+  "checked_trials": 12,
+  "passed": true,
+  "credential_contents_read": false,
+  "records": [
+    {
+      "platform": "windows",
+      "trial": "1-wafer-count-commonjs-alg_default",
+      "cleanup": true,
+      "auth_copy_removed": true,
+      "auth_copy_absent": true,
+      "source_unchanged": true,
+      "global_configuration_unchanged": true,
+      "plans": [
+        {
+          "template": "coding-diamond",
+          "shell_gate": null,
+          "preserve_paths": null
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "trial": "1-wafer-count-commonjs-alg_targeted",
+      "cleanup": true,
+      "auth_copy_removed": true,
+      "auth_copy_absent": true,
+      "source_unchanged": true,
+      "global_configuration_unchanged": true,
+      "plans": [
+        {
+          "template": null,
+          "shell_gate": null,
+          "preserve_paths": null
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "trial": "1-wafer-count-commonjs-build",
+      "cleanup": true,
+      "auth_copy_removed": true,
+      "auth_copy_absent": true,
+      "source_unchanged": true,
+      "global_configuration_unchanged": true,
+      "plans": []
+    },
+    {
+      "platform": "windows",
+      "trial": "2-wafer-report-staged-alg_default",
+      "cleanup": true,
+      "auth_copy_removed": true,
+      "auth_copy_absent": true,
+      "source_unchanged": true,
+      "global_configuration_unchanged": true,
+      "plans": [
+        {
+          "template": "research-diamond",
+          "shell_gate": null,
+          "preserve_paths": null
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "trial": "2-wafer-report-staged-alg_targeted",
+      "cleanup": true,
+      "auth_copy_removed": true,
+      "auth_copy_absent": true,
+      "source_unchanged": true,
+      "global_configuration_unchanged": true,
+      "plans": [
+        {
+          "template": "coding-diamond",
+          "shell_gate": null,
+          "preserve_paths": null
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "trial": "2-wafer-report-staged-build",
+      "cleanup": true,
+      "auth_copy_removed": true,
+      "auth_copy_absent": true,
+      "source_unchanged": true,
+      "global_configuration_unchanged": true,
+      "plans": []
+    },
+    {
+      "platform": "linux",
+      "trial": "2-wafer-report-staged-alg_targeted",
+      "cleanup": true,
+      "auth_copy_removed": true,
+      "auth_copy_absent": true,
+      "source_unchanged": true,
+      "global_configuration_unchanged": true,
+      "plans": [
+        {
+          "template": "research-diamond",
+          "shell_gate": null,
+          "preserve_paths": null
+        }
+      ]
+    },
+    {
+      "platform": "linux",
+      "trial": "1-wafer-count-commonjs-build",
+      "cleanup": true,
+      "auth_copy_removed": true,
+      "auth_copy_absent": true,
+      "source_unchanged": true,
+      "global_configuration_unchanged": true,
+      "plans": []
+    },
+    {
+      "platform": "linux",
+      "trial": "1-wafer-count-commonjs-alg_default",
+      "cleanup": true,
+      "auth_copy_removed": true,
+      "auth_copy_absent": true,
+      "source_unchanged": true,
+      "global_configuration_unchanged": true,
+      "plans": [
+        {
+          "template": null,
+          "shell_gate": null,
+          "preserve_paths": null
+        }
+      ]
+    },
+    {
+      "platform": "linux",
+      "trial": "1-wafer-count-commonjs-alg_targeted",
+      "cleanup": true,
+      "auth_copy_removed": true,
+      "auth_copy_absent": true,
+      "source_unchanged": true,
+      "global_configuration_unchanged": true,
+      "plans": [
+        {
+          "template": null,
+          "shell_gate": null,
+          "preserve_paths": null
+        }
+      ]
+    },
+    {
+      "platform": "linux",
+      "trial": "2-wafer-report-staged-alg_default",
+      "cleanup": true,
+      "auth_copy_removed": true,
+      "auth_copy_absent": true,
+      "source_unchanged": true,
+      "global_configuration_unchanged": true,
+      "plans": [
+        {
+          "template": "coding-diamond",
+          "shell_gate": null,
+          "preserve_paths": null
+        },
+        {
+          "template": "coding-compact",
+          "shell_gate": null,
+          "preserve_paths": null
+        }
+      ]
+    },
+    {
+      "platform": "linux",
+      "trial": "2-wafer-report-staged-build",
+      "cleanup": true,
+      "auth_copy_removed": true,
+      "auth_copy_absent": true,
+      "source_unchanged": true,
+      "global_configuration_unchanged": true,
+      "plans": []
+    }
+  ]
+}

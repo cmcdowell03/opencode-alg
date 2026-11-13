@@ -1,0 +1,3229 @@
+{
+  "schema": "alg-build-pilot-v1",
+  "issued": 0,
+  "unissued": 12,
+  "completed": 0,
+  "stopped": 0,
+  "primaryDenominator": 0,
+  "complete": true,
+  "preflight": {
+    "planned": 12,
+    "passed": 12,
+    "failed": 0,
+    "stopped": 0
+  },
+  "fatal": null,
+  "model": "openai/gpt-6.1-terra",
+  "limits": {
+    "trialMs": 1800000,
+    "assistantTurns": 256,
+    "reportedComponents": 2000000,
+    "outputTokens": 4096,
+    "suiteMs": 25200000
+  },
+  "track": "default",
+  "pairs": [
+    {
+      "pairId": "pair-0001-e2432ae963f4",
+      "caseId": "factory-evidence-4ec5badaf7f2-v1",
+      "track": "default",
+      "issuedAt": "2026-11-13T03:56:45.612Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "completed"
+        },
+        {
+          "arm": "alg_default",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "pairId": "pair-0002-463287b0af89",
+      "caseId": "multi-repo-compat-v1",
+      "track": "default",
+      "issuedAt": "2026-11-13T03:56:45.612Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "completed"
+        },
+        {
+          "arm": "alg_default",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "pairId": "pair-0003-789bce354d8b",
+      "caseId": "accepted-query-lost-ack-v1-0",
+      "track": "default",
+      "issuedAt": "2026-11-13T03:56:45.612Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "completed"
+        },
+        {
+          "arm": "alg_default",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "pairId": "pair-0004-cde50f731a6f",
+      "caseId": "factory-evidence-357ebc622173-v1",
+      "track": "default",
+      "issuedAt": "2026-11-13T03:56:45.612Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "completed"
+        },
+        {
+          "arm": "alg_default",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "pairId": "pair-0005-e34483928c7d",
+      "caseId": "factory-evidence-cc6a0524ea56-v1",
+      "track": "default",
+      "issuedAt": "2026-11-13T03:56:45.612Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "completed"
+        },
+        {
+          "arm": "alg_default",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "pairId": "pair-0006-9c336f9dc91a",
+      "caseId": "partial-investigation-restart-v1",
+      "track": "default",
+      "issuedAt": "2026-11-13T03:56:45.612Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "completed"
+        },
+        {
+          "arm": "alg_default",
+          "status": "completed"
+        }
+      ]
+    }
+  ],
+  "results": [
+    {
+      "pairId": "pair-0001-e2432ae963f4",
+      "caseId": "factory-evidence-4ec5badaf7f2-v1",
+      "arm": "build",
+      "status": "preflight_passed",
+      "passed": false,
+      "stopReason": null,
+      "scored_task_success": false,
+      "independent_score": null,
+      "metrics": {
+        "attribution": {
+          "rows": [],
+          "overflowMessages": 0
+        },
+        "sessions": {
+          "total": 0,
+          "roots": 0,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 0,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": []
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 0,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated",
+          "coverage": "observed_session_fields_only"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": null,
+      "total_with_startup_ms": 5902,
+      "phases": [],
+      "rootSession": "",
+      "recovery": {
+        "requested": false,
+        "recoveryRequired": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "compaction": null,
+        "phase1": null
+      },
+      "retention": {
+        "status": "unavailable_preflight"
+      },
+      "alg_states": [],
+      "alg_progress_coverage": "no_runtime_runs",
+      "budget_observed_overshoot": 0,
+      "retention_boundaries": {
+        "status": "unavailable_no_boundary_probes"
+      },
+      "cleanup": true,
+      "metering_complete": null,
+      "observed_metering_stable": true,
+      "final_census": {
+        "elapsedMs": 324,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 0,
+        "usage": {
+          "completeTurns": 0,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 0
+        },
+        "outcome": "quiescent",
+        "coverage": {
+          "listedSessions": 0,
+          "completedHistories": 0,
+          "failedEndpoint": null,
+          "overallBudgetMs": 4000,
+          "elapsedMs": 50,
+          "complete": true
+        }
+      },
+      "coverage": {
+        "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+        "provider_usage": "session_reported_fields_only",
+        "quiescent_snapshot": true
+      },
+      "databaseCensus": {
+        "qualified": true,
+        "databaseSessions": 0,
+        "databaseMessages": 0,
+        "observedSessions": 0,
+        "observedMessages": 0,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      },
+      "reported_component_overshoot": 0,
+      "eligibility": {
+        "artifactOutcome": "failed",
+        "workflowEligible": false,
+        "operationalEligible": false,
+        "comparisonEligible": false,
+        "reasons": [
+          "workflow_incomplete",
+          "final_census_unresolved",
+          "service_isolation_unqualified"
+        ]
+      },
+      "auth_copy_removed": true,
+      "processes": [
+        1603468
+      ],
+      "source_unchanged": true,
+      "arm_config_sha256": "d824dd919727cfd9f6a538c28a0204b1353a62dd17986beb50dc861291052524",
+      "final_files": [
+        {
+          "path": "README.md",
+          "bytes": 303,
+          "sha256": "d93492eaee6b0cbd0b247493b48858ece5b201e83a126801388e7e451653aa6d"
+        },
+        {
+          "path": "catalog/catalog.jsonl",
+          "bytes": 660198,
+          "sha256": "ab5f3ba5549a15dbaccff2f6c990923781ad516aff43b6576d360f369a7ee8e9"
+        },
+        {
+          "path": "evidence/archive/1252990e0f.json",
+          "bytes": 8394,
+          "sha256": "c53a7be12fb84f3c9e88de043b994be381efe2a9bc23f895d846992f6fa2f939"
+        },
+        {
+          "path": "evidence/archive/33fed62ee2.json",
+          "bytes": 1218,
+          "sha256": "b87919ee614260a7972588e82757f45e9a68a57f2632f76b4117241a1e016f83"
+        },
+        {
+          "path": "evidence/archive/6f70e021b6.json",
+          "bytes": 678,
+          "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+        },
+        {
+          "path": "evidence/archive/ae4cc41eb9.json",
+          "bytes": 470,
+          "sha256": "8dc1548f0b5a451094ab4bafeb8b3b15d9528438b8a0b3b2c7bc9c6292bcba5e"
+        },
+        {
+          "path": "evidence/archive/c082384c29.json",
+          "bytes": 489,
+          "sha256": "f743b2b7fc06bfedf6e6ad42c622d291fc21a7486c07fc108e87a319312d3834"
+        },
+        {
+          "path": "evidence/archive/fbd691e2b7.json",
+          "bytes": 432,
+          "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+        },
+        {
+          "path": "evidence/incident.json",
+          "bytes": 119,
+          "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+        },
+        {
+          "path": "evidence/registry.json",
+          "bytes": 95,
+          "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+        },
+        {
+          "path": "evidence/report-contract.json",
+          "bytes": 1221,
+          "sha256": "aa0e9eb92b25c417e67df79f3400a02283c8ff4a3e93e05f974baaacee10b491"
+        }
+      ],
+      "usage_monitors": {
+        "reportedTokens": 2000000,
+        "reportedCostPerSuite": null,
+        "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+      },
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ],
+      "hard_service": {
+        "required": false,
+        "started": false,
+        "stopped": false,
+        "ledger_before": null,
+        "ledger_after": null,
+        "errors": []
+      },
+      "isolation": "same-user-development-only-not-os-isolated",
+      "confirmation_qualified": false,
+      "requested_host_compaction": false,
+      "native_compaction": {
+        "auto": true,
+        "prune": true
+      },
+      "alg_state_diagnostics": "bounded_post_stop_private_progress_projection_excluded_from_grader",
+      "compaction_evidence": {
+        "basis": "existing_metrics_and_retention_receipts",
+        "requested_boundary": "not_requested",
+        "information_loss": "not_measured"
+      },
+      "final_files_coverage": "complete_user_files_with_declared_runtime_exclusions"
+    },
+    {
+      "pairId": "pair-0001-e2432ae963f4",
+      "caseId": "factory-evidence-4ec5badaf7f2-v1",
+      "arm": "alg_default",
+      "status": "preflight_passed",
+      "passed": false,
+      "stopReason": null,
+      "scored_task_success": false,
+      "independent_score": null,
+      "metrics": {
+        "attribution": {
+          "rows": [],
+          "overflowMessages": 0
+        },
+        "sessions": {
+          "total": 0,
+          "roots": 0,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 0,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": []
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 0,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated",
+          "coverage": "observed_session_fields_only"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": null,
+      "total_with_startup_ms": 9448,
+      "phases": [],
+      "rootSession": "",
+      "recovery": {
+        "requested": false,
+        "recoveryRequired": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "compaction": null,
+        "phase1": null
+      },
+      "retention": {
+        "status": "unavailable_preflight"
+      },
+      "alg_states": [],
+      "alg_progress_coverage": "no_runtime_runs",
+      "budget_observed_overshoot": 0,
+      "retention_boundaries": {
+        "status": "unavailable_no_boundary_probes"
+      },
+      "cleanup": true,
+      "metering_complete": null,
+      "observed_metering_stable": true,
+      "final_census": {
+        "elapsedMs": 297,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 0,
+        "usage": {
+          "completeTurns": 0,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 0
+        },
+        "outcome": "quiescent",
+        "coverage": {
+          "listedSessions": 0,
+          "completedHistories": 0,
+          "failedEndpoint": null,
+          "overallBudgetMs": 4000,
+          "elapsedMs": 8,
+          "complete": true
+        }
+      },
+      "coverage": {
+        "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+        "provider_usage": "session_reported_fields_only",
+        "quiescent_snapshot": true
+      },
+      "databaseCensus": {
+        "qualified": true,
+        "databaseSessions": 0,
+        "databaseMessages": 0,
+        "observedSessions": 0,
+        "observedMessages": 0,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      },
+      "reported_component_overshoot": 0,
+      "eligibility": {
+        "artifactOutcome": "failed",
+        "workflowEligible": false,
+        "operationalEligible": false,
+        "comparisonEligible": false,
+        "reasons": [
+          "workflow_incomplete",
+          "final_census_unresolved",
+          "service_isolation_unqualified"
+        ]
+      },
+      "auth_copy_removed": true,
+      "processes": [
+        1621324
+      ],
+      "source_unchanged": true,
+      "arm_config_sha256": "613e81b91d0e1ecfa968294e67cd327305112469b71215866322be82b076126f",
+      "final_files": [
+        {
+          "path": "README.md",
+          "bytes": 303,
+          "sha256": "d93492eaee6b0cbd0b247493b48858ece5b201e83a126801388e7e451653aa6d"
+        },
+        {
+          "path": "catalog/catalog.jsonl",
+          "bytes": 660198,
+          "sha256": "ab5f3ba5549a15dbaccff2f6c990923781ad516aff43b6576d360f369a7ee8e9"
+        },
+        {
+          "path": "evidence/archive/1252990e0f.json",
+          "bytes": 8394,
+          "sha256": "c53a7be12fb84f3c9e88de043b994be381efe2a9bc23f895d846992f6fa2f939"
+        },
+        {
+          "path": "evidence/archive/33fed62ee2.json",
+          "bytes": 1218,
+          "sha256": "b87919ee614260a7972588e82757f45e9a68a57f2632f76b4117241a1e016f83"
+        },
+        {
+          "path": "evidence/archive/6f70e021b6.json",
+          "bytes": 678,
+          "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+        },
+        {
+          "path": "evidence/archive/ae4cc41eb9.json",
+          "bytes": 470,
+          "sha256": "8dc1548f0b5a451094ab4bafeb8b3b15d9528438b8a0b3b2c7bc9c6292bcba5e"
+        },
+        {
+          "path": "evidence/archive/c082384c29.json",
+          "bytes": 489,
+          "sha256": "f743b2b7fc06bfedf6e6ad42c622d291fc21a7486c07fc108e87a319312d3834"
+        },
+        {
+          "path": "evidence/archive/fbd691e2b7.json",
+          "bytes": 432,
+          "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+        },
+        {
+          "path": "evidence/incident.json",
+          "bytes": 119,
+          "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+        },
+        {
+          "path": "evidence/registry.json",
+          "bytes": 95,
+          "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+        },
+        {
+          "path": "evidence/report-contract.json",
+          "bytes": 1221,
+          "sha256": "aa0e9eb92b25c417e67df79f3400a02283c8ff4a3e93e05f974baaacee10b491"
+        }
+      ],
+      "usage_monitors": {
+        "reportedTokens": 2000000,
+        "reportedCostPerSuite": null,
+        "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+      },
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ],
+      "hard_service": {
+        "required": false,
+        "started": false,
+        "stopped": false,
+        "ledger_before": null,
+        "ledger_after": null,
+        "errors": []
+      },
+      "isolation": "same-user-development-only-not-os-isolated",
+      "confirmation_qualified": false,
+      "requested_host_compaction": false,
+      "native_compaction": {
+        "auto": true,
+        "prune": true
+      },
+      "alg_state_diagnostics": "bounded_post_stop_private_progress_projection_excluded_from_grader",
+      "compaction_evidence": {
+        "basis": "existing_metrics_and_retention_receipts",
+        "requested_boundary": "not_requested",
+        "information_loss": "not_measured"
+      },
+      "final_files_coverage": "complete_user_files_with_declared_runtime_exclusions"
+    },
+    {
+      "pairId": "pair-0002-463287b0af89",
+      "caseId": "multi-repo-compat-v1",
+      "arm": "build",
+      "status": "preflight_passed",
+      "passed": false,
+      "stopReason": null,
+      "scored_task_success": false,
+      "independent_score": null,
+      "metrics": {
+        "attribution": {
+          "rows": [],
+          "overflowMessages": 0
+        },
+        "sessions": {
+          "total": 0,
+          "roots": 0,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 0,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": []
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 0,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated",
+          "coverage": "observed_session_fields_only"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": null,
+      "total_with_startup_ms": 6238,
+      "phases": [],
+      "rootSession": "",
+      "recovery": {
+        "requested": false,
+        "recoveryRequired": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "compaction": null,
+        "phase1": null
+      },
+      "retention": {
+        "status": "unavailable_preflight"
+      },
+      "alg_states": [],
+      "alg_progress_coverage": "no_runtime_runs",
+      "budget_observed_overshoot": 0,
+      "retention_boundaries": {
+        "status": "unavailable_no_boundary_probes"
+      },
+      "cleanup": true,
+      "metering_complete": null,
+      "observed_metering_stable": true,
+      "final_census": {
+        "elapsedMs": 286,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 0,
+        "usage": {
+          "completeTurns": 0,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 0
+        },
+        "outcome": "quiescent",
+        "coverage": {
+          "listedSessions": 0,
+          "completedHistories": 0,
+          "failedEndpoint": null,
+          "overallBudgetMs": 4000,
+          "elapsedMs": 9,
+          "complete": true
+        }
+      },
+      "coverage": {
+        "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+        "provider_usage": "session_reported_fields_only",
+        "quiescent_snapshot": true
+      },
+      "databaseCensus": {
+        "qualified": true,
+        "databaseSessions": 0,
+        "databaseMessages": 0,
+        "observedSessions": 0,
+        "observedMessages": 0,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      },
+      "reported_component_overshoot": 0,
+      "eligibility": {
+        "artifactOutcome": "failed",
+        "workflowEligible": false,
+        "operationalEligible": false,
+        "comparisonEligible": false,
+        "reasons": [
+          "workflow_incomplete",
+          "final_census_unresolved",
+          "service_isolation_unqualified"
+        ]
+      },
+      "auth_copy_removed": true,
+      "processes": [
+        1193864
+      ],
+      "source_unchanged": true,
+      "arm_config_sha256": "d824dd919727cfd9f6a538c28a0204b1353a62dd17986beb50dc861291052524",
+      "final_files": [
+        {
+          "path": "README.md",
+          "bytes": 92,
+          "sha256": "88526f0729d4c099ec55bea7ccb1a0b28dac8914159216df45276d6611463375"
+        },
+        {
+          "path": "repos/api/src/index.ts",
+          "bytes": 331,
+          "sha256": "62d22f6beea373708aaa5a3ca4058e6db3302b4403093425a6cad71f6170ca7b"
+        },
+        {
+          "path": "repos/client/fixtures/expected.json",
+          "bytes": 34,
+          "sha256": "b324f31e58d301abb07bd85a4f096d10a84692fcc79be0e745c0dcd7abc826e2"
+        },
+        {
+          "path": "repos/client/src/report.ts",
+          "bytes": 234,
+          "sha256": "2b6cb91138ccf311fe28e6f8341aa668dfeb85cdda90df3ed49c85246ab4e46f"
+        },
+        {
+          "path": "repos/ingestion/CONTRACT.md",
+          "bytes": 91,
+          "sha256": "0ddd528482f7cad88f02348954d64c7e1b60bca82503d6f98771be36988f6485"
+        },
+        {
+          "path": "repos/ingestion/src/export.json",
+          "bytes": 418,
+          "sha256": "3a6a92801af7af6caec954868979800992dd5f5561c3ac392df3c1a8289dd4d6"
+        }
+      ],
+      "usage_monitors": {
+        "reportedTokens": 2000000,
+        "reportedCostPerSuite": null,
+        "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+      },
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ],
+      "hard_service": {
+        "required": false,
+        "started": false,
+        "stopped": false,
+        "ledger_before": null,
+        "ledger_after": null,
+        "errors": []
+      },
+      "isolation": "same-user-development-only-not-os-isolated",
+      "confirmation_qualified": false,
+      "requested_host_compaction": false,
+      "native_compaction": {
+        "auto": true,
+        "prune": true
+      },
+      "alg_state_diagnostics": "bounded_post_stop_private_progress_projection_excluded_from_grader",
+      "compaction_evidence": {
+        "basis": "existing_metrics_and_retention_receipts",
+        "requested_boundary": "not_requested",
+        "information_loss": "not_measured"
+      },
+      "final_files_coverage": "complete_user_files_with_declared_runtime_exclusions"
+    },
+    {
+      "pairId": "pair-0002-463287b0af89",
+      "caseId": "multi-repo-compat-v1",
+      "arm": "alg_default",
+      "status": "preflight_passed",
+      "passed": false,
+      "stopReason": null,
+      "scored_task_success": false,
+      "independent_score": null,
+      "metrics": {
+        "attribution": {
+          "rows": [],
+          "overflowMessages": 0
+        },
+        "sessions": {
+          "total": 0,
+          "roots": 0,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 0,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": []
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 0,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated",
+          "coverage": "observed_session_fields_only"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": null,
+      "total_with_startup_ms": 8599,
+      "phases": [],
+      "rootSession": "",
+      "recovery": {
+        "requested": false,
+        "recoveryRequired": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "compaction": null,
+        "phase1": null
+      },
+      "retention": {
+        "status": "unavailable_preflight"
+      },
+      "alg_states": [],
+      "alg_progress_coverage": "no_runtime_runs",
+      "budget_observed_overshoot": 0,
+      "retention_boundaries": {
+        "status": "unavailable_no_boundary_probes"
+      },
+      "cleanup": true,
+      "metering_complete": null,
+      "observed_metering_stable": true,
+      "final_census": {
+        "elapsedMs": 271,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 0,
+        "usage": {
+          "completeTurns": 0,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 0
+        },
+        "outcome": "quiescent",
+        "coverage": {
+          "listedSessions": 0,
+          "completedHistories": 0,
+          "failedEndpoint": null,
+          "overallBudgetMs": 4000,
+          "elapsedMs": 7,
+          "complete": true
+        }
+      },
+      "coverage": {
+        "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+        "provider_usage": "session_reported_fields_only",
+        "quiescent_snapshot": true
+      },
+      "databaseCensus": {
+        "qualified": true,
+        "databaseSessions": 0,
+        "databaseMessages": 0,
+        "observedSessions": 0,
+        "observedMessages": 0,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      },
+      "reported_component_overshoot": 0,
+      "eligibility": {
+        "artifactOutcome": "failed",
+        "workflowEligible": false,
+        "operationalEligible": false,
+        "comparisonEligible": false,
+        "reasons": [
+          "workflow_incomplete",
+          "final_census_unresolved",
+          "service_isolation_unqualified"
+        ]
+      },
+      "auth_copy_removed": true,
+      "processes": [
+        1581328
+      ],
+      "source_unchanged": true,
+      "arm_config_sha256": "613e81b91d0e1ecfa968294e67cd327305112469b71215866322be82b076126f",
+      "final_files": [
+        {
+          "path": "README.md",
+          "bytes": 92,
+          "sha256": "88526f0729d4c099ec55bea7ccb1a0b28dac8914159216df45276d6611463375"
+        },
+        {
+          "path": "repos/api/src/index.ts",
+          "bytes": 331,
+          "sha256": "62d22f6beea373708aaa5a3ca4058e6db3302b4403093425a6cad71f6170ca7b"
+        },
+        {
+          "path": "repos/client/fixtures/expected.json",
+          "bytes": 34,
+          "sha256": "b324f31e58d301abb07bd85a4f096d10a84692fcc79be0e745c0dcd7abc826e2"
+        },
+        {
+          "path": "repos/client/src/report.ts",
+          "bytes": 234,
+          "sha256": "2b6cb91138ccf311fe28e6f8341aa668dfeb85cdda90df3ed49c85246ab4e46f"
+        },
+        {
+          "path": "repos/ingestion/CONTRACT.md",
+          "bytes": 91,
+          "sha256": "0ddd528482f7cad88f02348954d64c7e1b60bca82503d6f98771be36988f6485"
+        },
+        {
+          "path": "repos/ingestion/src/export.json",
+          "bytes": 418,
+          "sha256": "3a6a92801af7af6caec954868979800992dd5f5561c3ac392df3c1a8289dd4d6"
+        }
+      ],
+      "usage_monitors": {
+        "reportedTokens": 2000000,
+        "reportedCostPerSuite": null,
+        "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+      },
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ],
+      "hard_service": {
+        "required": false,
+        "started": false,
+        "stopped": false,
+        "ledger_before": null,
+        "ledger_after": null,
+        "errors": []
+      },
+      "isolation": "same-user-development-only-not-os-isolated",
+      "confirmation_qualified": false,
+      "requested_host_compaction": false,
+      "native_compaction": {
+        "auto": true,
+        "prune": true
+      },
+      "alg_state_diagnostics": "bounded_post_stop_private_progress_projection_excluded_from_grader",
+      "compaction_evidence": {
+        "basis": "existing_metrics_and_retention_receipts",
+        "requested_boundary": "not_requested",
+        "information_loss": "not_measured"
+      },
+      "final_files_coverage": "complete_user_files_with_declared_runtime_exclusions"
+    },
+    {
+      "pairId": "pair-0003-789bce354d8b",
+      "caseId": "accepted-query-lost-ack-v1-0",
+      "arm": "build",
+      "status": "preflight_passed",
+      "passed": false,
+      "stopReason": null,
+      "scored_task_success": false,
+      "independent_score": null,
+      "metrics": {
+        "attribution": {
+          "rows": [],
+          "overflowMessages": 0
+        },
+        "sessions": {
+          "total": 0,
+          "roots": 0,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 0,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": []
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 0,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated",
+          "coverage": "observed_session_fields_only"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": null,
+      "total_with_startup_ms": 5173,
+      "phases": [],
+      "rootSession": "",
+      "recovery": {
+        "requested": false,
+        "recoveryRequired": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "compaction": null,
+        "phase1": null
+      },
+      "retention": {
+        "status": "unavailable_preflight"
+      },
+      "alg_states": [],
+      "alg_progress_coverage": "no_runtime_runs",
+      "budget_observed_overshoot": 0,
+      "retention_boundaries": {
+        "status": "unavailable_no_boundary_probes"
+      },
+      "cleanup": true,
+      "metering_complete": null,
+      "observed_metering_stable": true,
+      "final_census": {
+        "elapsedMs": 278,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 0,
+        "usage": {
+          "completeTurns": 0,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 0
+        },
+        "outcome": "quiescent",
+        "coverage": {
+          "listedSessions": 0,
+          "completedHistories": 0,
+          "failedEndpoint": null,
+          "overallBudgetMs": 4000,
+          "elapsedMs": 9,
+          "complete": true
+        }
+      },
+      "coverage": {
+        "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+        "provider_usage": "session_reported_fields_only",
+        "quiescent_snapshot": true
+      },
+      "databaseCensus": {
+        "qualified": true,
+        "databaseSessions": 0,
+        "databaseMessages": 0,
+        "observedSessions": 0,
+        "observedMessages": 0,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      },
+      "reported_component_overshoot": 0,
+      "eligibility": {
+        "artifactOutcome": "failed",
+        "workflowEligible": false,
+        "operationalEligible": false,
+        "comparisonEligible": false,
+        "reasons": [
+          "workflow_incomplete",
+          "final_census_unresolved",
+          "service_isolation_unqualified"
+        ]
+      },
+      "auth_copy_removed": true,
+      "processes": [
+        1261032
+      ],
+      "source_unchanged": true,
+      "arm_config_sha256": "d824dd919727cfd9f6a538c28a0204b1353a62dd17986beb50dc861291052524",
+      "final_files": [
+        {
+          "path": "README.md",
+          "bytes": 628,
+          "sha256": "ddebf8bcebb33f0c5791d61a72dd05a24547d62214b2bf5447fc82376b051bdc"
+        },
+        {
+          "path": "sources/request.json",
+          "bytes": 1048,
+          "sha256": "1f0c2ddfd4e7ab24ff09301f5c0a4e979ee693c3927adfcae37c1e2e3992a102"
+        }
+      ],
+      "usage_monitors": {
+        "reportedTokens": 2000000,
+        "reportedCostPerSuite": null,
+        "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+      },
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ],
+      "hard_service": {
+        "required": true,
+        "started": true,
+        "stopped": true,
+        "ledger_before": {
+          "acceptedComputations": 0,
+          "jobs": 0,
+          "acceptedWorkUnits": 0,
+          "lostAcknowledgements": 0,
+          "sourceChanges": 0
+        },
+        "ledger_after": {
+          "acceptedComputations": 0,
+          "jobs": 0,
+          "acceptedWorkUnits": 0,
+          "lostAcknowledgements": 0,
+          "sourceChanges": 0
+        },
+        "errors": []
+      },
+      "isolation": "same-user-development-only-not-os-isolated",
+      "confirmation_qualified": false,
+      "requested_host_compaction": false,
+      "native_compaction": {
+        "auto": true,
+        "prune": true
+      },
+      "alg_state_diagnostics": "bounded_post_stop_private_progress_projection_excluded_from_grader",
+      "compaction_evidence": {
+        "basis": "existing_metrics_and_retention_receipts",
+        "requested_boundary": "not_requested",
+        "information_loss": "not_measured"
+      },
+      "final_files_coverage": "complete_user_files_with_declared_runtime_exclusions"
+    },
+    {
+      "pairId": "pair-0003-789bce354d8b",
+      "caseId": "accepted-query-lost-ack-v1-0",
+      "arm": "alg_default",
+      "status": "preflight_passed",
+      "passed": false,
+      "stopReason": null,
+      "scored_task_success": false,
+      "independent_score": null,
+      "metrics": {
+        "attribution": {
+          "rows": [],
+          "overflowMessages": 0
+        },
+        "sessions": {
+          "total": 0,
+          "roots": 0,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 0,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": []
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 0,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated",
+          "coverage": "observed_session_fields_only"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": null,
+      "total_with_startup_ms": 8337,
+      "phases": [],
+      "rootSession": "",
+      "recovery": {
+        "requested": false,
+        "recoveryRequired": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "compaction": null,
+        "phase1": null
+      },
+      "retention": {
+        "status": "unavailable_preflight"
+      },
+      "alg_states": [],
+      "alg_progress_coverage": "no_runtime_runs",
+      "budget_observed_overshoot": 0,
+      "retention_boundaries": {
+        "status": "unavailable_no_boundary_probes"
+      },
+      "cleanup": true,
+      "metering_complete": null,
+      "observed_metering_stable": true,
+      "final_census": {
+        "elapsedMs": 314,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 0,
+        "usage": {
+          "completeTurns": 0,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 0
+        },
+        "outcome": "quiescent",
+        "coverage": {
+          "listedSessions": 0,
+          "completedHistories": 0,
+          "failedEndpoint": null,
+          "overallBudgetMs": 4000,
+          "elapsedMs": 39,
+          "complete": true
+        }
+      },
+      "coverage": {
+        "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+        "provider_usage": "session_reported_fields_only",
+        "quiescent_snapshot": true
+      },
+      "databaseCensus": {
+        "qualified": true,
+        "databaseSessions": 0,
+        "databaseMessages": 0,
+        "observedSessions": 0,
+        "observedMessages": 0,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      },
+      "reported_component_overshoot": 0,
+      "eligibility": {
+        "artifactOutcome": "failed",
+        "workflowEligible": false,
+        "operationalEligible": false,
+        "comparisonEligible": false,
+        "reasons": [
+          "workflow_incomplete",
+          "final_census_unresolved",
+          "service_isolation_unqualified"
+        ]
+      },
+      "auth_copy_removed": true,
+      "processes": [
+        1617004
+      ],
+      "source_unchanged": true,
+      "arm_config_sha256": "613e81b91d0e1ecfa968294e67cd327305112469b71215866322be82b076126f",
+      "final_files": [
+        {
+          "path": "README.md",
+          "bytes": 628,
+          "sha256": "ddebf8bcebb33f0c5791d61a72dd05a24547d62214b2bf5447fc82376b051bdc"
+        },
+        {
+          "path": "sources/request.json",
+          "bytes": 1048,
+          "sha256": "1f0c2ddfd4e7ab24ff09301f5c0a4e979ee693c3927adfcae37c1e2e3992a102"
+        }
+      ],
+      "usage_monitors": {
+        "reportedTokens": 2000000,
+        "reportedCostPerSuite": null,
+        "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+      },
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ],
+      "hard_service": {
+        "required": true,
+        "started": true,
+        "stopped": true,
+        "ledger_before": {
+          "acceptedComputations": 0,
+          "jobs": 0,
+          "acceptedWorkUnits": 0,
+          "lostAcknowledgements": 0,
+          "sourceChanges": 0
+        },
+        "ledger_after": {
+          "acceptedComputations": 0,
+          "jobs": 0,
+          "acceptedWorkUnits": 0,
+          "lostAcknowledgements": 0,
+          "sourceChanges": 0
+        },
+        "errors": []
+      },
+      "isolation": "same-user-development-only-not-os-isolated",
+      "confirmation_qualified": false,
+      "requested_host_compaction": false,
+      "native_compaction": {
+        "auto": true,
+        "prune": true
+      },
+      "alg_state_diagnostics": "bounded_post_stop_private_progress_projection_excluded_from_grader",
+      "compaction_evidence": {
+        "basis": "existing_metrics_and_retention_receipts",
+        "requested_boundary": "not_requested",
+        "information_loss": "not_measured"
+      },
+      "final_files_coverage": "complete_user_files_with_declared_runtime_exclusions"
+    },
+    {
+      "pairId": "pair-0004-cde50f731a6f",
+      "caseId": "factory-evidence-357ebc622173-v1",
+      "arm": "build",
+      "status": "preflight_passed",
+      "passed": false,
+      "stopReason": null,
+      "scored_task_success": false,
+      "independent_score": null,
+      "metrics": {
+        "attribution": {
+          "rows": [],
+          "overflowMessages": 0
+        },
+        "sessions": {
+          "total": 0,
+          "roots": 0,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 0,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": []
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 0,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated",
+          "coverage": "observed_session_fields_only"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": null,
+      "total_with_startup_ms": 5353,
+      "phases": [],
+      "rootSession": "",
+      "recovery": {
+        "requested": false,
+        "recoveryRequired": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "compaction": null,
+        "phase1": null
+      },
+      "retention": {
+        "status": "unavailable_preflight"
+      },
+      "alg_states": [],
+      "alg_progress_coverage": "no_runtime_runs",
+      "budget_observed_overshoot": 0,
+      "retention_boundaries": {
+        "status": "unavailable_no_boundary_probes"
+      },
+      "cleanup": true,
+      "metering_complete": null,
+      "observed_metering_stable": true,
+      "final_census": {
+        "elapsedMs": 339,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 0,
+        "usage": {
+          "completeTurns": 0,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 0
+        },
+        "outcome": "quiescent",
+        "coverage": {
+          "listedSessions": 0,
+          "completedHistories": 0,
+          "failedEndpoint": null,
+          "overallBudgetMs": 4000,
+          "elapsedMs": 48,
+          "complete": true
+        }
+      },
+      "coverage": {
+        "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+        "provider_usage": "session_reported_fields_only",
+        "quiescent_snapshot": true
+      },
+      "databaseCensus": {
+        "qualified": true,
+        "databaseSessions": 0,
+        "databaseMessages": 0,
+        "observedSessions": 0,
+        "observedMessages": 0,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      },
+      "reported_component_overshoot": 0,
+      "eligibility": {
+        "artifactOutcome": "failed",
+        "workflowEligible": false,
+        "operationalEligible": false,
+        "comparisonEligible": false,
+        "reasons": [
+          "workflow_incomplete",
+          "final_census_unresolved",
+          "service_isolation_unqualified"
+        ]
+      },
+      "auth_copy_removed": true,
+      "processes": [
+        1611260
+      ],
+      "source_unchanged": true,
+      "arm_config_sha256": "d824dd919727cfd9f6a538c28a0204b1353a62dd17986beb50dc861291052524",
+      "final_files": [
+        {
+          "path": "README.md",
+          "bytes": 303,
+          "sha256": "d93492eaee6b0cbd0b247493b48858ece5b201e83a126801388e7e451653aa6d"
+        },
+        {
+          "path": "catalog/catalog.jsonl",
+          "bytes": 660198,
+          "sha256": "ab5f3ba5549a15dbaccff2f6c990923781ad516aff43b6576d360f369a7ee8e9"
+        },
+        {
+          "path": "evidence/archive/1252990e0f.json",
+          "bytes": 8408,
+          "sha256": "25380a0ab4e641f601df5dadb5adbbaf1229330c1eab3ae32af650a86c441e3f"
+        },
+        {
+          "path": "evidence/archive/33fed62ee2.json",
+          "bytes": 1222,
+          "sha256": "5e411eaed9cbf11c4878cb5633c2a154acc340bad3cb18c466563cc47c342513"
+        },
+        {
+          "path": "evidence/archive/6f70e021b6.json",
+          "bytes": 678,
+          "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+        },
+        {
+          "path": "evidence/archive/ae4cc41eb9.json",
+          "bytes": 470,
+          "sha256": "89876123f3057e492a99805a66c2b333d732c04bfbc590b55529c88caa0ba689"
+        },
+        {
+          "path": "evidence/archive/c082384c29.json",
+          "bytes": 489,
+          "sha256": "f743b2b7fc06bfedf6e6ad42c622d291fc21a7486c07fc108e87a319312d3834"
+        },
+        {
+          "path": "evidence/archive/fbd691e2b7.json",
+          "bytes": 432,
+          "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+        },
+        {
+          "path": "evidence/incident.json",
+          "bytes": 119,
+          "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+        },
+        {
+          "path": "evidence/registry.json",
+          "bytes": 95,
+          "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+        },
+        {
+          "path": "evidence/report-contract.json",
+          "bytes": 1221,
+          "sha256": "aa0e9eb92b25c417e67df79f3400a02283c8ff4a3e93e05f974baaacee10b491"
+        }
+      ],
+      "usage_monitors": {
+        "reportedTokens": 2000000,
+        "reportedCostPerSuite": null,
+        "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+      },
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ],
+      "hard_service": {
+        "required": false,
+        "started": false,
+        "stopped": false,
+        "ledger_before": null,
+        "ledger_after": null,
+        "errors": []
+      },
+      "isolation": "same-user-development-only-not-os-isolated",
+      "confirmation_qualified": false,
+      "requested_host_compaction": false,
+      "native_compaction": {
+        "auto": true,
+        "prune": true
+      },
+      "alg_state_diagnostics": "bounded_post_stop_private_progress_projection_excluded_from_grader",
+      "compaction_evidence": {
+        "basis": "existing_metrics_and_retention_receipts",
+        "requested_boundary": "not_requested",
+        "information_loss": "not_measured"
+      },
+      "final_files_coverage": "complete_user_files_with_declared_runtime_exclusions"
+    },
+    {
+      "pairId": "pair-0004-cde50f731a6f",
+      "caseId": "factory-evidence-357ebc622173-v1",
+      "arm": "alg_default",
+      "status": "preflight_passed",
+      "passed": false,
+      "stopReason": null,
+      "scored_task_success": false,
+      "independent_score": null,
+      "metrics": {
+        "attribution": {
+          "rows": [],
+          "overflowMessages": 0
+        },
+        "sessions": {
+          "total": 0,
+          "roots": 0,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 0,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": []
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 0,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated",
+          "coverage": "observed_session_fields_only"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": null,
+      "total_with_startup_ms": 9232,
+      "phases": [],
+      "rootSession": "",
+      "recovery": {
+        "requested": false,
+        "recoveryRequired": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "compaction": null,
+        "phase1": null
+      },
+      "retention": {
+        "status": "unavailable_preflight"
+      },
+      "alg_states": [],
+      "alg_progress_coverage": "no_runtime_runs",
+      "budget_observed_overshoot": 0,
+      "retention_boundaries": {
+        "status": "unavailable_no_boundary_probes"
+      },
+      "cleanup": true,
+      "metering_complete": null,
+      "observed_metering_stable": true,
+      "final_census": {
+        "elapsedMs": 381,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 0,
+        "usage": {
+          "completeTurns": 0,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 0
+        },
+        "outcome": "quiescent",
+        "coverage": {
+          "listedSessions": 0,
+          "completedHistories": 0,
+          "failedEndpoint": null,
+          "overallBudgetMs": 4000,
+          "elapsedMs": 8,
+          "complete": true
+        }
+      },
+      "coverage": {
+        "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+        "provider_usage": "session_reported_fields_only",
+        "quiescent_snapshot": true
+      },
+      "databaseCensus": {
+        "qualified": true,
+        "databaseSessions": 0,
+        "databaseMessages": 0,
+        "observedSessions": 0,
+        "observedMessages": 0,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      },
+      "reported_component_overshoot": 0,
+      "eligibility": {
+        "artifactOutcome": "failed",
+        "workflowEligible": false,
+        "operationalEligible": false,
+        "comparisonEligible": false,
+        "reasons": [
+          "workflow_incomplete",
+          "final_census_unresolved",
+          "service_isolation_unqualified"
+        ]
+      },
+      "auth_copy_removed": true,
+      "processes": [
+        1598860
+      ],
+      "source_unchanged": true,
+      "arm_config_sha256": "613e81b91d0e1ecfa968294e67cd327305112469b71215866322be82b076126f",
+      "final_files": [
+        {
+          "path": "README.md",
+          "bytes": 303,
+          "sha256": "d93492eaee6b0cbd0b247493b48858ece5b201e83a126801388e7e451653aa6d"
+        },
+        {
+          "path": "catalog/catalog.jsonl",
+          "bytes": 660198,
+          "sha256": "ab5f3ba5549a15dbaccff2f6c990923781ad516aff43b6576d360f369a7ee8e9"
+        },
+        {
+          "path": "evidence/archive/1252990e0f.json",
+          "bytes": 8408,
+          "sha256": "25380a0ab4e641f601df5dadb5adbbaf1229330c1eab3ae32af650a86c441e3f"
+        },
+        {
+          "path": "evidence/archive/33fed62ee2.json",
+          "bytes": 1222,
+          "sha256": "5e411eaed9cbf11c4878cb5633c2a154acc340bad3cb18c466563cc47c342513"
+        },
+        {
+          "path": "evidence/archive/6f70e021b6.json",
+          "bytes": 678,
+          "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+        },
+        {
+          "path": "evidence/archive/ae4cc41eb9.json",
+          "bytes": 470,
+          "sha256": "89876123f3057e492a99805a66c2b333d732c04bfbc590b55529c88caa0ba689"
+        },
+        {
+          "path": "evidence/archive/c082384c29.json",
+          "bytes": 489,
+          "sha256": "f743b2b7fc06bfedf6e6ad42c622d291fc21a7486c07fc108e87a319312d3834"
+        },
+        {
+          "path": "evidence/archive/fbd691e2b7.json",
+          "bytes": 432,
+          "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+        },
+        {
+          "path": "evidence/incident.json",
+          "bytes": 119,
+          "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+        },
+        {
+          "path": "evidence/registry.json",
+          "bytes": 95,
+          "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+        },
+        {
+          "path": "evidence/report-contract.json",
+          "bytes": 1221,
+          "sha256": "aa0e9eb92b25c417e67df79f3400a02283c8ff4a3e93e05f974baaacee10b491"
+        }
+      ],
+      "usage_monitors": {
+        "reportedTokens": 2000000,
+        "reportedCostPerSuite": null,
+        "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+      },
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ],
+      "hard_service": {
+        "required": false,
+        "started": false,
+        "stopped": false,
+        "ledger_before": null,
+        "ledger_after": null,
+        "errors": []
+      },
+      "isolation": "same-user-development-only-not-os-isolated",
+      "confirmation_qualified": false,
+      "requested_host_compaction": false,
+      "native_compaction": {
+        "auto": true,
+        "prune": true
+      },
+      "alg_state_diagnostics": "bounded_post_stop_private_progress_projection_excluded_from_grader",
+      "compaction_evidence": {
+        "basis": "existing_metrics_and_retention_receipts",
+        "requested_boundary": "not_requested",
+        "information_loss": "not_measured"
+      },
+      "final_files_coverage": "complete_user_files_with_declared_runtime_exclusions"
+    },
+    {
+      "pairId": "pair-0005-e34483928c7d",
+      "caseId": "factory-evidence-cc6a0524ea56-v1",
+      "arm": "build",
+      "status": "preflight_passed",
+      "passed": false,
+      "stopReason": null,
+      "scored_task_success": false,
+      "independent_score": null,
+      "metrics": {
+        "attribution": {
+          "rows": [],
+          "overflowMessages": 0
+        },
+        "sessions": {
+          "total": 0,
+          "roots": 0,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 0,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": []
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 0,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated",
+          "coverage": "observed_session_fields_only"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": null,
+      "total_with_startup_ms": 5849,
+      "phases": [],
+      "rootSession": "",
+      "recovery": {
+        "requested": false,
+        "recoveryRequired": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "compaction": null,
+        "phase1": null
+      },
+      "retention": {
+        "status": "unavailable_preflight"
+      },
+      "alg_states": [],
+      "alg_progress_coverage": "no_runtime_runs",
+      "budget_observed_overshoot": 0,
+      "retention_boundaries": {
+        "status": "unavailable_no_boundary_probes"
+      },
+      "cleanup": true,
+      "metering_complete": null,
+      "observed_metering_stable": true,
+      "final_census": {
+        "elapsedMs": 349,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 0,
+        "usage": {
+          "completeTurns": 0,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 0
+        },
+        "outcome": "quiescent",
+        "coverage": {
+          "listedSessions": 0,
+          "completedHistories": 0,
+          "failedEndpoint": null,
+          "overallBudgetMs": 4000,
+          "elapsedMs": 73,
+          "complete": true
+        }
+      },
+      "coverage": {
+        "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+        "provider_usage": "session_reported_fields_only",
+        "quiescent_snapshot": true
+      },
+      "databaseCensus": {
+        "qualified": true,
+        "databaseSessions": 0,
+        "databaseMessages": 0,
+        "observedSessions": 0,
+        "observedMessages": 0,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      },
+      "reported_component_overshoot": 0,
+      "eligibility": {
+        "artifactOutcome": "failed",
+        "workflowEligible": false,
+        "operationalEligible": false,
+        "comparisonEligible": false,
+        "reasons": [
+          "workflow_incomplete",
+          "final_census_unresolved",
+          "service_isolation_unqualified"
+        ]
+      },
+      "auth_copy_removed": true,
+      "processes": [
+        1618076
+      ],
+      "source_unchanged": true,
+      "arm_config_sha256": "d824dd919727cfd9f6a538c28a0204b1353a62dd17986beb50dc861291052524",
+      "final_files": [
+        {
+          "path": "README.md",
+          "bytes": 303,
+          "sha256": "d93492eaee6b0cbd0b247493b48858ece5b201e83a126801388e7e451653aa6d"
+        },
+        {
+          "path": "catalog/catalog.jsonl",
+          "bytes": 660198,
+          "sha256": "ab5f3ba5549a15dbaccff2f6c990923781ad516aff43b6576d360f369a7ee8e9"
+        },
+        {
+          "path": "evidence/archive/1252990e0f.json",
+          "bytes": 8394,
+          "sha256": "c53a7be12fb84f3c9e88de043b994be381efe2a9bc23f895d846992f6fa2f939"
+        },
+        {
+          "path": "evidence/archive/33fed62ee2.json",
+          "bytes": 1218,
+          "sha256": "b87919ee614260a7972588e82757f45e9a68a57f2632f76b4117241a1e016f83"
+        },
+        {
+          "path": "evidence/archive/6f70e021b6.json",
+          "bytes": 678,
+          "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+        },
+        {
+          "path": "evidence/archive/ae4cc41eb9.json",
+          "bytes": 470,
+          "sha256": "08d4450fbc90374c1add54fa287ca3ece9b5feb2c03c8d4b2eb982d4fe31a7d9"
+        },
+        {
+          "path": "evidence/archive/c082384c29.json",
+          "bytes": 489,
+          "sha256": "f743b2b7fc06bfedf6e6ad42c622d291fc21a7486c07fc108e87a319312d3834"
+        },
+        {
+          "path": "evidence/archive/fbd691e2b7.json",
+          "bytes": 432,
+          "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+        },
+        {
+          "path": "evidence/incident.json",
+          "bytes": 119,
+          "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+        },
+        {
+          "path": "evidence/registry.json",
+          "bytes": 95,
+          "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+        },
+        {
+          "path": "evidence/report-contract.json",
+          "bytes": 1221,
+          "sha256": "aa0e9eb92b25c417e67df79f3400a02283c8ff4a3e93e05f974baaacee10b491"
+        }
+      ],
+      "usage_monitors": {
+        "reportedTokens": 2000000,
+        "reportedCostPerSuite": null,
+        "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+      },
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ],
+      "hard_service": {
+        "required": false,
+        "started": false,
+        "stopped": false,
+        "ledger_before": null,
+        "ledger_after": null,
+        "errors": []
+      },
+      "isolation": "same-user-development-only-not-os-isolated",
+      "confirmation_qualified": false,
+      "requested_host_compaction": false,
+      "native_compaction": {
+        "auto": true,
+        "prune": true
+      },
+      "alg_state_diagnostics": "bounded_post_stop_private_progress_projection_excluded_from_grader",
+      "compaction_evidence": {
+        "basis": "existing_metrics_and_retention_receipts",
+        "requested_boundary": "not_requested",
+        "information_loss": "not_measured"
+      },
+      "final_files_coverage": "complete_user_files_with_declared_runtime_exclusions"
+    },
+    {
+      "pairId": "pair-0005-e34483928c7d",
+      "caseId": "factory-evidence-cc6a0524ea56-v1",
+      "arm": "alg_default",
+      "status": "preflight_passed",
+      "passed": false,
+      "stopReason": null,
+      "scored_task_success": false,
+      "independent_score": null,
+      "metrics": {
+        "attribution": {
+          "rows": [],
+          "overflowMessages": 0
+        },
+        "sessions": {
+          "total": 0,
+          "roots": 0,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 0,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": []
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 0,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated",
+          "coverage": "observed_session_fields_only"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": null,
+      "total_with_startup_ms": 8528,
+      "phases": [],
+      "rootSession": "",
+      "recovery": {
+        "requested": false,
+        "recoveryRequired": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "compaction": null,
+        "phase1": null
+      },
+      "retention": {
+        "status": "unavailable_preflight"
+      },
+      "alg_states": [],
+      "alg_progress_coverage": "no_runtime_runs",
+      "budget_observed_overshoot": 0,
+      "retention_boundaries": {
+        "status": "unavailable_no_boundary_probes"
+      },
+      "cleanup": true,
+      "metering_complete": null,
+      "observed_metering_stable": true,
+      "final_census": {
+        "elapsedMs": 291,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 0,
+        "usage": {
+          "completeTurns": 0,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 0
+        },
+        "outcome": "quiescent",
+        "coverage": {
+          "listedSessions": 0,
+          "completedHistories": 0,
+          "failedEndpoint": null,
+          "overallBudgetMs": 4000,
+          "elapsedMs": 11,
+          "complete": true
+        }
+      },
+      "coverage": {
+        "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+        "provider_usage": "session_reported_fields_only",
+        "quiescent_snapshot": true
+      },
+      "databaseCensus": {
+        "qualified": true,
+        "databaseSessions": 0,
+        "databaseMessages": 0,
+        "observedSessions": 0,
+        "observedMessages": 0,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      },
+      "reported_component_overshoot": 0,
+      "eligibility": {
+        "artifactOutcome": "failed",
+        "workflowEligible": false,
+        "operationalEligible": false,
+        "comparisonEligible": false,
+        "reasons": [
+          "workflow_incomplete",
+          "final_census_unresolved",
+          "service_isolation_unqualified"
+        ]
+      },
+      "auth_copy_removed": true,
+      "processes": [
+        1621844
+      ],
+      "source_unchanged": true,
+      "arm_config_sha256": "613e81b91d0e1ecfa968294e67cd327305112469b71215866322be82b076126f",
+      "final_files": [
+        {
+          "path": "README.md",
+          "bytes": 303,
+          "sha256": "d93492eaee6b0cbd0b247493b48858ece5b201e83a126801388e7e451653aa6d"
+        },
+        {
+          "path": "catalog/catalog.jsonl",
+          "bytes": 660198,
+          "sha256": "ab5f3ba5549a15dbaccff2f6c990923781ad516aff43b6576d360f369a7ee8e9"
+        },
+        {
+          "path": "evidence/archive/1252990e0f.json",
+          "bytes": 8394,
+          "sha256": "c53a7be12fb84f3c9e88de043b994be381efe2a9bc23f895d846992f6fa2f939"
+        },
+        {
+          "path": "evidence/archive/33fed62ee2.json",
+          "bytes": 1218,
+          "sha256": "b87919ee614260a7972588e82757f45e9a68a57f2632f76b4117241a1e016f83"
+        },
+        {
+          "path": "evidence/archive/6f70e021b6.json",
+          "bytes": 678,
+          "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+        },
+        {
+          "path": "evidence/archive/ae4cc41eb9.json",
+          "bytes": 470,
+          "sha256": "08d4450fbc90374c1add54fa287ca3ece9b5feb2c03c8d4b2eb982d4fe31a7d9"
+        },
+        {
+          "path": "evidence/archive/c082384c29.json",
+          "bytes": 489,
+          "sha256": "f743b2b7fc06bfedf6e6ad42c622d291fc21a7486c07fc108e87a319312d3834"
+        },
+        {
+          "path": "evidence/archive/fbd691e2b7.json",
+          "bytes": 432,
+          "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+        },
+        {
+          "path": "evidence/incident.json",
+          "bytes": 119,
+          "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+        },
+        {
+          "path": "evidence/registry.json",
+          "bytes": 95,
+          "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+        },
+        {
+          "path": "evidence/report-contract.json",
+          "bytes": 1221,
+          "sha256": "aa0e9eb92b25c417e67df79f3400a02283c8ff4a3e93e05f974baaacee10b491"
+        }
+      ],
+      "usage_monitors": {
+        "reportedTokens": 2000000,
+        "reportedCostPerSuite": null,
+        "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+      },
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ],
+      "hard_service": {
+        "required": false,
+        "started": false,
+        "stopped": false,
+        "ledger_before": null,
+        "ledger_after": null,
+        "errors": []
+      },
+      "isolation": "same-user-development-only-not-os-isolated",
+      "confirmation_qualified": false,
+      "requested_host_compaction": false,
+      "native_compaction": {
+        "auto": true,
+        "prune": true
+      },
+      "alg_state_diagnostics": "bounded_post_stop_private_progress_projection_excluded_from_grader",
+      "compaction_evidence": {
+        "basis": "existing_metrics_and_retention_receipts",
+        "requested_boundary": "not_requested",
+        "information_loss": "not_measured"
+      },
+      "final_files_coverage": "complete_user_files_with_declared_runtime_exclusions"
+    },
+    {
+      "pairId": "pair-0006-9c336f9dc91a",
+      "caseId": "partial-investigation-restart-v1",
+      "arm": "build",
+      "status": "preflight_passed",
+      "passed": false,
+      "stopReason": null,
+      "scored_task_success": false,
+      "independent_score": null,
+      "metrics": {
+        "attribution": {
+          "rows": [],
+          "overflowMessages": 0
+        },
+        "sessions": {
+          "total": 0,
+          "roots": 0,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 0,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": []
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 0,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated",
+          "coverage": "observed_session_fields_only"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": null,
+      "total_with_startup_ms": 6266,
+      "phases": [],
+      "rootSession": "",
+      "recovery": {
+        "requested": false,
+        "recoveryRequired": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "compaction": null,
+        "phase1": null
+      },
+      "retention": {
+        "status": "unavailable_preflight"
+      },
+      "alg_states": [],
+      "alg_progress_coverage": "no_runtime_runs",
+      "budget_observed_overshoot": 0,
+      "retention_boundaries": {
+        "status": "unavailable_no_boundary_probes"
+      },
+      "cleanup": true,
+      "metering_complete": null,
+      "observed_metering_stable": true,
+      "final_census": {
+        "elapsedMs": 302,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 0,
+        "usage": {
+          "completeTurns": 0,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 0
+        },
+        "outcome": "quiescent",
+        "coverage": {
+          "listedSessions": 0,
+          "completedHistories": 0,
+          "failedEndpoint": null,
+          "overallBudgetMs": 4000,
+          "elapsedMs": 14,
+          "complete": true
+        }
+      },
+      "coverage": {
+        "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+        "provider_usage": "session_reported_fields_only",
+        "quiescent_snapshot": true
+      },
+      "databaseCensus": {
+        "qualified": true,
+        "databaseSessions": 0,
+        "databaseMessages": 0,
+        "observedSessions": 0,
+        "observedMessages": 0,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      },
+      "reported_component_overshoot": 0,
+      "eligibility": {
+        "artifactOutcome": "failed",
+        "workflowEligible": false,
+        "operationalEligible": false,
+        "comparisonEligible": false,
+        "reasons": [
+          "workflow_incomplete",
+          "final_census_unresolved",
+          "service_isolation_unqualified"
+        ]
+      },
+      "auth_copy_removed": true,
+      "processes": [
+        1618632
+      ],
+      "source_unchanged": true,
+      "arm_config_sha256": "d824dd919727cfd9f6a538c28a0204b1353a62dd17986beb50dc861291052524",
+      "final_files": [
+        {
+          "path": "README.md",
+          "bytes": 754,
+          "sha256": "677d4d9aaeefdc70a0acd6bf873048acb80c587db43344c34c4c4b5b8b429060"
+        },
+        {
+          "path": "sources/checkpoint.json",
+          "bytes": 261,
+          "sha256": "10510f94f04815ce262a3748fcc9c8136a1b77fad8e168471816ccd19851cc47"
+        },
+        {
+          "path": "sources/report-contract.json",
+          "bytes": 413,
+          "sha256": "a693d5757b7c263b9a3082d9ca38a6236558d91d3965f75920f4dd42697d2779"
+        }
+      ],
+      "usage_monitors": {
+        "reportedTokens": 2000000,
+        "reportedCostPerSuite": null,
+        "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+      },
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ],
+      "hard_service": {
+        "required": true,
+        "started": true,
+        "stopped": true,
+        "ledger_before": {
+          "acceptedComputations": 3,
+          "jobs": 3,
+          "acceptedWorkUnits": 28,
+          "lostAcknowledgements": 0,
+          "sourceChanges": 1
+        },
+        "ledger_after": {
+          "acceptedComputations": 3,
+          "jobs": 3,
+          "acceptedWorkUnits": 28,
+          "lostAcknowledgements": 0,
+          "sourceChanges": 1
+        },
+        "errors": []
+      },
+      "isolation": "same-user-development-only-not-os-isolated",
+      "confirmation_qualified": false,
+      "requested_host_compaction": false,
+      "native_compaction": {
+        "auto": true,
+        "prune": true
+      },
+      "alg_state_diagnostics": "bounded_post_stop_private_progress_projection_excluded_from_grader",
+      "compaction_evidence": {
+        "basis": "existing_metrics_and_retention_receipts",
+        "requested_boundary": "not_requested",
+        "information_loss": "not_measured"
+      },
+      "final_files_coverage": "complete_user_files_with_declared_runtime_exclusions"
+    },
+    {
+      "pairId": "pair-0006-9c336f9dc91a",
+      "caseId": "partial-investigation-restart-v1",
+      "arm": "alg_default",
+      "status": "preflight_passed",
+      "passed": false,
+      "stopReason": null,
+      "scored_task_success": false,
+      "independent_score": null,
+      "metrics": {
+        "attribution": {
+          "rows": [],
+          "overflowMessages": 0
+        },
+        "sessions": {
+          "total": 0,
+          "roots": 0,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 0,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": []
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 0,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 0,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated",
+          "coverage": "observed_session_fields_only"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": null,
+      "total_with_startup_ms": 9406,
+      "phases": [],
+      "rootSession": "",
+      "recovery": {
+        "requested": false,
+        "recoveryRequired": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "compaction": null,
+        "phase1": null
+      },
+      "retention": {
+        "status": "unavailable_preflight"
+      },
+      "alg_states": [],
+      "alg_progress_coverage": "no_runtime_runs",
+      "budget_observed_overshoot": 0,
+      "retention_boundaries": {
+        "status": "unavailable_no_boundary_probes"
+      },
+      "cleanup": true,
+      "metering_complete": null,
+      "observed_metering_stable": true,
+      "final_census": {
+        "elapsedMs": 305,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 0,
+        "usage": {
+          "completeTurns": 0,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 0
+        },
+        "outcome": "quiescent",
+        "coverage": {
+          "listedSessions": 0,
+          "completedHistories": 0,
+          "failedEndpoint": null,
+          "overallBudgetMs": 4000,
+          "elapsedMs": 12,
+          "complete": true
+        }
+      },
+      "coverage": {
+        "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+        "provider_usage": "session_reported_fields_only",
+        "quiescent_snapshot": true
+      },
+      "databaseCensus": {
+        "qualified": true,
+        "databaseSessions": 0,
+        "databaseMessages": 0,
+        "observedSessions": 0,
+        "observedMessages": 0,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      },
+      "reported_component_overshoot": 0,
+      "eligibility": {
+        "artifactOutcome": "failed",
+        "workflowEligible": false,
+        "operationalEligible": false,
+        "comparisonEligible": false,
+        "reasons": [
+          "workflow_incomplete",
+          "final_census_unresolved",
+          "service_isolation_unqualified"
+        ]
+      },
+      "auth_copy_removed": true,
+      "processes": [
+        1618968
+      ],
+      "source_unchanged": true,
+      "arm_config_sha256": "613e81b91d0e1ecfa968294e67cd327305112469b71215866322be82b076126f",
+      "final_files": [
+        {
+          "path": "README.md",
+          "bytes": 754,
+          "sha256": "677d4d9aaeefdc70a0acd6bf873048acb80c587db43344c34c4c4b5b8b429060"
+        },
+        {
+          "path": "sources/checkpoint.json",
+          "bytes": 261,
+          "sha256": "10510f94f04815ce262a3748fcc9c8136a1b77fad8e168471816ccd19851cc47"
+        },
+        {
+          "path": "sources/report-contract.json",
+          "bytes": 413,
+          "sha256": "a693d5757b7c263b9a3082d9ca38a6236558d91d3965f75920f4dd42697d2779"
+        }
+      ],
+      "usage_monitors": {
+        "reportedTokens": 2000000,
+        "reportedCostPerSuite": null,
+        "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+      },
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ],
+      "hard_service": {
+        "required": true,
+        "started": true,
+        "stopped": true,
+        "ledger_before": {
+          "acceptedComputations": 3,
+          "jobs": 3,
+          "acceptedWorkUnits": 28,
+          "lostAcknowledgements": 0,
+          "sourceChanges": 1
+        },
+        "ledger_after": {
+          "acceptedComputations": 3,
+          "jobs": 3,
+          "acceptedWorkUnits": 28,
+          "lostAcknowledgements": 0,
+          "sourceChanges": 1
+        },
+        "errors": []
+      },
+      "isolation": "same-user-development-only-not-os-isolated",
+      "confirmation_qualified": false,
+      "requested_host_compaction": false,
+      "native_compaction": {
+        "auto": true,
+        "prune": true
+      },
+      "alg_state_diagnostics": "bounded_post_stop_private_progress_projection_excluded_from_grader",
+      "compaction_evidence": {
+        "basis": "existing_metrics_and_retention_receipts",
+        "requested_boundary": "not_requested",
+        "information_loss": "not_measured"
+      },
+      "final_files_coverage": "complete_user_files_with_declared_runtime_exclusions"
+    }
+  ],
+  "workload": "hard-development",
+  "hard": {
+    "hard_fixtures_sha256": "a4d183e940ae468c8b33c3a9720a4eb4903d6260a7df770ba461df0fc8c5287a",
+    "fixtures_source_sha256": "33bfd2fa15c0d5ae4132f1d2aadc27cfdf4fcd042b2f5c5b98745fc7ec5182dd",
+    "grader_sha256": "33bfd2fa15c0d5ae4132f1d2aadc27cfdf4fcd042b2f5c5b98745fc7ec5182dd",
+    "service_sha256": "a194fd54428f3015582f145d31111a18b6f6a0fbe586136397d2b8b341cf05c9",
+    "qualification_sha256": "9e3e24dc43e11172b0642f09f3d19e46464cd36c9afd59f35646dcb79f7f580b",
+    "host_sha256": "33b8681d1e45667fee0ec4d1167bb1a0756d3298c0b34d58484667e3861153e5",
+    "cohort_sha256": "0a35fddd0ad797890375acec045bfbaa47bfb2e9bc9d162a0e4eebe1c4b5db37",
+    "runner_sha256": "97c4dca3ab692fc4c456b761ad0296c0528559e2441c67bd51b88c3361efad3b",
+    "host_executable_sha256": "6f15c8f241f3df22375f174753193a71c488f6c0a6bbbae3f9fa34d112673b7b",
+    "qualification_evidence_sha256": "7c5141e1ec13e72ba4815793763a01852fe6e05a9116c08d1a604456d6153efc",
+    "order_seed": 20261114,
+    "order_algorithm": "sha256-sort-v1+alternating-arms-seed-bit",
+    "plan_sha256": "abeff46c57d72f9c16bf1f8a033b550cff94794a55ef2c68610cfc4dc5821aee",
+    "native_compaction": {
+      "auto": true,
+      "prune": true
+    },
+    "requested_host_compaction": false,
+    "service_instruction_exception": "Only the supplied per-arm fixture HTTP endpoint on 127.0.0.1 via Node fetch; no other network services.",
+    "isolation": "same-user-development-only-not-os-isolated",
+    "confirmation_qualified": false,
+    "interpretation": "DEVELOPMENT ONLY; same user; NOT OS ISOLATED; unqualified for confirmation. Native auto/prune compaction is enabled prospectively; hard L1 requests no host compaction. Existing telemetry distinguishes observed markers, linked completed summaries and continuation evidence. No forced boundary implies no information-loss estimate, not zero loss. The preseeded service restart is not model compaction."
+  },
+  "suite_cleanup_errors": [],
+  "known_reported_cost": 0,
+  "reported_cost_is_invoice": false,
+  "usage_monitors": {
+    "reportedTokens": 2000000,
+    "reportedCostPerSuite": null,
+    "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+  },
+  "global_configuration_unchanged": true,
+  "local_model_stopped": true,
+  "source_unchanged": true
+}

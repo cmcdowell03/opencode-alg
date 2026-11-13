@@ -1,0 +1,7 @@
+{
+  "candidate_commit": "7c60070ef0b30c5adba987a7fc6b88b315919226",
+  "exit_code": 1,
+  "scope": "full local package check",
+  "platform": "win32",
+  "runtime_commit": "79da198"
+}

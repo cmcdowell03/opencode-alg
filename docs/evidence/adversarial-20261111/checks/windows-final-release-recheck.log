@@ -1,0 +1,10 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\release-gate.test.ts:
+(pass) bounded release-gate evidence > semantic verification rejects coherent-looking contradictory or stale evidence [26042.44ms]
+
+ 1 pass
+ 24 filtered out
+ 0 fail
+ 23 expect() calls
+Ran 1 test across 1 file. [26.41s]

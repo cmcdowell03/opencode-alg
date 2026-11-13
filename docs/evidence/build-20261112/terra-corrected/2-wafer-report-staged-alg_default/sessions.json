@@ -1,0 +1,524 @@
+[
+  {
+    "id": "ses_e31af548bffe7o68oliaVAYLdy",
+    "slug": "quick-canyon",
+    "projectID": "5714877d466910c84f225571a97b3f3d11c28177",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project",
+    "path": "",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 29151,
+      "output": 1044,
+      "reasoning": 25,
+      "cache": {
+        "read": 33664,
+        "write": 0
+      }
+    },
+    "title": "Frozen benchmark wafer-report-staged alg_default",
+    "agent": "orchestrator",
+    "model": {
+      "id": "gpt-6.1-terra",
+      "providerID": "openai",
+      "variant": "default"
+    },
+    "version": "1.19.5",
+    "time": {
+      "created": 1794462755701,
+      "updated": 1794462911854
+    }
+  },
+  {
+    "id": "ses_e31af0eafffee4xq9xVj2WHZjo",
+    "slug": "witty-tiger",
+    "projectID": "5714877d466910c84f225571a97b3f3d11c28177",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project",
+    "path": "",
+    "parentID": "ses_e31af548bffe7o68oliaVAYLdy",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 11229,
+      "output": 760,
+      "reasoning": 0,
+      "cache": {
+        "read": 6784,
+        "write": 0
+      }
+    },
+    "title": "alg:prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb/explore/a1 (@explorer subagent)",
+    "agent": "explorer",
+    "model": {
+      "id": "gpt-6.1-terra",
+      "providerID": "openai",
+      "variant": "default"
+    },
+    "version": "1.19.5",
+    "time": {
+      "created": 1794462773584,
+      "updated": 1794462793159
+    },
+    "permission": [
+      {
+        "permission": "alg_templates",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_models",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_criteria",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_plan",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_run",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_resume",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_artifact",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_transfer",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_audit",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_historical",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_review",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_promote",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_rollback",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_investigation",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ]
+  },
+  {
+    "id": "ses_e31aec1f1ffeUXkm95DEA3yG5H",
+    "slug": "calm-cabin",
+    "projectID": "5714877d466910c84f225571a97b3f3d11c28177",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project",
+    "path": "",
+    "parentID": "ses_e31af548bffe7o68oliaVAYLdy",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 9129,
+      "output": 1128,
+      "reasoning": 23,
+      "cache": {
+        "read": 7040,
+        "write": 0
+      }
+    },
+    "title": "alg:prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb/research/a1 (@researcher subagent)",
+    "agent": "researcher",
+    "model": {
+      "id": "gpt-6.1-terra",
+      "providerID": "openai",
+      "variant": "default"
+    },
+    "version": "1.19.5",
+    "time": {
+      "created": 1794462793230,
+      "updated": 1794462819475
+    },
+    "permission": [
+      {
+        "permission": "alg_templates",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_models",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_criteria",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_plan",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_run",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_resume",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_artifact",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_transfer",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_audit",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_historical",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_review",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_promote",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_rollback",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_investigation",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ]
+  },
+  {
+    "id": "ses_e31ae5b1cffetYaI7wyrB9mdx0",
+    "slug": "lucky-squid",
+    "projectID": "5714877d466910c84f225571a97b3f3d11c28177",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project",
+    "path": "",
+    "parentID": "ses_e31af548bffe7o68oliaVAYLdy",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 15776,
+      "output": 1091,
+      "reasoning": 12,
+      "cache": {
+        "read": 49920,
+        "write": 0
+      }
+    },
+    "title": "alg:prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb/implement/a1 (@implementer subagent)",
+    "agent": "implementer",
+    "model": {
+      "id": "gpt-6.1-terra",
+      "providerID": "openai",
+      "variant": "default"
+    },
+    "version": "1.19.5",
+    "time": {
+      "created": 1794462819555,
+      "updated": 1794462862178
+    },
+    "permission": [
+      {
+        "permission": "alg_templates",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_models",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_criteria",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_plan",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_run",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_resume",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_artifact",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_transfer",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_audit",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_historical",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_review",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_promote",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_rollback",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_investigation",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ]
+  },
+  {
+    "id": "ses_e31adb456ffeOp1sGmmeXwwy1c",
+    "slug": "gentle-wolf",
+    "projectID": "5714877d466910c84f225571a97b3f3d11c28177",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-alg_default\\project",
+    "path": "",
+    "parentID": "ses_e31af548bffe7o68oliaVAYLdy",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 16104,
+      "output": 475,
+      "reasoning": 0,
+      "cache": {
+        "read": 19456,
+        "write": 0
+      }
+    },
+    "title": "alg:prepare-first-phase-synthetic-wa-20261112055248-6f8b5a07f7eb/check/a1 (@checker subagent)",
+    "agent": "checker",
+    "model": {
+      "id": "gpt-6.1-terra",
+      "providerID": "openai",
+      "variant": "default"
+    },
+    "version": "1.19.5",
+    "time": {
+      "created": 1794462862249,
+      "updated": 1794462877788
+    },
+    "permission": [
+      {
+        "permission": "alg_templates",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_models",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_criteria",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_plan",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_run",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_resume",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_artifact",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_transfer",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_audit",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_historical",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_review",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_promote",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_rollback",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_investigation",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ]
+  }
+]

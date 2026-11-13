@@ -1,0 +1,4 @@
+$ bun ./node_modules/typescript/bin/tsc -p tsconfig.json --noEmit
+tests/task-allowance-execution.test.ts(95,14): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RunState'.
+tests/task-allowance-execution.test.ts(97,14): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RunState'.
+tests/task-allowance-execution.test.ts(135,27): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RunState'.

@@ -1,0 +1,18 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\change-scope-evidence.test.ts:
+(pass) explicit excluded roots cannot be certified as an empty unchanged scope [4.98ms]
+(pass) empty directory trees are bounded independently of file count [702.51ms]
+(pass) a declared nested root cannot bypass an internal symlink ancestor [2.05ms]
+(pass) scope schema bounds and rejects unsafe, duplicate, overlapping, or out-of-root paths [2.29ms]
+(pass) content comparison reports allowed modifications, additions, and deletions [9.49ms]
+(pass) protected changes and changed-file count overages violate the scope [5.34ms]
+(pass) fixed exclusions are explicit and changes beneath them are invisible [7.79ms]
+(pass) a symlink at an excluded directory name is skipped without traversal [2.70ms]
+(pass) missing roots, symlink entries, and baseline tampering fail closed [5.60ms]
+(pass) file count, per-file bytes, and total bytes are bounded [252.91ms]
+
+ 10 pass
+ 0 fail
+ 41 expect() calls
+Ran 10 tests across 1 file. [1089.00ms]

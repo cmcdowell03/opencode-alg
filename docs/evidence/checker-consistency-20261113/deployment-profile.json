@@ -1,0 +1,79 @@
+{
+  "schema": "alg-deployment-staged-io-profile-v1",
+  "status": "PASS",
+  "bundle_source_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+  "manifest_sha256": "3db0ea5b156412055eb52afcbbccbfb4944745941dd962a0a466bb45756cb4fa",
+  "artifact_sha256": "3b284f42df0456c30281a5deecad2416a9e3db02ae44b67d865ae19ff8eea8db",
+  "rows": [
+    {
+      "lane": "before-fresh",
+      "seconds": 363.82088690000006,
+      "staged_inventory_seconds": [
+        254.19479649999997
+      ],
+      "status": "passed"
+    },
+    {
+      "lane": "before-noop",
+      "seconds": 18.13205469999998,
+      "staged_inventory_seconds": [],
+      "status": "passed"
+    },
+    {
+      "lane": "after-fresh",
+      "seconds": 190.5143016,
+      "staged_inventory_seconds": [
+        64.53480990000006
+      ],
+      "status": "passed"
+    },
+    {
+      "lane": "after-noop",
+      "seconds": 23.720272099999942,
+      "staged_inventory_seconds": [],
+      "status": "passed"
+    }
+  ],
+  "scope": "One sequential matched before/after real manager fresh+no-op pair on c232 v0.5.11 frozen bundle, same absolute config/install root, newly copied stage per lane. No cache flush/distribution/update comparison or real host/model calls; version probe stubbed. Measured snapshot predates final synchronous callback restoration, mutex renewal, Linux FIFO flag and test-only Buffer annotation. It is performance evidence for bounded staged I/O, NOT exact-final-source package qualification. Final package must measure current code. No no-op improvement claimed.",
+  "source_snapshot_sha256": "295701e5f7417ebfe6cd2e44e11ee20c93d33dfb58f43d5a6e5865d1c52c2b0e",
+  "comparison_receipt_sha256": "e196679f6518278bc96314efaa45a930329efacd49db192941ab3d8beb6b3534",
+  "measured_deployment_sources": [
+    {
+      "mode": "before",
+      "path": "scripts/manager-core.ts",
+      "original_sha256": "d3764461b43bd3d6dc916d831cb16c28dc7db171cb4fb4c0d629c17b5cc0984d",
+      "instrumented_sha256": "d3764461b43bd3d6dc916d831cb16c28dc7db171cb4fb4c0d629c17b5cc0984d"
+    },
+    {
+      "mode": "before",
+      "path": "scripts/deployment.ts",
+      "original_sha256": "a2003b83d7602cb38d6e90dc15641a5d4817f2b02bd8976ed91e6ec9a2ba063c",
+      "instrumented_sha256": "172deae173c6443bc4d0280408ab71f24aca85ea8c2f40e5b58f1c6cb96336c6"
+    },
+    {
+      "mode": "after",
+      "path": "scripts/manager-core.ts",
+      "original_sha256": "e50d8d35bf0ecb89add5a83fb22749817d2b0c2fe93c57c85756477354b8aba1",
+      "instrumented_sha256": "e50d8d35bf0ecb89add5a83fb22749817d2b0c2fe93c57c85756477354b8aba1"
+    },
+    {
+      "mode": "after",
+      "path": "scripts/deployment.ts",
+      "original_sha256": "2f9e024b93e6f221d0aab6d03fafbc237e1a932d5eb71fddbf82b58442d08ac9",
+      "instrumented_sha256": "5f833e9b14df162a0391be0eb0bd5aece76f57c925760891b19adb0fdaf09b62"
+    }
+  ],
+  "windows_focused": {
+    "inventory": "11 PASS, 2 platform skips, 53 assertions",
+    "deployment": "8 PASS, 1 platform skip, 68 assertions",
+    "typecheck": "PASS",
+    "broader_manager": "INTERRUPTED_NOT_PASS"
+  },
+  "linux_engineering": {
+    "status": "FAILED_SETUP_NOT_PASS",
+    "manager_launchers": "95 PASS, 6 skips (5 PowerShell-unavailable, 1 Windows-only), 1 FAIL",
+    "failure": "Scoped engineering archive omitted bun.lock; POSIX direct-installer frozen Bun argv fixture correctly refused installation",
+    "typecheck": "NOT_RUN in this lane"
+  },
+  "final_package_qualification": "Reported separately at exact f14bb1489773800c78dce62684d688aa94c32321 candidate; these profile timings do not qualify its final source"
+}

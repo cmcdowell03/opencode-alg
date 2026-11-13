@@ -1,0 +1,20 @@
+{
+  "pid": 1618860,
+  "startAt": 1794518777286,
+  "stopAt": 1794518870400,
+  "receipt": {
+    "root_pid": 1618860,
+    "cleanup_scope": "root-process",
+    "exit_observed": true,
+    "exit_code": null,
+    "exit_signal": "SIGTERM",
+    "termination_attempted": true,
+    "termination_result": "succeeded",
+    "tree_termination_attempted": false,
+    "tree_termination_result": "not-required",
+    "best_effort_kill_attempted": false,
+    "passed": true
+  },
+  "stdout": "opencode server listening on http://127.0.0.1:46079\n",
+  "stderr": ""
+}

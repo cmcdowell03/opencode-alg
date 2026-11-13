@@ -8,6 +8,7 @@ import { readSkillEvolutionDirectBounded } from "../skill-evolution-store.ts"
 import { acquireFilesystemMutex } from "../filesystem-mutex.ts"
 import { redactEvolutionText } from "../skill-evolution-redaction.ts"
 import { createHash } from "node:crypto"
+import { assertTaskAllowanceTransition } from "../task-allowance-schema.ts"
 import { CheckpointSchema, ContextReceiptSchema, Hash, MemoryNodeSchema, SessionId, type Checkpoint, type ContextReceipt, type MemoryNode, type StoredNode } from "./schemas.ts"
 import { DeliveryJournalSchema, DeliveryLatestSchema, DeliveryReceiptSchema, DeliveryRequestHeadSchema, type DeliveryReceipt } from "./delivery-schema.ts"
 
@@ -188,6 +189,7 @@ export class MemoryStore {
       const candidate = mutate(structuredClone(prior))
       const value = CheckpointSchema.parse({ ...candidate, owner, project: this.projectId,
         revision: revision + 1, parent: prior.revision ? sha256Json(prior) : null, updated_at: new Date().toISOString() })
+      assertTaskAllowanceTransition(prior, value)
       assertNoSecrets(JSON.stringify(value))
       for (const id of [...value.pins, ...value.skills.map((skill) => skill.id), ...(value.environment ? [value.environment] : [])]) this.node(id, owner)
       const headPath = this.path(["heads", `${sha256Json(owner)}.json`], true)

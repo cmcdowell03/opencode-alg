@@ -1,5 +1,7 @@
 import type { RunState } from "./types.ts"
 import { truncateUtf8, utf8Bytes } from "./limits.ts"
+import { sha256Json } from "./persistence.ts"
+import { TASK_DELIVERY_SCOPE_GUIDANCE } from "./task-contract.ts"
 
 export const MAX_COMPACTION_CONTEXT_BYTES = 16 * 1024
 export const MAX_COMPACTION_OUTPUT_BYTES = 32 * 1024
@@ -11,6 +13,19 @@ export const COMPACTION_FAILURE_COUNT = 3
 export const COMPACTION_FAILURE_CHARS = 200
 
 const INCOMPLETE_STATUSES = new Set(["planning", "running", "blocked"])
+
+function requestSourcePointer(run: RunState): string[] {
+  const source = run.task_contract?.request_snapshot
+  return source?.status === "captured" ? [
+    `- user_turn_text: ${source.text_sha256}; full source in alg_status(detail=full).task_contract.request_snapshot; current turn only, not complete conversation.`,
+  ] : []
+}
+
+function allowancePointer(run: RunState): string[] {
+  return run.task_allowance ? [
+    `- task_allowance: ${run.task_allowance.task_id}; alg_status.task_allowance_status has current remaining dispatches. Replanning, retries and ownership transfer retain this allowance; root/compaction provider usage is outside this limit.`,
+  ] : []
+}
 
 export function selectCompactionRun(runs: RunState[], sessionId: string): RunState | null {
   return [...runs]
@@ -40,7 +55,13 @@ const RUN_SUMMARY_DETAIL: readonly RunSummaryDetail[] = [
     nodes: COMPACTION_NODE_COUNT, failures: COMPACTION_FAILURE_COUNT, failureChars: COMPACTION_FAILURE_CHARS },
   { goalChars: 400, criteria: 8, criterionChars: 160, nodes: 32, failures: 1, failureChars: 120 },
   { goalChars: 160, criteria: 0, criterionChars: 0, nodes: 12, failures: 0, failureChars: 0 },
+  { goalChars: 160, criteria: 0, criterionChars: 0, nodes: 0, failures: 0, failureChars: 0 },
 ]
+
+function actionEvidencePointer(run: RunState): string[] {
+  return Object.values(run.nodes).some(node => node.attempts.some(attempt => attempt.action_evidence_ref || attempt.action_evidence_sources))
+    ? ["- Evidence gaps: inspect attempt records; do not replay work or remote submissions."] : []
+}
 
 /** What must survive any allowance comes first: which run, its state, and how to continue it. */
 function renderRunSummary(run: RunState, detail: RunSummaryDetail): string {
@@ -49,7 +70,15 @@ function renderRunSummary(run: RunState, detail: RunSummaryDetail): string {
     "",
     `- run_id: ${run.run_id}`,
     `- status: ${run.status} / phase: ${cap(run.phase, 80)}`,
+    ...(run.status === "blocked" && run.summary ? [`- blocker: ${cap(run.summary, 700)}`] : []),
+    ...(run.task_contract ? [`- task_contract: ${run.task_contract.contract_sha256}; ALG delivery phase=${run.task_contract.input.phase}; requirements=${run.task_contract.requirements_sha256}`,
+      "- Reuse the accepted task via alg_status; advisory findings cannot replace its criteria.",
+      `- ${TASK_DELIVERY_SCOPE_GUIDANCE}`] : ["- task_admission: legacy-unqualified"]),
+    ...requestSourcePointer(run),
+    ...allowancePointer(run),
+    ...(run.task_baseline ? [`- task_baseline: ${sha256Json(run.task_baseline)}; immutable before-first-child observations in alg_status(detail=full).task_baseline; do not recapture.`] : []),
     "- continue with alg_resume; alg_status and alg_artifact hold the authoritative details.",
+    ...actionEvidencePointer(run),
     `- path: .opencode/runs/${run.run_id}/`,
     "",
     "### Nodes",
@@ -60,6 +89,9 @@ function renderRunSummary(run: RunState, detail: RunSummaryDetail): string {
     const failures = node.last_failures.slice(0, detail.failures).map((failure) => cap(failure, detail.failureChars))
     lines.push(`- ${node.id} [${node.agent}] ${node.status} attempts=${node.current_attempt}` +
       (failures.length ? ` failures=${failures.join(" | ")}` : ""))
+    const latest = node.attempts.at(-1)
+    if (latest?.action_evidence_ref) lines.push(`  action_manifest=${latest.action_evidence_ref.sha256}; exact reference in alg_status attempt state`)
+    if (latest?.outcome === "evidence_unavailable") lines.push("  evidence_unavailable: inspect retained records; do not replay the producer")
   }
   if (definitions.length > detail.nodes) lines.push(`- (${definitions.length - detail.nodes} more nodes not shown)`)
   lines.push("", `- goal: ${cap(run.goal, detail.goalChars)}`, `- criteria_locked: ${run.criteria_locked}`)
@@ -102,7 +134,14 @@ export function formatCompactionContext(run: RunState, maximumBytes?: number): s
     `- status: ${run.status} / phase: ${cap(run.phase, 80)}`,
     `- goal: ${cap(run.goal, COMPACTION_GOAL_CHARS)}`,
     `- criteria_locked: ${run.criteria_locked}`,
+    ...(run.status === "blocked" && run.summary ? [`- blocker: ${cap(run.summary, 700)}`] : []),
+    ...(run.task_contract ? [`- task_contract: ${run.task_contract.contract_sha256}; ALG delivery phase=${run.task_contract.input.phase}; requirements=${run.task_contract.requirements_sha256}`,
+      `- ${TASK_DELIVERY_SCOPE_GUIDANCE}`] : ["- task_admission: legacy-unqualified"]),
+    ...requestSourcePointer(run),
+    ...allowancePointer(run),
     "- criteria:",
+    ...actionEvidencePointer(run),
+    ...(run.task_baseline ? [`- task_baseline: ${sha256Json(run.task_baseline)}; immutable before-first-child observations in alg_status(detail=full).task_baseline; do not recapture.`] : []),
     ...(run.criteria.length
       ? run.criteria.slice(0, COMPACTION_CRITERIA_COUNT).map((criterion) =>
           `  - ${cap(criterion, COMPACTION_CRITERION_CHARS)}`)
@@ -122,6 +161,9 @@ export function formatCompactionContext(run: RunState, maximumBytes?: number): s
       `- ${node.id} [${node.agent}] ${node.status} attempts=${node.current_attempt}` +
       (failures.length ? ` failures=${failures.join(" | ")}` : ""),
     )
+    const latest = node.attempts.at(-1)
+    if (latest?.action_evidence_ref) lines.push(`  action_manifest=${latest.action_evidence_ref.sha256}; exact reference in alg_status attempt state`)
+    if (latest?.outcome === "evidence_unavailable") lines.push("  evidence_unavailable: inspect retained records; do not replay the producer")
   }
   lines.push("", "Use alg_status / alg_resume / alg_artifact for authoritative details.")
   const context = lines.join("\n")

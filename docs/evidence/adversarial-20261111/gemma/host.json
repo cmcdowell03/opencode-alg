@@ -1,0 +1,86 @@
+{
+  "complete": true,
+  "failure": null,
+  "source_sha256": "d0614611c04d7f054dbbb0a8ac686fe3578bbca9bc8527946cff556734f37b5a",
+  "source_unchanged": true,
+  "model": "alg-local/gemma4",
+  "actual_calls": 34,
+  "known_reported_cost": 0,
+  "output_cap_observed": true,
+  "cleanup": true,
+  "auth_copy_removed": true,
+  "global_config_unchanged": true,
+  "report": {
+    "runId": "3aaeef46-f20e-488b-abe5-8ebd595ae35e",
+    "paired": {
+      "wins": 1,
+      "losses": 2,
+      "ties": 7
+    },
+    "schemaFailures": 4,
+    "transportFailures": 4
+  },
+  "processes": [
+    {
+      "name": "ollama",
+      "pid": 1516628,
+      "closed": true,
+      "exit_code": null
+    },
+    {
+      "name": "opencode",
+      "pid": 1542524,
+      "closed": true,
+      "exit_code": null
+    }
+  ],
+  "plan": {
+    "kind": "alg-paired-model-host",
+    "model": "alg-local/gemma4",
+    "calls_max": 40,
+    "output_tokens_per_call": 2048,
+    "wall_ms": 1800000,
+    "per_call_ms": 120000,
+    "consecutive_transport_failure_stop": 3,
+    "reported_cost_stop_usd": 5,
+    "source_sha256": "d0614611c04d7f054dbbb0a8ac686fe3578bbca9bc8527946cff556734f37b5a",
+    "started_at": "2026-11-12T00:18:37.865Z",
+    "harness_sha256": "b31152a2445aab3450434b718fec6882f0577f1ec87f50041fcb47bfcc5e45b7",
+    "evaluator_sha256": "35b5bee05958e5ab937093bcfe941445a53065a3093b30f88b9bcae8562cebea",
+    "cases_sha256": "32682c25869b8ec2540337af45f0e9a25bc628e820403664a67295931fac4966",
+    "scope": "Synthetic fixed evidence; fresh real OpenCode sessions, ALG prompt/parser/validation; no live factory query or nested execution"
+  },
+  "original_files": {
+    "report_sha256": "9ab4aafc6e4b3585570647ebf8def71dc26ac9ae22c488c156926d9cb8767000",
+    "events_sha256": "7dbf00b757e6da31b975abcf6f80fee35047be67332fe472332152de0a9b3262",
+    "manifest_sha256": "cda056ba957e0b7f5b4974ced6d6e139e71437c7f2eff3c33dc56480199050a7"
+  },
+  "local_model": {
+    "name": "gemma4",
+    "details": {
+      "parent_model": "",
+      "format": "gguf",
+      "family": "gemma4",
+      "families": [
+        "gemma4"
+      ],
+      "parameter_size": "8.0B",
+      "quantization_level": "Q4_K_M"
+    },
+    "capabilities": [
+      "completion",
+      "vision",
+      "audio",
+      "tools",
+      "thinking"
+    ]
+  },
+  "local_model_load": {
+    "elapsed_ms": 101871,
+    "done": true,
+    "done_reason": "load",
+    "prompt_eval_count": 0,
+    "eval_count": 0
+  },
+  "note": "A reported zero OpenCode cost is not proof of free inference or actual billed cost. Usage is the raw host telemetry; time includes transport and host overhead."
+}

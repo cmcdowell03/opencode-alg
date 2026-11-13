@@ -1,0 +1,48 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\plan-execution-guidance.test.ts:
+(pass) plan execution intent > compact live plan directs requested artifacts to bounded execution without executing during planning [142.20ms]
+(pass) plan execution intent > compact dry plan keeps live execution out of its next action [90.93ms]
+(pass) plan execution intent > full live plan directs requested artifacts to bounded execution without executing during planning [88.20ms]
+(pass) plan execution intent > full dry plan keeps live execution out of its next action [85.32ms]
+(pass) plan execution intent > explicit plan-only goals remain unexecuted and receive a stop-at-planning exception [98.20ms]
+(pass) opt-in coding-compact workflow > ships one matching, registered, schema-valid graph without changing the default [3.56ms]
+(pass) opt-in coding-compact workflow > preserves original criteria, bounds attempts and keeps the independent checker when a shell gate is supplied [94.46ms]
+(pass) opt-in coding-compact workflow > fresh checker feedback stays within the original four-attempt cap (repaired) [1520.84ms]
+(pass) opt-in coding-compact workflow > fresh checker feedback stays within the original four-attempt cap (rejected) [1970.12ms]
+(pass) optional plan preservation inputs > compact validates project-relative files and requests snapshots without adding criteria [123.16ms]
+(pass) optional plan preservation inputs > full validates project-relative files and requests snapshots without adding criteria [136.96ms]
+(pass) optional plan preservation inputs > omission is opt-in and custom graph augmentation retains dependency inputs on only the first implementer [209.02ms]
+(pass) optional plan preservation inputs > enforces count, path length, normalization, existence and regular files before creating a run [120.51ms]
+(pass) optional plan preservation inputs > rejects a symlink or junction escape even when the target is a regular file [11.85ms]
+(pass) optional plan preservation inputs > rejects graphs without implementers and preserves the revision argument boundary [116.80ms]
+
+tests\task-admission.test.ts:
+(pass) tool task contract admission > planning captures the actual host user turn rather than trusting a lossy planner summary [176.40ms]
+(pass) tool task contract admission > new plans cannot silently omit contracts or original criteria [5.45ms]
+(pass) tool task contract admission > impossible producer is rejected without effective-permission or child calls [6.18ms]
+(pass) tool task contract admission > known writes admit compact work and keep source and contract through status [160.74ms]
+(pass) tool task contract admission > host denial blocks before creation and changed permissions block before execution [134.65ms]
+(pass) tool task contract admission > criteria cannot be weakened by the legacy unlock switch [131.85ms]
+
+tests\task-contract.test.ts:
+(pass) declared task admission > host user request survives persistence, compaction and both child handoffs without trusting a shortened summary [1027.21ms]
+(pass) declared task admission > project deliverables reject research-only graphs and do not create durable work [0.98ms]
+(pass) declared task admission > routing uses declared work and uncertainty, not model/task-name keywords [0.28ms]
+(pass) declared task admission > missing checker, disconnected producer, execution and protected paths fail closed [0.24ms]
+(pass) declared task admission > typed paths cannot conflict or traverse; diagnostics do not echo unknown keys [0.80ms]
+(pass) declared task admission > evidence plans cover criteria in order and bind observations to declared inputs [0.45ms]
+(pass) declared task admission > capabilities recognize only uniform host decisions [0.39ms]
+(pass) declared task admission > original criteria and contract survive persistence and bounded context projection [96.06ms]
+(pass) declared task admission > removing an accepted contract cannot silently turn a new run into legacy [95.17ms]
+(pass) declared task admission > legacy persisted runs remain readable without invented admission [67.97ms]
+(pass) declared task admission > older directly bound contracts may retain an absent evidence plan [78.56ms]
+(pass) host-enforced task completion > passing model verdict cannot certify a missing declared file [526.25ms]
+(pass) host-enforced task completion > correct files pass; preparation contract is visible to workers and remains pinned [1019.29ms]
+(pass) host-enforced task completion > claimed commands do not satisfy the native command requirement [505.76ms]
+(pass) host-enforced task completion > accepted verification gate cannot be replaced at run time [138.11ms]
+
+ 36 pass
+ 0 fail
+ 232 expect() calls
+Ran 36 tests across 3 files. [9.21s]

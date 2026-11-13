@@ -1,0 +1,947 @@
+{
+  "schema": "opencode-v1-long-session-headless/v1",
+  "generatedAt": "2026-11-13T06:58:27.455Z",
+  "hostExecutable": "/home/algtest/tools/opencode/node_modules/opencode-ai/bin/opencode.exe",
+  "arms": [
+    "build",
+    "alg"
+  ],
+  "passed": true,
+  "results": [
+    {
+      "arm": "build",
+      "passed": true,
+      "qualificationScope": "mechanical host lifecycle only; no task accuracy, semantic retention, or ownership-transfer claim",
+      "ownershipTransferCoverage": false,
+      "handoffMechanics": "created a distinct OpenCode session; did not invoke alg_transfer or move an owned production run",
+      "evidence": {
+        "schema": "alg-live-obligations-v1",
+        "taskId": "headless-build-ed014198-8e5c-4f77-aea9-166d4ef7698a",
+        "cell": {
+          "handoff": true,
+          "compact": true
+        },
+        "checkpoints": [
+          {
+            "phase": "q0",
+            "sessionId": "ses_e2c4d5692ffe2ap0iynnFOpjaY",
+            "startedAt": 1794553063937,
+            "completedAt": 1794553068278,
+            "fromSequence": 0,
+            "nonce": "265feffe7b1f4ba3fb82542441848a46",
+            "status": "completed",
+            "grade": {
+              "passed": true,
+              "evidenceDigest": "fad2e95b39e3be894cda013d78f181bb9058fcb60d8c55cdc488af8912bf8fbe",
+              "checks": [
+                {
+                  "id": "synthetic-phase-artifact-written-by-host-tool",
+                  "category": "phase",
+                  "expectedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "observedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "exposed": true,
+                  "known": true,
+                  "passed": true
+                }
+              ]
+            },
+            "error": null,
+            "gradedSequence": 1,
+            "gradedNativeMarkers": []
+          },
+          {
+            "phase": "qh",
+            "sessionId": "ses_e2c4d44b7ffeSgziqMAR3DYxa6",
+            "startedAt": 1794553068480,
+            "completedAt": 1794553069464,
+            "fromSequence": 1,
+            "nonce": "c039390762a713642d46646cf1b150e8",
+            "status": "completed",
+            "grade": {
+              "passed": true,
+              "evidenceDigest": "f0d02eabe27eefcdc68c4268478fb0074535035a36e6510a4effc1f9b4d3716f",
+              "checks": [
+                {
+                  "id": "synthetic-phase-artifact-written-by-host-tool",
+                  "category": "phase",
+                  "expectedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "observedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "exposed": true,
+                  "known": true,
+                  "passed": true
+                }
+              ]
+            },
+            "error": null,
+            "gradedSequence": 2,
+            "gradedNativeMarkers": []
+          },
+          {
+            "phase": "qc",
+            "sessionId": "ses_e2c4d44b7ffeSgziqMAR3DYxa6",
+            "startedAt": 1794553070221,
+            "completedAt": 1794553071303,
+            "fromSequence": 2,
+            "nonce": "be81cfb0f4142f8038f70285c25c4b30",
+            "status": "completed",
+            "grade": {
+              "passed": true,
+              "evidenceDigest": "e2db8f8c5119922ac069762b4b5bdac2bdb668f005edb84c9d2fd85ea91e1357",
+              "checks": [
+                {
+                  "id": "synthetic-phase-artifact-written-by-host-tool",
+                  "category": "phase",
+                  "expectedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "observedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "exposed": true,
+                  "known": true,
+                  "passed": true
+                }
+              ]
+            },
+            "error": null,
+            "gradedSequence": 3,
+            "gradedNativeMarkers": []
+          },
+          {
+            "phase": "qr",
+            "sessionId": "ses_e2c4d44b7ffeSgziqMAR3DYxa6",
+            "startedAt": 1794553077385,
+            "completedAt": 1794553081868,
+            "fromSequence": 3,
+            "nonce": "b457d93f2b584bf79775c7b3b0e457ac",
+            "status": "completed",
+            "grade": {
+              "passed": true,
+              "evidenceDigest": "ece08f65c830271d1cdbfe72ef3f4b4e58d9575bf2b6c514e8ff8ebe6b71116f",
+              "checks": [
+                {
+                  "id": "synthetic-phase-artifact-written-by-host-tool",
+                  "category": "phase",
+                  "expectedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "observedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "exposed": true,
+                  "known": true,
+                  "passed": true
+                }
+              ]
+            },
+            "error": null,
+            "gradedSequence": 4,
+            "gradedNativeMarkers": []
+          }
+        ],
+        "retention": {
+          "schema": "build-benchmark-retention-boundaries/v1",
+          "boundaries": [
+            {
+              "boundaryId": "headless-build-ed014198-8e5c-4f77-aea9-166d4ef7698a:qh",
+              "taskId": "headless-build-ed014198-8e5c-4f77-aea9-166d4ef7698a",
+              "sessionId": "ses_e2c4d5692ffe2ap0iynnFOpjaY",
+              "requestId": "8daaec8fd3e10185b6207232a7829152",
+              "transition": "reassignment",
+              "compactionMode": null,
+              "frozenAt": 1794553068311,
+              "transitionAt": 1794553068311,
+              "requestAt": null,
+              "summaryAt": null,
+              "summarySucceeded": false,
+              "summaryEvidence": null,
+              "frozenSetDigest": "d553236ab1d04d8cff022ca0c6fa2f34abc27c4477f60e6efb69d853aa3ad28f",
+              "obligations": [],
+              "before": {
+                "observedAt": 1794553068278,
+                "complete": false,
+                "facts": []
+              },
+              "after": {
+                "observedAt": 1794553069505,
+                "complete": false,
+                "facts": []
+              },
+              "boundaryCensusComplete": true,
+              "useWindow": {
+                "startAt": 1794553068311,
+                "endAt": 1794553069505,
+                "complete": true
+              },
+              "pruneEvidence": {
+                "observable": false,
+                "receipt": null
+              },
+              "preBehavior": {
+                "startAt": 1794553068278,
+                "endAt": 1794553068311,
+                "complete": true,
+                "evidenceId": "headless-build-ed014198-8e5c-4f77-aea9-166d4ef7698a:q0:grade",
+                "digest": "fad2e95b39e3be894cda013d78f181bb9058fcb60d8c55cdc488af8912bf8fbe",
+                "events": []
+              },
+              "lineage": {
+                "eventId": "headless-build-ed014198-8e5c-4f77-aea9-166d4ef7698a:qh:handoff",
+                "sourceSessionId": "ses_e2c4d5692ffe2ap0iynnFOpjaY",
+                "recipientSessionId": "ses_e2c4d44b7ffeSgziqMAR3DYxa6",
+                "at": 1794553068311,
+                "evidenceId": "headless-build-ed014198-8e5c-4f77-aea9-166d4ef7698a:qh:transfer",
+                "digest": "72a1ec21ec0c4327278cd2dfccdf106060afaff1564009204d49415b1dc9f459"
+              }
+            },
+            {
+              "boundaryId": "headless-build-ed014198-8e5c-4f77-aea9-166d4ef7698a:qc",
+              "taskId": "headless-build-ed014198-8e5c-4f77-aea9-166d4ef7698a",
+              "sessionId": "ses_e2c4d44b7ffeSgziqMAR3DYxa6",
+              "requestId": "9561e87199097ab5a4a059c9207ee689",
+              "transition": "compaction",
+              "compactionMode": "requested",
+              "frozenAt": 1794553069554,
+              "transitionAt": 1794553069554,
+              "requestAt": 1794553069554,
+              "summaryAt": 1794553069814,
+              "summarySucceeded": true,
+              "summaryEvidence": {
+                "eventId": "msg_1d3b2c0830011u7NDLHeiaVu9L",
+                "requestId": "9561e87199097ab5a4a059c9207ee689",
+                "taskId": "headless-build-ed014198-8e5c-4f77-aea9-166d4ef7698a",
+                "sessionId": "ses_e2c4d44b7ffeSgziqMAR3DYxa6",
+                "observedAt": 1794553069814,
+                "digest": "e930cf3b3122706696b85df7cdba3c83fdf8efe0006b57d88a6fc8afd875442b",
+                "frozenSetDigest": "528b361854a07fd9ede38d909c5884612f0965e3e84f89136cfc2ae1839871d1"
+              },
+              "frozenSetDigest": "528b361854a07fd9ede38d909c5884612f0965e3e84f89136cfc2ae1839871d1",
+              "obligations": [],
+              "before": {
+                "observedAt": 1794553069464,
+                "complete": false,
+                "facts": []
+              },
+              "after": {
+                "observedAt": 1794553071375,
+                "complete": false,
+                "facts": []
+              },
+              "boundaryCensusComplete": true,
+              "useWindow": {
+                "startAt": 1794553069814,
+                "endAt": 1794553071375,
+                "complete": true
+              },
+              "pruneEvidence": {
+                "observable": false,
+                "receipt": null
+              },
+              "preBehavior": {
+                "startAt": 1794553069464,
+                "endAt": 1794553069554,
+                "complete": true,
+                "evidenceId": "headless-build-ed014198-8e5c-4f77-aea9-166d4ef7698a:qh:grade",
+                "digest": "f0d02eabe27eefcdc68c4268478fb0074535035a36e6510a4effc1f9b4d3716f",
+                "events": []
+              }
+            },
+            {
+              "boundaryId": "headless-build-ed014198-8e5c-4f77-aea9-166d4ef7698a:qr",
+              "taskId": "headless-build-ed014198-8e5c-4f77-aea9-166d4ef7698a",
+              "sessionId": "ses_e2c4d44b7ffeSgziqMAR3DYxa6",
+              "requestId": "384664bf4e4875e15961c8826fe4f53f",
+              "transition": "restart",
+              "compactionMode": null,
+              "frozenAt": 1794553071434,
+              "transitionAt": 1794553071434,
+              "requestAt": null,
+              "summaryAt": null,
+              "summarySucceeded": false,
+              "summaryEvidence": null,
+              "frozenSetDigest": "e265cfeb6b015fa7d51d21b985dada2880a66f81f4da3b8e135224efe22b9552",
+              "obligations": [],
+              "before": {
+                "observedAt": 1794553071303,
+                "complete": false,
+                "facts": []
+              },
+              "after": {
+                "observedAt": 1794553081912,
+                "complete": false,
+                "facts": []
+              },
+              "boundaryCensusComplete": true,
+              "useWindow": {
+                "startAt": 1794553071434,
+                "endAt": 1794553081912,
+                "complete": true
+              },
+              "pruneEvidence": {
+                "observable": false,
+                "receipt": null
+              },
+              "preBehavior": {
+                "startAt": 1794553071303,
+                "endAt": 1794553071434,
+                "complete": true,
+                "evidenceId": "headless-build-ed014198-8e5c-4f77-aea9-166d4ef7698a:qc:grade",
+                "digest": "e2db8f8c5119922ac069762b4b5bdac2bdb668f005edb84c9d2fd85ea91e1357",
+                "events": []
+              }
+            }
+          ],
+          "observations": []
+        },
+        "transitions": [
+          {
+            "phase": "qh",
+            "status": "completed",
+            "receipt": {
+              "sourceSessionId": "ses_e2c4d5692ffe2ap0iynnFOpjaY",
+              "recipientSessionId": "ses_e2c4d44b7ffeSgziqMAR3DYxa6",
+              "kind": "new_session_only",
+              "ownershipTransferCoverage": false,
+              "at": 1794553068449
+            }
+          },
+          {
+            "phase": "qc",
+            "status": "completed"
+          },
+          {
+            "phase": "qr",
+            "status": "completed",
+            "receipt": {
+              "sessionId": "ses_e2c4d44b7ffeSgziqMAR3DYxa6",
+              "hostRestarted": true,
+              "at": 1794553077349
+            }
+          }
+        ],
+        "passed": true,
+        "complete": true
+      },
+      "proofs": [
+        {
+          "sequence": 1,
+          "phase": "q0",
+          "nonce": "265feffe7b1f4ba3fb82542441848a46",
+          "sessionId": "ses_e2c4d5692ffe2ap0iynnFOpjaY",
+          "messageId": "msg_1d3b2b183001q7sSq5neVo62Vx",
+          "partId": "prt_1d3b2b428001tp6cZGS5hIf2tr",
+          "tool": "write",
+          "input": {
+            "filePath": "checkpoint-q0.json",
+            "content": "{\n  \"schema\": \"long-session-headless/v1\",\n  \"fact\": \"ALG_L2_SYNTHETIC_CHECKPOINT_FACT_V1\",\n  \"phase\": \"q0\",\n  \"nonce\": \"265feffe7b1f4ba3fb82542441848a46\"\n}\n"
+          },
+          "artifactSha256": "4df6719acda28150ad8f8ba29cda4b4e3d997cb266ffc48a20cfc3c04861ac00"
+        },
+        {
+          "sequence": 2,
+          "phase": "qh",
+          "nonce": "c039390762a713642d46646cf1b150e8",
+          "sessionId": "ses_e2c4d44b7ffeSgziqMAR3DYxa6",
+          "messageId": "msg_1d3b2bc19001PE7Yf2LMsmp6RH",
+          "partId": "prt_1d3b2bcb4001zM3ACy62yKikXg",
+          "tool": "write",
+          "input": {
+            "filePath": "checkpoint-qh.json",
+            "content": "{\n  \"schema\": \"long-session-headless/v1\",\n  \"fact\": \"ALG_L2_SYNTHETIC_CHECKPOINT_FACT_V1\",\n  \"phase\": \"qh\",\n  \"nonce\": \"c039390762a713642d46646cf1b150e8\"\n}\n"
+          },
+          "artifactSha256": "92cd08b93bca8d037d97224aa8388fd4290cd0565029577ae45343f356078cb4"
+        },
+        {
+          "sequence": 3,
+          "phase": "qc",
+          "nonce": "be81cfb0f4142f8038f70285c25c4b30",
+          "sessionId": "ses_e2c4d44b7ffeSgziqMAR3DYxa6",
+          "messageId": "msg_1d3b2c31a001QmFi4RKtRlaFwZ",
+          "partId": "prt_1d3b2c3d9001SDeX0aOdoq1L09",
+          "tool": "write",
+          "input": {
+            "filePath": "checkpoint-qc.json",
+            "content": "{\n  \"schema\": \"long-session-headless/v1\",\n  \"fact\": \"ALG_L2_SYNTHETIC_CHECKPOINT_FACT_V1\",\n  \"phase\": \"qc\",\n  \"nonce\": \"be81cfb0f4142f8038f70285c25c4b30\"\n}\n"
+          },
+          "artifactSha256": "a7aea702bc441c853c6e1aec9d73f9af08c9bbe32314947a889e43f2478b7526"
+        },
+        {
+          "sequence": 4,
+          "phase": "qr",
+          "nonce": "b457d93f2b584bf79775c7b3b0e457ac",
+          "sessionId": "ses_e2c4d44b7ffeSgziqMAR3DYxa6",
+          "messageId": "msg_1d3b2e589001uemwsBf1UW0NEc",
+          "partId": "prt_1d3b2eca9001RdlOK97I11QUou",
+          "tool": "write",
+          "input": {
+            "filePath": "checkpoint-qr.json",
+            "content": "{\n  \"schema\": \"long-session-headless/v1\",\n  \"fact\": \"ALG_L2_SYNTHETIC_CHECKPOINT_FACT_V1\",\n  \"phase\": \"qr\",\n  \"nonce\": \"b457d93f2b584bf79775c7b3b0e457ac\"\n}\n"
+          },
+          "artifactSha256": "7b54c04adeb5a3d2294a3d6c5b5e96597fbedd79949e8f1aa4bb2849cfb99567"
+        }
+      ],
+      "census": {
+        "complete": true,
+        "sessionIds": [
+          "ses_e2c4d44b7ffeSgziqMAR3DYxa6",
+          "ses_e2c4d5692ffe2ap0iynnFOpjaY"
+        ],
+        "messages": [
+          {
+            "sessionId": "ses_e2c4d5692ffe2ap0iynnFOpjaY",
+            "ids": [
+              "msg_1d3b2aa8c001nw0cW6CcDYDqij",
+              "msg_1d3b2b183001q7sSq5neVo62Vx",
+              "msg_1d3b2b48d001q5JqPm4gwcv2kf"
+            ]
+          },
+          {
+            "sessionId": "ses_e2c4d44b7ffeSgziqMAR3DYxa6",
+            "ids": [
+              "msg_1d3b2bbef001kwLe1tPE8xOlD0",
+              "msg_1d3b2bc19001PE7Yf2LMsmp6RH",
+              "msg_1d3b2bd1a001pODHXTADFzipVQ",
+              "msg_1d3b2c03d001JOxs5TwnTdy6HT",
+              "msg_1d3b2c0830011u7NDLHeiaVu9L",
+              "msg_1d3b2c2de0012bZ6Ry82QtgN7d",
+              "msg_1d3b2c31a001QmFi4RKtRlaFwZ",
+              "msg_1d3b2c42a001HpoPM31DHmZrc5",
+              "msg_1d3b2ded4001meuo65Ws3r0Mj8",
+              "msg_1d3b2e589001uemwsBf1UW0NEc",
+              "msg_1d3b2ed98001oAaT2f8CsmUfUP"
+            ]
+          }
+        ],
+        "failure": null
+      },
+      "provider": {
+        "requests": [
+          {
+            "kind": "tool_call",
+            "phase": "q0",
+            "tool": "write"
+          },
+          {
+            "kind": "completion",
+            "phase": "q0",
+            "tool": null
+          },
+          {
+            "kind": "tool_call",
+            "phase": "qh",
+            "tool": "write"
+          },
+          {
+            "kind": "completion",
+            "phase": "qh",
+            "tool": null
+          },
+          {
+            "kind": "summary",
+            "phase": null,
+            "tool": null
+          },
+          {
+            "kind": "tool_call",
+            "phase": "qc",
+            "tool": "write"
+          },
+          {
+            "kind": "completion",
+            "phase": "qc",
+            "tool": null
+          },
+          {
+            "kind": "tool_call",
+            "phase": "qr",
+            "tool": "write"
+          },
+          {
+            "kind": "completion",
+            "phase": "qr",
+            "tool": null
+          }
+        ],
+        "nonLoopbackOnly": true
+      },
+      "host": {
+        "restarts": 1,
+        "sameSessionAfterRestart": "ses_e2c4d44b7ffeSgziqMAR3DYxa6"
+      },
+      "summary": {
+        "id": "msg_1d3b2c0830011u7NDLHeiaVu9L",
+        "completedAt": 1794553069814,
+        "digest": "e930cf3b3122706696b85df7cdba3c83fdf8efe0006b57d88a6fc8afd875442b"
+      },
+      "hostVersion": "1.18.35",
+      "credentialsInherited": false,
+      "tempWorkspaceRetained": false,
+      "cleanup": {
+        "complete": true,
+        "errors": [],
+        "tempWorkspaceRetained": false
+      },
+      "globalConfigurationUnchanged": true
+    },
+    {
+      "arm": "alg",
+      "passed": true,
+      "qualificationScope": "mechanical host lifecycle only; no task accuracy, semantic retention, or ownership-transfer claim",
+      "ownershipTransferCoverage": false,
+      "handoffMechanics": "created a distinct OpenCode session; did not invoke alg_transfer or move an owned production run",
+      "evidence": {
+        "schema": "alg-live-obligations-v1",
+        "taskId": "headless-alg-c5da6420-7bcd-4b8c-af2b-b4b51d67dbd3",
+        "cell": {
+          "handoff": true,
+          "compact": true
+        },
+        "checkpoints": [
+          {
+            "phase": "q0",
+            "sessionId": "ses_e2c4cf108ffeIOkHJ42o736aSA",
+            "startedAt": 1794553089876,
+            "completedAt": 1794553093333,
+            "fromSequence": 0,
+            "nonce": "67c5b179a73889f7d6f7ba3496f4226a",
+            "status": "completed",
+            "grade": {
+              "passed": true,
+              "evidenceDigest": "3f9ce655186bbaad6e4ae139ef38abac5d7d078ceb7935304c3e447b38473824",
+              "checks": [
+                {
+                  "id": "synthetic-phase-artifact-written-by-host-tool",
+                  "category": "phase",
+                  "expectedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "observedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "exposed": true,
+                  "known": true,
+                  "passed": true
+                }
+              ]
+            },
+            "error": null,
+            "gradedSequence": 1,
+            "gradedNativeMarkers": []
+          },
+          {
+            "phase": "qh",
+            "sessionId": "ses_e2c4ce2dfffeFc1DRav7Pt60Ks",
+            "startedAt": 1794553093510,
+            "completedAt": 1794553094401,
+            "fromSequence": 1,
+            "nonce": "417964170ce62388621eb8d29df8f3ca",
+            "status": "completed",
+            "grade": {
+              "passed": true,
+              "evidenceDigest": "6f1c48e052f03ab89ff0a4ad864e7065a742d30ba8ab2f432e791ad7be8014ef",
+              "checks": [
+                {
+                  "id": "synthetic-phase-artifact-written-by-host-tool",
+                  "category": "phase",
+                  "expectedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "observedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "exposed": true,
+                  "known": true,
+                  "passed": true
+                }
+              ]
+            },
+            "error": null,
+            "gradedSequence": 2,
+            "gradedNativeMarkers": []
+          },
+          {
+            "phase": "qc",
+            "sessionId": "ses_e2c4ce2dfffeFc1DRav7Pt60Ks",
+            "startedAt": 1794553095140,
+            "completedAt": 1794553096049,
+            "fromSequence": 2,
+            "nonce": "dac7b123f2f1aa35311ce3284c15f92d",
+            "status": "completed",
+            "grade": {
+              "passed": true,
+              "evidenceDigest": "b5fcc357672eedeff66b2b02978b5f6bea42c48e8071de0f84b75b25a73b0c24",
+              "checks": [
+                {
+                  "id": "synthetic-phase-artifact-written-by-host-tool",
+                  "category": "phase",
+                  "expectedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "observedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "exposed": true,
+                  "known": true,
+                  "passed": true
+                }
+              ]
+            },
+            "error": null,
+            "gradedSequence": 3,
+            "gradedNativeMarkers": []
+          },
+          {
+            "phase": "qr",
+            "sessionId": "ses_e2c4ce2dfffeFc1DRav7Pt60Ks",
+            "startedAt": 1794553102726,
+            "completedAt": 1794553106926,
+            "fromSequence": 3,
+            "nonce": "770a87f57a162a2a37621e4b52ba6f1a",
+            "status": "completed",
+            "grade": {
+              "passed": true,
+              "evidenceDigest": "402aa96d87bd4ed48430a47b07dacd46eca0aae467924929b987abea61dd2dc1",
+              "checks": [
+                {
+                  "id": "synthetic-phase-artifact-written-by-host-tool",
+                  "category": "phase",
+                  "expectedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "observedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "exposed": true,
+                  "known": true,
+                  "passed": true
+                }
+              ]
+            },
+            "error": null,
+            "gradedSequence": 4,
+            "gradedNativeMarkers": []
+          }
+        ],
+        "retention": {
+          "schema": "build-benchmark-retention-boundaries/v1",
+          "boundaries": [
+            {
+              "boundaryId": "headless-alg-c5da6420-7bcd-4b8c-af2b-b4b51d67dbd3:qh",
+              "taskId": "headless-alg-c5da6420-7bcd-4b8c-af2b-b4b51d67dbd3",
+              "sessionId": "ses_e2c4cf108ffeIOkHJ42o736aSA",
+              "requestId": "2de3dae2d0849a5169b57a08f8d5a37a",
+              "transition": "reassignment",
+              "compactionMode": null,
+              "frozenAt": 1794553093365,
+              "transitionAt": 1794553093365,
+              "requestAt": null,
+              "summaryAt": null,
+              "summarySucceeded": false,
+              "summaryEvidence": null,
+              "frozenSetDigest": "9bd53963cd8de76662389f87d62396e756abfab23dda1df98f038ea8ade1a042",
+              "obligations": [],
+              "before": {
+                "observedAt": 1794553093333,
+                "complete": false,
+                "facts": []
+              },
+              "after": {
+                "observedAt": 1794553094432,
+                "complete": false,
+                "facts": []
+              },
+              "boundaryCensusComplete": true,
+              "useWindow": {
+                "startAt": 1794553093365,
+                "endAt": 1794553094432,
+                "complete": true
+              },
+              "pruneEvidence": {
+                "observable": false,
+                "receipt": null
+              },
+              "preBehavior": {
+                "startAt": 1794553093333,
+                "endAt": 1794553093365,
+                "complete": true,
+                "evidenceId": "headless-alg-c5da6420-7bcd-4b8c-af2b-b4b51d67dbd3:q0:grade",
+                "digest": "3f9ce655186bbaad6e4ae139ef38abac5d7d078ceb7935304c3e447b38473824",
+                "events": []
+              },
+              "lineage": {
+                "eventId": "headless-alg-c5da6420-7bcd-4b8c-af2b-b4b51d67dbd3:qh:handoff",
+                "sourceSessionId": "ses_e2c4cf108ffeIOkHJ42o736aSA",
+                "recipientSessionId": "ses_e2c4ce2dfffeFc1DRav7Pt60Ks",
+                "at": 1794553093365,
+                "evidenceId": "headless-alg-c5da6420-7bcd-4b8c-af2b-b4b51d67dbd3:qh:transfer",
+                "digest": "f12a0305fa2132d68905bee2443f67936904bcee6d71362eb5b5b2501a9c7b91"
+              }
+            },
+            {
+              "boundaryId": "headless-alg-c5da6420-7bcd-4b8c-af2b-b4b51d67dbd3:qc",
+              "taskId": "headless-alg-c5da6420-7bcd-4b8c-af2b-b4b51d67dbd3",
+              "sessionId": "ses_e2c4ce2dfffeFc1DRav7Pt60Ks",
+              "requestId": "8c75e0e087155738e4f290d91acc5bfd",
+              "transition": "compaction",
+              "compactionMode": "requested",
+              "frozenAt": 1794553094474,
+              "transitionAt": 1794553094474,
+              "requestAt": 1794553094474,
+              "summaryAt": 1794553094743,
+              "summarySucceeded": true,
+              "summaryEvidence": {
+                "eventId": "msg_1d3b321d8001KZNkBC0xGpjHtn",
+                "requestId": "8c75e0e087155738e4f290d91acc5bfd",
+                "taskId": "headless-alg-c5da6420-7bcd-4b8c-af2b-b4b51d67dbd3",
+                "sessionId": "ses_e2c4ce2dfffeFc1DRav7Pt60Ks",
+                "observedAt": 1794553094743,
+                "digest": "c5f913771cd0e1b27a53373516647f24e9e213ad325360203ee98ad986c6a609",
+                "frozenSetDigest": "0d1f74b595fbb9a1cb3fc55ffe6c0795902f23ed24eb474f0bf65cc3aeb1418d"
+              },
+              "frozenSetDigest": "0d1f74b595fbb9a1cb3fc55ffe6c0795902f23ed24eb474f0bf65cc3aeb1418d",
+              "obligations": [],
+              "before": {
+                "observedAt": 1794553094401,
+                "complete": false,
+                "facts": []
+              },
+              "after": {
+                "observedAt": 1794553096085,
+                "complete": false,
+                "facts": []
+              },
+              "boundaryCensusComplete": true,
+              "useWindow": {
+                "startAt": 1794553094743,
+                "endAt": 1794553096085,
+                "complete": true
+              },
+              "pruneEvidence": {
+                "observable": false,
+                "receipt": null
+              },
+              "preBehavior": {
+                "startAt": 1794553094401,
+                "endAt": 1794553094474,
+                "complete": true,
+                "evidenceId": "headless-alg-c5da6420-7bcd-4b8c-af2b-b4b51d67dbd3:qh:grade",
+                "digest": "6f1c48e052f03ab89ff0a4ad864e7065a742d30ba8ab2f432e791ad7be8014ef",
+                "events": []
+              }
+            },
+            {
+              "boundaryId": "headless-alg-c5da6420-7bcd-4b8c-af2b-b4b51d67dbd3:qr",
+              "taskId": "headless-alg-c5da6420-7bcd-4b8c-af2b-b4b51d67dbd3",
+              "sessionId": "ses_e2c4ce2dfffeFc1DRav7Pt60Ks",
+              "requestId": "092b7074a203065dd462d1ab26f99532",
+              "transition": "restart",
+              "compactionMode": null,
+              "frozenAt": 1794553096123,
+              "transitionAt": 1794553096123,
+              "requestAt": null,
+              "summaryAt": null,
+              "summarySucceeded": false,
+              "summaryEvidence": null,
+              "frozenSetDigest": "535d217aca940b5bff017182f3a44ba0830631b2186b3c2a3c868c87a5092c1f",
+              "obligations": [],
+              "before": {
+                "observedAt": 1794553096049,
+                "complete": false,
+                "facts": []
+              },
+              "after": {
+                "observedAt": 1794553106961,
+                "complete": false,
+                "facts": []
+              },
+              "boundaryCensusComplete": true,
+              "useWindow": {
+                "startAt": 1794553096123,
+                "endAt": 1794553106961,
+                "complete": true
+              },
+              "pruneEvidence": {
+                "observable": false,
+                "receipt": null
+              },
+              "preBehavior": {
+                "startAt": 1794553096049,
+                "endAt": 1794553096123,
+                "complete": true,
+                "evidenceId": "headless-alg-c5da6420-7bcd-4b8c-af2b-b4b51d67dbd3:qc:grade",
+                "digest": "b5fcc357672eedeff66b2b02978b5f6bea42c48e8071de0f84b75b25a73b0c24",
+                "events": []
+              }
+            }
+          ],
+          "observations": []
+        },
+        "transitions": [
+          {
+            "phase": "qh",
+            "status": "completed",
+            "receipt": {
+              "sourceSessionId": "ses_e2c4cf108ffeIOkHJ42o736aSA",
+              "recipientSessionId": "ses_e2c4ce2dfffeFc1DRav7Pt60Ks",
+              "kind": "new_session_only",
+              "ownershipTransferCoverage": false,
+              "at": 1794553093484
+            }
+          },
+          {
+            "phase": "qc",
+            "status": "completed"
+          },
+          {
+            "phase": "qr",
+            "status": "completed",
+            "receipt": {
+              "sessionId": "ses_e2c4ce2dfffeFc1DRav7Pt60Ks",
+              "hostRestarted": true,
+              "at": 1794553102694
+            }
+          }
+        ],
+        "passed": true,
+        "complete": true
+      },
+      "proofs": [
+        {
+          "sequence": 1,
+          "phase": "q0",
+          "nonce": "67c5b179a73889f7d6f7ba3496f4226a",
+          "sessionId": "ses_e2c4cf108ffeIOkHJ42o736aSA",
+          "messageId": "msg_1d3b31572001CnmQc0tlfduT42",
+          "partId": "prt_1d3b318ff001VOSCHIv6QBuQyo",
+          "tool": "write",
+          "input": {
+            "filePath": "checkpoint-q0.json",
+            "content": "{\n  \"schema\": \"long-session-headless/v1\",\n  \"fact\": \"ALG_L2_SYNTHETIC_CHECKPOINT_FACT_V1\",\n  \"phase\": \"q0\",\n  \"nonce\": \"67c5b179a73889f7d6f7ba3496f4226a\"\n}\n"
+          },
+          "artifactSha256": "2e8ce0f05f9bd69b8ce6084bf7af1b7591e91d9d7a9bc41306bab90beb065984"
+        },
+        {
+          "sequence": 2,
+          "phase": "qh",
+          "nonce": "417964170ce62388621eb8d29df8f3ca",
+          "sessionId": "ses_e2c4ce2dfffeFc1DRav7Pt60Ks",
+          "messageId": "msg_1d3b31dcc001gbPt2nqeeQoOiR",
+          "partId": "prt_1d3b31e7c001cWs8lcDgIoWdgY",
+          "tool": "write",
+          "input": {
+            "filePath": "checkpoint-qh.json",
+            "content": "{\n  \"schema\": \"long-session-headless/v1\",\n  \"fact\": \"ALG_L2_SYNTHETIC_CHECKPOINT_FACT_V1\",\n  \"phase\": \"qh\",\n  \"nonce\": \"417964170ce62388621eb8d29df8f3ca\"\n}\n"
+          },
+          "artifactSha256": "37097051c739008caa93765fa81e95197e700c708be8a1821eabe661056eea0a"
+        },
+        {
+          "sequence": 3,
+          "phase": "qc",
+          "nonce": "dac7b123f2f1aa35311ce3284c15f92d",
+          "sessionId": "ses_e2c4ce2dfffeFc1DRav7Pt60Ks",
+          "messageId": "msg_1d3b32436001PKkXzsQ48IVaMU",
+          "partId": "prt_1d3b324dd0019VW7sgeOA4jtj5",
+          "tool": "write",
+          "input": {
+            "filePath": "checkpoint-qc.json",
+            "content": "{\n  \"schema\": \"long-session-headless/v1\",\n  \"fact\": \"ALG_L2_SYNTHETIC_CHECKPOINT_FACT_V1\",\n  \"phase\": \"qc\",\n  \"nonce\": \"dac7b123f2f1aa35311ce3284c15f92d\"\n}\n"
+          },
+          "artifactSha256": "c2c0ef80aec7b7b7b5654b411bf156992238ff8087144840ed3e650660ff9f6d"
+        },
+        {
+          "sequence": 4,
+          "phase": "qr",
+          "nonce": "770a87f57a162a2a37621e4b52ba6f1a",
+          "sessionId": "ses_e2c4ce2dfffeFc1DRav7Pt60Ks",
+          "messageId": "msg_1d3b348530011bT8QXY7SBRVx1",
+          "partId": "prt_1d3b34cf1001Oi0oPy74CpVFNO",
+          "tool": "write",
+          "input": {
+            "filePath": "checkpoint-qr.json",
+            "content": "{\n  \"schema\": \"long-session-headless/v1\",\n  \"fact\": \"ALG_L2_SYNTHETIC_CHECKPOINT_FACT_V1\",\n  \"phase\": \"qr\",\n  \"nonce\": \"770a87f57a162a2a37621e4b52ba6f1a\"\n}\n"
+          },
+          "artifactSha256": "1690467949a554ba07d7a40661c896b55167fb880081632a4713674451729391"
+        }
+      ],
+      "census": {
+        "complete": true,
+        "sessionIds": [
+          "ses_e2c4ce2dfffeFc1DRav7Pt60Ks",
+          "ses_e2c4cf108ffeIOkHJ42o736aSA"
+        ],
+        "messages": [
+          {
+            "sessionId": "ses_e2c4cf108ffeIOkHJ42o736aSA",
+            "ids": [
+              "msg_1d3b30fde001i50VUCbiKZ3cAM",
+              "msg_1d3b31572001CnmQc0tlfduT42",
+              "msg_1d3b31970001tkrz6vIk0k2loo"
+            ]
+          },
+          {
+            "sessionId": "ses_e2c4ce2dfffeFc1DRav7Pt60Ks",
+            "ids": [
+              "msg_1d3b31daa0012k2JJwH5tUaB3H",
+              "msg_1d3b31dcc001gbPt2nqeeQoOiR",
+              "msg_1d3b31ec6001mLX3KLDxjHQr2b",
+              "msg_1d3b3217a001ZtnkH30fUxIl4Z",
+              "msg_1d3b321d8001KZNkBC0xGpjHtn",
+              "msg_1d3b3240d001nYSCLbmWHlFiu9",
+              "msg_1d3b32436001PKkXzsQ48IVaMU",
+              "msg_1d3b32531001nwV9hLcBxPTmhd",
+              "msg_1d3b341cf001UID5NJu4bx6cOe",
+              "msg_1d3b348530011bT8QXY7SBRVx1",
+              "msg_1d3b34d5c001FV5YG0umdPk5va"
+            ]
+          }
+        ],
+        "failure": null
+      },
+      "provider": {
+        "requests": [
+          {
+            "kind": "tool_call",
+            "phase": "q0",
+            "tool": "write"
+          },
+          {
+            "kind": "completion",
+            "phase": "q0",
+            "tool": null
+          },
+          {
+            "kind": "tool_call",
+            "phase": "qh",
+            "tool": "write"
+          },
+          {
+            "kind": "completion",
+            "phase": "qh",
+            "tool": null
+          },
+          {
+            "kind": "summary",
+            "phase": null,
+            "tool": null
+          },
+          {
+            "kind": "tool_call",
+            "phase": "qc",
+            "tool": "write"
+          },
+          {
+            "kind": "completion",
+            "phase": "qc",
+            "tool": null
+          },
+          {
+            "kind": "tool_call",
+            "phase": "qr",
+            "tool": "write"
+          },
+          {
+            "kind": "completion",
+            "phase": "qr",
+            "tool": null
+          }
+        ],
+        "nonLoopbackOnly": true
+      },
+      "host": {
+        "restarts": 1,
+        "sameSessionAfterRestart": "ses_e2c4ce2dfffeFc1DRav7Pt60Ks"
+      },
+      "summary": {
+        "id": "msg_1d3b321d8001KZNkBC0xGpjHtn",
+        "completedAt": 1794553094743,
+        "digest": "c5f913771cd0e1b27a53373516647f24e9e213ad325360203ee98ad986c6a609"
+      },
+      "hostVersion": "1.18.35",
+      "credentialsInherited": false,
+      "tempWorkspaceRetained": false,
+      "cleanup": {
+        "complete": true,
+        "errors": [],
+        "tempWorkspaceRetained": false
+      },
+      "globalConfigurationUnchanged": true
+    }
+  ],
+  "failure": null
+}

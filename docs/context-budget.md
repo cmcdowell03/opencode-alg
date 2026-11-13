@@ -119,3 +119,25 @@ but never gains permission to exceed the overall ceiling.
   next call.
 - Tested with synthetic hook fixtures at 32k, 100k, 200k and 1M windows. Not yet
   observed against a real provider's token counts.
+
+## Measuring long-task retention
+
+The package includes an offline analyzer for evaluator-collected observations:
+
+```sh
+bun scripts/build-benchmark-retention-cli.ts observations.json new-report.json
+```
+
+Use an `alg-retention-input-v1` document with `events`, `expectedFacts`, and
+optional `boundaries` conforming to the exported retention schemas. Preserve one
+logical task ID across session reassignment and restart. Compaction counts need
+linked completed summaries; rates need complete denominators. Boundary probes
+separately assess durable records, context, retrieval, use and independently
+scored behavior, including revoked procedures. Missing probes remain unknown.
+
+The analyzer reads bounded local JSON, records input/output hashes, and never
+overwrites a report. It cannot authenticate supplied observations or infer that
+compaction caused a failure. Actual long-session collection and behavioral
+qualification remain pending. Development cases and receipts stay in the
+[source benchmark documentation](https://github.com/cmcdowell03/opencode-alg/blob/codex/v1-workspace-investigation-deployment/docs/v1-build-benchmark.md)
+and are excluded from the deployment package.

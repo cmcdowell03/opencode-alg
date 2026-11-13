@@ -1,0 +1,113 @@
+{
+  "note": "Hashes of original private receipts. No credentials, raw model histories, or workspace paths are published.",
+  "artifacts": [
+    {
+      "name": "cw-c232-a2/preparation-result.json",
+      "bytes": 11001,
+      "sha256": "dcd538e2a53750f9a600be736b0865d5d2684605d3ed24ad86bbf59bf581b69c",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "cw-c232-a2/candidate-result.json",
+      "bytes": 11816,
+      "sha256": "a12c0620e061fb05701ad4cd050f53a0b55b1afb414922b2824ff3b9cd0e1bc4",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "cw-c232-a2/live-receipt-manifest.json",
+      "bytes": 1535,
+      "sha256": "615af7d182722a26b78f0cf619ab892178c1286a01d50dd90ac21b6164334aef",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "cw-c232-a2/acceptance/acceptance-summary.json",
+      "bytes": 1012,
+      "sha256": "4ac8c05b32b5ed780745ab2b36c512dfb012796aa648d747bd3954f7c4d17d4a",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "cw-c232-a2/acceptance/acceptance-progress.jsonl",
+      "bytes": 6628,
+      "sha256": "4808bdcf31e85208aed8a6fcbaa660ff8a9f7dd5122eed918b103a165eac83cb",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "cw-c232-a2/acceptance/candidate-relocation-inventory.private.log",
+      "bytes": 222,
+      "sha256": "bb6a9ce4998b0b374d8e660f96c190caf591f1e21a328ea8da5fb460390cd4db",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "cw-c232-fresh/acceptance/acceptance-summary.json",
+      "bytes": 975,
+      "sha256": "cfeac853ca63a06a4c98213cf715f688ab170fff115ca635eee6722b496a02b2",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "cw-c232-fresh/acceptance/acceptance-progress.jsonl",
+      "bytes": 4026,
+      "sha256": "7485f9ed0ea44ee8596143263d210806bc6ec140b428f73dcb0f754065707000",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "cw-c232-fresh/acceptance/candidate-relocation-inventory.private.log",
+      "bytes": 222,
+      "sha256": "bb6a9ce4998b0b374d8e660f96c190caf591f1e21a328ea8da5fb460390cd4db",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "linux-final/preparation-result.json",
+      "bytes": 8516,
+      "sha256": "aef40a04ac205a8b9c731a02d958064e30f634c5fd93257f7402613bc0e2b5dc",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "linux-final/candidate-result.json",
+      "bytes": 8920,
+      "sha256": "95c4a407295a3763c2ce185dd42ea8b34d39df5886e2eec155e9abff3b37d7ba",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "linux-final/live-receipt-manifest.json",
+      "bytes": 1517,
+      "sha256": "eb15b93743a842fae8c3520d24bc40b2cebe715aa104d67e1ae0a9091247181b",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "linux-final/acceptance/acceptance-summary.json",
+      "bytes": 990,
+      "sha256": "5837ce75dd49fe9115935839853fe1af85301171fb36423b6d519ef868edb198",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "linux-final/acceptance/acceptance-progress.jsonl",
+      "bytes": 1359,
+      "sha256": "36d07d5065de689957d055da40fe211ca59e17fbccdb16b334b46757aeb58a43",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "linux-final/acceptance/candidate-relocation-inventory.private.log",
+      "bytes": 222,
+      "sha256": "fc312667d9ae5c2cfc02a03c159ad2fee86ea8029b7dbf171df65c54b9b19579",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "linux-final/fresh-acceptance/acceptance-summary.json",
+      "bytes": 953,
+      "sha256": "27e4abe14d128fdc18eae5c482e2a5f790f9ed1a8cdf65edaa335dfe657c42f6",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "linux-final/fresh-acceptance/acceptance-progress.jsonl",
+      "bytes": 821,
+      "sha256": "698c44407144bcd29c9c3844e2068359c6c1133ff51084a4b163d6b68c8f1194",
+      "visibility": "private receipt; sanitized summary committed"
+    },
+    {
+      "name": "linux-final/fresh-acceptance/candidate-relocation-inventory.private.log",
+      "bytes": 222,
+      "sha256": "fc312667d9ae5c2cfc02a03c159ad2fee86ea8029b7dbf171df65c54b9b19579",
+      "visibility": "private receipt; sanitized summary committed"
+    }
+  ]
+}

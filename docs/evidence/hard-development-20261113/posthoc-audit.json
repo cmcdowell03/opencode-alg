@@ -1,0 +1,2504 @@
+{
+  "kind": "posthoc-development-diagnostic-not-confirmation",
+  "raw_source_commit": "7764686cc16b87a564d2735f63618c969d94ba29",
+  "auditor_commit": "b4b510788abd628bca2582790f3415c788ffc568",
+  "auditor_sources": [
+    {
+      "path": "scripts/hard-benchmark-cohort.ts",
+      "sha256": "f3015b803028d324399ae2cef3935dabbb97f485eb04d94511e012f083227be8"
+    },
+    {
+      "path": "scripts/hard-benchmark-fixtures.ts",
+      "sha256": "33bfd2fa15c0d5ae4132f1d2aadc27cfdf4fcd042b2f5c5b98745fc7ec5182dd"
+    }
+  ],
+  "issued": 12,
+  "completed": 11,
+  "stopped": 1,
+  "fatal": null,
+  "global_configuration_unchanged": true,
+  "source_unchanged": true,
+  "all_cleanup": true,
+  "frozen_inputs_unchanged": true,
+  "interpretation": "Original scores preserved. Posthoc artifact grades are diagnostic only; they do not repair incomplete telemetry, blocked ALG verification, missing public requirements, or establish superiority. Service cases are not regraded.",
+  "inputs": [
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\plan.json",
+      "sha256": "b611967e32a689986f20ab2687a2df36cd6f5b4e3614b531922c2639270b39ef"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\result.json",
+      "sha256": "f17d972cec160fd14ceaaffc8bb473eba01ca85d53d2f8accd076d3a9633a85e"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\hard-fixtures.json",
+      "sha256": "d0e930bcab9c399096aa19c5080f6e5494f0bf60230183b324501c44d624f7bb"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\hard-qualification.json",
+      "sha256": "b7e8c0c2c18189f44c64590ef510be9c1556366ee8347b0ae409ed263126cc98"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-alg\\result.json",
+      "sha256": "1b45c0936cd07481f0cd1d0ae188b5a0e80ad1ef96544446370d8279cf382c03"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-alg\\project\\README.md",
+      "sha256": "d93492eaee6b0cbd0b247493b48858ece5b201e83a126801388e7e451653aa6d"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-alg\\project\\catalog\\catalog.jsonl",
+      "sha256": "ab5f3ba5549a15dbaccff2f6c990923781ad516aff43b6576d360f369a7ee8e9"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-alg\\project\\evidence\\archive\\1252990e0f.json",
+      "sha256": "c53a7be12fb84f3c9e88de043b994be381efe2a9bc23f895d846992f6fa2f939"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-alg\\project\\evidence\\archive\\33fed62ee2.json",
+      "sha256": "b87919ee614260a7972588e82757f45e9a68a57f2632f76b4117241a1e016f83"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-alg\\project\\evidence\\archive\\6f70e021b6.json",
+      "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-alg\\project\\evidence\\archive\\ae4cc41eb9.json",
+      "sha256": "8dc1548f0b5a451094ab4bafeb8b3b15d9528438b8a0b3b2c7bc9c6292bcba5e"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-alg\\project\\evidence\\archive\\c082384c29.json",
+      "sha256": "f743b2b7fc06bfedf6e6ad42c622d291fc21a7486c07fc108e87a319312d3834"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-alg\\project\\evidence\\archive\\fbd691e2b7.json",
+      "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-alg\\project\\evidence\\incident.json",
+      "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-alg\\project\\evidence\\registry.json",
+      "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-alg\\project\\evidence\\report-contract.json",
+      "sha256": "aa0e9eb92b25c417e67df79f3400a02283c8ff4a3e93e05f974baaacee10b491"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-alg\\project\\report.json",
+      "sha256": "abdb91e9674c0e7cf327667c5b029a95ada8ee93f731fa717c3d44d4647f50be"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-bld\\result.json",
+      "sha256": "84c6ffdef8dec1dd4d65c51dd5f878b63d623a6813b15b14e21a5a1c4cb7b4bd"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-bld\\project\\README.md",
+      "sha256": "d93492eaee6b0cbd0b247493b48858ece5b201e83a126801388e7e451653aa6d"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-bld\\project\\catalog\\catalog.jsonl",
+      "sha256": "ab5f3ba5549a15dbaccff2f6c990923781ad516aff43b6576d360f369a7ee8e9"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-bld\\project\\evidence\\archive\\1252990e0f.json",
+      "sha256": "c53a7be12fb84f3c9e88de043b994be381efe2a9bc23f895d846992f6fa2f939"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-bld\\project\\evidence\\archive\\33fed62ee2.json",
+      "sha256": "b87919ee614260a7972588e82757f45e9a68a57f2632f76b4117241a1e016f83"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-bld\\project\\evidence\\archive\\6f70e021b6.json",
+      "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-bld\\project\\evidence\\archive\\ae4cc41eb9.json",
+      "sha256": "8dc1548f0b5a451094ab4bafeb8b3b15d9528438b8a0b3b2c7bc9c6292bcba5e"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-bld\\project\\evidence\\archive\\c082384c29.json",
+      "sha256": "f743b2b7fc06bfedf6e6ad42c622d291fc21a7486c07fc108e87a319312d3834"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-bld\\project\\evidence\\archive\\fbd691e2b7.json",
+      "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-bld\\project\\evidence\\incident.json",
+      "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-bld\\project\\evidence\\registry.json",
+      "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-bld\\project\\evidence\\report-contract.json",
+      "sha256": "aa0e9eb92b25c417e67df79f3400a02283c8ff4a3e93e05f974baaacee10b491"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\01-bld\\project\\report.json",
+      "sha256": "caa3491d089e32249e7281bd5326adb49bea90da965373a131326ddcc1806153"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-alg\\result.json",
+      "sha256": "793dc16879b3e2bab974ab615561e2eca31ac3d11f36ffe0d40d38bfe2ed5fda"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-alg\\project\\README.md",
+      "sha256": "d93492eaee6b0cbd0b247493b48858ece5b201e83a126801388e7e451653aa6d"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-alg\\project\\catalog\\catalog.jsonl",
+      "sha256": "ab5f3ba5549a15dbaccff2f6c990923781ad516aff43b6576d360f369a7ee8e9"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-alg\\project\\evidence\\archive\\1252990e0f.json",
+      "sha256": "25380a0ab4e641f601df5dadb5adbbaf1229330c1eab3ae32af650a86c441e3f"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-alg\\project\\evidence\\archive\\33fed62ee2.json",
+      "sha256": "5e411eaed9cbf11c4878cb5633c2a154acc340bad3cb18c466563cc47c342513"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-alg\\project\\evidence\\archive\\6f70e021b6.json",
+      "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-alg\\project\\evidence\\archive\\ae4cc41eb9.json",
+      "sha256": "89876123f3057e492a99805a66c2b333d732c04bfbc590b55529c88caa0ba689"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-alg\\project\\evidence\\archive\\c082384c29.json",
+      "sha256": "f743b2b7fc06bfedf6e6ad42c622d291fc21a7486c07fc108e87a319312d3834"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-alg\\project\\evidence\\archive\\fbd691e2b7.json",
+      "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-alg\\project\\evidence\\incident.json",
+      "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-alg\\project\\evidence\\registry.json",
+      "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-alg\\project\\evidence\\report-contract.json",
+      "sha256": "aa0e9eb92b25c417e67df79f3400a02283c8ff4a3e93e05f974baaacee10b491"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-alg\\project\\report.json",
+      "sha256": "ac3e289550a05fab95dd6c17a7270243f9547d3bde490e20782a039f22436f3a"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-bld\\result.json",
+      "sha256": "1ce27c8b1afb99d872c9720449715c43a815dd5074fb8deb76cd4e92342f5952"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-bld\\project\\README.md",
+      "sha256": "d93492eaee6b0cbd0b247493b48858ece5b201e83a126801388e7e451653aa6d"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-bld\\project\\catalog\\catalog.jsonl",
+      "sha256": "ab5f3ba5549a15dbaccff2f6c990923781ad516aff43b6576d360f369a7ee8e9"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-bld\\project\\evidence\\archive\\1252990e0f.json",
+      "sha256": "25380a0ab4e641f601df5dadb5adbbaf1229330c1eab3ae32af650a86c441e3f"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-bld\\project\\evidence\\archive\\33fed62ee2.json",
+      "sha256": "5e411eaed9cbf11c4878cb5633c2a154acc340bad3cb18c466563cc47c342513"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-bld\\project\\evidence\\archive\\6f70e021b6.json",
+      "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-bld\\project\\evidence\\archive\\ae4cc41eb9.json",
+      "sha256": "89876123f3057e492a99805a66c2b333d732c04bfbc590b55529c88caa0ba689"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-bld\\project\\evidence\\archive\\c082384c29.json",
+      "sha256": "f743b2b7fc06bfedf6e6ad42c622d291fc21a7486c07fc108e87a319312d3834"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-bld\\project\\evidence\\archive\\fbd691e2b7.json",
+      "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-bld\\project\\evidence\\incident.json",
+      "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-bld\\project\\evidence\\registry.json",
+      "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-bld\\project\\evidence\\report-contract.json",
+      "sha256": "aa0e9eb92b25c417e67df79f3400a02283c8ff4a3e93e05f974baaacee10b491"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\02-bld\\project\\report.json",
+      "sha256": "29effa0d958f2797c689e300bc4eec47e10f359c71a0776cf1a83982474681d0"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\03-alg\\result.json",
+      "sha256": "98bcea5fa638b3130ce968fddcb7b20ff18f7b7945dd108b1951d15750eb807c"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\03-alg\\project\\README.md",
+      "sha256": "677d4d9aaeefdc70a0acd6bf873048acb80c587db43344c34c4c4b5b8b429060"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\03-alg\\project\\report.json",
+      "sha256": "be796a0e670ee8fd645b5d7c2c8584c3f94045ed51d3568b2731339bf9bd8a97"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\03-alg\\project\\sources\\checkpoint.json",
+      "sha256": "10510f94f04815ce262a3748fcc9c8136a1b77fad8e168471816ccd19851cc47"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\03-alg\\project\\sources\\report-contract.json",
+      "sha256": "a693d5757b7c263b9a3082d9ca38a6236558d91d3965f75920f4dd42697d2779"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\03-bld\\result.json",
+      "sha256": "cf463f1a493648dfd22543739ad425128137777505ff65c6a448a8a575243fbf"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\03-bld\\project\\README.md",
+      "sha256": "677d4d9aaeefdc70a0acd6bf873048acb80c587db43344c34c4c4b5b8b429060"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\03-bld\\project\\report.json",
+      "sha256": "c1b31f47e71d3ec1f4670082a6a93061007f4f050317062e4bc8065296f66ce5"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\03-bld\\project\\sources\\checkpoint.json",
+      "sha256": "10510f94f04815ce262a3748fcc9c8136a1b77fad8e168471816ccd19851cc47"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\03-bld\\project\\sources\\report-contract.json",
+      "sha256": "a693d5757b7c263b9a3082d9ca38a6236558d91d3965f75920f4dd42697d2779"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\04-alg\\result.json",
+      "sha256": "d850cc68e363bdbb286d794614b3cd083d838058f1bd6a783de90b9a5e4d9a59"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\04-alg\\project\\README.md",
+      "sha256": "ddebf8bcebb33f0c5791d61a72dd05a24547d62214b2bf5447fc82376b051bdc"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\04-alg\\project\\sources\\request.json",
+      "sha256": "ac96e7fbfdc0d4479a6d656e6d7f85d3a9a644b4eaed5ff99fa608ec836feb1d"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\04-bld\\result.json",
+      "sha256": "be8ea6ad7c4568a30875f507d71f7928b514cba06fad0a3d5d0f7cb9124abbee"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\04-bld\\project\\README.md",
+      "sha256": "ddebf8bcebb33f0c5791d61a72dd05a24547d62214b2bf5447fc82376b051bdc"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\04-bld\\project\\sources\\request.json",
+      "sha256": "ac96e7fbfdc0d4479a6d656e6d7f85d3a9a644b4eaed5ff99fa608ec836feb1d"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-alg\\result.json",
+      "sha256": "7a15435cc82b73cc2e808057505165945deef78468b8fc5e8f225b2a0f371edc"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-alg\\project\\README.md",
+      "sha256": "88526f0729d4c099ec55bea7ccb1a0b28dac8914159216df45276d6611463375"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-alg\\project\\repos\\api\\src\\index.ts",
+      "sha256": "aef7244ae27cc9c4a043ca3b9ed59a70a5a720cb098f1cc2a2558baa2395d027"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-alg\\project\\repos\\client\\fixtures\\expected.json",
+      "sha256": "b324f31e58d301abb07bd85a4f096d10a84692fcc79be0e745c0dcd7abc826e2"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-alg\\project\\repos\\client\\src\\report.ts",
+      "sha256": "9cfaa0d059be550a82b3ed09bc6a6bee3112f5ec9e4a5e6627e32b5f09a43e05"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-alg\\project\\repos\\ingestion\\CONTRACT.md",
+      "sha256": "0ddd528482f7cad88f02348954d64c7e1b60bca82503d6f98771be36988f6485"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-alg\\project\\repos\\ingestion\\src\\export.json",
+      "sha256": "3a6a92801af7af6caec954868979800992dd5f5561c3ac392df3c1a8289dd4d6"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-alg\\project\\validation.json",
+      "sha256": "0615b3ad366c56bfae5995e0583176073dc3b8e7e6d08f7680aaec792f3c8eb5"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-bld\\result.json",
+      "sha256": "08009dfb485621cc694916c0ddcb999352b122abbadf04c4794f33ef98f3571f"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-bld\\project\\README.md",
+      "sha256": "88526f0729d4c099ec55bea7ccb1a0b28dac8914159216df45276d6611463375"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-bld\\project\\repos\\api\\src\\index.ts",
+      "sha256": "99e797ed3200e643184591a5167a80ad277c75f525eecb6f9a8f0b4212a250e5"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-bld\\project\\repos\\client\\fixtures\\expected.json",
+      "sha256": "b324f31e58d301abb07bd85a4f096d10a84692fcc79be0e745c0dcd7abc826e2"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-bld\\project\\repos\\client\\src\\report.ts",
+      "sha256": "9cfaa0d059be550a82b3ed09bc6a6bee3112f5ec9e4a5e6627e32b5f09a43e05"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-bld\\project\\repos\\ingestion\\CONTRACT.md",
+      "sha256": "0ddd528482f7cad88f02348954d64c7e1b60bca82503d6f98771be36988f6485"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-bld\\project\\repos\\ingestion\\src\\export.json",
+      "sha256": "3a6a92801af7af6caec954868979800992dd5f5561c3ac392df3c1a8289dd4d6"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\05-bld\\project\\validation.json",
+      "sha256": "0615b3ad366c56bfae5995e0583176073dc3b8e7e6d08f7680aaec792f3c8eb5"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-alg\\result.json",
+      "sha256": "32292ea07aaddcc8c24750c3b0b528195d306178a5261a0b80db05ab4b8d97fa"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-alg\\project\\README.md",
+      "sha256": "d93492eaee6b0cbd0b247493b48858ece5b201e83a126801388e7e451653aa6d"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-alg\\project\\catalog\\catalog.jsonl",
+      "sha256": "ab5f3ba5549a15dbaccff2f6c990923781ad516aff43b6576d360f369a7ee8e9"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-alg\\project\\evidence\\archive\\1252990e0f.json",
+      "sha256": "c53a7be12fb84f3c9e88de043b994be381efe2a9bc23f895d846992f6fa2f939"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-alg\\project\\evidence\\archive\\33fed62ee2.json",
+      "sha256": "b87919ee614260a7972588e82757f45e9a68a57f2632f76b4117241a1e016f83"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-alg\\project\\evidence\\archive\\6f70e021b6.json",
+      "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-alg\\project\\evidence\\archive\\ae4cc41eb9.json",
+      "sha256": "08d4450fbc90374c1add54fa287ca3ece9b5feb2c03c8d4b2eb982d4fe31a7d9"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-alg\\project\\evidence\\archive\\c082384c29.json",
+      "sha256": "f743b2b7fc06bfedf6e6ad42c622d291fc21a7486c07fc108e87a319312d3834"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-alg\\project\\evidence\\archive\\fbd691e2b7.json",
+      "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-alg\\project\\evidence\\incident.json",
+      "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-alg\\project\\evidence\\registry.json",
+      "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-alg\\project\\evidence\\report-contract.json",
+      "sha256": "aa0e9eb92b25c417e67df79f3400a02283c8ff4a3e93e05f974baaacee10b491"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-alg\\project\\report.json",
+      "sha256": "c41a02ab4edd9a76b8fdef9b5b854df8ffd0e70cf9546dec0fad135f8cd8a13e"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-bld\\result.json",
+      "sha256": "571abd70760514819e2aa4c2baaffa9f8b81f920f3510613ebd2760e1f195296"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-bld\\project\\README.md",
+      "sha256": "d93492eaee6b0cbd0b247493b48858ece5b201e83a126801388e7e451653aa6d"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-bld\\project\\catalog\\catalog.jsonl",
+      "sha256": "ab5f3ba5549a15dbaccff2f6c990923781ad516aff43b6576d360f369a7ee8e9"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-bld\\project\\evidence\\archive\\1252990e0f.json",
+      "sha256": "c53a7be12fb84f3c9e88de043b994be381efe2a9bc23f895d846992f6fa2f939"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-bld\\project\\evidence\\archive\\33fed62ee2.json",
+      "sha256": "b87919ee614260a7972588e82757f45e9a68a57f2632f76b4117241a1e016f83"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-bld\\project\\evidence\\archive\\6f70e021b6.json",
+      "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-bld\\project\\evidence\\archive\\ae4cc41eb9.json",
+      "sha256": "08d4450fbc90374c1add54fa287ca3ece9b5feb2c03c8d4b2eb982d4fe31a7d9"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-bld\\project\\evidence\\archive\\c082384c29.json",
+      "sha256": "f743b2b7fc06bfedf6e6ad42c622d291fc21a7486c07fc108e87a319312d3834"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-bld\\project\\evidence\\archive\\fbd691e2b7.json",
+      "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-bld\\project\\evidence\\incident.json",
+      "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-bld\\project\\evidence\\registry.json",
+      "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-bld\\project\\evidence\\report-contract.json",
+      "sha256": "aa0e9eb92b25c417e67df79f3400a02283c8ff4a3e93e05f974baaacee10b491"
+    },
+    {
+      "path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\hard-d50-terra\\06-bld\\project\\report.json",
+      "sha256": "f466b02b34da3f958a9b9a3a2b18dc88ac201c50bd9799e70af6d9c0b8850fdd"
+    }
+  ],
+  "rows": [
+    {
+      "arm": "01-alg",
+      "family": "factory-evidence",
+      "raw_result_sha256": "1b45c0936cd07481f0cd1d0ae188b5a0e80ad1ef96544446370d8279cf382c03",
+      "raw_status": "completed",
+      "raw_success": false,
+      "stop_reason": null,
+      "raw_failed_checks": [
+        "report:window"
+      ],
+      "posthoc_artifact_grade": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:README.md",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/incident.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/report-contract.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/registry.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/1252990e0f.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/33fed62ee2.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/ae4cc41eb9.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/c082384c29.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/6f70e021b6.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/fbd691e2b7.json",
+            "passed": true
+          },
+          {
+            "id": "protected:catalog/catalog.jsonl",
+            "passed": true
+          },
+          {
+            "id": "scope:allowed-write-paths",
+            "passed": true
+          },
+          {
+            "id": "report:schema",
+            "passed": true
+          },
+          {
+            "id": "report:window",
+            "passed": true
+          },
+          {
+            "id": "report:cleanings",
+            "passed": true
+          },
+          {
+            "id": "report:sources",
+            "passed": true
+          },
+          {
+            "id": "report:joinKey",
+            "passed": true
+          },
+          {
+            "id": "report:strata",
+            "passed": true
+          },
+          {
+            "id": "report:comparison",
+            "passed": true
+          },
+          {
+            "id": "report:conclusion",
+            "passed": true
+          },
+          {
+            "id": "report:nextMeasurement",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "checkCount": 21,
+          "failedChecks": 0,
+          "protectedFileCount": 11,
+          "changedFileCount": 1,
+          "contestantFileCount": 12
+        }
+      },
+      "posthoc_changes": "Equivalent UTC instants, strict UTC/calendar validation retained",
+      "runtime_diagnostic": {
+        "states": [
+          {
+            "run_id": "investigate-post-cleaning-chambe-20261113030736-c92e8b8b450e",
+            "status": "blocked",
+            "phase": "task-prerequisite",
+            "global_attempts": 3,
+            "nodes": [
+              {
+                "id": "check",
+                "status": "pending",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": []
+              },
+              {
+                "id": "explore",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d1ff723ffecP9Tp2GADrsDYf"
+                  }
+                ]
+              },
+              {
+                "id": "implement",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d1efd8bffedUTHg5ntGdTNqz"
+                  }
+                ]
+              },
+              {
+                "id": "research",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d1f8547ffeZ2ZX6iqMY73Zwm"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "coverage": "complete_inline",
+        "runDirectories": 1,
+        "archivedAttempts": 0
+      },
+      "wall_ms": 157582,
+      "turns": 20,
+      "reported_components": 413071,
+      "metering_complete": null,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "fact_loss_claim": "untested",
+      "cleanup": true,
+      "auth_removed": true,
+      "source_unchanged": true,
+      "census": {
+        "elapsedMs": 318,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 20,
+        "usage": {
+          "completeTurns": 20,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 100
+        },
+        "outcome": "quiescent"
+      },
+      "database_census": {
+        "qualified": true,
+        "databaseSessions": 4,
+        "databaseMessages": 24,
+        "observedSessions": 4,
+        "observedMessages": 24,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      }
+    },
+    {
+      "arm": "01-bld",
+      "family": "factory-evidence",
+      "raw_result_sha256": "84c6ffdef8dec1dd4d65c51dd5f878b63d623a6813b15b14e21a5a1c4cb7b4bd",
+      "raw_status": "completed",
+      "raw_success": false,
+      "stop_reason": null,
+      "raw_failed_checks": [
+        "report:window"
+      ],
+      "posthoc_artifact_grade": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:README.md",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/incident.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/report-contract.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/registry.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/1252990e0f.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/33fed62ee2.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/ae4cc41eb9.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/c082384c29.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/6f70e021b6.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/fbd691e2b7.json",
+            "passed": true
+          },
+          {
+            "id": "protected:catalog/catalog.jsonl",
+            "passed": true
+          },
+          {
+            "id": "scope:allowed-write-paths",
+            "passed": true
+          },
+          {
+            "id": "report:schema",
+            "passed": true
+          },
+          {
+            "id": "report:window",
+            "passed": true
+          },
+          {
+            "id": "report:cleanings",
+            "passed": true
+          },
+          {
+            "id": "report:sources",
+            "passed": true
+          },
+          {
+            "id": "report:joinKey",
+            "passed": true
+          },
+          {
+            "id": "report:strata",
+            "passed": true
+          },
+          {
+            "id": "report:comparison",
+            "passed": true
+          },
+          {
+            "id": "report:conclusion",
+            "passed": true
+          },
+          {
+            "id": "report:nextMeasurement",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "checkCount": 21,
+          "failedChecks": 0,
+          "protectedFileCount": 11,
+          "changedFileCount": 1,
+          "contestantFileCount": 12
+        }
+      },
+      "posthoc_changes": "Equivalent UTC instants, strict UTC/calendar validation retained",
+      "runtime_diagnostic": {
+        "states": [],
+        "coverage": "no_runtime_runs",
+        "runDirectories": 0
+      },
+      "wall_ms": 59715,
+      "turns": 11,
+      "reported_components": 257369,
+      "metering_complete": null,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "fact_loss_claim": "untested",
+      "cleanup": true,
+      "auth_removed": true,
+      "source_unchanged": true,
+      "census": {
+        "elapsedMs": 289,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 11,
+        "usage": {
+          "completeTurns": 11,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 55
+        },
+        "outcome": "quiescent"
+      },
+      "database_census": {
+        "qualified": true,
+        "databaseSessions": 1,
+        "databaseMessages": 12,
+        "observedSessions": 1,
+        "observedMessages": 12,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      }
+    },
+    {
+      "arm": "02-alg",
+      "family": "factory-evidence",
+      "raw_result_sha256": "793dc16879b3e2bab974ab615561e2eca31ac3d11f36ffe0d40d38bfe2ed5fda",
+      "raw_status": "stopped",
+      "raw_success": false,
+      "stop_reason": "telemetry_failure",
+      "raw_failed_checks": [
+        "report:window"
+      ],
+      "posthoc_artifact_grade": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:README.md",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/incident.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/report-contract.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/registry.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/1252990e0f.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/33fed62ee2.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/ae4cc41eb9.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/c082384c29.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/6f70e021b6.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/fbd691e2b7.json",
+            "passed": true
+          },
+          {
+            "id": "protected:catalog/catalog.jsonl",
+            "passed": true
+          },
+          {
+            "id": "scope:allowed-write-paths",
+            "passed": true
+          },
+          {
+            "id": "report:schema",
+            "passed": true
+          },
+          {
+            "id": "report:window",
+            "passed": true
+          },
+          {
+            "id": "report:cleanings",
+            "passed": true
+          },
+          {
+            "id": "report:sources",
+            "passed": true
+          },
+          {
+            "id": "report:joinKey",
+            "passed": true
+          },
+          {
+            "id": "report:strata",
+            "passed": true
+          },
+          {
+            "id": "report:comparison",
+            "passed": true
+          },
+          {
+            "id": "report:conclusion",
+            "passed": true
+          },
+          {
+            "id": "report:nextMeasurement",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "checkCount": 21,
+          "failedChecks": 0,
+          "protectedFileCount": 11,
+          "changedFileCount": 1,
+          "contestantFileCount": 12
+        }
+      },
+      "posthoc_changes": "Equivalent UTC instants, strict UTC/calendar validation retained",
+      "runtime_diagnostic": {
+        "states": [
+          {
+            "run_id": "investigate-post-cleaning-chambe-20261113031218-72c78225dd01",
+            "status": "blocked",
+            "phase": "blocked",
+            "global_attempts": 3,
+            "nodes": [
+              {
+                "id": "check",
+                "status": "pending",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": []
+              },
+              {
+                "id": "explore",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d1ba99cffeNrVzwbE2qgd5QU"
+                  }
+                ]
+              },
+              {
+                "id": "implement",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d1a5c89ffecIQUSGYMGoWUi4"
+                  }
+                ]
+              },
+              {
+                "id": "research",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d1b0e05ffeUQdWB1JGk1F2PX"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "coverage": "complete_inline",
+        "runDirectories": 1,
+        "archivedAttempts": 0
+      },
+      "wall_ms": 181448,
+      "turns": 18,
+      "reported_components": 404423,
+      "metering_complete": null,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": false,
+        "countsInterpretation": "observed_lower_bounds_only_missing_markers_are_not_zero"
+      },
+      "fact_loss_claim": "untested",
+      "cleanup": true,
+      "auth_removed": true,
+      "source_unchanged": true,
+      "census": {
+        "elapsedMs": 1511,
+        "rounds": 1,
+        "stableQuiescentRounds": 0,
+        "quiescent": false,
+        "activeSessions": null,
+        "pendingWork": null,
+        "inFlightRequests": null,
+        "assistantTurns": null,
+        "usage": {
+          "completeTurns": null,
+          "partialTurns": null,
+          "unknownTurns": null,
+          "reportedComponents": null
+        },
+        "outcome": "census_error",
+        "error": "final_census_grace_expired"
+      },
+      "database_census": {
+        "qualified": false,
+        "databaseSessions": 4,
+        "databaseMessages": 22,
+        "observedSessions": 4,
+        "observedMessages": 22,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      }
+    },
+    {
+      "arm": "02-bld",
+      "family": "factory-evidence",
+      "raw_result_sha256": "1ce27c8b1afb99d872c9720449715c43a815dd5074fb8deb76cd4e92342f5952",
+      "raw_status": "completed",
+      "raw_success": false,
+      "stop_reason": null,
+      "raw_failed_checks": [
+        "report:window"
+      ],
+      "posthoc_artifact_grade": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:README.md",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/incident.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/report-contract.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/registry.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/1252990e0f.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/33fed62ee2.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/ae4cc41eb9.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/c082384c29.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/6f70e021b6.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/fbd691e2b7.json",
+            "passed": true
+          },
+          {
+            "id": "protected:catalog/catalog.jsonl",
+            "passed": true
+          },
+          {
+            "id": "scope:allowed-write-paths",
+            "passed": true
+          },
+          {
+            "id": "report:schema",
+            "passed": true
+          },
+          {
+            "id": "report:window",
+            "passed": true
+          },
+          {
+            "id": "report:cleanings",
+            "passed": true
+          },
+          {
+            "id": "report:sources",
+            "passed": true
+          },
+          {
+            "id": "report:joinKey",
+            "passed": true
+          },
+          {
+            "id": "report:strata",
+            "passed": true
+          },
+          {
+            "id": "report:comparison",
+            "passed": true
+          },
+          {
+            "id": "report:conclusion",
+            "passed": true
+          },
+          {
+            "id": "report:nextMeasurement",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "checkCount": 21,
+          "failedChecks": 0,
+          "protectedFileCount": 11,
+          "changedFileCount": 1,
+          "contestantFileCount": 12
+        }
+      },
+      "posthoc_changes": "Equivalent UTC instants, strict UTC/calendar validation retained",
+      "runtime_diagnostic": {
+        "states": [],
+        "coverage": "no_runtime_runs",
+        "runDirectories": 0
+      },
+      "wall_ms": 51918,
+      "turns": 8,
+      "reported_components": 163146,
+      "metering_complete": null,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "fact_loss_claim": "untested",
+      "cleanup": true,
+      "auth_removed": true,
+      "source_unchanged": true,
+      "census": {
+        "elapsedMs": 284,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 8,
+        "usage": {
+          "completeTurns": 8,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 40
+        },
+        "outcome": "quiescent"
+      },
+      "database_census": {
+        "qualified": true,
+        "databaseSessions": 1,
+        "databaseMessages": 9,
+        "observedSessions": 1,
+        "observedMessages": 9,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      }
+    },
+    {
+      "arm": "03-alg",
+      "family": "partial-investigation-restart",
+      "raw_result_sha256": "98bcea5fa638b3130ce968fddcb7b20ff18f7b7945dd108b1951d15750eb807c",
+      "raw_status": "completed",
+      "raw_success": true,
+      "stop_reason": null,
+      "raw_failed_checks": [],
+      "posthoc_artifact_grade": null,
+      "posthoc_changes": "No rescore",
+      "runtime_diagnostic": {
+        "states": [
+          {
+            "run_id": "reconcile-fixture-checkpoint-job-20261113031552-9f9586d869c3",
+            "status": "done",
+            "phase": "done",
+            "global_attempts": 6,
+            "nodes": [
+              {
+                "id": "check",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "substantive_rejection",
+                    "failures": [
+                      "Current job statuses, revisions, and result digests cannot be verified from the retained host output. The evidence…[truncated]"
+                    ],
+                    "session_id": "ses_e2d16d641ffeABEgv0IqTi1BUS"
+                  },
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d155b36ffedNEF9uSmAYXTcg"
+                  }
+                ]
+              },
+              {
+                "id": "explore",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d185d74ffejy1cHkQZtSfaGB"
+                  }
+                ]
+              },
+              {
+                "id": "implement",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d17b60dffefGWIcCzxIMVw3m"
+                  },
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d169fbfffeXnxAXSJjM14MTe"
+                  }
+                ]
+              },
+              {
+                "id": "research",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d181f22ffeuk6QlDn8buUR8V"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "coverage": "complete_inline",
+        "runDirectories": 1,
+        "archivedAttempts": 0
+      },
+      "wall_ms": 274902,
+      "turns": 35,
+      "reported_components": 537852,
+      "metering_complete": null,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "fact_loss_claim": "untested",
+      "cleanup": true,
+      "auth_removed": true,
+      "source_unchanged": true,
+      "census": {
+        "elapsedMs": 327,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 35,
+        "usage": {
+          "completeTurns": 35,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 175
+        },
+        "outcome": "quiescent"
+      },
+      "database_census": {
+        "qualified": true,
+        "databaseSessions": 7,
+        "databaseMessages": 42,
+        "observedSessions": 7,
+        "observedMessages": 42,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      }
+    },
+    {
+      "arm": "03-bld",
+      "family": "partial-investigation-restart",
+      "raw_result_sha256": "cf463f1a493648dfd22543739ad425128137777505ff65c6a448a8a575243fbf",
+      "raw_status": "completed",
+      "raw_success": false,
+      "stop_reason": null,
+      "raw_failed_checks": [
+        "report:particle"
+      ],
+      "posthoc_artifact_grade": null,
+      "posthoc_changes": "No rescore",
+      "runtime_diagnostic": {
+        "states": [],
+        "coverage": "no_runtime_runs",
+        "runDirectories": 0
+      },
+      "wall_ms": 56597,
+      "turns": 11,
+      "reported_components": 93978,
+      "metering_complete": null,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "fact_loss_claim": "untested",
+      "cleanup": true,
+      "auth_removed": true,
+      "source_unchanged": true,
+      "census": {
+        "elapsedMs": 272,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 11,
+        "usage": {
+          "completeTurns": 11,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 55
+        },
+        "outcome": "quiescent"
+      },
+      "database_census": {
+        "qualified": true,
+        "databaseSessions": 1,
+        "databaseMessages": 12,
+        "observedSessions": 1,
+        "observedMessages": 12,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      }
+    },
+    {
+      "arm": "04-alg",
+      "family": "accepted-query-lost-ack",
+      "raw_result_sha256": "d850cc68e363bdbb286d794614b3cd083d838058f1bd6a783de90b9a5e4d9a59",
+      "raw_status": "completed",
+      "raw_success": false,
+      "stop_reason": null,
+      "raw_failed_checks": [
+        "service:one-accepted-job",
+        "service:recovered-by-lookup",
+        "service:query-scope",
+        "service:read-complete",
+        "report:schema",
+        "report:numerator",
+        "report:denominator",
+        "report:rate",
+        "report:affectedLots",
+        "report:jobId",
+        "report:sourceRevision",
+        "report:resultDigest"
+      ],
+      "posthoc_artifact_grade": null,
+      "posthoc_changes": "No rescore",
+      "runtime_diagnostic": {
+        "states": [
+          {
+            "run_id": "recover-bounded-particle-summary-20261113032154-1d3001c50694",
+            "status": "failed",
+            "phase": "failed",
+            "global_attempts": 6,
+            "nodes": [
+              {
+                "id": "check",
+                "status": "failed",
+                "last_failures": [
+                  "Criterion 1 was not completed: the claimed output states that no service request was made, so there was no submission, lookup, job check, complete result read, or calculated particle summary.",
+                  "Criterion 2 is unverified across the run: the selected host record contains no preservation observations, and the claim explicitly does not independently establish that process controls and supplied files were preserved across other actors or…[truncated]"
+                ],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "substantive_rejection",
+                    "failures": [
+                      "The claimed output states that no service request was made. The required submission, lookup after acknowledgement …[truncated]"
+                    ],
+                    "session_id": "ses_e2d124e05ffex31BiZeL7vkJyS"
+                  },
+                  {
+                    "outcome": "substantive_rejection",
+                    "failures": [
+                      "Criterion 1 was not completed: the claimed output states that no service request was made, so there was no submiss…[truncated]"
+                    ],
+                    "session_id": "ses_e2d11e233ffe9R2mpSy8nszcls"
+                  }
+                ]
+              },
+              {
+                "id": "explore_a",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d12e088ffeOrxm7PE6gYwi6v"
+                  }
+                ]
+              },
+              {
+                "id": "explore_b",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d12dfc4ffeS54pF0PFiTjr3y"
+                  }
+                ]
+              },
+              {
+                "id": "research",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d129e20ffe88U9dWWYGN8Z3j"
+                  },
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d123bfeffeLcaH1WXzhexJ80"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "coverage": "complete_inline",
+        "runDirectories": 1,
+        "archivedAttempts": 0
+      },
+      "wall_ms": 101364,
+      "turns": 19,
+      "reported_components": 213034,
+      "metering_complete": null,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "fact_loss_claim": "untested",
+      "cleanup": true,
+      "auth_removed": true,
+      "source_unchanged": true,
+      "census": {
+        "elapsedMs": 306,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 19,
+        "usage": {
+          "completeTurns": 19,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 95
+        },
+        "outcome": "quiescent"
+      },
+      "database_census": {
+        "qualified": true,
+        "databaseSessions": 7,
+        "databaseMessages": 26,
+        "observedSessions": 7,
+        "observedMessages": 26,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      }
+    },
+    {
+      "arm": "04-bld",
+      "family": "accepted-query-lost-ack",
+      "raw_result_sha256": "be8ea6ad7c4568a30875f507d71f7928b514cba06fad0a3d5d0f7cb9124abbee",
+      "raw_status": "completed",
+      "raw_success": false,
+      "stop_reason": null,
+      "raw_failed_checks": [
+        "report:schema",
+        "report:numerator",
+        "report:denominator",
+        "report:rate",
+        "report:affectedLots",
+        "report:jobId",
+        "report:sourceRevision",
+        "report:resultDigest"
+      ],
+      "posthoc_artifact_grade": null,
+      "posthoc_changes": "No rescore",
+      "runtime_diagnostic": {
+        "states": [],
+        "coverage": "no_runtime_runs",
+        "runDirectories": 0
+      },
+      "wall_ms": 34088,
+      "turns": 6,
+      "reported_components": 40060,
+      "metering_complete": null,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "fact_loss_claim": "untested",
+      "cleanup": true,
+      "auth_removed": true,
+      "source_unchanged": true,
+      "census": {
+        "elapsedMs": 273,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 6,
+        "usage": {
+          "completeTurns": 6,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 30
+        },
+        "outcome": "quiescent"
+      },
+      "database_census": {
+        "qualified": true,
+        "databaseSessions": 1,
+        "databaseMessages": 7,
+        "observedSessions": 1,
+        "observedMessages": 7,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      }
+    },
+    {
+      "arm": "05-alg",
+      "family": "multi-repo-compatibility",
+      "raw_result_sha256": "7a15435cc82b73cc2e808057505165945deef78468b8fc5e8f225b2a0f371edc",
+      "raw_status": "completed",
+      "raw_success": false,
+      "stop_reason": null,
+      "raw_failed_checks": [
+        "code:executed-all-cases",
+        "code:client-uses-api"
+      ],
+      "posthoc_artifact_grade": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:README.md",
+            "passed": true
+          },
+          {
+            "id": "protected:repos/ingestion/src/export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:repos/ingestion/CONTRACT.md",
+            "passed": true
+          },
+          {
+            "id": "protected:repos/client/fixtures/expected.json",
+            "passed": true
+          },
+          {
+            "id": "scope:allowed-write-paths",
+            "passed": true
+          },
+          {
+            "id": "validation:schema",
+            "passed": true
+          },
+          {
+            "id": "validation:api",
+            "passed": true
+          },
+          {
+            "id": "validation:client",
+            "passed": true
+          },
+          {
+            "id": "validation:eventCount",
+            "passed": true
+          },
+          {
+            "id": "code:bounded-sources",
+            "passed": true
+          },
+          {
+            "id": "code:executed-all-cases",
+            "passed": true
+          },
+          {
+            "id": "code:api-contract",
+            "passed": true
+          },
+          {
+            "id": "code:client-contract",
+            "passed": true
+          },
+          {
+            "id": "code:sibling-contract",
+            "passed": true
+          },
+          {
+            "id": "code:client-uses-api",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "checkCount": 15,
+          "failedChecks": 0,
+          "protectedFileCount": 4,
+          "changedFileCount": 3,
+          "contestantFileCount": 7
+        }
+      },
+      "posthoc_changes": "Missing code runner supplied after cohort; original checks unchanged",
+      "runtime_diagnostic": {
+        "states": [
+          {
+            "run_id": "repair-api-and-report-consumer-a-20261113032341-21585eb4b886",
+            "status": "blocked",
+            "phase": "task-prerequisite",
+            "global_attempts": 3,
+            "nodes": [
+              {
+                "id": "check",
+                "status": "pending",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": []
+              },
+              {
+                "id": "explore",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d113d06ffeZoBSr8ZBdnxwAP"
+                  }
+                ]
+              },
+              {
+                "id": "implement",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d106c64ffeh2oC0BMJV1y2M0"
+                  }
+                ]
+              },
+              {
+                "id": "research",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d10e302ffeTxLqBjmdn9FS8k"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "coverage": "complete_inline",
+        "runDirectories": 1,
+        "archivedAttempts": 0
+      },
+      "wall_ms": 148509,
+      "turns": 19,
+      "reported_components": 293438,
+      "metering_complete": null,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "fact_loss_claim": "untested",
+      "cleanup": true,
+      "auth_removed": true,
+      "source_unchanged": true,
+      "census": {
+        "elapsedMs": 293,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 19,
+        "usage": {
+          "completeTurns": 19,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 95
+        },
+        "outcome": "quiescent"
+      },
+      "database_census": {
+        "qualified": true,
+        "databaseSessions": 4,
+        "databaseMessages": 23,
+        "observedSessions": 4,
+        "observedMessages": 23,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      }
+    },
+    {
+      "arm": "05-bld",
+      "family": "multi-repo-compatibility",
+      "raw_result_sha256": "08009dfb485621cc694916c0ddcb999352b122abbadf04c4794f33ef98f3571f",
+      "raw_status": "completed",
+      "raw_success": false,
+      "stop_reason": null,
+      "raw_failed_checks": [
+        "code:executed-all-cases",
+        "code:client-uses-api"
+      ],
+      "posthoc_artifact_grade": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:README.md",
+            "passed": true
+          },
+          {
+            "id": "protected:repos/ingestion/src/export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:repos/ingestion/CONTRACT.md",
+            "passed": true
+          },
+          {
+            "id": "protected:repos/client/fixtures/expected.json",
+            "passed": true
+          },
+          {
+            "id": "scope:allowed-write-paths",
+            "passed": true
+          },
+          {
+            "id": "validation:schema",
+            "passed": true
+          },
+          {
+            "id": "validation:api",
+            "passed": true
+          },
+          {
+            "id": "validation:client",
+            "passed": true
+          },
+          {
+            "id": "validation:eventCount",
+            "passed": true
+          },
+          {
+            "id": "code:bounded-sources",
+            "passed": true
+          },
+          {
+            "id": "code:executed-all-cases",
+            "passed": true
+          },
+          {
+            "id": "code:api-contract",
+            "passed": true
+          },
+          {
+            "id": "code:client-contract",
+            "passed": true
+          },
+          {
+            "id": "code:sibling-contract",
+            "passed": true
+          },
+          {
+            "id": "code:client-uses-api",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "checkCount": 15,
+          "failedChecks": 0,
+          "protectedFileCount": 4,
+          "changedFileCount": 3,
+          "contestantFileCount": 7
+        }
+      },
+      "posthoc_changes": "Missing code runner supplied after cohort; original checks unchanged",
+      "runtime_diagnostic": {
+        "states": [],
+        "coverage": "no_runtime_runs",
+        "runDirectories": 0
+      },
+      "wall_ms": 61921,
+      "turns": 11,
+      "reported_components": 85193,
+      "metering_complete": null,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "fact_loss_claim": "untested",
+      "cleanup": true,
+      "auth_removed": true,
+      "source_unchanged": true,
+      "census": {
+        "elapsedMs": 272,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 11,
+        "usage": {
+          "completeTurns": 11,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 55
+        },
+        "outcome": "quiescent"
+      },
+      "database_census": {
+        "qualified": true,
+        "databaseSessions": 1,
+        "databaseMessages": 12,
+        "observedSessions": 1,
+        "observedMessages": 12,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      }
+    },
+    {
+      "arm": "06-alg",
+      "family": "factory-evidence",
+      "raw_result_sha256": "32292ea07aaddcc8c24750c3b0b528195d306178a5261a0b80db05ab4b8d97fa",
+      "raw_status": "completed",
+      "raw_success": false,
+      "stop_reason": null,
+      "raw_failed_checks": [
+        "report:window"
+      ],
+      "posthoc_artifact_grade": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:README.md",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/incident.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/report-contract.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/registry.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/1252990e0f.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/33fed62ee2.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/ae4cc41eb9.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/c082384c29.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/6f70e021b6.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/fbd691e2b7.json",
+            "passed": true
+          },
+          {
+            "id": "protected:catalog/catalog.jsonl",
+            "passed": true
+          },
+          {
+            "id": "scope:allowed-write-paths",
+            "passed": true
+          },
+          {
+            "id": "report:schema",
+            "passed": true
+          },
+          {
+            "id": "report:window",
+            "passed": true
+          },
+          {
+            "id": "report:cleanings",
+            "passed": true
+          },
+          {
+            "id": "report:sources",
+            "passed": true
+          },
+          {
+            "id": "report:joinKey",
+            "passed": true
+          },
+          {
+            "id": "report:strata",
+            "passed": true
+          },
+          {
+            "id": "report:comparison",
+            "passed": true
+          },
+          {
+            "id": "report:conclusion",
+            "passed": true
+          },
+          {
+            "id": "report:nextMeasurement",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "checkCount": 21,
+          "failedChecks": 0,
+          "protectedFileCount": 11,
+          "changedFileCount": 1,
+          "contestantFileCount": 12
+        }
+      },
+      "posthoc_changes": "Equivalent UTC instants, strict UTC/calendar validation retained",
+      "runtime_diagnostic": {
+        "states": [
+          {
+            "run_id": "investigate-post-cleaning-chambe-20261113032832-17e2fb45da77",
+            "status": "blocked",
+            "phase": "task-prerequisite",
+            "global_attempts": 3,
+            "nodes": [
+              {
+                "id": "check",
+                "status": "pending",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": []
+              },
+              {
+                "id": "explore",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d0cc992ffeJcR94y3WFMH66g"
+                  }
+                ]
+              },
+              {
+                "id": "implement",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d0b9ce5ffeEUQRqHea2jJ5Aw"
+                  }
+                ]
+              },
+              {
+                "id": "research",
+                "status": "done",
+                "last_failures": [],
+                "archived_attempts": 0,
+                "attempts": [
+                  {
+                    "outcome": "passed",
+                    "failures": [],
+                    "session_id": "ses_e2d0c51a4ffeq5pJ4hqrHe4pQC"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "coverage": "complete_inline",
+        "runDirectories": 1,
+        "archivedAttempts": 0
+      },
+      "wall_ms": 185958,
+      "turns": 25,
+      "reported_components": 551861,
+      "metering_complete": null,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "fact_loss_claim": "untested",
+      "cleanup": true,
+      "auth_removed": true,
+      "source_unchanged": true,
+      "census": {
+        "elapsedMs": 333,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 25,
+        "usage": {
+          "completeTurns": 25,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 125
+        },
+        "outcome": "quiescent"
+      },
+      "database_census": {
+        "qualified": true,
+        "databaseSessions": 4,
+        "databaseMessages": 29,
+        "observedSessions": 4,
+        "observedMessages": 29,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      }
+    },
+    {
+      "arm": "06-bld",
+      "family": "factory-evidence",
+      "raw_result_sha256": "571abd70760514819e2aa4c2baaffa9f8b81f920f3510613ebd2760e1f195296",
+      "raw_status": "completed",
+      "raw_success": false,
+      "stop_reason": null,
+      "raw_failed_checks": [
+        "report:window"
+      ],
+      "posthoc_artifact_grade": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:README.md",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/incident.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/report-contract.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/registry.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/1252990e0f.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/33fed62ee2.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/ae4cc41eb9.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/c082384c29.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/6f70e021b6.json",
+            "passed": true
+          },
+          {
+            "id": "protected:evidence/archive/fbd691e2b7.json",
+            "passed": true
+          },
+          {
+            "id": "protected:catalog/catalog.jsonl",
+            "passed": true
+          },
+          {
+            "id": "scope:allowed-write-paths",
+            "passed": true
+          },
+          {
+            "id": "report:schema",
+            "passed": true
+          },
+          {
+            "id": "report:window",
+            "passed": true
+          },
+          {
+            "id": "report:cleanings",
+            "passed": true
+          },
+          {
+            "id": "report:sources",
+            "passed": true
+          },
+          {
+            "id": "report:joinKey",
+            "passed": true
+          },
+          {
+            "id": "report:strata",
+            "passed": true
+          },
+          {
+            "id": "report:comparison",
+            "passed": true
+          },
+          {
+            "id": "report:conclusion",
+            "passed": true
+          },
+          {
+            "id": "report:nextMeasurement",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "checkCount": 21,
+          "failedChecks": 0,
+          "protectedFileCount": 11,
+          "changedFileCount": 1,
+          "contestantFileCount": 12
+        }
+      },
+      "posthoc_changes": "Equivalent UTC instants, strict UTC/calendar validation retained",
+      "runtime_diagnostic": {
+        "states": [],
+        "coverage": "no_runtime_runs",
+        "runDirectories": 0
+      },
+      "wall_ms": 68042,
+      "turns": 12,
+      "reported_components": 266306,
+      "metering_complete": null,
+      "compactions": {
+        "native": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "requested": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "unknown": {
+          "attempts": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 0,
+          "unverified": 0
+        },
+        "censusComplete": true,
+        "countsInterpretation": "complete_host_census"
+      },
+      "fact_loss_claim": "untested",
+      "cleanup": true,
+      "auth_removed": true,
+      "source_unchanged": true,
+      "census": {
+        "elapsedMs": 270,
+        "rounds": 2,
+        "stableQuiescentRounds": 2,
+        "quiescent": true,
+        "activeSessions": 0,
+        "pendingWork": false,
+        "inFlightRequests": null,
+        "assistantTurns": 12,
+        "usage": {
+          "completeTurns": 12,
+          "partialTurns": 0,
+          "unknownTurns": 0,
+          "reportedComponents": 60
+        },
+        "outcome": "quiescent"
+      },
+      "database_census": {
+        "qualified": true,
+        "databaseSessions": 1,
+        "databaseMessages": 13,
+        "observedSessions": 1,
+        "observedMessages": 13,
+        "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+      }
+    }
+  ]
+}

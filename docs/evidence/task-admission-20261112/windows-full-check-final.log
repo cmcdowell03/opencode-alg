@@ -1,0 +1,1617 @@
+$ bun run typecheck && bun run test && bun run smoke && bun run check:live && bun run check:excel-manifest && bun run check:duckdb-manifest && bun run check:optional-manifests
+$ bun ./node_modules/typescript/bin/tsc -p tsconfig.json --noEmit
+$ bun test --timeout 60000
+bun test v1.3.14 (0d9b296a)
+
+tests\adversarial-evaluation.test.ts:
+(pass) synthetic paired adversarial evaluation > rejects inconsistent strata, duplicate approval IDs and false duplicate oracle metadata [2.39ms]
+(pass) synthetic paired adversarial evaluation > all ten frozen cases have deterministic construction-based oracles and include null controls [0.50ms]
+(pass) synthetic paired adversarial evaluation > writes the immutable manifest before inference and runs fixed alternating 40-call pairs [307.84ms]
+(pass) synthetic paired adversarial evaluation > does not retry transport or schema failures and reports them separately [281.11ms]
+
+tests\architecture-audit.test.ts:
+(pass) architecture audit remediation > README, operations, and orchestrator help document the local-integrity authenticity boundary [0.93ms]
+(pass) architecture audit remediation > aggregate output and worker/checker prompt payloads have byte caps [8.96ms]
+(pass) architecture audit remediation > structured incomplete implementer output validates but never completes a node [433.56ms]
+(pass) architecture audit remediation > executor rejects a safe artifact path belonging to another run [409.17ms]
+(pass) architecture audit remediation > session sidecar is atomically bound before progress child-id persistence [187.41ms]
+(pass) architecture audit remediation > checker feedback targets only arbitrary direct dependencies [0.99ms]
+(pass) architecture audit remediation > tight global retry allocation is graph-ordered regardless failure completion speed [1908.10ms]
+(pass) architecture audit remediation > compaction selects exact-owner active state and formats deterministic bounded text [67.52ms]
+(pass) architecture audit remediation > compaction output join is capped across chunks [0.37ms]
+(pass) architecture audit remediation > listing, explicit access, and compaction never mutate another owner's runs [254.55ms]
+(pass) architecture audit remediation > disabled skill evolution does not inject SKILL.md into chat or compact context [9.59ms]
+(pass) architecture audit remediation > compacting hook logs run-store failures instead of swallowing them [7.61ms]
+(pass) architecture audit remediation > compacting hook includes skill-evolution pointers when the store has pending rows [438.05ms]
+(pass) architecture audit remediation > merged config role models are snapped once and project overrides win [140.50ms]
+(pass) architecture audit remediation > transfer tool validates target session fields before ownership mutation [220.77ms]
+(pass) architecture audit remediation > shell command timeout overrides preserve cwd across helper, run, and resume [1834.83ms]
+(pass) architecture audit remediation > criteria requires a planned run and lock=false replaces while leaving unlocked [425.01ms]
+(pass) architecture audit remediation > persistence preserves unknown non-owned artifact files [124.67ms]
+
+tests\build-benchmark-fixtures.test.ts:
+(pass) Build end-to-end benchmark fixtures and scorer > exports two compact, frozen fixtures with the same per-case prompts for every arm [0.13ms]
+(pass) Build end-to-end benchmark fixtures and scorer > held-out API and UI tests fail the original bug and pass a known-good repair [1436.43ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects a third source edit at src/helper.cjs even when every behavioral check passes [732.05ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects a third source edit at src/helper even when every behavioral check passes [664.14ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects a third source edit at helper.js even when every behavioral check passes [678.73ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects a third source edit at lib/nested/helper.ts even when every behavioral check passes [659.00ms]
+(pass) Build end-to-end benchmark fixtures and scorer > counts final source changes independently of tests, notes and runtime bookkeeping [605.16ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects empty preparation even with an otherwise correct report [19.72ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects whitespace preparation even with an otherwise correct report [6.15ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects old keyword-only preparation even with an otherwise correct report [17.51ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting reporting date [17.01ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting system source ID [17.96ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting manual source ID [20.06ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting system source path [9.67ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting manual source path [10.06ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting calculation plan [23.76ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting distinct-wafer calculation [9.83ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting rate calculation [22.71ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting conflict [18.45ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting conflicting wafer [45.94ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting system observation [25.45ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting manual observation [12.27ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting planned fields [19.31ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting explicit STOP [13.61ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting planned field numerator [20.45ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting planned field denominator [21.33ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting planned field rate [20.17ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting planned field window [24.47ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting planned field sources [14.19ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting planned field conflicts [21.97ms]
+(pass) Build end-to-end benchmark fixtures and scorer > rejects preparation omitting planned field limitations [17.75ms]
+(pass) Build end-to-end benchmark fixtures and scorer > accepts equivalent unlabelled field list preparation and UTC instant representations [23.17ms]
+(pass) Build end-to-end benchmark fixtures and scorer > accepts equivalent prose preparation and UTC instant representations [16.83ms]
+(pass) Build end-to-end benchmark fixtures and scorer > accepts equivalent table preparation and UTC instant representations [15.77ms]
+(pass) Build end-to-end benchmark fixtures and scorer > accepts equivalent JSON field plan preparation and UTC instant representations [23.97ms]
+(pass) Build end-to-end benchmark fixtures and scorer > staged report scorer checks preparation, arithmetic, provenance, uncertainty, skill rules, and protected inputs [55.85ms]
+(pass) Build end-to-end benchmark fixtures and scorer > detects a tampered protected wafer-data file in the code fixture [629.82ms]
+
+tests\build-benchmark-metrics.test.ts:
+(pass) reported session benchmark metrics > deduplicates polled message updates and aggregates usage, costs, models, sessions and calls [1.94ms]
+(pass) reported session benchmark metrics > keeps unknown usage and cost distinct from reported zeros and only counts fixed error signals [0.22ms]
+(pass) reported session benchmark metrics > counts only exact observed step and denial markers and handles absent model/token fields [0.11ms]
+(pass) reported session benchmark metrics > bounds attribution while retaining request, session, role, phase and model identities [0.08ms]
+
+tests\build-benchmark-protocol.test.ts:
+(pass) benchmark protocol integrity > issues matched default Build/ALG pairs and isolates targeted compatibility as opt-in [0.26ms]
+(pass) benchmark protocol integrity > binds a non-contiguous case subset to its own pairs and execution order [0.12ms]
+(pass) benchmark protocol integrity > keeps every upfront-issued arm in the denominator when the suite stops before its launch [0.10ms]
+(pass) benchmark protocol integrity > separates preflight rows from issued trials and closes a terminal stopped trial [0.06ms]
+(pass) benchmark protocol integrity > accepts the SDK boolean only with a new marker, linked terminal summary, and scored continuation [0.89ms]
+(pass) benchmark protocol integrity > rejects old markers, errored or unlinked summaries, rejected acceptance, and unscored continuation [0.29ms]
+(pass) benchmark protocol integrity > final census waits within its grace and retains missing or in-flight usage as unknown [0.81ms]
+(pass) benchmark protocol integrity > census needs two consecutive stable quiet samples with known absence of pending work [0.28ms]
+(pass) benchmark protocol integrity > artifact outcome is independent from workflow and operational eligibility [0.07ms]
+
+tests\build-benchmark-retention.test.ts:
+(pass) build benchmark retention measurement > aggregates compaction exposure across a stable task and session lineage [3.22ms]
+(pass) build benchmark retention measurement > distinguishes changed criteria, stale skills, pending loss, and retrieval after context omission [2.75ms]
+(pass) build benchmark retention measurement > does not infer avoidability from equivalent keys and treats incomplete census as unknown exposure [0.93ms]
+(pass) build benchmark retention measurement > a complete zero-exposure census is zero and incomplete telemetry never fills missing denominators [0.14ms]
+(pass) build benchmark retention measurement > an incomplete census publishes observed counts without rates or assumed failures [0.94ms]
+(pass) root and child turns follow session ancestry, and accepted compaction counts despite failed recovery [0.46ms]
+(pass) only repeated accepted work can be a classified duplicate and only cross-boundary repeats count after compaction [0.28ms]
+
+tests\build-benchmark-transport.test.ts:
+(pass) OpenCode async prompt transport > does not accept a summary as the answer or a length stop as successful completion [2.81ms]
+(pass) OpenCode async prompt transport > distinguishes a post-dispatch poll error and never resubmits [0.41ms]
+(pass) OpenCode async prompt transport > does not treat prompt_async acknowledgement as completion and reaches deadline with no new root [96.33ms]
+(pass) OpenCode async prompt transport > ignores old messages and tool-calls intermediary, then accepts reasoning-only completed assistant [13.52ms]
+(pass) OpenCode async prompt transport > returns matching model errors as terminal failures [0.27ms]
+(pass) OpenCode async prompt transport > stops after cancellation is observed during a poll [0.19ms]
+
+tests\checker-evidence.test.ts:
+(pass) selected checker evidence > compiled policy retains legacy reconciliation without changing the persisted investigation graph [58.89ms]
+(pass) selected checker evidence > executor delivers selected shell evidence alongside the claim and excludes unrelated wiring [905.44ms]
+(pass) selected checker evidence > byte/count limits and missing references remain explicit without partial JSON [49.99ms]
+(pass) selected checker evidence > aggregate bound omits complete values even when each fits individually [72.93ms]
+
+tests\context-budget.test.ts:
+(pass) context plan > an unknown window keeps every fixed limit [0.21ms]
+(pass) context plan > the allowance is a share of the window, whatever its size [0.23ms]
+(pass) context plan > it shrinks as the window fills without forcing the floor into a full window [0.22ms]
+(pass) context plan > the orientation floor cannot override a low configured cap on calls or compactions [0.22ms]
+(pass) context plan > parts split the allowance by weight, leave out what is off, and pass on what they do not use [0.12ms]
+(pass) context plan > required memory may borrow optional shares but never exceeds the hard ceiling [0.15ms]
+(pass) context plan > normal optional target is configurable and recovery reservation is physically bounded [0.07ms]
+(pass) how full the window is > uses the host's own measurement and estimates only what came after it [0.12ms]
+(pass) how full the window is > a compaction summary counts for its own size, not for the conversation it replaced [0.02ms]
+(pass) how full the window is > what ALG added last time is not counted against it again [0.15ms]
+(pass) how full the window is > headroom uses published bytes rather than section spending estimates [0.06ms]
+(pass) what each part does with its allowance > tiny and zero allowances never force summaries or truncation markers into context [77.19ms]
+(pass) what each part does with its allowance > the run summary keeps what identifies and continues the run at any size [72.90ms]
+(pass) what each part does with its allowance > a skill body is included whole when it fits the allowance and never clipped [30.35ms]
+(pass) what each part does with its allowance > the memory pack takes the planned allowance instead of its fixed fallback [0.43ms]
+(pass) the hooks size what they add from the model's window > run pointer survives 196k and 199k usage in both hooks, with and without assist [992.50ms]
+(pass) the hooks size what they add from the model's window > assist restores complete required instructions before reserving optional environment shares [405.83ms]
+(pass) the hooks size what they add from the model's window > an explicitly raised call ceiling admits required procedures without raising the compaction cap [327.20ms]
+(pass) the hooks size what they add from the model's window > a small window gets a short run summary, a large one gets the detail, and neither exceeds its share [215.17ms]
+(pass) the hooks size what they add from the model's window > a nearly full window leaves only the essentials, and compaction uses the same window [145.78ms]
+(pass) the hooks size what they add from the model's window > environment facts are added even when the model reports an output limit as large as its window [77.39ms]
+(pass) the hooks size what they add from the model's window > a session whose model window is unknown keeps the fixed limits [141.88ms]
+
+tests\context-delivery.test.ts:
+(pass) journal survives restart without rewriting checkpoints or legacy context receipts [221.34ms]
+(pass) out-of-order settlement cannot replace latest; evicted preparations cannot settle [406.98ms]
+(pass) stale, observational and corrupt records fail visibly [240.88ms]
+(pass) legacy delivery buckets are not scanned or changed by new writes [903.61ms]
+(pass) legacy receipts remain readable and immutable during journal migration [248.94ms]
+{"benchmark":"delivery-journal-5100","transactions":5100,"journal_bytes":16493,"early_median_ms":43.16619999999966,"early_p95_ms":51.94599999999991,"late_median_ms":43.17389999999432,"late_p95_ms":52.10949999996228}
+(pass) 5100 real delivery transactions stay bounded across restart [254064.30ms]
+(pass) publication prepares then emits and repeated hooks replace only owned context [352.39ms]
+(pass) preparation failure removes stale instructions without failing conversation [213.84ms]
+(pass) revocation, changed checkpoint and missing pack prevent procedure publication [679.89ms]
+(pass) identical foreign content cannot attest ALG publication [227.08ms]
+(pass) settlement failure is unknown and accounting reflects the fallback [237.88ms]
+(pass) UTF8 separators and fallback obey zero and tiny ceilings [149.59ms]
+
+tests\datascience-lifecycle.test.ts:
+(pass) Data Science receipt lifecycle > enable is receipt-owned, default-off MCP, and uninstall preserves the prepared interpreter [75.16ms]
+(pass) Data Science receipt lifecycle > rejects interpreters inside the package tree and preserves a corrupt receipt [52.00ms]
+
+tests\deployment.test.ts:
+(pass) offline deployment bundle > requires approval of the exact manifest identity and validates the package inventory [62.26ms]
+(pass) offline deployment bundle > rejects a bundle targeted at another platform [31.22ms]
+(pass) offline deployment bundle > rejects a bundle prepared for the other launcher [41.78ms]
+(pass) offline deployment bundle > deploy CLI requires offline mode and an explicit approved manifest hash [0.73ms]
+(pass) offline deployment bundle > prepares from a real commit and deploys a complete offline bundle transaction [28404.57ms]
+
+tests\duckdb-capability.test.ts:
+(pass) optional DuckDB capability > manifest binds the exact pinned runtime and every shipped capability input [4.84ms]
+(pass) optional DuckDB capability > versioned example hash is canonical and its JSON schema is recursively strict [0.87ms]
+(pass) optional DuckDB capability > managed lifecycle is opt-in, comment-preserving, reversible, and drift-safe [4.70ms]
+(pass) optional DuckDB capability > project lifecycle commands persist enable/doctor/disable/status/uninstall without running Python [369.59ms]
+(pass) optional DuckDB capability > source/package inventories include the exact capability, skill, docs, and manager without registry changes [231.07ms]
+(pass) optional DuckDB capability > skill encodes attachment, partition, PII, EXPLAIN, and no-data-movement guidance [0.55ms]
+
+tests\duckdb-lifecycle.test.ts:
+(pass) DuckDB receipt and config transaction > installs discovery skill and preserves private runtime on uninstall [203.85ms]
+(pass) DuckDB receipt and config transaction > same-shape command drift and changed skill are preserved [156.58ms]
+(pass) DuckDB receipt and config transaction > CAS preserves a concurrent unrelated config edit [80.31ms]
+(pass) DuckDB receipt and config transaction > mid-transaction failure rolls back config and never claims ownership [109.17ms]
+(pass) DuckDB receipt and config transaction > UTF-16 config retains encoding and comments [183.10ms]
+(pass) DuckDB receipt and config transaction > missing or corrupt live evidence never replaces the original failure [17.03ms]
+(pass) DuckDB receipt and config transaction > valid failed live evidence reports cleanup without success adjudication [124.55ms]
+
+tests\environment-memory-cli.test.ts:
+(pass) CLI input stays bounded even when a file is already larger than the limit [62.54ms]
+(pass) CLI prevalidates structure and reports durable progress on a later semantic failure [98.55ms]
+
+tests\environment-memory-engine.test.ts:
+(pass) environment memory SQLite core > commits, reopens, detects concurrent revisions, and deduplicates idempotency keys [79.23ms]
+(pass) environment memory SQLite core > rolls back dangling relations and enforces globally unique, irreversible identities [56.16ms]
+(pass) environment memory SQLite core > isolates owner scope, reevaluates expiry, and keeps principal-specific route evidence [51.97ms]
+(pass) environment memory SQLite core > bounds the LRU and traversal and reports capacity failures [49.51ms]
+(pass) environment memory SQLite core > snapshot plus contiguous journal replay reconstructs current state and rejects corruption [106.11ms]
+(pass) environment memory SQLite core > restored snapshots retain revoked identities and historical idempotency receipts [90.31ms]
+(pass) environment memory SQLite core > snapshot plus invalid replay rolls back together [87.52ms]
+(pass) environment memory SQLite core > snapshot restore rejects relations that broaden private endpoint visibility [93.61ms]
+(pass) environment memory SQLite core > entity scope changes cannot leave a dependent relation broader, so exported state always restores [101.87ms]
+(pass) environment memory SQLite core > direct reads recheck relation time, endpoints and return defensive copies [52.20ms]
+(pass) environment memory SQLite core > a future query horizon cannot activate observations that have not happened [45.17ms]
+(pass) environment memory SQLite core > bounded traversal handles parallel paths without exceeding its result schema [81.51ms]
+
+tests\environment-memory-integration.test.ts:
+(pass) environment memory Phase 3 integration > off mode opens without creating storage [1.20ms]
+(pass) environment memory Phase 3 integration > assist adds bounded scoped evidence through existing tools without changing the registry [144.00ms]
+(pass) environment memory Phase 3 integration > host project and session owner isolate project and private environment records [106.66ms]
+(pass) environment memory Phase 3 integration > observe mode reports diagnostics but adds no environment context [126.86ms]
+
+tests\environment-memory-lifecycle.test.ts:
+(pass) synthetic environment lifecycle > compaction-style snapshots, restarts, route change, expiry, revocation, and recovery retain scoped evidence [406.57ms]
+
+tests\environment-memory-replication.test.ts:
+(pass) environment memory object stores > local store bounds reads, publishes immutable objects, and compare-and-swaps manifests [92.00ms]
+(pass) environment memory object stores > local store takes over a crashed writer's expired manifest lock but waits on a live one [178.76ms]
+(pass) environment memory object stores > concurrent manifest writers in one process wait asynchronously instead of blocking each other [57.83ms]
+(pass) environment memory object stores > injected S3 transport uses conditional requests, bounded streaming, and no credentials [2.99ms]
+(pass) environment memory replication and recovery > replicates bounded contiguous batches and restores a snapshot plus later events [236.63ms]
+(pass) environment memory replication and recovery > failed uploads leave the old manifest authoritative; retry recovers; missing segments fail before restore [106.79ms]
+(pass) environment memory replication and recovery > a restore newer than the remote cursor republishes a checkpoint only over an ancestor head [333.10ms]
+(pass) environment memory replication and recovery > namespace mismatch and cancellation are typed without mutating a destination [169.47ms]
+
+tests\excel-capability.test.ts:
+(pass) Excel capability release identity > repository contains no generated Python caches, virtualenvs, or packed archives [44.54ms]
+(pass) Excel capability release identity > manifest binds every executable/lock input and exact sorted upstream tool contract [5.12ms]
+(pass) Excel capability release identity > source identity covers the strict capability asset set but not generated Python caches [100.74ms]
+(pass) Excel capability release identity > a local Git clone preserves LF-bound hashes and remains clean on every platform [955.35ms]
+
+tests\excel-template.test.ts:
+(pass) spreadsheet-diamond capability workflow > shipped JSON and built-in TypeScript definitions remain identical and schema-valid [0.94ms]
+(pass) spreadsheet-diamond capability workflow > uses only existing roles, leaves the gate optional, and injects it only on implementer [0.60ms]
+(pass) spreadsheet-diamond capability workflow > embeds the staged-copy, relative-path, no-overwrite, and no-recalculation safety contract [0.14ms]
+
+tests\execution-evidence.test.ts:
+(pass) host-origin child execution evidence > captures only host bash tool records and requires exact exit metadata [9.55ms]
+(pass) host-origin child execution evidence > reports retrieval timeout and omitted command rows explicitly [21.35ms]
+(pass) host-origin child execution evidence > sanitizes and bounds command output while marking truncation [1.56ms]
+(pass) host-origin child execution evidence > retains timeout when the SDK rejects immediately on abort [10.54ms]
+(pass) host-origin child execution evidence > retains aborted when the SDK rejects immediately on abort [0.20ms]
+(pass) host-origin child execution evidence > keeps ordinary SDK rejection distinct from cancellation [0.22ms]
+(pass) host-origin child execution evidence > checker evidence attaches only receipts from claimed or selected evidence inputs [1.24ms]
+(pass) host-origin child execution evidence > shell-gate helper retains exact host result, setup and containment flags [0.22ms]
+(pass) host-origin child execution evidence > receipt schema rejects oversized aggregates and foreign-session parts are counted [0.62ms]
+
+tests\executor.test.ts:
+(pass) executor semantics > global attempts are enforced and zero is rejected by graph validation [793.13ms]
+(pass) executor semantics > terminal failed dependencies deterministically skip descendants [479.92ms]
+(pass) executor semantics > explicit checker metadata routes generic feedback without resetting history [1877.04ms]
+(pass) executor semantics > schema-valid checker pass with a failed shell gate retries only the checker [1222.40ms]
+(pass) executor semantics > exactly 100 checker failures plus a shell failure persist within the cap and retry only the checker [1492.18ms]
+(pass) executor semantics > maximum valid graph and failure history reaches a bounded final save and reload [25724.06ms]
+(pass) executor semantics > maximum executor error is prefixed within the persisted field cap [363.64ms]
+
+tests\experience.test.ts:
+(pass) explicit experience foundation > inspection has no initialization side effects [2.98ms]
+(pass) explicit experience foundation > dedupe, integrity, exact project binding and deterministic catalog [86.78ms]
+(pass) explicit experience foundation > redacts synthetic credentials and rejects absent references [24.54ms]
+(pass) explicit experience foundation > incident transitions are revision-fenced and evidence-gated [1104.43ms]
+(pass) explicit experience foundation > paired evaluation checks application provenance and leakage without auto-promotion [540.97ms]
+(pass) explicit experience foundation > raw identity fields fail before initialization and archive copies remain deduplicated [76.52ms]
+(pass) explicit experience foundation > sealed historical import copies commitments not transcripts and intake stays explicit [154.15ms]
+
+tests\filesystem-mutex.test.ts:
+(pass) restart-safe short filesystem mutexes > automatic heartbeat protects a long critical section beyond the short lease [4218.83ms]
+(pass) restart-safe short filesystem mutexes > a contended waiter does not starve the current holder's release claim [49.39ms]
+(pass) restart-safe short filesystem mutexes > execution guard, mirror, and model locks recover only expired proven-dead owners [93.16ms]
+(pass) restart-safe short filesystem mutexes > expired live owners and malformed or remote owners fail closed [32.14ms]
+(pass) restart-safe short filesystem mutexes > renew CAS cannot overwrite a replacement installed at the commit gap [23.11ms]
+(pass) restart-safe short filesystem mutexes > release CAS cannot delete a replacement installed at the remove gap [32.92ms]
+(pass) long workspace paths preserve bounded mutation owner labels through acquire, renew and takeover [25.95ms]
+
+tests\gate-recovery.test.ts:
+(pass) gate setup recovery > runtime setup failure reserves no model or shell attempt and releases preparation [98.99ms]
+(pass) gate setup recovery > native shell gate receipts reach the checker on this platform [3799.27ms]
+(pass) gate setup recovery > setup failure stops retries; persisted explicit resume only reruns gate before checker [1493.40ms]
+(pass) gate setup recovery > repeated setup failures retain the original native receipt for the fresh checker at attempt 3 [2124.88ms]
+(pass) gate setup recovery > repeated setup failures retain the original native receipt for the fresh checker at attempt 6 [4993.34ms]
+(pass) gate setup recovery > changed file refuses reuse before another attempt is reserved [603.59ms]
+(pass) gate setup recovery > changed gate refuses reuse before another attempt is reserved [546.39ms]
+(pass) gate setup recovery > changed output refuses reuse before another attempt is reserved [519.61ms]
+(pass) gate setup recovery > interrupted running recovery retains its original output source across persisted resume [1610.64ms]
+(pass) gate setup recovery > interrupted gate call persists recovery intent before launch and never retries the implementer [1806.28ms]
+(pass) gate setup recovery > declared-file drift after admission blocks the invocation and preserves gate-only intent [1850.47ms]
+(pass) gate setup recovery > changed preservation paths refuse recovery without replacing the original basis [917.40ms]
+(pass) gate setup recovery > real test failure still retries implementation [1205.84ms]
+
+tests\graph-revision.test.ts:
+(pass) bounded V1 graph revisions > reload and revision retain completed work and spend while adding a bounded probe [2037.60ms]
+(pass) bounded V1 graph revisions > changes pending nodes and adds bounded work without changing caps or run identity [87.66ms]
+(pass) bounded V1 graph revisions > rejects stale hashes, raised caps, capacity growth beyond root budget, and feedback loops [86.41ms]
+(pass) bounded V1 graph revisions > preserves attempted definitions, state, history, and output exactly [160.23ms]
+(pass) bounded V1 graph revisions > rejects running, unknown, terminal, and managed-investigation runs [92.84ms]
+(pass) bounded V1 graph revisions > does not remove or weaken existing checker definitions and dependencies [99.11ms]
+(pass) bounded V1 graph revisions > uses immutable content-addressed run artifacts for graph-version retrieval [185.57ms]
+(pass) bounded V1 graph revisions > revises through alg_plan with ownership, CAS, persisted receipts, status digest, and historical artifact retrieval [769.70ms]
+
+tests\hard-benchmark-fixtures.test.ts:
+(pass) hard benchmark grading against raw evidence and executed work > public fixtures contain raw evidence and contracts with distinct private grader records [23.27ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives accepted-query results from paged rows after lost ack (seed %s) [153.32ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives accepted-query results from paged rows after lost ack (seed %s) [155.30ms]
+(pass) hard benchmark grading against raw evidence and executed work > irrelevant projection and literal out-of-scope writes cannot earn credit [135.26ms]
+(pass) hard benchmark grading against raw evidence and executed work > executes visible and hidden repo cases and rejects report-only submissions [459.94ms]
+(pass) hard benchmark grading against raw evidence and executed work > hidden cases reject sibling regressions, reimplemented clients and scope violations [457.24ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives true-effect from matched evidence despite identical crude totals [32.63ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives confounded from matched evidence despite identical crude totals [25.64ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives insufficient from matched evidence despite identical crude totals [33.11ms]
+(pass) hard benchmark grading against raw evidence and executed work > rejects plausible keywords, stale citations, wrong UTC edges, wrong strata and vague follow-up [43.67ms]
+(pass) hard benchmark grading against raw evidence and executed work > restart preserves only current complete jobs and requires observed unavailability [173.49ms]
+
+tests\hard-benchmark-service.test.ts:
+(pass) durable benchmark query service > commits acceptance and lost-ack receipt before returning the fault, across a process restart [150.79ms]
+(pass) durable benchmark query service > normalizes query identity, rejects collisions and never trusts caller-declared cost [25.19ms]
+(pass) durable benchmark query service > across independent handles, same-key replay shares the one accepted job [20.47ms]
+(pass) durable benchmark query service > a rejected database commit leaves neither a ghost acceptance nor consumed faults [56.44ms]
+(pass) durable benchmark query service > pins manifests, rejects stale current reads and keeps explicit snapshots available [45.55ms]
+(pass) durable benchmark query service > enforces count and byte limits, job-bound cursors, and complete distinct read coverage [80.67ms]
+(pass) durable benchmark query service > oversized results and unavailable sources cannot create accepted jobs [79.92ms]
+
+tests\headless-harness.test.ts:
+(pass) headless synthetic provider contract > checker fixture rejects absent or spoofed evidence and requires its exact selected source [0.28ms]
+(pass) headless synthetic provider contract > query evidence excludes admission but retains failed query outputs [0.19ms]
+(pass) headless synthetic provider contract > drives the host through workspace, investigation plan, and query tools [0.66ms]
+(pass) headless synthetic provider contract > compaction only repeats references observed in the host request [0.06ms]
+(pass) headless synthetic provider contract > follow-up claims recovery only when both persisted markers are in context [0.06ms]
+(pass) isolated host dependency setup uses the pinned SDK and refuses an existing target [42.42ms]
+
+tests\host-executable.test.ts:
+(pass) Windows npm host discovery resolves only the packaged binary, never shell text [6.96ms]
+(pass) native host discovery preserves the selected PATH entry and rejects missing hosts [1.30ms]
+
+tests\installer.test.ts:
+(pass) shared installer core > preserves a UTF-8 BOM, comments, tuples, exact backup bytes, and idempotence [115.09ms]
+(pass) shared installer core > round-trips supported UTF-16 BOM encodings and fails closed on UTF-32 [176.11ms]
+(pass) shared installer core > preserves comments, trailing commas, tuples, and unrelated nested fields [106.68ms]
+(pass) shared installer core > rejects malformed JSONC before any config, backup, or agent write [17.52ms]
+(pass) shared installer core > is idempotent and creates no backups or writes on a repeated install [36.85ms]
+(pass) shared installer core > deduplicates only exact ALG registrations and preserves similarly named plugins [57.25ms]
+(pass) shared installer core > does not overwrite custom agents without force and backs up forced updates exactly [231.86ms]
+(pass) shared installer core > safe uninstall removes exact registrations while retaining unrelated plugins and custom agents [324.35ms]
+(pass) shared installer core > second config write failure rolls back the first config exactly [75.20ms]
+(pass) shared installer core > agent failure after config changes rolls back configs and created agents [147.24ms]
+(pass) shared installer core > config publish race preserves third-party bytes and fails closed [140.10ms]
+(pass) shared installer core > agent publish race preserves third-party bytes and fails closed [132.77ms]
+(pass) shared installer core > config delete/unlink race preserves third-party bytes [236.21ms]
+(pass) shared installer core > agent delete/unlink race preserves third-party bytes [296.10ms]
+(pass) shared installer core > config same-byte replacement before rollback is preserved by identity [91.91ms]
+(pass) shared installer core > agent same-byte replacement before rollback is preserved by identity [84.09ms]
+(pass) shared installer core > config same-byte replacement after planning fails before every public write [21.26ms]
+(pass) shared installer core > agent same-byte replacement after planning fails before every public write [33.93ms]
+(pass) shared installer core > unchanged-config same-byte replacement after planning fails with zero direct-installer writes [145.57ms]
+(pass) shared installer core > exact-target-agent same-byte replacement after planning fails with zero direct-installer writes [165.95ms]
+(pass) shared installer core > skipped-custom-agent same-byte replacement after planning fails with zero direct-installer writes [42.03ms]
+
+tests\investigation-completion.test.ts:
+(pass) bounded evidence and job continuation > reopened readers reuse durable pages while rechecking current access [365.46ms]
+(pass) bounded evidence and job continuation > parallel reads publish one immutable page after a later validity check [268.77ms]
+(pass) bounded evidence and job continuation > rejects a mismatched page digest without publishing it [164.36ms]
+(pass) bounded evidence and job continuation > rejects a mismatched page access_scope without publishing it [161.86ms]
+(pass) bounded evidence and job continuation > rejects a mismatched page cursor without publishing it [160.64ms]
+(pass) bounded evidence and job continuation > bounds content bytes, rows, cursors and cache capacity [589.92ms]
+(pass) bounded evidence and job continuation > known jobs finish inside host waiting without another submission or model turn [302.02ms]
+(pass) bounded evidence and job continuation > timeout retains live reservation and restart continues the same job [248.74ms]
+(pass) bounded evidence and job continuation > unknown outcome is not repeatedly polled and abort spends no lookup [159.80ms]
+(pass) bounded evidence and job continuation > wait checks identity, bounds, deadline and abort after lookup [304.45ms]
+(pass) bounded evidence and job continuation > explicit service migration revalidates retained results and keeps accounting [251.49ms]
+(pass) bounded evidence and job continuation > migration cannot transfer uncertain jobs or change principal [141.96ms]
+(pass) bounded evidence and job continuation > migration cannot revive a stale result [216.81ms]
+
+tests\investigation-core.test.ts:
+(pass) durable investigation core > oversized persisted metadata is rejected before parsing [84.87ms]
+(pass) durable investigation core > source dependency order does not repeat work, but changed source versions do [191.91ms]
+(pass) durable investigation core > survives twenty compaction-style reconstructions and two independent stores [1374.94ms]
+(pass) durable investigation core > deduplicates concurrent callers and reserves budget once [145.69ms]
+(pass) durable investigation core > serializes stale store writers and keys executable query content [265.95ms]
+(pass) durable investigation core > caps concurrent expensive jobs at two and caps zero-cost admissions [327.74ms]
+(pass) durable investigation core > admission preserves space for durable terminal receipts [808.40ms]
+(pass) durable investigation core > accepted submit with lost response becomes unknown and resume reconciles before proceeding [287.13ms]
+(pass) durable investigation core > late submit callback cannot overwrite the newer reconciled result [208.83ms]
+(pass) durable investigation core > unknown lookup blocks automatic resend and unqualified transport fails closed [200.45ms]
+(pass) durable investigation core > pins remote service identity separately from the host session identity [199.80ms]
+(pass) durable investigation core > a late validation cannot restore a result revoked by another caller [195.38ms]
+(pass) durable investigation core > uncertain reconciliation preserves cancellation and its budget reservation [260.25ms]
+(pass) durable investigation core > failed worker output does not erase a durable result and permissions/expiry gate reuse [226.22ms]
+(pass) durable investigation core > engineer input is provenance-labelled reported knowledge, not verified evidence [73.51ms]
+
+tests\investigation-hooks.test.ts:
+29 |   test("fixed template planning fails closed when disabled and rejects graph or gate overrides", async () => {
+30 |     const path = fixture(), hooks = await server(plugin(path), { sessionMemory: { mode: "assist" },
+31 |       investigation: { enabled: false }, skillEvolution: { enabled: false } } as any)
+32 |     try {
+33 |       const plan = hooks.tool!.alg_plan!
+34 |       expect(output(await plan.execute({ goal: "Investigate particles", template: "data-investigation" }, context(path))).error).toContain("enabled configuration")
+                                                                                                                                      ^
+error: expect(received).toContain(expected)
+
+Expected to contain: "enabled configuration"
+Received: "task_contract_required: declare the work kind, deliverables, phase, verification and protected paths before planning"
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\investigation-hooks.test.ts:34:130)
+(fail) investigation host boundaries > fixed template planning fails closed when disabled and rejects graph or gate overrides [13.55ms]
+45 |     const path = fixture(), hooks = await server(plugin(path), { sessionMemory: { mode: "assist" },
+46 |       investigation: { enabled: true }, skillEvolution: { enabled: false } } as any)
+47 |     try {
+48 |       const planned = output(await hooks.tool!.alg_plan!.execute({ goal: "Investigate particles", template: "data-investigation",
+49 |         criteria: ["Keep causal claims bounded"] }, context(path)))
+50 |       expect(planned.error).toBeUndefined()
+                                 ^
+error: expect(received).toBeUndefined()
+
+Received: "task_contract_required: declare the work kind, deliverables, phase, verification and protected paths before planning"
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\investigation-hooks.test.ts:50:29)
+(fail) investigation host boundaries > actual plan seals the normalized graph and managed run blocks criterion and gate mutation [6.69ms]
+(pass) investigation host boundaries > an orphan investigation graph cannot execute and resume guard runs before reopening attempts [326.90ms]
+(pass) investigation host boundaries > batch guard fails before any child or attempt reservation [253.14ms]
+(pass) investigation host boundaries > normal and compaction hooks retain the durable pointer within the context ceiling [993.66ms]
+(pass) a simple host tool call records an advisory workspace operation without model-supplied operation [53.67ms]
+
+tests\investigation-planning.test.ts:
+(pass) durable investigation planning > simultaneous retries create one run and ledger; host reconstruction keeps its original budget [1340.07ms]
+(pass) durable investigation planning > changed criteria, mode or goal cannot replace the attached investigation [1000.34ms]
+(pass) durable investigation planning > detach does not reset identity, while explicit task advancement permits an intentional repeat [1317.75ms]
+(pass) durable investigation planning > legacy attached random-ID plans are reused and other owners remain isolated [2630.13ms]
+(pass) durable investigation planning > a crash after durable run creation reuses that run rather than creating a second ledger [443.18ms]
+(pass) durable investigation planning > a task change during creation cannot attach an old-task run to the new task [158.15ms]
+(pass) durable investigation planning > an attachment interleaved before claim commit is not overwritten [439.22ms]
+(pass) durable investigation planning > explicit attach cannot replace the task claim with another owned run [718.85ms]
+
+tests\investigation-protocol.test.ts:
+(pass) investigation protocol bindings > keeps pass-through behavior when a mapping is absent [0.43ms]
+(pass) investigation protocol bindings > maps trusted request and host pointers plus explicit constants [2.34ms]
+(pass) investigation protocol bindings > requires paths by default and omits explicitly optional missing paths [0.46ms]
+(pass) investigation protocol bindings > maps response fields and constants into an internal envelope [1.60ms]
+(pass) investigation protocol bindings > rejects unsafe pointer grammar, prototype names, and oversized mappings [2.44ms]
+(pass) investigation protocol bindings > does not traverse inherited properties and rejects non-JSON values [0.21ms]
+(pass) typed finite investigation recipes > normalizes declared typed values under query.parameters with deterministic revision [0.79ms]
+(pass) typed finite investigation recipes > rejects extra/missing parameters, implicit coercion, bounds violations, and ambiguous timestamps [0.65ms]
+(pass) typed finite investigation recipes > rejects recipe query override fields and duplicate recipe identities [0.26ms]
+(pass) typed finite investigation recipes > changes fingerprint when normalization semantics change [0.25ms]
+(pass) native response nesting and local validity identity need no server ALG hash [0.30ms]
+(pass) equivalent timezone-qualified recipe timestamps normalize to one query [0.21ms]
+(pass) native job states choose reviewed envelopes without guessing unknown states [0.64ms]
+
+tests\investigation-qualification.test.ts:
+(pass) operator MCP qualification inventory and probe > bounded fetch pins the endpoint, rejects redirects, and caps response bytes [5.59ms]
+(pass) operator MCP qualification inventory and probe > inventory stores identities and schema hashes only, and labels pagination and guarantees honestly [30.77ms]
+(pass) operator MCP qualification inventory and probe > probe sends one synthetic submit, looks up that exact id, validates result, and does not claim enforcement [124.76ms]
+(pass) operator MCP qualification inventory and probe > an unavailable port yields failed observed work and never a ready profile [116.20ms]
+
+tests\investigation-recovery-regressions.test.ts:
+(pass) investigation review regressions > legacy identities stay inspectable but cannot silently admit duplicate work [141.52ms]
+(pass) investigation review regressions > unsupported precision is rejected before admission [63.24ms]
+(pass) investigation review regressions > operator abandonment is atomic and cannot hide uncertain remote compute [279.15ms]
+(pass) investigation review regressions > equivalent as-of instants and unused parameter labels share an execution identity [123.25ms]
+(pass) investigation review regressions > decimal reservations settle and reopen without float drift [444.40ms]
+(pass) investigation review regressions > fine-precision terminal cost %s is preserved and conservatively settled [180.12ms]
+(pass) investigation review regressions > fine-precision terminal cost %s is preserved and conservatively settled [197.60ms]
+(pass) investigation review regressions > a terminal service overrun is recorded once and blocks new spend [172.82ms]
+(pass) investigation review regressions > overrun inside the total budget also stops previously reserved dispatch [220.32ms]
+(pass) investigation review regressions > proved nonacceptance releases the reservation without automatic replay [272.74ms]
+(pass) investigation review regressions > remote failure text cannot forge proof authorizing replay [194.46ms]
+
+tests\investigation-template.test.ts:
+(pass) data-investigation fixed V1 template > is registered, cloned, expanded, and valid under the existing graph schema [1.39ms]
+(pass) data-investigation fixed V1 template > has exactly three bounded specialist branches and the required reconcile-confirm-check chain [0.60ms]
+(pass) data-investigation fixed V1 template > bounds topology and uses only existing roles and managed investigation actions [0.54ms]
+
+tests\investigation-transport.test.ts:
+(pass) qualified MCP HTTP transport > local admission failures release both job slots without submitting [231.38ms]
+(pass) qualified MCP HTTP transport > official SDK server sees host scope and fixed service limits outside model query [38.76ms]
+(pass) qualified MCP HTTP transport > schema and MCP handshake identity drift fail closed [26.53ms]
+(pass) qualified MCP HTTP transport > redirect and oversized HTTP replies do not escape the endpoint or byte bound [15.42ms]
+(pass) qualified MCP HTTP transport > profile refuses missing service enforcement and result bound over response bound [0.91ms]
+(pass) native MCP bindings translate jobs and host validity without requiring ALG-shaped service output [115.23ms]
+
+tests\investigation-workflow.test.ts:
+(pass) V1 Phase One synthetic investigation acceptance > pages an 11,000-entry catalog with bounded frontier and correctly scoped negative coverage [7.65ms]
+(pass) V1 Phase One synthetic investigation acceptance > reuses one managed computation and cached pages across context reconstruction, then resumes the seven-node graph after review [10645.89ms]
+(pass) V1 Phase One synthetic investigation acceptance > four incident families preserve evidence provenance and represent missing evidence as uncertainty [0.35ms]
+
+tests\learning-record.test.ts:
+(pass) the learning record never fills up > old settled records move to an archive and the turn still counts as audited [140.05ms]
+(pass) the learning record never fills up > it keeps working turn after turn far past the old limit [7513.34ms]
+(pass) the learning record never fills up > recent, unfinished and candidate records never move, and the hard limit still holds [475.94ms]
+(pass) the learning record never fills up > a byte limit alone also moves the older half out [136.37ms]
+(pass) the learning record never fills up > finished audit children are archived before their registry fills [138.58ms]
+(pass) a command that exits non-zero is a failed command, whatever it printed > the turn is scored as a failed command that was then made to work [7.98ms]
+(pass) a command that exits non-zero is a failed command, whatever it printed > a turn whose commands all succeeded is scored as before [0.70ms]
+
+tests\live-verify.test.ts:
+(pass) complete bounded runtime source identity > sorts and records every runtime source path with byte counts [34.52ms]
+(pass) complete bounded runtime source identity > changes for tools, store, executor, templates, agents, and untracked runtime modules [132.60ms]
+(pass) complete bounded runtime source identity > excludes tests, docs, verifier evidence, scripts, and unrelated shipped files [19.89ms]
+(pass) complete bounded runtime source identity > fails closed on a source symlink or junction [6.15ms]
+(pass) complete bounded runtime source identity > fails before reading past per-file, aggregate, or file-count bounds [7.43ms]
+(pass) live verifier OpenCode compatibility > rejects unsupported future stable majors [0.25ms]
+(pass) live verifier OpenCode compatibility > derives the verifier requirement from package metadata [0.40ms]
+(pass) live verifier OpenCode compatibility > accepts compatible stable version 1.18.0 [0.35ms]
+(pass) live verifier OpenCode compatibility > accepts compatible stable version 1.18.18
+(pass) live verifier OpenCode compatibility > rejects a stable version below the declared minimum [0.06ms]
+(pass) live verifier OpenCode compatibility > rejects unsupported blank output [0.03ms]
+(pass) live verifier OpenCode compatibility > rejects unsupported malformed output
+(pass) live verifier OpenCode compatibility > rejects unsupported prerelease output
+(pass) live verifier OpenCode compatibility > rejects unsupported build metadata output
+(pass) live verifier OpenCode compatibility > rejects unsupported oversized component output
+(pass) real-user global OpenCode config preservation snapshots > resolves roots only from the pre-isolation environment and deduplicates HOME/XDG [0.40ms]
+(pass) real-user global OpenCode config preservation snapshots > unchanged metadata and keyed fingerprints compare exactly without retaining contents or absolute paths [20.76ms]
+(pass) real-user global OpenCode config preservation snapshots > detects create of an allowlisted config [12.11ms]
+(pass) real-user global OpenCode config preservation snapshots > detects mutate of an allowlisted config [30.51ms]
+(pass) real-user global OpenCode config preservation snapshots > detects delete of an allowlisted config [3.06ms]
+(pass) real-user global OpenCode config preservation snapshots > rejects a symlink or junction in an allowlisted config path [1.07ms]
+(pass) live verifier reviewed-checkout binding > builds isolated server and TUI registrations for the exact current package root and entry points [131.21ms]
+(pass) live verifier reviewed-checkout binding > rejects a wrong package spec, checkout identity, or entry point [312.40ms]
+(pass) live verifier reviewed-checkout binding > stale/global-only tool and TUI evidence cannot satisfy checkout proof [65.57ms]
+(pass) live verifier reviewed-checkout binding > requires exact current-checkout markers from both server and TUI [66.73ms]
+(pass) live verifier reviewed-checkout binding > recognizes only the real OpenCode 1.18.x structured disabled startup record [0.83ms]
+(pass) live verifier reviewed-checkout binding > structured startup grammar requires the canonical ordered nineteen IDs and disabled state [1.98ms]
+(pass) live verifier reviewed-checkout binding > recognizes current deployment-identity startup without accepting contradictory metadata [71.91ms]
+(pass) server tool registration readiness > transport failures retain readiness stage and redacted nested causes [108.30ms]
+(pass) server tool registration readiness > keeps polling after an initial empty 200 until source identity and exact tools are ready [95.94ms]
+(pass) server tool registration readiness > exact tools and source identity cannot reach readiness without exact disabled startup evidence [123.57ms]
+(pass) server tool registration readiness > a permanent empty 200 remains a bounded readiness failure with diagnostics [122.70ms]
+(pass) retained live evidence destination confinement > extracted packages without Git keep their source boundary and permit external evidence [9.57ms]
+(pass) retained live evidence destination confinement > rejects a lexical path anywhere in the containing repository [3.16ms]
+(pass) retained live evidence destination confinement > rejects a sibling repository because it is outside the dedicated evidence root [2.91ms]
+(pass) retained live evidence destination confinement > rejects symlink or junction parent redirection into the repository [4.08ms]
+(pass) retained live evidence destination confinement > creates and accepts a plain destination under the dedicated external root [4.62ms]
+(pass) retained live evidence destination confinement > unique no-clobber live artifacts preserve the first run and reject deterministic/colliding paths [117.83ms]
+(pass) retained live evidence destination confinement > same-byte final replacement before-final-check is preserved and rejected by identity [127.83ms]
+(pass) retained live evidence destination confinement > same-byte final replacement after-final-check is preserved and rejected by identity [89.84ms]
+(pass) retained live evidence destination confinement > same-name temporary replacement is preserved and causes publication failure [104.20ms]
+(pass) retained live evidence destination confinement > retained verification requires the publication identity and rejects a same-byte replacement [95.62ms]
+(pass) live verifier cleanup gate > accepts an already-exited one-shot process without claiming termination [0.57ms]
+(pass) live verifier cleanup gate > requires successful termination and observed root exit [0.28ms]
+(pass) live verifier cleanup gate > termination failure cannot pass even when best-effort kill observes root exit [0.24ms]
+(pass) live verifier cleanup gate > termination timeout remains failed after bounded best-effort cleanup [14.69ms]
+(pass) live verifier cleanup gate > deterministic temporary remove failure cannot satisfy the final pass gate [0.43ms]
+(pass) live verifier cleanup gate > temporary_environment_removed false fails even after successful process cleanup [2.41ms]
+(pass) typed version command failure evidence > timeout retains PID, output, exit observation, and successful termination evidence [13.66ms]
+(pass) typed version command failure evidence > termination failure retains complete failed cleanup and fallback evidence [12.61ms]
+(pass) exact live TUI registration evidence > accepts one bounded explicit service line carrying both registrations [1.82ms]
+(pass) exact live TUI registration evidence > accepts the structured ALG TUI service message carrying both registrations [0.20ms]
+(pass) exact live TUI registration evidence > accepts an exact structured JSON service/token pair [0.11ms]
+(pass) exact live TUI registration evidence > rejects negated token evidence [0.05ms]
+(pass) exact live TUI registration evidence > rejects unrelated service evidence [0.02ms]
+(pass) exact live TUI registration evidence > rejects unrelated JSON service evidence [0.01ms]
+(pass) exact live TUI registration evidence > rejects extra command evidence [0.01ms]
+(pass) exact live TUI registration evidence > rejects models only evidence
+(pass) exact live TUI registration evidence > rejects runs only evidence
+(pass) exact live TUI registration evidence > rejects token embedded in prose evidence
+(pass) exact live TUI registration evidence > rejects token embedded in message prose evidence
+(pass) exact live TUI registration evidence > rejects unknown log field evidence [0.06ms]
+(pass) exact live TUI registration evidence > rejects oversized line evidence
+
+tests\lock-waits.test.ts:
+(pass) locks are never waited for by stopping the thread > no blocking sleep remains in the plugin or its scripts [22.18ms]
+(pass) locks are never waited for by stopping the thread > a plain acquisition reports a held lock at once [14.00ms]
+(pass) locks are never waited for by stopping the thread > an awaited acquisition waits on a timer and takes the lock once this process releases it [170.68ms]
+(pass) locks are never waited for by stopping the thread > awaitLock gives up after its wait, with the event loop running throughout [224.50ms]
+(pass) locks are never waited for by stopping the thread > a lock held by another process is waited for without blocking [586.76ms]
+(pass) locks are never waited for by stopping the thread > awaitFirstLock never repeats an operation that already held a lock [394.99ms]
+(pass) locks are never waited for by stopping the thread > a release that meets a busy mutation claim finishes from the event loop [113.72ms]
+(pass) locks are never waited for by stopping the thread > a heartbeat that meets a busy mutation claim renews a moment later instead of losing the lock [316.73ms]
+(pass) run store operations wait for another process on a timer > a save that meets a held lock waits, commits, and finishes the run [641.48ms]
+(pass) run store operations wait for another process on a timer > a save whose lock is never released fails as a persistence failure, not a hang [592.06ms]
+(pass) run store operations wait for another process on a timer > a run lock whose release meets a busy guard is removed from the event loop [184.48ms]
+(pass) run store operations wait for another process on a timer > a run that really is executing is still refused at once [83.34ms]
+(pass) run store operations wait for another process on a timer > the owner projection is refreshed from the event loop when its lock is busy [373.27ms]
+(pass) run store operations wait for another process on a timer > a run whose lock is held for an instant is waited for, not mistaken for no run [208.64ms]
+
+tests\long-session-cost.test.ts:
+(pass) the cost of a model call does not grow with the session > turns already captured are not registered again on later model calls [2200.20ms]
+(pass) the skill catalog is scanned once and still never stale > an edited or added SKILL.md is seen on the very next read [53.72ms]
+(pass) the skill catalog is scanned once and still never stale > an unchanged tree is not read again, and a body is always checked against its catalog hash [32.13ms]
+(pass) the skill catalog is scanned once and still never stale > recording nothing new takes no lock, and a held lock is passed on to be waited for [214.41ms]
+(pass) a worker whose model call failed says why > the provider error replaces the empty-response diagnosis [494.43ms]
+(pass) a worker whose model call failed says why > a usable answer is kept even when the host also recorded an error [3.14ms]
+
+tests\manager-launchers.test.ts:
+(pass) manager launchers and parser > direct launchers require frozen lockfile installs with lifecycle scripts disabled [20.25ms]
+(pass) manager launchers and parser > PowerShell direct installer executes exact frozen Bun argv on supported Windows [768.54ms]
+(pass) manager launchers and parser > POSIX direct installer executes exact frozen Bun argv [222.49ms]
+(pass) manager launchers and parser > explicit npm selection bypasses Bun and fails before configuration on dependency error [1561.98ms]
+(pass) manager launchers and parser > POSIX explicitly selects npm despite Bun on PATH [338.86ms]
+(pass) manager launchers and parser > CLI parser forwards spaced roots and all manager policies without shell parsing [1.03ms]
+(pass) manager launchers and parser > PowerShell launcher forwards GNU-style arguments and emits bounded JSON [902.83ms]
+(pass) manager launchers and parser > POSIX launcher has valid sh syntax and forwards spaced paths where sh is available [851.10ms]
+(pass) manager launchers and parser > PowerShell launcher forwards every lifecycle command through an isolated executable shim [2858.34ms]
+(pass) manager launchers and parser > POSIX/Git shell launcher forwards every lifecycle command through an isolated executable shim [1118.18ms]
+(pass) manager launchers and parser > PowerShell launcher executes real manager lifecycle with exact local tags and zero project dependencies [32301.55ms]
+(pass) manager launchers and parser > POSIX/Git shell launcher executes real manager lifecycle where available [27790.51ms]
+(pass) manager launchers and parser > PowerShell Node fallback executes install/update lifecycle with Bun absent [30876.41ms]
+
+tests\manager.test.ts:
+(pass) bounded production dependency identity > detects changed dependency code/version plus added and removed files [131.75ms]
+(pass) bounded production dependency identity > supports an empty production tree and enforces file/tree bounds [38.19ms]
+(pass) bounded production dependency identity > rejects a dependency junction/symlink that escapes node_modules [3.69ms]
+291 |     sandboxes.push(config)
+292 |     const runner = new LocalGitRunner()
+293 |     runManager({ command: "install", configDir: config, source }, { runner })
+294 |     const state = receipt(config)
+295 |     expect(state.generations[0]?.capabilities).toBeUndefined()
+296 |     expect(state.generations[0]?.durable_state.compatible_package_versions).toEqual(["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1", "0.5.0", "0.5.1", "0.5.2", "0.5.3", "0.5.4", "0.5.5", "0.5.6"])
+                                                                                  ^
+error: expect(received).toEqual(expected)
+
+  [
+    "0.1.0",
+    "0.2.0",
+    "0.3.0",
+    "0.4.0",
+    "0.4.1",
+    "0.5.0",
+    "0.5.1",
+    "0.5.2",
+    "0.5.3",
+    "0.5.4",
+    "0.5.5",
+    "0.5.6",
++   "0.5.7",
+  ]
+
+- Expected  - 0
++ Received  + 1
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\manager.test.ts:296:77)
+(fail) v0.2 side-by-side release manager > deliberately accepts an old v0.1 generation and receipt with no capability fields [11705.64ms]
+(pass) v0.2 side-by-side release manager > custom and skip agent ownership cannot be laundered by exact target bytes; force explicitly adopts [49933.88ms]
+(pass) v0.2 side-by-side release manager > Excel is neutral by default, opt-in install/update preserves root, repeated enable is receipt-idempotent, and disable is explicit [36163.95ms]
+(pass) v0.2 side-by-side release manager > rollback restores only the target generation Excel state and uninstall removes only exact managed config [26084.12ms]
+(pass) v0.2 side-by-side release manager > Excel uv discovery, frozen sync, and wrapper-check failures produce no live config or receipt writes [22992.31ms]
+(pass) v0.2 side-by-side release manager > strict Excel manifest hashes and sorted tool inventory fail before activation [10696.95ms]
+(pass) v0.2 side-by-side release manager > rehashed malicious pyprojects cannot add dependencies, markers, ranges, extras, groups, or alternate sources [31360.13ms]
+(pass) v0.2 side-by-side release manager > custom alg_excel blocks enable, UTF-16/comments/unrelated MCP survive enable, and receipts contain no ambient secrets [17613.66ms]
+(pass) v0.2 side-by-side release manager > exact-looking unowned Excel config stays custom across enable, doctor, and uninstall [17155.85ms]
+(pass) v0.2 side-by-side release manager > rollback cannot launder an exact target Excel config without current receipt ownership [17688.06ms]
+(pass) v0.2 side-by-side release manager > doctor checks exact Excel runtime through the injected runner and journal repair rolls capability config back [18019.28ms]
+(pass) v0.2 side-by-side release manager > same-generation Excel enable/disable journals prove receipt before/after hashes across every crash boundary [93359.72ms]
+(pass) v0.2 side-by-side release manager > journal repair fails closed when receipt matches neither cryptographic state [18338.56ms]
+(pass) v0.2 side-by-side release manager > committed journal repair retains the journal when any live file differs from its intended after-state [17242.84ms]
+(pass) v0.2 side-by-side release manager > installs, updates side-by-side, preserves tuple options/custom agents, rolls back, and uninstalls safely [32354.24ms]
+(pass) v0.2 side-by-side release manager > resolves exact v0.1.0 to v0.2.0 tags from a local bare remote with argument-vector dependency install [16895.98ms]
+(pass) v0.2 side-by-side release manager > existing-generation update reuse requires the trusted origin and accepts a healthy retained generation [40147.88ms]
+(pass) v0.2 side-by-side release manager > rejects package-lock mismatch from a local bare remote before live writes [7369.64ms]
+(pass) v0.2 side-by-side release manager > rejects trusted remote mismatch and non-fast-forward stable update [11162.53ms]
+(pass) v0.2 side-by-side release manager > dependency command failure from a bare remote is bounded/redacted and performs no live writes [3266.20ms]
+(pass) v0.2 side-by-side release manager > rejects an existing target-generation collision without replacing it [7369.23ms]
+(pass) v0.2 side-by-side release manager > generation reservation is exclusive and cleanup removes only an unchanged empty reservation [16078.10ms]
+(pass) v0.2 side-by-side release manager > generation materialization preserves a raced destination and its reservation [7346.31ms]
+(pass) v0.2 side-by-side release manager > generation materialization link failure removes only unchanged manager-created paths [8109.27ms]
+(pass) v0.2 side-by-side release manager > generation cleanup preserves a same-byte identity replacement and reservation [9521.91ms]
+(pass) v0.2 side-by-side release manager > staging cleanup preserves foreign additions and removes a clean validated staging tree [21451.14ms]
+(pass) v0.2 side-by-side release manager > failed git staging that adds a foreign file is preserved for inspection [2020.49ms]
+(pass) v0.2 side-by-side release manager > failed npm staging that adds a foreign file is preserved for inspection [2745.85ms]
+(pass) v0.2 side-by-side release manager > private primitive probe preserves occupied foreign state [8055.93ms]
+(pass) v0.2 side-by-side release manager > private primitive probe preserves same-byte-replacement foreign state [11765.37ms]
+(pass) v0.2 side-by-side release manager > dependency failure and a late injected failure leave config and agents byte-identical [16882.25ms]
+(pass) v0.2 side-by-side release manager > rejects dirty/untracked source, tag-version mismatch, and customized managed-agent drift on rollback [21268.90ms]
+(pass) v0.2 side-by-side release manager > rollback revalidates clean Git state, origin, HEAD/tag/commit, package, lock, and runtime digest before live writes [33260.27ms]
+(pass) v0.2 side-by-side release manager > preserves manager-level UTF-8/UTF-16 BOM, comments, trailing commas, and tuple options [10006.73ms]
+(pass) v0.2 side-by-side release manager > forged receipt agent keys fail before uninstall can read or delete outside direct bundled scope [11680.55ms]
+(pass) v0.2 side-by-side release manager > byte-CAS drift is not overwritten and leaves a deterministic recoverable journal [12775.78ms]
+(pass) v0.2 side-by-side release manager > journal preflight makes zero restorations when a later config path is third-state [9999.36ms]
+(pass) v0.2 side-by-side release manager > journal preflight makes zero restorations when a later agent path is third-state [9889.67ms]
+(pass) v0.2 side-by-side release manager > journal recovery uses identity-bound claims and does not depend on a missing audit backup [13149.39ms]
+(pass) v0.2 side-by-side release manager > journal recovery uses identity-bound claims and does not depend on a corrupt audit backup [11128.02ms]
+(pass) v0.2 side-by-side release manager > partially restored before/after files remain retryable and recovery is idempotent [9020.62ms]
+(pass) v0.2 side-by-side release manager > receipt derivation CAS rejects a semantically equivalent rewrite before journal creation with zero live writes [16065.85ms]
+(pass) v0.2 side-by-side release manager > receipt CAS recheck after prewrite hook prevents every live write and removes the unneeded journal [15398.53ms]
+(pass) v0.2 side-by-side release manager > post-write config mutation cannot commit the receipt and remains fail-closed [8992.70ms]
+(pass) v0.2 side-by-side release manager > post-write agent mutation cannot commit the receipt and remains fail-closed [9260.74ms]
+(pass) v0.2 side-by-side release manager > post-write valid receipt mutation rolls live files back without stale receipt overwrite [17072.56ms]
+(pass) v0.2 side-by-side release manager > doctor recovers simulated crashes after config and agent writes [20300.86ms]
+(pass) v0.2 side-by-side release manager > doctor finalizes a receipt-committed crash journal instead of rolling live files back [11177.59ms]
+(pass) v0.2 side-by-side release manager > ordinary journal-phase faults roll every live file back and remove the journal [18914.75ms]
+(pass) v0.2 side-by-side release manager > doctor reports release and managed-agent drift and JSON output stays bounded [11190.14ms]
+(pass) v0.2 side-by-side release manager > receipt claim/publish boundary before-commit preserves bytes and recovers deterministically [15742.17ms]
+(pass) v0.2 side-by-side release manager > receipt claim/publish boundary after-claim preserves bytes and recovers deterministically [16610.32ms]
+(pass) v0.2 side-by-side release manager > receipt claim/publish boundary claim-crash preserves bytes and recovers deterministically [15797.13ms]
+(pass) v0.2 side-by-side release manager > receipt claim/publish boundary publish-crash preserves bytes and recovers deterministically [15282.34ms]
+(pass) v0.2 side-by-side release manager > pre-created different claim is never overwritten or deleted and blocks recovery [15913.95ms]
+(pass) v0.2 side-by-side release manager > pre-created same-bytes claim is never overwritten or deleted and blocks recovery [15930.17ms]
+(pass) v0.2 side-by-side release manager > claim hard-link failure rolls back without receipt loss and receipt-linked crash is recoverable [22292.85ms]
+(pass) v0.2 side-by-side release manager > post-publication claim replacement is preserved and never used for receipt restoration or deletion [16122.70ms]
+(pass) v0.2 side-by-side release manager > same-byte receipt-after replacement is third state and cannot trigger restore or cleanup [15877.51ms]
+(pass) v0.2 side-by-side release manager > config replacement between live claim and unlink is preserved [17756.37ms]
+(pass) v0.2 side-by-side release manager > agent replacement between live claim and unlink is preserved [19884.88ms]
+(pass) v0.2 side-by-side release manager > receipt same-byte identity replacement after derivation fails with zero live writes [19983.26ms]
+(pass) v0.2 side-by-side release manager > unchanged-config same-byte identity replacement after derivation fails with zero live writes [15251.18ms]
+(pass) v0.2 side-by-side release manager > exact-target-agent same-byte identity replacement after derivation fails with zero live writes [15516.70ms]
+(pass) v0.2 side-by-side release manager > skipped-custom-agent same-byte identity replacement after derivation fails with zero live writes [15699.90ms]
+(pass) v0.2 side-by-side release manager > occupied config claim path is preserved before any public live unlink [17772.34ms]
+(pass) v0.2 side-by-side release manager > occupied agent claim path is preserved before any public live unlink [18088.80ms]
+(pass) v0.2 side-by-side release manager > occupied config public destination before publish is never overwritten [20700.77ms]
+(pass) v0.2 side-by-side release manager > occupied agent public destination before publish is never overwritten [19122.28ms]
+(pass) v0.2 side-by-side release manager > config delete race and recovery link race preserve third-party bytes [10126.94ms]
+(pass) v0.2 side-by-side release manager > agent delete race and recovery link race preserve third-party bytes [9608.95ms]
+(pass) v0.2 side-by-side release manager > config recovery create-if-absent race preserves the racer and journal [17054.54ms]
+(pass) v0.2 side-by-side release manager > agent recovery create-if-absent race preserves the racer and journal [18136.31ms]
+(pass) v0.2 side-by-side release manager > forged journal agent paths cannot delete custom, nested, unknown, or case-variant files [9000.51ms]
+(pass) v0.2 side-by-side release manager > forged receipt auxiliary prefix collisions and other-transaction paths are never deleted [17515.92ms]
+(pass) v0.2 side-by-side release manager > occupied initial journal publication is no-clobber and preserves foreign bytes [10566.16ms]
+(pass) v0.2 side-by-side release manager > occupied journal revision and same-byte marker replacement preserve journal evidence [32615.33ms]
+(pass) v0.2 side-by-side release manager > journal cleanup and recovery same-byte replacements are preserved by identity [34607.69ms]
+(pass) v0.2 side-by-side release manager > expected-absent and post-publication races never overwrite third-party receipt/config/agent bytes [29486.50ms]
+(pass) v0.2 side-by-side release manager > restart acknowledgement uses recoverable claim/publish journals and preserves races [32331.53ms]
+(pass) v0.2 side-by-side release manager > Excel root changes stage a fresh environment and failed staging preserves all active bytes [33009.03ms]
+(pass) v0.2 side-by-side release manager > same-generation no-op rejects active origin, Git, dependency, environment, and managed-agent drift [64901.75ms]
+(pass) v0.2 side-by-side release manager > agent directory and direct targets reject junction/symlink redirection before managed I/O [13291.10ms]
+(pass) v0.2 side-by-side release manager > rollback blocks an unsafe durable-state compatibility declaration before config writes [22736.14ms]
+
+tests\model-agnostic-recovery.test.ts:
+(pass) host finish semantics reject intermediate, truncated, failed and summary turns for every provider [1.31ms]
+(pass) whole-turn evidence retains tool steps, final result and loaded skill after rank 32 [294.36ms]
+(pass) event plus replay queue one finished-turn audit, with whole evidence [1164.11ms]
+(pass) weak keyword neighbors never bind or block the complete selected procedure [525.02ms]
+(pass) learning evidence and the private answer cite one turn and stay separate records [325.44ms]
+(pass) reported values survive lossy compact and restart without acquiring verification authority [537.72ms]
+(pass) completed event captures results even when learning is off and before compaction [230.92ms]
+(pass) memory off status is usable and disabled operations advise no retry [4.54ms]
+(pass) real child timeout aborts the owned host session; uncertain cancellation blocks next create [1219.21ms]
+(pass) disposal still sends host abort on an active child [232.06ms]
+(pass) foreign turns, failed loads and duplicate envelopes cannot contaminate evidence [1.14ms]
+(pass) secret-bearing answers never become retained result claims [57.77ms]
+(pass) legacy immutable per-message evidence requires manual review rather than automatic replay [1687.91ms]
+
+tests\models-sessions-plugin.test.ts:
+(pass) models, SDK propagation, and registration > JSON extraction accepts one object in surrounding prose or fences and rejects ambiguity [1.31ms]
+(pass) models, SDK propagation, and registration > role schema selects one valid response among competing objects without weakening validation [1.56ms]
+(pass) models, SDK propagation, and registration > strict project model settings persist and snapshot independently [75.70ms]
+(pass) models, SDK propagation, and registration > model-only settings stay valid while variants are trimmed, bounded, and strict [1.00ms]
+(pass) models, SDK propagation, and registration > alg_models supports full set, variant-only update, clear_variant, clear, CAS, and rejects incompatible args [203.42ms]
+(pass) models, SDK propagation, and registration > session prompt splits exact structured model and top-level variant [3.04ms]
+(pass) models, SDK propagation, and registration > session prompt omits both model and variant when unset and only variant when model has none [2.60ms]
+(pass) models, SDK propagation, and registration > executor propagates each snapshotted role variant through retries [2354.13ms]
+(pass) models, SDK propagation, and registration > configured role variants require an explicit valid role model and project selections replace them [0.53ms]
+(pass) models, SDK propagation, and registration > SDK field errors are returned instead of being mistaken for data [1.40ms]
+(pass) models, SDK propagation, and registration > dedicated server default is PluginModule and registers every tool [17.22ms]
+(pass) models, SDK propagation, and registration > server consumes disabled, triggered, and every-turn plugin-tuple option payloads [99.19ms]
+(pass) models, SDK propagation, and registration > project model settings serialize writers and fail closed on stale/malformed locks [92.86ms]
+(pass) models, SDK propagation, and registration > model settings lock releases in finally when validation fails [9.58ms]
+(pass) models, SDK propagation, and registration > failed model quarantine rename honestly reports manual recovery [31.78ms]
+(pass) models, SDK propagation, and registration > live alg_run persists child session ids and returns matching session links [676.20ms]
+(pass) models, SDK propagation, and registration > alg_resume exposes preserved and newly-created child session ids [1055.44ms]
+
+tests\offline-diagnostics.test.ts:
+(pass) offline diagnostics > rejects a foreign --root instead of mixing local parser code with another package's digest [294.31ms]
+
+tests\operational-runtime.test.ts:
+(pass) operational investigation host > models cannot manufacture fresh work through purpose or generation [1149.44ms]
+(pass) operational investigation host > typed argument diagnostics name safe fields without echoing unknown keys or values [503.18ms]
+(pass) operational investigation host > restart and compaction reuse the pointer and never duplicate unknown work [6276.80ms]
+(pass) operational investigation host > missed pointer delivery blocks query before admission or remote submission [833.01ms]
+(pass) operational investigation host > new task records ledger detach durably without resetting jobs or budget [1135.90ms]
+(pass) operational investigation host > restart replays a committed detach intent after a crash window [774.16ms]
+(pass) operational investigation host > child requires current parent pointer, task epoch and its running node attempt [1924.20ms]
+(pass) operational investigation host > recorded result is revalidated for each reuse and permission revocation never resubmits [920.40ms]
+(pass) operational investigation host > typed tool rejects model budget controls and reserves the operator configured maximum [572.64ms]
+(pass) operational investigation host > root analytical assessment stays reported and appears in bounded status context [551.63ms]
+(pass) operational investigation host > workspace mandatory boundary uses only current operator qualification evidence [139.10ms]
+(pass) operational investigation host > review binds complete findings and gates confirmation until fresh review [679.40ms]
+(pass) reviewed recipe admission normalizes parameters and rejects executable-query substitution [715.11ms]
+
+tests\optional-manifests.test.ts:
+(pass) optional manifests reject drift, extra metadata and unpinned or activated capability contracts [296.99ms]
+
+tests\owned-context.test.ts:
+(pass) replaces only recorded ALG slots and preserves identical foreign text [0.63ms]
+(pass) a failed preparation leaves the shared array and previous ownership intact [0.43ms]
+(pass) foreign appends during preparation survive, but conflicting edits are not guessed away [0.53ms]
+(pass) concurrent hooks cannot both publish to the same array [0.29ms]
+
+tests\package-completion.test.ts:
+(pass) publishable npm lock and checkout lock have identical dependency authority [188.91ms]
+233 |     if (!path || path.includes("\\") || path.includes("\0") || path.startsWith("/") || path.split("/").some((part) => part === "" || part === "." || part === "..")) {
+234 |       throw new Error(`npm pack inventory contains unsafe path: ${path}`)
+235 |     }
+236 |   }
+237 |   const sorted = [...paths].sort()
+238 |   if (JSON.stringify(sorted) !== JSON.stringify(expected)) throw new Error("npm pack inventory differs from the complete reviewed allowlist")
+                                                                                                                                                  ^
+error: npm pack inventory differs from the complete reviewed allowlist
+      at validatePackedInventory (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\scripts\release-gate.ts:238:141)
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\package-completion.test.ts:29:5)
+(fail) actual extracted package has the full reviewed inventory and dependency-ready installer entrypoint [4382.22ms]
+
+tests\path-components.test.ts:
+(pass) host root sentinels never broaden a scoped directory; real roots retain root gates [0.34ms]
+(pass) existing-component realpath containment > injectable strict absence proof covers $Deleted, disappearance, denial, and symlink branches [2.01ms]
+(pass) existing-component realpath containment > rejects .opencode, runs, and run-directory symlink/junction escapes [9.48ms]
+(skip) existing-component realpath containment > rejects a model file symlink escape
+(skip) existing-component realpath containment > rejects a config file symlink escape without touching its target
+(pass) existing-component realpath containment > rejects a config agent-directory junction escape [28.93ms]
+(pass) existing-component realpath containment > safely resolves not-yet-created paths below a canonical root [2.44ms]
+(pass) existing-component realpath containment > rejects escaping artifacts/checks/sessions and nested junctions without touching outside [3211.30ms]
+(pass) existing-component realpath containment > executor, persistence, and load reject artifact metadata through a nested junction [870.15ms]
+(pass) existing-component realpath containment > executor, persistence, and load reject files_touched through a project junction [1121.23ms]
+
+tests\persistence-evidence-capacity.test.ts:
+{"fixture":"implementer","seeded_attempts":99,"completed_attempts":100,"archive_attempts":96,"archive_bytes":90562,"archive_limit":524288,"inline_attempts":4,"native_receipt_bytes":12288,"gate_receipt_bytes":5935,"preservation_bytes":13799,"basis_bytes":0}
+(pass) bounded receipt-bearing attempt archives > implementer receipts survive persist, reload and attempt 100 [26963.19ms]
+{"fixture":"checker","seeded_attempts":99,"completed_attempts":100,"archive_attempts":96,"archive_bytes":91042,"archive_limit":524288,"inline_attempts":4,"native_receipt_bytes":0,"gate_receipt_bytes":0,"preservation_bytes":0,"basis_bytes":17293}
+(pass) bounded receipt-bearing attempt archives > checker receipts survive persist, reload and attempt 100 [30523.74ms]
+
+tests\persistence-full-hydration.test.ts:
+(pass) transactional immutable persistence > progress current-rename failure preserves current and prior backup byte-for-byte [844.83ms]
+(pass) transactional immutable persistence > post-commit backup-update failure keeps the new current and prior backup exact [820.84ms]
+(pass) transactional immutable persistence > a pre-progress failure preserves authoritative and backup manifests plus every old sidecar byte [858.43ms]
+(pass) transactional immutable persistence > sidecar and fixed-mirror failures never advance progress or invalidate old references [876.61ms]
+(pass) transactional immutable persistence > successive manifests retain distinct immutable content and each hydrates its own bytes [763.72ms]
+(pass) transactional immutable persistence > an occupied immutable hash path with mismatched bytes fails closed [729.91ms]
+(pass) transactional immutable persistence > GC preserves current and backup reachability and never removes unknown files [875.39ms]
+(pass) transactional immutable persistence > a deterministic post-commit GC failure reports success and preserves committed recovery plus all candidates [989.06ms]
+(pass) transactional immutable persistence > immutable node and attempt outputs must already equal their parsed canonical form [4014.76ms]
+(pass) transactional immutable persistence > canonical immutable outputs hydrate unchanged and publication canonicalizes accepted defaults [904.47ms]
+(pass) transactional immutable persistence > successful save replaces stale references with the canonical committed execution reload in place [818.01ms]
+(pass) transactional immutable persistence > successful save removes configurable hidden string and symbol extensions while retaining identities [709.34ms]
+(pass) transactional immutable persistence > non-configurable run, node, and attempt extensions fail preflight without caller or authoritative mutation [2228.96ms]
+(pass) transactional immutable persistence > archived caller attempts are preflighted and configurable extras are stripped from detached identities [839.55ms]
+(pass) transactional immutable persistence > a non-configurable archived-attempt extra fails before caller or authoritative mutation [724.08ms]
+(pass) transactional immutable persistence > non-configurable canonical data properties allow invariant-safe updates and exact fixed values [672.27ms]
+(pass) transactional immutable persistence > incompatible canonical descriptors fail precommit without invoking accessors or changing state [1221.06ms]
+(pass) transactional immutable persistence > custom prototypes and deterministic proxy trap rejection stay precommit and mutation-free [1096.54ms]
+(pass) transactional immutable persistence > node:util types.isProxy rejects transparent and stateful proxies before any write [1138.50ms]
+(pass) transactional immutable persistence > descriptor post-validation catches stateful Proxy mutation without getter or durable write [1198.73ms]
+(pass) transactional immutable persistence > descriptor snapshot persistence accepts an ordinary graph and preserves canonical identities [714.55ms]
+(pass) transactional immutable persistence > cross-path node and attempt aliases fail precommit while ordinary identities persist [2013.22ms]
+(pass) transactional immutable persistence > post-save execution state keeps model snapshots immutable and node fields mutable [171.24ms]
+(pass) transactional immutable persistence > legacy fixed references load and migrate to immutable paths while fixed backup content remains recoverable [971.95ms]
+(pass) transactional immutable persistence > a transfer-only save recursively migrates nested legacy history while the old manifest still hydrates [1064.19ms]
+(pass) transactional immutable persistence > a transfer rebinds and migrates a projected root-authorization archive without breaking legacy recovery [440.64ms]
+(pass) transactional immutable persistence > concurrent cross-process publication yields one fenced manifest and valid immutable content [2963.06ms]
+(pass) complete full hydration > archived projected records are strictly parsed before valid details can hydrate over them [1436.72ms]
+(pass) complete full hydration > status, run, and resume full hydrate archived order plus every attempt field while compact stays projected [4521.16ms]
+(pass) complete full hydration > routing summaries count archived prefixes exactly, expose legacy unknowns, and reject forged metadata [2465.21ms]
+(pass) complete full hydration > full status list hydrates every owned run and reports a precise corrupt-run failure [1617.29ms]
+(pass) complete full hydration > owned listing reports malformed owned state without disclosing malformed other-owner state [280.77ms]
+(pass) complete full hydration > missing, corrupt, wrong-hash, escaping, and wrong-kind history/output references fail safely and clearly [3249.33ms]
+(pass) complete full hydration > a valid same-node failure sidecar cannot be substituted for the projected failure list [536.13ms]
+(pass) complete full hydration > attempt detail rejects the exact projection-only failures_commitment field before hydration [319.55ms]
+(pass) complete full hydration > failure sidecars preserve canonical strings and reject padded failure text instead of trimming [366.53ms]
+(pass) complete full hydration > root authorization sidecars accept canonical values and reject padded operation/session/path/ID fields [1045.04ms]
+(pass) complete full hydration > same-prefix/count attempt and node failure suffix substitutions fail their independent commitments [410.44ms]
+
+tests\plan-execution-guidance.test.ts:
+(pass) plan execution intent > compact live plan directs requested artifacts to bounded execution without executing during planning [148.44ms]
+(pass) plan execution intent > compact dry plan keeps live execution out of its next action [127.86ms]
+(pass) plan execution intent > full live plan directs requested artifacts to bounded execution without executing during planning [126.89ms]
+(pass) plan execution intent > full dry plan keeps live execution out of its next action [123.30ms]
+(pass) plan execution intent > explicit plan-only goals remain unexecuted and receive a stop-at-planning exception [153.32ms]
+(pass) opt-in coding-compact workflow > ships one matching, registered, schema-valid graph without changing the default [3.69ms]
+(pass) opt-in coding-compact workflow > preserves original criteria, bounds attempts and keeps the independent checker when a shell gate is supplied [142.14ms]
+(pass) opt-in coding-compact workflow > fresh checker feedback stays within the original four-attempt cap (repaired) [2208.71ms]
+(pass) opt-in coding-compact workflow > fresh checker feedback stays within the original four-attempt cap (rejected) [2426.92ms]
+(pass) optional plan preservation inputs > compact validates project-relative files and requests snapshots without adding criteria [112.39ms]
+(pass) optional plan preservation inputs > full validates project-relative files and requests snapshots without adding criteria [106.76ms]
+(pass) optional plan preservation inputs > omission is opt-in and custom graph augmentation retains dependency inputs on only the first implementer [241.05ms]
+(pass) optional plan preservation inputs > enforces count, path length, normalization, existence and regular files before creating a run [149.26ms]
+(pass) optional plan preservation inputs > rejects a symlink or junction escape even when the target is a regular file [16.21ms]
+(pass) optional plan preservation inputs > rejects graphs without implementers and preserves the revision argument boundary [142.41ms]
+
+tests\plugin-configuration.test.ts:
+(pass) air-gapped plugin configuration > workspace and investigation policy sections obey whole-section SDK precedence [12.94ms]
+(pass) air-gapped plugin configuration > uses package sidecar and replaces a whole section supplied by the SDK [21.51ms]
+(pass) air-gapped plugin configuration > uses legacy src sidecar only when package-root sidecar is absent [17.25ms]
+(pass) air-gapped plugin configuration > uses only an absolute explicit override and never loads from cwd [10.39ms]
+(pass) air-gapped plugin configuration > fails closed and keeps malformed, oversized, and schema-invalid input sanitized [28.17ms]
+(pass) air-gapped plugin configuration > SDK option errors do not print unknown keys or submitted values [0.99ms]
+(pass) air-gapped plugin configuration > rejects a symlink sidecar where the host permits creating one [1.40ms]
+
+tests\preservation-evidence.test.ts:
+(pass) preservation observations bind exact bytes and do not hide a changed file [26.52ms]
+(pass) original preservation basis survives implementation retries, persistence and checker handoff [1809.01ms]
+
+tests\properties.test.ts:
+(pass) deterministic adversarial properties > safe ids and derived paths agree for arbitrary and reserved strings [41.55ms]
+(pass) deterministic adversarial properties > arbitrary path segments can never produce an escaping accepted path [72.46ms]
+(pass) deterministic adversarial properties > graph id validity and forged done-state outputs hold across generated data [283.38ms]
+
+tests\prose-fence-recovery.test.ts:
+(pass) bounded prose-opener recovery > recovers a closed output fence after Here is the { opener gate it uses. All checks done. [0.55ms]
+(pass) bounded prose-opener recovery > recovers a closed output fence after Here is the [ opener gate it uses. All checks done. [0.20ms]
+(pass) bounded prose-opener recovery > recovers a closed output fence after The { character and the { character are mentioned in prose. [0.10ms]
+(pass) bounded prose-opener recovery > recovers a closed output fence after The `{`/`[` opener gate is checked. [0.07ms]
+(pass) bounded prose-opener recovery > inline, unlabeled, uppercase and CRLF fences retain compatibility [0.39ms]
+(pass) bounded prose-opener recovery > recovery preserves ambiguity and role-schema selection across all candidates [1.23ms]
+(pass) bounded prose-opener recovery > a recovered object still goes to schema validation, not coercion [0.23ms]
+(pass) bounded prose-opener recovery > fails closed on genuine or uncertain truncation: "The { opener is discussed.\n```json\n{\"passed\":true" [0.12ms]
+(pass) bounded prose-opener recovery > fails closed on genuine or uncertain truncation: "The { opener is discussed.\n```json\n{\"passed\":true,\"failures\":[],\"score\":9}" [0.05ms]
+(pass) bounded prose-opener recovery > fails closed on genuine or uncertain truncation: "The { opener is discussed.\n```json\n{\"passed\":true\n```" [0.05ms]
+(pass) bounded prose-opener recovery > fails closed on genuine or uncertain truncation: "{\"wrapper\":{\"passed\":true,\"failures\":[],\"score\":9}" [0.04ms]
+(pass) bounded prose-opener recovery > fails closed on genuine or uncertain truncation: "[{\"passed\":true,\"failures\":[],\"score\":9}" [0.01ms]
+(pass) bounded prose-opener recovery > fails closed on genuine or uncertain truncation: "{\"wrapper\":\n```json\n{\"passed\":true,\"failures\":[],\"score\":9}\n```" [0.02ms]
+(pass) bounded prose-opener recovery > fails closed on genuine or uncertain truncation: "[\n```json\n{\"passed\":true,\"failures\":[],\"score\":9}\n```" [0.01ms]
+(pass) bounded prose-opener recovery > fails closed on genuine or uncertain truncation: "Broken object {broken:\n```json\n{\"passed\":true,\"failures\":[],\"score\":9}\n```" [0.05ms]
+(pass) bounded prose-opener recovery > fails closed on genuine or uncertain truncation: "Broken array [true,\n```json\n{\"passed\":true,\"failures\":[],\"score\":9}\n```" [0.02ms]
+(pass) bounded prose-opener recovery > fails closed on genuine or uncertain truncation: "{\"passed\":true,\"failures\":[],\"score\":9} {\"unfinished\":" [0.02ms]
+(pass) bounded prose-opener recovery > fails closed on genuine or uncertain truncation: "The { opener is discussed.\n```json\n{\"passed\":true,\"failures\":[],\"score\":9}\n```\n{\"unfinished\":" [0.02ms]
+(pass) bounded prose-opener recovery > fails closed on genuine or uncertain truncation: "{broken:}\n{\"passed\":true,\"failures\":[],\"score\":9}\n{\"unfinished\":" [0.15ms]
+(pass) bounded prose-opener recovery > never salvages nested verdicts in balanced malformed parents or arrays [0.32ms]
+(pass) bounded prose-opener recovery > does not rescan arbitrary later raw objects without a fence boundary [0.12ms]
+(pass) bounded prose-opener recovery > escaped quotes, brackets and fence-looking text inside JSON strings stay data [0.50ms]
+(pass) bounded prose-opener recovery > prose openers consume the shared eight-span budget [0.56ms]
+(pass) bounded prose-opener recovery > the response size limit is enforced before recovery [0.95ms]
+
+tests\release-gate.test.ts:
+(pass) every release command has a deadline and failed commands retain diagnostics [243.19ms]
+(pass) release command launch errors and deadlines return failure diagnostics [653.97ms]
+(pass) release output overflow is bounded without killing a successful command [229.47ms]
+(pass) bounded release-gate evidence > v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate [7.06ms]
+(pass) bounded release-gate evidence > source identity and npm allowlist automatically include every skill-evolution runtime module [168.84ms]
+(pass) bounded release-gate evidence > strict schema rejects unknown or contradictory fields [1.53ms]
+(pass) bounded release-gate evidence > release-input identity binds same-length manager script, documentation, and test changes [80.06ms]
+(pass) bounded release-gate evidence > redacts credentials and bounds UTF-8 output tails [0.40ms]
+(pass) bounded release-gate evidence > writes only strict bounded external evidence and artifact scanning detects caches [24.40ms]
+(pass) bounded release-gate evidence > release evidence UUID collision never overwrites the existing final artifact [59.74ms]
+(pass) bounded release-gate evidence > release evidence same-byte replacement before-final-check is preserved and rejected [41.08ms]
+(pass) bounded release-gate evidence > release evidence same-byte replacement after-final-check is preserved and rejected [43.35ms]
+(pass) bounded release-gate evidence > release evidence preserves a replaced temporary and rejects cleanup [34.86ms]
+(pass) bounded release-gate evidence > strict release verification rejects a same-byte final identity replacement [46.17ms]
+(pass) bounded release-gate evidence > semantically verifies retained evidence against the current source, package, live proof, path, and hash [2221.30ms]
+(pass) bounded release-gate evidence > semantic verification rejects coherent-looking contradictory or stale evidence [10754.62ms]
+(pass) bounded release-gate evidence > strict live semantics reject minimal, empty, wrong-tool, manifest, and registration evidence [1417.37ms]
+(pass) bounded release-gate evidence > resolves npm by fixed canonical siblings with spaces and never parses a malicious cmd shim [23.35ms]
+(pass) bounded release-gate evidence > rejects unresolvable or non-file npm shims and supports a resolved POSIX executable [4.33ms]
+(pass) bounded release-gate evidence > accepts only the canonical Node POSIX bin/npm to lib/npm CLI layout [0.94ms]
+(skip) bounded release-gate evidence > resolves a real POSIX npm symlink inside the Node installation
+(pass) bounded release-gate evidence > rejects an actual npm CLI directory junction/symlink escape [6.39ms]
+(pass) bounded release-gate evidence > deterministic realpath seam rejects independent node executable escape [0.42ms]
+(pass) bounded release-gate evidence > deterministic realpath seam rejects independent CLI escape [0.24ms]
+(pass) bounded release-gate evidence > complete package allowlist rejects extras, missing paths, duplicates, unsafe paths, and bad modes [106.97ms]
+
+tests\reliability-observability.test.ts:
+(pass) reliability and observability hardening > portable root detection rejects each mutating call unless that call opts in [0.81ms]
+(pass) reliability and observability hardening > plan/run/resume tools reject the host root before lookup and require opt-in on each call [6.11ms]
+(pass) reliability and observability hardening > tool handlers reject before mutation and generate persisted per-call root authorization audits [1775.04ms]
+(pass) reliability and observability hardening > built-in explorer nodes have one finite retry [0.51ms]
+(pass) reliability and observability hardening > explorer strict-output rejection consumes and retries only the explorer [1048.05ms]
+(pass) reliability and observability hardening > more than 100 schema issues persist deterministically and retry only their node [1190.11ms]
+(pass) reliability and observability hardening > schema-contradictory checker retries itself without reopening worker [1573.79ms]
+(pass) reliability and observability hardening > SDK diagnostics retain safe nested detail while redacting and bounding hostile values [0.69ms]
+(pass) reliability and observability hardening > request-like unknown fields stay opaque while exact SDK wrappers remain useful [0.43ms]
+(pass) reliability and observability hardening > diagnostics redact composite content keys and every quoted or unquoted authorization form [0.41ms]
+(pass) reliability and observability hardening > inline diagnostics redact entire quoted credential values and retain safe surroundings [0.23ms]
+(pass) reliability and observability hardening > escaped JSON credential assignments are fully redacted in text and SDK diagnostics [0.34ms]
+(pass) reliability and observability hardening > assignment redaction fails closed across bare, quoted, escaped, comma, space, and authorization values [0.27ms]
+(pass) reliability and observability hardening > approved scalar messages redact complete private-content assignments across serialization layers [0.44ms]
+(pass) reliability and observability hardening > unknown request-content containers never expose recognized descendants [0.20ms]
+(pass) reliability and observability hardening > diagnostic scalar fields reject structured values at every nesting level [0.43ms]
+(pass) reliability and observability hardening > unknown top-level scalar, object, array, and type fields stay opaque [0.18ms]
+(pass) reliability and observability hardening > approved diagnostic containers allowlist fields and never emit arbitrary values [0.43ms]
+(pass) reliability and observability hardening > approved container arrays and exact SDK wrappers use restricted semantics [0.26ms]
+(pass) reliability and observability hardening > three-component request content containers are opaque non-content markers [0.18ms]
+(pass) reliability and observability hardening > alg_status compact list reports a shortened goal even when no runs are omitted [134.12ms]
+(pass) reliability and observability hardening > alg_status list reports accurate run and field truncation counts and honors full completeness [3063.70ms]
+(pass) reliability and observability hardening > maximum prefixed SDK diagnostic persists within schema limits without leaking sentinels [1143.83ms]
+(pass) reliability and observability hardening > session SDK response errors and primitive throws use safe useful diagnostics [2.49ms]
+(pass) reliability and observability hardening > model resolution records precedence, defaults, repair identity, and old-run fallback [138.64ms]
+(pass) reliability and observability hardening > compact status remains projected while full status and artifact hydrate complete typed detail [1460.08ms]
+(pass) reliability and observability hardening > full run and resume retain bounded projected timing, outcome, and reference history [1565.53ms]
+(pass) reliability and observability hardening > maximum incomplete outputs compact every save while complete typed artifacts survive reload [2766.23ms]
+(pass) reliability and observability hardening > legacy inline-output progress reloads and migrates without losing full artifact access [821.43ms]
+(pass) reliability and observability hardening > compact plan/run/status apply aggregate node, attempt, session, event, and byte bounds [7092.15ms]
+(pass) reliability and observability hardening > persisted root authorization audit remains visible in compact and full status [247.89ms]
+(pass) reliability and observability hardening > projected root authorization history is immutable, fully hydratable, aggregated, legacy-honest, and fail-closed [507.32ms]
+(pass) reliability and observability hardening > compact root verification rejects a forged per-operation distribution with the same total [196.45ms]
+(pass) reliability and observability hardening > compact run and resume use one committed root projection above 64 approvals [1062.90ms]
+(pass) reliability and observability hardening > legacy failure commitments report weaker verification and migrate on save [256.54ms]
+
+tests\response-reliability.test.ts:
+(pass) model-agnostic response reliability > extractor is bounded, escape-aware, and does not salvage nested objects [1.05ms]
+(pass) model-agnostic response reliability > role selection normalizes path metadata before schema filtering and rejects two valid objects [9.13ms]
+(pass) model-agnostic response reliability > schema diagnostics name safe fields and expected types without echoing values or unknown keys [0.57ms]
+(pass) model-agnostic response reliability > worker prompt and executor accept normalized Windows metadata only within this run [2590.34ms]
+(pass) model-agnostic response reliability > empty tool-only SDK output records bounded metadata without inferring a step limit [574.78ms]
+(pass) model-agnostic response reliability > oversized SDK text is a bounded response failure, not an SDK error [574.59ms]
+
+tests\run-cards.test.ts:
+(pass) native subagent cards > a parallel fan-out shows one running task card per child, then completes each [1053.81ms]
+(pass) native subagent cards > a failed attempt becomes a failed card and its retry gets a new card [1245.02ms]
+(pass) native subagent cards > shell nodes, dry runs, and the off setting create no cards [2225.69ms]
+(pass) native subagent cards > a host that rejects cards never changes the run and stops being asked [1722.36ms]
+(pass) native subagent cards > cancelling mid-run closes cards that were still running [758.95ms]
+(pass) run card projector > cards a crashed process left running are closed by the next call, and earlier attempts are not redrawn [116.79ms]
+(pass) run card projector > observer errors and late calls never throw [112.37ms]
+(pass) run card projector > part ids use the host layout and stay ordered within a millisecond [0.83ms]
+
+tests\run-close.test.ts:
+(pass) ending a run that will not be continued > alg_resume close=true fails the unfinished nodes, keeps what finished, and stops offering the run [1059.46ms]
+(pass) ending a run that will not be continued > a run left mid-attempt by a crashed process closes cleanly [455.36ms]
+(pass) ending a run that will not be continued > close_reason alone is refused, and a finished run is not closed [1260.54ms]
+(pass) a run nobody has touched for a week > is offered as a short notice instead of a full summary [143.34ms]
+
+tests\run-progress-integration.test.ts:
+(pass) live progress tool integration > publishes both parallel child IDs before either prompt completes and retains final metadata [970.84ms]
+(pass) live progress tool integration > records retry count, resumes the next wave, and describes dry progress [2772.61ms]
+(pass) live progress tool integration > sync throws and asynchronous metadata rejection do not change the verdict [569.17ms]
+(pass) live progress tool integration > does not notify progress when child-session persistence fails [334.28ms]
+
+tests\run-progress.test.ts:
+(pass) live run progress contract > counts all nodes, caps rows, and prioritizes unfinished nodes deterministically [0.73ms]
+(pass) live run progress contract > derives ready state and emits only the privacy-limited projection [0.33ms]
+(pass) live run progress contract > parser checks owner first, rejects unknown or inconsistent data, and returns a fresh object [0.13ms]
+
+tests\runtime-completion.test.ts:
+(pass) creation validates execution directory before writes and pins it in the initial commit [114.96ms]
+(pass) plan and status expose the persisted child and relative-gate base [1802.35ms]
+(pass) feedback cancellation preserves successful history and exhausted consumers prevent reopening [3472.23ms]
+(pass) checker retries receive schema failure context and explicit score contract [987.19ms]
+(pass) session sidecar persistence failure is not classified or retried as worker work [497.80ms]
+(pass) diagnostics canonicalize whitespace, redaction, Unicode and truncation [0.43ms]
+(pass) JSON literals and safe references agree with graph validation [114.73ms]
+(pass) shell failure survives save/load/resume with canonical stderr diagnostics [1441.32ms]
+(pass) rejected workers retry; observer exceptions cannot rewrite DONE [885.80ms]
+(pass) failed branch with unfinished independent work is durably blocked [1454.47ms]
+(pass) cancellation between batches reserves no later work and remains resumable [1268.72ms]
+(pass) execution cwd remains pinned across subdirectory resumes; legacy uses project root [2557.54ms]
+
+tests\runtime-identity.test.ts:
+(pass) deployment runtime identity > freezes a bounded module-evaluation source observation [76.82ms]
+(pass) deployment runtime identity > compares frozen module observation to current disk without claiming host loading [0.16ms]
+
+tests\save-path.test.ts:
+(pass) executor saves > a finished node is durable and reported while its batch sibling is still running [1092.16ms]
+(pass) executor saves > a one-node run commits five times and never re-saves an unchanged run [663.25ms]
+(pass) executor saves > a failed attempt that will be retried is committed once, already rescheduled [931.60ms]
+(pass) executor saves > a running run rewrites its owner projection only on a status change or after another writer [863.65ms]
+(pass) executor saves > a direct save still mirrors every change into the owner projection [360.65ms]
+(pass) per-turn incomplete-run lookup > scans once, then answers from two stat calls until something changes [984.17ms]
+(pass) per-turn incomplete-run lookup > notices a run created or finished by another process [987.69ms]
+(pass) per-turn incomplete-run lookup > does not trust a just-modified directory, and rescans after the maximum age [91.95ms]
+(pass) per-turn incomplete-run lookup > a worker session this process created is answered without any scan [105.67ms]
+(pass) containment scope > isContained answers exactly as path.relative does [11.72ms]
+(pass) containment scope > remembers within one operation only, including when it throws [0.30ms]
+(pass) containment scope > a directory swapped for a link between operations is always caught [3.86ms]
+(pass) lock ownership without reading the lock back > a renewed lock is still held, and release removes it [23.46ms]
+(pass) lock ownership without reading the lock back > a lock replaced by another writer is lost and is never removed by the former holder [15.91ms]
+(pass) lock ownership without reading the lock back > a lock that disappeared is lost [15.11ms]
+
+tests\schema-retry-diagnostics.test.ts:
+(pass) schema-owned retry diagnostics > explorer exposes trusted path query [0.35ms]
+(pass) schema-owned retry diagnostics > explorer exposes trusted path map.0.role [0.20ms]
+(pass) schema-owned retry diagnostics > explorer exposes trusted path key_hits.0.note [0.48ms]
+(pass) schema-owned retry diagnostics > researcher exposes trusted path evidence.0.path [0.27ms]
+(pass) schema-owned retry diagnostics > researcher exposes trusted path options.0.pros.0 [0.49ms]
+(pass) schema-owned retry diagnostics > implementer exposes trusted path artifact_path [0.06ms]
+(pass) schema-owned retry diagnostics > implementer exposes trusted path blockers.0 [0.12ms]
+(pass) schema-owned retry diagnostics > implementer exposes trusted path commands_run.0.outcome [0.38ms]
+(pass) schema-owned retry diagnostics > checker exposes trusted path passed [0.08ms]
+(pass) schema-owned retry diagnostics > checker exposes trusted path notes [0.05ms]
+(pass) schema-owned retry diagnostics > shell exposes trusted path exit_code [0.10ms]
+(pass) schema-owned retry diagnostics > shell exposes trusted path stdout_tail [0.13ms]
+(pass) schema-owned retry diagnostics > shell exposes trusted path timed_out [0.21ms]
+(pass) schema-owned retry diagnostics > enum and size diagnostics remain useful without echoing supplied values [0.48ms]
+(pass) schema-owned retry diagnostics > unknown keys, values and cross-role field names are never diagnostic paths [0.68ms]
+(pass) schema-owned retry diagnostics > many nested issues stay within the existing persisted diagnostic limits [12.56ms]
+(pass) schema-owned retry diagnostics > semantic verdict and completion constraints still fail closed [0.61ms]
+(pass) schema-owned retry diagnostics > custom rule blockers_required_when_incomplete has fixed actionable guidance [0.15ms]
+(pass) schema-owned retry diagnostics > custom rule blockers_forbidden_when_done has fixed actionable guidance [0.05ms]
+(pass) schema-owned retry diagnostics > custom rule run_artifact_path has fixed actionable guidance [0.09ms]
+(pass) schema-owned retry diagnostics > custom rule project_relative_path has fixed actionable guidance [0.13ms]
+(pass) schema-owned retry diagnostics > custom rule text_trimmed has fixed actionable guidance [0.07ms]
+(pass) schema-owned retry diagnostics > custom rule failures_empty_when_passed has fixed actionable guidance [0.04ms]
+(pass) schema-owned retry diagnostics > custom rule failures_required_when_rejected has fixed actionable guidance [0.04ms]
+(pass) schema-owned retry diagnostics > custom rule score_matches_verdict has fixed actionable guidance [0.04ms]
+(pass) schema-owned retry diagnostics > custom rule shell_ok_matches_execution has fixed actionable guidance [0.05ms]
+(pass) schema-owned retry diagnostics > explorer aggregate limit names local UTF-8 byte policy [0.73ms]
+(pass) schema-owned retry diagnostics > researcher aggregate limit names local UTF-8 byte policy [0.45ms]
+(pass) schema-owned retry diagnostics > implementer aggregate limit names local UTF-8 byte policy [0.11ms]
+(pass) schema-owned retry diagnostics > checker aggregate limit names local UTF-8 byte policy [0.07ms]
+(pass) schema-owned retry diagnostics > shell aggregate limit names local UTF-8 byte policy [0.15ms]
+(pass) schema-owned retry diagnostics > child cannot inject a custom rule or override the byte limit through output keys [0.18ms]
+(pass) schema-owned retry diagnostics > schema_invalid selects guidance from outcome, not feedback text [0.17ms]
+(pass) schema-owned retry diagnostics > sdk_error selects guidance from outcome, not feedback text [0.05ms]
+(pass) schema-owned retry diagnostics > gate_failure selects guidance from outcome, not feedback text [0.01ms]
+(pass) schema-owned retry diagnostics > substantive_rejection selects guidance from outcome, not feedback text
+(pass) schema-owned retry diagnostics > incomplete selects guidance from outcome, not feedback text [0.05ms]
+(pass) schema-owned retry diagnostics > %s selects guidance from outcome, not feedback text [0.04ms]
+(pass) schema-owned retry diagnostics > initial calls have no prior-failure heading [0.09ms]
+(pass) schema-owned retry diagnostics > safe schema feedback survives save/load/resume without replaying a successful sibling [1267.10ms]
+
+tests\schemas.test.ts:
+(pass) strict contracts > persisted attempt session IDs reject surrounding whitespace instead of normalizing it [0.56ms]
+(pass) strict contracts > checker pass/failure/score invariants reject contradictions [0.33ms]
+(pass) strict contracts > checker outcomes require matching passed semantics and proved graph shell gates [0.72ms]
+(pass) strict contracts > implementer requires done=true and strict fields [0.17ms]
+(pass) strict contracts > implementer path metadata is normalized, project-relative, and traversal-safe [1.05ms]
+(pass) strict contracts > the prompt schema hint omits $schema and an echoed $schema marker does not fail validation [1.62ms]
+(pass) strict contracts > unknown agents are rejected instead of receiving a permissive record [0.24ms]
+(pass) strict contracts > graph rejects unknown agents, zero attempts, extra fields, and unordered refs [1.24ms]
+(pass) strict contracts > legacy omitted global cap receives local capacity while explicit bounded caps are preserved [0.27ms]
+(pass) strict contracts > traversal and prototype-shaped ids are rejected [0.16ms]
+(pass) strict contracts > run state validates exact graph/state identity and null-prototype maps [69.79ms]
+(pass) strict contracts > run state rejects forged outputs, attempts, statuses, and dependency completion [84.26ms]
+(pass) strict contracts > forged rejected checker output cannot support done attempt/node/run [1153.29ms]
+(pass) strict contracts > ownership transfer history is a strict creator-rooted monotonic chain [75.80ms]
+(pass) strict contracts > persisted checker attempt scores reject fractions and scores without output [85.93ms]
+(pass) strict contracts > loaded implementer artifacts must belong to the current run id [1280.49ms]
+
+tests\sdk-retry-contract.test.ts:
+(pass) SDK response -> persisted failure -> fresh retry: custom-rule rejection [1471.38ms]
+(pass) SDK response -> persisted failure -> fresh retry: prose-wrapped nested-field rejection with non-text parts [1378.70ms]
+(pass) SDK response -> persisted failure -> fresh retry: malformed JSON [1325.04ms]
+(pass) SDK response -> persisted failure -> fresh retry: tool-only reply [1494.53ms]
+(pass) SDK response -> persisted failure -> fresh retry: truncated verdict resumes with prose-opener recovery [1506.10ms]
+(pass) SDK response -> durable outcome: prose opener recovers on the first attempt [782.92ms]
+(pass) SDK response -> durable outcome: unfinished outer object cannot supply a nested verdict [704.63ms]
+(pass) SDK response -> durable outcome: recovered verdict still requires a boolean [762.60ms]
+
+tests\session-memory-host.test.ts:
+(pass) session memory SDK-boundary conformance > non-Git host sentinel keeps skills, approvals and compaction inside the working directory [484.27ms]
+(pass) session memory SDK-boundary conformance > corrupt delivery telemetry does not fail host hooks or retain stale procedures [601.41ms]
+(pass) session memory SDK-boundary conformance > revoked or missing procedures replace stale owned context and remain unavailable after restart [1500.66ms]
+(pass) session memory SDK-boundary conformance > twenty compacted turns retain exact prerequisites without duplicate injection or skill reminders [12419.65ms]
+(pass) session memory SDK-boundary conformance > learning-off hooks restore full procedures after compact/restart and preserve other plugins [1156.21ms]
+(pass) session memory SDK-boundary conformance > assist compaction captures pending learning evidence before rendering one working view [741.40ms]
+(pass) session memory SDK-boundary conformance > off and observe do not emit new memory context [276.75ms]
+(pass) session memory SDK-boundary conformance > observe corruption cannot veto ALG execution [585.08ms]
+(pass) session memory SDK-boundary conformance > foreign/private sessions cannot capture, propose, or initialize memory [18.23ms]
+(pass) session memory SDK-boundary conformance > read-only tools enforce session scope and complete instruction expansion [243.72ms]
+(pass) session memory SDK-boundary conformance > SDK child handoff precedes prompt; failed handoff and cancellation send no prompt [331.55ms]
+(pass) session memory SDK-boundary conformance > integrated ALG adapter intercepts repeat failed execution before creating another child [1590.86ms]
+(pass) session memory SDK-boundary conformance > ownership is validated again after the message read returns [10.78ms]
+(pass) session memory SDK-boundary conformance > a corrupt assist view does not stop the run [607.02ms]
+(pass) session memory SDK-boundary conformance > assist retry blocks only a matching committed failure [5643.28ms]
+
+tests\session-memory.test.ts:
+(pass) durable session memory > configured roots, exact bindings and successful restoration do not attest operator approval [494.44ms]
+(pass) durable session memory > larger mandatory allowance does not expand optional evidence or clip required bodies [418.88ms]
+(pass) durable session memory > off and read-only status do not initialize storage [2.54ms]
+(pass) durable session memory > exact names do not activate prefix neighbors and pinned restore skips discovery [224.64ms]
+(pass) durable session memory > successful current-turn skill tool loads survive generic continue; old and failed loads do not [246.42ms]
+(pass) durable session memory > duplicate skill names require reviewed exact-source binding instead of mixing procedures [369.36ms]
+(pass) durable session memory > golden: skill 87/100, verified solution, 20 compactions, restart, continue [3320.43ms]
+(pass) durable session memory > declared dependencies stay whole; drift and review are explicit [684.99ms]
+(pass) durable session memory > environment revision, expiry and origin invalidate old procedures [687.08ms]
+(pass) durable session memory > uncited failures do not block; polling and a reviewed retry stay explicit [900.60ms]
+(pass) durable session memory > observe mode never changes action results or injects context [603.70ms]
+(pass) durable session memory > failed adapter calls cannot persist exception secrets [567.74ms]
+(pass) durable session memory > mandatory multilingual instructions are never clipped; budget shrinks safely [247.37ms]
+(pass) durable session memory > assist refuses execution when a bound complete skill exceeds the context budget [453.29ms]
+(pass) durable session memory > CAS and interrupted publication preserve last committed cursor [178.96ms]
+(pass) durable session memory > scope, tombstones, tampering and redirected paths fail closed [185.09ms]
+(pass) durable session memory > suspected credentials reject entire source without rewriting instructions [9.81ms]
+(pass) durable session memory > an observed opening is not a task, and a checkpoint without that field still loads [123.25ms]
+(pass) durable session memory > candidate selection stays stable while receipts show what the budget actually rendered [493.80ms]
+(pass) durable session memory > budget-trimmed evidence is counted and offered for explicit retrieval [250.25ms]
+(pass) durable session memory > bounded graph expansion preserves evidence labels and does not promote proposals [4694.91ms]
+(pass) durable session memory > scoped worker delegation excludes private evidence; checker inherits no procedures [691.85ms]
+(pass) durable session memory > operator CLI uses strict reviewed requests and never modifies legacy state [79.06ms]
+
+tests\shell-preflight.test.ts:
+(pass) read-only shell command preflight > rejects command_required:   [0.21ms]
+(pass) read-only shell command preflight > rejects command_not_text: echo   [0.02ms]
+(pass) read-only shell command preflight > rejects command_too_long: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+(pass) read-only shell command preflight > rejects prose_or_markdown: ```cmd
+echo ok
+```
+(pass) read-only shell command preflight > rejects prose_or_markdown: Allowed tools: bash | edit | {read} [0.02ms]
+(pass) read-only shell command preflight > rejects prose_or_markdown: Run the tests and then summarize th
+(pass) read-only shell command preflight > rejects missing_pipeline_command: | echo ok [0.02ms]
+(pass) read-only shell command preflight > rejects missing_pipeline_command: echo ok | [0.04ms]
+(pass) read-only shell command preflight > rejects missing_pipeline_command: echo ok && [0.03ms]
+(pass) read-only shell command preflight > rejects missing_pipeline_command: echo ok | | echo bad [0.01ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: python -m pytest tests/unit [0.08ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo "a | {b} & c" [0.02ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: node -e "console.log(1 > 0)" [0.01ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok | findstr ok [0.02ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok && echo done [0.02ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: "C:\Program Files\Node\node.exe" -v
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok > result.txt 2>&1 [0.02ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: if exist tests (echo ok)
+(pass) read-only shell command preflight > preserves Windows command syntax: cmd /c "echo ok | echo done"
+(pass) read-only shell command preflight > preserves Windows command syntax: cd /d "C:\Repo With Spaces" && python -m pytest tests/unit [0.04ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ^| escaped
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok
+echo done
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok &
+(pass) read-only shell command preflight > preserves Windows command syntax: echo "unterminated
+(pass) read-only shell command preflight > preserves Windows command syntax: missing-tool || echo fallback [0.02ms]
+(pass) read-only shell command preflight > missing tools use the actual shell and PATH, not a POSIX blacklist [0.31ms]
+(pass) read-only shell command preflight > bounded and conservative for scripts, dynamic commands and directory changes [0.84ms]
+(pass) read-only shell command preflight > executable lookup reads files only, honors PATHEXT, and never invokes a command [11.24ms]
+(pass) plan rejects malformed gates before persistence, and reports explicit nested cwd [420.82ms]
+(pass) custom graphs are checked; directory escape is rejected; future test files are not required [186.12ms]
+(pass) legacy missing command blocks before any child or counter and does not echo arguments [328.50ms]
+(pass) corrected gate resumes with completed sibling intact and no budget reset [1978.08ms]
+(pass) unreachable exhausted gates cannot block independent work on resume [2161.54ms]
+(pass) command and cwd overrides affect only the persisted target implementer [852.03ms]
+(pass) checker-reopened work is rechecked before another attempt and durably blocked until repaired [2406.34ms]
+(pass) real failing tests still retry; stdout-only failures retain safe shell and cwd diagnostics [1074.81ms]
+(pass) public run and resume repair shell_cwd relative to pinned directory, not current UI directory [1203.17ms]
+(pass) empty-output and timeout failures report their limits without guessing a parser defect [1213.70ms]
+(pass) actual local gate runs in an explicit repository directory with spaces [3384.98ms]
+
+tests\shell-setup.test.ts:
+(pass) Windows helper compiles and executes under a long isolated TEMP [4606.83ms]
+(pass) cancellation during compiler startup reaps preparation and never runs a command [2238.47ms]
+(skip) Bash preparation is read-only and unavailable shells fail with sanitized diagnostics
+(pass) preparation cancellation before start never compiles or launches a command [0.25ms]
+(pass) compiler failure keeps bounded stdout and identity without uncertain command termination [210.06ms]
+
+tests\shell.test.ts:
+(pass) permissioned bounded shell gate > oversized inherited PATH remains usable by cmd without broadening environment inheritance [304.78ms]
+(pass) permissioned bounded shell gate > permission denial happens before spawn [4.62ms]
+(pass) permissioned bounded shell gate > failed Windows helper build removes its exact recorded source and executable [307.75ms]
+(pass) permissioned bounded shell gate > private Windows Job helper ignores a poisoned legacy path and compiles once in-process [6441.34ms]
+(pass) permissioned bounded shell gate > asks with exact command metadata and uses a canonical contained cwd [882.16ms]
+(pass) permissioned bounded shell gate > Windows timeout starts at command-ready after delayed watcher setup [7180.45ms]
+(pass) permissioned bounded shell gate > times out and terminates long-running commands [1495.46ms]
+(pass) permissioned bounded shell gate > keeps fixed-size byte tails without accumulating full output [259.78ms]
+(pass) permissioned bounded shell gate > abort cancellation terminates a spawned command [1313.77ms]
+(pass) permissioned bounded shell gate > abort occurring inside spawn is caught by the post-registration recheck [169.23ms]
+(pass) permissioned bounded shell gate > child error during termination cannot mask failed containment verification [309.25ms]
+(pass) permissioned bounded shell gate > Windows taskkill failure or hang is bounded with direct-kill fallback [529.66ms]
+(pass) permissioned bounded shell gate > Windows fallback kills a real grandchild before its delayed marker write [4983.83ms]
+(pass) permissioned bounded shell gate > Windows helper lifecycle leaves zero net strictly owned TEMP additions [4347.26ms]
+(pass) permissioned bounded shell gate > a next process janitor reclaims a marked helper after its owner is forcibly killed [2934.79ms]
+(skip) permissioned bounded shell gate > POSIX timeout verifies a real child/grandchild process group is gone
+(skip) permissioned bounded shell gate > POSIX normal shell exit terminates redirected-stdio background descendants
+
+tests\skill-approval.test.ts:
+(pass) public tool authorizes every operation and keeps approval separate from loading [261.78ms]
+(pass) source policy admits new revisions without editing config; unrelated rules do not invalidate receipts [396.38ms]
+(pass) source, names and scopes are policy bounds, not grants inferred from skill prose [142.47ms]
+(pass) preview is read-only; approval is separate from activation and survives restart [222.17ms]
+(pass) approval fails without policy and for foreign project, scope, or revision [40.61ms]
+(pass) policy removal or revision change cannot downgrade an approved binding [291.81ms]
+(pass) legacy bindings are not approvals; source drift and revocation fail closed [431.22ms]
+(pass) twenty restores retain approved complete closure with restart and no learning [1307.48ms]
+(pass) workers inherit policy-checked procedures but cannot issue approvals [480.43ms]
+
+tests\skill-catalog.test.ts:
+(pass) skill catalog > lists managed SKILL.md files and skips invalid or duplicate names [19.33ms]
+(pass) skill catalog > matches unused related tools and formats system plus compaction context [10.35ms]
+(pass) skill catalog > evidence records catalog coverage and unused-skill triggers [19.71ms]
+(pass) skill catalog > SkillGuidance does not inject catalog text when evolution is disabled [3.68ms]
+(pass) skill catalog > hint extraction reads skill tool names from chat messages [0.26ms]
+(pass) session continuity regressions > recovery updates preserve independent fields and reject substituted owners [103.28ms]
+(pass) session continuity regressions > complete system injection counts as loaded only for its source user turn [104.46ms]
+(pass) session continuity regressions > no hint or no match does not activate arbitrary skills [8.35ms]
+(pass) session continuity regressions > oversized Unicode bodies are omitted whole, with hash and reload status [34.70ms]
+(pass) session continuity regressions > complete bodies fit atomically within the combined budget [34.80ms]
+(pass) session continuity regressions > late-alphabet active skill survives restart, with owner isolation and drift detection [200.27ms]
+(pass) session continuity regressions > active reference truncation is explicit and failed skill tools are not loaded [77.29ms]
+(pass) session continuity regressions > ALG budgeting preserves foreign plugin chunks and prioritizes recovery [0.33ms]
+
+tests\skill-evolution-child-outcome.test.ts:
+(pass) private skill-evolution child response boundary > completed terminal output distinguishes extraction failure from transport uncertainty [1410.77ms]
+(pass) private skill-evolution child response boundary > only successful terminal metadata bound to the created child is completed [2168.42ms]
+(pass) private skill-evolution child response boundary > trusted private contract is conditional and ordinary agent contracts remain present [0.53ms]
+
+tests\skill-evolution-evidence-schema.test.ts:
+(pass) skill-evolution options and strict schemas > options are disabled by default, fill bounded defaults, and reject unknown plugin/options fields [0.88ms]
+(pass) skill-evolution options and strict schemas > unsafe, duplicate, store-overlapping, device, ADS, absolute, and traversal skill roots are rejected [0.52ms]
+(pass) skill-evolution options and strict schemas > auditor variants are exact and decision/operation/basis invariants are strict [13.41ms]
+(pass) skill-evolution options and strict schemas > checker, ledger, candidate-index, and immutable revision schemas reject contradictions and extras [3.06ms]
+(pass) skill-evolution options and strict schemas > proposed skills require strict frontmatter and reject oversized, secret, absolute-resource, and unsafe targets [4.38ms]
+(pass) skill-evolution evidence selection, scoring, redaction, and bounds > the target assistant and its authoritative parent user win over decoys and stale post-processing envelopes [0.76ms]
+(pass) skill-evolution evidence selection, scoring, redaction, and bounds > user correction, failed command/test, repeated attempts, reusable success, and no-signal turns score independently [1.35ms]
+(pass) skill-evolution evidence selection, scoring, redaction, and bounds > evidence redacts secrets, credential values, and absolute local paths while preserving injection text as inert data [0.47ms]
+(pass) skill-evolution evidence selection, scoring, redaction, and bounds > excerpt and aggregate limits retain truthful UTF-8 omission counters [2.61ms]
+(pass) skill-evolution evidence selection, scoring, redaction, and bounds > missing, cross-session, incomplete, errored, and wrong-parent authoritative messages fail closed [0.45ms]
+
+tests\skill-evolution-foundations.test.ts:
+(pass) credential canaries are absent from normalized canonical historical bytes and transport representations [2.02ms]
+(pass) live recovery is fenced across processes by the shared historical lease [634.24ms]
+(pass) late live success and failure writes cannot commit after a new attempt takes ownership [607.43ms]
+(pass) ledger size rejection checks formatted bytes and preserves the previous readable file [1718.60ms]
+(pass) read-only transaction health leaves an absent store absent [2.20ms]
+
+tests\skill-evolution-historical.test.ts:
+(pass) V1-only historical skill evolution > new sealed snapshots and prompted fragments redact transcript and session metadata canaries [2573.65ms]
+(pass) V1-only historical skill evolution > source uses only the supplied V1 client and strict bounded action unions [19.52ms]
+(pass) V1-only historical skill evolution > preview fails before transcript reads when auditor and checker models are not explicit [50.21ms]
+(pass) V1-only historical skill evolution > production V1 historical run fails closed before issuing an uncommitted child checkpoint [341.77ms]
+(pass) V1-only historical skill evolution > fails closed without exact current V1 project identity and filters discovery by identity plus canonical containment [172.89ms]
+(pass) V1-only historical skill evolution > maximum historical chunk configuration is prompt-safe at its exact boundary [0.47ms]
+(pass) V1-only historical skill evolution > historical candidate bindings accept large snapshot refs only up to the dedicated finite cap [1.50ms]
+(pass) V1-only historical skill evolution > candidate creation atomically rejects a historical plan cancelled before its store lock [289.38ms]
+(pass) V1-only historical skill evolution > near-cap canonical snapshots and references persist while either over-cap form is rejected [473.27ms]
+(pass) V1-only historical skill evolution > oversized serialized session metadata fails before transcript reads or snapshot persistence [42.33ms]
+(pass) V1-only historical skill evolution > public historical tool has one required strict request union and forwards every valid variant unchanged [1.61ms]
+(pass) V1-only historical skill evolution > maxChunkBytes boundary accounts for worst-case base64, metadata, and framing [0.72ms]
+(pass) V1-only historical skill evolution > missing or malformed current project identity fails closed before V1 reads or persistence [184.03ms]
+(pass) V1-only historical skill evolution > all historical actions preserve project skill roots and user/global OpenCode sentinels [2264.16ms]
+(pass) V1-only historical skill evolution > discovery and preview require exact projectID plus canonical containment [50.78ms]
+(pass) V1-only historical skill evolution > normalization preserves declared JSON shapes, rejects bad links, and fragments multibyte bytes losslessly [2.81ms]
+(pass) V1-only historical skill evolution > disabled by default makes no historical V1 or model calls [45.94ms]
+(pass) V1-only historical skill evolution > seals all 101+ messages with repeated limit+1 reads, immutable preview, confirmation, run, dedupe, and cancel [60006.62ms]
+(pass) V1-only historical skill evolution > overflow and repeated mutation reject without seal or model call [124.04ms]
+(pass) V1-only historical skill evolution > cross-project and private-child selections fail with stable dispositions [84.51ms]
+(pass) V1-only historical skill evolution > deterministic local reduction and a fresh checker create a validated but unpromoted candidate [2585.25ms]
+(pass) V1-only historical skill evolution > completed verification rejects every security-relevant candidate mirror and initial revision substitution [3940.67ms]
+(pass) V1-only historical skill evolution > interrupted chunk work is resumable from immutable committed checkpoints [1059.73ms]
+(pass) V1-only historical skill evolution > a completed malformed auditor response is durably rejected and retried within maxAttempts [2248.39ms]
+(pass) V1-only historical skill evolution > maxAttempts=1 rejection resumes in a reconstructed runtime without repeating the accepted chunk prefix [12153.18ms]
+(pass) V1-only historical skill evolution > a completed malformed checker response retries without creating a candidate from rejected output [2726.93ms]
+(pass) V1-only historical skill evolution > an exhausted checker batch resumes after reconstruction without repeating auditors [3694.23ms]
+(pass) V1-only historical skill evolution > a substantive checker rejection is recorded once and never retried as invalid format [2530.33ms]
+(pass) V1-only historical skill evolution > checker rejection references, content, order, and accounting are verified independently [4420.24ms]
+(pass) V1-only historical skill evolution > new previews pin a recognized recovery protocol while legacy completed plans remain readable [2049.64ms]
+(pass) V1-only historical skill evolution > persistent completed invalid output stays resumable and tampered rejection bindings fail closed [1090.02ms]
+(pass) V1-only historical skill evolution > durable cancellation during active work prevents the next child call [1032.67ms]
+(pass) V1-only historical skill evolution > complete fragment review publishes every identity even when later checker work is cancelled [3063.58ms]
+(pass) V1-only historical skill evolution > persisted hard deadline survives resume and preview input estimate covers encoded auditor prompts [1733.30ms]
+(pass) V1-only historical skill evolution > mutable progress and forged completion cannot skip confirmed chunks [575.07ms]
+(pass) V1-only historical skill evolution > status and idempotent resume fail closed on missing final and reordered chunk evidence [5885.54ms]
+(pass) V1-only historical skill evolution > status rejects unsafe chunk refs, completed disposition rollback, and trailing issued work [5646.70ms]
+(pass) V1-only historical skill evolution > a reduction checkpoint from another confirmed plan fails closed [3394.18ms]
+(pass) V1-only historical skill evolution > issued progress cannot lose or replace its immutable execution epoch [2217.73ms]
+(pass) V1-only historical skill evolution > historical child prompt keeps the planned model while configuration mutates during create [1593.06ms]
+(pass) V1-only historical skill evolution > changed transcript bytes with reused message IDs produce a distinct historical candidate [4808.07ms]
+(pass) V1-only historical skill evolution > project lease rejects a concurrent resume before another child create [1846.61ms]
+(pass) V1-only historical skill evolution > a reused first snapshot records a failed multi-session preview attempt [291.26ms]
+(pass) V1-only historical skill evolution > forged fragment provenance and memory candidates stop before publication/checker [3872.20ms]
+(pass) V1-only historical skill evolution > live-first and historical-first claim order deterministically selects one assistant auditor [4585.78ms]
+(pass) V1-only historical skill evolution > historical execution waits for a live auditor create lease and stale live publication stays fenced [3763.39ms]
+(pass) V1-only historical skill evolution > a missing reviewed-live candidate behind candidate ledger status fails inconsistent before historical suppression [597.75ms]
+(pass) V1-only historical skill evolution > a corrupt reviewed-live candidate behind candidate ledger status fails inconsistent before historical suppression [887.98ms]
+(pass) V1-only historical skill evolution > a ambiguous reviewed-live candidate behind candidate ledger status fails inconsistent before historical suppression [897.79ms]
+(pass) V1-only historical skill evolution > a candidate ledger status appearing after chunk review fails inconsistent before coverage or a second candidate [1912.02ms]
+(pass) V1-only historical skill evolution > duplicate registered auditor child identity makes reviewed-live binding ambiguous [835.49ms]
+(pass) V1-only historical skill evolution > duplicate registered checker child identity makes reviewed-live binding ambiguous [851.90ms]
+(pass) V1-only historical skill evolution > candidate-index crash recovery lets historical takeover dedupe the exact reviewed live identity [2064.84ms]
+(pass) V1-only historical skill evolution > historical execution waits for each live review lease and rejects stale live publication [7641.14ms]
+(pass) V1-only historical skill evolution > supported disposition transitions continue beyond the former state-history cap [1999.30ms]
+
+tests\skill-evolution-runtime.test.ts:
+(pass) live SDK get reads time out even if the client ignores abort [551.17ms]
+(pass) live SDK messages reads time out even if the client ignores abort [605.40ms]
+(pass) overall disabled rejects historical enabled without SDK effects or store creation [2.84ms]
+(pass) live checker receives the persisted source evidence as untrusted data [1140.39ms]
+(pass) installed V1 contract lacks permission rules and fails closed before synthetic sentinel execution [93.98ms]
+(pass) out-of-project sessions are skipped without failed ledger errors [380.15ms]
+(pass) explicit allowBuiltinToolMap dispatches auditor children without claiming deny-all [985.70ms]
+(pass) skipUninformativeAudits suppresses every-turn model calls without a catalog gap [534.14ms]
+(pass) triggered mode records unused catalog skill without an auditor call [647.81ms]
+(pass) unused catalog skill keeps an every-turn auditor call when skipUninformativeAudits is on [937.56ms]
+(pass) skill-evolution runtime event intake and queueing > disabled runtime and finish-only, idle, user, incomplete, errored, and summary updates are ignored [871.56ms]
+(pass) skill-evolution runtime event intake and queueing > duplicate terminal and post-processing updates execute once in memory and after runtime restart [1013.79ms]
+(pass) skill-evolution runtime event intake and queueing > session lookup title, created-event race, and registered child IDs prevent recursive audits [1089.45ms]
+(pass) skill-evolution runtime event intake and queueing > a project queue is single-flight and backlog overflow is a durable bounded failure [1814.15ms]
+(pass) skill-evolution runtime event intake and queueing > asynchronous SDK rejection is caught and persisted rather than escaping the event hook [403.79ms]
+(pass) skill-evolution runtime event intake and queueing > a new runtime recovers and retries a pending interrupted audit within its attempt bound [947.31ms]
+(pass) skill-evolution runtime event intake and queueing > triggered mode skips no-signal turns but audits scored corrections; every-turn audits both [2213.92ms]
+(pass) skill-evolution fresh auditor/checker child protocol > a never-settling auditor create times out durably and releases the project queue [1538.87ms]
+(pass) skill-evolution fresh auditor/checker child protocol > a never-settling auditor prompt times out and cannot create a late candidate [819.36ms]
+(pass) skill-evolution fresh auditor/checker child protocol > a never-settling checker prompt is bounded after a successful auditor result [1036.33ms]
+(pass) skill-evolution fresh auditor/checker child protocol > a never-settling checker create is bounded after a successful auditor result [845.22ms]
+(pass) skill-evolution fresh auditor/checker child protocol > late SDK fulfillment after timeout cannot alter failure or disrupt later work [1524.88ms]
+(pass) skill-evolution fresh auditor/checker child protocol > late SDK rejection after timeout cannot alter failure or disrupt later work [1623.51ms]
+(pass) skill-evolution fresh auditor/checker child protocol > synthetic child receives parent/title/model fixture metadata and untrusted auditor evidence [856.78ms]
+(pass) skill-evolution fresh auditor/checker child protocol > memory output creates no checker; skill output creates a fresh checker and records pass/fail honestly [2926.43ms]
+(pass) skill-evolution fresh auditor/checker child protocol > malformed, oversized, invalid-frontmatter, invented-trigger, and provenance-forged auditor outputs fail closed before checking [4057.39ms]
+(pass) skill-evolution fresh auditor/checker child protocol > auditor/checker creation, prompt, and malformed-result failures become terminal failed records; shutdown aborts stay recoverable [4562.84ms]
+(pass) skill-evolution compaction-loss handling > ordinary turn capture uses stable envelopes before the backend transcript disappears [810.84ms]
+(pass) skill-evolution compaction-loss handling > ordinary capture refuses foreign envelopes before enqueue and persistence [50.55ms]
+(pass) skill-evolution compaction-loss handling > enqueue then compact snapshot then dropped transcript still audits the durable evidence [1385.45ms]
+(pass) skill-evolution compaction-loss handling > compactSession fetches session.messages once per session [847.49ms]
+(pass) skill-evolution compaction-loss handling > shutting down mid-audit leaves the turn for startup recovery instead of failing it [1565.49ms]
+(pass) skill-evolution compaction-loss handling > compactSession does not wait the full child call timeout [2330.46ms]
+(pass) skill-evolution compaction-loss handling > enqueue then drop the assistant envelope without a snapshot is compacted_or_unavailable [564.71ms]
+(pass) skill-evolution compaction-loss handling > live session.messages uses limit+1 and classifies overflow instead of truncating [455.89ms]
+(pass) skill-evolution compaction-loss handling > a 100-envelope window that lacks the target id is compacted_or_unavailable [463.92ms]
+(pass) skill-evolution compaction-loss handling > alg executor children are excluded from automatic intake [111.12ms]
+(pass) skill-evolution compaction-loss handling > session.deleted is persisted and cancels queued audits across restart [323.94ms]
+(pass) skill-evolution compaction-loss handling > skill-evolution compaction context stays bounded and names pending keys [2.70ms]
+
+tests\skill-evolution-store.test.ts:
+(pass) skill-evolution durable store > ledger enqueue is exactly-once, bounded, force-retry limited, and restart recovery is durable [571.29ms]
+(pass) skill-evolution durable store > backlog overflow persists a terminal failure instead of dropping an identity [139.22ms]
+(pass) skill-evolution durable store > audit-child registry is durable and idempotent [65.82ms]
+(pass) skill-evolution durable store > evidence publication is canonical, idempotent, integrity-checked, and no-clobber [33.55ms]
+(pass) skill-evolution durable store > evidence loading rejects escaping paths, oversized direct files, and file-symlink replacement when supported [66.48ms]
+(pass) skill-evolution durable store > candidate creation is idempotent and revision updates enforce CAS and immutable integrity [210.99ms]
+(pass) skill-evolution durable store > candidate revision loading rejects oversized direct files and file-symlink replacement when supported [66.84ms]
+(pass) skill-evolution durable store > corrupted, malformed, and oversized ledger/index JSON fail closed [59.10ms]
+(pass) skill-evolution durable store > separate processes serialize concurrent ledger writers without lost records [1371.60ms]
+
+tests\skill-evolution-tools-promotion.test.ts:
+(pass) skill-evolution user tools > status keeps compact/full output bounded, filters honestly, reports global totals, and tracks restart need [1943.50ms]
+(pass) skill-evolution user tools > manual audit is project-scoped, idempotent, bounded-force, and cannot recurse through private IDs or titles [3230.93ms]
+(pass) skill-evolution user tools > review revisions preserve actor/reason, and restore cannot manufacture checker approval [1027.16ms]
+(pass) skill publication and filesystem containment > promotion accepts only explicitly confirmed validated skills and never deletes created skills [765.09ms]
+(pass) skill publication and filesystem containment > create is absent across every configured root; replace binds exact basis identity and publishes an independent backup [518.71ms]
+(pass) skill publication and filesystem containment > absolute/traversal/ADS/device targets and symlink, junction, reparse, or foreign parents fail closed [6.97ms]
+(pass) skill publication and filesystem containment > no-clobber publication preserves a racing create or replacement and leaves candidate state unchanged [533.85ms]
+(pass) skill transaction recovery and rollback > every publication crash point is journaled and recovers only exact before/file-applied states [2177.08ms]
+(pass) skill transaction recovery and rollback > startup recovers transactions while status reports pending work without mutations [570.35ms]
+(pass) skill transaction recovery and rollback > malformed/forged journals fail closed on exact path, hash, identity, revision, and third-state checks [1970.79ms]
+(pass) skill transaction recovery and rollback > rollback requires confirmation/promoted exact hash, preserves drift, restores exact backup, and appends rolled_back revision [490.22ms]
+(pass) skill mutation serialization > concurrent promote/review and duplicate rollback serialize; stale loser fails without clobber [1037.95ms]
+
+tests\smoke.test.ts:
+(pass) offline smoke temporary project cleanup > removes the exact smoke project after a successful full dry verification [1548.56ms]
+(pass) offline smoke temporary project cleanup > removes the exact smoke project when an injected post-verification failure is thrown [1438.45ms]
+
+tests\store-ownership.test.ts:
+(pass) safe durable store and ownership > run ids are collision-resistant and safe [4.69ms]
+(pass) safe durable store and ownership > atomic persistence creates a usable backup [173.87ms]
+(pass) safe durable store and ownership > owner run projections update atomically on create, save, and transfer without becoming authoritative [378.12ms]
+(pass) safe durable store and ownership > parallel run creators merge the bounded owner projection without lost entries [489.93ms]
+(pass) safe durable store and ownership > an unverifiable projection lock cannot fail authoritative run creation [75.39ms]
+(pass) safe durable store and ownership > post-commit create hydration failure returns the loadable committed run without cleanup [95.51ms]
+(pass) safe durable store and ownership > parallel ownership transfers merge removals from the former owner projection [558.92ms]
+(pass) safe durable store and ownership > exclusive lock rejects overlap and releases for a later executor [141.99ms]
+(pass) safe durable store and ownership > heartbeat renews a short lease and prevents stale takeover [4301.52ms]
+(pass) safe durable store and ownership > expired-lock takeover cannot rename a lease renewed after observation [144.65ms]
+(pass) safe durable store and ownership > fenced persistence rejects replacement or expiry in the final current-rename hook without changing recovery [853.49ms]
+(pass) safe durable store and ownership > fenced persistence commits when the final current-rename boundary still holds the lock [444.01ms]
+(pass) safe durable store and ownership > fenced persistence reports success when expiry or replacement occurs only after commit [709.38ms]
+(pass) safe durable store and ownership > non-commit fenced callbacks retain their failure-producing postcheck [169.10ms]
+(pass) safe durable store and ownership > owned discovery streams only the scan bound plus one, reports truncation truthfully, closes, and leaks no other-owner content [102.40ms]
+(pass) safe durable store and ownership > owned mutation keeps lease verification and commit inside the takeover guard [258.43ms]
+(pass) safe durable store and ownership > malformed and identity-mismatched locks fail closed without takeover [123.15ms]
+(pass) safe durable store and ownership > loaded state cannot select another project root and is quarantined [122.30ms]
+(pass) safe durable store and ownership > failed run quarantine rename reports that corrupt progress remains in place [87.00ms]
+(pass) safe durable store and ownership > implicit and explicit access are exact-owner only; transfer is audited [409.39ms]
+(pass) safe durable store and ownership > owner-filtered listRuns preserves another owner's corrupt state and derived metadata [284.29ms]
+(pass) safe durable store and ownership > only a confirmed owner can quarantine envelope-valid corrupt progress [140.21ms]
+(pass) safe durable store and ownership > owned load CAS-reconciles a legacy running attempt from its valid session sidecar [429.67ms]
+(pass) safe durable store and ownership > CAS rejects stale commits, including stale execution after transfer [603.36ms]
+(pass) safe durable store and ownership > transfer uses the execution lock and rechecks ownership inside it [301.39ms]
+(pass) safe durable store and ownership > derived write failure preserves progress and load reconciles every mirror [2718.98ms]
+(pass) safe durable store and ownership > stale loader re-reads authoritative revision under the mirror lock [252.28ms]
+
+tests\task-admission.test.ts:
+(pass) tool task contract admission > new plans cannot silently omit contracts or original criteria [6.02ms]
+(pass) tool task contract admission > impossible producer is rejected without effective-permission or child calls [7.92ms]
+(pass) tool task contract admission > known writes admit compact work and keep source and contract through status [228.76ms]
+(pass) tool task contract admission > host denial blocks before creation and changed permissions block before execution [185.35ms]
+(pass) tool task contract admission > criteria cannot be weakened by the legacy unlock switch [183.64ms]
+
+tests\task-contract.test.ts:
+(pass) declared task admission > project deliverables reject research-only graphs and do not create durable work [2.36ms]
+(pass) declared task admission > routing uses declared work and uncertainty, not model/task-name keywords [0.49ms]
+(pass) declared task admission > missing checker, disconnected producer, execution and protected paths fail closed [0.42ms]
+(pass) declared task admission > typed paths cannot conflict or traverse; diagnostics do not echo unknown keys [1.04ms]
+(pass) declared task admission > capabilities recognize only uniform host decisions [0.61ms]
+(pass) declared task admission > original criteria and contract survive persistence and bounded context projection [145.22ms]
+(pass) declared task admission > removing an accepted contract cannot silently turn a new run into legacy [143.56ms]
+(pass) declared task admission > legacy persisted runs remain readable without invented admission [124.03ms]
+(pass) host-enforced task completion > passing model verdict cannot certify a missing declared file [665.29ms]
+(pass) host-enforced task completion > correct files pass; preparation contract is visible to workers and remains pinned [1467.79ms]
+(pass) host-enforced task completion > claimed commands do not satisfy the native command requirement [669.75ms]
+(pass) host-enforced task completion > accepted verification gate cannot be replaced at run time [169.14ms]
+
+tests\task-evidence-integrity.test.ts:
+(pass) checker task evidence references survive attempt archiving and hydration; tampering fails closed [8436.49ms]
+
+tests\task-recovery.test.ts:
+(pass) an explicit resume repairs a missing file without rerunning completed unrelated work [3334.58ms]
+(pass) missing native evidence can be repaired by a new scoped producer attempt [1950.94ms]
+(pass) explicit prerequisite repair respects the original budget {"local":1} [940.43ms]
+(pass) explicit prerequisite repair respects the original budget {"global":2} [929.39ms]
+(pass) prerequisite repair refuses a project deliverable redirected outside the worktree [975.87ms]
+(pass) persistent missing evidence does not trigger a producer/checker prompt loop [1573.18ms]
+(pass) existing-file drift reopens only the checker and its descendants [3366.00ms]
+(pass) same-command cwd/timeout repair requires an actual setup failure (%s) [2293.74ms]
+(pass) same-command cwd/timeout repair requires an actual setup failure (%s) [935.84ms]
+
+tests\tui-live.test.ts:
+(pass) ALG live progress controller > rehydrates once, refreshes only the selected run, and keeps mid-run saved revisions visible [3.06ms]
+(pass) ALG live progress controller > labels corruption/wrong-owner as unavailable and never promotes saved running to current activity [0.80ms]
+(pass) ALG live progress controller > durable adapter projects a real saved run, rejects corruption, and ignores another owner [159.18ms]
+(pass) ALG live progress controller > paused/ready elapsed time freezes at last durable update; completed nodes use finish time [0.16ms]
+(pass) ALG live progress controller > route generation and disposal fence late discovery/read completions [0.41ms]
+(pass) ALG live progress controller > stalled read is reported, retained, and never overlapped by polling [0.44ms]
+(pass) ALG live progress controller > click re-reads ownership, checks cached parent identity, and navigates once [0.75ms]
+(pass) ALG live progress controller > rejects dry, shell, absent-child, wrong-parent, stale-generation, and malformed child links [1.88ms]
+(pass) ALG live progress controller > does not call prompt, messages, or transcript APIs [0.25ms]
+(pass) ALG live progress controller > OpenTUI synthetic render smoke mounts the live surface and renders saved labels [552.87ms]
+(pass) ALG live progress controller > /alg-live command mounts inside renderer and disposes its keyboard interceptor [220.25ms]
+
+tests\tui.test.ts:
+(pass) OpenCode 1.18.3 ALG TUI model picker > live verifier parses only ALG IDs from raw endpoint response shapes [0.24ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > uses separate server and TUI modules and discovers ALG /alg-models through keymap [2.24ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs accepts a canonical legacy visible row without outcome metadata and navigates exactly [6.93ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs visibly rejects exact missing, extra, duplicate, and graph/state agent identities [9.90ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs rejects strict graph omissions, unknown keys, and invalid relationships [10.70ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs lazily pages every archived attempt with truthful counts and exact session navigation [26.29ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs safely reports missing, corrupt, raw-byte, hash, owner, kind, run, and node archive failures [126.93ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs parses a genuine pretty-printed schema-v1 fixed archive and navigates its session [13.68ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs rejects malformed, missing, wrong-path/run/node, non-strict, and logical-size-invalid schema-v1 archives [94.36ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs lazily validates real schema-v1 fixed nested detail/output and deduplicates its weaker warning [60.08ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs rejects missing/malformed/escaping/wrong-identity/agent/logical-size legacy nested refs [203.79ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs rejects authoritative terminal, schema, output, outcome, score, and reference violations without navigation [88.43ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs validates reference-only checker score and substantive outcome before archived navigation [66.48ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs rejects ungated/schema-only checker gate_failure and accepts valid shell/all gate_failure [5.40ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs enforces inline checker passed, score, and substantive relationships [3.33ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs enforces referenced checker passed, score, and substantive relationships on navigation [97.69ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs rejects malformed referenced checker metadata and matching-hash malformed output [47.79ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs validates visible reference-only checker output before navigation [13.79ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs toasts for no current parent, no owned runs, and SDK errors [5.29ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs uses the bounded owner index with thousands of unrelated runs never listed or read [1.71ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs legacy fallback applies finite server limits and caps progress reads despite oversized responses [2.86ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs detects a missing owner index from the SDK result response status [1.16ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs does not classify non-404 SDK response errors as a missing index [1.06ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs legacy fallback rejects unrelated, traversal, absolute, and non-progress paths [1.06ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs legacy fallback sorts its bounded candidate set by actual updated_at before limiting results [1.92ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs surfaces a malformed index and recovers through the bounded fallback [1.25ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs visibly reports parseable malformed owned progress [1.13ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs toasts for a run with no attempts and an attempt without a child session [1.97ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs bounds node and attempt dialogs before navigating the selected session [168.11ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > /alg-runs rejects a malformed legacy visible row instead of bypassing the authoritative parser [2.32ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > all four roles open a searchable picker and display current global selection [1.33ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > catalog uses connected providers, excludes deprecated models, and includes inherit [0.83ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > a catalog model with variants opens a searchable second picker and patches exact effort [10.52ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > saves one global role through the official API without changing other config [14.98ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > inherit structurally clears that role's model and variant in one plan and creates an exact backup [84.14ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > default effort atomically sets a changed model and deletes variant with BOM/comment/exact-backup preservation [75.37ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > non-loopback response rejects a stale exact-match local file without API call or write [11.96ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > unavailable URL, ambiguous sources, and mismatched local role values fail closed [80.48ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > save and global-read failures produce error toasts [13.22ms]
+(pass) OpenCode 1.18.3 ALG TUI model picker > explicit-variant API failure leaves the local source untouched [17.81ms]
+
+tests\verification-tui.test.ts:
+(pass) verified TUI archives > compact v3 archive validates its exact detail before navigation: valid [23.89ms]
+(pass) verified TUI archives > compact v3 archive validates its exact detail before navigation: session_mismatch [33.51ms]
+(pass) verified TUI archives > compact v3 archive validates its exact detail before navigation: missing_basis [30.74ms]
+(pass) verified TUI archives > rejects an archived failed call whose pre-call basis is missing [13.66ms]
+(pass) verified TUI archives > rejects a detail whose verification basis differs from its archive projection [33.82ms]
+(pass) visible task evidence is checked before navigation even without detail/output references: valid [12.37ms]
+(pass) visible task evidence is checked before navigation even without detail/output references: missing [15.41ms]
+(pass) visible task evidence is checked before navigation even without detail/output references: tampered [15.88ms]
+(pass) visible task evidence is checked before navigation even without detail/output references: wrong-contract [15.13ms]
+
+tests\verification.test.ts:
+(pass) opt-in verification > preserves supported without converting uncertainty into contradiction [0.44ms]
+(pass) opt-in verification > preserves disconfirmed without converting uncertainty into contradiction [0.16ms]
+(pass) opt-in verification > preserves unsupported without converting uncertainty into contradiction [0.09ms]
+(pass) opt-in verification > preserves inconclusive without converting uncertainty into contradiction [0.12ms]
+(pass) opt-in verification > refuses absent, duplicated, invented or omitted citations and incomplete criterion coverage [1.02ms]
+(pass) opt-in verification > diagnostics never echo submitted identifiers or unknown keys [0.36ms]
+(pass) opt-in verification > an unlaunched reservation may lack a basis, while a launched running attempt may not [0.43ms]
+(pass) opt-in verification > legacy remains legacy and bounded mandate is explicit [0.91ms]
+(pass) opt-in verification > executor persists basis before launch, informs retry, and recovers bound output [1572.88ms]
+(pass) opt-in verification > pins fallback criteria before parallel researcher completion and keeps the checker prompt stable [1286.84ms]
+(pass) opt-in verification > revised graphs reject direct shell and live-mode overrides before work [75.36ms]
+(pass) opt-in verification > dry mode cannot claim evidence-qualified success [742.99ms]
+
+tests\worker-launch.test.ts:
+(pass) worker launch > a cancelled run aborts each running child session before the tool returns [999.88ms]
+(pass) worker launch > a child that finishes normally is not aborted, and an unreachable host cannot hang cancellation [25.92ms]
+(pass) worker launch > workers are titled like native subagents and cannot see ALG's own tools [676.88ms]
+(pass) worker launch > session memory keeps its tools available to workers [669.00ms]
+
+tests\workspace-facts.test.ts:
+(pass) bounded workspace facts > reads only requested facts from bounded package and Git metadata without executing commands [27.02ms]
+(pass) bounded workspace facts > keeps ambiguous, malformed and unrequested repository evidence unknown [25.85ms]
+(pass) bounded workspace facts > exposes environment facts only from a selected, current, origin-bound review [157.09ms]
+(pass) explicit workspace operation detection > recognizes an explicit command 0 [0.26ms]
+(pass) explicit workspace operation detection > recognizes an explicit command 1 [0.02ms]
+(pass) explicit workspace operation detection > recognizes an explicit command 2 [0.02ms]
+(pass) explicit workspace operation detection > recognizes an explicit command 3
+(pass) explicit workspace operation detection > ignores non-unambiguous input 0 [0.04ms]
+(pass) explicit workspace operation detection > ignores non-unambiguous input 1
+(pass) explicit workspace operation detection > ignores non-unambiguous input 2
+(pass) explicit workspace operation detection > ignores non-unambiguous input 3 [0.03ms]
+(pass) explicit workspace operation detection > ignores non-unambiguous input 4
+(pass) explicit workspace operation detection > ignores non-unambiguous input 5
+(pass) workspace discovery does not copy credential-bearing metadata into context [14.41ms]
+
+tests\workspace-registry.test.ts:
+(pass) workspace registry loading > missing registry is an explicit coverage gap [2.46ms]
+(pass) workspace registry loading > corrupt JSON and invalid schema fail closed [40.89ms]
+(pass) workspace registry loading > bounded bytes, oversized registry and duplicate identifiers are rejected [4.51ms]
+(pass) workspace registry loading > registry symlink and missing or redirected .opencode path never load external content [4.56ms]
+(pass) workspace applicability and authority > an exact current approved binding restores applicability; source or closure drift does not [30.73ms]
+(pass) workspace applicability and authority > registry required label cannot become mandatory without separately authorized trusted policy [7.40ms]
+(pass) workspace applicability and authority > required missing facts need context rather than a skill [23.26ms]
+(pass) workspace applicability and authority > operation phase mismatch cannot be ready or enforced [20.43ms]
+(pass) workspace applicability and authority > operation role mismatch cannot be ready or enforced [6.47ms]
+(pass) workspace applicability and authority > operation environment mismatch cannot be ready or enforced [4.16ms]
+(pass) workspace applicability and authority > operation resource mismatch cannot be ready or enforced [3.51ms]
+(pass) workspace applicability and authority > operation missing resource identity mismatch cannot be ready or enforced [8.89ms]
+(pass) workspace applicability and authority > invalid or future snapshot time not-a-date blocks evaluation [4.78ms]
+(pass) workspace applicability and authority > invalid or future snapshot time 2026-11-12T20:43:38.416Z blocks evaluation [5.22ms]
+(pass) workspace applicability and authority > optional incompatibility and unknown evidence remain advisory without blocking covered work [24.35ms]
+(pass) workspace applicability and authority > unknown, stale, conflicting and incompatible facts remain distinct [24.42ms]
+(pass) workspace applicability and authority > scope mismatch, source revision change and compact projection are explicit and bounded [22.42ms]
+(pass) workspace applicability and authority > off mode does not evaluate skills or registry applicability [4.28ms]
+
+tests\workspace-runtime.test.ts:
+(pass) workspace runtime selection > does not approve or load for an incompatible operation phase [51.08ms]
+(pass) workspace runtime selection > does not approve or load for an incompatible operation role [56.75ms]
+(pass) workspace runtime selection > does not approve or load for an incompatible operation resource [50.20ms]
+(pass) workspace runtime selection > does not approve or load for an incompatible operation environment [29.36ms]
+(pass) workspace runtime selection > does not approve an otherwise eligible skill whose own ALG.json scope is incompatible [68.79ms]
+(pass) workspace runtime selection > does not approve a skill when its ALG.json environment has not been selected [44.63ms]
+(pass) workspace runtime selection > diagnostics retain requirement kind and distinguish missing skill from missing fact [27.89ms]
+(pass) workspace runtime selection > resolves a required test command from the local package manifest as evidence [27.65ms]
+(pass) workspace runtime selection > selection delegates approval revalidation to current policy and never silently repins [469.99ms]
+(pass) workspace runtime selection > selection requires an operator-authorized mandatory operation [12.13ms]
+(pass) workspace runtime selection > render never exceeds its byte allowance, including zero and tiny limits [236.62ms]
+(pass) workspace runtime selection > render drops optional requirement projection before required readiness [88.53ms]
+(pass) workspace runtime selection > ordinary readiness stays advisory until an explicit service qualification is supplied [82.13ms]
+(pass) workspace runtime selection > does not qualify an investigation route with an unsupported input validator [48.92ms]
+(pass) workspace runtime selection > does not qualify an investigation route with an unsupported resource resolver [42.76ms]
+(pass) workspace runtime selection > does not qualify an investigation route with an unsupported write effect [49.26ms]
+(pass) workspace runtime selection > does not qualify an investigation route with an unsupported missing required effect [43.62ms]
+
+6 tests skipped:
+(skip) existing-component realpath containment > rejects a model file symlink escape
+(skip) existing-component realpath containment > rejects a config file symlink escape without touching its target
+(skip) bounded release-gate evidence > resolves a real POSIX npm symlink inside the Node installation
+(skip) Bash preparation is read-only and unavailable shells fail with sanitized diagnostics
+(skip) permissioned bounded shell gate > POSIX timeout verifies a real child/grandchild process group is gone
+(skip) permissioned bounded shell gate > POSIX normal shell exit terminates redirected-stdio background descendants
+
+
+4 tests failed:
+(fail) investigation host boundaries > fixed template planning fails closed when disabled and rejects graph or gate overrides [13.55ms]
+(fail) investigation host boundaries > actual plan seals the normalized graph and managed run blocks criterion and gate mutation [6.69ms]
+(fail) v0.2 side-by-side release manager > deliberately accepts an old v0.1 generation and receipt with no capability fields [11705.64ms]
+(fail) actual extracted package has the full reviewed inventory and dependency-ready installer entrypoint [4382.22ms]
+
+ 1302 pass
+ 6 skip
+ 4 fail
+ 15306 expect() calls
+Ran 1312 tests across 104 files. [2730.82s]
+error: script "test" exited with code 1
+error: script "check" exited with code 1

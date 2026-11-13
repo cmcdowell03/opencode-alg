@@ -1,0 +1,195 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\build-benchmark-census.test.ts:
+(pass) bounded fair session census > covers every session under slow synthetic host responses with identical collection semantics [87.72ms]
+(pass) bounded fair session census > reports the failing endpoint and preserves partial coverage when one host request stalls [90.25ms]
+(pass) bounded fair session census > requires two complete stable snapshots and stays within the final census cap [12.73ms]
+(pass) bounded fair session census > a late stalled final poll is aborted and settled before retry, with its own partial coverage [195.58ms]
+(pass) bounded fair session census > a later healthy final poll clears an earlier failure and requires stable complete snapshots [25.44ms]
+
+tests\build-benchmark-protocol.test.ts:
+(pass) benchmark protocol integrity > observed cumulative limits stop at equality including maintenance and resumed-phase usage [0.39ms]
+(pass) benchmark protocol integrity > database census requires exact session/message IDs, ownership, uniqueness and quiescence [0.91ms]
+(pass) benchmark protocol integrity > issues matched default Build/ALG pairs and isolates targeted compatibility as opt-in [1.21ms]
+(pass) benchmark protocol integrity > binds a non-contiguous case subset to its own pairs and execution order [0.76ms]
+(pass) benchmark protocol integrity > keeps every upfront-issued arm in the denominator when the suite stops before its launch [0.42ms]
+(pass) benchmark protocol integrity > separates preflight rows from issued trials and closes a terminal stopped trial [0.25ms]
+(pass) benchmark protocol integrity > accepts the SDK boolean only with a new marker, linked terminal summary, and scored continuation [2.63ms]
+(pass) benchmark protocol integrity > rejects old markers, errored or unlinked summaries, rejected acceptance, and unscored continuation [1.04ms]
+(pass) benchmark protocol integrity > final census waits within its grace and retains missing or in-flight usage as unknown [1.31ms]
+(pass) benchmark protocol integrity > census needs two consecutive stable quiet samples with known absence of pending work [2.09ms]
+(pass) benchmark protocol integrity > artifact outcome is independent from workflow and operational eligibility [0.29ms]
+
+tests\change-scope-evidence.test.ts:
+(pass) explicit excluded roots cannot be certified as an empty unchanged scope [8.63ms]
+(pass) empty directory trees are bounded independently of file count [2314.62ms]
+(pass) a declared nested root cannot bypass an internal symlink ancestor [6.05ms]
+(pass) scope schema bounds and rejects unsafe, duplicate, overlapping, or out-of-root paths [7.21ms]
+(pass) content comparison reports allowed modifications, additions, and deletions [40.21ms]
+(pass) protected changes and changed-file count overages violate the scope [19.52ms]
+(pass) fixed exclusions are explicit and changes beneath them are invisible [61.87ms]
+(pass) a symlink at an excluded directory name is skipped without traversal [9.38ms]
+(pass) missing roots, symlink entries, and baseline tampering fail closed [38.54ms]
+(pass) file count, per-file bytes, and total bytes are bounded [642.46ms]
+
+tests\change-scope-runtime.test.ts:
+(pass) new bounded policy excludes only root runtime stores, retaining skills, config and unknown paths [303.80ms]
+(pass) explicit runtime descendants in roots or allowed paths stay observed, including siblings [160.52ms]
+(pass) Windows casing cannot erase an explicitly declared runtime path [14.87ms]
+(pass) task baseline protects explicitly preserved and deliverable paths inside runtime stores [58.50ms]
+(pass) v1 comparison retains exact provenance and detects runtime and user changes without migration [54.27ms]
+(pass) real MemoryStore writes after baseline permit fresh checker and durable proof (memory assist) [3304.92ms]
+(pass) real MemoryStore writes after baseline permit fresh checker and durable proof (memory off) [2263.14ms]
+(pass) real memory writes do not hide user violation at .opencode/skills/local/SKILL.md or reset baseline on resume [2031.27ms]
+(pass) real memory writes do not hide user violation at .opencode/ALG.workspace.json or reset baseline on resume [1985.33ms]
+(pass) real memory writes do not hide user violation at .opencode/user-notes.txt or reset baseline on resume [1959.21ms]
+(pass) fresh checker cannot bless post-snapshot user drift at report.json [2946.55ms]
+(pass) fresh checker cannot bless post-snapshot user drift at .opencode/skills/local/SKILL.md [2953.10ms]
+(pass) legacy admitted run remains fail-closed on runtime drift and retains its original baseline on resume [2162.51ms]
+(pass) completed v1 evidence retains its original projection identity across load and resume [1969.39ms]
+
+tests\hard-benchmark-cohort.test.ts:
+warning: in the working copy of 'bounded-path-segment/bounded-path-segment/bounded-path-segment/bounded-path-segment/bounded-path-segment/bounded-path-segment/README.md', LF will be replaced by CRLF the next time Git touches it
+(pass) disposable Git setup indexes long nested paths from a short working directory [1199.90ms]
+(pass) live hard development code scoring > the default path executes reference code and the API dependency probe [334.57ms]
+(pass) live hard development code scoring > missing or unavailable runners are explicit apparatus errors; executed code errors remain failures [3.61ms]
+(pass) live hard development code scoring > the local child runner bounds output and terminates nonreturning candidate code [5213.29ms]
+(pass) hard development prospective selection > historic controls retain limits, subset order, arm order and disabled native compaction [1.33ms]
+(pass) hard development prospective selection > hard admission requires explicit bounded limits, seed, qualification and the complete six cases [63.00ms]
+(pass) hard development prospective selection > seeded fixture and alternating arm order are bound before all twelve issues [145.04ms]
+(pass) hard development prospective selection > case conversion supplies original criteria and never serializes the grader [26.23ms]
+(pass) hard development prospective selection > both service arms receive an explicit report destination and public format [18.67ms]
+(pass) hard development prospective selection > the common service exception and Node fetch usage are identical for both arms [0.52ms]
+(pass) hard development prospective selection > fatal termination keeps all issued arms with terminal error receipts [61.00ms]
+(pass) bounded complete hard project collection > progress collection tolerates real native card metadata but rejects unknown unsafe namespaces [277.31ms]
+(pass) bounded complete hard project collection > post-stop runtime progress is bounded and remains outside grader input [107.25ms]
+(pass) bounded complete hard project collection > preserves protected evidence and unknown writes while excluding only known runtime metadata [101.12ms]
+(pass) bounded complete hard project collection > a fixture file under a runtime name remains visible with all sibling writes [34.35ms]
+(pass) bounded complete hard project collection > symlinks, oversized and non-UTF8 files reject collection instead of hiding writes [31.08ms]
+(pass) external development qualification evidence > real admission qualification exercises the shared live scorer through direct and HTTP paths [2987.25ms]
+(pass) external development qualification evidence > identities bind frozen fixtures and all host, grader, service, qualification and runner inputs [48.90ms]
+(pass) external development qualification evidence > strict receipt parsing recomputes coverage and grade agreement instead of trusting passed [40.71ms]
+
+tests\hard-benchmark-fixtures.test.ts:
+(pass) hard benchmark grading against raw evidence and executed work > public fixtures contain raw evidence and contracts with distinct private grader records [25.67ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives accepted-query results from paged rows after lost ack (seed %s) [195.52ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives accepted-query results from paged rows after lost ack (seed %s) [190.40ms]
+(pass) hard benchmark grading against raw evidence and executed work > irrelevant projection and literal out-of-scope writes cannot earn credit [177.03ms]
+(pass) hard benchmark grading against raw evidence and executed work > executes visible and hidden repo cases and rejects report-only submissions [870.40ms]
+(pass) hard benchmark grading against raw evidence and executed work > hidden cases reject sibling regressions, reimplemented clients and scope violations [743.12ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives true-effect from matched evidence despite identical crude totals [38.02ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives confounded from matched evidence despite identical crude totals [40.12ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives insufficient from matched evidence despite identical crude totals [41.23ms]
+(pass) hard benchmark grading against raw evidence and executed work > factory window accepts equivalent UTC precision and explicit zero offset [84.56ms]
+(pass) hard benchmark grading against raw evidence and executed work > factory window rejects shifted, non-UTC and invalid endpoints without calendar normalization [170.62ms]
+(pass) hard benchmark grading against raw evidence and executed work > rejects plausible keywords, stale citations, wrong UTC edges, wrong strata and vague follow-up [73.61ms]
+(pass) hard benchmark grading against raw evidence and executed work > restart preserves only current complete jobs and requires observed unavailability [226.69ms]
+
+tests\hard-benchmark-host.test.ts:
+(pass) hard benchmark public loopback HTTP host (same-user development) > healthy public reference passes unchanged scorer: accepted lost ACK [101.62ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > healthy public reference passes unchanged scorer: accepted lost ACK alternate seed [121.55ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > healthy public reference passes unchanged scorer: partial restart with stale evidence [198.67ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > native Node fetch recovers a lost ACK, avoids repeat charges, obeys work limit and produces a passing report [625.43ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > HTTP proxy preserves native lost-ACK, stale-source and unavailable-source errors [198.87ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > only exact public POST routes exist and prohibited routes cannot change state [56.84ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > malformed, oversized and chunked oversized bodies fail before service work [55.60ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > response limit permits bounded pages and fails closed on oversized or internal host output [73.81ms]
+(pass) hard benchmark public loopback HTTP host (same-user development) > per-arm endpoints keep distinct state; stop is idempotent and closes incomplete requests [97.49ms]
+
+tests\hard-benchmark-qualification.test.ts:
+(pass) arm-neutral hard benchmark development qualification > reference solutions pass and negative/tamper submissions fail for every frozen fixture [1818.84ms]
+(pass) arm-neutral hard benchmark development qualification > arm receives a contestant-only snapshot and no grader-evidence methods [125.22ms]
+(pass) arm-neutral hard benchmark development qualification > individual negative and tamper controls fail closed [1201.26ms]
+(pass) arm-neutral hard benchmark development qualification > only an explicit unavailable runner blocks a positive code qualification [34.89ms]
+(pass) arm-neutral hard benchmark development qualification > unavailable execution cannot qualify negative or tamper controls as rejected code [28.58ms]
+(pass) arm-neutral hard benchmark development qualification > equivalent factory stratum order remains valid [70.59ms]
+(pass) arm-neutral hard benchmark development qualification > factory reference matches hand-enumerated seed-zero strata and outcomes [59.59ms]
+
+tests\release-gate.test.ts:
+(pass) every release command has a deadline and failed commands retain diagnostics [249.55ms]
+(pass) release command launch errors and deadlines return failure diagnostics [722.01ms]
+(pass) release output overflow is bounded without killing a successful command [218.57ms]
+236 | describe("bounded release-gate evidence", () => {
+237 |   test("v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate", () => {
+238 |     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"))
+239 |     const lock = JSON.parse(readFileSync(join(ROOT, "package-lock.json"), "utf8"))
+240 |     expect(pkg.version).toBe("0.5.11")
+241 |     expect(lock.version).toBe("0.5.11")
+                               ^
+error: expect(received).toBe(expected)
+
+Expected: "0.5.11"
+Received: "0.5.10"
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\release-gate.test.ts:241:26)
+(fail) bounded release-gate evidence > v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate [7.64ms]
+(pass) bounded release-gate evidence > source identity and npm allowlist automatically include every skill-evolution runtime module [398.75ms]
+(pass) bounded release-gate evidence > strict schema rejects unknown or contradictory fields [8.93ms]
+(pass) bounded release-gate evidence > release-input identity binds same-length manager script, documentation, and test changes [100.95ms]
+(pass) bounded release-gate evidence > redacts credentials and bounds UTF-8 output tails [0.56ms]
+(pass) bounded release-gate evidence > default release identity still binds graders and plans excluded from deployment [249.15ms]
+(pass) bounded release-gate evidence > writes only strict bounded external evidence and artifact scanning detects caches [23.13ms]
+(pass) bounded release-gate evidence > release evidence UUID collision never overwrites the existing final artifact [53.26ms]
+(pass) bounded release-gate evidence > release evidence same-byte replacement before-final-check is preserved and rejected [51.91ms]
+(pass) bounded release-gate evidence > release evidence same-byte replacement after-final-check is preserved and rejected [42.46ms]
+(pass) bounded release-gate evidence > release evidence preserves a replaced temporary and rejects cleanup [66.92ms]
+(pass) bounded release-gate evidence > strict release verification rejects a same-byte final identity replacement [46.19ms]
+(pass) bounded release-gate evidence > semantically verifies retained evidence against the current source, package, live proof, path, and hash [4940.88ms]
+(pass) bounded release-gate evidence > semantic verification rejects coherent-looking contradictory or stale evidence [17352.05ms]
+(pass) bounded release-gate evidence > strict live semantics reject minimal, empty, wrong-tool, manifest, and registration evidence [4689.78ms]
+(pass) bounded release-gate evidence > resolves npm by fixed canonical siblings with spaces and never parses a malicious cmd shim [33.87ms]
+(pass) bounded release-gate evidence > rejects unresolvable or non-file npm shims and supports a resolved POSIX executable [8.25ms]
+(pass) bounded release-gate evidence > accepts only the canonical Node POSIX bin/npm to lib/npm CLI layout [3.48ms]
+(skip) bounded release-gate evidence > resolves a real POSIX npm symlink inside the Node installation
+(pass) bounded release-gate evidence > rejects an actual npm CLI directory junction/symlink escape [15.00ms]
+(pass) bounded release-gate evidence > deterministic realpath seam rejects independent node executable escape [1.01ms]
+(pass) bounded release-gate evidence > deterministic realpath seam rejects independent CLI escape [0.56ms]
+(pass) bounded release-gate evidence > complete package allowlist rejects extras, missing paths, duplicates, unsafe paths, and bad modes [306.00ms]
+
+tests\task-allowance-execution.test.ts:
+(pass) phases, beginTask, compaction and a fresh controller share one allowance [4102.69ms]
+(pass) a saved reservation before attempt persistence is reused, never double charged [1690.20ms]
+(pass) an interrupted committed attempt remains charged while a retry consumes another dispatch [1692.23ms]
+(pass) a transferred run and subsequent phase retain the original root ledger [3348.83ms]
+(pass) gate-only recovery consumes no child allowance and leaves the final checker reserved [2190.83ms]
+(pass) bound runs fail closed without a controller and their binding cannot be erased [211.68ms]
+(pass) concurrent real-store runs cannot dispatch past the shared bound [2330.13ms]
+(pass) checkpoint write failure cannot create a run attempt or child [408.21ms]
+(pass) new tool plans share a task reference with memory disabled and surface its status [425.59ms]
+
+tests\task-allowance.test.ts:
+(pass) bounded task allowance > policy defaults, strict keys, and reserve equality [0.64ms]
+(pass) bounded task allowance > admission binds one root task and survives task replan/beginTask transitions [1.91ms]
+(pass) bounded task allowance > charges producers while retaining the final checker reserve; batch is all-or-none [6.27ms]
+(pass) bounded task allowance > original isolated checker is verification even without node.verification; shell is excluded [2.15ms]
+(pass) bounded task allowance > concurrent runs serialize against the shared root ledger [2.60ms]
+(pass) bounded task allowance > continuation attaches one hop, cannot replace allowance, and missing roots fail closed [2.82ms]
+(pass) bounded task allowance > delegated and deleted roots cannot admit; mode-off storage needs no other database [1.81ms]
+(pass) bounded task allowance > elapsed limits and backwards clocks reject without changing reservations [2.35ms]
+(pass) bounded task allowance > state bounds, unique keys, immutable headers, and append-only entries [2.16ms]
+(pass) bounded task allowance > replay cannot change a charged reservation from producer to verification [2.23ms]
+(pass) bounded task allowance > real MemoryStore persists root and alias ledgers through task replan [452.64ms]
+(pass) bounded task allowance > an unexpired dead writer remains protected until its short lease expires [1056.38ms]
+(pass) bounded task allowance > live writer cancellation stops waiting without a charge; later retry is idempotent [586.23ms]
+(pass) bounded task allowance > contention reported after checkpoint mutation is never blindly replayed [10.43ms]
+
+tests\task-baseline.test.ts:
+(pass) coverage must cover each criterion and bind actual collection declarations [95.19ms]
+(pass) baseline is durable before discovery, survives compaction/restart, and cannot be replaced [2631.89ms]
+(pass) an unavailable before-work file stops before the first child and attempt [203.58ms]
+(pass) discovery cannot change a protected file before its baseline is collected [1376.24ms]
+(pass) out-of-scope change blocks checker and resume does not repeat the correct producer [1832.15ms]
+(pass) post-check content drift invalidates proof even when changed path count stays identical [1994.55ms]
+
+1 tests skipped:
+(skip) bounded release-gate evidence > resolves a real POSIX npm symlink inside the Node installation
+
+
+1 tests failed:
+(fail) bounded release-gate evidence > v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate [7.64ms]
+
+ 141 pass
+ 1 skip
+ 1 fail
+ 1072 expect() calls
+Ran 143 tests across 12 files. [101.19s]

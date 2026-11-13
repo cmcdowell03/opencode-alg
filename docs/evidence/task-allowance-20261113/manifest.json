@@ -1,0 +1,380 @@
+{
+  "candidate_commit": "5a2e8a604e0294d57f72ba21f85e0e77ddd395a7",
+  "files": [
+    {
+      "path": "collect-task-allowance-evidence.py",
+      "bytes": 6674,
+      "sha256": "c1dd297eed371884f35cf47d6939f347f2e0f38066d30b019583dd073e493c31"
+    },
+    {
+      "path": "hard-d50-preflight.log",
+      "bytes": 11002,
+      "sha256": "b36232cf119a6005ca81556ed24cbc8c39a46882ad2d6da79e1c54f5539739c2"
+    },
+    {
+      "path": "hard-development-longpath-corrected-tests.log",
+      "bytes": 2188,
+      "sha256": "c73d3c6df656539183520a3cfcece709415f59098a6332bf972a97b16253fe69"
+    },
+    {
+      "path": "hard-development-longpath-tests.log",
+      "bytes": 2977,
+      "sha256": "b216b808585e67fc29f7e4f3841195bada0ed1c20bdb796405024bbd910b92a8"
+    },
+    {
+      "path": "hard-development-longpath-typecheck.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "hard-development-qualification-20261113.json",
+      "bytes": 60058,
+      "sha256": "e04f62431fc9edb2de485c5bc7071014eb2713d6b2cf7e17e0415e01bae6cee2"
+    },
+    {
+      "path": "hard-development-qualification-20261113.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "hard-development-qualification-2fa970d.json",
+      "bytes": 60058,
+      "sha256": "4d3c694823b9247b9fd23381e6c9c30950ba7bc9ba7c34daaa01b204b998c6d0"
+    },
+    {
+      "path": "hard-development-qualification-2fa970d.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "hard-development-qualification-d50ce31.json",
+      "bytes": 60058,
+      "sha256": "bad416903e57008d98fd54c40bca9189bc48b4d4c503c2561a1c0d3666559f02"
+    },
+    {
+      "path": "hard-development-qualification-d50ce31.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "hard-development-reviewed-tests.log",
+      "bytes": 6449,
+      "sha256": "0da7f1de2dc3511841452098bcb7c56acfdc5641532f9111fa133f19d2ee0b0a"
+    },
+    {
+      "path": "hard-development-terra-20261113-preflight-reviewed.log",
+      "bytes": 7481,
+      "sha256": "19a52d8cbe38d4dc885207f5ecd3fb31559cb3f8d99832ad09e31af0a3d80b24"
+    },
+    {
+      "path": "hard-development-terra-20261113-preflight.log",
+      "bytes": 1236,
+      "sha256": "968d4eed720129e6b6d21765168c53869855a3f3a2e93b82390f44d13ea0b379"
+    },
+    {
+      "path": "preflight-final-plan.json",
+      "bytes": 20965,
+      "sha256": "21b74858036959830e588b3bc0dcd5d2017be3e128e0829e584ab4575a117ee8"
+    },
+    {
+      "path": "preflight-final-result.json",
+      "bytes": 94018,
+      "sha256": "60b7efe99868f807ea705857abb8ba70610147e9423c82f1e07ab34f1c456979"
+    },
+    {
+      "path": "preflight-longpath-failed-plan.json",
+      "bytes": 20965,
+      "sha256": "f16913b5733bde36bab1903ba320c07e16d757a61c72b38a28361470040ed3d2"
+    },
+    {
+      "path": "preflight-longpath-failed-result.json",
+      "bytes": 68755,
+      "sha256": "e3f3edb51f0af0d62919347a15d335675d1965336806e058f858293296d0a9d0"
+    },
+    {
+      "path": "qualify-task-allowance-linux.sh",
+      "bytes": 2403,
+      "sha256": "cbf773785b7b13995b676b484d1cb81cfdedf421030f91be03ad1561e0c706ef"
+    },
+    {
+      "path": "request-source-identity.ts",
+      "bytes": 770,
+      "sha256": "0a2d1d6073bca40bd28ac0f9f9225678c32223e0596f06a8d03bb2be85a0c3a8"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 5000,
+      "sha256": "4bc25e5d0c6499830372534d407ce7cf0871daeae9d8c74ef650ac32093099ab"
+    },
+    {
+      "path": "task-allowance-2fa970dc3a70-linux-full.log",
+      "bytes": 190875,
+      "sha256": "1db4c6cdf9f21afd1c9a40aa994c68f3debf8d60e6010679f286efbfa5f14bcd"
+    },
+    {
+      "path": "task-allowance-2fa970dc3a70-linux-gate.json",
+      "bytes": 194,
+      "sha256": "47b08828ec87715b3390d5cf14122242b5f6ba5dd427aaa950ffa94288d00b30"
+    },
+    {
+      "path": "task-allowance-2fa970dc3a70-linux-headless.json",
+      "bytes": 8905,
+      "sha256": "2bc563872a168a2e3fc601bfab376d78d68e4c8a7ed50c768e326a6ef1967d05"
+    },
+    {
+      "path": "task-allowance-2fa970dc3a70-linux-headless.json.before-cleanup.json",
+      "bytes": 8907,
+      "sha256": "d1ce35630c3a054d9426edf3d4c374d1793c6a60364f8d1983f48e859216ac9e"
+    },
+    {
+      "path": "task-allowance-2fa970dc3a70-linux-headless.log",
+      "bytes": 714,
+      "sha256": "4e0a4e6d5fc2ba36bdc1f39574405d5db2b66c5d9d872fdf5e56a7f528d9906b"
+    },
+    {
+      "path": "task-allowance-2fa970dc3a70-linux-identity.json",
+      "bytes": 33871,
+      "sha256": "e40f67aa37bbce17b6c354cd623beda3af011bb979f40340b0cd0a3481e0753b"
+    },
+    {
+      "path": "task-allowance-5a2e8a604e02-linux-full.log",
+      "bytes": 202962,
+      "sha256": "f770077485949fd63322841b319941862e693650ad74e8dfc43d206510313206"
+    },
+    {
+      "path": "task-allowance-5a2e8a604e02-linux-gate.json",
+      "bytes": 193,
+      "sha256": "f752de5506c49435ed4b0853a34ee753ca4e6c37e837b131a9bb5f1626e9921c"
+    },
+    {
+      "path": "task-allowance-5a2e8a604e02-linux-headless.json",
+      "bytes": 8905,
+      "sha256": "2f143c0ae77f2a0ddaa10e97eab7e63a724a1f01d4e39351fc646c34f43f6c3d"
+    },
+    {
+      "path": "task-allowance-5a2e8a604e02-linux-headless.json.before-cleanup.json",
+      "bytes": 8907,
+      "sha256": "3450ec207027da23fb5c0fd8a0f402283a6f4197de2c4a4f7a9f92c6ec853cb6"
+    },
+    {
+      "path": "task-allowance-5a2e8a604e02-linux-headless.log",
+      "bytes": 714,
+      "sha256": "6d3da9f5eee3d064ef0c39b0e5581afeb446d87135dfa14810b685fef8a4eb36"
+    },
+    {
+      "path": "task-allowance-5a2e8a604e02-linux-identity.json",
+      "bytes": 33871,
+      "sha256": "2dde7c4c84826e939bf1a54682487cafb958742c5eda3d8bf22fc503ff21226c"
+    },
+    {
+      "path": "task-allowance-5a2e8a604e02-linux-live.json",
+      "bytes": 41555,
+      "sha256": "f99df0b4d2b07f30a857ff51b6a2d9a7a82ca74e663b79c189b36f6c181c52c5"
+    },
+    {
+      "path": "task-allowance-h0-first.log",
+      "bytes": 4134,
+      "sha256": "aacbba86d2245098baa6e6ec3c123dde12b90d2d52fe17c23ab6f19181416c65"
+    },
+    {
+      "path": "task-allowance-integration-first.log",
+      "bytes": 6574,
+      "sha256": "d00c9f3e7bf6848d6c1c36152575fe752c8c0418ef543d82f080be915e80f3c5"
+    },
+    {
+      "path": "task-allowance-package-windows.log",
+      "bytes": 16198,
+      "sha256": "68aa3de7846f3d9dbf8f6f1cb6ed6374bd47b48901e67e9c74b088cd29fef351"
+    },
+    {
+      "path": "task-allowance-runtime-fixture-repair.log",
+      "bytes": 1270,
+      "sha256": "eca8b4a8c0f66c9ea5ace57b9e61d3463e8c613ea4c147060e9ce3beb5edec39"
+    },
+    {
+      "path": "task-allowance-typecheck-2.log",
+      "bytes": 3051,
+      "sha256": "57427945785e5c4de96a7d5cdbe28cbee29a4fdbff221d2705ad568df068317a"
+    },
+    {
+      "path": "task-allowance-typecheck-3.log",
+      "bytes": 485,
+      "sha256": "0dcdba430b5b84f80074e6f9faa6469004d70d72814fcb193ff3c8d3a8e3fa4b"
+    },
+    {
+      "path": "task-allowance-typecheck-4.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "task-allowance-typecheck-5.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "task-allowance-typecheck-6.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "task-allowance-typecheck-first.log",
+      "bytes": 98,
+      "sha256": "7b7f57f82e9f1451cd29689ff22cadc066dc54a3c4626b389feb7de234ccff31"
+    },
+    {
+      "path": "task-allowance-typecheck-reviewed.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "task-allowance-windows-headless-diagnostic.json",
+      "bytes": 7759,
+      "sha256": "d77aa0e311bdad98e0ef66dd62184968348155f627ec8a03993033014b4dd9fa"
+    },
+    {
+      "path": "task-allowance-windows-headless-diagnostic.json.before-cleanup.json",
+      "bytes": 7761,
+      "sha256": "a7bd871665196d120a597410a2c991f0f5a0498eba693fba155275b90c4f1b32"
+    },
+    {
+      "path": "task-allowance-windows-headless-diagnostic.log",
+      "bytes": 982,
+      "sha256": "6ca948e11dec08f99e2f6a3d502bdc5599572eb5cd350ef006a951c25d252c95"
+    },
+    {
+      "path": "task-allowance-windows-headless-final.json",
+      "bytes": 8088,
+      "sha256": "9bef84ccd207893fde5cb871d8ee332e57d3dc2a60e0fdf03d4277cc4d53bdaa"
+    },
+    {
+      "path": "task-allowance-windows-headless-final.json.before-cleanup.json",
+      "bytes": 8090,
+      "sha256": "4000c1c50a3558fbf171ab415e887a4a6c5c9cf3c775efb3988ef50651669c90"
+    },
+    {
+      "path": "task-allowance-windows-headless-final.log",
+      "bytes": 796,
+      "sha256": "8c5ca8ddd1a657b032c14005b9cc083822fa5094b88166d4cda064aaf2871977"
+    },
+    {
+      "path": "task-allowance-windows-headless-first.json",
+      "bytes": 6731,
+      "sha256": "92be5cc50ab13c63a3b7aae288bb8566d2ced2e55df80d1425047650098a7b11"
+    },
+    {
+      "path": "task-allowance-windows-headless-first.json.before-cleanup.json",
+      "bytes": 6733,
+      "sha256": "de8bf4c75ea77787c62306a2fec4db05b6fe156193d1794ce338cd522c2afb95"
+    },
+    {
+      "path": "task-allowance-windows-headless-first.log",
+      "bytes": 849,
+      "sha256": "2b231b517da2a59e4c7ea84c00e2130523e8f444cd518472b787335b36accde6"
+    },
+    {
+      "path": "task-allowance-windows-headless-fourth.json",
+      "bytes": 8087,
+      "sha256": "8ec019ad8e2b8296e465c62d5732e55e2451a39ce63015c44ff980e368a0925e"
+    },
+    {
+      "path": "task-allowance-windows-headless-fourth.json.before-cleanup.json",
+      "bytes": 8089,
+      "sha256": "9aa53f23c08c99266116bbacc551ae6130b314e53476b4369d5825b1f38a989f"
+    },
+    {
+      "path": "task-allowance-windows-headless-fourth.log",
+      "bytes": 797,
+      "sha256": "ca5bdea6f4e55d37bbb30ff450b7a36a8ae3f6e8f3643ace89443648e66caa72"
+    },
+    {
+      "path": "task-allowance-windows-headless-lock.json",
+      "bytes": 7886,
+      "sha256": "f6c853f11aecd19c4c1bb475d45adea3f67bbad15fba961f7f3a55de495ed8dc"
+    },
+    {
+      "path": "task-allowance-windows-headless-lock.json.before-cleanup.json",
+      "bytes": 7888,
+      "sha256": "a98849a61a51982a5b8e380690cae8bdfab5a1fc7aa303e964a1b4f0d5d5c14f"
+    },
+    {
+      "path": "task-allowance-windows-headless-lock.log",
+      "bytes": 1109,
+      "sha256": "dbbcc73c64d59b20c2414e13220b7f06145dc4047873e8f5ac1da572a35b125e"
+    },
+    {
+      "path": "task-allowance-windows-headless-repaired.json",
+      "bytes": 9119,
+      "sha256": "c68128a3bd60ac952ab68133299f54e332b9ba3030de13c4f212b6483b77ca68"
+    },
+    {
+      "path": "task-allowance-windows-headless-repaired.json.before-cleanup.json",
+      "bytes": 9121,
+      "sha256": "461e95b0b29f82e1d28be6d7d963fbe7efa5da88fcbbd562f62e99861fbe3712"
+    },
+    {
+      "path": "task-allowance-windows-headless-repaired.log",
+      "bytes": 718,
+      "sha256": "8ab098f4563f9e306c145f60e773bb5608ae316e222206a16f658d0503455c59"
+    },
+    {
+      "path": "task-allowance-windows-headless-second.json",
+      "bytes": 6606,
+      "sha256": "33c33eb14e9eb38313b7874b739c0ee59ceda78b491a1ef6201bc68f53e45ad9"
+    },
+    {
+      "path": "task-allowance-windows-headless-second.json.before-cleanup.json",
+      "bytes": 6608,
+      "sha256": "4661443ab3f59f69a7ecb7138fa7c6f93c56b51d11f3fa2e452bbf7d131f818d"
+    },
+    {
+      "path": "task-allowance-windows-headless-second.log",
+      "bytes": 726,
+      "sha256": "c6a06a5275cfe80da25e8a363765b5b47578c7c7d23b3a5d551f1f8991ecf74a"
+    },
+    {
+      "path": "task-allowance-windows-headless-third.json",
+      "bytes": 7666,
+      "sha256": "136499baa2984ff53306987c8ff63533c5ee59b419e3d007e3ba29a44caaa8ce"
+    },
+    {
+      "path": "task-allowance-windows-headless-third.json.before-cleanup.json",
+      "bytes": 7668,
+      "sha256": "0446f5e8f72300567e852477c5087a9fa8e85b42deb7c2dff17b47bd562136f0"
+    },
+    {
+      "path": "task-allowance-windows-headless-third.log",
+      "bytes": 1784,
+      "sha256": "e0252a84d9d3ded8d31ff6fbecb4647329bd4c140467456afec998fdcdcd852c"
+    },
+    {
+      "path": "task-allowance-windows-identity.json",
+      "bytes": 34758,
+      "sha256": "77c807b0be0b32e252874175c3ed09646f1f8f5d17dd77789fa0e1b6ef87191f"
+    },
+    {
+      "path": "task-allowance-windows-live-corrected.log",
+      "bytes": 10211,
+      "sha256": "368231a13201497cf644127eb45d56fa63b89cc602c20be220685b1e02847bfa"
+    },
+    {
+      "path": "task-allowance-windows-live.json",
+      "bytes": 38738,
+      "sha256": "7e6d5fbd0a4dfcf820a7f4976722255ede354751cc6254d9626ffe644df310d6"
+    },
+    {
+      "path": "task-allowance-windows-live.log",
+      "bytes": 1782,
+      "sha256": "e9a9e70ee76a31824bc449a55eed1e4d342e5479e124e0292faece933a90e1a6"
+    },
+    {
+      "path": "task-allowance-windows-lock-repair.log",
+      "bytes": 4393,
+      "sha256": "55524d8cfb88ae62f376905b27bf5819b7ad27f0b6a4d6e4cb6fb74f80dc26cb"
+    },
+    {
+      "path": "task-allowance-windows-reviewed.log",
+      "bytes": 12387,
+      "sha256": "abfa5d28c64d7fdfd6ebc706e742f46e9453f1628401c16a99b8f77c91f1f7b1"
+    }
+  ]
+}

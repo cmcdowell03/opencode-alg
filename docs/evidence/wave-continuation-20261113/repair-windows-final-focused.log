@@ -1,0 +1,79 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\allowance-headless-probe.test.ts:
+(pass) probe declares bounded root-wide scope in every phase and keeps its fresh checker [23.49ms]
+(pass) both scope cases use the existing local synthetic response before phase-specific behavior [1.61ms]
+(pass) recorder binds real persisted baseline, child delegation and emitted delivery receipt [1937.64ms]
+(pass) scope success alone cannot attest absent host delivery writes [1289.54ms]
+(pass) compaction delivery is not mislabeled as a child's system hook [1423.34ms]
+(pass) recorder rejects an older delivery or a different baseline identity [1608.95ms]
+(pass) report accepts old receipts without new fields and validates new bounded fields when present [4.81ms]
+(pass) SDK transport calibration retains 2/1 exhaustion and independently blocks user drift without a fourth prompt [4143.76ms]
+
+tests\hard-benchmark-cohort.test.ts:
+warning: in the working copy of 'bounded-path-segment/bounded-path-segment/bounded-path-segment/bounded-path-segment/bounded-path-segment/README.md', LF will be replaced by CRLF the next time Git touches it
+(pass) disposable Git setup indexes long nested paths from a short working directory [804.21ms]
+(pass) live hard development code scoring > the default path executes reference code and the API dependency probe [235.24ms]
+(pass) live hard development code scoring > missing or unavailable runners are explicit apparatus errors; executed code errors remain failures [2.62ms]
+(pass) live hard development code scoring > the local child runner bounds output and terminates nonreturning candidate code [5149.77ms]
+(pass) hard development prospective selection > historic controls retain limits, subset order, arm order and disabled native compaction [1.20ms]
+(pass) hard development prospective selection > hard admission requires explicit bounded limits, seed, qualification and the complete six cases [48.17ms]
+(pass) hard development prospective selection > seeded fixture and alternating arm order are bound before all twelve issues [113.75ms]
+(pass) hard development prospective selection > case conversion supplies original criteria and never serializes the grader [15.20ms]
+(pass) hard development prospective selection > both service arms receive an explicit report destination and public format [15.95ms]
+(pass) hard development prospective selection > the common service exception and Node fetch usage are identical for both arms [0.37ms]
+(pass) hard development prospective selection > fatal termination keeps all issued arms with terminal error receipts [41.87ms]
+(pass) bounded complete hard project collection > progress collection tolerates real native card metadata but rejects unknown unsafe namespaces [177.20ms]
+(pass) bounded complete hard project collection > post-stop runtime progress is bounded and remains outside grader input [47.54ms]
+(pass) bounded complete hard project collection > preserves protected evidence and unknown writes while excluding only known runtime metadata [34.71ms]
+(pass) bounded complete hard project collection > a fixture file under a runtime name remains visible with all sibling writes [21.86ms]
+(pass) bounded complete hard project collection > symlinks, oversized and non-UTF8 files reject collection instead of hiding writes [19.36ms]
+(pass) external development qualification evidence > real admission qualification exercises the shared live scorer through direct and HTTP paths [2278.53ms]
+(pass) external development qualification evidence > identities bind frozen fixtures and all host, grader, service, qualification and runner inputs [32.77ms]
+(pass) external development qualification evidence > strict receipt parsing recomputes coverage and grade agreement instead of trusting passed [25.77ms]
+
+tests\hard-benchmark-fixtures.test.ts:
+(pass) hard benchmark grading against raw evidence and executed work > public fixtures contain raw evidence and contracts with distinct private grader records [29.91ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives accepted-query results from paged rows after lost ack (seed %s) [126.60ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives accepted-query results from paged rows after lost ack (seed %s) [138.72ms]
+(pass) hard benchmark grading against raw evidence and executed work > irrelevant projection and literal out-of-scope writes cannot earn credit [134.68ms]
+(pass) hard benchmark grading against raw evidence and executed work > executes visible and hidden repo cases and rejects report-only submissions [539.42ms]
+(pass) hard benchmark grading against raw evidence and executed work > hidden cases reject sibling regressions, reimplemented clients and scope violations [418.92ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives true-effect from matched evidence despite identical crude totals [31.42ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives confounded from matched evidence despite identical crude totals [27.67ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives insufficient from matched evidence despite identical crude totals [26.12ms]
+(pass) hard benchmark grading against raw evidence and executed work > factory window accepts equivalent UTC precision and explicit zero offset [51.14ms]
+(pass) hard benchmark grading against raw evidence and executed work > factory window rejects shifted, non-UTC and invalid endpoints without calendar normalization [104.28ms]
+(pass) hard benchmark grading against raw evidence and executed work > rejects plausible keywords, stale citations, wrong UTC edges, wrong strata and vague follow-up [39.22ms]
+(pass) hard benchmark grading against raw evidence and executed work > restart preserves only current complete jobs and requires observed unavailability [145.82ms]
+
+tests\hard-benchmark-qualification.test.ts:
+(pass) arm-neutral hard benchmark development qualification > reference solutions pass and negative/tamper/extra-field submissions fail for every frozen fixture [1554.18ms]
+(pass) arm-neutral hard benchmark development qualification > arm receives a contestant-only snapshot and no grader-evidence methods [65.98ms]
+(pass) arm-neutral hard benchmark development qualification > individual negative and tamper controls fail closed [1031.64ms]
+(pass) arm-neutral hard benchmark development qualification > only an explicit unavailable runner blocks a positive code qualification [17.94ms]
+(pass) arm-neutral hard benchmark development qualification > unavailable execution cannot qualify negative or tamper controls as rejected code [19.91ms]
+(pass) arm-neutral hard benchmark development qualification > equivalent factory stratum order remains valid [34.99ms]
+(pass) arm-neutral hard benchmark development qualification > factory reference matches hand-enumerated seed-zero strata and outcomes [32.70ms]
+
+tests\live-retention-runner.test.ts:
+(pass) live retention runner evidence guards > apparatus continuation cannot reset time or usage or replay already compacted work [1.02ms]
+(pass) live retention runner evidence guards > observed stop thresholds include equality and wall expiry [0.09ms]
+(pass) live retention runner evidence guards > vanished and duplicate checks count as loss; changed expectations leave the denominator [0.30ms]
+(pass) live retention runner evidence guards > rates require complete, linked, quiescent, persisted evidence [0.19ms]
+(pass) live retention runner evidence guards > headline retention excludes unqualified summary boundaries but preserves their diagnostic losses [0.27ms]
+(pass) live retention runner evidence guards > summary exposure retains failed, wrong, and missing continuations without changing historical fields [1.08ms]
+(pass) live retention runner evidence guards > fixture skill discovery requires exact location and current body [0.90ms]
+
+tests\wave-continuation.test.ts:
+(pass) a bounded checker repair continues the same durable run without replaying or refunding attempts [2131.36ms]
+(pass) a cancel stop is not advertised as a wave pause [526.96ms]
+(pass) a sdk stop is not advertised as a wave pause [392.57ms]
+(pass) a prerequisite stop is not advertised as a wave pause [203.26ms]
+(pass) an exhausted global allowance remains terminal at the wave boundary [485.20ms]
+(pass) a shell setup failure at a wave boundary still requires prerequisite repair [514.14ms]
+
+ 60 pass
+ 0 fail
+ 477 expect() calls
+Ran 60 tests across 6 files. [29.00s]

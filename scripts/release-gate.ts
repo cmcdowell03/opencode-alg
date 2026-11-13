@@ -21,7 +21,8 @@ const MAX_RETAINED_COMMAND_BYTES = 96 * 1024
 const MAX_RETAINED_OUTPUT_TOTAL_BYTES = 320 * 1024
 const TAIL_BYTES = 2_048
 const Sha = z.string().regex(/^[a-f0-9]{64}$/)
-const FileIdentitySchema = z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict()
+const FileIdentitySchema = z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/),
+  birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict()
 export const RELEASE_COMMAND_IDS = [
   "typecheck", "bun_test", "manager_tests", "smoke", "live_verify", "excel_manifest", "duckdb_manifest",
   "python_tests", "excel_uv_sync", "excel_wrapper_check", "excel_wrapper_eof", "duckdb_uv_sync",
@@ -48,7 +49,7 @@ export const ReleaseEvidenceSchema = z.object({
   schema_version: z.literal(6),
   kind: z.literal("opencode-alg-release-gate"),
   generated_at: z.iso.datetime({ offset: true }),
-  package_version: z.literal("0.4.1"),
+  package_version: z.literal("0.5.12"),
   source: z.object({ sha256: Sha, files: z.number().int().positive(), bytes: z.number().int().positive() }).strict(),
   release_inputs: z.object({ sha256: Sha, files: z.number().int().positive(), bytes: z.number().int().positive() }).strict(),
   commands: z.array(CommandEvidenceSchema).length(RELEASE_COMMAND_IDS.length),
@@ -113,6 +114,7 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "CHANGELOG.md", "DESIGN.md", "README.md",
   "bun.lock", "npm-shrinkwrap.json",
   "docs/operations.md", "docs/release-verification.md", "docs/upgrades.md",
+  "docs/deployment.md", "docs/v1-investigations.md", "docs/v1-headless-testing.md", "docs/v1-implementation-status.md",
   "docs/duckdb-query-plane.md",
   "docs/experience-and-data-science.md", "docs/connectors.md", "docs/implementation-status.md",
   "docs/session-continuity.md", "docs/session-memory.md", "docs/session-memory-implementation-plan.md",
@@ -122,21 +124,38 @@ const REVIEWED_PACKAGE_SUPPORT_PATHS = [
   "docs/historical-audit-recovery.md", "docs/live-run-visibility.md", "docs/context-budget.md",
   "scripts/alg.ps1", "scripts/alg.sh", "scripts/check-live.ts", "scripts/install.ps1", "scripts/install.sh",
   "scripts/installer-core.ts", "scripts/live-verify.ts", "scripts/manager-cli.ts", "scripts/manager-core.ts",
-  "scripts/manager-schema.ts", "scripts/npm-invocation.ts", "scripts/release-gate.ts", "scripts/smoke.ts",
+  "scripts/manager-schema.ts", "scripts/npm-invocation.ts", "scripts/host-executable.ts", "scripts/release-gate.ts", "scripts/smoke.ts",
   "scripts/verify-duckdb-manifest.ts", "scripts/verify-excel-manifest.ts",
   "scripts/duckdb-project.ts", "scripts/datascience-project.ts",
   "scripts/data-science-cli.ts", "scripts/experience-cli.ts", "scripts/verify-optional-manifests.ts",
   "scripts/synthetic-gate.ts",
   "scripts/memory-cli.ts", "scripts/session-memory-gate.ts", "scripts/session-memory-benchmark.ts",
   "scripts/environment-memory-cli.ts", "scripts/environment-memory-benchmark.ts", "scripts/snapshot-upgrade.ts",
-  "scripts/offline-diagnostics.ts",
+  "scripts/offline-diagnostics.ts", "scripts/deployment.ts", "scripts/prepare-deployment.ts",
+  "scripts/investigation-cli.ts", "scripts/qualify-investigation.ts", "scripts/verification-host-dependencies.ts", "scripts/test-v1-headless.ts",
+  "scripts/checker-headless-probe.ts", "scripts/task-headless-probe.ts", "scripts/allowance-headless-probe.ts",
+  "scripts/build-benchmark-protocol.ts", "scripts/build-benchmark-retention.ts",
+  "scripts/build-benchmark-retention-boundaries.ts", "scripts/build-benchmark-retention-cli.ts",
+  "docs/datalake-mcp-qualification.md",
+  "docs/v1-action-evidence.md", "scripts/test-action-evidence-headless.ts",
+  "scripts/action-evidence-live-regression.ts",
 ] as const
 
-const RELEASE_CONTROL_PATHS = [
+export const RELEASE_CONTROL_PATHS = [
+  "docs/alg-v1-design-index.md", "docs/alg-v1-applicability-measured-improvement-design.md", "docs/alg-v1-large-data-investigation-design.md", "docs/alg-v1-phase-one-investigation-plan.md", "docs/alg-v1-linux-bash-acceptance-plan.md", "docs/alg-v1-artifact-skill-extension.md", "docs/alg-v1-claude-review-reconciliation.md",
   "docs/skill-knowledge-graph-design.md", "docs/execution-recovery-contract.md",
   "docs/knowledge-environment-contract.md", "docs/context-decision-contract.md",
   "docs/coordination-improvement-contract.md", "docs/opencode-v2-design.md", "docs/incident-watcher-design.md",
-  ".gitattributes", ".gitignore", ".npmignore", "docs/.npmignore", "bun.lock", "package-lock.json", "tsconfig.json",
+  ".gitattributes", ".gitignore", ".npmignore", "docs/.npmignore", "scripts/.npmignore", "bun.lock", "package-lock.json", "tsconfig.json",
+  "scripts/adversarial-cases.ts", "scripts/adversarial-evaluation.ts",
+  "scripts/build-benchmark.ts", "scripts/build-benchmark-fixtures.ts", "scripts/build-benchmark-metrics.ts", "scripts/build-benchmark-transport.ts",
+  "scripts/hard-benchmark-fixtures.ts", "scripts/hard-benchmark-service.ts",
+  "scripts/hard-benchmark-qualification.ts", "scripts/hard-benchmark-host.ts", "scripts/hard-benchmark-cohort.ts",
+  "scripts/live-retention.ts", "scripts/live-retention-fixture.ts",
+  "docs/v1-adversarial-evaluation.md", "docs/v1-benchmark-failure-analysis.md", "docs/v1-build-benchmark.md",
+  "docs/v1-graph-evolution-adversarial-review.md", "docs/v1-reliability-and-build-comparison-plan.md",
+  "docs/v1-hard-development-cohort-protocol.md",
+  "docs/v1-hard-development-findings.md", "docs/v1-hard-development-repair-followup.md",
 ] as const
 
 export function expectedPackedPaths(root = ROOT): string[] {
@@ -231,7 +250,9 @@ export function validatePackedInventory(
   }
   const sorted = [...paths].sort()
   if (JSON.stringify(sorted) !== JSON.stringify(expected)) throw new Error("npm pack inventory differs from the complete reviewed allowlist")
-  if (files.some((file) => file.mode !== 420)) throw new Error("npm pack key file modes must all be 0644")
+  if (files.some((file) => file.mode !== 420 && !(file.mode === 493 && ["scripts/alg.sh", "scripts/install.sh"].includes(file.path)))) {
+    throw new Error("npm pack file modes must be 0644, or 0755 for the reviewed Bash launchers")
+  }
   return { paths: sorted, sha256: sha256(Buffer.from(`${sorted.join("\n")}\n`, "utf8")) }
 }
 
@@ -461,7 +482,7 @@ export function validateReleaseEvidenceSemantics(value: unknown, root = ROOT): R
   }
   for (const file of parsedFiles) {
     const current = join(canonicalRoot, ...file.path.split("/"))
-    if (!existsSync(current) || !lstatSync(current).isFile() || statSync(current).size !== file.size || file.mode !== 420) {
+    if (!existsSync(current) || !lstatSync(current).isFile() || statSync(current).size !== file.size || file.mode !== ((statSync(current).mode & 0o111) ? 493 : 420)) {
       throw new Error(`Release evidence packed file metadata differs from current package: ${file.path}`)
     }
   }
@@ -628,11 +649,12 @@ function releaseEvidenceIdentity(path: string): EvidenceFileIdentity {
   if (!stat.isFile() || stat.isSymbolicLink() || !sameResolvedPath(realpathSync.native(path), path)) {
     throw new Error(`Release evidence path is redirected or not a direct regular file: ${path}`)
   }
-  return { dev: stat.dev.toString(), ino: stat.ino.toString() }
+  return { dev: stat.dev.toString(), ino: stat.ino.toString(), birthtimeNs: stat.birthtimeNs.toString() }
 }
 
 function sameEvidenceIdentity(left: EvidenceFileIdentity, right: EvidenceFileIdentity): boolean {
-  return left.dev === right.dev && left.ino === right.ino
+  return left.dev === right.dev && left.ino === right.ino &&
+    (right.birthtimeNs === undefined || left.birthtimeNs === right.birthtimeNs)
 }
 
 function releaseEvidenceMissing(path: string): boolean {
@@ -815,7 +837,7 @@ export async function runReleaseGate(args = process.argv.slice(2)): Promise<{ ev
   }, ROOT)
   if (!sameEvidenceIdentity(liveArtifact.identity, live.evidence_identity)) throw new Error("Retained live evidence identity differs from live summary")
   const evidence = ReleaseEvidenceSchema.parse({
-    schema_version: 6, kind: "opencode-alg-release-gate", generated_at: new Date().toISOString(), package_version: "0.4.1",
+    schema_version: 6, kind: "opencode-alg-release-gate", generated_at: new Date().toISOString(), package_version: "0.5.12",
     source: { sha256: source.digest, files: source.file_count, bytes: source.total_bytes }, release_inputs: releaseInputsAfter, commands,
     totals: { ...bunTotals, ...managerTotals, ...pythonTotals, ...duckdbPythonTotals },
     excel: { manifest_sha256: manifest.manifest_sha256, lock_sha256: manifest.files.lock, version: wrapperCheck.version, tool_count: wrapperCheck.tool_count, eof_stdout_bytes: eofStdoutBytes },

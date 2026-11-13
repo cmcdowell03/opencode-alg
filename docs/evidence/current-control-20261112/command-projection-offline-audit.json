@@ -1,0 +1,91 @@
+{
+  "kind": "offline-command-projection-audit",
+  "implementation_sha256": "79b510e5adeedb479fa731565ff69f06a8b8068f78c1eff6a696115184c575ba",
+  "interpretation": "Measured projection of frozen command receipts. Does not retroactively pass either checker verdict.",
+  "rows": [
+    {
+      "attempt": 1,
+      "original_attempt_sha256": "3d394c2570b20fc4b51f4dadb2727ea7b5b799331ed793d77ca7ba75a42ff75e",
+      "original_receipt_sha256": "0be4237f7316f75077540b26487010d9d84f984854acf808e073cf2bc02daaf4",
+      "input_commands": 4,
+      "input_omitted": 0,
+      "projection_bytes": 3954,
+      "projection_commands": 4,
+      "projection_omitted": 0,
+      "exact_commands_retained": 4,
+      "original_unchanged": true,
+      "projected": [
+        {
+          "command": "git status --short",
+          "exit_code": 0,
+          "exit_code_status": "reported",
+          "output_truncated": false,
+          "command_truncated": false
+        },
+        {
+          "command": "npm test",
+          "exit_code": 0,
+          "exit_code_status": "reported",
+          "output_truncated": false,
+          "command_truncated": false
+        },
+        {
+          "command": "node -e 'const assert = require(\"node:assert/strict\"); const {countDistinctWafers: count} = require(\"./src/wafer-count.cjs\"); const rows = [{wafer_id:\"a\",inspected_at:\"2025-04-01T02:00:00+02:00\"},{wafer_id:\"a\",inspected_at:\"2025-04-01T12:00:00Z\"},{wafer_id:\"b\",inspected_at:\"2025-04-01T19:59:59-04:00\"},{wafer_id:\"c\",inspected_at:\"2025-04-02T01:00:00+01:00\"},{wafer_id:\"d\",inspected_at:\"2025-03-31T23:59:59Z\"}]; assert.equal(count(rows,\"2025-04-01T00:00:00Z\",\"2025-04-02T00:00:00Z\"),2); assert.equal(count(rows,\"2025-04-01T02:00:00+02:00\",\"2025-04-01T20:00:00-04:00\"),2); console.log(\"offset, duplicate, and boundary checks passed\");'",
+          "exit_code": 0,
+          "exit_code_status": "reported",
+          "output_truncated": false,
+          "command_truncated": false
+        },
+        {
+          "command": "git diff -- src/wafer-count.cjs src/wafer-view.cjs",
+          "exit_code": 0,
+          "exit_code_status": "reported",
+          "output_truncated": true,
+          "command_truncated": false
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "original_attempt_sha256": "f0e77e4ca51000eb012a6bc901f68ad2d6b544e03ffdba303d0d170aeddd887f",
+      "original_receipt_sha256": "7cb68e653a1d166cc4bd7cd30dac89dbba409c7b9294f9955a51d7165d36cd7b",
+      "input_commands": 4,
+      "input_omitted": 0,
+      "projection_bytes": 3889,
+      "projection_commands": 4,
+      "projection_omitted": 0,
+      "exact_commands_retained": 4,
+      "original_unchanged": true,
+      "projected": [
+        {
+          "command": "git status --short --untracked-files=all; git diff --stat; git diff --cached --stat; git status --ignored --short",
+          "exit_code": 0,
+          "exit_code_status": "reported",
+          "output_truncated": true,
+          "command_truncated": false
+        },
+        {
+          "command": "node --test test/wafer-count.test.cjs",
+          "exit_code": 0,
+          "exit_code_status": "reported",
+          "output_truncated": false,
+          "command_truncated": false
+        },
+        {
+          "command": "git diff HEAD --; git diff --cached --; git ls-files --others --exclude-standard -- . ':!.opencode'; git ls-files --others --ignored --exclude-standard -- . ':!.opencode'; git diff --check",
+          "exit_code": 0,
+          "exit_code_status": "reported",
+          "output_truncated": true,
+          "command_truncated": false
+        },
+        {
+          "command": "node -e 'const assert=require(\"node:assert/strict\"); const {countDistinctWafers:c}=require(\"./src/wafer-count.cjs\"); const rows=[{wafer_id:\"a\",inspected_at:\"2025-04-01T02:00:00+02:00\"},{wafer_id:\"a\",inspected_at:\"2025-04-01T12:00:00Z\"},{wafer_id:\"b\",inspected_at:\"2025-04-01T20:59:59-03:00\"},{wafer_id:\"c\",inspected_at:\"2025-04-02T01:00:00+01:00\"},{wafer_id:\"d\",inspected_at:\"2025-03-31T23:59:59Z\"}]; assert.equal(c(rows,\"2025-04-01T00:00:00Z\",\"2025-04-02T00:00:00Z\"),2); console.log(\"boundary, offsets and deduplication passed\");'",
+          "exit_code": 0,
+          "exit_code_status": "reported",
+          "output_truncated": false,
+          "command_truncated": false
+        }
+      ]
+    }
+  ]
+}

@@ -12,6 +12,7 @@ import type {
   StateProjectionMetadata,
 } from "./types.ts"
 import {
+  MAX_ATTEMPT_HISTORY_BYTES,
   MAX_INLINE_ATTEMPTS_PER_NODE,
   MAX_PROJECTED_ATTEMPT_FAILURES,
   MAX_PROJECTED_ERROR_BYTES,
@@ -25,13 +26,24 @@ import {
 import { safeDiagnosticText } from "./diagnostics.ts"
 
 export interface AttemptHistoryDocument {
-  schema_version: 1 | 2
+  schema_version: 1 | 2 | 3
   /** Present on newly published archives; schema-v1 archives remain loadable. */
   kind?: "attempt_history"
   owner_session_id?: string
   run_id: string
   node_id: string
   attempts: NodeAttempt[]
+}
+
+/** Version-3 archive rows retain exact detail refs instead of duplicating these payloads. */
+export const ARCHIVED_ATTEMPT_EVIDENCE_FIELDS = [
+  "execution_evidence", "gate_evidence", "preservation_evidence", "verification_basis",
+] as const satisfies readonly (keyof NodeAttempt)[]
+
+/** Call only after verifying and validating the referenced immutable detail. */
+export function restoreArchivedAttemptEvidence(compact: NodeAttempt, detail: NodeAttempt): NodeAttempt {
+  return { ...compact, ...Object.fromEntries(ARCHIVED_ATTEMPT_EVIDENCE_FIELDS
+    .filter(field => detail[field] !== undefined).map(field => [field, detail[field]])) }
 }
 
 export interface RootAuthorizationHistoryDocument {
@@ -52,7 +64,7 @@ export function canonicalJson(value: unknown): string {
   const canonicalize = (candidate: unknown): unknown => {
     if (Array.isArray(candidate)) return candidate.map((item) => canonicalize(item))
     if (candidate && typeof candidate === "object") {
-      const sorted: Record<string, unknown> = {}
+      const sorted: Record<string, unknown> = Object.create(null)
       for (const key of Object.keys(candidate).sort()) {
         const field = (candidate as Record<string, unknown>)[key]
         if (field !== undefined) sorted[key] = canonicalize(field)
@@ -152,7 +164,10 @@ export function attemptOutcomeCounts(attempts: readonly NodeAttempt[]): AttemptO
     gate_failure: 0,
     legacy_unknown: 0,
   }
-  for (const attempt of attempts) counts[attempt.outcome ?? "legacy_unknown"]++
+  for (const attempt of attempts) {
+    const outcome = attempt.outcome ?? "legacy_unknown"
+    counts[outcome] = (counts[outcome] ?? 0) + 1
+  }
   return counts
 }
 
@@ -256,6 +271,17 @@ function projectAttempt(run: RunState, nodeId: string, attempt: NodeAttempt): No
       )
     : attempt.detail_ref
   const projected: NodeAttempt = {
+    ...(attempt.action_evidence_ref ? { action_evidence_ref: attempt.action_evidence_ref } : {}),
+    ...(attempt.action_evidence_sources ? { action_evidence_sources: attempt.action_evidence_sources } : {}),
+    ...(attempt.retrieved_evidence ? { retrieved_evidence: attempt.retrieved_evidence } : {}),
+    ...(attempt.execution_evidence ? { execution_evidence: attempt.execution_evidence } : {}),
+    ...(attempt.gate_evidence ? { gate_evidence: attempt.gate_evidence } : {}),
+    ...(attempt.preservation_evidence ? { preservation_evidence: attempt.preservation_evidence } : {}),
+    ...(attempt.shell_setup_failed ? { shell_setup_failed: true as const } : {}),
+    ...(attempt.gate_recovery ? { gate_recovery: attempt.gate_recovery } : {}),
+    ...(attempt.reused_output_from !== undefined ? { reused_output_from: attempt.reused_output_from } : {}),
+    ...(attempt.verification_basis ? { verification_basis: attempt.verification_basis } : {}),
+    ...(attempt.task_evidence_ref ? { task_evidence_ref: attempt.task_evidence_ref } : {}),
     attempt: attempt.attempt,
     status: attempt.status,
     ...(attempt.session_id ? { session_id: attempt.session_id } : {}),
@@ -328,6 +354,16 @@ export function projectRunState(run: RunState): ProjectedRunState {
         run_id: run.run_id,
         node_id: node.id,
         attempts: archived,
+      }
+      if (serializedBytes(document) > MAX_ATTEMPT_HISTORY_BYTES) {
+        // Keep normal archives readable by existing v2 readers. Only an archive
+        // that cannot fit uses v3; every omitted byte remains in its exact sidecar.
+        document.schema_version = 3
+        document.attempts = archived.map(attempt => {
+          const compact = { ...attempt }
+          for (const field of ARCHIVED_ATTEMPT_EVIDENCE_FIELDS) delete compact[field]
+          return compact
+        })
       }
       histories.set(node.id, document)
       attemptHistoryRef = historyReference(run, node.id, document)

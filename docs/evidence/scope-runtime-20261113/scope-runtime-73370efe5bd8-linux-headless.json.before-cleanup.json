@@ -1,0 +1,388 @@
+{
+  "task_allowance_probe": {
+    "passed": true,
+    "run_id": "alg-dispatch-recovery-probe-79a1-20261113042312-43ac8150158b",
+    "task_id": "9b7db599070d447577c3c5e4d495ea3f9e0e44cee5dda9f4f07a4315c4953fa7",
+    "reserved_before_compaction": 1,
+    "reserved_after_restarts": 1,
+    "reserved_after_checker": 2,
+    "additional_dispatches_after_exhaustion": 0,
+    "checker_parent_verified": true,
+    "scope": "Real SDK children and host-hook delivery writes after the original scope baseline, across one root compaction and two restarts; synthetic provider, no model-quality claim.",
+    "scope_regression": {
+      "passed": true,
+      "baseline_sha256": "31025badfaa72b9066ad37e8dfdae8b756fc5f92b7a4f5088531ecb62f62afa2",
+      "exclusion_policy_version": 2,
+      "exclusions": [
+        ".git",
+        "node_modules",
+        ".opencode/runs",
+        ".opencode/session-memory",
+        ".opencode/skill-evolution",
+        ".opencode/experience"
+      ],
+      "producer_hook": {
+        "passed": true,
+        "before_child": {
+          "baseline_sha256": "31025badfaa72b9066ad37e8dfdae8b756fc5f92b7a4f5088531ecb62f62afa2",
+          "observed_at": "2026-11-13T04:23:13.396Z",
+          "owner_checkpoint_revision": 7
+        },
+        "child_session_id": "ses_e2cdacb05ffedNwztWxYhg1pLq",
+        "checkpoint_sha256": "4c39efeb9d9668af3a91623374d4f8dcd685979f159670bb4831c864dea4cee8",
+        "checkpoint_updated_at": "2026-11-13T04:23:13.500Z",
+        "delivery_sha256": "fb6c35989c951e73d7807976bcee062b0bbcd42df84a765ec41ce9bb23e5e76d",
+        "delivery_created_at": "2026-11-13T04:23:13.713Z",
+        "delivery_state": "emitted",
+        "delivery_hook": "system",
+        "baseline_retained": true,
+        "delegated_role_matches": true,
+        "hook_emitted_after_baseline": true
+      },
+      "checker_hook": {
+        "passed": true,
+        "before_child": {
+          "baseline_sha256": "31025badfaa72b9066ad37e8dfdae8b756fc5f92b7a4f5088531ecb62f62afa2",
+          "observed_at": "2026-11-13T04:23:54.159Z",
+          "owner_checkpoint_revision": 8
+        },
+        "child_session_id": "ses_e2cda2bc7ffeqdct63lh5GgeYI",
+        "checkpoint_sha256": "8daf9834c35e7daa1afeb62fe0dcbd3edbad828c0568fdd7fbaf3bed5c22b7fd",
+        "checkpoint_updated_at": "2026-11-13T04:23:54.329Z",
+        "delivery_sha256": "5e0b3287a671557eac867db338b555b5304b6c2e6d5bbdfeaedc3455b44cd8f7",
+        "delivery_created_at": "2026-11-13T04:23:54.620Z",
+        "delivery_state": "emitted",
+        "delivery_hook": "system",
+        "baseline_retained": true,
+        "delegated_role_matches": true,
+        "hook_emitted_after_baseline": true
+      },
+      "final_status": "within_scope",
+      "changed_count": 0,
+      "checker_evidence_matches": true
+    }
+  },
+  "task_scope_violation_probe": {
+    "passed": true,
+    "run_id": "alg-dispatch-recovery-probe-79a1-20261113042355-3227128c0557",
+    "owner": "ses_e2cda2572ffe4YF6UKMiSUs20n",
+    "task_id": "48cf4bd8d8c80643b45c799e58e550786a91d635ba75841cdc66c618dce364ba",
+    "distinct_task": true,
+    "max_dispatches": 2,
+    "verification_reserve": 1,
+    "baseline_sha256": "55d954a66944a52c29a4de29415c86c59db2c7c7c0bbc951724a2d76f936f517",
+    "baseline_retained": true,
+    "producer_hook": {
+      "passed": true,
+      "before_child": {
+        "baseline_sha256": "55d954a66944a52c29a4de29415c86c59db2c7c7c0bbc951724a2d76f936f517",
+        "observed_at": "2026-11-13T04:23:56.432Z",
+        "owner_checkpoint_revision": 2
+      },
+      "child_session_id": "ses_e2cda22ecffeqvtnMd9lDoqDMP",
+      "checkpoint_sha256": "6724938c290039fa26465cebf619cd7f437597ef181feb94be3ed5dcd556d1b7",
+      "checkpoint_updated_at": "2026-11-13T04:23:56.531Z",
+      "delivery_sha256": "787319148e93f306b01e2f45e5fdbd2e0fabb07792ff9a5517b92f0b7f35a3ad",
+      "delivery_created_at": "2026-11-13T04:23:57.639Z",
+      "delivery_state": "emitted",
+      "delivery_hook": "system",
+      "baseline_retained": true,
+      "delegated_role_matches": true,
+      "hook_emitted_after_baseline": true
+    },
+    "changed_path": ".opencode/headless-user-file.txt",
+    "scope_status": "violated",
+    "changed_count": 1,
+    "run_status": "blocked",
+    "run_phase": "task-prerequisite",
+    "scope_error_observed": true,
+    "attempts_before": 1,
+    "attempts_after": 1,
+    "checker_attempts": 0,
+    "additional_sdk_creates": 0,
+    "additional_sdk_prompts": 0,
+    "reserved_before": 1,
+    "reserved_after": 1,
+    "ledger_unchanged": true,
+    "host_children_before": [
+      "ses_e2cda22ecffeqvtnMd9lDoqDMP"
+    ],
+    "host_children_after": [
+      "ses_e2cda22ecffeqvtnMd9lDoqDMP"
+    ],
+    "positive_ledger_unchanged": true,
+    "error": "task_change_scope_unverified: scoped content changes exceeded the declaration or could not be observed; inspect scope evidence before repair; restore the evidence or explicitly resume bounded producer repair",
+    "scope": "Unauthorized user-file modification between real producer and checker waves; independent root/ledger, synthetic provider, no ledger reset or refund."
+  },
+  "checker_probe": {
+    "passed": true,
+    "run_id": "alg-selected-evidence-probe-5a92-20261113042358-db8e37852b9f",
+    "attempts": 3,
+    "distinct_children": 3,
+    "host_verified_parents": 3,
+    "verification_basis_recovered": true,
+    "nodes": [
+      {
+        "id": "work",
+        "status": "done",
+        "outcome": "passed",
+        "failures": []
+      },
+      {
+        "id": "probe",
+        "status": "done",
+        "outcome": "passed",
+        "failures": []
+      },
+      {
+        "id": "check",
+        "status": "done",
+        "outcome": "passed",
+        "failures": []
+      }
+    ]
+  },
+  "task_admission_probe": {
+    "passed": true,
+    "run_id": "synthetic-task-admission-only-20261113042400-59f435f1fd1f",
+    "host_permissions_checked": true,
+    "criteria_immutable": true,
+    "incompatible_graph_rejected": true,
+    "child_calls": 0,
+    "scope": "Actual host permission lookup and durable planning only; no file creation, command execution or model-quality claim."
+  },
+  "schema_version": 1,
+  "kind": "opencode-alg-v1-headless-acceptance",
+  "generated_at": "2026-11-13T04:24:02.462Z",
+  "passed": true,
+  "failure": null,
+  "evidence_path": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/scope-runtime-73370efe5bd8-linux-headless.json",
+  "task_contract": {
+    "run_id": "927a1accda7c2b07f7668be1e4222f4bbe6d5b9b1d5d154a432912be468cc7a6",
+    "input": {
+      "version": 1,
+      "kind": "read_only",
+      "discovery": "required",
+      "phase": "complete",
+      "deliverables": [
+        {
+          "destination": "response",
+          "producer_node": "confirm"
+        }
+      ],
+      "verification": {
+        "checker_node": "check",
+        "execution": "none"
+      },
+      "preserve_paths": [],
+      "evidence_plan": [
+        {
+          "criterion": 1,
+          "observations": [
+            {
+              "kind": "deliverable",
+              "index": 0
+            }
+          ]
+        }
+      ]
+    },
+    "original_goal": "Run bounded synthetic data investigation acceptance",
+    "original_criteria": [
+      "Use only deterministic local fixture data"
+    ],
+    "requirements_sha256": "98781e7178aa9576bd709eeab74d7096b9d5e4709b5c0616b5632073c934d30f",
+    "contract_sha256": "49c15f1106b42f3cbbfd7fd4527f514a7b06be696c0417144a101cde3ce82dc8",
+    "persisted_before_compaction": true,
+    "persisted_after_compaction": true,
+    "persisted_after_restart": true,
+    "persisted_after_final_restart": true,
+    "digests_stable": true,
+    "user_request_captured": true,
+    "user_request_sha256": "4ae38716ff0f43f983be0cd4248bd46591d4c1e84f53442f87c5b4f18ba65330"
+  },
+  "source": {
+    "package_version": "0.5.11",
+    "root": "/home/algtest/alg-scope-runtime-73370efe5bd8",
+    "loaded_root": "/tmp/alg-v1-headless-MWoJx3/runtime-source",
+    "sha256": "f91e081787de32629c358bbd98dae80c8248e0f104243b1ca4767bf62c3fba0f",
+    "node": "24.3.0",
+    "bun": "1.3.14"
+  },
+  "host": {
+    "executable": "/home/algtest/tools/opencode/node_modules/opencode-ai/bin/opencode.exe",
+    "version": "1.18.35",
+    "platform": "linux",
+    "arch": "x64",
+    "libc": "glibc-2.39",
+    "starts": 3,
+    "restarts": 2,
+    "pids": [
+      11549,
+      11590,
+      11630
+    ],
+    "clean_exits": [
+      true,
+      true,
+      true
+    ]
+  },
+  "isolation": {
+    "temporary_root": "/tmp/alg-v1-headless-MWoJx3",
+    "project": "/tmp/alg-v1-headless-MWoJx3/project",
+    "config_home": "/tmp/alg-v1-headless-MWoJx3/xdg-config",
+    "config_path": "/tmp/alg-v1-headless-MWoJx3/opencode.json",
+    "sidecar_path": "/tmp/alg-v1-headless-MWoJx3/alg-options.json",
+    "provider_endpoint": "http://127.0.0.1:43891/v1",
+    "server_bind_host": "127.0.0.1",
+    "credentials_inherited": false,
+    "real_user_config_unchanged": true,
+    "config_before_sha256": "08afb58456ae0e744d9ad0dbed698f9d52fd61325d6c7c518a82481180cdad2b",
+    "config_after_sha256": "08afb58456ae0e744d9ad0dbed698f9d52fd61325d6c7c518a82481180cdad2b"
+  },
+  "session": {
+    "id": "ses_e2cdae628ffeyXlELsDcLAoA8o",
+    "persisted_same_id": true,
+    "initial_tool_calls": [
+      "alg_context_status",
+      "alg_plan",
+      "alg_investigation"
+    ],
+    "followup_tool_calls": [
+      "alg_investigation",
+      "alg_investigation"
+    ],
+    "tool_registry_ids": [
+      "alg_templates",
+      "alg_models",
+      "alg_criteria",
+      "alg_plan",
+      "alg_run",
+      "alg_status",
+      "alg_resume",
+      "alg_artifact",
+      "alg_transfer",
+      "alg_skill_evolution_status",
+      "alg_skill_evolution_audit",
+      "alg_skill_evolution_historical",
+      "alg_skill_evolution_review",
+      "alg_skill_evolution_promote",
+      "alg_skill_evolution_rollback",
+      "alg_skill",
+      "alg_memory_search",
+      "alg_memory_read",
+      "alg_context_status",
+      "alg_memory_propose",
+      "alg_investigation"
+    ],
+    "registry_exact": true,
+    "plugin_startup_proofs": [
+      true,
+      true,
+      true
+    ],
+    "initial_memory_checkpoint": {
+      "revision": 6,
+      "generation": 0,
+      "result_pins": [
+        "552ba996b4ab7b34f5ce0b8b7ec0cb44ff435a57c031b0f2be90b31076779869"
+      ],
+      "result_persisted": true
+    },
+    "compacted_memory_checkpoint": {
+      "revision": 7,
+      "generation": 0,
+      "same_result_pin": true
+    },
+    "recovered_compaction_message": true,
+    "recovered_reference_and_result": true,
+    "final_memory_checkpoint": {
+      "revision": 8,
+      "generation": 0,
+      "result_persisted": true
+    }
+  },
+  "synthetic_provider": {
+    "endpoint": "http://127.0.0.1:43891/v1",
+    "received_requests": 19,
+    "non_loopback_requests": 0,
+    "phases": [
+      "initial",
+      "initial",
+      "initial",
+      "initial",
+      "initial",
+      "initial",
+      "initial",
+      "compaction",
+      "followup",
+      "followup",
+      "followup",
+      "followup",
+      "followup",
+      "followup",
+      "background",
+      "background",
+      "background",
+      "background",
+      "background"
+    ],
+    "context_status_seen": true,
+    "plan_tool_seen": true,
+    "investigation_query_tool_seen": true,
+    "query_result_observed_by_model": true,
+    "compaction_saw_initial_result": true,
+    "followup_saw_persisted_reference": true,
+    "no_non_loopback_requests": true
+  },
+  "investigation": {
+    "enabled": true,
+    "mcp_server_name": "alg-headless-synthetic",
+    "mcp_server_version": "1.32.2-fixture.1",
+    "profile_schema_hashes": {
+      "submit": "8f96cf996df3ceb5927c28688bead79b03e999da7ea93945a4adb981c422d610",
+      "lookup": "853817dd743deb499325778f6aaf1e1ca21828411cd40b8f82e0785426aff47c",
+      "validate": "802cda9d18a48a0c460f2546e5672a9e56312aad00acf6c172bcd0ecd712fb36",
+      "read": "5d4843c64cba757b727351493dc17717b4ad0dafabbaeed08436d75820143ff1",
+      "cancel": "a1f3edfb447fba0789fa3d0cfc8948cb46aacca3ea4c96c4c4f8e16876f9c4cf"
+    },
+    "submit_calls": 1,
+    "accepted_remote_jobs": 1,
+    "validation_calls": 6,
+    "read_calls": 1,
+    "lookup_calls": 2,
+    "read_result_tool_calls": 3,
+    "query_tool_calls": 3,
+    "same_work_key": true,
+    "same_result_reference": true,
+    "result_revalidated_after_restarts": true,
+    "actual_tool_results": [
+      {
+        "status": "reusable",
+        "work_key": "a79485d48761e3d8081903b9a27e2dbd3031e8492887dd0988f9c037d7cacc2e",
+        "manifest_ref": "synthetic://alg-headless/manifest/readings-v1",
+        "digest": "57d1f764111f08be633cbcb9282598b5cc7320f8360bfc1229aa30dfda5bbac2"
+      },
+      {
+        "status": "reusable",
+        "work_key": "a79485d48761e3d8081903b9a27e2dbd3031e8492887dd0988f9c037d7cacc2e",
+        "manifest_ref": "synthetic://alg-headless/manifest/readings-v1",
+        "digest": "57d1f764111f08be633cbcb9282598b5cc7320f8360bfc1229aa30dfda5bbac2"
+      },
+      {
+        "status": "reusable",
+        "work_key": "a79485d48761e3d8081903b9a27e2dbd3031e8492887dd0988f9c037d7cacc2e",
+        "manifest_ref": "synthetic://alg-headless/manifest/readings-v1",
+        "digest": "57d1f764111f08be633cbcb9282598b5cc7320f8360bfc1229aa30dfda5bbac2"
+      }
+    ]
+  },
+  "cleanup": {
+    "host_processes_stopped": true,
+    "provider_stopped": true,
+    "mcp_service_stopped": true,
+    "temporary_environment_removed": false,
+    "evidence_persisted_before_environment_removal": false
+  }
+}

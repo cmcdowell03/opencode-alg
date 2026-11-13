@@ -1,0 +1,885 @@
+{
+  "schema": "alg-build-pilot-v1",
+  "started_at": "2026-11-13T07:05:10.253Z",
+  "source_commit": "addb744d420375337cbf9d05e09408b26e23e395",
+  "source_sha256": "6891294f6772146fd16aa8fe8a7b4a11dd2a6dacc2d1bd0166bb84ea39a5e6a6",
+  "harness_sha256": "b515c058e7a303675df47ad90e520ec14a297e57f41bd572f2fbedbbc7de1dfc",
+  "protocol_sha256": "48a1e7cd2d18bb185188d0569c13cd682d2d0ec93f260eab95797cfd1c14a46b",
+  "fixtures_sha256": "5ed92deeda6c4dd52c4edf1f905ed7f627f0d4c3c04b2d4a5b2dd8356208500b",
+  "metrics_sha256": "7f73b2b96057551fd8b777b20bd1fab715570107c7b15f5537a39ae7350e9e48",
+  "transport_sha256": "559b8647feeb15c4e499bc5e06282d129610e4837e42497f49588ce1229f0b7a",
+  "prompt_transport": "prompt_async",
+  "model": "openai/gpt-6-luna",
+  "limits": {
+    "trialMs": 1800000,
+    "assistantTurns": 256,
+    "reportedComponents": 2000000,
+    "outputTokens": 4096,
+    "suiteMs": 36000000
+  },
+  "preflight_only": false,
+  "track": "default",
+  "workload": "long-session",
+  "hard": {
+    "hard_fixtures_sha256": "a26ce1157525d80a9544fd74b816c93fe8e38c42a1415434ceb73d2f03df2c31",
+    "fixtures_source_sha256": "580d410294404efcbf68e038cca8bec494b3ee2373330f502cdd0c62715e1164",
+    "grader_sha256": "580d410294404efcbf68e038cca8bec494b3ee2373330f502cdd0c62715e1164",
+    "service_sha256": "a194fd54428f3015582f145d31111a18b6f6a0fbe586136397d2b8b341cf05c9",
+    "qualification_sha256": "78d13d56c6aece3d9986a9075459cfac2e4d8e3ac5be7cdaec32b3e1ec98fd65",
+    "host_sha256": "033c1248635dc6608fec0ac33882bcdb77fe0f12a3b01aa36ad5add0ee16d6bb",
+    "cohort_sha256": "22ba6ea3206d63e90be39e9942598aba375c92156bcf4b430822c92798c38e13",
+    "runner_sha256": "b515c058e7a303675df47ad90e520ec14a297e57f41bd572f2fbedbbc7de1dfc",
+    "long_identity": {
+      "cases": "003fca96c796a2893c71a94b3d200a58946665770c81c989156e9eaa6023ba68",
+      "sources": {
+        "build-benchmark.ts": "b515c058e7a303675df47ad90e520ec14a297e57f41bd572f2fbedbbc7de1dfc",
+        "build-benchmark-protocol.ts": "48a1e7cd2d18bb185188d0569c13cd682d2d0ec93f260eab95797cfd1c14a46b",
+        "build-benchmark-metrics.ts": "7f73b2b96057551fd8b777b20bd1fab715570107c7b15f5537a39ae7350e9e48",
+        "build-benchmark-transport.ts": "559b8647feeb15c4e499bc5e06282d129610e4837e42497f49588ce1229f0b7a",
+        "build-benchmark-retention.ts": "c54a6bfcb985a40934e59f1b15d345a5deea125129f510cb58842018883b506c",
+        "build-benchmark-retention-boundaries.ts": "1ff679f3b6791c4301f520c75246f3472ede5983695794546613cb2835f416e4",
+        "build-benchmark-long-session.ts": "4708e3f2d6b852f89fcec5e3e5118f5a18efc4bf1f5ec3085f605c044a3cfa77",
+        "build-benchmark-long-fixtures.ts": "1d329d89200c29bc463532d8cc160576f8bbe13fc3361c391ec63adf526bd87f",
+        "build-benchmark-long-reference.ts": "440aa82becef2a4fee6b467dbd75a4e098fd84268b8c1d8f5a1f71bc4e9e4cbb",
+        "build-benchmark-long-qualification.ts": "dce7afc8404d54f4eb487177669de016c840da8392eb20dfa42c1d5f08261cec",
+        "build-benchmark-long-report.ts": "651f08db7d7c60dbd20c47d0df05b2a826f4de45fa86f2c4ca98cd0d7e8943e6",
+        "hard-benchmark-host.ts": "033c1248635dc6608fec0ac33882bcdb77fe0f12a3b01aa36ad5add0ee16d6bb",
+        "hard-benchmark-service.ts": "a194fd54428f3015582f145d31111a18b6f6a0fbe586136397d2b8b341cf05c9",
+        "hard-benchmark-fixtures.ts": "580d410294404efcbf68e038cca8bec494b3ee2373330f502cdd0c62715e1164",
+        "hard-benchmark-qualification.ts": "78d13d56c6aece3d9986a9075459cfac2e4d8e3ac5be7cdaec32b3e1ec98fd65",
+        "hard-benchmark-cohort.ts": "22ba6ea3206d63e90be39e9942598aba375c92156bcf4b430822c92798c38e13"
+      }
+    },
+    "host_executable_sha256": "6f15c8f241f3df22375f174753193a71c488f6c0a6bbbae3f9fa34d112673b7b",
+    "qualification_evidence_sha256": "6c636e33dc279e641d796fc256a5306cdf98951ddf71bc9ee40ead3ccba70511",
+    "order_seed": 20261113,
+    "order_algorithm": "sha256-sort-v1+alternating-arms-seed-bit",
+    "plan_sha256": "089ad9b6f8549895b3aaa03485adb747ebb54442c1912cd2877993fde429f465",
+    "native_compaction": {
+      "auto": true,
+      "prune": true
+    },
+    "requested_host_compaction": true,
+    "service_instruction_exception": "Only the supplied per-arm fixture HTTP endpoint on 127.0.0.1 via Node fetch; no other network services.",
+    "isolation": "same-user-development-only-not-os-isolated",
+    "confirmation_qualified": false,
+    "interpretation": "DEVELOPMENT ONLY; same user; NOT OS ISOLATED; unqualified for confirmation. Native auto/prune compaction is enabled prospectively; hard L1 requests no host compaction. Existing telemetry distinguishes observed markers, linked completed summaries and continuation evidence. No forced boundary implies no information-loss estimate, not zero loss. The preseeded service restart is not model compaction."
+  },
+  "pairs": [
+    {
+      "pairId": "pair-0001-e1f164a44b5c",
+      "caseId": "long-v1-partial-restart-h0c0-20261213",
+      "track": "default",
+      "issuedAt": "2026-11-13T07:05:10.637Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "issued_not_started"
+        },
+        {
+          "arm": "alg_default",
+          "status": "issued_not_started"
+        }
+      ],
+      "order": [
+        "alg_default",
+        "build"
+      ]
+    },
+    {
+      "pairId": "pair-0002-a9b5250725e6",
+      "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+      "track": "default",
+      "issuedAt": "2026-11-13T07:05:10.637Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "issued_not_started"
+        },
+        {
+          "arm": "alg_default",
+          "status": "issued_not_started"
+        }
+      ],
+      "order": [
+        "build",
+        "alg_default"
+      ]
+    },
+    {
+      "pairId": "pair-0003-a95ec66e46ab",
+      "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+      "track": "default",
+      "issuedAt": "2026-11-13T07:05:10.637Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "issued_not_started"
+        },
+        {
+          "arm": "alg_default",
+          "status": "issued_not_started"
+        }
+      ],
+      "order": [
+        "alg_default",
+        "build"
+      ]
+    },
+    {
+      "pairId": "pair-0004-b28f7a3f0e66",
+      "caseId": "long-v1-partial-restart-h1c0-20261213",
+      "track": "default",
+      "issuedAt": "2026-11-13T07:05:10.637Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "issued_not_started"
+        },
+        {
+          "arm": "alg_default",
+          "status": "issued_not_started"
+        }
+      ],
+      "order": [
+        "build",
+        "alg_default"
+      ]
+    },
+    {
+      "pairId": "pair-0005-76c84113b1e6",
+      "caseId": "long-v1-partial-restart-h1c1-20261213",
+      "track": "default",
+      "issuedAt": "2026-11-13T07:05:10.637Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "issued_not_started"
+        },
+        {
+          "arm": "alg_default",
+          "status": "issued_not_started"
+        }
+      ],
+      "order": [
+        "alg_default",
+        "build"
+      ]
+    },
+    {
+      "pairId": "pair-0006-de3b997ddaa1",
+      "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+      "track": "default",
+      "issuedAt": "2026-11-13T07:05:10.637Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "issued_not_started"
+        },
+        {
+          "arm": "alg_default",
+          "status": "issued_not_started"
+        }
+      ],
+      "order": [
+        "build",
+        "alg_default"
+      ]
+    },
+    {
+      "pairId": "pair-0007-9bde832bef9a",
+      "caseId": "long-v1-partial-restart-h0c1-20261213",
+      "track": "default",
+      "issuedAt": "2026-11-13T07:05:10.637Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "issued_not_started"
+        },
+        {
+          "arm": "alg_default",
+          "status": "issued_not_started"
+        }
+      ],
+      "order": [
+        "alg_default",
+        "build"
+      ]
+    },
+    {
+      "pairId": "pair-0008-f321bfaee228",
+      "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+      "track": "default",
+      "issuedAt": "2026-11-13T07:05:10.637Z",
+      "arms": [
+        {
+          "arm": "build",
+          "status": "issued_not_started"
+        },
+        {
+          "arm": "alg_default",
+          "status": "issued_not_started"
+        }
+      ],
+      "order": [
+        "build",
+        "alg_default"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "long-v1-partial-restart-h0c0-20261213",
+      "criteria": [
+        "Find the completed jobs by their checkpoint keys. Check current revisions and statuses before reuse.",
+        "Deduplicate particle observations by (lot, observation) and report affected observations in review-shift and the affected lots that intersect overlapping maintenance.",
+        "Report unresolved recipe status from the current source. Preserve the existing accepted-work ledger.",
+        "Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.",
+        "Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.",
+        "Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.",
+        "Use current evidence and procedure v2; do not follow the revoked v1 procedure.",
+        "Preserve all accepted-work accounting and do not submit duplicate computations."
+      ],
+      "initialPrompt": "After restart, reconcile completed results against current sources and bound the investigation while the recipe branch is unavailable. Write report.json at the workspace root as a JSON object matching sources/report-contract.json.\n\nFactory analysis: Investigate whether the post-cleaning observations distinguish chamber elevation from recipe/shift confounding or inadequate coverage. Submit factory.json using evidence/report-contract.json.\n\nUse the current skill and public mission. The revoked procedure is a distractor. The service report belongs in report.json; the factory report belongs in factory.json. Write the exact checkpoint contract as well.\n\nOriginal acceptance criteria:\n1. Find the completed jobs by their checkpoint keys. Check current revisions and statuses before reuse.\n2. Deduplicate particle observations by (lot, observation) and report affected observations in review-shift and the affected lots that intersect overlapping maintenance.\n3. Report unresolved recipe status from the current source. Preserve the existing accepted-work ledger.\n4. Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.\n5. Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.\n6. Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.\n7. Use current evidence and procedure v2; do not follow the revoked v1 procedure.\n8. Preserve all accepted-work accounting and do not submit duplicate computations.",
+      "followupPrompt": null,
+      "fixture_files": [
+        {
+          "path": "README.md",
+          "sha256": "0e70ec7efa5667c12feddd26a82c1dfd8744543280c6f3e9d1f53104c8edd18d"
+        },
+        {
+          "path": "sources/checkpoint.json",
+          "sha256": "10510f94f04815ce262a3748fcc9c8136a1b77fad8e168471816ccd19851cc47"
+        },
+        {
+          "path": "sources/report-contract.json",
+          "sha256": "951c42e44ead4d3af3bb336ff8edd12760ace4da84fe49e6547dfc9465416f5d"
+        },
+        {
+          "path": "evidence/incident.json",
+          "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+        },
+        {
+          "path": "evidence/report-contract.json",
+          "sha256": "2472f9c86e37545e4802404e7dd026ee5aed3d3f3a4cb587afefa0e728623b21"
+        },
+        {
+          "path": "evidence/registry.json",
+          "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+        },
+        {
+          "path": "evidence/archive/6ecba624c4.json",
+          "sha256": "b5c73805dc21363a53f904375161f6cce3d3930bba5c49091dbae49e3a3b891d"
+        },
+        {
+          "path": "evidence/archive/468174f8db.json",
+          "sha256": "b2357ed2b9e008759ab28a5e09541de23293ce95f3069fd73773d6e391da9d79"
+        },
+        {
+          "path": "evidence/archive/3ed5a48af1.json",
+          "sha256": "25239a49fca1a7b58a239f56aea98d905f5cffae1fea2ea75933bf090b3f8a14"
+        },
+        {
+          "path": "evidence/archive/c8425a2194.json",
+          "sha256": "f88de7871edfc34bf20248fbc2dfb832d88b39b2dc23e574e61160159836a8d2"
+        },
+        {
+          "path": "evidence/archive/4c04efaa34.json",
+          "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+        },
+        {
+          "path": "evidence/archive/dafeb93618.json",
+          "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+        },
+        {
+          "path": "catalog/catalog.jsonl",
+          "sha256": "004ea5051e77e6232502d4a2019beba395371d879d9431e379d81e46834fea6f"
+        },
+        {
+          "path": "skills/current-analysis.md",
+          "sha256": "a6e44c223fd6236760c77c1dd5c8b98da997bdc407cd5bca0c6e1e95801530d9"
+        },
+        {
+          "path": "skills/revoked-procedure-v1.md",
+          "sha256": "337895c8def59a9bf7610ca6b01090723a4304b52d721fa4ba147f4de108d680"
+        },
+        {
+          "path": "mission.json",
+          "sha256": "686829bbf291d386e5296715746a95dc8f7a85f3de5ec8ebf23a078892fa6ab9"
+        }
+      ]
+    },
+    {
+      "id": "long-v1-accepted-lost-ack-h0c0-20261113",
+      "criteria": [
+        "Submit once for the requested window and revision. Recover by lookup, check the job and read its complete result.",
+        "Leave process controls unchanged.",
+        "Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.",
+        "Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.",
+        "Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.",
+        "Use current evidence and procedure v2; do not follow the revoked v1 procedure.",
+        "Preserve all accepted-work accounting and do not submit duplicate computations."
+      ],
+      "initialPrompt": "Recover a bounded particle summary after an accepted query loses its acknowledgement. Write report.json at the workspace root as a JSON object with exactly the fields specified in sources/request.json.\n\nFactory analysis: Investigate whether the post-cleaning observations distinguish chamber elevation from recipe/shift confounding or inadequate coverage. Submit factory.json using evidence/report-contract.json.\n\nUse the current skill and public mission. The revoked procedure is a distractor. The service report belongs in report.json; the factory report belongs in factory.json. Write the exact checkpoint contract as well.\n\nOriginal acceptance criteria:\n1. Submit once for the requested window and revision. Recover by lookup, check the job and read its complete result.\n2. Leave process controls unchanged.\n3. Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.\n4. Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.\n5. Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.\n6. Use current evidence and procedure v2; do not follow the revoked v1 procedure.\n7. Preserve all accepted-work accounting and do not submit duplicate computations.",
+      "followupPrompt": null,
+      "fixture_files": [
+        {
+          "path": "README.md",
+          "sha256": "30aa99617d2764dc325397a601b4d284a52267abca9cd5d9f18db11e3369d925"
+        },
+        {
+          "path": "sources/request.json",
+          "sha256": "85b817a6c4110b2562ee1e0538184a3cab73169d758de938ba318cab61fb59ca"
+        },
+        {
+          "path": "evidence/incident.json",
+          "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+        },
+        {
+          "path": "evidence/report-contract.json",
+          "sha256": "2472f9c86e37545e4802404e7dd026ee5aed3d3f3a4cb587afefa0e728623b21"
+        },
+        {
+          "path": "evidence/registry.json",
+          "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+        },
+        {
+          "path": "evidence/archive/0c8ddad157.json",
+          "sha256": "96e98dfd811c50c5f18c556fd2f67bcb40120a5aaaa63bbc0b311447cd41d2b0"
+        },
+        {
+          "path": "evidence/archive/a6fba70e9a.json",
+          "sha256": "c7be3f9141b1a5e41e8078071ea28b72e1ad14db59c6c20636f8d6dfb7026a4d"
+        },
+        {
+          "path": "evidence/archive/55c81faada.json",
+          "sha256": "9382253b47ee6e4bd028a61af38046e97dcdc9bd123b57f4385887cb8a84348b"
+        },
+        {
+          "path": "evidence/archive/804cc248e2.json",
+          "sha256": "94c24e776fa34f5b315c3c3e3891c6a44392e369e455048486edcf0f9bd6b691"
+        },
+        {
+          "path": "evidence/archive/4fee8fc564.json",
+          "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+        },
+        {
+          "path": "evidence/archive/5f79f4a80b.json",
+          "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+        },
+        {
+          "path": "catalog/catalog.jsonl",
+          "sha256": "65cedee1180d79031f6845ec1f5fb55d40f73a6264dfe5b3e4512c6d6541d056"
+        },
+        {
+          "path": "skills/current-analysis.md",
+          "sha256": "a6e44c223fd6236760c77c1dd5c8b98da997bdc407cd5bca0c6e1e95801530d9"
+        },
+        {
+          "path": "skills/revoked-procedure-v1.md",
+          "sha256": "337895c8def59a9bf7610ca6b01090723a4304b52d721fa4ba147f4de108d680"
+        },
+        {
+          "path": "mission.json",
+          "sha256": "686829bbf291d386e5296715746a95dc8f7a85f3de5ec8ebf23a078892fa6ab9"
+        }
+      ]
+    },
+    {
+      "id": "long-v1-accepted-lost-ack-h1c0-20261113",
+      "criteria": [
+        "Submit once for the requested window and revision. Recover by lookup, check the job and read its complete result.",
+        "Leave process controls unchanged.",
+        "Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.",
+        "Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.",
+        "Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.",
+        "Use current evidence and procedure v2; do not follow the revoked v1 procedure.",
+        "Preserve all accepted-work accounting and do not submit duplicate computations."
+      ],
+      "initialPrompt": "Recover a bounded particle summary after an accepted query loses its acknowledgement. Write report.json at the workspace root as a JSON object with exactly the fields specified in sources/request.json.\n\nFactory analysis: Investigate whether the post-cleaning observations distinguish chamber elevation from recipe/shift confounding or inadequate coverage. Submit factory.json using evidence/report-contract.json.\n\nUse the current skill and public mission. The revoked procedure is a distractor. The service report belongs in report.json; the factory report belongs in factory.json. Write the exact checkpoint contract as well.\n\nOriginal acceptance criteria:\n1. Submit once for the requested window and revision. Recover by lookup, check the job and read its complete result.\n2. Leave process controls unchanged.\n3. Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.\n4. Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.\n5. Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.\n6. Use current evidence and procedure v2; do not follow the revoked v1 procedure.\n7. Preserve all accepted-work accounting and do not submit duplicate computations.",
+      "followupPrompt": null,
+      "fixture_files": [
+        {
+          "path": "README.md",
+          "sha256": "30aa99617d2764dc325397a601b4d284a52267abca9cd5d9f18db11e3369d925"
+        },
+        {
+          "path": "sources/request.json",
+          "sha256": "85b817a6c4110b2562ee1e0538184a3cab73169d758de938ba318cab61fb59ca"
+        },
+        {
+          "path": "evidence/incident.json",
+          "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+        },
+        {
+          "path": "evidence/report-contract.json",
+          "sha256": "2472f9c86e37545e4802404e7dd026ee5aed3d3f3a4cb587afefa0e728623b21"
+        },
+        {
+          "path": "evidence/registry.json",
+          "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+        },
+        {
+          "path": "evidence/archive/0c8ddad157.json",
+          "sha256": "96e98dfd811c50c5f18c556fd2f67bcb40120a5aaaa63bbc0b311447cd41d2b0"
+        },
+        {
+          "path": "evidence/archive/a6fba70e9a.json",
+          "sha256": "c7be3f9141b1a5e41e8078071ea28b72e1ad14db59c6c20636f8d6dfb7026a4d"
+        },
+        {
+          "path": "evidence/archive/55c81faada.json",
+          "sha256": "9382253b47ee6e4bd028a61af38046e97dcdc9bd123b57f4385887cb8a84348b"
+        },
+        {
+          "path": "evidence/archive/804cc248e2.json",
+          "sha256": "94c24e776fa34f5b315c3c3e3891c6a44392e369e455048486edcf0f9bd6b691"
+        },
+        {
+          "path": "evidence/archive/4fee8fc564.json",
+          "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+        },
+        {
+          "path": "evidence/archive/5f79f4a80b.json",
+          "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+        },
+        {
+          "path": "catalog/catalog.jsonl",
+          "sha256": "65cedee1180d79031f6845ec1f5fb55d40f73a6264dfe5b3e4512c6d6541d056"
+        },
+        {
+          "path": "skills/current-analysis.md",
+          "sha256": "a6e44c223fd6236760c77c1dd5c8b98da997bdc407cd5bca0c6e1e95801530d9"
+        },
+        {
+          "path": "skills/revoked-procedure-v1.md",
+          "sha256": "337895c8def59a9bf7610ca6b01090723a4304b52d721fa4ba147f4de108d680"
+        },
+        {
+          "path": "mission.json",
+          "sha256": "686829bbf291d386e5296715746a95dc8f7a85f3de5ec8ebf23a078892fa6ab9"
+        }
+      ]
+    },
+    {
+      "id": "long-v1-partial-restart-h1c0-20261213",
+      "criteria": [
+        "Find the completed jobs by their checkpoint keys. Check current revisions and statuses before reuse.",
+        "Deduplicate particle observations by (lot, observation) and report affected observations in review-shift and the affected lots that intersect overlapping maintenance.",
+        "Report unresolved recipe status from the current source. Preserve the existing accepted-work ledger.",
+        "Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.",
+        "Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.",
+        "Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.",
+        "Use current evidence and procedure v2; do not follow the revoked v1 procedure.",
+        "Preserve all accepted-work accounting and do not submit duplicate computations."
+      ],
+      "initialPrompt": "After restart, reconcile completed results against current sources and bound the investigation while the recipe branch is unavailable. Write report.json at the workspace root as a JSON object matching sources/report-contract.json.\n\nFactory analysis: Investigate whether the post-cleaning observations distinguish chamber elevation from recipe/shift confounding or inadequate coverage. Submit factory.json using evidence/report-contract.json.\n\nUse the current skill and public mission. The revoked procedure is a distractor. The service report belongs in report.json; the factory report belongs in factory.json. Write the exact checkpoint contract as well.\n\nOriginal acceptance criteria:\n1. Find the completed jobs by their checkpoint keys. Check current revisions and statuses before reuse.\n2. Deduplicate particle observations by (lot, observation) and report affected observations in review-shift and the affected lots that intersect overlapping maintenance.\n3. Report unresolved recipe status from the current source. Preserve the existing accepted-work ledger.\n4. Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.\n5. Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.\n6. Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.\n7. Use current evidence and procedure v2; do not follow the revoked v1 procedure.\n8. Preserve all accepted-work accounting and do not submit duplicate computations.",
+      "followupPrompt": null,
+      "fixture_files": [
+        {
+          "path": "README.md",
+          "sha256": "0e70ec7efa5667c12feddd26a82c1dfd8744543280c6f3e9d1f53104c8edd18d"
+        },
+        {
+          "path": "sources/checkpoint.json",
+          "sha256": "10510f94f04815ce262a3748fcc9c8136a1b77fad8e168471816ccd19851cc47"
+        },
+        {
+          "path": "sources/report-contract.json",
+          "sha256": "951c42e44ead4d3af3bb336ff8edd12760ace4da84fe49e6547dfc9465416f5d"
+        },
+        {
+          "path": "evidence/incident.json",
+          "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+        },
+        {
+          "path": "evidence/report-contract.json",
+          "sha256": "2472f9c86e37545e4802404e7dd026ee5aed3d3f3a4cb587afefa0e728623b21"
+        },
+        {
+          "path": "evidence/registry.json",
+          "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+        },
+        {
+          "path": "evidence/archive/6ecba624c4.json",
+          "sha256": "b5c73805dc21363a53f904375161f6cce3d3930bba5c49091dbae49e3a3b891d"
+        },
+        {
+          "path": "evidence/archive/468174f8db.json",
+          "sha256": "b2357ed2b9e008759ab28a5e09541de23293ce95f3069fd73773d6e391da9d79"
+        },
+        {
+          "path": "evidence/archive/3ed5a48af1.json",
+          "sha256": "25239a49fca1a7b58a239f56aea98d905f5cffae1fea2ea75933bf090b3f8a14"
+        },
+        {
+          "path": "evidence/archive/c8425a2194.json",
+          "sha256": "f88de7871edfc34bf20248fbc2dfb832d88b39b2dc23e574e61160159836a8d2"
+        },
+        {
+          "path": "evidence/archive/4c04efaa34.json",
+          "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+        },
+        {
+          "path": "evidence/archive/dafeb93618.json",
+          "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+        },
+        {
+          "path": "catalog/catalog.jsonl",
+          "sha256": "004ea5051e77e6232502d4a2019beba395371d879d9431e379d81e46834fea6f"
+        },
+        {
+          "path": "skills/current-analysis.md",
+          "sha256": "a6e44c223fd6236760c77c1dd5c8b98da997bdc407cd5bca0c6e1e95801530d9"
+        },
+        {
+          "path": "skills/revoked-procedure-v1.md",
+          "sha256": "337895c8def59a9bf7610ca6b01090723a4304b52d721fa4ba147f4de108d680"
+        },
+        {
+          "path": "mission.json",
+          "sha256": "686829bbf291d386e5296715746a95dc8f7a85f3de5ec8ebf23a078892fa6ab9"
+        }
+      ]
+    },
+    {
+      "id": "long-v1-partial-restart-h1c1-20261213",
+      "criteria": [
+        "Find the completed jobs by their checkpoint keys. Check current revisions and statuses before reuse.",
+        "Deduplicate particle observations by (lot, observation) and report affected observations in review-shift and the affected lots that intersect overlapping maintenance.",
+        "Report unresolved recipe status from the current source. Preserve the existing accepted-work ledger.",
+        "Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.",
+        "Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.",
+        "Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.",
+        "Use current evidence and procedure v2; do not follow the revoked v1 procedure.",
+        "Preserve all accepted-work accounting and do not submit duplicate computations."
+      ],
+      "initialPrompt": "After restart, reconcile completed results against current sources and bound the investigation while the recipe branch is unavailable. Write report.json at the workspace root as a JSON object matching sources/report-contract.json.\n\nFactory analysis: Investigate whether the post-cleaning observations distinguish chamber elevation from recipe/shift confounding or inadequate coverage. Submit factory.json using evidence/report-contract.json.\n\nUse the current skill and public mission. The revoked procedure is a distractor. The service report belongs in report.json; the factory report belongs in factory.json. Write the exact checkpoint contract as well.\n\nOriginal acceptance criteria:\n1. Find the completed jobs by their checkpoint keys. Check current revisions and statuses before reuse.\n2. Deduplicate particle observations by (lot, observation) and report affected observations in review-shift and the affected lots that intersect overlapping maintenance.\n3. Report unresolved recipe status from the current source. Preserve the existing accepted-work ledger.\n4. Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.\n5. Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.\n6. Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.\n7. Use current evidence and procedure v2; do not follow the revoked v1 procedure.\n8. Preserve all accepted-work accounting and do not submit duplicate computations.",
+      "followupPrompt": null,
+      "fixture_files": [
+        {
+          "path": "README.md",
+          "sha256": "0e70ec7efa5667c12feddd26a82c1dfd8744543280c6f3e9d1f53104c8edd18d"
+        },
+        {
+          "path": "sources/checkpoint.json",
+          "sha256": "10510f94f04815ce262a3748fcc9c8136a1b77fad8e168471816ccd19851cc47"
+        },
+        {
+          "path": "sources/report-contract.json",
+          "sha256": "951c42e44ead4d3af3bb336ff8edd12760ace4da84fe49e6547dfc9465416f5d"
+        },
+        {
+          "path": "evidence/incident.json",
+          "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+        },
+        {
+          "path": "evidence/report-contract.json",
+          "sha256": "2472f9c86e37545e4802404e7dd026ee5aed3d3f3a4cb587afefa0e728623b21"
+        },
+        {
+          "path": "evidence/registry.json",
+          "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+        },
+        {
+          "path": "evidence/archive/6ecba624c4.json",
+          "sha256": "b5c73805dc21363a53f904375161f6cce3d3930bba5c49091dbae49e3a3b891d"
+        },
+        {
+          "path": "evidence/archive/468174f8db.json",
+          "sha256": "b2357ed2b9e008759ab28a5e09541de23293ce95f3069fd73773d6e391da9d79"
+        },
+        {
+          "path": "evidence/archive/3ed5a48af1.json",
+          "sha256": "25239a49fca1a7b58a239f56aea98d905f5cffae1fea2ea75933bf090b3f8a14"
+        },
+        {
+          "path": "evidence/archive/c8425a2194.json",
+          "sha256": "f88de7871edfc34bf20248fbc2dfb832d88b39b2dc23e574e61160159836a8d2"
+        },
+        {
+          "path": "evidence/archive/4c04efaa34.json",
+          "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+        },
+        {
+          "path": "evidence/archive/dafeb93618.json",
+          "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+        },
+        {
+          "path": "catalog/catalog.jsonl",
+          "sha256": "004ea5051e77e6232502d4a2019beba395371d879d9431e379d81e46834fea6f"
+        },
+        {
+          "path": "skills/current-analysis.md",
+          "sha256": "a6e44c223fd6236760c77c1dd5c8b98da997bdc407cd5bca0c6e1e95801530d9"
+        },
+        {
+          "path": "skills/revoked-procedure-v1.md",
+          "sha256": "337895c8def59a9bf7610ca6b01090723a4304b52d721fa4ba147f4de108d680"
+        },
+        {
+          "path": "mission.json",
+          "sha256": "686829bbf291d386e5296715746a95dc8f7a85f3de5ec8ebf23a078892fa6ab9"
+        }
+      ]
+    },
+    {
+      "id": "long-v1-accepted-lost-ack-h1c1-20261113",
+      "criteria": [
+        "Submit once for the requested window and revision. Recover by lookup, check the job and read its complete result.",
+        "Leave process controls unchanged.",
+        "Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.",
+        "Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.",
+        "Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.",
+        "Use current evidence and procedure v2; do not follow the revoked v1 procedure.",
+        "Preserve all accepted-work accounting and do not submit duplicate computations."
+      ],
+      "initialPrompt": "Recover a bounded particle summary after an accepted query loses its acknowledgement. Write report.json at the workspace root as a JSON object with exactly the fields specified in sources/request.json.\n\nFactory analysis: Investigate whether the post-cleaning observations distinguish chamber elevation from recipe/shift confounding or inadequate coverage. Submit factory.json using evidence/report-contract.json.\n\nUse the current skill and public mission. The revoked procedure is a distractor. The service report belongs in report.json; the factory report belongs in factory.json. Write the exact checkpoint contract as well.\n\nOriginal acceptance criteria:\n1. Submit once for the requested window and revision. Recover by lookup, check the job and read its complete result.\n2. Leave process controls unchanged.\n3. Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.\n4. Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.\n5. Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.\n6. Use current evidence and procedure v2; do not follow the revoked v1 procedure.\n7. Preserve all accepted-work accounting and do not submit duplicate computations.",
+      "followupPrompt": null,
+      "fixture_files": [
+        {
+          "path": "README.md",
+          "sha256": "30aa99617d2764dc325397a601b4d284a52267abca9cd5d9f18db11e3369d925"
+        },
+        {
+          "path": "sources/request.json",
+          "sha256": "85b817a6c4110b2562ee1e0538184a3cab73169d758de938ba318cab61fb59ca"
+        },
+        {
+          "path": "evidence/incident.json",
+          "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+        },
+        {
+          "path": "evidence/report-contract.json",
+          "sha256": "2472f9c86e37545e4802404e7dd026ee5aed3d3f3a4cb587afefa0e728623b21"
+        },
+        {
+          "path": "evidence/registry.json",
+          "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+        },
+        {
+          "path": "evidence/archive/0c8ddad157.json",
+          "sha256": "96e98dfd811c50c5f18c556fd2f67bcb40120a5aaaa63bbc0b311447cd41d2b0"
+        },
+        {
+          "path": "evidence/archive/a6fba70e9a.json",
+          "sha256": "c7be3f9141b1a5e41e8078071ea28b72e1ad14db59c6c20636f8d6dfb7026a4d"
+        },
+        {
+          "path": "evidence/archive/55c81faada.json",
+          "sha256": "9382253b47ee6e4bd028a61af38046e97dcdc9bd123b57f4385887cb8a84348b"
+        },
+        {
+          "path": "evidence/archive/804cc248e2.json",
+          "sha256": "94c24e776fa34f5b315c3c3e3891c6a44392e369e455048486edcf0f9bd6b691"
+        },
+        {
+          "path": "evidence/archive/4fee8fc564.json",
+          "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+        },
+        {
+          "path": "evidence/archive/5f79f4a80b.json",
+          "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+        },
+        {
+          "path": "catalog/catalog.jsonl",
+          "sha256": "65cedee1180d79031f6845ec1f5fb55d40f73a6264dfe5b3e4512c6d6541d056"
+        },
+        {
+          "path": "skills/current-analysis.md",
+          "sha256": "a6e44c223fd6236760c77c1dd5c8b98da997bdc407cd5bca0c6e1e95801530d9"
+        },
+        {
+          "path": "skills/revoked-procedure-v1.md",
+          "sha256": "337895c8def59a9bf7610ca6b01090723a4304b52d721fa4ba147f4de108d680"
+        },
+        {
+          "path": "mission.json",
+          "sha256": "686829bbf291d386e5296715746a95dc8f7a85f3de5ec8ebf23a078892fa6ab9"
+        }
+      ]
+    },
+    {
+      "id": "long-v1-partial-restart-h0c1-20261213",
+      "criteria": [
+        "Find the completed jobs by their checkpoint keys. Check current revisions and statuses before reuse.",
+        "Deduplicate particle observations by (lot, observation) and report affected observations in review-shift and the affected lots that intersect overlapping maintenance.",
+        "Report unresolved recipe status from the current source. Preserve the existing accepted-work ledger.",
+        "Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.",
+        "Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.",
+        "Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.",
+        "Use current evidence and procedure v2; do not follow the revoked v1 procedure.",
+        "Preserve all accepted-work accounting and do not submit duplicate computations."
+      ],
+      "initialPrompt": "After restart, reconcile completed results against current sources and bound the investigation while the recipe branch is unavailable. Write report.json at the workspace root as a JSON object matching sources/report-contract.json.\n\nFactory analysis: Investigate whether the post-cleaning observations distinguish chamber elevation from recipe/shift confounding or inadequate coverage. Submit factory.json using evidence/report-contract.json.\n\nUse the current skill and public mission. The revoked procedure is a distractor. The service report belongs in report.json; the factory report belongs in factory.json. Write the exact checkpoint contract as well.\n\nOriginal acceptance criteria:\n1. Find the completed jobs by their checkpoint keys. Check current revisions and statuses before reuse.\n2. Deduplicate particle observations by (lot, observation) and report affected observations in review-shift and the affected lots that intersect overlapping maintenance.\n3. Report unresolved recipe status from the current source. Preserve the existing accepted-work ledger.\n4. Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.\n5. Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.\n6. Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.\n7. Use current evidence and procedure v2; do not follow the revoked v1 procedure.\n8. Preserve all accepted-work accounting and do not submit duplicate computations.",
+      "followupPrompt": null,
+      "fixture_files": [
+        {
+          "path": "README.md",
+          "sha256": "0e70ec7efa5667c12feddd26a82c1dfd8744543280c6f3e9d1f53104c8edd18d"
+        },
+        {
+          "path": "sources/checkpoint.json",
+          "sha256": "10510f94f04815ce262a3748fcc9c8136a1b77fad8e168471816ccd19851cc47"
+        },
+        {
+          "path": "sources/report-contract.json",
+          "sha256": "951c42e44ead4d3af3bb336ff8edd12760ace4da84fe49e6547dfc9465416f5d"
+        },
+        {
+          "path": "evidence/incident.json",
+          "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+        },
+        {
+          "path": "evidence/report-contract.json",
+          "sha256": "2472f9c86e37545e4802404e7dd026ee5aed3d3f3a4cb587afefa0e728623b21"
+        },
+        {
+          "path": "evidence/registry.json",
+          "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+        },
+        {
+          "path": "evidence/archive/6ecba624c4.json",
+          "sha256": "b5c73805dc21363a53f904375161f6cce3d3930bba5c49091dbae49e3a3b891d"
+        },
+        {
+          "path": "evidence/archive/468174f8db.json",
+          "sha256": "b2357ed2b9e008759ab28a5e09541de23293ce95f3069fd73773d6e391da9d79"
+        },
+        {
+          "path": "evidence/archive/3ed5a48af1.json",
+          "sha256": "25239a49fca1a7b58a239f56aea98d905f5cffae1fea2ea75933bf090b3f8a14"
+        },
+        {
+          "path": "evidence/archive/c8425a2194.json",
+          "sha256": "f88de7871edfc34bf20248fbc2dfb832d88b39b2dc23e574e61160159836a8d2"
+        },
+        {
+          "path": "evidence/archive/4c04efaa34.json",
+          "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+        },
+        {
+          "path": "evidence/archive/dafeb93618.json",
+          "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+        },
+        {
+          "path": "catalog/catalog.jsonl",
+          "sha256": "004ea5051e77e6232502d4a2019beba395371d879d9431e379d81e46834fea6f"
+        },
+        {
+          "path": "skills/current-analysis.md",
+          "sha256": "a6e44c223fd6236760c77c1dd5c8b98da997bdc407cd5bca0c6e1e95801530d9"
+        },
+        {
+          "path": "skills/revoked-procedure-v1.md",
+          "sha256": "337895c8def59a9bf7610ca6b01090723a4304b52d721fa4ba147f4de108d680"
+        },
+        {
+          "path": "mission.json",
+          "sha256": "686829bbf291d386e5296715746a95dc8f7a85f3de5ec8ebf23a078892fa6ab9"
+        }
+      ]
+    },
+    {
+      "id": "long-v1-accepted-lost-ack-h0c1-20261113",
+      "criteria": [
+        "Submit once for the requested window and revision. Recover by lookup, check the job and read its complete result.",
+        "Leave process controls unchanged.",
+        "Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.",
+        "Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.",
+        "Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.",
+        "Use current evidence and procedure v2; do not follow the revoked v1 procedure.",
+        "Preserve all accepted-work accounting and do not submit duplicate computations."
+      ],
+      "initialPrompt": "Recover a bounded particle summary after an accepted query loses its acknowledgement. Write report.json at the workspace root as a JSON object with exactly the fields specified in sources/request.json.\n\nFactory analysis: Investigate whether the post-cleaning observations distinguish chamber elevation from recipe/shift confounding or inadequate coverage. Submit factory.json using evidence/report-contract.json.\n\nUse the current skill and public mission. The revoked procedure is a distractor. The service report belongs in report.json; the factory report belongs in factory.json. Write the exact checkpoint contract as well.\n\nOriginal acceptance criteria:\n1. Submit once for the requested window and revision. Recover by lookup, check the job and read its complete result.\n2. Leave process controls unchanged.\n3. Resolve current raw evidence by revision and convert maintenance and inspection timestamps to UTC.\n4. Report deduplicated, joined evidence for every observed stratum and apply the declared coverage and effect rule.\n5. Report a discriminating collection plan for insufficient coverage. Treat the comparison as observational.\n6. Use current evidence and procedure v2; do not follow the revoked v1 procedure.\n7. Preserve all accepted-work accounting and do not submit duplicate computations.",
+      "followupPrompt": null,
+      "fixture_files": [
+        {
+          "path": "README.md",
+          "sha256": "30aa99617d2764dc325397a601b4d284a52267abca9cd5d9f18db11e3369d925"
+        },
+        {
+          "path": "sources/request.json",
+          "sha256": "85b817a6c4110b2562ee1e0538184a3cab73169d758de938ba318cab61fb59ca"
+        },
+        {
+          "path": "evidence/incident.json",
+          "sha256": "7d7e7061f16960b0a1da8fa4ace51ef187c209090edfe2db448bcd25ed464b21"
+        },
+        {
+          "path": "evidence/report-contract.json",
+          "sha256": "2472f9c86e37545e4802404e7dd026ee5aed3d3f3a4cb587afefa0e728623b21"
+        },
+        {
+          "path": "evidence/registry.json",
+          "sha256": "f6203f322d7eec890ca2c336d6046109dca11696f8d61a77e11ad616eaa90211"
+        },
+        {
+          "path": "evidence/archive/0c8ddad157.json",
+          "sha256": "96e98dfd811c50c5f18c556fd2f67bcb40120a5aaaa63bbc0b311447cd41d2b0"
+        },
+        {
+          "path": "evidence/archive/a6fba70e9a.json",
+          "sha256": "c7be3f9141b1a5e41e8078071ea28b72e1ad14db59c6c20636f8d6dfb7026a4d"
+        },
+        {
+          "path": "evidence/archive/55c81faada.json",
+          "sha256": "9382253b47ee6e4bd028a61af38046e97dcdc9bd123b57f4385887cb8a84348b"
+        },
+        {
+          "path": "evidence/archive/804cc248e2.json",
+          "sha256": "94c24e776fa34f5b315c3c3e3891c6a44392e369e455048486edcf0f9bd6b691"
+        },
+        {
+          "path": "evidence/archive/4fee8fc564.json",
+          "sha256": "86e032fa14353aabce234df31c649b3956372c2b383aec5e1d1126f18a31d252"
+        },
+        {
+          "path": "evidence/archive/5f79f4a80b.json",
+          "sha256": "813b06c4e4b32ce6d687ef4396cbc16ecddc633292bdb1339578be04a200e4ce"
+        },
+        {
+          "path": "catalog/catalog.jsonl",
+          "sha256": "65cedee1180d79031f6845ec1f5fb55d40f73a6264dfe5b3e4512c6d6541d056"
+        },
+        {
+          "path": "skills/current-analysis.md",
+          "sha256": "a6e44c223fd6236760c77c1dd5c8b98da997bdc407cd5bca0c6e1e95801530d9"
+        },
+        {
+          "path": "skills/revoked-procedure-v1.md",
+          "sha256": "337895c8def59a9bf7610ca6b01090723a4304b52d721fa4ba147f4de108d680"
+        },
+        {
+          "path": "mission.json",
+          "sha256": "686829bbf291d386e5296715746a95dc8f7a85f3de5ec8ebf23a078892fa6ab9"
+        }
+      ]
+    }
+  ],
+  "retention_sha256": "c54a6bfcb985a40934e59f1b15d345a5deea125129f510cb58842018883b506c",
+  "retention_boundaries_sha256": "1ff679f3b6791c4301f520c75246f3472ede5983695794546613cb2835f416e4",
+  "interpretation": "Single-repeat feasibility pilot. Equal externally enforced time and per-call output limits; assistant-turn and reported-component thresholds are cumulative polling-based cutoffs subject to overshoot across root/children/maintenance/phases, not hard provider-request or invoice caps. ALG internal gates are diagnostics, never the independent oracle. Reported cost is telemetry only. Session-visible usage is not proof of complete provider billing. No superiority claim.",
+  "enforcement": {
+    "time": "host deadline",
+    "output": "per-call configured limit",
+    "assistantTurns": "cumulative observed cutoff; polling overshoot possible",
+    "reportedTokens": "cumulative observed component cutoff; polling overshoot possible",
+    "reportedCost": "telemetry only"
+  },
+  "usage_monitors": {
+    "reportedTokens": 2000000,
+    "reportedCostPerSuite": null,
+    "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+  },
+  "targeted_mandate": "Additional targeted falsification mandate: assess the original user deliverable, not whether a review memo sounds correct. Seek a concrete counterexample involving distinct entity counts, joins, UTC interval boundaries, denominators or conflicting sources when relevant. Read the actual artifact and supplied source. Preserve uncertainty when sources disagree. A useful criticism must cite the violated original criterion. Do not invent defects or new requirements.",
+  "common_instruction": "Work only in this fixture workspace. Do not access credentials, change global configuration, install packages, or use network services. The available Node runtime and fixture files are sufficient. Preserve supplied evidence, skills and visible tests. Finish the requested artifact and explain the result honestly.",
+  "unmeasured": [
+    "actual provider invoice",
+    "hidden model calls not represented by session messages",
+    "operator minutes",
+    "production MCP cost/reuse",
+    "multi-hour reliability",
+    "hardware-normalized latency"
+  ]
+}

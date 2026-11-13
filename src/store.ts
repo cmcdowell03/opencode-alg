@@ -3,19 +3,21 @@ import {
   copyFileSync,
   existsSync,
   fsyncSync,
+  fstatSync,
   linkSync,
   lstatSync,
   mkdirSync,
   opendirSync,
   openSync,
   readFileSync,
+  readSync,
   renameSync,
   rmSync,
   statSync,
   writeFileSync,
 } from "node:fs"
 import { basename, dirname, isAbsolute, join } from "node:path"
-import { randomUUID } from "node:crypto"
+import { createHash, randomUUID } from "node:crypto"
 import { isDeepStrictEqual, types as utilTypes } from "node:util"
 import { z } from "zod"
 import type {
@@ -29,10 +31,20 @@ import type {
   RunState,
 } from "./types.ts"
 import { ALG_SCHEMA_VERSION } from "./types.ts"
-import { initNodeStates, validateGraph } from "./graph.ts"
+import { assertTaskState } from "./task-contract.ts"
+import { assertTaskEvidence, MAX_TASK_EVIDENCE_BYTES, type TaskEvidence } from "./task-evidence.ts"
+import { readActionManifest, readActionRecord, assertActionEvidenceManifestIdentity, actionEvidenceRecordReferences, type ActionEvidenceIdentity, type ActionEvidenceRecordReference } from "./action-evidence.ts"
+import { hasMechanicalAssessment, validateCheckerConsistency, MECHANICAL_BINDING_FAILURE, type VerifiedCheckerRecord } from "./checker-consistency.ts"
+import { evidencePage } from "./evidence-retrieval.ts"
+import { checkerRelatedNodes } from "./checker-evidence.ts"
+import { graphPolicy } from "./graph-policy.ts"
+import { initNodeStates, resolveInputValue, validateGraph } from "./graph.ts"
+import { pinClaimedSubmission } from "./verification.ts"
 import {
   parsePersistedNodeAttempt,
+  parseInputExpression,
   parsePersistedAttemptDetail,
+  parseCompactArchivedAttempt,
   PersistedFailureListSchema,
   parseRunState,
   parseRunStateForProjection,
@@ -75,6 +87,7 @@ import {
   nodeFailuresPath,
   projectRunState,
   rootAuthorizationCounts,
+  restoreArchivedAttemptEvidence,
   sha256Json,
 } from "./persistence.ts"
 import {
@@ -325,6 +338,10 @@ function assertRunArtifactMetadataContained(state: RunState, projectDirectory: s
       node.last_failures_ref,
       ...node.attempts.map((attempt) => attempt.output_ref),
       ...node.attempts.map((attempt) => attempt.detail_ref),
+      ...node.attempts.map((attempt) => attempt.task_evidence_ref),
+       ...node.attempts.map((attempt) => attempt.action_evidence_ref),
+       ...node.attempts.flatMap((attempt) => attempt.action_evidence_sources?.journals.map(source => source.reference) ?? []),
+       ...node.attempts.flatMap((attempt) => attempt.retrieved_evidence?.map(receipt => receipt.reference) ?? []),
     ]) {
       if (!reference) continue
       try {
@@ -699,6 +716,16 @@ function verifyFailureCommitment(
 }
 
 const ATTEMPT_DETAIL_IDENTITY_FIELDS = [
+  "task_evidence_ref",
+  "action_evidence_ref",
+  "action_evidence_sources",
+  "retrieved_evidence",
+  "execution_evidence",
+  "gate_evidence",
+  "preservation_evidence",
+  "shell_setup_failed",
+  "gate_recovery",
+  "reused_output_from",
   "attempt",
   "status",
   "session_id",
@@ -709,7 +736,22 @@ const ATTEMPT_DETAIL_IDENTITY_FIELDS = [
   "schema_ok",
   "feedback_applied",
   "outcome",
+  "verification_basis",
 ] as const satisfies readonly (keyof NodeAttempt)[]
+
+export function writeTaskEvidence(state: RunState, nodeId: string, attempt: number, evidence: TaskEvidence): RunDataReference {
+  if (!state.task_contract || state.task_contract.input.verification.checker_node !== nodeId)
+    throw new StoreError("task evidence must belong to the admitted checker")
+  assertTaskEvidence(evidence, state.task_contract, state.run_id, state.task_baseline)
+  const byte_size = serializedBytes(evidence), sha256 = sha256Json(evidence)
+  if (byte_size > MAX_TASK_EVIDENCE_BYTES) throw new StoreError("task evidence exceeds byte limit")
+  const name = `task-evidence-${nodeId}-a${attempt}-${sha256}.json`
+  const reference = { artifact_path: `.opencode/runs/${state.run_id}/artifacts/${name}`, byte_size, sha256 }
+  const path = runContainedPath(state.project_directory, state.run_id, "artifacts", name)
+  if (!existsSync(path)) writeImmutableJson(path, evidence)
+  readAndVerifyReference(state, reference, true)
+  return reference
+}
 
 function persistedAttemptContext(
   state: RunState,
@@ -726,6 +768,9 @@ function persistedAttemptContext(
     mode: state.mode,
     requires_shell: definition.agent === "shell" || definition.loop?.gate === "shell" ||
       definition.loop?.gate === "all",
+    verification_required: !!definition.verification,
+    verification_criteria: state.criteria,
+    task_evidence_required: state.task_contract?.input.verification.checker_node === nodeId && state.mode !== "dry",
   }
 }
 
@@ -738,6 +783,163 @@ function parseAttemptBeforeHydration(state: RunState, nodeId: string, value: unk
       { cause: error },
     )
   }
+}
+
+function plainReference(reference: RunDataReference): RunDataReference {
+  return { artifact_path: reference.artifact_path, sha256: reference.sha256, byte_size: reference.byte_size }
+}
+
+/** Resolve the original action owner of a pinned submission without relabeling its evidence. */
+export function resolveCheckerSubmissionActionOrigin(state: RunState, nodeId: string, submissionAttempt: number): NodeAttempt | undefined {
+  const producer = state.nodes[nodeId]
+  let archived: NodeAttempt[] | undefined
+  const find = (number: number) => producer?.attempts.find(row => row.attempt === number) ??
+    (number <= (producer?.attempt_history_ref?.attempt_count ?? 0)
+      ? (archived ??= readAttemptHistoryDocument(state, nodeId)?.attempts ?? []).find(row => row.attempt === number) : undefined)
+  let current = find(submissionAttempt)
+  while (current?.reused_output_from !== undefined) {
+    const prior = find(current.reused_output_from)
+    try {
+      parsePersistedNodeAttempt(current, persistedAttemptContext(state, nodeId, current.attempt))
+      if (!prior || prior.attempt >= current.attempt || !prior.shell_setup_failed || prior.schema_ok !== true || !prior.gate_recovery ||
+        !isDeepStrictEqual(prior.gate_recovery, current.gate_recovery) || !isDeepStrictEqual(prior.execution_evidence, current.execution_evidence)) {
+        throw new Error("invalid recovery origin")
+      }
+    } catch (cause) { throw new StoreError("checker gate-only recovery origin binding failed", { cause }) }
+    current = prior
+  }
+  return current
+}
+
+/** Recompute a new host pin from its persisted submission, never from today's producer output. */
+function verifyClaimedSubmission(state: RunState, nodeId: string, attempt: NodeAttempt): void {
+  const pin = attempt.verification_basis?.claimed_submission
+  if (!pin) return // Legacy missing pins stay missing; read paths never infer one.
+  try {
+    const definition = state.graph.nodes.find(node => node.id === nodeId)
+    const reference = definition?.inputs?.claimed
+    const expression = reference === undefined ? undefined : parseInputExpression(reference)
+    const producer = state.nodes[pin.node_id]
+    if (definition?.agent !== "checker" || pin.run_id !== state.run_id || reference !== pin.reference ||
+      expression?.kind !== "reference" || expression.node !== pin.node_id || !producer) throw new Error("submission identity mismatch")
+    let submission = producer.attempts.find(row => row.attempt === pin.attempt)
+    if (!submission && pin.attempt <= (producer.attempt_history_ref?.attempt_count ?? 0))
+      submission = readAttemptHistoryDocument(state, pin.node_id)?.attempts.find(row => row.attempt === pin.attempt)
+    if (!submission) throw new Error("submission attempt unavailable")
+    const output = submission.output_ref
+      ? parseReferencedAgentOutput(producer.agent, readAndVerifyReference(state, submission.output_ref), submission.output_ref, "claimed submission")
+      : submission.output
+    if (submission.output_ref && submission.output !== undefined) verifyInlineAgainstReference(submission.output, submission.output_ref, "claimed submission")
+    const claimed = resolveInputValue(reference, { ...state, nodes: { ...state.nodes, [pin.node_id]: { ...producer, output } } })
+    if (claimed == null || !isDeepStrictEqual(pin, pinClaimedSubmission({ run_id: state.run_id, node_id: pin.node_id,
+      reference, attempt: pin.attempt }, claimed))) throw new Error("submission content mismatch")
+  } catch (cause) { throw new StoreError("checker claimed submission integrity or identity failed", { cause }) }
+}
+
+/** Validate the transitive evidence tree, including checker pages, on every authoritative load. */
+function verifyAttemptActionEvidence(state: RunState, nodeId: string, attempt: NodeAttempt, materialize = false): Map<string, VerifiedCheckerRecord> {
+  const records = new Map<string, VerifiedCheckerRecord>()
+  const identity = { run_id: state.run_id, node_id: nodeId, attempt: attempt.attempt }
+  if (attempt.action_evidence_ref) {
+    if (!attempt.session_id) throw new StoreError("action evidence session binding is missing")
+    try {
+      const manifest = readActionManifest(state.project_directory, attempt.action_evidence_ref, identity)
+      assertActionEvidenceManifestIdentity(manifest, identity, attempt.session_id)
+      const sessionHash = createHash("sha256").update(attempt.session_id).digest("hex")
+      if (attempt.action_evidence_ref.artifact_path !==
+        `.opencode/runs/${state.run_id}/artifacts/action-evidence/${sessionHash}/manifest-${attempt.action_evidence_ref.sha256}.json`) {
+        throw new Error("manifest path does not bind the child session")
+      }
+    } catch (cause) {
+      throw new StoreError("action evidence manifest integrity or identity failed", { cause })
+    }
+  }
+  if (!attempt.action_evidence_sources && !attempt.retrieved_evidence) return records
+  if (state.nodes[nodeId]?.agent !== "checker" || !attempt.action_evidence_sources ||
+    ((attempt.retrieved_evidence?.length ?? 0) > 0 && !attempt.session_id)) {
+    throw new StoreError("checker evidence source binding is missing")
+  }
+  const definition = state.graph.nodes.find(node => node.id === nodeId)
+  if (!definition) throw new StoreError("checker evidence source node is missing")
+  const related = checkerRelatedNodes(definition, state, graphPolicy(state.graph)?.checkerEvidencePorts?.[nodeId])
+  const allowed = new Map<string, RunDataReference>()
+  const owners = new Map<string, { identity: ActionEvidenceIdentity & { child_session_id: string };
+    reference: ActionEvidenceRecordReference; selectedSubmission: boolean | undefined; firstBashOrdinal: number | undefined }>()
+  const seenSources = new Set<string>()
+  for (const source of attempt.action_evidence_sources.journals) {
+    const key = `${source.node_id}/${source.attempt}`
+    if (source.run_id !== state.run_id || !related.has(source.node_id) || source.node_id === nodeId || seenSources.has(key)) {
+      throw new StoreError("checker evidence source is unrelated or repeated")
+    }
+    seenSources.add(key)
+    const producer = state.nodes[source.node_id]
+    let prior = producer?.attempts.find(row => row.attempt === source.attempt)
+    if (!prior && producer?.attempt_history_ref && source.attempt <= producer.attempt_history_ref.attempt_count) {
+      prior = readAttemptHistoryDocument(state, source.node_id)?.attempts.find(row => row.attempt === source.attempt)
+    }
+    if (!prior || prior.session_id !== source.child_session_id ||
+      (prior.action_evidence_ref && !isDeepStrictEqual(prior.action_evidence_ref, source.reference))) {
+      throw new StoreError("checker evidence source attempt binding failed")
+    }
+    try {
+      const sourceIdentity = { run_id: state.run_id, node_id: source.node_id, attempt: source.attempt }
+      const manifest = readActionManifest(state.project_directory, source.reference, sourceIdentity)
+      assertActionEvidenceManifestIdentity(manifest, sourceIdentity, source.child_session_id)
+      const sessionHash = createHash("sha256").update(source.child_session_id).digest("hex")
+      if (source.reference.artifact_path !==
+        `.opencode/runs/${state.run_id}/artifacts/action-evidence/${sessionHash}/manifest-${source.reference.sha256}.json`) {
+        throw new Error("source manifest path does not bind the child session")
+      }
+      allowed.set(source.reference.artifact_path, plainReference(source.reference))
+      const submissions = (attempt.verification_basis?.evidence ?? []).filter(entry => {
+        if (entry.source.kind !== "node_output" || entry.source.run_id !== state.run_id || !entry.source.reference || entry.source.attempt === undefined) return false
+        const input = parseInputExpression(entry.source.reference)
+        return input.kind === "reference" && input.node === source.node_id
+      })
+      const pin = attempt.verification_basis?.claimed_submission
+      const origins = pin ? (pin.node_id === source.node_id ? [resolveCheckerSubmissionActionOrigin(state, source.node_id, pin.attempt)] : []) :
+        submissions.map(entry => resolveCheckerSubmissionActionOrigin(state, source.node_id, entry.source.attempt!))
+      const selectedSubmission = pin && pin.node_id !== source.node_id ? false :
+        origins.some(origin => origin?.attempt === source.attempt) ? true : !origins.length || origins.some(origin => !origin) ? undefined : false
+      const ordinals = manifest.entries.filter(entry => entry.kind === "intent").map(entry => entry.ordinal)
+      for (const entry of actionEvidenceRecordReferences(manifest)) {
+        allowed.set(entry.artifact_path, plainReference(entry))
+        if (materialize) owners.set(entry.artifact_path, { identity: { ...sourceIdentity, child_session_id: source.child_session_id },
+          reference: entry, selectedSubmission, firstBashOrdinal: ordinals.length ? Math.min(...ordinals) : undefined })
+      }
+    } catch (cause) {
+      throw new StoreError("checker evidence source manifest integrity failed", { cause })
+    }
+  }
+  const seenPages = new Set<string>()
+  for (const receipt of attempt.retrieved_evidence ?? []) {
+    const assigned = allowed.get(receipt.reference.artifact_path)
+    if (!assigned || !isDeepStrictEqual(assigned, receipt.reference) || seenPages.has(receipt.id)) {
+      throw new StoreError("retrieved evidence page is unassigned or repeated")
+    }
+    seenPages.add(receipt.id)
+    try {
+      const recomputed = evidencePage(state.project_directory, state.run_id, assigned, receipt.offset).receipt
+      if (!isDeepStrictEqual(recomputed, receipt)) throw new Error("retrieved page commitment mismatch")
+      const owner = owners.get(assigned.artifact_path)
+      if (owner && !records.has(assigned.artifact_path)) records.set(assigned.artifact_path, {
+        record: readActionRecord(state.project_directory, owner.reference, owner.identity),
+        selectedSubmission: owner.selectedSubmission, firstBashOrdinal: owner.firstBashOrdinal,
+      })
+    } catch (cause) {
+      throw new StoreError("retrieved evidence page integrity failed", { cause })
+    }
+  }
+  return records
+}
+
+/** The live checker and hydrated persistence boundary use this same evaluator. */
+export function validateCheckerActionConsistency(state: RunState, nodeId: string, attempt: NodeAttempt, output: unknown = attempt.output): string[] {
+  verifyClaimedSubmission(state, nodeId, attempt)
+  const mechanical = hasMechanicalAssessment(output)
+  const records = verifyAttemptActionEvidence(state, nodeId, attempt, mechanical)
+  if (mechanical && !attempt.verification_basis) return [MECHANICAL_BINDING_FAILURE]
+  return validateCheckerConsistency(output, attempt.retrieved_evidence ?? [], records)
 }
 
 function hydrateAttemptData(
@@ -820,7 +1022,15 @@ function hydrateAttemptData(
   if (!detailReference) {
     verifyFailureCommitment(complete.failures, projected.failures_commitment, `attempt ${nodeId}/${projected.attempt}`)
   }
-
+  if (complete.task_evidence_ref) {
+    if (!state.task_contract || state.task_contract.input.verification.checker_node !== nodeId)
+      throw new StoreError("task evidence must belong to the admitted checker")
+    try {
+      assertTaskEvidence(readAndVerifyReference(state, complete.task_evidence_ref, true), state.task_contract, state.run_id, state.task_baseline)
+    } catch (cause) {
+      throw new StoreError("task evidence integrity or contract binding failed", { cause })
+    }
+  }
   if (outputReference) {
     const output = readAndVerifyReference(state, outputReference)
     const parsed = parseReferencedAgentOutput(agent, output, outputReference, "attempt artifact")
@@ -830,6 +1040,9 @@ function hydrateAttemptData(
     complete.output = parsed
   } else if (complete.output !== undefined && !schemaForAgent(agent).safeParse(complete.output).success) {
     throw new StoreError(`inline attempt output violates ${agent} output schema`)
+  }
+  if (validateCheckerActionConsistency(state, nodeId, complete).length) {
+    throw new StoreError("checker mechanical assessment violates its persisted observations")
   }
 
   complete.failures_omitted = undefined
@@ -919,7 +1132,8 @@ function readAttemptHistoryDocument(
   }
   const document = value as AttemptHistoryDocument
   const legacy = document.schema_version === 1 && document.kind === undefined && document.owner_session_id === undefined
-  const current = document.schema_version === 2 && document.kind === "attempt_history" &&
+  const compact = document.schema_version === 3
+  const current = (document.schema_version === 2 || compact) && document.kind === "attempt_history" &&
     document.owner_session_id === expectedOwnerSessionId
   const allowedKeys = legacy
     ? ["schema_version", "run_id", "node_id", "attempts"]
@@ -929,8 +1143,16 @@ function readAttemptHistoryDocument(
     Object.keys(document).some((key) => !allowedKeys.includes(key))) {
     throw new StoreError(`attempt history identity mismatch: ${reference.artifact_path}`)
   }
-  const parsedAttempts = document.attempts.map((attempt, index) =>
-    parseAttemptBeforeHydration(state, nodeId, attempt, index + 1))
+  const parsedAttempts = document.attempts.map((attempt, index) => {
+    if (!compact) return parseAttemptBeforeHydration(state, nodeId, attempt, index + 1)
+    const context = persistedAttemptContext(state, nodeId, index + 1)
+    const row = parseCompactArchivedAttempt(attempt, context)
+    const detail = parsePersistedAttemptDetail(readAndVerifyReference(state, row.detail_ref!), context)
+    const restored = restoreArchivedAttemptEvidence(row, detail)
+    // Preserve the same metadata, diagnostics, output and commitment checks as v2.
+    hydrateAttemptData(state, nodeId, node.agent, restored, false)
+    return restored
+  })
   if (current) {
     for (const attempt of parsedAttempts) {
       if (attempt.output !== undefined || attempt.detail_ref === undefined ||
@@ -1093,6 +1315,8 @@ export function readNodeArtifactOutput(state: RunState, nodeId: string): unknown
 }
 
 export function createRun(options: {
+  taskContract?: import("./task-contract.ts").TaskContract
+  taskAllowance?: import("./task-allowance-schema.ts").TaskAllowanceReference
   goal: string
   criteria: string[]
   graph: GraphDef | unknown
@@ -1122,6 +1346,10 @@ export function createRun(options: {
     options.treatProjectAsFilesystemRoot === true,
   )
   const graph = validateGraph(options.graph)
+  assertTaskState({ task_contract: options.taskContract, goal: options.goal, criteria: options.criteria,
+    criteria_locked: options.criteria.length > 0, graph })
+  if (options.taskContract && options.taskContract.source.session_id !== options.ownerSessionId)
+    throw new StoreError("task contract source must match the admitting run owner")
   const runId = options.runId ?? createRunId(options.goal)
   assertSafeId(runId, "run_id")
   ensureDir(projectRunsRoot(projectDirectory))
@@ -1149,6 +1377,8 @@ export function createRun(options: {
     goal: options.goal,
     criteria: options.criteria,
     criteria_locked: options.criteria.length > 0,
+    ...(options.taskContract ? { task_contract: options.taskContract } : {}),
+    ...(options.taskAllowance ? { task_allowance: options.taskAllowance } : {}),
     graph,
     status: "planning",
     phase: "plan",
@@ -1350,12 +1580,12 @@ function localReferencePath(state: RunState, reference: RunDataReference): strin
   return runContainedPath(state.project_directory, state.run_id, ...parts.slice(3))
 }
 
-function readAndVerifyReference(state: RunState, reference: RunDataReference): unknown {
+function readAndVerifyReference(state: RunState, reference: RunDataReference, requireCanonical = false): unknown {
   const path = localReferencePath(state, reference)
   // Several passes of one save check the same content-addressed object. Its bytes are read and verified
   // once per save; each caller still receives its own parsed copy.
   const immutableName = reference.artifact_path.endsWith(`-${reference.sha256}.json`)
-  const verifiedKey = immutableName ? `verified-reference\0${path}\0${reference.sha256}\0${reference.byte_size}` : undefined
+  const verifiedKey = immutableName ? `verified-reference\0${path}\0${reference.sha256}\0${reference.byte_size}\0${requireCanonical}` : undefined
   const verifiedText = verifiedKey ? scopedValue<string>(verifiedKey) : undefined
   if (verifiedText !== undefined) return JSON.parse(verifiedText)
   const maximumFileBytes = Math.min(MAX_STATE_BYTES, Math.max(reference.byte_size * 2 + 8_192, 16_384))
@@ -1372,12 +1602,34 @@ function readAndVerifyReference(state: RunState, reference: RunDataReference): u
   let value: unknown
   let text: string
   try {
-    text = readFileSync(path, "utf8")
+    if (requireCanonical) {
+      const fd = openSync(path, "r")
+      try {
+        const stat = fstatSync(fd)
+        if (!stat.isFile() || stat.size !== reference.byte_size) throw new Error("task evidence is not the expected regular file")
+        const data = Buffer.alloc(reference.byte_size + 1)
+        let total = 0
+        while (total < data.length) {
+          const count = readSync(fd, data, total, data.length - total, null)
+          if (!count) break
+          total += count
+        }
+        if (total !== reference.byte_size) throw new Error("task evidence size changed during read")
+        const content = data.subarray(0, total)
+        text = content.toString("utf8")
+        if (!content.equals(Buffer.from(text, "utf8"))) throw new Error("task evidence must be valid UTF-8")
+      } finally {
+        closeSync(fd)
+      }
+    } else {
+      text = readFileSync(path, "utf8")
+    }
     value = JSON.parse(text)
   } catch (error) {
     throw new StoreError(`referenced JSON is not valid: ${reference.artifact_path}`, { cause: error })
   }
-  if (serializedBytes(value) !== reference.byte_size || sha256Json(value) !== reference.sha256) {
+  if (serializedBytes(value) !== reference.byte_size || sha256Json(value) !== reference.sha256 ||
+    (requireCanonical && text !== canonicalJson(value))) {
     throw new StoreError(`referenced JSON integrity mismatch: ${reference.artifact_path}`)
   }
   if (verifiedKey) rememberInScope(verifiedKey, text)
@@ -1394,12 +1646,31 @@ function runReferences(state: RunState): RunDataReference[] {
       node.output_ref,
       node.attempt_history_ref,
       node.last_failures_ref,
-      ...node.attempts.flatMap((attempt) => [attempt.output_ref, attempt.detail_ref]),
+      ...node.attempts.flatMap((attempt) => [attempt.output_ref, attempt.detail_ref, attempt.task_evidence_ref,
+        attempt.action_evidence_ref, ...(attempt.action_evidence_sources?.journals.map(source => source.reference) ?? []),
+        ...(attempt.retrieved_evidence?.map(receipt => receipt.reference) ?? [])]),
     ]) {
       if (reference) references.push(reference)
     }
   }
   return references
+}
+
+function addActionRecordPaths(paths: Set<string>, state: RunState, nodeId: string, attempt: NodeAttempt): void {
+  const add = (reference: RunDataReference, sourceNode: string, sourceAttempt: number, session: string) => {
+    const manifest = readActionManifest(state.project_directory, reference,
+      { run_id: state.run_id, node_id: sourceNode, attempt: sourceAttempt })
+    assertActionEvidenceManifestIdentity(manifest,
+      { run_id: state.run_id, node_id: sourceNode, attempt: sourceAttempt }, session)
+    for (const entry of actionEvidenceRecordReferences(manifest)) paths.add(entry.artifact_path)
+  }
+  if (attempt.action_evidence_ref) {
+    if (!attempt.session_id) throw new StoreError("action evidence session binding is missing")
+    add(attempt.action_evidence_ref, nodeId, attempt.attempt, attempt.session_id)
+  }
+  for (const source of attempt.action_evidence_sources?.journals ?? []) {
+    add(source.reference, source.node_id, source.attempt, source.child_session_id)
+  }
 }
 
 function protectedReferencePaths(
@@ -1411,6 +1682,9 @@ function protectedReferencePaths(
   const addManifest = (manifest: RunState): void => {
     for (const reference of runReferences(manifest)) paths.add(reference.artifact_path)
     for (const node of Object.values(manifest.nodes)) {
+      try {
+        for (const attempt of node.attempts) addActionRecordPaths(paths, manifest, node.id, attempt)
+      } catch { uncertainBackup = true }
       if (!node.attempt_history_ref) continue
       try {
         const document = readAttemptHistoryDocument(manifest, node.id)
@@ -1418,6 +1692,11 @@ function protectedReferencePaths(
         for (const attempt of document.attempts) {
           if (attempt.output_ref) paths.add(attempt.output_ref.artifact_path)
           if (attempt.detail_ref) paths.add(attempt.detail_ref.artifact_path)
+          if (attempt.task_evidence_ref) paths.add(attempt.task_evidence_ref.artifact_path)
+          if (attempt.action_evidence_ref) paths.add(attempt.action_evidence_ref.artifact_path)
+          for (const source of attempt.action_evidence_sources?.journals ?? []) paths.add(source.reference.artifact_path)
+          for (const receipt of attempt.retrieved_evidence ?? []) paths.add(receipt.reference.artifact_path)
+          addActionRecordPaths(paths, manifest, node.id, attempt)
         }
       } catch {
         uncertainBackup = true
@@ -1683,6 +1962,9 @@ function recoveryReachablePaths(state: RunState): Set<string> | null {
     }
     for (const reference of runReferences(manifest)) reachable.add(reference.artifact_path)
     for (const [nodeId, node] of Object.entries(manifest.nodes)) {
+      try {
+        for (const attempt of node.attempts) addActionRecordPaths(reachable, manifest, nodeId, attempt)
+      } catch { return null }
       if (!node.attempt_history_ref) continue
       try {
         const document = readAttemptHistoryDocument(manifest, nodeId)
@@ -1690,6 +1972,11 @@ function recoveryReachablePaths(state: RunState): Set<string> | null {
         for (const attempt of document.attempts) {
           if (attempt.output_ref) reachable.add(attempt.output_ref.artifact_path)
           if (attempt.detail_ref) reachable.add(attempt.detail_ref.artifact_path)
+          if (attempt.task_evidence_ref) reachable.add(attempt.task_evidence_ref.artifact_path)
+          if (attempt.action_evidence_ref) reachable.add(attempt.action_evidence_ref.artifact_path)
+          for (const source of attempt.action_evidence_sources?.journals ?? []) reachable.add(source.reference.artifact_path)
+          for (const receipt of attempt.retrieved_evidence ?? []) reachable.add(receipt.reference.artifact_path)
+          addActionRecordPaths(reachable, manifest, nodeId, attempt)
         }
       } catch {
         return null
@@ -1765,6 +2052,13 @@ function reconcileDerivedFilesUnlocked(state: RunState): void {
  * wholly new full-SHA reference tree, children before parent archives.
  */
 function prepareRunForImmutableCommit(candidate: RunState, current: RunState): RunState {
+  if (!isDeepStrictEqual(candidate.task_allowance, current.task_allowance))
+    throw new StoreError("task allowance reference is immutable; it cannot be added, removed or replaced on an existing run")
+  if (JSON.stringify(candidate.task_contract) !== JSON.stringify(current.task_contract))
+    throw new StoreError("accepted task contract is immutable; it cannot be added, removed or replaced on an existing run")
+  if ((current.task_baseline && !isDeepStrictEqual(candidate.task_baseline, current.task_baseline)) ||
+    (!current.task_baseline && candidate.task_baseline && (current.global_attempts > 0 || candidate.global_attempts > 0)))
+    throw new StoreError("task baseline is immutable and must be committed before any attempt")
   // `candidate` is already the detached result of the precommit structured-clone
   // guard and schema parsing. It is safe to materialize retained references in
   // place instead of performing another full graph clone.
@@ -1816,6 +2110,28 @@ function prepareRunForImmutableCommit(candidate: RunState, current: RunState): R
     }
   }
 
+  for (const definition of current.graph.nodes) {
+    const committed = current.nodes[definition.id]!
+    const archived = readAttemptHistoryDocument(current, definition.id)?.attempts ?? []
+    const next = prepared.nodes[definition.id]!.attempts
+    for (const attempt of [...archived, ...committed.attempts]) {
+      const candidate = next[attempt.attempt - 1]
+      if (attempt.task_evidence_ref && !isDeepStrictEqual(attempt.task_evidence_ref, candidate?.task_evidence_ref))
+        throw new StoreError("committed checker task evidence reference is immutable")
+      if (attempt.action_evidence_ref && !isDeepStrictEqual(attempt.action_evidence_ref, candidate?.action_evidence_ref))
+        throw new StoreError("committed action evidence manifest is immutable")
+      if (attempt.action_evidence_sources && !isDeepStrictEqual(attempt.action_evidence_sources, candidate?.action_evidence_sources))
+        throw new StoreError("committed checker evidence sources are immutable")
+      if (attempt.verification_basis && !isDeepStrictEqual(attempt.verification_basis, candidate?.verification_basis))
+        throw new StoreError("committed checker verification basis is immutable")
+      const pages = attempt.retrieved_evidence ?? []
+      const candidatePages = candidate?.retrieved_evidence ?? []
+      if (candidatePages.length < pages.length || !isDeepStrictEqual(candidatePages.slice(0, pages.length), pages) ||
+        (attempt.status !== "running" && candidatePages.length !== pages.length)) {
+        throw new StoreError("committed retrieved evidence pages are immutable")
+      }
+    }
+  }
   if (prepared.filesystem_root_authorizations_ref) {
     const reference = prepared.filesystem_root_authorizations_ref
     const document = readRootAuthorizationHistoryDocument(prepared, current.owner_session_id)!

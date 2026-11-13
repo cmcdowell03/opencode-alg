@@ -1,0 +1,36 @@
+[
+  {
+    "id": "ses_e3206186affe5LHPOGZnkoZhiI",
+    "slug": "misty-star",
+    "projectID": "ad8fe531533351e34ed0ca241628284f725ed439",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-luna-20261112\\2-wafer-report-staged-build\\project",
+    "path": "",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "title": "Frozen benchmark wafer-report-staged build",
+    "agent": "build",
+    "model": {
+      "id": "gpt-6-luna",
+      "providerID": "openai",
+      "variant": "default"
+    },
+    "version": "1.18.35",
+    "time": {
+      "created": 1794457069461,
+      "updated": 1794457069700
+    }
+  }
+]

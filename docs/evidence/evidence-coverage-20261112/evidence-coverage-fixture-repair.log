@@ -1,0 +1,165 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\architecture-audit.test.ts:
+(pass) architecture audit remediation > worker payload retains one authoritative task and preserves differing advisory inputs [0.63ms]
+(pass) architecture audit remediation > README, operations, and orchestrator help document the local-integrity authenticity boundary [4.55ms]
+(pass) architecture audit remediation > aggregate output and worker/checker prompt payloads have byte caps [8.01ms]
+(pass) architecture audit remediation > structured incomplete implementer output validates but never completes a node [574.66ms]
+(pass) architecture audit remediation > executor rejects a safe artifact path belonging to another run [445.55ms]
+(pass) architecture audit remediation > session sidecar is atomically bound before progress child-id persistence [227.57ms]
+(pass) architecture audit remediation > checker feedback targets only arbitrary direct dependencies [0.96ms]
+(pass) architecture audit remediation > tight global retry allocation is graph-ordered regardless failure completion speed [2122.07ms]
+(pass) architecture audit remediation > compaction selects exact-owner active state and formats deterministic bounded text [70.29ms]
+(pass) architecture audit remediation > compaction output join is capped across chunks [0.54ms]
+(pass) architecture audit remediation > listing, explicit access, and compaction never mutate another owner's runs [251.08ms]
+(pass) architecture audit remediation > disabled skill evolution does not inject SKILL.md into chat or compact context [12.30ms]
+(pass) architecture audit remediation > compacting hook logs run-store failures instead of swallowing them [10.01ms]
+(pass) architecture audit remediation > compacting hook includes skill-evolution pointers when the store has pending rows [442.94ms]
+(pass) architecture audit remediation > merged config role models are snapped once and project overrides win [164.98ms]
+(pass) architecture audit remediation > transfer tool validates target session fields before ownership mutation [258.97ms]
+(pass) architecture audit remediation > shell command timeout overrides preserve cwd across helper, run, and resume [1764.06ms]
+(pass) architecture audit remediation > criteria requires a planned run and lock=false replaces while leaving unlocked [372.04ms]
+(pass) architecture audit remediation > persistence preserves unknown non-owned artifact files [122.58ms]
+
+tests\graph-revision.test.ts:
+(pass) bounded V1 graph revisions > reload and revision retain completed work and spend while adding a bounded probe [1887.43ms]
+(pass) bounded V1 graph revisions > changes pending nodes and adds bounded work without changing caps or run identity [77.44ms]
+(pass) bounded V1 graph revisions > rejects stale hashes, raised caps, capacity growth beyond root budget, and feedback loops [73.59ms]
+(pass) bounded V1 graph revisions > preserves attempted definitions, state, history, and output exactly [155.51ms]
+(pass) bounded V1 graph revisions > rejects running, unknown, terminal, and managed-investigation runs [72.74ms]
+(pass) bounded V1 graph revisions > does not remove or weaken existing checker definitions and dependencies [78.04ms]
+(pass) bounded V1 graph revisions > uses immutable content-addressed run artifacts for graph-version retrieval [193.64ms]
+(pass) bounded V1 graph revisions > revises through alg_plan with ownership, CAS, persisted receipts, status digest, and historical artifact retrieval [747.31ms]
+
+tests\investigation-hooks.test.ts:
+(pass) investigation host boundaries > fixed template planning fails closed when disabled and rejects graph or gate overrides [122.22ms]
+(pass) investigation host boundaries > actual plan seals the normalized graph and managed run blocks criterion and gate mutation [617.89ms]
+(pass) investigation host boundaries > an orphan investigation graph cannot execute and resume guard runs before reopening attempts [303.87ms]
+(pass) investigation host boundaries > batch guard fails before any child or attempt reservation [189.34ms]
+(pass) investigation host boundaries > normal and compaction hooks retain the durable pointer within the context ceiling [652.37ms]
+(pass) a simple host tool call records an advisory workspace operation without model-supplied operation [38.42ms]
+
+tests\reliability-observability.test.ts:
+(pass) reliability and observability hardening > portable root detection rejects each mutating call unless that call opts in [0.44ms]
+(pass) reliability and observability hardening > plan/run/resume tools reject the host root before lookup and require opt-in on each call [5.81ms]
+(pass) reliability and observability hardening > tool handlers reject before mutation and generate persisted per-call root authorization audits [1226.13ms]
+(pass) reliability and observability hardening > built-in explorer nodes have one finite retry [0.49ms]
+(pass) reliability and observability hardening > explorer strict-output rejection consumes and retries only the explorer [740.07ms]
+(pass) reliability and observability hardening > more than 100 schema issues persist deterministically and retry only their node [858.26ms]
+(pass) reliability and observability hardening > schema-contradictory checker retries itself without reopening worker [1134.70ms]
+(pass) reliability and observability hardening > SDK diagnostics retain safe nested detail while redacting and bounding hostile values [0.79ms]
+(pass) reliability and observability hardening > request-like unknown fields stay opaque while exact SDK wrappers remain useful [0.74ms]
+(pass) reliability and observability hardening > diagnostics redact composite content keys and every quoted or unquoted authorization form [0.40ms]
+(pass) reliability and observability hardening > inline diagnostics redact entire quoted credential values and retain safe surroundings [0.26ms]
+(pass) reliability and observability hardening > escaped JSON credential assignments are fully redacted in text and SDK diagnostics [0.39ms]
+(pass) reliability and observability hardening > assignment redaction fails closed across bare, quoted, escaped, comma, space, and authorization values [0.27ms]
+(pass) reliability and observability hardening > approved scalar messages redact complete private-content assignments across serialization layers [0.58ms]
+(pass) reliability and observability hardening > unknown request-content containers never expose recognized descendants [0.19ms]
+(pass) reliability and observability hardening > diagnostic scalar fields reject structured values at every nesting level [0.41ms]
+(pass) reliability and observability hardening > unknown top-level scalar, object, array, and type fields stay opaque [0.20ms]
+(pass) reliability and observability hardening > approved diagnostic containers allowlist fields and never emit arbitrary values [0.44ms]
+(pass) reliability and observability hardening > approved container arrays and exact SDK wrappers use restricted semantics [0.26ms]
+(pass) reliability and observability hardening > three-component request content containers are opaque non-content markers [0.16ms]
+(pass) reliability and observability hardening > alg_status compact list reports a shortened goal even when no runs are omitted [101.06ms]
+(pass) reliability and observability hardening > alg_status list reports accurate run and field truncation counts and honors full completeness [2015.22ms]
+(pass) reliability and observability hardening > maximum prefixed SDK diagnostic persists within schema limits without leaking sentinels [748.67ms]
+(pass) reliability and observability hardening > session SDK response errors and primitive throws use safe useful diagnostics [1.49ms]
+(pass) reliability and observability hardening > model resolution records precedence, defaults, repair identity, and old-run fallback [80.52ms]
+(pass) reliability and observability hardening > compact status remains projected while full status and artifact hydrate complete typed detail [1040.55ms]
+(pass) reliability and observability hardening > full run and resume retain bounded projected timing, outcome, and reference history [1247.66ms]
+(pass) reliability and observability hardening > maximum incomplete outputs compact every save while complete typed artifacts survive reload [2249.68ms]
+(pass) reliability and observability hardening > legacy inline-output progress reloads and migrates without losing full artifact access [613.83ms]
+(pass) reliability and observability hardening > compact plan/run/status apply aggregate node, attempt, session, event, and byte bounds [6891.02ms]
+(pass) reliability and observability hardening > persisted root authorization audit remains visible in compact and full status [145.95ms]
+(pass) reliability and observability hardening > projected root authorization history is immutable, fully hydratable, aggregated, legacy-honest, and fail-closed [341.58ms]
+(pass) reliability and observability hardening > compact root verification rejects a forged per-operation distribution with the same total [144.53ms]
+(pass) reliability and observability hardening > compact run and resume use one committed root projection above 64 approvals [638.37ms]
+(pass) reliability and observability hardening > legacy failure commitments report weaker verification and migrate on save [175.85ms]
+
+tests\runtime-completion.test.ts:
+(pass) creation validates execution directory before writes and pins it in the initial commit [78.49ms]
+(pass) plan and status expose the persisted child and relative-gate base [1358.20ms]
+(pass) feedback cancellation preserves successful history and exhausted consumers prevent reopening [2383.33ms]
+(pass) checker retries receive schema failure context and explicit score contract [668.56ms]
+(pass) session sidecar persistence failure is not classified or retried as worker work [270.35ms]
+(pass) diagnostics canonicalize whitespace, redaction, Unicode and truncation [0.85ms]
+(pass) JSON literals and safe references agree with graph validation [56.80ms]
+(pass) shell failure survives save/load/resume with canonical stderr diagnostics [952.04ms]
+(pass) rejected workers retry; observer exceptions cannot rewrite DONE [631.41ms]
+(pass) failed branch with unfinished independent work is durably blocked [1144.59ms]
+(pass) cancellation between batches reserves no later work and remains resumable [940.84ms]
+(pass) execution cwd remains pinned across subdirectory resumes; legacy uses project root [1572.04ms]
+
+tests\shell-preflight.test.ts:
+(pass) read-only shell command preflight > rejects command_required:   [0.13ms]
+(pass) read-only shell command preflight > rejects command_not_text: echo   [0.01ms]
+(pass) read-only shell command preflight > rejects command_too_long: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+(pass) read-only shell command preflight > rejects prose_or_markdown: ```cmd
+echo ok
+```
+(pass) read-only shell command preflight > rejects prose_or_markdown: Allowed tools: bash | edit | {read}
+(pass) read-only shell command preflight > rejects prose_or_markdown: Run the tests and then summarize th
+(pass) read-only shell command preflight > rejects missing_pipeline_command: | echo ok
+(pass) read-only shell command preflight > rejects missing_pipeline_command: echo ok | [0.02ms]
+(pass) read-only shell command preflight > rejects missing_pipeline_command: echo ok && [0.01ms]
+(pass) read-only shell command preflight > rejects missing_pipeline_command: echo ok | | echo bad
+(pass) read-only shell command preflight > preserves Windows command syntax: python -m pytest tests/unit [0.05ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo "a | {b} & c" [0.03ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: node -e "console.log(1 > 0)" [0.04ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok | findstr ok [0.04ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok && echo done [0.03ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: "C:\Program Files\Node\node.exe" -v [0.05ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok > result.txt 2>&1 [0.03ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: if exist tests (echo ok) [0.02ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: cmd /c "echo ok | echo done" [0.02ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: cd /d "C:\Repo With Spaces" && python -m pytest tests/unit [0.05ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ^| escaped [0.01ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok
+echo done
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok & [0.05ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo "unterminated
+(pass) read-only shell command preflight > preserves Windows command syntax: missing-tool || echo fallback [0.02ms]
+(pass) read-only shell command preflight > missing tools use the actual shell and PATH, not a POSIX blacklist [0.21ms]
+(pass) read-only shell command preflight > bounded and conservative for scripts, dynamic commands and directory changes [0.45ms]
+(pass) read-only shell command preflight > executable lookup reads files only, honors PATHEXT, and never invokes a command [2.20ms]
+(pass) plan rejects malformed gates before persistence, and reports explicit nested cwd [339.58ms]
+(pass) custom graphs are checked; directory escape is rejected; future test files are not required [165.07ms]
+(pass) legacy missing command blocks before any child or counter and does not echo arguments [221.49ms]
+(pass) corrected gate resumes with completed sibling intact and no budget reset [2961.21ms]
+(pass) unreachable exhausted gates cannot block independent work on resume [1417.42ms]
+(pass) command and cwd overrides affect only the persisted target implementer [528.50ms]
+(pass) checker-reopened work is rechecked before another attempt and durably blocked until repaired [1544.30ms]
+(pass) real failing tests still retry; stdout-only failures retain safe shell and cwd diagnostics [596.85ms]
+(pass) public run and resume repair shell_cwd relative to pinned directory, not current UI directory [650.91ms]
+(pass) empty-output and timeout failures report their limits without guessing a parser defect [879.30ms]
+(pass) actual local gate runs in an explicit repository directory with spaces [3040.55ms]
+
+tests\task-admission.test.ts:
+(pass) tool task contract admission > planning captures the actual host user turn rather than trusting a lossy planner summary [146.57ms]
+(pass) tool task contract admission > new plans cannot silently omit contracts or original criteria [7.32ms]
+(pass) tool task contract admission > impossible producer is rejected without effective-permission or child calls [5.05ms]
+(pass) tool task contract admission > known writes admit compact work and keep source and contract through status [97.89ms]
+(pass) tool task contract admission > host denial blocks before creation and changed permissions block before execution [94.60ms]
+(pass) tool task contract admission > criteria cannot be weakened by the legacy unlock switch [114.75ms]
+
+tests\task-contract.test.ts:
+(pass) declared task admission > host user request survives persistence, compaction and both child handoffs without trusting a shortened summary [1039.06ms]
+(pass) declared task admission > project deliverables reject research-only graphs and do not create durable work [1.01ms]
+(pass) declared task admission > routing uses declared work and uncertainty, not model/task-name keywords [0.26ms]
+(pass) declared task admission > missing checker, disconnected producer, execution and protected paths fail closed [0.25ms]
+(pass) declared task admission > typed paths cannot conflict or traverse; diagnostics do not echo unknown keys [0.63ms]
+(pass) declared task admission > evidence plans cover criteria in order and bind observations to declared inputs [0.43ms]
+(pass) declared task admission > capabilities recognize only uniform host decisions [0.31ms]
+(pass) declared task admission > original criteria and contract survive persistence and bounded context projection [88.75ms]
+(pass) declared task admission > removing an accepted contract cannot silently turn a new run into legacy [78.73ms]
+(pass) declared task admission > legacy persisted runs remain readable without invented admission [71.65ms]
+(pass) declared task admission > older directly bound contracts may retain an absent evidence plan [70.96ms]
+(pass) host-enforced task completion > passing model verdict cannot certify a missing declared file [599.02ms]
+(pass) host-enforced task completion > correct files pass; preparation contract is visible to workers and remains pinned [1026.19ms]
+(pass) host-enforced task completion > claimed commands do not satisfy the native command requirement [607.70ms]
+(pass) host-enforced task completion > accepted verification gate cannot be replaced at run time [122.00ms]
+
+ 140 pass
+ 0 fail
+ 1188 expect() calls
+Ran 140 tests across 8 files. [59.48s]

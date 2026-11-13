@@ -6,3 +6,22 @@
 /coordination-improvement-contract.md
 /opencode-v2-design.md
 /incident-watcher-design.md
+/alg-v1-design-index.md
+/alg-v1-applicability-measured-improvement-design.md
+/alg-v1-large-data-investigation-design.md
+/alg-v1-phase-one-investigation-plan.md
+/alg-v1-linux-bash-acceptance-plan.md
+/alg-v1-artifact-skill-extension.md
+/alg-v1-claude-review-reconciliation.md
+# Development receipts and comparison/design reports remain inspectable in Git.
+/evidence/
+/v1-adversarial-evaluation.md
+/v1-benchmark-failure-analysis.md
+/v1-build-benchmark.md
+/v1-graph-evolution-adversarial-review.md
+/v1-reliability-and-build-comparison-plan.md
+/v1-hard-development-cohort-protocol.md
+/v1-hard-development-findings.md
+/v1-hard-development-repair-followup.md
+/v1-long-session-benchmark.md
+/v1-evidence-recovery-evaluation.md

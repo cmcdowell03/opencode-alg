@@ -1,0 +1,484 @@
+{
+  "caseId": "wafer-report-staged",
+  "arm": "build",
+  "status": "completed",
+  "passed": true,
+  "independent_score": {
+    "passed": true,
+    "checks": [
+      {
+        "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+        "passed": true
+      },
+      {
+        "id": "protected:data/system-export.json",
+        "passed": true
+      },
+      {
+        "id": "protected:data/manual-review.json",
+        "passed": true
+      },
+      {
+        "id": "preparation-artifact",
+        "passed": true
+      },
+      {
+        "id": "arithmetic-distinct-wafers",
+        "passed": true
+      },
+      {
+        "id": "source-provenance",
+        "passed": true
+      },
+      {
+        "id": "conflict-and-uncertainty",
+        "passed": true
+      },
+      {
+        "id": "skill-procedure-and-scope",
+        "passed": true
+      }
+    ],
+    "metrics": {
+      "protectedFiles": 3,
+      "preparationBytes": 2237,
+      "reportBytes": 530,
+      "reportParsed": true
+    }
+  },
+  "metrics": {
+    "sessions": {
+      "total": 1,
+      "roots": 1,
+      "children": 0
+    },
+    "assistantTurns": {
+      "total": 20,
+      "finished": 20,
+      "unfinished": 0,
+      "error": 0,
+      "modelIdentities": [
+        {
+          "providerID": "openai",
+          "modelID": "gpt-6-luna",
+          "turns": 20
+        }
+      ]
+    },
+    "usage": {
+      "components": {
+        "input": {
+          "reportedTotal": 29337,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "output": {
+          "reportedTotal": 3453,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "reasoning": {
+          "reportedTotal": 132,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "cacheRead": {
+          "reportedTotal": 122368,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "cacheWrite": {
+          "reportedTotal": 0,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        }
+      },
+      "totalReportedTokens": 155290,
+      "turns": {
+        "complete": 20,
+        "partial": 0,
+        "unknown": 0
+      },
+      "billing": "not_estimated"
+    },
+    "cost": {
+      "reportedTotal": 0,
+      "reportedTurns": 20,
+      "unknownTurns": 0,
+      "billing": "not_estimated"
+    },
+    "tools": {
+      "total": 24,
+      "completed": 24,
+      "error": 0,
+      "pending": 0,
+      "byName": {
+        "skill": {
+          "total": 2,
+          "completed": 2,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 237,
+          "durationCalls": 2,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 2,
+              "durationMsReported": 237,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "todowrite": {
+          "total": 7,
+          "completed": 7,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 47,
+          "durationCalls": 7,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 7,
+              "durationMsReported": 47,
+              "durationCalls": 7,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "glob": {
+          "total": 4,
+          "completed": 4,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 607,
+          "durationCalls": 4,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 4,
+              "durationMsReported": 607,
+              "durationCalls": 4,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "grep": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 229,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 229,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "bash": {
+          "total": 3,
+          "completed": 3,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 3772,
+          "durationCalls": 3,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 3,
+              "durationMsReported": 3772,
+              "durationCalls": 3,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "read": {
+          "total": 5,
+          "completed": 5,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 393,
+          "durationCalls": 5,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 5,
+              "durationMsReported": 393,
+              "durationCalls": 5,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "apply_patch": {
+          "total": 2,
+          "completed": 2,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 26,
+          "durationCalls": 2,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 2,
+              "durationMsReported": 26,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        }
+      }
+    },
+    "repeatedExactToolInputs": {
+      "skill": {
+        "distinctRepeatedInputs": 1,
+        "repeatedCalls": 1
+      },
+      "glob": {
+        "distinctRepeatedInputs": 1,
+        "repeatedCalls": 1
+      },
+      "read": {
+        "distinctRepeatedInputs": 2,
+        "repeatedCalls": 2
+      }
+    },
+    "skillLoads": {
+      "wafer-analysis": {
+        "attempted": 2,
+        "successful": 2,
+        "error": 0,
+        "pending": 0
+      }
+    },
+    "algTools": {
+      "alg_plan": {
+        "total": 0,
+        "completed": 0,
+        "error": 0,
+        "pending": 0
+      },
+      "alg_run": {
+        "total": 0,
+        "completed": 0,
+        "error": 0,
+        "pending": 0
+      }
+    },
+    "observedErrors": {
+      "deniedTool": 0,
+      "stepExhaustion": 0
+    }
+  },
+  "wall_ms": 114195,
+  "total_with_startup_ms": 123708,
+  "phases": [
+    {
+      "phase": "initial",
+      "ms": 48573,
+      "completed": true
+    },
+    {
+      "phase": "compaction",
+      "ms": 12504,
+      "completed": true
+    },
+    {
+      "phase": "followup",
+      "ms": 48460,
+      "completed": true
+    }
+  ],
+  "rootSession": "ses_e31d9afb0ffe6ONWmDz55MdGqM",
+  "recovery": {
+    "requested": true,
+    "restarted": true,
+    "compactionRecovered": true,
+    "phase1": {
+      "files": [
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": "data/manual-review.json",
+          "bytes": 359,
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        },
+        {
+          "path": "data/system-export.json",
+          "bytes": 558,
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        },
+        {
+          "path": "preparation.md",
+          "bytes": 2237,
+          "sha256": "25cfba4f8ad4fbc78c5a7ecff922795e11bef601222ff211388ccb75fded10f1"
+        }
+      ],
+      "at_ms": 48616,
+      "preparation_content": "# Wafer evidence report — preparation\n\n## Reporting date and window\n\n- Reporting date (from both supplied sources): **2025-04-01** (UTC).\n- Planned window: inclusive `2025-04-01T00:00:00Z` through exclusive `2025-04-02T00:00:00Z`.\n- Timezone: `UTC`.\n\n## Sources\n\n- `SYS-APR-01` — `data/system-export.json` (primary calculation source).\n- `MR-APR-01` — `data/manual-review.json` (supplemental evidence).\n\n## Calculation plan\n\nUse only records for the supplied reporting date/window. Calculate the numerator from the primary system export, counting wafers with `defect: true`; calculate the denominator as distinct `wafer_id` values, not inspection events. The system export has five events for four distinct wafers (W11, W12, W13, W14), and W12's repeated event adds no denominator count. There is one primary-source defect wafer (W12), so the planned rate is `1 / 4 = 0.25` (0.25 as a fraction; 25%). Use the system export as primary and do not merge or overwrite its values with manual review.\n\n## Conflict to disclose\n\n- Wafer `W13`: system observation `defect: false` in `SYS-APR-01`; manual observation `reviewer_defect: true` in `MR-APR-01` (note: “visual mark; confirm against primary record”). This disagreement is **unresolved**. Preserve the primary system observation in the calculation and expose both observations in the report conflict entry.\n- W12 agrees across the sources (`true`); it is not a conflict.\n\n## Planned `report.json` fields (next phase)\n\n- `numerator`: number (`1`).\n- `denominator`: number (`4`, distinct wafer IDs).\n- `rate`: number (`0.25`, numerator divided by denominator).\n- `window`: object with `start`, `endExclusive`, and `timezone` (the UTC bounds above).\n- `sources`: array of source file paths: `data/system-export.json`, `data/manual-review.json`.\n- `conflicts`: array of `{wafer_id, system_defect, manual_defect, status}`; include W13 with `system_defect: false`, `manual_defect: true`, and status marking unresolved.\n- `limitations`: array including the exact required sentence: **Synthetic analysis only; not process validation.**\n\n## STOP\n\nPreparation phase only. Do not create `report.json` in this phase. Stop here; the report is to be produced only after the run is restarted.\n",
+      "report_absent": true,
+      "independent_score": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 2237
+        }
+      }
+    }
+  },
+  "alg_states": [],
+  "budget_observed_overshoot": 0,
+  "cleanup": true,
+  "metering_complete": true,
+  "auth_copy_removed": true,
+  "processes": [
+    1576316,
+    1562048
+  ],
+  "source_unchanged": true,
+  "final_files": [
+    {
+      "path": ".opencode/skills/wafer-analysis/SKILL.md",
+      "bytes": 1270,
+      "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+    },
+    {
+      "path": "data/manual-review.json",
+      "bytes": 359,
+      "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+    },
+    {
+      "path": "data/system-export.json",
+      "bytes": 558,
+      "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+    },
+    {
+      "path": "preparation.md",
+      "bytes": 2237,
+      "sha256": "25cfba4f8ad4fbc78c5a7ecff922795e11bef601222ff211388ccb75fded10f1"
+    },
+    {
+      "path": "report.json",
+      "bytes": 530,
+      "sha256": "f5e7f4f09e904b07092e9625de37000599d382f9101117817eb3fefd1148564e"
+    }
+  ],
+  "measurement_limits": [
+    "actual provider invoice",
+    "hidden model calls not represented by session messages",
+    "operator minutes",
+    "production MCP cost/reuse",
+    "multi-hour reliability",
+    "hardware-normalized latency"
+  ]
+}

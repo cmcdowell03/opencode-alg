@@ -1,0 +1,197 @@
+{
+  "task_allowance_probe": null,
+  "checker_probe": null,
+  "task_admission_probe": null,
+  "schema_version": 1,
+  "kind": "opencode-alg-v1-headless-acceptance",
+  "generated_at": "2026-11-13T02:26:48.563Z",
+  "passed": false,
+  "failure": "Allowance probe did not reserve one actual child: {\"status\":\"failed\",\"phase\":\"failed\",\"attempts\":1,\"first\":{\"task_id\":\"04bd8b67bb623316a29f3417ad0640378eb48d3324361554c2f877535165da21\",\"reserved\":1,\"entries_sha256\":\"def0ccb792d61b32ad8c5934ea29aa6b4ca8815e47b7414462da6f5b06f6ec71\",\"max_dispatches\":2,\"verification_reserve\":1},\"parent_verified\":true,\"worker_status\":\"failed\",\"failures\":[\"session.prompt failed: {\\\"name\\\":\\\"UnknownError\\\",\\\"data\\\":{\\\"message\\\":\\\"Unexpected server error. Check server logs for details.\\\"}}\"],\"summary\":\"run alg-dispatch-recovery-probe-79a1-20261113022647-ecd0e06a37e2 — failed\\ngoal: ALG_DISPATCH_RECOVERY_PROBE_79A1\\nmode: live\\nglobal attempts: 1/2\\nnodes:\\n  - check [checker] skipped attempts=0 failures=[\\\"Dependency did not complete: work\\\"]\\n  - work [researcher] failed attempts=1 failures=[\\\"session.prompt failed: {\\\\\\\"name\\\\\\\":\\\\\\\"UnknownError\\\\\\\",\\\\\\\"data\\\\\\\":{\\\\\\\"message\\\\\\\":\\\\\\\"Unexpected server error. Check server logs for details.\\\\\\\"}}\\\"]\"}",
+  "evidence_path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\task-allowance-windows-headless-third.json",
+  "task_contract": {
+    "run_id": "1e66de585fd3645a2beaec5d1983f3860af1c5b280450a8b104ade8d0d8f9ae8",
+    "input": {
+      "version": 1,
+      "kind": "read_only",
+      "discovery": "required",
+      "phase": "complete",
+      "deliverables": [
+        {
+          "destination": "response",
+          "producer_node": "confirm"
+        }
+      ],
+      "verification": {
+        "checker_node": "check",
+        "execution": "none"
+      },
+      "preserve_paths": [],
+      "evidence_plan": [
+        {
+          "criterion": 1,
+          "observations": [
+            {
+              "kind": "deliverable",
+              "index": 0
+            }
+          ]
+        }
+      ]
+    },
+    "original_goal": "Run bounded synthetic data investigation acceptance",
+    "original_criteria": [
+      "Use only deterministic local fixture data"
+    ],
+    "requirements_sha256": "98781e7178aa9576bd709eeab74d7096b9d5e4709b5c0616b5632073c934d30f",
+    "contract_sha256": "6b2a9edf0db3b61dcec0d3b6e8c80b0a4ab119e9f80996ed206b0a66d5ce4c14",
+    "persisted_before_compaction": true,
+    "persisted_after_compaction": false,
+    "persisted_after_restart": false,
+    "persisted_after_final_restart": false,
+    "digests_stable": false,
+    "user_request_captured": true,
+    "user_request_sha256": "4ae38716ff0f43f983be0cd4248bd46591d4c1e84f53442f87c5b4f18ba65330"
+  },
+  "source": {
+    "package_version": "0.5.10",
+    "root": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\opencode-alg-v1",
+    "loaded_root": "D:\\Docker\\model-temp\\alg-v1-headless-I5aa33\\runtime-source",
+    "sha256": "88c65c3e7f27eea8dd7458c419992d71fd984fef51f9bc68ac950b7dacd627f7",
+    "node": "24.3.0",
+    "bun": "1.3.14"
+  },
+  "host": {
+    "executable": "C:\\Users\\codym\\AppData\\Roaming\\npm\\node_modules\\opencode-ai\\bin\\opencode.exe",
+    "version": "1.19.5",
+    "platform": "win32",
+    "arch": "x64",
+    "libc": "not-applicable",
+    "starts": 1,
+    "restarts": 0,
+    "pids": [
+      1620400
+    ],
+    "clean_exits": [
+      true
+    ]
+  },
+  "isolation": {
+    "temporary_root": "D:\\Docker\\model-temp\\alg-v1-headless-I5aa33",
+    "project": "D:\\Docker\\model-temp\\alg-v1-headless-I5aa33\\project",
+    "config_home": "D:\\Docker\\model-temp\\alg-v1-headless-I5aa33\\xdg-config",
+    "config_path": "D:\\Docker\\model-temp\\alg-v1-headless-I5aa33\\opencode.json",
+    "sidecar_path": "D:\\Docker\\model-temp\\alg-v1-headless-I5aa33\\alg-options.json",
+    "provider_endpoint": "http://127.0.0.1:23715/v1",
+    "server_bind_host": "127.0.0.1",
+    "credentials_inherited": false,
+    "real_user_config_unchanged": true,
+    "config_before_sha256": "60f723485414703410239ab9346f96fc394b4c694536aac359a37bd06371da01",
+    "config_after_sha256": "60f723485414703410239ab9346f96fc394b4c694536aac359a37bd06371da01"
+  },
+  "session": {
+    "id": "ses_e2d457e2affe84Bkkh31SKbtUm",
+    "persisted_same_id": false,
+    "initial_tool_calls": [
+      "alg_context_status",
+      "alg_plan",
+      "alg_investigation"
+    ],
+    "followup_tool_calls": [],
+    "tool_registry_ids": [
+      "alg_templates",
+      "alg_models",
+      "alg_criteria",
+      "alg_plan",
+      "alg_run",
+      "alg_status",
+      "alg_resume",
+      "alg_artifact",
+      "alg_transfer",
+      "alg_skill_evolution_status",
+      "alg_skill_evolution_audit",
+      "alg_skill_evolution_historical",
+      "alg_skill_evolution_review",
+      "alg_skill_evolution_promote",
+      "alg_skill_evolution_rollback",
+      "alg_skill",
+      "alg_memory_search",
+      "alg_memory_read",
+      "alg_context_status",
+      "alg_memory_propose",
+      "alg_investigation"
+    ],
+    "registry_exact": true,
+    "plugin_startup_proofs": [
+      true
+    ],
+    "initial_memory_checkpoint": {
+      "revision": 6,
+      "generation": 0,
+      "result_pins": [
+        "33c3f49b935ec618383a3ad4b2617d51372e8133f572a17027ce67cf8dad87ba"
+      ],
+      "result_persisted": true
+    },
+    "compacted_memory_checkpoint": null,
+    "recovered_compaction_message": false,
+    "recovered_reference_and_result": false,
+    "final_memory_checkpoint": null
+  },
+  "synthetic_provider": {
+    "endpoint": "http://127.0.0.1:23715/v1",
+    "received_requests": 6,
+    "non_loopback_requests": 0,
+    "phases": [
+      "initial",
+      "initial",
+      "initial",
+      "initial",
+      "initial",
+      "initial"
+    ],
+    "context_status_seen": true,
+    "plan_tool_seen": true,
+    "investigation_query_tool_seen": true,
+    "query_result_observed_by_model": true,
+    "compaction_saw_initial_result": false,
+    "followup_saw_persisted_reference": false,
+    "no_non_loopback_requests": true
+  },
+  "investigation": {
+    "enabled": true,
+    "mcp_server_name": "alg-headless-synthetic",
+    "mcp_server_version": "1.32.2-fixture.1",
+    "profile_schema_hashes": {
+      "submit": "8f96cf996df3ceb5927c28688bead79b03e999da7ea93945a4adb981c422d610",
+      "lookup": "853817dd743deb499325778f6aaf1e1ca21828411cd40b8f82e0785426aff47c",
+      "validate": "802cda9d18a48a0c460f2546e5672a9e56312aad00acf6c172bcd0ecd712fb36",
+      "read": "5d4843c64cba757b727351493dc17717b4ad0dafabbaeed08436d75820143ff1",
+      "cancel": "a1f3edfb447fba0789fa3d0cfc8948cb46aacca3ea4c96c4c4f8e16876f9c4cf"
+    },
+    "submit_calls": 1,
+    "accepted_remote_jobs": 1,
+    "validation_calls": 2,
+    "read_calls": 1,
+    "lookup_calls": 2,
+    "read_result_tool_calls": 1,
+    "query_tool_calls": 1,
+    "same_work_key": false,
+    "same_result_reference": false,
+    "result_revalidated_after_restarts": false,
+    "actual_tool_results": [
+      {
+        "status": "reusable",
+        "work_key": "aff2eab9ad76fea3c95b9a55ae8fc492cb4cbbda49581dde5ace9fba5e51f576",
+        "manifest_ref": "synthetic://alg-headless/manifest/readings-v1",
+        "digest": "57d1f764111f08be633cbcb9282598b5cc7320f8360bfc1229aa30dfda5bbac2"
+      }
+    ]
+  },
+  "cleanup": {
+    "host_processes_stopped": true,
+    "provider_stopped": true,
+    "mcp_service_stopped": true,
+    "temporary_environment_removed": true,
+    "evidence_persisted_before_environment_removal": true
+  }
+}

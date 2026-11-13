@@ -1,5 +1,7 @@
 # opencode-alg
 
+V1 implementation roadmap: [workspace readiness, durable investigations and portable deployment](docs/alg-v1-design-index.md). Linux/Bash and Windows/PowerShell acceptance run locally; no GitHub runners.
+
 New opt-in [environment-aware session memory](docs/session-memory.md) restores exact
 procedures after compaction, with bounded context and scoped repeat-work guards.
 
@@ -48,7 +50,58 @@ See [implementation status and remaining completion gates](docs/implementation-s
 
 **Architecture:** [read the design and implementation guide](DESIGN.md).
 
-The SDK/plugin dependency used to compile this package is pinned at `1.18.3`; that dependency pin is not the runtime compatibility floor. Live verification accepts stable OpenCode versions satisfying the declared engine range and is currently exercised with `1.18.18`.
+The SDK/plugin dependency used to compile this package is pinned at `1.18.3`; that dependency pin is not the runtime compatibility floor. Live verification accepts stable OpenCode versions satisfying the declared engine range. The recorded 0.5.11 package acceptance used OpenCode `1.19.5` on Windows and `1.18.35` in native WSL Linux; later candidates require their own qualification.
+
+## Pending 0.5.12 checker consistency
+
+The candidate checks structured assessments of host-verifiable action facts
+against the original cited records. A contradiction is invalid checker output
+and uses the existing bounded checker-only retry; it does not automatically pass
+the work or rerun its producer. Semantic judgments and the translation of user
+criteria remain the model's responsibility. The [evaluation protocol](docs/v1-evidence-recovery-evaluation.md)
+requires a passing real-checker diagnostic before the paired comparison.
+
+The `7a32708` V4 diagnostic failed that admission gate. Contradictory positive
+verdicts were correctly rejected, but the checker did not recover within its
+allowance. A correct negative verdict separately exceeded the diagnostic's
+retrieval recipe. The comparison remains unissued; see the [measured results
+and preserved limitations](docs/evidence/checker-consistency-20261113/README.md).
+
+A verified substantive rejection ends review of that submission, including on
+resume. An explicit graph feedback route can repair the producer before fresh
+review. Output-contract failures and evidence uncertainty can retry the checker
+within the existing shared attempt budget; they do not reset that budget.
+
+Legacy runs remain readable. New submission-pin fields and mechanical assessments
+require a 0.5.12 reader; do not downgrade after writing them. Recorded diagnostic failures and historical
+comparison scores remain unchanged. Package acceptance and semantic task success
+are separate gates.
+
+## 0.5.6 archive recovery
+
+Archive recovery repairs checker lookup of original attempts and preserves cancellation causes during evidence collection. Large receipt-bearing histories use compact archive rows backed by verified immutable details; compact archives require a 0.5.6 or newer reader, while older histories remain readable. Do not downgrade an installation after it writes these archives. See the [V1 reliability and comparison plan](docs/v1-reliability-and-build-comparison-plan.md). Historical hosted cohorts retain their own tested identities and scores.
+
+## 0.5.5 recovery and evidence
+
+The 0.5.5 candidate implements repairs identified by the [V1 benchmark failure analysis](docs/v1-benchmark-failure-analysis.md). Local Windows/Linux regressions and headless compaction/restart checks pass; the separate hosted Terra follow-up still exposes usage limits and incorrect task/template choices. Historical results retain their tested versions. See [current V1 status](docs/v1-implementation-status.md) for qualification boundaries.
+
+New plans require a typed `task_contract` and nonempty original `criteria`. Declare the work kind, discovery need, phase, deliverable destinations and producers, fresh checker, required command evidence, and protected paths. With no explicit template, known project changes select `coding-compact` (implement → fresh checker, four total attempts), changes needing discovery select `coding-diamond`, and read-only work selects `research-diamond`. An incompatible explicit graph fails before child work. A successful live plan is followed by bounded `alg_run` when the user requested work or an artifact. Plan-only/dry-run requests and completed runs retain their stop behavior.
+
+Admission records the planner's declaration; it does not certify that the declaration captures everything the user meant. Project-file producers need known effective host edit permission, and required native command execution needs known bash permission. Ask, denied, scoped or unavailable capability information blocks admission pending resolution; ALG never grants permission. Existing runs without a contract remain readable and resumable as `legacy-unqualified`.
+
+For example, a known-scope file task can use the following contract alongside its goal and original criteria:
+
+```json
+{"version":1,"kind":"project_change","discovery":"not_required","phase":"complete","deliverables":[{"destination":"project_file","path":"src/result.ts","producer_node":"implement"}],"verification":{"checker_node":"check","execution":"none"},"preserve_paths":[]}
+```
+
+Use `execution="host_command"` or `"shell_gate"` with `execution_node` when the user requires execution evidence. The host verifies file presence/digests and observed successful commands before checking; the checker still assesses command relevance and correctness. Preparation work uses `phase="preparation"` and its own bounded deliverables. Criteria, contract hashes and checker evidence references survive persistence and context reconstruction.
+
+If the user requires specific existing files to stay unchanged, pass `preserve_paths` to `alg_plan`, alongside the original criterion. For example, `preserve_paths=["test/wafer-count.test.cjs"]` requests snapshots of that existing project-relative file on the first implementer. The optional list accepts 1–8 distinct normalized paths, at most 512 characters each; live snapshot capture requires contained regular files of at most 1 MiB each. The original before hashes remain the basis across retries. Planning validates paths but captures no evidence, and snapshots neither scan the whole workspace nor prove that tests ran. Researcher suggestions and verification methods remain separate from original user requirements.
+
+For reachable live shell gates, ALG prepares the Windows helper before spending model attempts and retains bounded compiler diagnostics. A later setup failure remains an aggregate `gate_failure` with diagnostic `setup_failed`; the requested command did not launch. Repair the environment, then explicitly resume the existing run. Gate-only recovery requires matching saved output, gate/cwd and bounded declared-file digests and spends an ordinary attempt slot. Changed or unavailable bases fail closed; limits are not reset.
+
+Checker inputs can now include bounded host receipts for native child `bash` execution, ALG shell gates and explicit file preservation. Missing exit metadata and unavailable/truncated evidence remain visible. A completed tool call, passing command or unchanged file does not prove semantic truth or that the tests adequately cover the user criteria. These are V1 changes; real air-gapped service qualification and new offline-package acceptance remain separate, unresolved work.
 
 ## Tools
 
@@ -628,12 +681,12 @@ The role variant is captured only when that same role has an explicit valid role
 
 ```text
 alg_plan goal="Add rate limiting" template="coding-diamond"
-  criteria=[...] shell_gate="bun test"
+  criteria=[...] task_contract={...} shell_gate="bun test"
 alg_run run_id="..." max_waves=2
 alg_status run_id="..."
 ```
 
-For a no-model smoke path, use `alg_plan mode=dry` then `alg_run dry=true`.
+For a no-model smoke path, supply the same contract and criteria with `alg_plan mode=dry`, then `alg_run dry=true`. Dry success is not execution evidence.
 
 `alg_plan`, `alg_run`, `alg_resume`, `alg_status`, and `alg_artifact` use `detail="compact"` by default. Full plan detail includes full goals/criteria/graph definitions plus the complete newly persisted run. Full run/resume/status detail recursively integrity-checks and hydrates every archived attempt, detail/output/failure reference, typed output, session, timing, verdict, outcome, score, shell/schema result, error, and feedback field in deterministic attempt order. It can therefore be much larger than `progress.json`; callers explicitly opt into that cost. `alg_status list=true detail="full"` fully hydrates every exactly-owned run and fails the request with the precise run ID if any one cannot be fully verified. `alg_artifact detail="full"` continues to return the complete current typed node output from integrity-checked storage. Compact run/resume/status reload one committed projected representation for every summary and `state_projection`; bounded reference verification may read complete sidecars internally, but archive/root entries are discarded rather than returned. Compact list mode returns at most 20 summaries plus total/shown/omitted metadata. Compact plans and run/status responses have a 64 KiB aggregate JSON budget: at most 24 node summaries, 32 total attempt summaries, 32 total session summaries, 24 call events, bounded UTF-8 text, and explicit omitted/truncated counts. Compact artifacts include metadata, available fields, byte size, artifact path, bounded failures, and a 2 KiB preview.
 
@@ -647,9 +700,25 @@ attempt history. Use `max_waves` to bound a call, then `alg_status` and
 
 Planning, running, and resuming at `/`, a Windows drive root such as `C:\`, or a UNC share root is rejected by default with a scoped-directory error. Intentional machine-wide audits must pass `allow_filesystem_root=true` on **each** mutating call. Every accepted root call is appended to `filesystem_root_authorizations` with operation, `authorized:true`, canonical path, actor session, and timestamp and is surfaced in plan/status/run output. Above 64 entries, progress retains a 64-entry tail plus an immutable owner-bound complete-history reference with exact total and plan/run/resume counts. Compact load verifies the bounded archive's containment, size/hash, kind/owner/run, ordered tail, total, and computed operation distribution, then discards archive entries; full detail restores every entry in order. Transfer-only saves rebind the archive to the new audited owner. Older runs with only `filesystem_root_authorizations_omitted` remain compatible and explicitly report the unknown legacy operation distribution rather than inventing counts. A plan approval never authorizes a later run, and a run approval never authorizes resume. Ordinary project directories require no opt-in.
 
-Pass user criteria directly to `alg_plan`. `alg_criteria` never creates a staging run: it only edits an owned run while it is still `planning`. Locked criteria require `lock=false` to replace them and leave them unlocked; a later call with the default lock behavior can lock the replacement.
+Pass original user criteria directly to `alg_plan`; new task contracts lock them permanently for that run. `alg_criteria` cannot weaken or unlock an admitted task. Its planning-only editing behavior remains available for legacy runs without a contract.
 
 ### Templates and attempt semantics
+
+Candidate 0.5.11 separates the plugin's internal state from project change
+scope. New baselines retain the `.git`, `node_modules` and `.opencode/runs`
+exclusions and pin applicable root-level `.opencode/session-memory`,
+`.opencode/skill-evolution` and `.opencode/experience` exclusions. Explicitly
+observed or protected paths remain observable; skills, configuration and unknown
+`.opencode` content are not broadly excluded. Legacy baselines keep their
+original exclusions and hashes. Upgrading does not erase an existing scope
+violation or silently rebase an already blocked run.
+
+The new v2 scope records require the 0.5.11 reader; downgrade is unsupported.
+An older reader can quarantine an incompatible progress file while failing
+closed. Optional environment-memory databases use an operator-configured path:
+keep that database outside the measured project scope or explicitly account for
+its database/sidecar writes. Arbitrary configured locations are not implicitly
+excluded, and the configuration file itself remains observable.
 
 - `coding-diamond`: explore (up to 2) → research (up to 2) → implement (up to 5) → fresh-child checker (up to 5), with schema-valid substantive checker failures routed to its direct implementer dependency when both still have capacity; global cap 14.
 - `research-diamond`: two explorers in parallel (up to 2 each) → research (up to 2) → fresh-child checker (up to 2), with schema-valid substantive feedback to its direct research dependency; global cap 8.
@@ -660,6 +729,33 @@ Pass user criteria directly to `alg_plan`. `alg_criteria` never creates a stagin
 Schema-invalid explorer/worker/researcher output consumes that node's own attempt and retries that same node while capacity remains. A checker contradiction or other schema-invalid checker result likewise consumes/retries the checker; it never reopens the worker. Only a schema-valid checker rejection with concrete failures enters the bounded repair-feedback route. Agent outputs have serialized aggregate byte caps (in addition to field/count bounds), graphs have an aggregate persistence budget, and every save externalizes complete outputs/details before validating the projected aggregate with headroom below the 5 MiB store ceiling. Resume safely hydrates referenced dependency/checker output and archived metadata; fresh in-memory execution retains complete values for routing. An implementer may report `done:false` only with explicit `blockers` and optional `artifact_path`; this is retained as structured failed-attempt evidence and never completes the node. `files_touched` entries must be normalized project-relative paths and every existing component is realpath-checked under the project root. `artifact_path` is restricted and realpath-bound to `.opencode/runs/<current-run-id>/artifacts/**`.
 
 ## Ownership and transfer
+
+New live plans in candidate 0.5.10 also share a durable **task dispatch allowance**
+in their root checkpoint, even with skill memory disabled. The default allows
+128 reserved ALG child launches, with eight protected for nominated checkers.
+Planning another phase, retrying or compacting cannot refill it. The original
+run-level attempt limits still apply. Shell-only work, dry execution and reuse of
+an implementation for a gate-only retry consume no child dispatch. Reservations
+with an uncertain outcome remain charged.
+
+The SDK options or existing operator sidecar may supply:
+
+```json
+{"taskAllowance":{"max_dispatches":128,"verification_reserve":8}}
+```
+
+The maximum is 256; optional `max_elapsed_ms` limits elapsed wall time including
+downtime. Policy is pinned on first admission and is not changed by later config
+edits. Inspect `task_allowance_status` in `alg_plan`, `alg_status` or
+`alg_context_status`. Provider requests/tokens, root planning, compaction and the
+root's final report are outside this enforcement boundary. This is not a billing
+cap or a sandbox against an agent with filesystem access.
+
+Transfer of an allowance-bound run binds the recipient to the same root ledger;
+an already different task binding is rejected. A failed transfer can retain that
+prepared binding without granting run ownership. Continue existing work through
+the transfer route; an unlinked new session is not automatically recognized as
+the same task. Legacy saved runs remain explicitly unbound.
 
 A run belongs to the session that created it. Run/status/resume/artifact operations resolve only exactly owned runs, and list hides other sessions' runs. Discovery reads a bounded minimal owner discriminator before parsing remaining state: malformed exact-owner candidates become bounded compact errors or a precise full-list failure, while parseable other-owner bodies are neither parsed nor disclosed. A corrupt `progress.json` is quarantined through owner-facing tools only after that envelope confirms the requesting session is the owner; another session cannot trigger quarantine or derived-file changes. Use:
 
@@ -683,7 +779,7 @@ alg_plan goal="Fix the service" shell_gate="python -m pytest tests/unit" shell_c
 
 `alg_plan` returns bounded `shell_gate_preflight` diagnostics (resolved shell/cwd, fixed issue codes and command positions). Read-only preflight rejects obvious prose/fences and incomplete pipelines, checks contained directories, and checks simple literal command names against the runner's allowlisted PATH/PATHEXT. An unavailable POSIX utility on Windows is rejected; other missing commands warn at plan time and block live execution **before any new model attempt**. No test commands are executed during planning. Valid pipes/chains and installed POSIX utilities are allowed. Complex scripts, expansions, redirections, fallback chains and inline directory changes get review warnings rather than a guessed shell interpretation; prefer a reviewed validation script for those cases. Explicit executable paths may name future build products and are not availability-checked. Future test-file paths are likewise not rejected before implementation. Preflight is deliberately not a full shell parser, command-success proof, sandbox, or detector of every bad gate.
 
-Run/resume preflight reachable unfinished gates, including old persisted plans, before reserving work, and recheck each batch (including checker-reopened work). Exhausted branches and their unreachable descendants cannot veto independent resumable work. An initial preflight error leaves committed attempts, counters and completed siblings unchanged; a later error durably blocks the run without reserving that batch or discarding earlier results. Correct the first implementer's command/cwd with `alg_run` or `alg_resume`; overrides do not affect other implementers in a custom graph, and other graph gates should be corrected in a new reviewed graph. Existing exhausted attempt budgets are not reset. Ordinary nonzero test results retain the bounded retry policy; no exit code alone is treated as proof of a planner defect. Failure diagnostics now include shell, cwd, timeout/cancellation/termination category, and a redacted stdout fallback when stderr is empty (or an explicit no-output message). Dry runs do structural/cwd checks but do not require installed test commands. Commands later in a sequential setup chain receive review warnings because earlier commands may install them; the leading command and simple pipeline executables are still checked.
+Run/resume preflight reachable unfinished gates, including old persisted plans, before reserving work, and recheck each batch (including checker-reopened work). Exhausted branches and their unreachable descendants cannot veto independent resumable work. An initial preflight error leaves committed attempts, counters and completed siblings unchanged; a later error durably blocks the run without reserving that batch or discarding earlier results. Legacy runs allow first-implementer command/cwd overrides. Admitted task contracts prohibit command replacement or conversion from live to dry execution; a persisted setup failure can permit same-command cwd/timeout recovery while retaining evidence and budgets. Missing task deliverables or command receipts can reopen only their necessary producers on explicit resume, and containment/preservation failures must be restored first. Existing exhausted attempt budgets are not reset. Ordinary nonzero test results retain the bounded retry policy; no exit code alone is treated as proof of a planner defect. Failure diagnostics now include shell, cwd, timeout/cancellation/termination category, and a redacted stdout fallback when stderr is empty (or an explicit no-output message). Dry runs do structural/cwd checks but do not require installed test commands. Commands later in a sequential setup chain receive review warnings because earlier commands may install them; the leading command and simple pipeline executables are still checked.
 
 The runtime confines `cwd` to the project root, supplies only a small environment allowlist, and caps command length/output tails/timeouts. On timeout or cancellation ALG attempts process-tree termination and verifies that the POSIX process group or the snapshotted/refreshed Windows descendant set is gone. If verification cannot confirm containment, the shell result explicitly reports `termination_failed`; descendants may remain, so containment is not guaranteed. These are guardrails, not a sandbox. Do not approve untrusted commands, and use narrow OpenCode permission patterns rather than blanket `bash: allow` when possible.
 
@@ -755,3 +851,7 @@ filenames use the release-input prefix. Local hashes provide integrity, not auth
 coherent rewriting of all local files.
 
 `bun run check` performs strict TypeScript checking, all hardened tests, the no-model dry smoke run, and bounded live OpenCode version/server/raw tool-ID/TUI-registration verification. Smoke and live verification create separate `alg-smoke-*` and `alg-live-verify-*` temporary project trees and remove their exact created trees on both success and failure; these project trees are not release evidence and are never intentionally retained. Live verification disables parent project/default plugin discovery, uses isolated HOME/XDG state plus explicit temporary server and TUI configs that each register this checkout's canonical package-root `file://` spec, and requires server/TUI markers for a complete bounded runtime manifest (`package.json`, all `src/**/*.ts`, shipped templates/agents, and the strict Excel manifest/policy/project/lock/validator/wrapper assets). Normal startup computes and logs a separate operational digest of the local package tree at module evaluation; it does not emit the opt-in `OPENCODE_ALG_SOURCE_ID` live-verification marker unless `OPENCODE_ALG_LIVE_SOURCE_DIGEST` is set. Neither disk observation proves the exact bytes loaded by the host. Server/TUI process cleanup and temporary-environment removal are mandatory pass criteria. Separately, `check:live` retains one bounded evidence JSON only under the dedicated external `opencode-alg-verification-evidence` root below the OS temporary directory (or an approved absolute `OPENCODE_ALG_LIVE_EVIDENCE` there). Every run uses an immutable `live-verification-<source-prefix>-<random-uuid>.json` name and no-clobber publication. The exclusive temporary identity is recorded after write; final and temporary must remain the same hard-linked file through exact byte/hash checks, and temporary cleanup requires that identity again. `check:live` prints final device/inode identity with exact path/size/hash, source manifest identity, registrations, and cleanup results. Strict later verification rejects even a same-byte identity replacement. Later checks cannot replace earlier release-referenced artifacts. See [`docs/operations.md`](docs/operations.md) and [`docs/release-verification.md`](docs/release-verification.md).
+
+### V1 investigation candidate
+
+The opt-in [workspace and investigation workflow](docs/v1-investigations.md) adds prerequisite checks, a fixed data-investigation graph, durable query reuse and an engineer checkpoint. [Prepared offline bundles](docs/deployment.md) support one-command installation through Bash or PowerShell. These features target OpenCode 1; see the [design index](docs/alg-v1-design-index.md) for the phased scope and local acceptance evidence.

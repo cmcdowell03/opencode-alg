@@ -1,0 +1,10 @@
+{
+  "source_commit": "5500ad6afad56b5ccc3bfdd0b90c568b3413a56d",
+  "passed": false,
+  "stage": "git_archive_setup",
+  "exit_code": 1,
+  "tests_started": false,
+  "headless_started": false,
+  "reason": "Native WSL Git cannot resolve the Windows absolute gitdir pointer in alg-scope-repair/.git. Archive creation and tar extraction failed.",
+  "repair": "Archive the same committed object through the primary checkout's real .git directory into a new native destination. Preserve the unused first destination."
+}

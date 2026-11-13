@@ -1,0 +1,17 @@
+$ bun run scripts/check-live.ts
+{"check":"opencode-alg-live","passed":false,"evidence_path":"C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\task-admission-20261112\\live-verification-192c0bef5100915d-45d0596c-b68a-4e87-a988-27298d7435de.json","original_failure":"live verification evidence must be inside a dedicated external evidence root","evidence_validation_error":"live verification did not retain evidence"}
+321 |     ? (process.platform === "win32" ? APPROVED_WINDOWS_LIVE_EVIDENCE_ROOT : null)
+322 |     : options.approvedEvidenceRoot
+323 |   if (approved) allowedRoots.push(resolve(approved))
+324 |   const selectedRoot = allowedRoots.find((root) => pathWithin(root, destination) && normalizedPath(root) !== normalizedPath(destination))
+325 |   if (!selectedRoot) {
+326 |     throw new Error("live verification evidence must be inside a dedicated external evidence root")
+                    ^
+error: live verification evidence must be inside a dedicated external evidence root
+      at prepareLiveEvidenceDestination (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\scripts\live-verify.ts:326:15)
+      at runLiveVerification (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\scripts\live-verify.ts:1416:16)
+      at checkLive (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\scripts\check-live.ts:55:23)
+      at C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\scripts\check-live.ts:111:29
+
+Bun v1.3.14 (Windows x64)
+error: script "check:live" exited with code 1

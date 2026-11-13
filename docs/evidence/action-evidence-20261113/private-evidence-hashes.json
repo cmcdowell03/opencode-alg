@@ -1,0 +1,319 @@
+{
+  "scope": "Local logs and full host receipts remain private. Hashes preserve their identities; unfinished logs are not terminal passes.",
+  "files": [
+    {
+      "name": "action-23fffd886122-linux-gate.json",
+      "bytes": 189,
+      "sha256": "37924a15d361a1ff710cbcc8135761a74471d98193931a2d9ce888894423a08a"
+    },
+    {
+      "name": "action-23fffd886122-linux-headless.json",
+      "bytes": 17511,
+      "sha256": "6a3e681f8e30cc6685a3b742e85bd877a5ee30fc392e0af5ee2005bb3819ea8b"
+    },
+    {
+      "name": "action-23fffd886122-linux-headless.log",
+      "bytes": 1872,
+      "sha256": "70199d2538f6408d3e7d311d60185e4cc071578ab459d572a508f779f5551f80",
+      "terminal_test_counts": null
+    },
+    {
+      "name": "action-23fffd886122-linux-tests.log",
+      "bytes": 204114,
+      "sha256": "7ef35827b845b99fe907d5b434d1b78ea9147f9ac39dec727bd82ab2d269bd92",
+      "terminal_test_counts": {
+        "pass": 1550,
+        "skip": 17,
+        "fail": 0,
+        "assertions": 17100,
+        "tests": 1567,
+        "files": 129,
+        "duration": "538.61s"
+      }
+    },
+    {
+      "name": "action-23fffd886122-linux-typecheck.log",
+      "bytes": 66,
+      "sha256": "d773539b4007a1c6e881b39c4bad4ce65837992453c5228198f10bd7ca4677c6",
+      "terminal_test_counts": null
+    },
+    {
+      "name": "action-23fffd886122-windows-focused.log",
+      "bytes": 15178,
+      "sha256": "ec6827bbc6e421b15198e7f6979fd17c49f7c4edba92c4acdce1e4adb7c8bec9",
+      "terminal_test_counts": {
+        "pass": 58,
+        "skip": 1,
+        "fail": 3,
+        "assertions": 578,
+        "tests": 62,
+        "files": 5,
+        "duration": "35.17s"
+      }
+    },
+    {
+      "name": "action-23fffd886122-windows-gate.json",
+      "bytes": 105,
+      "sha256": "46677e525a4b6cec6b4d4e5b47d19a45296caf3a760bc11cdb0e469b35f1e79a"
+    },
+    {
+      "name": "action-23fffd886122-windows-headless.json",
+      "bytes": 17544,
+      "sha256": "f8361fe8f91c3e3902c5bad9887c673d15a7eb80d6439313bd7824433bf606db"
+    },
+    {
+      "name": "action-23fffd886122-windows-headless.log",
+      "bytes": 1881,
+      "sha256": "15d5e92dcb8f30095278e8b4b05a838d578abc92588e93230a98b4995bdbb85c",
+      "terminal_test_counts": null
+    },
+    {
+      "name": "action-23fffd886122-windows-isolated-focused.log",
+      "bytes": 9202,
+      "sha256": "f18cb2175a0ea4e62a553f82f419d7f73e0161818b16af26596cbbb9add17e9f",
+      "terminal_test_counts": {
+        "pass": 71,
+        "skip": 1,
+        "fail": 0,
+        "assertions": 661,
+        "tests": 72,
+        "files": 7,
+        "duration": "85.95s"
+      }
+    },
+    {
+      "name": "action-23fffd886122-windows-isolated-gate.json",
+      "bytes": 136,
+      "sha256": "7cfbea891ea1230545a86bb91f75522031884d6a7f17b3530789f05c381d4c8e"
+    },
+    {
+      "name": "action-23fffd886122-windows-isolated-typecheck.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f",
+      "terminal_test_counts": null
+    },
+    {
+      "name": "action-23fffd886122-windows-runtime-integrity.log",
+      "bytes": 1161,
+      "sha256": "cd19e03ec2cfa84aac8b28108c6641baa35ff2b603c0e11d1ca809deeb837d18",
+      "terminal_test_counts": {
+        "pass": 10,
+        "skip": 0,
+        "fail": 0,
+        "assertions": 33,
+        "tests": 10,
+        "files": 2,
+        "duration": "30.94s"
+      }
+    },
+    {
+      "name": "action-23fffd886122-windows-typecheck.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f",
+      "terminal_test_counts": null
+    },
+    {
+      "name": "action-884c947-windows-final-focused-2.log",
+      "bytes": 2672,
+      "sha256": "7b614d28475528066625bb053e985efe3612e608d4d83e109dd522f3979e789c",
+      "terminal_test_counts": {
+        "pass": 22,
+        "skip": 0,
+        "fail": 0,
+        "assertions": 85,
+        "tests": 22,
+        "files": 4,
+        "duration": "42.90s"
+      }
+    },
+    {
+      "name": "action-884c947-windows-final-focused.log",
+      "bytes": 2892,
+      "sha256": "95d2151ed70f8739be4990bf5a533f1b0aa44f914d14dcfcfd8a4be2a6631d70",
+      "terminal_test_counts": {
+        "pass": 21,
+        "skip": 0,
+        "fail": 1,
+        "assertions": 85,
+        "tests": 22,
+        "files": 4,
+        "duration": "49.87s"
+      }
+    },
+    {
+      "name": "action-884c947-windows-headless.json",
+      "bytes": 9835,
+      "sha256": "1d3bffe3cae1cab620a411f37e255f8ede1b1ec067af07b40a56737d426945dd"
+    },
+    {
+      "name": "action-884c947-windows-headless.log",
+      "bytes": 326,
+      "sha256": "89bd518fb414cf87d93c3188b432d211d660e37c4fe884db62067a328bfa4056",
+      "terminal_test_counts": null
+    },
+    {
+      "name": "action-884c947a7f5e-linux-gate.json",
+      "bytes": 189,
+      "sha256": "04d9a0503356c35aa8056ea87059290d7b613eee00332cddac98b9b88968ffbf"
+    },
+    {
+      "name": "action-884c947a7f5e-linux-headless.json",
+      "bytes": 9821,
+      "sha256": "5b537e3ec5546b5883be741967173a0a98412b84ecc15eeb9810e6d40458a60a"
+    },
+    {
+      "name": "action-884c947a7f5e-linux-headless.log",
+      "bytes": 322,
+      "sha256": "a23a4bf4fd4514640282da800fd9e81485f29fe2b7d1c4106514c1f73d9bed93",
+      "terminal_test_counts": null
+    },
+    {
+      "name": "action-884c947a7f5e-linux-tests.log",
+      "bytes": 212938,
+      "sha256": "e7da7a42aa3298a96cf053bfc3402897adf24664a450e51a067a0fbfad5d473d",
+      "terminal_test_counts": {
+        "pass": 1543,
+        "skip": 17,
+        "fail": 7,
+        "assertions": 16780,
+        "tests": 1567,
+        "files": 129,
+        "duration": "551.20s"
+      }
+    },
+    {
+      "name": "action-884c947a7f5e-linux-typecheck.log",
+      "bytes": 66,
+      "sha256": "d773539b4007a1c6e881b39c4bad4ce65837992453c5228198f10bd7ca4677c6",
+      "terminal_test_counts": null
+    },
+    {
+      "name": "action-context-repair-windows.log",
+      "bytes": 3144,
+      "sha256": "9f99013c44b41890abc7ddf90797852be20f0481cf9f0824da6e0bdeb1f5c1ce",
+      "terminal_test_counts": {
+        "pass": 23,
+        "skip": 0,
+        "fail": 0,
+        "assertions": 176,
+        "tests": 23,
+        "files": 2,
+        "duration": "4.26s"
+      }
+    },
+    {
+      "name": "action-d3776b0b9184-linux-gate.json",
+      "bytes": 168,
+      "sha256": "71ac83566debf488e3aef32f3fae409ea5e3240caa0eeced7c8a1a15fd11b9e9"
+    },
+    {
+      "name": "action-d3776b0b9184-linux-headless.json",
+      "bytes": 20846,
+      "sha256": "2accc9fce223ca271f6e1379ef8c6521063a5e75f43f276c126aafa6cb4f60a8"
+    },
+    {
+      "name": "action-d3776b0b9184-linux-headless.log",
+      "bytes": 1828,
+      "sha256": "490273e7cd683b14d27dd9e559da3ecf3ba81cb3fd3c3cff7437fd90844d166b",
+      "terminal_test_counts": null
+    },
+    {
+      "name": "action-d3776b0b9184-linux-identity.json",
+      "bytes": 34333,
+      "sha256": "84325c39674b0777394ce81b2fbfa1d98d51937128366d7692adacbb4fa07faf"
+    },
+    {
+      "name": "action-d3776b0b9184-linux-typecheck.log",
+      "bytes": 66,
+      "sha256": "d773539b4007a1c6e881b39c4bad4ce65837992453c5228198f10bd7ca4677c6",
+      "terminal_test_counts": null
+    },
+    {
+      "name": "action-d3776b0b9184-windows-headless.json",
+      "bytes": 20860,
+      "sha256": "061412abe77f12424237eae5f05c899b1e6827f7de2f0ac270960fb42cc43cec"
+    },
+    {
+      "name": "action-d3776b0b9184-windows-headless.log",
+      "bytes": 1837,
+      "sha256": "c2270fff7bbef1beb9800aa6531bc3f2432c609dacfb6e6cfab0321dc70d752f",
+      "terminal_test_counts": null
+    },
+    {
+      "name": "action-d3776b0b9184-windows-identity.json",
+      "bytes": 34333,
+      "sha256": "9483a29e275903ec7b662875c9c1793d167fb964cfad58be03729b9592c0d750"
+    },
+    {
+      "name": "action-final-docs-package-windows.log",
+      "bytes": 357,
+      "sha256": "9cb8fa2874e75745073c7f87c7e8509b93106bc330d1e0a6d026d8bd1ae2b560",
+      "terminal_test_counts": null
+    },
+    {
+      "name": "action-focused-windows-1.log",
+      "bytes": 8842,
+      "sha256": "4d37183b1a4ccd6fd427cd7f42bdd2debcea1f305b92b4234812f84a359dc746",
+      "terminal_test_counts": {
+        "pass": 42,
+        "skip": 0,
+        "fail": 3,
+        "assertions": 220,
+        "tests": 45,
+        "files": 5,
+        "duration": "21.51s"
+      }
+    },
+    {
+      "name": "action-focused-windows-2.log",
+      "bytes": 6723,
+      "sha256": "c553c28ec1c50f2b49dee954ebf982a56156f2acf1259a8fed6aa8f53ef9b69e",
+      "terminal_test_counts": {
+        "pass": 57,
+        "skip": 0,
+        "fail": 0,
+        "assertions": 272,
+        "tests": 57,
+        "files": 6,
+        "duration": "30.27s"
+      }
+    },
+    {
+      "name": "action-full-windows-1.log",
+      "bytes": 208387,
+      "sha256": "d0b760627e830be8bb2a2b167cd94546f05687d8f8cf50b0fbfdcde3c56767af",
+      "terminal_test_counts": {
+        "pass": 1557,
+        "skip": 7,
+        "fail": 2,
+        "assertions": 17202,
+        "tests": 1566,
+        "files": 129,
+        "duration": "2949.78s"
+      }
+    },
+    {
+      "name": "action-typecheck-windows-2.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f",
+      "terminal_test_counts": null
+    },
+    {
+      "name": "action-typecheck-windows.log",
+      "bytes": 98,
+      "sha256": "7b7f57f82e9f1451cd29689ff22cadc066dc54a3c4626b389feb7de234ccff31",
+      "terminal_test_counts": null
+    },
+    {
+      "name": "action-windows-headless-1.json",
+      "bytes": 7628,
+      "sha256": "9fe6283592c31605388e473fcf3f379c24104f684e64ac2d64c2a4bad95c8639"
+    },
+    {
+      "name": "action-windows-headless-1.log",
+      "bytes": 309,
+      "sha256": "f4804c5650f6cad8da7808447e39cd2aacef1f5ec1ff741065031c41828f8dd1",
+      "terminal_test_counts": null
+    }
+  ]
+}

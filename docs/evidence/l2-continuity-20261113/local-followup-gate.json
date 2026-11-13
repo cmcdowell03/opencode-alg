@@ -1,0 +1,119 @@
+{
+  "schema": "alg-l2-local-followup-gate-v1",
+  "sourceCommit": "fd0b77441471dfbb17b0ab47f99716914eef27ed",
+  "fullSuite": false,
+  "paidReplay": false,
+  "windows": {
+    "tests": {
+      "passed": 367,
+      "skipped": 1,
+      "failed": 0,
+      "assertions": 2565,
+      "privateLog": "l2-followup-windows-tests.log"
+    },
+    "typecheck": {
+      "observedExitCode": 0,
+      "basis": "observed exec completion",
+      "privateLog": "l2-followup-windows-typecheck.log"
+    },
+    "headless": {
+      "receipt": "l2-fd0b77441471-windows-headless-sequential.json",
+      "passed": true,
+      "arms": [
+        {
+          "arm": "build",
+          "hostVersion": "1.19.5",
+          "toolWrites": 4,
+          "cleanup": true,
+          "credentialsInherited": false,
+          "globalConfigurationUnchanged": true,
+          "ownershipTransferCoverage": false
+        },
+        {
+          "arm": "alg",
+          "hostVersion": "1.19.5",
+          "toolWrites": 4,
+          "cleanup": true,
+          "credentialsInherited": false,
+          "globalConfigurationUnchanged": true,
+          "ownershipTransferCoverage": false
+        }
+      ]
+    },
+    "qualification": {
+      "receipt": "l2-fd0b77441471-windows-qualification.json",
+      "passed": true,
+      "rows": 80
+    }
+  },
+  "linux": {
+    "tests": {
+      "passed": 367,
+      "skipped": 1,
+      "failed": 0,
+      "assertions": 2565,
+      "privateLog": "l2-fd0b77441471-linux-tests.log"
+    },
+    "gate": {
+      "source_commit": "fd0b77441471dfbb17b0ab47f99716914eef27ed",
+      "exit_codes": {
+        "typecheck": 0,
+        "focused_tests": 0,
+        "headless": 0,
+        "qualification": 0
+      },
+      "full_suite": false,
+      "passed": true
+    },
+    "headless": {
+      "receipt": "l2-fd0b77441471-linux-headless.json",
+      "passed": true,
+      "arms": [
+        {
+          "arm": "build",
+          "hostVersion": "1.18.35",
+          "toolWrites": 4,
+          "cleanup": true,
+          "credentialsInherited": false,
+          "globalConfigurationUnchanged": true,
+          "ownershipTransferCoverage": false
+        },
+        {
+          "arm": "alg",
+          "hostVersion": "1.18.35",
+          "toolWrites": 4,
+          "cleanup": true,
+          "credentialsInherited": false,
+          "globalConfigurationUnchanged": true,
+          "ownershipTransferCoverage": false
+        }
+      ]
+    },
+    "qualification": {
+      "receipt": "l2-fd0b77441471-linux-qualification.json",
+      "passed": true,
+      "rows": 80
+    }
+  },
+  "preservedFailures": [
+    {
+      "kind": "sandbox_could_not_read_cwd",
+      "occurredBeforeTypecheck": true,
+      "privateLog": "l2-followup-windows-typecheck-sandbox-failed.log"
+    },
+    {
+      "kind": "relative_output_argument_rejected",
+      "occurredBeforeHostStart": true,
+      "privateLog": "l2-fd0b77441471-windows-headless-arguments-failed.log"
+    },
+    {
+      "receipt": "l2-fd0b77441471-windows-headless.json",
+      "armReceipt": "l2-fd0b77441471-windows-headless.json.alg.json",
+      "kind": "version_probe_timeout_15s",
+      "cleanupPassed": true,
+      "interpretation": "Build lifecycle passed, ALG failed startup. Unchanged candidate passed both arms in one subsequent sequential local check. Timeout cause is not established; original failure remains a failure."
+    }
+  ],
+  "scope": "Local model-independent mechanics, prompt contracts, evidence qualification and package checks only. The single skipped opt-in lifecycle test is exercised by the explicit headless CLI. Not full-suite, release acceptance, live-model Linux equivalence or paid validation of these fixes.",
+  "logPublication": "Raw local logs remain private and are SHA-256 committed in receipt-manifest.json. This structured gate records observed results; the public repository does not contain those logs."
+}

@@ -1,17 +1,23 @@
 import { tool } from "@opencode-ai/plugin"
 import type { PluginInput, ToolContext } from "@opencode-ai/plugin"
+import { existsSync, readFileSync, statSync } from "node:fs"
 import { validateGraph } from "./graph.ts"
+import { graphSha256, reviseGraph, type GraphRevisionReceipt } from "./graph-revision.ts"
 import { closeRun, prepareRunForResume } from "./executor.ts"
 import { preflightShellGates, type GatePreflightReport } from "./shell-preflight.ts"
 import {
+  atomicWriteFile,
   createRun,
   hydrateRunFully,
   listOwnedRunEnvelopeResults,
   loadCommittedRunProjectionForOwner,
   readNodeArtifactOutput,
+  runContainedPath,
   runDir,
 } from "./store.ts"
 import { getTemplate, listTemplates } from "./templates.ts"
+import { graphPolicy, assertManagedGraph } from "./graph-policy.ts"
+import { detectWorkspaceOperation } from "./workspace-facts.ts"
 import type { AgentModelMap, GraphDef, ModelResolutionMap, RunState } from "./types.ts"
 import { ALG_TOOL_IDS } from "./types.ts"
 import { mutateOwnedRunAsync, resolveOwnedRun, transferRunOwnershipAsync } from "./ownership.ts"
@@ -31,15 +37,44 @@ import {
   hostProjectDirectory,
   isContained,
   isFilesystemRoot,
+  isSafeProjectRelativePath,
+  resolveContainedPath,
 } from "./paths.ts"
 import { formatSdkError } from "./diagnostics.ts"
-import { serializedBytes, truncateUtf8, utf8Bytes } from "./limits.ts"
+import { MAX_GRAPH_STATE_BYTES, serializedBytes, truncateUtf8, utf8Bytes } from "./limits.ts"
 import { executeWithMemory } from "./session-memory/attempts.ts"
+import { hashObject, MemoryStore } from "./session-memory/store.ts"
+import { TaskAllowanceRuntime } from "./task-allowance.ts"
+import type { TaskAllowancePolicy } from "./task-allowance-schema.ts"
+import { canonicalJson } from "./persistence.ts"
+import { TASK_DELIVERY_SCOPE_GUIDANCE, TaskContractInputSchema, parseTaskContractInput, taskTemplate, bindTaskContract, assertTaskState,
+  assertTaskGraph, assertTaskHostCapabilities, assertEvidencePlan, taskContractSummary, type TaskContractInput } from "./task-contract.ts"
+import { captureTaskRequest } from "./task-request.ts"
 import type { SessionMemoryRuntime } from "./session-memory/runtime.ts"
 import { buildRunProgress, parseRunProgress, type AlgRunProgress } from "./run-progress.ts"
 import { createRunCardProjector, type RunCardProjector, type SubagentCardMode } from "./run-cards.ts"
+import type { ExecuteOptions } from "./executor.ts"
 
 type Detail = "compact" | "full"
+
+function readGraphSnapshot(path: string): string {
+  const size = statSync(path).size
+  if (size > MAX_GRAPH_STATE_BYTES) throw new Error("graph snapshot exceeds the graph byte limit")
+  const text = readFileSync(path, "utf8")
+  if (utf8Bytes(text) > MAX_GRAPH_STATE_BYTES) throw new Error("graph snapshot exceeds the graph byte limit")
+  return text
+}
+
+function persistGraphSnapshot(project: string, runId: string, graph: GraphDef): string {
+  const digest = graphSha256(graph)
+  const path = runContainedPath(project, runId, "artifacts", `graph-${digest}.json`)
+  const serialized = canonicalJson(graph)
+  // Revision callers hold the run lease. Reuse the store's staged/fsynced commit,
+  // so interruption cannot publish a partial immutable graph at its final name.
+  if (!existsSync(path)) atomicWriteFile(path, serialized)
+  if (readGraphSnapshot(path) !== serialized) throw new Error("immutable graph snapshot content mismatch")
+  return digest
+}
 const PREVIEW_BYTES = 2_048
 const COMPACT_OUTPUT_BYTES = 64 * 1_024
 const COMPACT_TEXT_BYTES = 384
@@ -119,7 +154,12 @@ function rootAuthorization(run: RunState, detail: Detail = "compact") {
   }
 }
 
+import type { OperationalRuntime } from "./operational-runtime.ts"
+
 export interface AlgToolRuntime {
+  actionEvidence?: ExecuteOptions["actionEvidence"]
+  taskAllowancePolicy?: TaskAllowancePolicy
+  operations?: OperationalRuntime
   sessionMemory?: SessionMemoryRuntime
   /** "native" (default) mirrors worker attempts into the transcript as OpenCode subagent cards. */
   subagentCards?: SubagentCardMode
@@ -177,6 +217,9 @@ function compactNodes(run: RunState) {
         session_id: sessionId,
         ...(attempt.output_ref ? { output_ref: attempt.output_ref } : {}),
         ...(attempt.detail_ref ? { detail_ref: attempt.detail_ref } : {}),
+        ...(attempt.task_evidence_ref ? { task_evidence_ref: attempt.task_evidence_ref } : {}),
+        ...(attempt.action_evidence_ref ? { action_evidence_ref: attempt.action_evidence_ref } : {}),
+        ...(attempt.retrieved_evidence ? { retrieved_evidence_pages: attempt.retrieved_evidence.length } : {}),
       }
     })
     const visibleSessionCount = node.attempts.filter((attempt) => Boolean(attempt.session_id)).length
@@ -275,6 +318,7 @@ function routingSummary(run: RunState) {
     schema_invalid: 0,
     sdk_error: 0,
     substantive_rejection: 0,
+    evidence_unavailable: 0,
     incomplete: 0,
     gate_failure: 0,
     legacy_unknown: 0,
@@ -298,7 +342,7 @@ function routingSummary(run: RunState) {
     if (!reference) continue
     if (reference.outcome_counts) {
       for (const outcome of Object.keys(outcomes) as Array<keyof typeof outcomes>) {
-        outcomes[outcome] += reference.outcome_counts[outcome]
+        outcomes[outcome] += reference.outcome_counts[outcome] ?? 0
       }
       if (node.agent === "checker") checkerSchemaInvalid += reference.outcome_counts.schema_invalid
       else nodeSchemaInvalid += reference.outcome_counts.schema_invalid
@@ -330,9 +374,44 @@ function routingSummary(run: RunState) {
 
 function nextAction(run: RunState): string {
   if (run.status === "planning") return `Call alg_run with run_id=${run.run_id}; filesystem-root approval, if needed, must be explicit again.`
-  if (run.status === "blocked" || run.status === "running") return `Call alg_resume with run_id=${run.run_id} for another bounded synchronous wave set.`
-  if (run.status === "done") return "Inspect compact artifacts or request detail=full for complete typed output."
+  if (run.status === "blocked" && run.phase === "wave-limit") return `This call reached max_waves with unfinished work. For an authorized execution request, continue with alg_resume and run_id=${run.run_id}, then inspect its result. Keep the same run, original attempts, task allowance and permissions; per-call filesystem-root approval still applies. This pause is not completion or a prerequisite failure. Stop on cancellation, a real blocker or exhausted limits; do not replan to reset them.`
+  if (run.status === "blocked") return `Inspect alg_status and the recorded blocker for run_id=${run.run_id}. Resolve its prerequisite before alg_resume; do not loop or reset attempts by replanning.`
+  if (run.status === "running") return `Call alg_resume with run_id=${run.run_id} for another bounded synchronous wave set.`
+  if (run.status === "done") return "The run is complete. Report its existing outcome and stop; do not plan or execute the same task again. Use alg_status/detail=full only if its recorded evidence is needed."
+  if (run.investigation || run.task_contract) return "Inspect the retained run and its failure artifacts. Do not replace it to reset attempts or budget; an intentional repeat requires an explicit new task."
   return "Inspect alg_status/detail=full and failure artifacts; attempt limits require a new run when exhausted."
+}
+
+/** Planning guidance only: execution remains an explicit, separately authorized tool call. */
+function planNextAction(run: RunState): string {
+  if (run.status === "done" || run.status === "failed") return nextAction(run)
+  if (run.status === "planning") {
+    if (run.mode === "dry") return `This is a dry plan, not live work. Stop here for an explicit plan-only request; if a dry smoke was requested, call alg_run with run_id=${run.run_id} and dry=true. Existing permissions and per-call filesystem-root approval still apply.`
+    return `This live plan has not executed the requested work. If the user requested implementation or an artifact, call alg_run with run_id=${run.run_id} before your final response; use bounded max_waves and inspect the result. Stop at planning for an explicit plan-only request. Existing permissions and per-call filesystem-root approval still apply; do not automatically retry a blocked run.`
+  }
+  return `Inspect alg_status and recorded blockers for run_id=${run.run_id}. Resume only if an authorized bounded retry can address the blocker; do not start duplicate execution, automatically loop, or reset budgets.`
+}
+
+const preservePathsSchema = tool.schema.array(tool.schema.string().min(1).max(512)
+  .refine(isSafeProjectRelativePath, "preserve_paths must use normalized project-relative file paths"))
+  .min(1).max(8).refine((paths) => new Set(paths).size === paths.length, "duplicate preservation path")
+
+function withPreservePaths(graph: GraphDef, project: string, requested: string[]): GraphDef {
+  const paths = preservePathsSchema.parse(requested)
+  const clone = structuredClone(graph)
+  const implementer = clone.nodes.find((node) => node.agent === "implementer")
+  if (!implementer) throw new Error("graph has no implementer node for preserve_paths")
+  for (const path of paths) {
+    const contained = resolveContainedPath(project, ...path.split("/"))
+    if (!statSync(contained).isFile()) throw new Error(`preserve_paths requires an existing regular file: ${path}`)
+  }
+  // Explicit inputs replace wireInputs' default dependency ports, so retain
+  // those ports when augmenting a custom node that previously omitted inputs.
+  implementer.inputs = {
+    ...(implementer.inputs ?? Object.fromEntries(implementer.depends_on.map((id) => [id, id]))),
+    preserve_paths: JSON.stringify(paths),
+  }
+  return validateGraph(clone)
 }
 
 function executionSummary(run: RunState, events: string[]) {
@@ -378,6 +457,13 @@ function finalizeCompact(data: Record<string, unknown>): Record<string, unknown>
     mode: candidate.mode,
     template: candidate.template,
     criteria_locked: candidate.criteria_locked,
+    task_admission: isPlainRecord(candidate.task_admission) ? {
+      status: candidate.task_admission.status, contract_sha256: candidate.task_admission.contract_sha256,
+      requirements_sha256: candidate.task_admission.requirements_sha256, phase: candidate.task_admission.phase,
+    } : undefined,
+    plan_reused: candidate.plan_reused,
+    task_allowance_status: candidate.task_allowance_status,
+    investigation_attached: candidate.investigation_attached,
     criteria_count: candidate.criteria_count,
     global_attempts: candidate.global_attempts,
     project_scope: typeof candidate.project_scope === "string" ? cap(candidate.project_scope, 2_048) : undefined,
@@ -397,6 +483,12 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value))
 }
 
+function allowanceStatus(run: RunState) {
+  if (!run.task_allowance) return { coverage: "legacy-or-dry-unbound", provider_usage: "unavailable" }
+  try { return new TaskAllowanceRuntime(new MemoryStore(run.project_directory)).status(run.task_allowance) }
+  catch { return { task_id: run.task_allowance.task_id, state: "unavailable", next: "Restore the root checkpoint; do not replan to reset allowance." } }
+}
+
 function runResponse(run: RunState, events: string[], detail: Detail) {
   if (detail === "full") {
     const full = hydrateRunFully(run)
@@ -408,6 +500,8 @@ function runResponse(run: RunState, events: string[], detail: Detail) {
     const visibleEvents = events.slice(-128).map((event) => cap(event))
     return {
       ...full,
+      task_admission: taskContractSummary(full),
+      task_allowance_status: allowanceStatus(full),
       execution_directory: full.execution_directory ?? full.project_directory,
       shell_gate_base: full.execution_directory ?? full.project_directory,
       events: visibleEvents,
@@ -425,6 +519,8 @@ function runResponse(run: RunState, events: string[], detail: Detail) {
   const truncatedEvents = events.filter((event) => utf8Bytes(event) > COMPACT_TEXT_BYTES).length
   return finalizeCompact({
     run_id: run.run_id,
+    task_admission: taskContractSummary(run),
+    task_allowance_status: allowanceStatus(run),
     status: run.status,
     phase: run.phase,
     mode: run.mode,
@@ -531,12 +627,36 @@ export function createAlgTools(
   runtime: AlgToolRuntime = {},
 ) {
   const { client } = plugin
+  const checkTaskCapabilities = async (input: TaskContractInput, graph: GraphDef, directory: string, signal: AbortSignal) => {
+    if (!input.deliverables.some(d => d.destination === "project_file" ||
+      (input.evidence_plan && d.destination === "run_artifact")) && input.verification.execution !== "host_command" &&
+      !input.change_scope && !(input.evidence_plan && input.preserve_paths.length)) return
+    const controller = new AbortController()
+    const abort = () => controller.abort()
+    signal.addEventListener("abort", abort, { once: true })
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+      if (signal.aborted) throw new Error("task_host_capability_unknown: capability lookup cancelled")
+      const response = await Promise.race([
+        client.app.agents({ query: { directory }, signal: controller.signal, responseStyle: "fields", throwOnError: false }),
+        new Promise<never>((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error("task_host_capability_unknown: host agent lookup timed out")) }, 3_000) }),
+      ])
+      assertTaskHostCapabilities(input, graph, response.error ? undefined : response.data)
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith("task_host_capability_")) throw error
+      throw new Error("task_host_capability_unknown: effective host agent permissions unavailable")
+    } finally { if (timer) clearTimeout(timer); signal.removeEventListener("abort", abort) }
+  }
+  const checkAdmittedTask = async (run: RunState, signal: AbortSignal) => {
+    assertTaskState(run)
+    if (run.task_contract) await checkTaskCapabilities(run.task_contract.input, run.graph, run.execution_directory ?? run.project_directory, signal)
+  }
   const isAdditionalFilesystemRoot = (project: string): boolean =>
     runtime.additionalFilesystemRoot?.(project) === true
   // Workers never orchestrate: hiding ALG's own tools saves their definitions on every worker request and
   // makes nested runs impossible. Memory tools stay available when session memory hands procedures to workers.
   const memoryTools = new Set<string>(["alg_memory_search", "alg_memory_read", "alg_context_status", "alg_memory_propose"])
-  const workerDisabledTools = ALG_TOOL_IDS.filter((id) => !(runtime.sessionMemory?.enabled && memoryTools.has(id)))
+  const workerDisabledTools = ALG_TOOL_IDS.filter((id) => !(runtime.sessionMemory?.enabled && memoryTools.has(id)) && !(runtime.operations?.options.enabled && id === "alg_investigation"))
   const runCards = (run: RunState, project: string, context: ToolContext): RunCardProjector | null => {
     const cards = createRunCardProjector(runtime.subagentCards, client, {
       project, directory: context.directory, runId: run.run_id, parentSessionId: context.sessionID, messageId: context.messageID,
@@ -634,11 +754,14 @@ export function createAlgTools(
           const { project } = roots(plugin, context)
           let run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned planned run found. Call alg_plan first and pass criteria directly to alg_plan when possible.")
+          if (run.task_contract) throw new Error("task_contract_locked: accepted original criteria cannot be replaced or unlocked")
+          if (run.investigation || graphPolicy(run.graph)?.investigation) throw new Error("managed investigation criteria are fixed at planning; plan a new investigation")
           if (run.status !== "planning") throw new Error("Criteria can only be changed while the run is planning")
           if (run.criteria_locked && run.criteria.length && args.lock !== false) {
             throw new Error(`Criteria are locked on run ${run.run_id}; pass lock=false to replace and leave unlocked.`)
           }
           run = await mutateOwnedRunAsync(project, run.run_id, context.sessionID, (fresh) => {
+            if (fresh.task_contract) throw new Error("task_contract_locked: accepted original criteria cannot be replaced or unlocked")
             if (fresh.status !== "planning") throw new Error("Criteria can only be changed while the run is planning")
             if (fresh.criteria_locked && fresh.criteria.length && args.lock !== false) {
               throw new Error(`Criteria are locked on run ${fresh.run_id}; pass lock=false to replace and leave unlocked.`)
@@ -659,35 +782,136 @@ export function createAlgTools(
     }),
 
     alg_plan: tool({
-      description: "Create and persist an owned ALG DAG. Compact by default; detail=full includes full criteria and node definitions.",
+      description: `Admit an owned ALG DAG; new plans require task_contract and original criteria. Declare deliverable producers, verification, protected paths and one evidence_plan row per original criterion before execution. ${TASK_DELIVERY_SCOPE_GUIDANCE} Missing template selects by declared work/discovery: coding-compact for known project changes, research-diamond for read-only work. Planning does not execute. Follow requested live work with alg_run; stop at explicit preparation/plan-only boundaries or reused done runs. Revisions retain the accepted task contract.`,
       args: {
-        goal: tool.schema.string().min(1).max(20_000),
-        template: tool.schema.enum(["coding-diamond", "research-diamond"]).optional(),
-        criteria: tool.schema.array(tool.schema.string().min(1).max(2_000)).max(100).optional(),
+        goal: tool.schema.string().min(1).max(20_000).optional(),
+        task_contract: TaskContractInputSchema.optional().describe("Required for new plans, omitted for graph revision. Version 1, kind read_only/project_change/mixed, discovery required/not_required, phase preparation/complete (ALG delivery scope, not domain fields), deliverables [{destination:response/run_artifact/project_file,producer_node,path only for project_file}], verification {checker_node,execution:none/host_command/shell_gate,execution_node only if execution required}, preserve_paths [], evidence_plan [{criterion:1,observations:[{kind:deliverable,index:0}]}] with one ordered row per criterion. Other observation kinds: execution, preservation with paths, change_scope, review with rationale. Optional change_scope {roots:[src],allowed_paths:[src/file.ts],max_changed_files:1}. Names refer to graph nodes; review declarations are not proof."),
+        template: tool.schema.enum(["coding-diamond", "coding-compact", "research-diamond", "data-investigation"]).optional().describe("Omit to route by declared task kind/discovery. data-investigation is the configured managed investigation workflow, not a default for all data tasks. Its configuration and guards remain required; template choice grants no host permissions."),
+        operation: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/).optional().describe("Advisory workspace requirement lookup; covered data-investigation uses data.investigate.read."),
+        criteria: tool.schema.array(tool.schema.string().min(1).max(2_000)).max(100).optional().describe("Original user requirements. Research proposals and suggested verification methods remain advisory unless explicitly adopted by the user."),
+        preserve_paths: preservePathsSchema.optional().describe("Optional 1–8 distinct existing project-relative files the user explicitly requires unchanged (512 chars each, forward slashes). New contracts capture host hashes before any child; planning does not capture evidence or add criteria."),
         shell_gate: tool.schema.string().min(1).max(8_192).optional().describe("Executable validation command, not prose or tool permissions. Windows uses cmd.exe, not PowerShell."),
         shell_cwd: tool.schema.string().trim().min(1).max(1_024).optional().describe("Existing gate directory inside the project, relative to the pinned execution directory. Requires shell_gate."),
         shell_timeout_ms: tool.schema.number().int().min(100).max(600_000).optional(),
         mode: tool.schema.enum(["live", "dry"]).optional(),
         graph_json: tool.schema.string().min(2).max(200_000).optional(),
+        revise_run_id: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/).optional(),
+        expected_graph_sha256: tool.schema.string().regex(/^[a-f0-9]{64}$/).optional(),
+        revision_reason: tool.schema.string().trim().min(1).max(500).optional(),
         allow_filesystem_root: tool.schema.boolean().optional().describe("Explicit one-call approval for planning at a filesystem root; does not authorize run/resume."),
         detail: tool.schema.enum(["compact", "full"]).optional(),
       },
       async execute(args, context) {
         try {
           const { project, directory } = roots(plugin, context)
-          // Authorize root scope before model-settings recovery/quarantine or
-          // run creation can touch the filesystem.
           const additionalFilesystemRoot = isAdditionalFilesystemRoot(project)
           assertFilesystemRootAuthorized(project, args.allow_filesystem_root, "plan", additionalFilesystemRoot)
+          if (args.revise_run_id !== undefined) {
+            if (!args.graph_json || !args.expected_graph_sha256 || !args.revision_reason) {
+              throw new Error("graph revision requires graph_json, expected_graph_sha256, and revision_reason")
+            }
+            if (args.goal !== undefined || args.criteria !== undefined || args.template !== undefined || args.mode !== undefined ||
+              args.operation !== undefined || args.shell_gate !== undefined || args.shell_cwd !== undefined || args.shell_timeout_ms !== undefined ||
+              args.preserve_paths !== undefined || args.task_contract !== undefined) {
+              throw new Error("graph revision changes only graph_json; run goal, criteria, mode, and execution scope are immutable")
+            }
+            let receipt: GraphRevisionReceipt | undefined
+            const revised = await mutateOwnedRunAsync(project, args.revise_run_id, context.sessionID, (fresh) => {
+              const revisionState = fresh as RunState & { graph_revisions?: GraphRevisionReceipt[] }
+              const history = revisionState.graph_revisions ?? []
+              if (history.length >= 16) throw new Error("graph revision history is full (maximum 16)")
+              const result = reviseGraph({
+                run: fresh,
+                graph: JSON.parse(args.graph_json!),
+                expectedGraphSha256: args.expected_graph_sha256!,
+                requestedBy: context.sessionID,
+                reason: args.revision_reason!,
+              })
+              if (fresh.task_contract) assertTaskGraph(fresh.task_contract.input, result.graph)
+              preflightShellGates(result.graph, {
+                worktree: project,
+                directory: fresh.execution_directory ?? fresh.project_directory,
+                phase: "plan",
+                checkExecutables: fresh.mode !== "dry",
+              })
+              // Publish immutable content-addressed versions before the state CAS.
+              // An interrupted mutation can leave an unreferenced snapshot, never a false revision.
+              persistGraphSnapshot(project, fresh.run_id, fresh.graph)
+              persistGraphSnapshot(project, fresh.run_id, result.graph)
+              fresh.graph = result.graph
+              fresh.nodes = result.nodes
+              revisionState.graph_revisions = [...history, result.receipt]
+              receipt = result.receipt
+            })
+            return ok("alg plan", {
+              ...(args.detail === "full" ? {
+                run_id: revised.run_id,
+                template: revised.graph.name,
+                status: revised.status,
+                graph_sha256: graphSha256(revised.graph),
+                graph_revision: receipt,
+                graph: revised.graph,
+                nodes: revised.graph.nodes,
+                run: hydrateRunFully(revised),
+                path: runDir(project, revised.run_id),
+                next: planNextAction(revised),
+              } : (() => {
+                const compacted = compactPlanNodes(revised)
+                return finalizeCompact({
+                  run_id: revised.run_id,
+                  template: revised.graph.name,
+                  status: revised.status,
+                  graph_sha256: graphSha256(revised.graph),
+                  graph_revision: receipt,
+                  nodes: compacted.nodes,
+                  truncation: compacted.truncation,
+                  path: runDir(project, revised.run_id),
+                  next: planNextAction(revised),
+                })
+              })()),
+              }, { run_id: revised.run_id })
+          }
+          if (!args.goal) throw new Error("goal is required when creating a new run")
+          if (!args.task_contract) throw new Error("task_contract_required: declare the work kind, deliverables, phase, verification and protected paths before planning")
+          const taskInput = parseTaskContractInput(args.task_contract)
+          // Authorize root scope before model-settings recovery/quarantine or
+          // run creation can touch the filesystem.
+          if (args.template === "data-investigation" && (args.graph_json || args.shell_gate)) {
+            throw new Error("Phase 1 investigations require the unmodified fixed data-investigation template")
+          }
           const source: unknown = args.graph_json
             ? JSON.parse(args.graph_json)
-            : getTemplate(args.template ?? "coding-diamond")
+            : getTemplate(args.template ?? taskTemplate(taskInput))
           let graph = validateGraph(source)
+          if (args.graph_json && graph.name === "data-investigation") {
+            throw new Error("Phase 1 investigations require the built-in data-investigation template")
+          }
+          if (args.template === "data-investigation" && hashObject(graph) !== hashObject(validateGraph(getTemplate("data-investigation")))) {
+            throw new Error("Phase 1 investigation graph differs from the fixed template")
+          }
           if (args.shell_timeout_ms !== undefined && !args.shell_gate) {
             throw new Error("shell_timeout_ms requires shell_gate")
           }
           if (args.shell_cwd !== undefined && !args.shell_gate) throw new Error("shell_cwd requires shell_gate")
           if (args.shell_gate) graph = withShellGate(graph, args.shell_gate, args.shell_timeout_ms, args.shell_cwd)
+          if (args.preserve_paths !== undefined && JSON.stringify(args.preserve_paths) !== JSON.stringify(taskInput.preserve_paths))
+            throw new Error("task_preservation_mismatch: preserve_paths must match the task contract")
+          if (taskInput.preserve_paths.length) graph = withPreservePaths(graph, project, taskInput.preserve_paths)
+          let taskContract = bindTaskContract(taskInput, args.goal, args.criteria ?? [], graph,
+            { session_id: context.sessionID, message_id: context.messageID })
+          assertEvidencePlan(taskInput, args.criteria!.length, true)
+          await checkTaskCapabilities(taskInput, graph, directory, context.abort)
+          const requestSnapshot = await captureTaskRequest(client, {
+            sessionID: context.sessionID, messageID: context.messageID, directory, abort: context.abort,
+          })
+          if (context.abort.aborted) throw new Error("Task admission cancelled")
+          taskContract = bindTaskContract(taskInput, args.goal, args.criteria ?? [], graph,
+            { session_id: context.sessionID, message_id: context.messageID }, requestSnapshot)
+          const preservationRequest = !taskInput.preserve_paths.length ? undefined : {
+            node_id: graph.nodes.find((node) => node.agent === "implementer")!.id,
+            paths: taskInput.preserve_paths,
+            scope: "Host before-first-child snapshot request. Planning validates paths only; preservation requires recorded execution evidence.",
+          }
           const gatePreflight = preflightShellGates(graph, { worktree: project, directory,
             phase: "plan", checkExecutables: args.mode !== "dry" })
           const modelResolution = snapshotModelResolutions(
@@ -695,8 +919,18 @@ export function createAlgTools(
             configuredResolutions(),
             configuredModels(),
           )
-          const run = createRun({
-            goal: args.goal,
+          const investigation = args.template === "data-investigation" && !args.graph_json
+          const operation = graphPolicy(graph)?.operation ?? args.operation ?? detectWorkspaceOperation("shell", { command: args.shell_gate })
+          if (operation) await runtime.operations?.plan(context.sessionID, operation)
+          if (investigation && (!runtime.operations?.options.enabled || runtime.sessionMemory?.options.mode !== "assist")) throw new Error("data investigations require enabled configuration and session memory assist mode")
+          const taskAllowance = args.mode === "dry" ? undefined : await new TaskAllowanceRuntime(
+            runtime.sessionMemory?.store ?? new MemoryStore(project), runtime.taskAllowancePolicy,
+          ).admit(context.sessionID, taskContract.contract_sha256, context.abort)
+          const create = (runId?: string) => createRun({
+            taskContract,
+            taskAllowance,
+            ...(runId ? { runId } : {}),
+            goal: args.goal!,
             criteria: args.criteria ?? [],
             graph,
             projectDirectory: project,
@@ -708,12 +942,30 @@ export function createAlgTools(
             allowFilesystemRoot: args.allow_filesystem_root,
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
           })
+          const planned = investigation
+            ? await runtime.operations!.planInvestigation(context.sessionID, { goal: args.goal!, criteria: args.criteria ?? [],
+                graph, directory, mode: args.mode ?? "live", task_contract: taskContract }, create)
+            : { run: create(), reused: false }
+          const { run } = planned
+          if (!run.task_contract || canonicalJson(run.task_contract.input) !== canonicalJson(taskInput))
+            throw new Error("task_reuse_contract_mismatch: existing investigation retains a different or legacy contract; inspect its status")
+          const initialOrCurrentGraphSha256 = persistGraphSnapshot(project, run.run_id, run.graph)
+          const investigationAttached = "attached" in planned ? planned.attached : undefined
+          const planNext = investigation && investigationAttached === false && !["done", "failed"].includes(run.status)
+            ? `This investigation is detached. Call alg_investigation with request={action:"attach",run_id:"${run.run_id}"} before alg_run or alg_resume; do not create another plan.`
+            : planNextAction(run)
           const detail = args.detail ?? "compact"
           const fullRun = detail === "full" ? hydrateRunFully(run) : undefined
           const compactedNodes = compactPlanNodes(run)
           const compact = finalizeCompact({
             run_id: run.run_id,
+            task_admission: taskContractSummary(run),
+            task_allowance_status: allowanceStatus(run),
+            graph_sha256: initialOrCurrentGraphSha256,
             template: graph.name,
+            plan_reused: planned.reused,
+            investigation_attached: investigationAttached,
+            status: run.status,
             mode: run.mode,
             criteria_locked: run.criteria_locked,
             criteria_count: run.criteria.length,
@@ -721,18 +973,26 @@ export function createAlgTools(
             execution_directory: run.execution_directory,
             shell_gate_base: run.execution_directory,
             shell_gate_preflight: compactGatePreflight(gatePreflight),
+            preservation_request: preservationRequest,
+            workspace: runtime.operations?.workspace.status(context.sessionID, operation),
             root_authorization: rootAuthorization(run),
             model_resolution: compactModels(run),
             nodes: compactedNodes.nodes,
             truncation: compactedNodes.truncation,
             path: runDir(project, run.run_id),
-            next: nextAction(run),
+            next: planNext,
           })
           return ok(
             "alg plan",
             detail === "full" ? {
               run_id: run.run_id,
+              task_admission: taskContractSummary(run),
+              task_allowance_status: allowanceStatus(run),
+              graph_sha256: initialOrCurrentGraphSha256,
               template: graph.name,
+              plan_reused: planned.reused,
+              investigation_attached: investigationAttached,
+              status: run.status,
               mode: run.mode,
               criteria_locked: run.criteria_locked,
               criteria_count: run.criteria.length,
@@ -740,6 +1000,7 @@ export function createAlgTools(
               execution_directory: run.execution_directory,
               shell_gate_base: run.execution_directory,
               shell_gate_preflight: { gates: gatePreflight },
+              preservation_request: preservationRequest,
               root_authorization: rootAuthorization(run, "full"),
               model_resolution: compactModels(run),
               goal: run.goal,
@@ -749,7 +1010,7 @@ export function createAlgTools(
               nodes: graph.nodes,
               run: fullRun,
               path: runDir(project, run.run_id),
-              next: nextAction(run),
+              next: planNext,
             } : compact,
             { run_id: run.run_id },
           )
@@ -783,15 +1044,20 @@ export function createAlgTools(
           assertFilesystemRootAuthorized(project, args.allow_filesystem_root, "run", additionalFilesystemRoot)
           const run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned run found. Call alg_plan first.")
+          assertManagedGraph(run, args.shell_gate)
           if (args.shell_cwd !== undefined && !args.shell_gate) throw new Error("shell_cwd requires shell_gate")
           if (args.shell_gate) {
             run.graph = withShellGate(run.graph, args.shell_gate, args.shell_timeout_ms, args.shell_cwd)
           } else if (args.shell_timeout_ms !== undefined) {
             throw new Error("shell_timeout_ms requires shell_gate")
           }
+          await checkAdmittedTask(run, context.abort)
+          await runtime.operations?.beforeRun(run, context.abort)
           cards = runCards(run, project, context)
           const events: string[] = []
           const updated = await executeWithMemory(runtime.sessionMemory, run, {
+            actionEvidence: runtime.actionEvidence,
+            taskAllowance: new TaskAllowanceRuntime(runtime.sessionMemory?.store ?? new MemoryStore(project), runtime.taskAllowancePolicy),
             client,
             parentSessionId: context.sessionID,
             directory,
@@ -807,6 +1073,8 @@ export function createAlgTools(
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
             operation: "run",
             workerDisabledTools,
+            beforeBatch: async (fresh, nodes) => { await checkAdmittedTask(fresh, context.abort); await runtime.operations?.beforeBatch(fresh, nodes, context.abort) },
+            beforeChildPrompt: (child, _role, node) => runtime.operations?.child(run, child, node) ?? Promise.resolve(),
             onEvent: (message) => events.push(message),
             onProgress: (savedRun) => {
               cards?.observe(savedRun)
@@ -915,8 +1183,12 @@ export function createAlgTools(
           const compact = finalizeCompact({
             run_id: run.run_id,
             owner_session_id: run.owner_session_id,
+            task_admission: taskContractSummary(run),
+            task_allowance_status: allowanceStatus(run),
             status: run.status,
             phase: run.phase,
+            graph_sha256: graphSha256(run.graph),
+            graph_revision_count: (run as RunState & { graph_revisions?: GraphRevisionReceipt[] }).graph_revisions?.length ?? 0,
             criteria_locked: run.criteria_locked,
             mode: run.mode,
             revision: run.revision,
@@ -982,6 +1254,7 @@ export function createAlgTools(
           assertFilesystemRootAuthorized(project, args.allow_filesystem_root, "resume", additionalFilesystemRoot)
           const run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned run found to resume.")
+          if (!args.close) assertManagedGraph(run, args.shell_gate)
           if (args.close_reason !== undefined && !args.close) throw new Error("close_reason requires close=true")
           if (args.close) {
             const closed = await mutateOwnedRunAsync(project, run.run_id, context.sessionID, (fresh) => {
@@ -1000,10 +1273,14 @@ export function createAlgTools(
           if (args.shell_cwd !== undefined && !args.shell_gate) throw new Error("shell_cwd requires shell_gate")
           if (args.shell_gate) run.graph = withShellGate(run.graph, args.shell_gate, args.shell_timeout_ms, args.shell_cwd)
           else if (args.shell_timeout_ms !== undefined) throw new Error("shell_timeout_ms requires shell_gate")
+          await checkAdmittedTask(run, context.abort)
+          await runtime.operations?.beforeRun(run, context.abort)
           prepareRunForResume(run)
           cards = runCards(run, project, context)
           const events: string[] = []
           const updated = await executeWithMemory(runtime.sessionMemory, run, {
+            actionEvidence: runtime.actionEvidence,
+            taskAllowance: new TaskAllowanceRuntime(runtime.sessionMemory?.store ?? new MemoryStore(project), runtime.taskAllowancePolicy),
             client,
             parentSessionId: context.sessionID,
             directory,
@@ -1019,6 +1296,8 @@ export function createAlgTools(
             treatProjectAsFilesystemRoot: additionalFilesystemRoot,
             operation: "resume",
             workerDisabledTools,
+            beforeBatch: async (fresh, nodes) => { await checkAdmittedTask(fresh, context.abort); await runtime.operations?.beforeBatch(fresh, nodes, context.abort) },
+            beforeChildPrompt: (child, _role, node) => runtime.operations?.child(run, child, node) ?? Promise.resolve(),
             onEvent: (message) => events.push(message),
             onProgress: (savedRun) => {
               cards?.observe(savedRun)
@@ -1047,20 +1326,58 @@ export function createAlgTools(
     }),
 
     alg_artifact: tool({
-      description: "Read compact artifact metadata/preview, or detail=full for complete typed content.",
+      description: "Read an owned node output or historical graph. Assigned checkers may use evidence=index/read for bounded host evidence pages; index pointers are not proof.",
       args: {
-        node_id: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
+        evidence: tool.schema.enum(["index", "read"]).optional(),
+        record_id: tool.schema.string().regex(/^[a-f0-9]{64}$/).optional(),
+        offset: tool.schema.number().int().nonnegative().optional(),
+        node_id: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/).optional(),
+        graph_sha256: tool.schema.string().regex(/^[a-f0-9]{64}$/).optional(),
         run_id: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/).optional(),
         detail: tool.schema.enum(["compact", "full"]).optional(),
       },
       async execute(args, context) {
         try {
           const { project } = roots(plugin, context)
+          if (args.evidence !== undefined) {
+            if (!runtime.actionEvidence || args.node_id !== undefined || args.graph_sha256 !== undefined || args.detail !== undefined)
+              throw new Error("invalid checker evidence request")
+            try { return ok("alg evidence", runtime.actionEvidence.retrieval.execute(context.sessionID, { ...args, evidence: args.evidence })) }
+            catch { throw new Error("assigned evidence unavailable or retrieval allowance exhausted; preserve uncertainty and do not replay work") }
+          }
+          if (args.record_id !== undefined || args.offset !== undefined) throw new Error("evidence selector required")
           const run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned run found.")
-          const node = run.nodes[args.node_id]
-          if (!node) throw new Error(`Unknown node ${args.node_id}`)
-          const output = readNodeArtifactOutput(run, args.node_id)
+          if ((args.graph_sha256 === undefined) === (args.node_id === undefined)) {
+            throw new Error("provide exactly one of node_id or graph_sha256")
+          }
+          if (args.graph_sha256 !== undefined) {
+            const accepted = new Set([graphSha256(run.graph), ...(run.graph_revisions ?? []).flatMap(receipt => [receipt.parent_sha256, receipt.graph_sha256])])
+            if (!accepted.has(args.graph_sha256)) throw new Error("graph snapshot is not an accepted revision of this run")
+            const path = runContainedPath(project, run.run_id, "artifacts", `graph-${args.graph_sha256}.json`)
+            const serialized = readGraphSnapshot(path)
+            const graph = validateGraph(JSON.parse(serialized))
+            if (graphSha256(graph) !== args.graph_sha256 || canonicalJson(graph) !== serialized) {
+              throw new Error("graph snapshot content does not match its requested digest")
+            }
+            const byteSize = utf8Bytes(serialized)
+            const preview = byteSize <= PREVIEW_BYTES
+              ? serialized
+              : `${truncateUtf8(serialized, PREVIEW_BYTES - utf8Bytes("…[truncated]"))}…[truncated]`
+            const metadata = {
+              run_id: run.run_id,
+              graph_sha256: args.graph_sha256,
+              artifact_path: `.opencode/runs/${run.run_id}/artifacts/graph-${args.graph_sha256}.json`,
+              byte_size: byteSize,
+            }
+            return ok("alg artifact", args.detail === "full"
+              ? { ...metadata, graph }
+              : finalizeCompact({ ...metadata, preview, preview_truncated: byteSize > PREVIEW_BYTES }))
+          }
+          const nodeId = args.node_id!
+          const node = run.nodes[nodeId]
+          if (!node) throw new Error(`Unknown node ${nodeId}`)
+          const output = readNodeArtifactOutput(run, nodeId)
           const serialized = JSON.stringify(output, null, 2)
           const byteSize = serializedBytes(output)
           const preview = utf8Bytes(serialized) <= PREVIEW_BYTES
@@ -1068,7 +1385,7 @@ export function createAlgTools(
             : `${truncateUtf8(serialized, PREVIEW_BYTES - utf8Bytes("…[truncated]"))}…[truncated]`
           const metadata = {
             run_id: run.run_id,
-            node_id: args.node_id,
+            node_id: nodeId,
             role: node.agent,
             status: node.status,
             attempts: node.current_attempt,
@@ -1115,6 +1432,11 @@ export function createAlgTools(
             directory,
             args.new_owner_session_id,
           )
+          // Pin the recipient to the same root before ownership changes. If the
+          // transfer fails, the conservative binding remains; it grants no run ownership.
+          if (owned.task_allowance) await new TaskAllowanceRuntime(
+            runtime.sessionMemory?.store ?? new MemoryStore(project), runtime.taskAllowancePolicy,
+          ).attach(args.new_owner_session_id, owned.task_allowance, context.abort)
           const transferred = await transferRunOwnershipAsync(
             project,
             args.run_id,

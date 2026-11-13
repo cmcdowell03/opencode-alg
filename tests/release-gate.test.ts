@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, test } from "bun:test"
 import { createHash } from "node:crypto"
-import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs"
+import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import {
   ReleaseEvidenceSchema,
   RELEASE_COMMAND_IDS,
+  RELEASE_CONTROL_PATHS,
   RELEASE_COMMAND_DEADLINES_MS,
   runReleaseCommand,
   writeReleaseFailure,
@@ -82,7 +83,7 @@ function command(id: typeof RELEASE_COMMAND_IDS[number] = "typecheck") {
 function evidence() {
   return {
     schema_version: 6 as const, kind: "opencode-alg-release-gate" as const,
-    generated_at: "2026-08-20T00:00:00.000Z", package_version: "0.4.1" as const,
+    generated_at: "2026-08-20T00:00:00.000Z", package_version: "0.5.12" as const,
     source: { sha256: digest, files: 1, bytes: 1 }, release_inputs: { sha256: digest, files: 1, bytes: 1 }, commands: RELEASE_COMMAND_IDS.map((id) => command(id)),
     totals: { bun_pass: 1, bun_skip: 0, bun_fail: 0, bun_total: 1, bun_assertions: 1, bun_files: 1, manager_pass: 1, manager_skip: 0, manager_fail: 0, manager_total: 1, manager_assertions: 1, manager_files: 1, python_run: 1, python_skipped: 0, python_ok: true as const, duckdb_python_run: 1, duckdb_python_skipped: 0, duckdb_python_ok: true as const },
     excel: { manifest_sha256: digest, lock_sha256: digest, version: "0.1.8" as const, tool_count: 25 as const, eof_stdout_bytes: 0 as const },
@@ -139,7 +140,7 @@ function semanticEvidence(livePath: string) {
   const liveBytes = Buffer.from(`${JSON.stringify(live)}\n`)
   const livePublication = persistImmutableLiveEvidence(livePath, liveBytes)
   const paths = expectedPackedPaths(ROOT)
-  const packedFiles = paths.map((path) => ({ path, size: statSync(join(ROOT, ...path.split("/"))).size, mode: 420 }))
+  const packedFiles = paths.map((path) => ({ path, size: statSync(join(ROOT, ...path.split("/"))).size, mode: (statSync(join(ROOT, ...path.split("/"))).mode & 0o111) ? 493 : 420 }))
   const inventory = validatePackedInventory(packedFiles, paths)
   const excel = verifyExcelManifest(ROOT)
   const duckdb = verifyDuckDbManifest(ROOT)
@@ -153,8 +154,8 @@ function semanticEvidence(livePath: string) {
   const npm = resolveNpmInvocation()
   const findExecutable = (names: string[]) => (process.env.PATH ?? "").split(process.platform === "win32" ? ";" : ":")
     .flatMap((directory) => names.map((name) => join(directory.replace(/^"|"$/g, ""), name))).find(existsSync)!
-  const python = findExecutable(process.platform === "win32" ? ["python.exe"] : ["python3", "python"])
-  const uv = findExecutable(process.platform === "win32" ? ["uv.exe"] : ["uv"])
+  const python = realpathSync.native(findExecutable(process.platform === "win32" ? ["python.exe"] : ["python3", "python"]))
+  const uv = realpathSync.native(findExecutable(process.platform === "win32" ? ["uv.exe"] : ["uv"]))
   const interpreter = join(resolve("C:/tmp/opencode-alg-excel-release-gate-fixture"), "env", process.platform === "win32" ? "Scripts/python.exe" : "bin/python")
   const duckdbInterpreter = join(resolve("C:/tmp/opencode-alg-duckdb-release-gate-fixture"), "env", process.platform === "win32" ? "Scripts/python.exe" : "bin/python")
   const bunOutput = " 12 pass\n 2 skip\n 0 fail\n 34 expect() calls\nRan 14 tests across 3 files. [1.00s]\n"
@@ -233,20 +234,20 @@ afterEach(() => {
 })
 
 describe("bounded release-gate evidence", () => {
-  test("v0.4 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate", () => {
+  test("v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate", () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"))
     const lock = JSON.parse(readFileSync(join(ROOT, "package-lock.json"), "utf8"))
-    expect(pkg.version).toBe("0.4.1")
-    expect(lock.version).toBe("0.4.1")
-    expect(lock.packages[""].version).toBe("0.4.1")
+    expect(pkg.version).toBe("0.5.12")
+    expect(lock.version).toBe("0.5.12")
+    expect(lock.packages[""].version).toBe("0.5.12")
     expect(pkg.opencodeAlg.durableState).toEqual({
       format: "alg-run-state",
       currentSchema: 2,
       compatibleSchemas: [1, 2],
-      compatiblePackageVersions: ["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1"],
+      compatiblePackageVersions: ["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1", "0.5.0", "0.5.1", "0.5.2", "0.5.3", "0.5.4", "0.5.5", "0.5.6", "0.5.7", "0.5.8", "0.5.9", "0.5.10", "0.5.11", "0.5.12"],
     })
     expect(MANAGER_VERSION).toBe("0.2.0")
-    expect(ReleaseEvidenceSchema.parse(evidence())).toMatchObject({ schema_version: 6, package_version: "0.4.1" })
+    expect(ReleaseEvidenceSchema.parse(evidence())).toMatchObject({ schema_version: 6, package_version: "0.5.12" })
     expect(ReleaseEvidenceSchema.safeParse({ ...evidence(), schema_version: 5 }).success).toBe(false)
   })
 
@@ -311,6 +312,25 @@ describe("bounded release-gate evidence", () => {
     const tail = boundedReleaseTail(`token=secret ${"🙂".repeat(5000)}`, 128)
     expect(Buffer.byteLength(tail)).toBeLessThanOrEqual(128)
     expect(tail).not.toContain("token=secret")
+  })
+
+  test("default release identity still binds graders and plans excluded from deployment", () => {
+    const root = tempProject("alg-unpacked-release-controls-")
+    temporary.push(root)
+    const targets = ["scripts/hard-benchmark-fixtures.ts", "scripts/build-benchmark-fixtures.ts",
+      "scripts/build-benchmark.ts", "docs/v1-reliability-and-build-comparison-plan.md"]
+    for (const path of new Set([...RELEASE_CONTROL_PATHS, ...targets, "tests/fixture.test.ts", "package.json"])) {
+      mkdirSync(dirname(join(root, path)), { recursive: true })
+      writeFileSync(join(root, path), `reviewed:${path}:A\n`)
+    }
+    const baseline = computeReleaseInputIdentity(root, ["package.json"])
+    for (const path of targets) {
+      const before = readFileSync(join(root, path))
+      writeFileSync(join(root, path), before.toString().replace(/A\n$/, "B\n"))
+      expect(computeReleaseInputIdentity(root, ["package.json"]).sha256, path).not.toBe(baseline.sha256)
+      writeFileSync(join(root, path), before)
+    }
+    expect(computeReleaseInputIdentity(root, ["package.json"])).toEqual(baseline)
   })
 
   test("writes only strict bounded external evidence and artifact scanning detects caches", () => {
@@ -517,6 +537,36 @@ describe("bounded release-gate evidence", () => {
     expect(resolveNpmInvocation({ platform: "linux", pathEntries: [posix] })).toEqual({ executable: npm, argsPrefix: [] })
   })
 
+  test("accepts only the canonical Node POSIX bin/npm to lib/npm CLI layout", () => {
+    const root = resolve("C:/fixture/node-v22.23.4")
+    const bin = join(root, "bin")
+    const shim = join(bin, "npm")
+    const cli = join(root, "lib", "node_modules", "npm", "bin", "npm-cli.js")
+    const outside = resolve("C:/outside/npm-cli.js")
+    const filesystem = (shimTarget: string, cliTarget = cli) => ({
+      exists: () => true,
+      isFile: () => true,
+      realpath: (path: string) => path === shim ? shimTarget : path === cli ? cliTarget : path,
+    })
+    expect(resolveNpmInvocation({ platform: "linux", pathEntries: [bin], filesystem: filesystem(cli) })).toEqual({ executable: cli, argsPrefix: [] })
+    expect(() => resolveNpmInvocation({ platform: "linux", pathEntries: [bin], filesystem: filesystem(outside) })).toThrow("shim escapes")
+    expect(() => resolveNpmInvocation({ platform: "linux", pathEntries: [bin], filesystem: filesystem(join(root, "lib", "node_modules", "npm", "bin", "other.js")) })).toThrow("shim escapes")
+    expect(() => resolveNpmInvocation({ platform: "linux", pathEntries: [bin], filesystem: filesystem(outside, outside) })).toThrow("shim escapes")
+  })
+
+  ;(process.platform === "win32" ? test.skip : test)("resolves a real POSIX npm symlink inside the Node installation", () => {
+    const root = tempProject("alg-node-posix-npm-")
+    temporary.push(root)
+    const bin = join(root, "bin")
+    const cli = join(root, "lib", "node_modules", "npm", "bin", "npm-cli.js")
+    mkdirSync(bin)
+    mkdirSync(dirname(cli), { recursive: true })
+    writeFileSync(cli, "#!/usr/bin/env node\n")
+    chmodSync(cli, 0o755)
+    symlinkSync(join("..", "lib", "node_modules", "npm", "bin", "npm-cli.js"), join(bin, "npm"))
+    expect(resolveNpmInvocation({ platform: "linux", pathEntries: [bin] })).toEqual({ executable: cli, argsPrefix: [] })
+  })
+
   test("rejects an actual npm CLI directory junction/symlink escape", () => {
     const root = tempProject("alg-npm-junction-escape-")
     temporary.push(root)
@@ -549,6 +599,8 @@ describe("bounded release-gate evidence", () => {
   test("complete package allowlist rejects extras, missing paths, duplicates, unsafe paths, and bad modes", () => {
     const expected = expectedPackedPaths()
     const files = expected.map((path) => ({ path, mode: 420 }))
+    expect(() => validatePackedInventory(files.map((file) => ["scripts/alg.sh", "scripts/install.sh"].includes(file.path) ? { ...file, mode: 493 } : file), expected)).not.toThrow()
+    expect(() => validatePackedInventory(files.map((file) => file.path === "scripts/alg.sh" ? { ...file, mode: 511 } : file), expected)).toThrow("0644")
     expect(validatePackedInventory(files, expected).paths).toEqual(expected)
     expect(() => validatePackedInventory([...files, { path: "scripts/unexpected.ts", mode: 420 }], expected)).toThrow("complete reviewed allowlist")
     expect(() => validatePackedInventory(files.slice(1), expected)).toThrow("complete reviewed allowlist")

@@ -1,0 +1,524 @@
+[
+  {
+    "id": "ses_e31fcadf4ffeX5ptCQ7MrO67Qs",
+    "slug": "tidy-orchid",
+    "projectID": "ef7774d07be9ca796ad3e2ac12d4e556fb3221cc",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-alg_default\\project",
+    "path": "",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 10335,
+      "output": 988,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "title": "Frozen benchmark wafer-report-staged alg_default",
+    "agent": "orchestrator",
+    "model": {
+      "id": "gemma4",
+      "providerID": "alg-local",
+      "variant": "default"
+    },
+    "version": "1.18.35",
+    "time": {
+      "created": 1794457686540,
+      "updated": 1794457715372
+    }
+  },
+  {
+    "id": "ses_e31fc12beffewkA6wWoWMFtxk9",
+    "slug": "curious-tiger",
+    "projectID": "ef7774d07be9ca796ad3e2ac12d4e556fb3221cc",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-alg_default\\project",
+    "path": "",
+    "parentID": "ses_e31fcadf4ffeX5ptCQ7MrO67Qs",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 4012,
+      "output": 1606,
+      "reasoning": 0,
+      "cache": {
+        "read": 3960,
+        "write": 0
+      }
+    },
+    "title": "alg:complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/explore/a1 (@explorer subagent)",
+    "agent": "explorer",
+    "model": {
+      "id": "gemma4",
+      "providerID": "alg-local",
+      "variant": "default"
+    },
+    "version": "1.18.35",
+    "time": {
+      "created": 1794457726273,
+      "updated": 1794457774945
+    },
+    "permission": [
+      {
+        "permission": "alg_templates",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_models",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_criteria",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_plan",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_run",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_resume",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_artifact",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_transfer",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_audit",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_historical",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_review",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_promote",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_rollback",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_investigation",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ]
+  },
+  {
+    "id": "ses_e31fb53f5ffeW6vq8V1kIcU4ZE",
+    "slug": "mighty-comet",
+    "projectID": "ef7774d07be9ca796ad3e2ac12d4e556fb3221cc",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-alg_default\\project",
+    "path": "",
+    "parentID": "ses_e31fcadf4ffeX5ptCQ7MrO67Qs",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 5954,
+      "output": 2273,
+      "reasoning": 0,
+      "cache": {
+        "read": 5842,
+        "write": 0
+      }
+    },
+    "title": "alg:complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/research/a1 (@researcher subagent)",
+    "agent": "researcher",
+    "model": {
+      "id": "gemma4",
+      "providerID": "alg-local",
+      "variant": "default"
+    },
+    "version": "1.18.35",
+    "time": {
+      "created": 1794457775114,
+      "updated": 1794457861484
+    },
+    "permission": [
+      {
+        "permission": "alg_templates",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_models",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_criteria",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_plan",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_run",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_resume",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_artifact",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_transfer",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_audit",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_historical",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_review",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_promote",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_rollback",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_investigation",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ]
+  },
+  {
+    "id": "ses_e31fa025dffe0oXgmri2zKU2u1",
+    "slug": "gentle-island",
+    "projectID": "ef7774d07be9ca796ad3e2ac12d4e556fb3221cc",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-alg_default\\project",
+    "path": "",
+    "parentID": "ses_e31fcadf4ffeX5ptCQ7MrO67Qs",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 6384,
+      "output": 3211,
+      "reasoning": 0,
+      "cache": {
+        "read": 17985,
+        "write": 0
+      }
+    },
+    "title": "alg:complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/research/a2 (@researcher subagent)",
+    "agent": "researcher",
+    "model": {
+      "id": "gemma4",
+      "providerID": "alg-local",
+      "variant": "default"
+    },
+    "version": "1.18.35",
+    "time": {
+      "created": 1794457861538,
+      "updated": 1794457974554
+    },
+    "permission": [
+      {
+        "permission": "alg_templates",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_models",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_criteria",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_plan",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_run",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_resume",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_artifact",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_transfer",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_audit",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_historical",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_review",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_promote",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_rollback",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_investigation",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ]
+  },
+  {
+    "id": "ses_e31f848b9ffe0jM2AuTEaUY6p2",
+    "slug": "silent-orchid",
+    "projectID": "ef7774d07be9ca796ad3e2ac12d4e556fb3221cc",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-alg_default\\project",
+    "path": "",
+    "parentID": "ses_e31fcadf4ffeX5ptCQ7MrO67Qs",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "title": "alg:complete-a-two-phase-synthetic-w-20261112042835-4ac813be2c4d/implement/a1 (@implementer subagent)",
+    "agent": "implementer",
+    "model": {
+      "id": "gemma4",
+      "providerID": "alg-local",
+      "variant": "default"
+    },
+    "version": "1.18.35",
+    "time": {
+      "created": 1794457974598,
+      "updated": 1794457975893
+    },
+    "permission": [
+      {
+        "permission": "alg_templates",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_models",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_criteria",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_plan",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_run",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_resume",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_artifact",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_transfer",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_audit",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_historical",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_review",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_promote",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_rollback",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_investigation",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ]
+  }
+]

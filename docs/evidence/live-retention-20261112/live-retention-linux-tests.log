@@ -1,0 +1,27 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/live-retention-fixture.test.ts:
+(pass) bounded live-retention development fixture > provides a meaningful seven-phase project with visible sources and only a phase-3 skill update [2.13ms]
+(pass) bounded live-retention development fixture > accepts computed outputs, valid alternate property order, source refs, and passing Node tests [274.90ms]
+(pass) bounded live-retention development fixture > rejects changed criteria even when the prose still looks plausible [196.72ms]
+(pass) bounded live-retention development fixture > rejects a stale skill after the announced v2 update [196.85ms]
+(pass) bounded live-retention development fixture > accepts the updated v2 skill with unchanged criteria and population [200.82ms]
+(pass) bounded live-retention development fixture > distinguishes an absent phase artifact from a wrong phase record [187.46ms]
+(pass) bounded live-retention development fixture > fails evidence integrity if contestant edits a protected raw source [181.69ms]
+(pass) bounded live-retention development fixture > checks the local cached observation ids and rejects fabricated live-query claims [161.22ms]
+(pass) bounded live-retention development fixture > requires a correct previous-phase pointer, including across restart boundaries [157.60ms]
+(pass) bounded live-retention development fixture > reports partial earlier-phase retention loss without masking preserved facts [164.43ms]
+(pass) bounded live-retention development fixture > rejects causal or process-readiness claims and does not treat missing artifacts as zero [159.47ms]
+(pass) bounded live-retention development fixture > requires the executable utility and actual node:test suite to pass [173.67ms]
+
+tests/live-retention-runner.test.ts:
+(pass) live retention runner evidence guards > observed stop thresholds include equality and wall expiry [6.38ms]
+(pass) live retention runner evidence guards > vanished and duplicate checks count as loss; changed expectations leave the denominator [0.41ms]
+(pass) live retention runner evidence guards > rates require complete, linked, quiescent, persisted evidence [0.23ms]
+(pass) live retention runner evidence guards > headline retention excludes unqualified summary boundaries but preserves their diagnostic losses [0.21ms]
+(pass) live retention runner evidence guards > fixture skill discovery requires exact location and current body [0.70ms]
+
+ 17 pass
+ 0 fail
+ 53 expect() calls
+Ran 17 tests across 2 files. [2.80s]

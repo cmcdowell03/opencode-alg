@@ -1,0 +1,325 @@
+{
+  "caseId": "wafer-report-staged",
+  "arm": "alg_targeted",
+  "status": "preparation_milestone_not_reached",
+  "passed": false,
+  "independent_score": {
+    "passed": false,
+    "checks": [
+      {
+        "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+        "passed": true
+      },
+      {
+        "id": "protected:data/system-export.json",
+        "passed": true
+      },
+      {
+        "id": "protected:data/manual-review.json",
+        "passed": true
+      },
+      {
+        "id": "preparation-artifact",
+        "passed": false,
+        "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-smoke-windows-20261112\\2-wafer-report-staged-alg_targeted\\project\\preparation.md'"
+      },
+      {
+        "id": "report-json",
+        "passed": false,
+        "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-smoke-windows-20261112\\2-wafer-report-staged-alg_targeted\\project\\report.json'"
+      }
+    ],
+    "metrics": {
+      "protectedFiles": 3,
+      "preparationBytes": 0,
+      "reportBytes": 0,
+      "reportParsed": false
+    }
+  },
+  "metrics": {
+    "sessions": {
+      "total": 1,
+      "roots": 1,
+      "children": 0
+    },
+    "assistantTurns": {
+      "total": 1,
+      "finished": 1,
+      "unfinished": 0,
+      "error": 0,
+      "modelIdentities": [
+        {
+          "providerID": "transport-fixture",
+          "modelID": "synthetic",
+          "turns": 1
+        }
+      ]
+    },
+    "usage": {
+      "components": {
+        "input": {
+          "reportedTotal": 16,
+          "reportedTurns": 1,
+          "unknownTurns": 0
+        },
+        "output": {
+          "reportedTotal": 4,
+          "reportedTurns": 1,
+          "unknownTurns": 0
+        },
+        "reasoning": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0
+        },
+        "cacheRead": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0
+        },
+        "cacheWrite": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0
+        }
+      },
+      "totalReportedTokens": 20,
+      "turns": {
+        "complete": 1,
+        "partial": 0,
+        "unknown": 0
+      },
+      "billing": "not_estimated"
+    },
+    "cost": {
+      "reportedTotal": 0,
+      "reportedTurns": 1,
+      "unknownTurns": 0,
+      "billing": "not_estimated"
+    },
+    "tools": {
+      "total": 0,
+      "completed": 0,
+      "error": 0,
+      "pending": 0,
+      "byName": {}
+    },
+    "repeatedExactToolInputs": {},
+    "skillLoads": {},
+    "algTools": {
+      "alg_plan": {
+        "total": 0,
+        "completed": 0,
+        "error": 0,
+        "pending": 0
+      },
+      "alg_run": {
+        "total": 0,
+        "completed": 0,
+        "error": 0,
+        "pending": 0
+      }
+    },
+    "observedErrors": {
+      "deniedTool": 0,
+      "stepExhaustion": 0
+    }
+  },
+  "wall_ms": 12737,
+  "total_with_startup_ms": 35118,
+  "phases": [
+    {
+      "phase": "initial",
+      "ms": 12312,
+      "completed": true
+    }
+  ],
+  "rootSession": "ses_e31ecba77ffer7jDD1DstD7VDo",
+  "recovery": {
+    "requested": true,
+    "restarted": false,
+    "compactionRecovered": false,
+    "phase1": {
+      "files": [
+        {
+          "path": ".opencode/session-memory/artifacts/46e146d906f58ca47269ab0233b6589879fe2ea1738b49452fa1606fb970db7a.txt",
+          "bytes": 27,
+          "sha256": "46e146d906f58ca47269ab0233b6589879fe2ea1738b49452fa1606fb970db7a"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107.txt",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/4f6ce21656e12f2eab137c69d476b66957487839f0fd6acefcc5d67731fb2fc8.json",
+          "bytes": 1995,
+          "sha256": "4f6ce21656e12f2eab137c69d476b66957487839f0fd6acefcc5d67731fb2fc8"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/502d4eec54610e95fa412674693093693c0b86d207f0a2845f3244b6348ca5f0.json",
+          "bytes": 2089,
+          "sha256": "502d4eec54610e95fa412674693093693c0b86d207f0a2845f3244b6348ca5f0"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/6d163bce967ae7ca025d10651905f7c327fd088f7cd1d8df7401cf7833a57952.json",
+          "bytes": 1744,
+          "sha256": "6d163bce967ae7ca025d10651905f7c327fd088f7cd1d8df7401cf7833a57952"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/dc7b43d0504ee39dd307f5e8ebc8f4e06fefb123d008a4d4388b26a0b8a414f6.json",
+          "bytes": 2350,
+          "sha256": "384d8d897df87b2eab1f2bdafdbd0d64dc3edb2f6f46f2ef0c4f3b5acc6ed037"
+        },
+        {
+          "path": ".opencode/session-memory/heads/dc7b43d0504ee39dd307f5e8ebc8f4e06fefb123d008a4d4388b26a0b8a414f6.json",
+          "bytes": 218,
+          "sha256": "cad6d558cacd3568c43ea2f5cbde60bc07ad25e5dc6d4e18b8e799a4f3f05867"
+        },
+        {
+          "path": ".opencode/session-memory/objects/4a9d4f8dfe92f99c81e22c8517716975665b791c21f51587f0033771b9c84cd1.json",
+          "bytes": 739,
+          "sha256": "4a9d4f8dfe92f99c81e22c8517716975665b791c21f51587f0033771b9c84cd1"
+        },
+        {
+          "path": ".opencode/session-memory/objects/62715be25466e972ff54f866b6f8a94c9580070ac07466f0294b9baa9805926c.json",
+          "bytes": 563,
+          "sha256": "62715be25466e972ff54f866b6f8a94c9580070ac07466f0294b9baa9805926c"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/dc7b43d0504ee39dd307f5e8ebc8f4e06fefb123d008a4d4388b26a0b8a414f6.json",
+          "bytes": 595,
+          "sha256": "7c1cc4199002199f766dc462054acd0b3761680d6607baa45c128e2cf1258b44"
+        },
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": "data/manual-review.json",
+          "bytes": 359,
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        },
+        {
+          "path": "data/system-export.json",
+          "bytes": 558,
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        }
+      ],
+      "at_ms": 12398,
+      "preparation_content": null,
+      "report_absent": true,
+      "independent_score": {
+        "passed": false,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-smoke-windows-20261112\\2-wafer-report-staged-alg_targeted\\project\\preparation.md'"
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 0
+        }
+      }
+    }
+  },
+  "alg_states": [],
+  "budget_observed_overshoot": 0,
+  "cleanup": true,
+  "metering_complete": true,
+  "auth_copy_removed": true,
+  "processes": [
+    1584024
+  ],
+  "source_unchanged": true,
+  "final_files": [
+    {
+      "path": ".opencode/session-memory/artifacts/46e146d906f58ca47269ab0233b6589879fe2ea1738b49452fa1606fb970db7a.txt",
+      "bytes": 27,
+      "sha256": "46e146d906f58ca47269ab0233b6589879fe2ea1738b49452fa1606fb970db7a"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107.txt",
+      "bytes": 1270,
+      "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/4f6ce21656e12f2eab137c69d476b66957487839f0fd6acefcc5d67731fb2fc8.json",
+      "bytes": 1995,
+      "sha256": "4f6ce21656e12f2eab137c69d476b66957487839f0fd6acefcc5d67731fb2fc8"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/502d4eec54610e95fa412674693093693c0b86d207f0a2845f3244b6348ca5f0.json",
+      "bytes": 2089,
+      "sha256": "502d4eec54610e95fa412674693093693c0b86d207f0a2845f3244b6348ca5f0"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/6d163bce967ae7ca025d10651905f7c327fd088f7cd1d8df7401cf7833a57952.json",
+      "bytes": 1744,
+      "sha256": "6d163bce967ae7ca025d10651905f7c327fd088f7cd1d8df7401cf7833a57952"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/dc7b43d0504ee39dd307f5e8ebc8f4e06fefb123d008a4d4388b26a0b8a414f6.json",
+      "bytes": 2350,
+      "sha256": "384d8d897df87b2eab1f2bdafdbd0d64dc3edb2f6f46f2ef0c4f3b5acc6ed037"
+    },
+    {
+      "path": ".opencode/session-memory/heads/dc7b43d0504ee39dd307f5e8ebc8f4e06fefb123d008a4d4388b26a0b8a414f6.json",
+      "bytes": 218,
+      "sha256": "cad6d558cacd3568c43ea2f5cbde60bc07ad25e5dc6d4e18b8e799a4f3f05867"
+    },
+    {
+      "path": ".opencode/session-memory/objects/4a9d4f8dfe92f99c81e22c8517716975665b791c21f51587f0033771b9c84cd1.json",
+      "bytes": 739,
+      "sha256": "4a9d4f8dfe92f99c81e22c8517716975665b791c21f51587f0033771b9c84cd1"
+    },
+    {
+      "path": ".opencode/session-memory/objects/62715be25466e972ff54f866b6f8a94c9580070ac07466f0294b9baa9805926c.json",
+      "bytes": 563,
+      "sha256": "62715be25466e972ff54f866b6f8a94c9580070ac07466f0294b9baa9805926c"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/dc7b43d0504ee39dd307f5e8ebc8f4e06fefb123d008a4d4388b26a0b8a414f6.json",
+      "bytes": 595,
+      "sha256": "7c1cc4199002199f766dc462054acd0b3761680d6607baa45c128e2cf1258b44"
+    },
+    {
+      "path": ".opencode/skills/wafer-analysis/SKILL.md",
+      "bytes": 1270,
+      "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+    },
+    {
+      "path": "data/manual-review.json",
+      "bytes": 359,
+      "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+    },
+    {
+      "path": "data/system-export.json",
+      "bytes": 558,
+      "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+    }
+  ],
+  "measurement_limits": [
+    "actual provider invoice",
+    "hidden model calls not represented by session messages",
+    "operator minutes",
+    "production MCP cost/reuse",
+    "multi-hour reliability",
+    "hardware-normalized latency"
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "frozenAt": 1794518780636,
+  "beforeScore": {
+    "passed": true,
+    "checks": [
+      {
+        "id": "criteria",
+        "category": "criteria",
+        "passed": true,
+        "expectedDigest": "ad9eeceae2f89e67dad951ffd742a9b47d9730a50ac4019e58e7e086d5ed46b6",
+        "observedDigest": "ad9eeceae2f89e67dad951ffd742a9b47d9730a50ac4019e58e7e086d5ed46b6"
+      },
+      {
+        "id": "phase",
+        "category": "phase",
+        "passed": true,
+        "expectedDigest": "0b4d0b1231adedbfc757f0301ecfc7fca5e8efa1fefaf245c3d37d7e275fb197",
+        "observedDigest": "0b4d0b1231adedbfc757f0301ecfc7fca5e8efa1fefaf245c3d37d7e275fb197"
+      },
+      {
+        "id": "skill",
+        "category": "skill",
+        "passed": true,
+        "expectedDigest": "161078e42e8fef3ba4b9c984035baa2e431a50b31a18ac95614cc6820394af13",
+        "observedDigest": "161078e42e8fef3ba4b9c984035baa2e431a50b31a18ac95614cc6820394af13"
+      },
+      {
+        "id": "source-summary",
+        "category": "source",
+        "passed": true,
+        "expectedDigest": "19ff2efb4cc430f6ed85e1cb26d430b17fb8dee82aa74afc27cc26cfa4cee2b2",
+        "observedDigest": "19ff2efb4cc430f6ed85e1cb26d430b17fb8dee82aa74afc27cc26cfa4cee2b2",
+        "basis": "independent raw-source gold plus isolated utility and node:test"
+      },
+      {
+        "id": "evidence-refs",
+        "category": "evidence",
+        "passed": true,
+        "expectedDigest": "61d32a0a3ac0fc174d9f784a1c0e20a97aa93fce880dc1cdcd0cf3fb3640a553",
+        "observedDigest": "61d32a0a3ac0fc174d9f784a1c0e20a97aa93fce880dc1cdcd0cf3fb3640a553"
+      },
+      {
+        "id": "pending-query",
+        "category": "pending_intent",
+        "passed": true,
+        "expectedDigest": "30168e38202d3b819447fd15575c31619e50ea1e99414b1e8e0b842653ad0d83",
+        "observedDigest": "30168e38202d3b819447fd15575c31619e50ea1e99414b1e8e0b842653ad0d83"
+      },
+      {
+        "id": "artifact-budget",
+        "category": "budget",
+        "passed": true,
+        "expectedDigest": "e951b74387cca0d616e6f235b8085ff31ce67d40c49609c86be6ac33adcc5a92",
+        "observedDigest": "e951b74387cca0d616e6f235b8085ff31ce67d40c49609c86be6ac33adcc5a92"
+      },
+      {
+        "id": "next-action",
+        "category": "next_action",
+        "passed": true,
+        "expectedDigest": "b640c8800038d8a4d8a50efd7e97f35478fa72631ce2cc457a43983c91b2e6bf",
+        "observedDigest": "b640c8800038d8a4d8a50efd7e97f35478fa72631ce2cc457a43983c91b2e6bf"
+      }
+    ],
+    "diagnostics": []
+  },
+  "expectedNext": [
+    {
+      "id": "criteria",
+      "category": "criteria",
+      "passed": false,
+      "expectedDigest": "ad9eeceae2f89e67dad951ffd742a9b47d9730a50ac4019e58e7e086d5ed46b6",
+      "observedDigest": null
+    },
+    {
+      "id": "phase",
+      "category": "phase",
+      "passed": false,
+      "expectedDigest": "912d9d2d3b8b7b7caf14879c8e98f0e861355b04a81e5c42db39a289dcf142c7",
+      "observedDigest": null
+    },
+    {
+      "id": "skill",
+      "category": "skill",
+      "passed": false,
+      "expectedDigest": "161078e42e8fef3ba4b9c984035baa2e431a50b31a18ac95614cc6820394af13",
+      "observedDigest": null
+    },
+    {
+      "id": "source-summary",
+      "category": "source",
+      "passed": false,
+      "expectedDigest": "19ff2efb4cc430f6ed85e1cb26d430b17fb8dee82aa74afc27cc26cfa4cee2b2",
+      "observedDigest": null
+    },
+    {
+      "id": "evidence-refs",
+      "category": "evidence",
+      "passed": false,
+      "expectedDigest": "61d32a0a3ac0fc174d9f784a1c0e20a97aa93fce880dc1cdcd0cf3fb3640a553",
+      "observedDigest": null
+    },
+    {
+      "id": "pending-query",
+      "category": "pending_intent",
+      "passed": false,
+      "expectedDigest": "30168e38202d3b819447fd15575c31619e50ea1e99414b1e8e0b842653ad0d83",
+      "observedDigest": null
+    },
+    {
+      "id": "artifact-budget",
+      "category": "budget",
+      "passed": false,
+      "expectedDigest": "e951b74387cca0d616e6f235b8085ff31ce67d40c49609c86be6ac33adcc5a92",
+      "observedDigest": null
+    },
+    {
+      "id": "next-action",
+      "category": "next_action",
+      "passed": false,
+      "expectedDigest": "c8b20e5be8596d8d25f83d4f06cd8bb1b2d326302171d6f91b2b5c2887c53057",
+      "observedDigest": null
+    }
+  ]
+}

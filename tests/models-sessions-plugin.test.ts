@@ -372,7 +372,7 @@ describe("models, SDK propagation, and registration", () => {
       } as never
       const hooks = await serverModule.server(context)
       expect(Object.keys(hooks.tool ?? {})).toEqual([...ALG_TOOL_IDS])
-      expect(ALG_TOOL_IDS).toHaveLength(20)
+      expect(ALG_TOOL_IDS).toHaveLength(21)
       expect(logs.some((entry) => entry.body.message.startsWith(algServerStartupMessage(false)) &&
         entry.body.message.includes("source_manifest_at_module_load="))).toBe(true)
       expect(Object.keys(createAlgTools(context)).sort()).toEqual([
@@ -517,16 +517,19 @@ describe("models, SDK propagation, and registration", () => {
         ask: async () => {},
         metadata: () => {},
       } as any
-      const planned = await tools.alg_plan.execute({
+      const legacy = createRun({
         goal: "session persistence",
-        graph_json: JSON.stringify({
+        criteria: [],
+        graph: {
           name: "single-child",
           max_global_attempts: 1,
           max_concurrency: 1,
           nodes: [{ id: "work", agent: "implementer", depends_on: [] }],
-        }),
-      }, context)
-      const runId = JSON.parse((planned as { output: string }).output).run_id
+        },
+        projectDirectory: project,
+        ownerSessionId: "owner",
+      })
+      const runId = legacy.run_id
       plannedRunId = runId
       const result = await tools.alg_run.execute({ run_id: runId }, context)
       const output = JSON.parse((result as { output: string }).output)
@@ -579,9 +582,10 @@ describe("models, SDK propagation, and registration", () => {
         ask: async () => {},
         metadata: () => {},
       } as any
-      const planned = await tools.alg_plan.execute({
+      const legacy = createRun({
         goal: "resume session history",
-        graph_json: JSON.stringify({
+        criteria: [],
+        graph: {
           name: "resume-child",
           max_global_attempts: 2,
           max_concurrency: 1,
@@ -591,9 +595,11 @@ describe("models, SDK propagation, and registration", () => {
             depends_on: [],
             loop: { max_attempts: 2, gate: "schema" },
           }],
-        }),
-      }, context)
-      const runId = JSON.parse((planned as { output: string }).output).run_id
+        },
+        projectDirectory: project,
+        ownerSessionId: "owner",
+      })
+      const runId = legacy.run_id
       const interrupted = loadRun(project, runId)!
       interrupted.status = "running"
       interrupted.phase = "execute"

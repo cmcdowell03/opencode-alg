@@ -1,0 +1,445 @@
+{
+  "source_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+  "runtime_reference": "1777e44354cf6f817de7882a11472b2adc9b766a",
+  "status": "PACKAGE_ACCEPTANCE_PASSED",
+  "release_status": "DRAFT_NO_MERGE",
+  "real_checker_gate": "FAILED_FALSE_REJECTION",
+  "cohort_issued": false,
+  "paid_package_calls": 0,
+  "scope": "One local Windows host and its native WSL Linux environment; not a platform population benchmark.",
+  "limitations": [
+    "Different OpenCode versions on Windows and Linux; descriptive timings only.",
+    "Doctor/ack checks a clean recovery state; no injected mid-deployment crash in these lanes.",
+    "Fresh server/TUI launches verify package registration and exact runtime identity, not model task success.",
+    "Isolated configuration snapshots are checked; no claim of auditing every user-global file.",
+    "No full eight-pair comparison or causal information-loss estimate."
+  ],
+  "platforms": [
+    {
+      "platform": "windows-powershell",
+      "source_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+      "runtime_reference": "1777e44354cf6f817de7882a11472b2adc9b766a",
+      "runtime_digest": "36e4c23c63346d1e580df7ff42ab2032772c8a4f82f2e344f6531e2bbcc56b8c",
+      "package_version": "0.5.11",
+      "target": {
+        "platform": "win32",
+        "arch": "x64",
+        "runtime": "bun",
+        "node_major": null,
+        "bun_major": 1,
+        "libc": "not-applicable"
+      },
+      "manifest_sha256": "3db0ea5b156412055eb52afcbbccbfb4944745941dd962a0a466bb45756cb4fa",
+      "manifest_file_sha256": "7bd5363b0cd6a51f93fec03d3cd583628cd58811673392c62fceac16cc29d7a9",
+      "artifact_sha256": "3b284f42df0456c30281a5deecad2416a9e3db02ae44b67d865ae19ff8eea8db",
+      "production_identity": {
+        "sha256": "5295b5fe78e9611f6dc1287b872b4bd04487ae076583baad606a359beede5c3c",
+        "files": 10104,
+        "bytes": 126814923
+      },
+      "archive_name": "opencode-alg-0.5.11-c23269c4aad0-win32-bun.tgz",
+      "archive_sha256": "3cef9b3576cbbc07b2e12e950dd78c2c160ac219777a0720dbdc7b12dcef11c1",
+      "archive_bytes": 29712666,
+      "stock_prepare_script_sha256": "27afbf7459fe6ffbd67389c4000d8ed0f227b06f9d2d22e2ba344dd9aff2fee4",
+      "preparation_stages": [
+        {
+          "stage": "stock-prepare",
+          "seconds": 302.5596028,
+          "exit_code": 0
+        },
+        {
+          "stage": "archive-create",
+          "seconds": 7.4665216000000365,
+          "exit_code": 0
+        },
+        {
+          "stage": "archive-extract",
+          "seconds": 10.397338700000022,
+          "exit_code": 0
+        },
+        {
+          "stage": "extracted-full-manifest-once",
+          "seconds": 235.09004270000005,
+          "status": "passed"
+        }
+      ],
+      "upgrade": {
+        "passed": true,
+        "update_exercised": true,
+        "baseline_commit": "d62812065e1d3b60cadce35385e1e620cb26f3a0",
+        "checks": {
+          "server_tui_identity_verified": true,
+          "isolated_global_snapshot_unchanged": true,
+          "owned_process_cleanup_verified": true,
+          "custom_config_preserved": true,
+          "recovery_doctor_clean": true,
+          "exact_redeploy_noop": true,
+          "custom_agent_preserved": true
+        },
+        "relocation": {
+          "passed": true,
+          "roots": 3,
+          "artifact_sha256": "3b284f42df0456c30281a5deecad2416a9e3db02ae44b67d865ae19ff8eea8db",
+          "manifest_sha256": "3db0ea5b156412055eb52afcbbccbfb4944745941dd962a0a466bb45756cb4fa",
+          "inventory_entries": 12914
+        },
+        "stages": [
+          {
+            "stage": "candidate-package-readiness",
+            "seconds": 5.1779196,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-package-readiness",
+            "seconds": 4.3283071,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-deploy",
+            "seconds": 597.1166272,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-server-tui-live",
+            "seconds": 14.9149831,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-doctor-ack",
+            "seconds": 9.9963736,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-deploy",
+            "seconds": 579.3208123,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-relocation-inventory",
+            "seconds": 9.1303627,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-server-tui-live",
+            "seconds": 8.8253092,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-doctor-ack",
+            "seconds": 9.7925133,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-noop",
+            "seconds": 16.74701,
+            "exit_code": 0
+          }
+        ]
+      },
+      "fresh": {
+        "passed": true,
+        "update_exercised": false,
+        "baseline_commit": null,
+        "checks": {
+          "server_tui_identity_verified": true,
+          "isolated_global_snapshot_unchanged": true,
+          "owned_process_cleanup_verified": true,
+          "custom_config_preserved": true,
+          "recovery_doctor_clean": true,
+          "exact_redeploy_noop": true,
+          "custom_agent_preserved": true
+        },
+        "relocation": {
+          "passed": true,
+          "roots": 3,
+          "artifact_sha256": "3b284f42df0456c30281a5deecad2416a9e3db02ae44b67d865ae19ff8eea8db",
+          "manifest_sha256": "3db0ea5b156412055eb52afcbbccbfb4944745941dd962a0a466bb45756cb4fa",
+          "inventory_entries": 12914
+        },
+        "stages": [
+          {
+            "stage": "candidate-package-readiness",
+            "seconds": 5.5389887,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-deploy",
+            "seconds": 708.6409818,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-relocation-inventory",
+            "seconds": 261.2607229,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-server-tui-live",
+            "seconds": 18.079342,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-doctor-ack",
+            "seconds": 10.4482921,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-noop",
+            "seconds": 16.9253365,
+            "exit_code": 0
+          }
+        ]
+      },
+      "live_receipts": [
+        {
+          "lane": "upgrade",
+          "stage": "baseline",
+          "name": "live-verification-e069c0791feb7ca7-bc514e93-840b-4098-b78c-1bc5e320faa1.json",
+          "sha256": "e84b95b2e196c0054639939c824243a3bf9835a7ac727ec1dda2a5550009a14e",
+          "host_version": "1.19.5",
+          "runtime_digest": "e069c0791feb7ca7f3afbaa94c95f0bf375aa84c0d405a9fb41ea73ea50f60d7",
+          "source_commit": "d62812065e1d3b60cadce35385e1e620cb26f3a0",
+          "server_cleanup": true,
+          "tui_cleanup": true,
+          "global_unchanged": true
+        },
+        {
+          "lane": "upgrade",
+          "stage": "candidate",
+          "name": "live-verification-36e4c23c63346d1e-b1c839c8-e34a-4253-9e09-5f6ac7d3b9b4.json",
+          "sha256": "b387f321d7a23f7a897c0d8daf5e9f8d75382e975bf6105919bb8ae390c81f82",
+          "host_version": "1.19.5",
+          "runtime_digest": "36e4c23c63346d1e580df7ff42ab2032772c8a4f82f2e344f6531e2bbcc56b8c",
+          "source_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+          "server_cleanup": true,
+          "tui_cleanup": true,
+          "global_unchanged": true
+        },
+        {
+          "lane": "fresh",
+          "stage": "candidate",
+          "name": "live-verification-36e4c23c63346d1e-a4fca986-5a3d-4877-8793-a2b9f3aa5169.json",
+          "sha256": "9ffd0c496e28cba34c0a7b2a23048c8f029148e99f9ce3c088c08280fc57e3ef",
+          "host_version": "1.19.5",
+          "runtime_digest": "36e4c23c63346d1e580df7ff42ab2032772c8a4f82f2e344f6531e2bbcc56b8c",
+          "source_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+          "server_cleanup": true,
+          "tui_cleanup": true,
+          "global_unchanged": true
+        }
+      ]
+    },
+    {
+      "platform": "native-wsl-bash",
+      "source_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+      "runtime_reference": "1777e44354cf6f817de7882a11472b2adc9b766a",
+      "runtime_digest": "36e4c23c63346d1e580df7ff42ab2032772c8a4f82f2e344f6531e2bbcc56b8c",
+      "package_version": "0.5.11",
+      "target": {
+        "platform": "linux",
+        "arch": "x64",
+        "runtime": "bun",
+        "node_major": null,
+        "bun_major": 1,
+        "libc": "glibc-2.39"
+      },
+      "manifest_sha256": "0bf558cacca4d20b6bdde07d480b4c8e3008a36d5340a948681d40f4b2149bdd",
+      "manifest_file_sha256": "a795e0825f0244c88d36b7c16c404dc168e950a714d823684f42594926331d5e",
+      "artifact_sha256": "fa2758eff78dbdb5704e0067258a0fba54ccc22a9a9e88c0e00062c31ce3b0f5",
+      "production_identity": {
+        "sha256": "45840380f2dc770d117fe5823e4d2e2e766a374a9384e3dcea2c438c31c0f601",
+        "files": 10052,
+        "bytes": 126621872
+      },
+      "archive_name": "opencode-alg-0.5.11-c23269c4aad0-linux-bun.tgz",
+      "archive_sha256": "5363fca775f85cc12b664c5538b3ea071b8a92ba30fc0316da9268c3c85ae98d",
+      "archive_bytes": 30172372,
+      "stock_prepare_script_sha256": "27afbf7459fe6ffbd67389c4000d8ed0f227b06f9d2d22e2ba344dd9aff2fee4",
+      "preparation_stages": [
+        {
+          "stage": "stock-prepare",
+          "seconds": 5.8514697149999995,
+          "exit_code": 0
+        },
+        {
+          "stage": "archive-create",
+          "seconds": 4.289155571000003,
+          "exit_code": 0
+        },
+        {
+          "stage": "archive-extract",
+          "seconds": 0.9885606039999985,
+          "exit_code": 0
+        },
+        {
+          "stage": "extracted-full-manifest-once",
+          "seconds": 0.36427836099999694,
+          "status": "passed"
+        }
+      ],
+      "upgrade": {
+        "passed": true,
+        "update_exercised": true,
+        "baseline_commit": "d62812065e1d3b60cadce35385e1e620cb26f3a0",
+        "checks": {
+          "server_tui_identity_verified": true,
+          "isolated_global_snapshot_unchanged": true,
+          "owned_process_cleanup_verified": true,
+          "custom_config_preserved": true,
+          "recovery_doctor_clean": true,
+          "exact_redeploy_noop": true,
+          "custom_agent_preserved": true
+        },
+        "relocation": {
+          "passed": true,
+          "roots": 3,
+          "artifact_sha256": "fa2758eff78dbdb5704e0067258a0fba54ccc22a9a9e88c0e00062c31ce3b0f5",
+          "manifest_sha256": "0bf558cacca4d20b6bdde07d480b4c8e3008a36d5340a948681d40f4b2149bdd",
+          "inventory_entries": 12880
+        },
+        "stages": [
+          {
+            "stage": "candidate-package-readiness",
+            "seconds": 0.31590938568115234,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-package-readiness",
+            "seconds": 0.3326573371887207,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-deploy",
+            "seconds": 7.578825950622559,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-server-tui-live",
+            "seconds": 17.53417420387268,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-doctor-ack",
+            "seconds": 0.821549654006958,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-deploy",
+            "seconds": 6.066288471221924,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-relocation-inventory",
+            "seconds": 0.9188306331634521,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-server-tui-live",
+            "seconds": 18.160786867141724,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-doctor-ack",
+            "seconds": 0.9380452632904053,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-noop",
+            "seconds": 2.1290366649627686,
+            "exit_code": 0
+          }
+        ]
+      },
+      "fresh": {
+        "passed": true,
+        "update_exercised": false,
+        "baseline_commit": null,
+        "checks": {
+          "server_tui_identity_verified": true,
+          "isolated_global_snapshot_unchanged": true,
+          "owned_process_cleanup_verified": true,
+          "custom_config_preserved": true,
+          "recovery_doctor_clean": true,
+          "exact_redeploy_noop": true,
+          "custom_agent_preserved": true
+        },
+        "relocation": {
+          "passed": true,
+          "roots": 3,
+          "artifact_sha256": "fa2758eff78dbdb5704e0067258a0fba54ccc22a9a9e88c0e00062c31ce3b0f5",
+          "manifest_sha256": "0bf558cacca4d20b6bdde07d480b4c8e3008a36d5340a948681d40f4b2149bdd",
+          "inventory_entries": 12880
+        },
+        "stages": [
+          {
+            "stage": "candidate-package-readiness",
+            "seconds": 0.5948984622955322,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-deploy",
+            "seconds": 8.635769605636597,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-relocation-inventory",
+            "seconds": 1.1361699104309082,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-server-tui-live",
+            "seconds": 19.827169179916382,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-doctor-ack",
+            "seconds": 0.9169881343841553,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-noop",
+            "seconds": 2.3624324798583984,
+            "exit_code": 0
+          }
+        ]
+      },
+      "live_receipts": [
+        {
+          "lane": "acceptance",
+          "stage": "baseline",
+          "name": "live-verification-e069c0791feb7ca7-71e8208c-a811-4792-b076-a62199faff57.json",
+          "sha256": "e8e75326ed2951ffefc4936137a06d49461937acbdccb461cfc7b9864a5708fb",
+          "host_version": "1.18.35",
+          "runtime_digest": "e069c0791feb7ca7f3afbaa94c95f0bf375aa84c0d405a9fb41ea73ea50f60d7",
+          "source_commit": "d62812065e1d3b60cadce35385e1e620cb26f3a0",
+          "server_cleanup": true,
+          "tui_cleanup": true,
+          "global_unchanged": true
+        },
+        {
+          "lane": "acceptance",
+          "stage": "candidate",
+          "name": "live-verification-36e4c23c63346d1e-ae4a1b21-89b0-4ffc-9886-b27691f4b2bd.json",
+          "sha256": "7b5c2f2e12a6140e4c77859d80b8522456ade852d2b0d3769edfcffb3c287ede",
+          "host_version": "1.18.35",
+          "runtime_digest": "36e4c23c63346d1e580df7ff42ab2032772c8a4f82f2e344f6531e2bbcc56b8c",
+          "source_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+          "server_cleanup": true,
+          "tui_cleanup": true,
+          "global_unchanged": true
+        },
+        {
+          "lane": "fresh-acceptance",
+          "stage": "candidate",
+          "name": "live-verification-36e4c23c63346d1e-33dd1901-b3db-4b9a-bb83-ed0671c3a324.json",
+          "sha256": "8d55698eb8500ef7b7c11c63c1d0bc584efcab571284e0098b281a589556c56c",
+          "host_version": "1.18.35",
+          "runtime_digest": "36e4c23c63346d1e580df7ff42ab2032772c8a4f82f2e344f6531e2bbcc56b8c",
+          "source_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+          "server_cleanup": true,
+          "tui_cleanup": true,
+          "global_unchanged": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"attempt":1,"failures":[],"finished_at":"2026-11-12T05:51:12.946Z","outcome":"passed","output":{"failures":[],"notes":"Preparation matches the supplied sources and skill; report.json is absent from the workspace.","passed":true,"score":10},"schema_ok":true,"score":10,"session_id":"ses_e31b0cd55ffeqDoLiBynfQ695Z","started_at":"2026-11-12T05:50:58.900Z","status":"done"}

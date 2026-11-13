@@ -2,6 +2,8 @@ import { z } from "zod"
 
 export const MANAGER_VERSION = "0.2.0"
 export const MAX_GENERATIONS = 16
+// Historical format compatibility outlives the bounded set of retained installations.
+export const MAX_COMPATIBLE_PACKAGE_VERSIONS = 64
 export const RECEIPT_FILE = "receipt.json"
 
 const AbsolutePathSchema = z.string().min(1).max(4_096)
@@ -14,7 +16,7 @@ export const DurableStateCompatibilitySchema = z.object({
   format: z.literal("alg-run-state"),
   current_schema: z.number().int().positive(),
   compatible_schemas: z.array(z.number().int().positive()).min(1).max(8),
-  compatible_package_versions: z.array(StableVersionSchema).min(1).max(16),
+  compatible_package_versions: z.array(StableVersionSchema).min(1).max(MAX_COMPATIBLE_PACKAGE_VERSIONS),
 }).strict()
 
 export const BUNDLED_AGENT_NAMES = ["checker.md", "explorer.md", "implementer.md", "orchestrator.md", "researcher.md"] as const
@@ -71,7 +73,7 @@ export const ExcelCapabilityReceiptSchema = z.object({
 export const ReleaseGenerationSchema = z.object({
   id: z.string().regex(/^\d+\.\d+\.\d+-[a-f0-9]{12}$/),
   version: StableVersionSchema,
-  tag: StableTagSchema,
+  tag: StableTagSchema.nullable(),
   commit: GitCommitSchema,
   package_root: AbsolutePathSchema,
   spec: z.string().url().max(8_192),
@@ -80,6 +82,10 @@ export const ReleaseGenerationSchema = z.object({
   installed_at: z.iso.datetime({ offset: true }),
   activated_at: z.iso.datetime({ offset: true }),
   dependency_manager: z.literal("npm"),
+  // Missing means a legacy Git generation. Bundles retain the real source commit without .git metadata.
+  source_kind: z.enum(["git", "bundle"]).optional(),
+  bundle_manifest_sha256: Sha256Schema.optional(),
+  bundle_artifact_sha256: Sha256Schema.optional(),
   // Optional only for deliberate v0.1 receipt compatibility; v0.2 requires it below.
   production_dependencies: ProductionDependencyIdentitySchema.optional(),
   agents: z.array(GenerationAgentSchema).max(32),
@@ -87,6 +93,14 @@ export const ReleaseGenerationSchema = z.object({
   // Optional only for deliberate compatibility with v0.1/no-capability receipts.
   capabilities: z.object({ excel: ExcelCapabilityReceiptSchema }).strict().optional(),
 }).strict().superRefine((generation, ctx) => {
+  const hasBundleHashes = generation.bundle_manifest_sha256 !== undefined && generation.bundle_artifact_sha256 !== undefined
+  const hasPartialBundleHash = (generation.bundle_manifest_sha256 === undefined) !== (generation.bundle_artifact_sha256 === undefined)
+  if ((generation.source_kind === "bundle") !== hasBundleHashes || hasPartialBundleHash) {
+    ctx.addIssue({ code: "custom", message: "bundle generations require manifest and artifact identities" })
+  }
+  if ((generation.source_kind === "bundle") !== (generation.tag === null)) {
+    ctx.addIssue({ code: "custom", message: "bundle generations have no release tag; Git generations require one" })
+  }
   if (generation.version !== "0.1.0" && generation.production_dependencies === undefined) {
     ctx.addIssue({ code: "custom", path: ["production_dependencies"], message: "v0.2+ generation requires production dependency identity" })
   }
@@ -123,7 +137,7 @@ export const ManagerReceiptSchema = z.object({
   config_root: AbsolutePathSchema,
   install_root: AbsolutePathSchema,
   trusted_remote: z.string().min(1).max(8_192),
-  channel: z.literal("stable"),
+  channel: z.enum(["stable", "candidate"]),
   active_generation: z.string().max(128).nullable(),
   generations: z.array(ReleaseGenerationSchema).max(MAX_GENERATIONS),
   server_registration: RegistrationSchema,
@@ -163,6 +177,9 @@ export const ManagerReceiptSchema = z.object({
   }
   const active = receipt.generations.find((item) => item.id === receipt.active_generation)
   if (active) {
+    if (receipt.channel !== (active.tag === null ? "candidate" : "stable")) {
+      ctx.addIssue({ code: "custom", path: ["channel"], message: "receipt channel disagrees with the active generation's release tag" })
+    }
     if (receipt.server_registration.spec !== active.spec || receipt.tui_registration.spec !== active.spec) {
       ctx.addIssue({ code: "custom", message: "active registration specs disagree with generation" })
     }
@@ -183,13 +200,13 @@ export const JournalFileSchema = z.object({
   path: AbsolutePathSchema,
   kind: z.enum(["config", "agent"]),
   before_hash: Sha256Schema.nullable(),
-  before_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict().nullable(),
+  before_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/), birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict().nullable(),
   after_hash: Sha256Schema.nullable(),
   backup: AbsolutePathSchema.nullable(),
   claim: AbsolutePathSchema.nullable(),
-  claim_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict().nullable(),
+  claim_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/), birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict().nullable(),
   prepared: AbsolutePathSchema.nullable(),
-  prepared_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict().nullable(),
+  prepared_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/), birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict().nullable(),
 }).strict()
 
 export const ManagerJournalSchema = z.object({
@@ -204,14 +221,14 @@ export const ManagerJournalSchema = z.object({
   target_generation: z.string().max(128).nullable(),
   receipt_path: AbsolutePathSchema,
   receipt_before_hash: Sha256Schema.nullable(),
-  receipt_before_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict().nullable(),
+  receipt_before_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/), birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict().nullable(),
   receipt_after_hash: Sha256Schema,
   receipt_backup: AbsolutePathSchema.nullable(),
-  receipt_backup_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict().nullable(),
+  receipt_backup_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/), birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict().nullable(),
   receipt_claim: AbsolutePathSchema.nullable(),
-  receipt_claim_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict().nullable(),
+  receipt_claim_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/), birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict().nullable(),
   receipt_prepared: AbsolutePathSchema,
-  receipt_prepared_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/) }).strict(),
+  receipt_prepared_identity: z.object({ dev: z.string().regex(/^\d+$/), ino: z.string().regex(/^\d+$/), birthtimeNs: z.string().regex(/^\d+$/).optional() }).strict(),
   files: z.array(JournalFileSchema).max(64),
 }).strict()
 

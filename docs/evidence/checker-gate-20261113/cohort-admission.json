@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "candidate_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+  "admitted": false,
+  "issued": false,
+  "reason": "V3 positive false rejection; negative control passed. Diagnostic requires both cases to pass.",
+  "planned_arms": 16,
+  "issued_arms": 0,
+  "original_config_sha256": "a03568b4094df5a2326294180ab1ba4bf5f7dca8a261a1c03b5ac0633107646f",
+  "v3_summary_sha256": "85a32c528e31b6de8690002f0d9704d7890db13b356c86ea2d57cb91214b91ba",
+  "preserved_previous_rounds": true
+}

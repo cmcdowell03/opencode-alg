@@ -1,0 +1,140 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\change-scope-evidence.test.ts:
+(pass) scope schema bounds and rejects unsafe, duplicate, overlapping, or out-of-root paths [6.99ms]
+(pass) content comparison reports allowed modifications, additions, and deletions [14.32ms]
+(pass) protected changes and changed-file count overages violate the scope [6.60ms]
+(pass) fixed exclusions are explicit and changes beneath them are invisible [10.66ms]
+108 |     catch { return } // Platform policy may disable symlink creation.
+109 |     const basis = captureChangeScopeBasis(root, { roots: ["."], allowed_paths: [], max_changed_files: 0 })
+110 |     expect(basis.files).toEqual([])
+111 |     expect(basis.exclusions).toContain("node_modules")
+112 |   } finally {
+113 |     rmSync(link, { force: true })
+          ^
+error: EFAULT: bad address in system call argument, rm 'D:\Docker\model-temp\alg-change-scope-URP8CL\node_modules'
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\change-scope-evidence.test.ts:113:5)
+(fail) a symlink at an excluded directory name is skipped without traversal [2.78ms]
+133 |     if (symlinkMade) {
+134 |       expect(finishChangeScopeEvidence(root, input, basis)).toMatchObject({ status: "unavailable", failure: "unsafe_entry" })
+135 |     }
+136 |     expect(() => captureChangeScopeBasis(root, scope({ roots: ["missing"], allowed_paths: [] }))).toThrow("change_scope_missing_root")
+137 |   } finally {
+138 |     if (symlinkMade) rmSync(escapeLink, { force: true })
+                           ^
+error: EFAULT: bad address in system call argument, rm 'D:\Docker\model-temp\alg-change-scope-FXqRiB\src\escape'
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\change-scope-evidence.test.ts:138:22)
+(fail) missing roots, symlink entries, and baseline tampering fail closed [7.46ms]
+(pass) file count, per-file bytes, and total bytes are bounded [316.10ms]
+
+tests\task-admission.test.ts:
+(pass) tool task contract admission > planning captures the actual host user turn rather than trusting a lossy planner summary [216.52ms]
+(pass) tool task contract admission > new plans cannot silently omit contracts or original criteria [6.61ms]
+(pass) tool task contract admission > impossible producer is rejected without effective-permission or child calls [5.18ms]
+(pass) tool task contract admission > known writes admit compact work and keep source and contract through status [120.01ms]
+(pass) tool task contract admission > host denial blocks before creation and changed permissions block before execution [112.79ms]
+(pass) tool task contract admission > criteria cannot be weakened by the legacy unlock switch [110.95ms]
+
+tests\task-baseline.test.ts:
+(pass) coverage must cover each criterion and bind actual collection declarations [73.80ms]
+62 |     expect(loadRun(root, run.run_id)!.task_baseline).toEqual(run.task_baseline)
+63 |   }) })
+64 |   expect(calls).toEqual(["researcher"])
+65 |   const original = structuredClone(run.task_baseline!)
+66 |   expect(original.change_scope!.files.map(f => f.path)).toEqual(["src/keep.ts"])
+67 |   expect(formatCompactionContext(run)).toContain(sha256Json(original))
+                                            ^
+error: expect(received).toContain(expected)
+
+Expected to contain: "cd5208aa1c42d8112053fed338933c1a917a0c2519374ff7ee54d12eec3f492d"
+Received: "## ALG active run state (bounded durable summary)\n\nALG creates fresh child sessions and does not explicitly forward worker transcripts to checkers.\nOpenCode SDK project/system context and filesystem/tool access still apply.\n\n- run_id: write-result-20261113003652-d9dc6e5cbc19\n- status: blocked / phase: blocked\n- goal: Write result\n- criteria_locked: true\n- blocker: run write-result-20261113003652-d9dc6e5cbc19 — blocked\ngoal: Write result\nmode: live\nglobal attempts: 1/8\nnodes:\n  - research [researcher] pending attempts=1 failures=[\"schema: acceptance_criteria: code=too_small min=1\"]\n  - implement [implementer] pending attempts=0\n  - check [checker] pending attempts=0\n- task_contract: 426a4eb216da8b344f1f80855caadba9f43ed0777e1cbfebca69f18f464b8db9; phase=complete; requirements=1219ab022df88c1dfa01529af3647ef3cc533ee9f8e7a4532f4de91bc5da9d9d\n- criteria:\n  - Produce result\n  - Keep policy unchanged\n  - Only result may change in src\n- path: .opencode/runs/write-result-20261113003652-d9dc6e5cbc19/\n\n### Nodes\n- research [researcher] pending attempts=1 failures=schema: acceptance_criteria: code=too_small min=1\n- implement [implementer] pending attempts=0\n- check [checker] pending attempts=0\n\nUse alg_status / alg_resume / alg_artifact for authoritative details."
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\task-baseline.test.ts:67:40)
+(fail) baseline is durable before discovery, survives compaction/restart, and cannot be replaced [683.41ms]
+(pass) an unavailable before-work file stops before the first child and attempt [159.98ms]
+91 | 
+92 | test("discovery cannot change a protected file before its baseline is collected", async () => {
+93 |   const { root, run } = fixture(), calls: string[] = []
+94 |   await expect(executeRun(run, { ...executeContext(root), sessionRunner: runner(root, calls, role => {
+95 |     if (role === "researcher") writeFileSync(join(root, "policy.md"), "changed early")
+96 |   }) })).rejects.toThrow("task_preservation_unverified")
+                      ^
+error: 
+
+Expected promise that rejects
+Received promise that resolved: Promise { <resolved> }
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\task-baseline.test.ts:96:18)
+(fail) discovery cannot change a protected file before its baseline is collected [995.71ms]
+100 | 
+101 | test("out-of-scope change blocks checker and resume does not repeat the correct producer", async () => {
+102 |   const { root, run } = fixture(), calls: string[] = []
+103 |   await expect(executeRun(run, { ...executeContext(root), sessionRunner: runner(root, calls, role => {
+104 |     if (role === "implementer") writeFileSync(join(root, "src", "extra.ts"), "unexpected")
+105 |   }) })).rejects.toThrow("task_change_scope_unverified")
+                       ^
+error: 
+
+Expected promise that rejects
+Received promise that resolved: Promise { <resolved> }
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\task-baseline.test.ts:105:18)
+(fail) out-of-scope change blocks checker and resume does not repeat the correct producer [1072.49ms]
+114 | test("post-check content drift invalidates proof even when changed path count stays identical", async () => {
+115 |   const { root, run } = fixture(), calls: string[] = []
+116 |   await executeRun(run, { ...executeContext(root), sessionRunner: runner(root, calls, role => {
+117 |     if (role === "checker") writeFileSync(join(root, "src", "result.json"), '{"result":"tampered"}')
+118 |   }) })
+119 |   expect(run.status).toBe("blocked")
+                           ^
+error: expect(received).toBe(expected)
+
+Expected: "blocked"
+Received: "failed"
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\task-baseline.test.ts:119:22)
+(fail) post-check content drift invalidates proof even when changed path count stays identical [970.37ms]
+
+tests\task-contract.test.ts:
+(pass) declared task admission > host user request survives persistence, compaction and both child handoffs without trusting a shortened summary [1138.77ms]
+(pass) declared task admission > project deliverables reject research-only graphs and do not create durable work [0.89ms]
+(pass) declared task admission > routing uses declared work and uncertainty, not model/task-name keywords [0.27ms]
+(pass) declared task admission > missing checker, disconnected producer, execution and protected paths fail closed [0.24ms]
+(pass) declared task admission > typed paths cannot conflict or traverse; diagnostics do not echo unknown keys [0.78ms]
+(pass) declared task admission > evidence plans cover criteria in order and bind observations to declared inputs [0.43ms]
+(pass) declared task admission > capabilities recognize only uniform host decisions [0.33ms]
+(pass) declared task admission > original criteria and contract survive persistence and bounded context projection [111.78ms]
+(pass) declared task admission > removing an accepted contract cannot silently turn a new run into legacy [106.37ms]
+(pass) declared task admission > legacy persisted runs remain readable without invented admission [86.24ms]
+(pass) declared task admission > older directly bound contracts may retain an absent evidence plan [87.02ms]
+(pass) host-enforced task completion > passing model verdict cannot certify a missing declared file [621.07ms]
+(pass) host-enforced task completion > correct files pass; preparation contract is visible to workers and remains pinned [1072.42ms]
+(pass) host-enforced task completion > claimed commands do not satisfy the native command requirement [576.18ms]
+(pass) host-enforced task completion > accepted verification gate cannot be replaced at run time [119.38ms]
+
+tests\task-evidence-integrity.test.ts:
+(pass) checker task evidence references survive attempt archiving and hydration; tampering fails closed [6314.79ms]
+
+tests\task-recovery.test.ts:
+(pass) an explicit resume repairs a missing file without rerunning completed unrelated work [2385.55ms]
+(pass) missing native evidence can be repaired by a new scoped producer attempt [1229.04ms]
+(pass) explicit prerequisite repair respects the original budget {"local":1} [646.52ms]
+(pass) explicit prerequisite repair respects the original budget {"global":2} [656.74ms]
+(pass) prerequisite repair refuses a project deliverable redirected outside the worktree [615.62ms]
+(pass) persistent missing evidence does not trigger a producer/checker prompt loop [1023.32ms]
+(pass) existing-file drift reopens only the checker and its descendants [2051.33ms]
+(pass) same-command cwd/timeout repair requires an actual setup failure (%s) [1338.40ms]
+(pass) same-command cwd/timeout repair requires an actual setup failure (%s) [857.55ms]
+
+6 tests failed:
+(fail) a symlink at an excluded directory name is skipped without traversal [2.78ms]
+(fail) missing roots, symlink entries, and baseline tampering fail closed [7.46ms]
+(fail) baseline is durable before discovery, survives compaction/restart, and cannot be replaced [683.41ms]
+(fail) discovery cannot change a protected file before its baseline is collected [995.71ms]
+(fail) out-of-scope change blocks checker and resume does not repeat the correct producer [1072.49ms]
+(fail) post-check content drift invalidates proof even when changed path count stays identical [970.37ms]
+
+ 38 pass
+ 6 fail
+ 238 expect() calls
+Ran 44 tests across 6 files. [26.26s]

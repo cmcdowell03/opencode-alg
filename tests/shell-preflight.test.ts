@@ -7,7 +7,7 @@ import { createAlgTools, withShellGate } from "../src/tools.ts"
 import { executeRun, prepareRunForResume } from "../src/executor.ts"
 import { createRun, hydrateRunFully, loadRun, persistRun, runDir } from "../src/store.ts"
 import { prospectiveShellGateHash } from "../src/session-memory/preflight.ts"
-import { executeContext, inertClient, removeProject, singleImplementGraph, tempProject } from "./helpers.ts"
+import { executeContext, inertClient, removeProject, singleImplementGraph, tempProject, testTaskContract } from "./helpers.ts"
 import type { GraphDef } from "../src/types.ts"
 
 const implemented = { summary: ["complete"], files_touched: [], commands_run: [], risks: [], done: true }
@@ -16,6 +16,9 @@ const inspect = (cmd: string, platform: NodeJS.Platform = "win32", available = t
 const errors = (cmd: string, platform: NodeJS.Platform = "win32", available = true) =>
   inspect(cmd, platform, available).filter((issue) => issue.severity === "error").map((issue) => issue.code)
 const decode = (value: unknown) => JSON.parse((value as { output: string }).output)
+const taskContract = () => testTaskContract({ kind: "project_change", discovery: "not_required", phase: "complete",
+  deliverables: [{ destination: "project_file", producer_node: "implement", path: "result.txt" }],
+  verification: { checker_node: "check", execution: "none" }, preserve_paths: [] })
 
 function setup(project: string, directory = project) {
   return {
@@ -98,11 +101,13 @@ test("plan rejects malformed gates before persistence, and reports explicit nest
       { shell_gate: "echo ok", shell_cwd: "missing" },
       { shell_cwd: "repo with spaces" },
     ]) {
-      const result = decode(await tools.alg_plan.execute({ goal: "preflight", ...args }, context))
+      const result = decode(await tools.alg_plan.execute({ goal: "preflight", criteria: ["Reject malformed shell gates"],
+        task_contract: taskContract(), ...args }, context))
       expect(result.error).toBeDefined()
       expect(existsSync(join(project, ".opencode"))).toBe(false)
     }
-    const plan = decode(await tools.alg_plan.execute({ goal: "cwd", shell_gate: "echo ok", shell_cwd: "repo with spaces" }, context))
+    const plan = decode(await tools.alg_plan.execute({ goal: "cwd", criteria: ["Resolve the shell gate cwd"], task_contract: taskContract(),
+      shell_gate: "echo ok", shell_cwd: "repo with spaces" }, context))
     expect(plan.shell_gate_preflight.gates[0].cwd).toBe(nested)
     expect(plan.shell_gate_preflight.gates[0].diagnostics).toEqual([])
     const stored = loadRun(project, plan.run_id)!
@@ -312,17 +317,18 @@ test("public run and resume repair shell_cwd relative to pinned directory, not c
   try {
     for (const path of ["pinned", "pinned/repo", "elsewhere"]) mkdirSync(join(project, path), { recursive: true })
     const { tools, context } = setup(project, join(project, "pinned"))
-    const plan = decode(await tools.alg_plan.execute({ goal: "repair", mode: "dry", shell_gate: "echo ok" }, context))
+    const legacy = createRun({ goal: "repair", criteria: [], graph: withShellGate(singleImplementGraph(), "echo ok"),
+      projectDirectory: project, executionDirectory: join(project, "pinned"), ownerSessionId: "session-owner", mode: "dry" })
     const moved = { ...(context as any), directory: join(project, "elsewhere") }
-    const result = decode(await tools.alg_run.execute({ run_id: plan.run_id, dry: true, shell_gate: "echo run", shell_cwd: "repo", max_waves: 1 }, moved))
+    const result = decode(await tools.alg_run.execute({ run_id: legacy.run_id, dry: true, shell_gate: "echo run", shell_cwd: "repo", max_waves: 1 }, moved))
     expect(result.error).toBeUndefined()
-    const resumed = decode(await tools.alg_resume.execute({ run_id: plan.run_id, dry: true, shell_gate: "echo resume", shell_cwd: "." }, moved))
+    const resumed = decode(await tools.alg_resume.execute({ run_id: legacy.run_id, dry: true, shell_gate: "echo resume", shell_cwd: "." }, moved))
     expect(resumed.error).toBeUndefined()
-    const stored = loadRun(project, plan.run_id)!
+    const stored = loadRun(project, legacy.run_id)!
     expect(stored.execution_directory).toBe(join(project, "pinned"))
     expect(stored.graph.nodes.find((node) => node.agent === "implementer")!.shell_gate!.cwd).toBe(".")
     for (const name of ["alg_run", "alg_resume"] as const) {
-      expect(decode(await tools[name].execute({ run_id: plan.run_id, shell_cwd: "repo" }, moved)).error).toBe("shell_cwd requires shell_gate")
+      expect(decode(await tools[name].execute({ run_id: legacy.run_id, shell_cwd: "repo" }, moved)).error).toBe("shell_cwd requires shell_gate")
     }
   } finally { removeProject(project) }
 }, 60_000)
