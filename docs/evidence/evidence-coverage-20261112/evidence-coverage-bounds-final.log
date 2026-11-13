@@ -1,0 +1,46 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\change-scope-evidence.test.ts:
+(pass) explicit excluded roots cannot be certified as an empty unchanged scope [4.35ms]
+(pass) empty directory trees are bounded independently of file count [752.47ms]
+36 |   const root = project(), link = join(root, "alias")
+37 |   let linked = false
+38 |   try {
+39 |     mkdirSync(join(root, "src", "child"), { recursive: true })
+40 |     symlinkSync(join(root, "src"), link, "junction"); linked = true
+41 |     expect(() => captureChangeScopeBasis(root, { roots: ["alias/child"], allowed_paths: [], max_changed_files: 0 })).toThrow("unsafe_entry")
+                                                                                                                          ^
+error: expect(received).toThrow(expected)
+
+Expected substring: "unsafe_entry"
+
+Received function did not throw
+Received value: {
+  version: 1,
+  scope_sha256: "8512f7051f11e14e127e8916c3be417d1a43e866892a3f1f8c797347ecadb2e8",
+  files: [],
+  exclusions: [ ".git", "node_modules", ".opencode/runs" ],
+}
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\change-scope-evidence.test.ts:41:118)
+(fail) a declared nested root cannot bypass an internal symlink ancestor [3.63ms]
+(pass) scope schema bounds and rejects unsafe, duplicate, overlapping, or out-of-root paths [1.92ms]
+(pass) content comparison reports allowed modifications, additions, and deletions [25.05ms]
+(pass) protected changes and changed-file count overages violate the scope [4.29ms]
+(pass) fixed exclusions are explicit and changes beneath them are invisible [22.03ms]
+(pass) a symlink at an excluded directory name is skipped without traversal [2.27ms]
+(pass) missing roots, symlink entries, and baseline tampering fail closed [14.30ms]
+(pass) file count, per-file bytes, and total bytes are bounded [222.94ms]
+
+tests\task-baseline.test.ts:
+(pass) coverage must cover each criterion and bind actual collection declarations [71.83ms]
+(pass) baseline is durable before discovery, survives compaction/restart, and cannot be replaced [1505.34ms]
+(pass) an unavailable before-work file stops before the first child and attempt [134.67ms]
+(pass) discovery cannot change a protected file before its baseline is collected [838.19ms]
+(pass) out-of-scope change blocks checker and resume does not repeat the correct producer [1150.54ms]
+(pass) post-check content drift invalidates proof even when changed path count stays identical [1296.57ms]
+
+ 15 pass
+ 1 fail
+ 73 expect() calls
+Ran 16 tests across 2 files. [6.24s]

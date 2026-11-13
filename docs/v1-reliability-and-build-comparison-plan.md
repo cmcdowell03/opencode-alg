@@ -143,6 +143,8 @@ substantive review. Host validation establishes declaration coverage and valid
 references, not that the planner selected the right proof. A review rationale
 does not waive a preservation, validation or scientific requirement. The fresh
 checker receives the declaration and observations separately and checks adequacy.
+New declarations are capped at 16 KiB before admission to keep this additional
+context bounded; the before-work record is not copied into child prompts.
 
 At execution admission, before **any ALG child** or attempt reservation, collect
 and separately commit a bounded `task_baseline`. Protected paths retain their

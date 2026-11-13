@@ -51,6 +51,23 @@ concurrent edits, or certify scope outside declared roots. Exact relevant comman
 matching and generic observation-only repair remain outstanding. No general
 superiority or long-session information-loss result follows from these changes.
 
+**Local qualification:** runtime `9acacd7` passes the complete native Linux
+`bun run check`: 1,386 passed, 16 platform skips, zero failures and 15,582
+assertions. Windows integration at `032c810` passed 351 tests with one platform
+skip; permission and final casing/scope follow-ups passed 36 and 25 tests
+respectively. Those sets overlap; the full Windows suite was not repeated.
+Final source-checkout OpenCode hosts on Windows 1.19.5 and Linux 1.18.35 passed
+server/TUI registration and deterministic headless checks, including one
+requested compaction, two restarts, stable contract identities and cleanup.
+The live host exposed a permission-order defect: earlier scoped defaults must
+not defeat a later uniform read allowance. The fix retains fail-closed handling
+of later scoped restrictions and unknown rules, including Windows casing.
+All 134 runtime inputs match after line-ending normalization. See the
+[qualification record and preserved failures](evidence/evidence-coverage-20261112/README.md).
+These synthetic host checks do not exercise scoped mutations through a real
+model; executor regressions cover those changes separately. No new paid
+comparison or newly prepared offline bundle is qualified by this increment.
+
 ## 0.5.8 follow-up — preserve current user-request details
 
 The [verification-repair follow-up](evidence/evidence-repair-20261112/README.md)

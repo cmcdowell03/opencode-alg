@@ -1,0 +1,74 @@
+{
+  "runtime_commit": "9acacd78da4bb564ce503a7388926b7e1a21f042",
+  "base_commit": "032c8109f0832eacc984cf60197d64967f73fb82",
+  "version": "0.5.9",
+  "scope": "V1 deterministic local qualification, not model-quality or superiority evidence",
+  "windows_integration_at_base": {
+    "pass": 351,
+    "skip": 1,
+    "fail": 0,
+    "assertions": 7247
+  },
+  "windows_permission_followup": {
+    "pass": 36,
+    "skip": 0,
+    "fail": 0,
+    "assertions": 232
+  },
+  "windows_final_case_and_scope_delta": {
+    "pass": 25,
+    "skip": 0,
+    "fail": 0,
+    "assertions": 111
+  },
+  "linux_full_check": {
+    "pass": 1386,
+    "skip": 16,
+    "fail": 0,
+    "assertions": 15582
+  },
+  "runtime_identity": {
+    "windows": "9f515dbb8866d1b4f6974beef347087fe9cc9625c8206c55e5e4b30188aa2d5d",
+    "linux": "34834d5c81ad65f90bf71d7081525a97a517e42387f34a6fb14803d52c60377b",
+    "runtime_files": 134,
+    "lf_normalized_equal": true,
+    "raw_differing_files": 67
+  },
+  "headless": {
+    "windows": {
+      "version": "1.19.5",
+      "restarts": 2,
+      "compaction_recovered": true,
+      "contract_digests_stable": true,
+      "cleanup": {
+        "host_processes_stopped": true,
+        "provider_stopped": true,
+        "mcp_service_stopped": true,
+        "temporary_environment_removed": true,
+        "evidence_persisted_before_environment_removal": true
+      },
+      "permissions_checked": true
+    },
+    "linux": {
+      "version": "1.18.35",
+      "restarts": 2,
+      "compaction_recovered": true,
+      "contract_digests_stable": true,
+      "cleanup": {
+        "host_processes_stopped": true,
+        "provider_stopped": true,
+        "mcp_service_stopped": true,
+        "temporary_environment_removed": true,
+        "evidence_persisted_before_environment_removal": true
+      },
+      "permissions_checked": true
+    }
+  },
+  "limitations": [
+    "Windows final qualification uses the 351-test integration matrix at the base plus focused final-delta tests; no full Windows suite rerun.",
+    "Headless contract probe plans a read-only investigation: it does not execute a scoped file mutation through a real model. Baseline/scope mutation and reconstruction are deterministic executor tests.",
+    "Headless provider and datalake are local synthetic services. One requested compaction and two restarts are not a long-session information-loss estimate.",
+    "Declared coverage is not semantic adequacy; external/global configuration, prior root-agent edits and concurrent/transient changes remain outside proof.",
+    "The new candidate has no paid Build comparison. Earlier losses remain unchanged."
+  ]
+}
