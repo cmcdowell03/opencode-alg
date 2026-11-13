@@ -1,0 +1,91 @@
+warning: in the working copy of 'catalog/catalog.jsonl', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/1252990e0f.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/33fed62ee2.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/6f70e021b6.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/ae4cc41eb9.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/c082384c29.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/fbd691e2b7.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/incident.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/registry.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/report-contract.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"factory-evidence-4ec5badaf7f2-v1","arm":"alg_default","status":"preflight_passed","passed":false,"wall_ms":null}
+warning: in the working copy of 'catalog/catalog.jsonl', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/1252990e0f.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/33fed62ee2.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/6f70e021b6.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/ae4cc41eb9.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/c082384c29.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/fbd691e2b7.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/incident.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/registry.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/report-contract.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"factory-evidence-4ec5badaf7f2-v1","arm":"build","status":"preflight_passed","passed":false,"wall_ms":null}
+warning: in the working copy of 'catalog/catalog.jsonl', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/1252990e0f.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/33fed62ee2.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/6f70e021b6.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/ae4cc41eb9.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/c082384c29.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/fbd691e2b7.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/incident.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/registry.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/report-contract.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"factory-evidence-357ebc622173-v1","arm":"build","status":"preflight_passed","passed":false,"wall_ms":null}
+warning: in the working copy of 'catalog/catalog.jsonl', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/1252990e0f.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/33fed62ee2.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/6f70e021b6.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/ae4cc41eb9.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/c082384c29.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/fbd691e2b7.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/incident.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/registry.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/report-contract.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"factory-evidence-357ebc622173-v1","arm":"alg_default","status":"preflight_passed","passed":false,"wall_ms":null}
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'sources/checkpoint.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'sources/report-contract.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"partial-investigation-restart-v1","arm":"alg_default","status":"preflight_passed","passed":false,"wall_ms":null}
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'sources/checkpoint.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'sources/report-contract.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"partial-investigation-restart-v1","arm":"build","status":"preflight_passed","passed":false,"wall_ms":null}
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'sources/request.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"accepted-query-lost-ack-v1-0","arm":"build","status":"preflight_passed","passed":false,"wall_ms":null}
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'sources/request.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"accepted-query-lost-ack-v1-0","arm":"alg_default","status":"preflight_passed","passed":false,"wall_ms":null}
+warning: in the working copy of 'repos/api/src/index.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'repos/client/fixtures/expected.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'repos/client/src/report.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'repos/ingestion/src/export.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"multi-repo-compat-v1","arm":"alg_default","status":"preflight_passed","passed":false,"wall_ms":null}
+warning: in the working copy of 'repos/api/src/index.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'repos/client/fixtures/expected.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'repos/client/src/report.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'repos/ingestion/src/export.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"multi-repo-compat-v1","arm":"build","status":"preflight_passed","passed":false,"wall_ms":null}
+warning: in the working copy of 'catalog/catalog.jsonl', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/1252990e0f.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/33fed62ee2.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/6f70e021b6.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/ae4cc41eb9.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/c082384c29.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/fbd691e2b7.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/incident.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/registry.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/report-contract.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"factory-evidence-cc6a0524ea56-v1","arm":"build","status":"preflight_passed","passed":false,"wall_ms":null}
+warning: in the working copy of 'catalog/catalog.jsonl', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/1252990e0f.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/33fed62ee2.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/6f70e021b6.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/ae4cc41eb9.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/c082384c29.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/archive/fbd691e2b7.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/incident.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/registry.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'evidence/report-contract.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"factory-evidence-cc6a0524ea56-v1","arm":"alg_default","status":"preflight_passed","passed":false,"wall_ms":null}
+{"terminal":true,"model":"openai/gpt-6.1-terra","trials":12,"fatal":null,"global_configuration_unchanged":true,"local_model_stopped":true}

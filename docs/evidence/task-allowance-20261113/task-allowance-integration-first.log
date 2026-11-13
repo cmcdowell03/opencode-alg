@@ -1,0 +1,70 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\plugin-configuration.test.ts:
+(pass) air-gapped plugin configuration > workspace and investigation policy sections obey whole-section SDK precedence [20.37ms]
+(pass) air-gapped plugin configuration > uses package sidecar and replaces a whole section supplied by the SDK [8.39ms]
+(pass) air-gapped plugin configuration > uses legacy src sidecar only when package-root sidecar is absent [6.10ms]
+(pass) air-gapped plugin configuration > uses only an absolute explicit override and never loads from cwd [17.22ms]
+(pass) air-gapped plugin configuration > fails closed and keeps malformed, oversized, and schema-invalid input sanitized [27.70ms]
+(pass) air-gapped plugin configuration > SDK option errors do not print unknown keys or submitted values [0.68ms]
+(pass) air-gapped plugin configuration > rejects a symlink sidecar where the host permits creating one [0.91ms]
+
+tests\session-memory.test.ts:
+(pass) durable session memory > configured roots, exact bindings and successful restoration do not attest operator approval [265.26ms]
+(pass) durable session memory > larger mandatory allowance does not expand optional evidence or clip required bodies [227.30ms]
+(pass) durable session memory > off and read-only status do not initialize storage [3.19ms]
+(pass) durable session memory > exact names do not activate prefix neighbors and pinned restore skips discovery [130.04ms]
+(pass) durable session memory > successful current-turn skill tool loads survive generic continue; old and failed loads do not [127.57ms]
+(pass) durable session memory > duplicate skill names require reviewed exact-source binding instead of mixing procedures [195.82ms]
+(pass) durable session memory > golden: skill 87/100, verified solution, 20 compactions, restart, continue [2040.24ms]
+(pass) durable session memory > declared dependencies stay whole; drift and review are explicit [505.58ms]
+(pass) durable session memory > environment revision, expiry and origin invalidate old procedures [517.61ms]
+(pass) durable session memory > uncited failures do not block; polling and a reviewed retry stay explicit [742.62ms]
+(pass) durable session memory > observe mode never changes action results or injects context [482.02ms]
+(pass) durable session memory > failed adapter calls cannot persist exception secrets [398.13ms]
+(pass) durable session memory > mandatory multilingual instructions are never clipped; budget shrinks safely [182.57ms]
+(pass) durable session memory > assist refuses execution when a bound complete skill exceeds the context budget [353.24ms]
+(pass) durable session memory > CAS and interrupted publication preserve last committed cursor [119.12ms]
+(pass) durable session memory > scope, tombstones, tampering and redirected paths fail closed [139.25ms]
+(pass) durable session memory > suspected credentials reject entire source without rewriting instructions [17.74ms]
+(pass) durable session memory > an observed opening is not a task, and a checkpoint without that field still loads [86.49ms]
+(pass) durable session memory > candidate selection stays stable while receipts show what the budget actually rendered [336.36ms]
+(pass) durable session memory > budget-trimmed evidence is counted and offered for explicit retrieval [193.10ms]
+(pass) durable session memory > bounded graph expansion preserves evidence labels and does not promote proposals [3560.70ms]
+(pass) durable session memory > scoped worker delegation excludes private evidence; checker inherits no procedures [576.72ms]
+(pass) durable session memory > operator CLI uses strict reviewed requests and never modifies legacy state [65.09ms]
+
+tests\task-admission.test.ts:
+(pass) tool task contract admission > planning captures the actual host user turn rather than trusting a lossy planner summary [143.43ms]
+(pass) tool task contract admission > new plans cannot silently omit contracts or original criteria [4.59ms]
+(pass) tool task contract admission > impossible producer is rejected without effective-permission or child calls [3.11ms]
+(pass) tool task contract admission > known writes admit compact work and keep source and contract through status [144.81ms]
+(pass) tool task contract admission > host denial blocks before creation and changed permissions block before execution [126.20ms]
+(pass) tool task contract admission > criteria cannot be weakened by the legacy unlock switch [99.67ms]
+
+tests\task-allowance-execution.test.ts:
+(pass) phases, beginTask, compaction and a fresh controller share one allowance [2046.22ms]
+(pass) a saved reservation before attempt persistence is reused, never double charged [814.83ms]
+(pass) an interrupted committed attempt remains charged while a retry consumes another dispatch [1096.59ms]
+(pass) a transferred run and subsequent phase retain the original root ledger [1929.11ms]
+(pass) gate-only recovery consumes no child allowance and leaves the final checker reserved [1326.45ms]
+(pass) bound runs fail closed without a controller and their binding cannot be erased [146.29ms]
+(pass) new tool plans share a task reference with memory disabled and surface its status [242.84ms]
+
+tests\task-allowance.test.ts:
+(pass) bounded task allowance > policy defaults, strict keys, and reserve equality [0.61ms]
+(pass) bounded task allowance > admission binds one root task and survives task replan/beginTask transitions [1.58ms]
+(pass) bounded task allowance > charges producers while retaining the final checker reserve; batch is all-or-none [5.25ms]
+(pass) bounded task allowance > original isolated checker is verification even without node.verification; shell is excluded [1.06ms]
+(pass) bounded task allowance > concurrent runs serialize against the shared root ledger [0.92ms]
+(pass) bounded task allowance > continuation attaches one hop, cannot replace allowance, and missing roots fail closed [1.18ms]
+(pass) bounded task allowance > delegated and deleted roots cannot admit; mode-off storage needs no other database [0.62ms]
+(pass) bounded task allowance > elapsed limits and backwards clocks reject without changing reservations [1.38ms]
+(pass) bounded task allowance > state bounds, unique keys, immutable headers, and append-only entries [1.16ms]
+(pass) bounded task allowance > replay cannot change a charged reservation from producer to verification [1.28ms]
+(pass) bounded task allowance > real MemoryStore persists root and alias ledgers through task replan [292.22ms]
+
+ 54 pass
+ 0 fail
+ 559 expect() calls
+Ran 54 tests across 5 files. [20.16s]
