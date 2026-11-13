@@ -33,13 +33,16 @@ import type {
 import { ALG_SCHEMA_VERSION } from "./types.ts"
 import { assertTaskState } from "./task-contract.ts"
 import { assertTaskEvidence, MAX_TASK_EVIDENCE_BYTES, type TaskEvidence } from "./task-evidence.ts"
-import { readActionManifest, assertActionEvidenceManifestIdentity, actionEvidenceRecordReferences } from "./action-evidence.ts"
+import { readActionManifest, readActionRecord, assertActionEvidenceManifestIdentity, actionEvidenceRecordReferences, type ActionEvidenceIdentity, type ActionEvidenceRecordReference } from "./action-evidence.ts"
+import { hasMechanicalAssessment, validateCheckerConsistency, MECHANICAL_BINDING_FAILURE, type VerifiedCheckerRecord } from "./checker-consistency.ts"
 import { evidencePage } from "./evidence-retrieval.ts"
 import { checkerRelatedNodes } from "./checker-evidence.ts"
 import { graphPolicy } from "./graph-policy.ts"
-import { initNodeStates, validateGraph } from "./graph.ts"
+import { initNodeStates, resolveInputValue, validateGraph } from "./graph.ts"
+import { pinClaimedSubmission } from "./verification.ts"
 import {
   parsePersistedNodeAttempt,
+  parseInputExpression,
   parsePersistedAttemptDetail,
   parseCompactArchivedAttempt,
   PersistedFailureListSchema,
@@ -786,8 +789,56 @@ function plainReference(reference: RunDataReference): RunDataReference {
   return { artifact_path: reference.artifact_path, sha256: reference.sha256, byte_size: reference.byte_size }
 }
 
+/** Resolve the original action owner of a pinned submission without relabeling its evidence. */
+export function resolveCheckerSubmissionActionOrigin(state: RunState, nodeId: string, submissionAttempt: number): NodeAttempt | undefined {
+  const producer = state.nodes[nodeId]
+  let archived: NodeAttempt[] | undefined
+  const find = (number: number) => producer?.attempts.find(row => row.attempt === number) ??
+    (number <= (producer?.attempt_history_ref?.attempt_count ?? 0)
+      ? (archived ??= readAttemptHistoryDocument(state, nodeId)?.attempts ?? []).find(row => row.attempt === number) : undefined)
+  let current = find(submissionAttempt)
+  while (current?.reused_output_from !== undefined) {
+    const prior = find(current.reused_output_from)
+    try {
+      parsePersistedNodeAttempt(current, persistedAttemptContext(state, nodeId, current.attempt))
+      if (!prior || prior.attempt >= current.attempt || !prior.shell_setup_failed || prior.schema_ok !== true || !prior.gate_recovery ||
+        !isDeepStrictEqual(prior.gate_recovery, current.gate_recovery) || !isDeepStrictEqual(prior.execution_evidence, current.execution_evidence)) {
+        throw new Error("invalid recovery origin")
+      }
+    } catch (cause) { throw new StoreError("checker gate-only recovery origin binding failed", { cause }) }
+    current = prior
+  }
+  return current
+}
+
+/** Recompute a new host pin from its persisted submission, never from today's producer output. */
+function verifyClaimedSubmission(state: RunState, nodeId: string, attempt: NodeAttempt): void {
+  const pin = attempt.verification_basis?.claimed_submission
+  if (!pin) return // Legacy missing pins stay missing; read paths never infer one.
+  try {
+    const definition = state.graph.nodes.find(node => node.id === nodeId)
+    const reference = definition?.inputs?.claimed
+    const expression = reference === undefined ? undefined : parseInputExpression(reference)
+    const producer = state.nodes[pin.node_id]
+    if (definition?.agent !== "checker" || pin.run_id !== state.run_id || reference !== pin.reference ||
+      expression?.kind !== "reference" || expression.node !== pin.node_id || !producer) throw new Error("submission identity mismatch")
+    let submission = producer.attempts.find(row => row.attempt === pin.attempt)
+    if (!submission && pin.attempt <= (producer.attempt_history_ref?.attempt_count ?? 0))
+      submission = readAttemptHistoryDocument(state, pin.node_id)?.attempts.find(row => row.attempt === pin.attempt)
+    if (!submission) throw new Error("submission attempt unavailable")
+    const output = submission.output_ref
+      ? parseReferencedAgentOutput(producer.agent, readAndVerifyReference(state, submission.output_ref), submission.output_ref, "claimed submission")
+      : submission.output
+    if (submission.output_ref && submission.output !== undefined) verifyInlineAgainstReference(submission.output, submission.output_ref, "claimed submission")
+    const claimed = resolveInputValue(reference, { ...state, nodes: { ...state.nodes, [pin.node_id]: { ...producer, output } } })
+    if (claimed == null || !isDeepStrictEqual(pin, pinClaimedSubmission({ run_id: state.run_id, node_id: pin.node_id,
+      reference, attempt: pin.attempt }, claimed))) throw new Error("submission content mismatch")
+  } catch (cause) { throw new StoreError("checker claimed submission integrity or identity failed", { cause }) }
+}
+
 /** Validate the transitive evidence tree, including checker pages, on every authoritative load. */
-function verifyAttemptActionEvidence(state: RunState, nodeId: string, attempt: NodeAttempt): void {
+function verifyAttemptActionEvidence(state: RunState, nodeId: string, attempt: NodeAttempt, materialize = false): Map<string, VerifiedCheckerRecord> {
+  const records = new Map<string, VerifiedCheckerRecord>()
   const identity = { run_id: state.run_id, node_id: nodeId, attempt: attempt.attempt }
   if (attempt.action_evidence_ref) {
     if (!attempt.session_id) throw new StoreError("action evidence session binding is missing")
@@ -803,7 +854,7 @@ function verifyAttemptActionEvidence(state: RunState, nodeId: string, attempt: N
       throw new StoreError("action evidence manifest integrity or identity failed", { cause })
     }
   }
-  if (!attempt.action_evidence_sources && !attempt.retrieved_evidence) return
+  if (!attempt.action_evidence_sources && !attempt.retrieved_evidence) return records
   if (state.nodes[nodeId]?.agent !== "checker" || !attempt.action_evidence_sources ||
     ((attempt.retrieved_evidence?.length ?? 0) > 0 && !attempt.session_id)) {
     throw new StoreError("checker evidence source binding is missing")
@@ -812,6 +863,8 @@ function verifyAttemptActionEvidence(state: RunState, nodeId: string, attempt: N
   if (!definition) throw new StoreError("checker evidence source node is missing")
   const related = checkerRelatedNodes(definition, state, graphPolicy(state.graph)?.checkerEvidencePorts?.[nodeId])
   const allowed = new Map<string, RunDataReference>()
+  const owners = new Map<string, { identity: ActionEvidenceIdentity & { child_session_id: string };
+    reference: ActionEvidenceRecordReference; selectedSubmission: boolean | undefined; firstBashOrdinal: number | undefined }>()
   const seenSources = new Set<string>()
   for (const source of attempt.action_evidence_sources.journals) {
     const key = `${source.node_id}/${source.attempt}`
@@ -838,8 +891,21 @@ function verifyAttemptActionEvidence(state: RunState, nodeId: string, attempt: N
         throw new Error("source manifest path does not bind the child session")
       }
       allowed.set(source.reference.artifact_path, plainReference(source.reference))
+      const submissions = (attempt.verification_basis?.evidence ?? []).filter(entry => {
+        if (entry.source.kind !== "node_output" || entry.source.run_id !== state.run_id || !entry.source.reference || entry.source.attempt === undefined) return false
+        const input = parseInputExpression(entry.source.reference)
+        return input.kind === "reference" && input.node === source.node_id
+      })
+      const pin = attempt.verification_basis?.claimed_submission
+      const origins = pin ? (pin.node_id === source.node_id ? [resolveCheckerSubmissionActionOrigin(state, source.node_id, pin.attempt)] : []) :
+        submissions.map(entry => resolveCheckerSubmissionActionOrigin(state, source.node_id, entry.source.attempt!))
+      const selectedSubmission = pin && pin.node_id !== source.node_id ? false :
+        origins.some(origin => origin?.attempt === source.attempt) ? true : !origins.length || origins.some(origin => !origin) ? undefined : false
+      const ordinals = manifest.entries.filter(entry => entry.kind === "intent").map(entry => entry.ordinal)
       for (const entry of actionEvidenceRecordReferences(manifest)) {
         allowed.set(entry.artifact_path, plainReference(entry))
+        if (materialize) owners.set(entry.artifact_path, { identity: { ...sourceIdentity, child_session_id: source.child_session_id },
+          reference: entry, selectedSubmission, firstBashOrdinal: ordinals.length ? Math.min(...ordinals) : undefined })
       }
     } catch (cause) {
       throw new StoreError("checker evidence source manifest integrity failed", { cause })
@@ -855,10 +921,25 @@ function verifyAttemptActionEvidence(state: RunState, nodeId: string, attempt: N
     try {
       const recomputed = evidencePage(state.project_directory, state.run_id, assigned, receipt.offset).receipt
       if (!isDeepStrictEqual(recomputed, receipt)) throw new Error("retrieved page commitment mismatch")
+      const owner = owners.get(assigned.artifact_path)
+      if (owner && !records.has(assigned.artifact_path)) records.set(assigned.artifact_path, {
+        record: readActionRecord(state.project_directory, owner.reference, owner.identity),
+        selectedSubmission: owner.selectedSubmission, firstBashOrdinal: owner.firstBashOrdinal,
+      })
     } catch (cause) {
       throw new StoreError("retrieved evidence page integrity failed", { cause })
     }
   }
+  return records
+}
+
+/** The live checker and hydrated persistence boundary use this same evaluator. */
+export function validateCheckerActionConsistency(state: RunState, nodeId: string, attempt: NodeAttempt, output: unknown = attempt.output): string[] {
+  verifyClaimedSubmission(state, nodeId, attempt)
+  const mechanical = hasMechanicalAssessment(output)
+  const records = verifyAttemptActionEvidence(state, nodeId, attempt, mechanical)
+  if (mechanical && !attempt.verification_basis) return [MECHANICAL_BINDING_FAILURE]
+  return validateCheckerConsistency(output, attempt.retrieved_evidence ?? [], records)
 }
 
 function hydrateAttemptData(
@@ -950,8 +1031,6 @@ function hydrateAttemptData(
       throw new StoreError("task evidence integrity or contract binding failed", { cause })
     }
   }
-  verifyAttemptActionEvidence(state, nodeId, complete)
-
   if (outputReference) {
     const output = readAndVerifyReference(state, outputReference)
     const parsed = parseReferencedAgentOutput(agent, output, outputReference, "attempt artifact")
@@ -961,6 +1040,9 @@ function hydrateAttemptData(
     complete.output = parsed
   } else if (complete.output !== undefined && !schemaForAgent(agent).safeParse(complete.output).success) {
     throw new StoreError(`inline attempt output violates ${agent} output schema`)
+  }
+  if (validateCheckerActionConsistency(state, nodeId, complete).length) {
+    throw new StoreError("checker mechanical assessment violates its persisted observations")
   }
 
   complete.failures_omitted = undefined
@@ -2040,6 +2122,8 @@ function prepareRunForImmutableCommit(candidate: RunState, current: RunState): R
         throw new StoreError("committed action evidence manifest is immutable")
       if (attempt.action_evidence_sources && !isDeepStrictEqual(attempt.action_evidence_sources, candidate?.action_evidence_sources))
         throw new StoreError("committed checker evidence sources are immutable")
+      if (attempt.verification_basis && !isDeepStrictEqual(attempt.verification_basis, candidate?.verification_basis))
+        throw new StoreError("committed checker verification basis is immutable")
       const pages = attempt.retrieved_evidence ?? []
       const candidatePages = candidate?.retrieved_evidence ?? []
       if (candidatePages.length < pages.length || !isDeepStrictEqual(candidatePages.slice(0, pages.length), pages) ||

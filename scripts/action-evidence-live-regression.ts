@@ -8,7 +8,11 @@ import { setTimeout as delay } from "node:timers/promises"
 import { isDeepStrictEqual } from "node:util"
 import { createRun, hydrateRunFully, loadRun } from "../src/store.ts"
 import { ActionEvidenceJournal } from "../src/action-evidence.ts"
-import { evidencePage } from "../src/evidence-retrieval.ts"
+import { EvidenceSourcesSchema, evidencePage } from "../src/evidence-retrieval.ts"
+import { MechanicalAssessmentSchema, VerificationBasisSchema, criteriaDigest, classifyVerificationEvidenceGap,
+  retrievedVerificationEvidence, validateVerification } from "../src/verification.ts"
+import { extractJsonDetailed } from "../src/sessions.ts"
+import { parseAndValidate } from "../src/schemas.ts"
 import { validateOpenCodeVersion, realUserGlobalConfigRoots, snapshotGlobalOpenCodeConfig, verificationPluginConfiguration,
   runVersionCommand, VersionCommandError, type VersionCommandEvidence } from "./live-verify.ts"
 import { redactEvolutionText } from "../src/skill-evolution-redaction.ts"
@@ -252,7 +256,7 @@ function createProvider(caseId: CaseId) {
           // Only this user turn decides whether to dispatch. Pre-compaction calls remain in history.
           const currentTurn = messages.slice(messages.map((message: any) => message?.role).lastIndexOf("user"))
           const tool = prompt.includes(RESUME_MARKER) ? "alg_resume" : "alg_run"
-          if (!calledTools(currentTurn).some(call => call.name === tool)) choice = { tool: toolChoice(body, tool, { run_id: RUN_ID, max_waves: 1 }) }
+          if (!calledTools(currentTurn).some(call => call.name === tool)) choice = { tool: toolChoice(body, tool, { run_id: RUN_ID, max_waves: tool === "alg_resume" ? 2 : 1 }) }
           else choice = { text: "The requested deterministic ALG wave finished." }
         } else if (role === "implementer") {
           const bashCalls = calls.filter(call => call.name === "bash")
@@ -295,7 +299,8 @@ function createProvider(caseId: CaseId) {
 const OWNER_TITLE = "ALG real-checker action evidence diagnostic parent"
 const RUN_ID = "action-evidence-live-regression"
 const GOAL = "Execute a fixed harmless command sequence and verify its persisted host evidence."
-const FIXTURE_VERSION = "action-evidence-live-v3"
+const FIXTURE_VERSION = "action-evidence-live-v4"
+const REPAIR_ALLOWANCE = "v4-pre-issuance-schema-or-validated-evidence-unavailable"
 const CRITERION = "The first recorded bash call within the producer attempt has its captured command retained exactly, and its linked host terminal explicitly reports exit code zero."
 const LOCAL_PROVIDER = "action-evidence-fixture"
 type CaseId = "correct" | "defective"
@@ -305,9 +310,14 @@ export interface LiveActionEvidenceGradeInput {
   case_id: CaseId
   run: any
   producer: Json
-  checker_output: any
-  retrieved: readonly any[]
-  checker_history: readonly any[]
+  checker_histories: readonly CheckerAttemptHistory[]
+  compaction_completed_at: number
+}
+export interface CheckerAttemptHistory { attempt: number; session_id: string; messages: readonly any[] }
+
+export function checkerAttemptSnapshot(attempt: unknown, history: readonly any[], secrets: readonly string[] = []) {
+  // Invalid JSON is absent from durable attempt.output; retain its original host text as well.
+  return boundedPrivateHostEvidence({ attempt, native_history: history }, secrets)
 }
 
 /** Deterministic host-side oracle. It validates provenance and model verdict; it never feeds the oracle to the checker. */
@@ -316,30 +326,98 @@ export function gradeLiveActionEvidenceCase(input: LiveActionEvidenceGradeInput)
   const evidence = input.producer
   const attempt = input.run?.nodes?.work?.attempts?.[0]
   const checker = input.run?.nodes?.check
-  const findings = input.checker_output?.findings
+  const attempts: any[] = Array.isArray(checker?.attempts) ? checker.attempts : []
+  const finalAttempt = attempts.at(-1), output = finalAttempt?.output
+  const histories = input.checker_histories
+  const finalHistory = histories.at(-1)?.messages ?? []
+  const countBound = attempts.length >= 1 && attempts.length <= 2 && checker?.current_attempt === attempts.length &&
+    input.run?.global_attempts === 1 + attempts.length && attempts.every((row, index) => row.attempt === index + 1)
+  const sessionIds = attempts.map(row => row.session_id)
+  const freshSessions = sessionIds.every(id => typeof id === "string" && id.length > 0 && id !== attempt?.session_id && id !== input.run?.owner_session_id) &&
+    new Set(sessionIds).size === attempts.length
+  const historiesBound = histories.length === attempts.length && histories.length > 0 && histories.every((entry, index) => {
+    const native = entry.messages, session = attempts[index]?.session_id
+    return entry.attempt === attempts[index]?.attempt && entry.session_id === session && native.length > 0 &&
+      native.every(message => typeof message?.info?.id === "string" && message.info.sessionID === session &&
+        Array.isArray(message.parts) && message.parts.every((part: any) => typeof part.id === "string" &&
+          part.sessionID === session && part.messageID === message.info.id)) &&
+      new Set(native.map(message => message.info.id)).size === native.length &&
+      new Set(native.flatMap(message => message.parts.map((part: any) => part.id))).size === native.flatMap(message => message.parts).length
+  })
+  const afterCompaction = Number.isFinite(input.compaction_completed_at) && attempts.every((row, index) => {
+    const start = Date.parse(row.started_at), end = Date.parse(row.finished_at)
+    return start >= input.compaction_completed_at && end >= start && (index === 0 || start >= Date.parse(attempts[index - 1].finished_at))
+  })
+  const nativeOutputMatches = (row: any, index: number): boolean => {
+    const assistant = histories[index]?.messages.filter(message => message?.info?.role === "assistant").at(-1)
+    const text = (assistant?.parts ?? []).filter((part: any) => part.type === "text").map((part: any) => part.text).join("\n")
+    return !!row.output && !assistant?.info?.error && isDeepStrictEqual(extractJsonDetailed(text, "checker").value, row.output)
+  }
+  const submissionJson = JSON.stringify(attempt?.output)
+  const expectedSources = { version: 1, journals: [{ run_id: input.run?.run_id, node_id: "work", attempt: 1,
+    child_session_id: attempt?.session_id, reference: attempt?.action_evidence_ref }], omitted: 0, unavailable: 0 }
+  const sameAssignment = isDeepStrictEqual(input.run?.criteria, [CRITERION]) && typeof submissionJson === "string" &&
+    input.run?.graph?.nodes?.find((node: any) => node.id === "check")?.inputs?.claimed === "work" && attempts.length > 0 && attempts.every(row => {
+      const basis = VerificationBasisSchema.safeParse(row.verification_basis), sources = EvidenceSourcesSchema.safeParse(row.action_evidence_sources)
+      if (!basis.success || !sources.success || !isDeepStrictEqual(sources.data, expectedSources) ||
+        !isDeepStrictEqual(row.verification_basis, attempts[0].verification_basis) ||
+        basis.data.criteria_sha256 !== criteriaDigest([CRITERION]) || !isDeepStrictEqual(basis.data.criterion_ids, ["C1"])) return false
+      // Host metadata pins the wired claim without granting another E citation or duplicating its content.
+      return isDeepStrictEqual(basis.data.claimed_submission, { run_id: input.run.run_id, node_id: "work", reference: "work", attempt: 1,
+        json_sha256: sha(submissionJson), json_bytes: Buffer.byteLength(submissionJson) })
+    })
+  const priorCategories = attempts.slice(0, -1).map((row, index) => {
+    if (row.status !== "failed" || row.error || row.shell_ok === false || row.shell_setup_failed === true ||
+      !Array.isArray(row.failures) || row.failures.length === 0) return "ineligible"
+    if (row.outcome === "schema_invalid" && row.schema_ok === false && row.output === undefined) return "schema_invalid"
+    const basis = VerificationBasisSchema.safeParse(row.verification_basis)
+    if (row.outcome === "evidence_unavailable" && row.schema_ok === true && parseAndValidate("checker", row.output).ok &&
+      basis.success && validateVerification(row.output, basis.data, row.retrieved_evidence ?? []).length === 0 &&
+      classifyVerificationEvidenceGap(row.output) && nativeOutputMatches(row, index)) return "evidence_unavailable"
+    return "ineligible"
+  })
+  const priorRepairOnly = priorCategories.every(category => category !== "ineligible")
+  const graphNodes = input.run?.graph?.nodes ?? []
+  const noFeedback = graphNodes.length === 2 && graphNodes.every((node: any) => node.feedback_to === undefined) &&
+    attempts.every(row => row.feedback_applied !== true) && attempt?.feedback_applied !== true
+  const allowanceExact = input.run?.graph?.max_global_attempts === 3 && input.run?.graph?.max_concurrency === 1 &&
+    graphNodes.find((node: any) => node.id === "work")?.loop?.max_attempts === 1 &&
+    graphNodes.find((node: any) => node.id === "check")?.loop?.max_attempts === 2
+  const terminalStatus = expectedPass ? "done" : "failed"
+  const finalTerminal = finalAttempt?.schema_ok === true && finalAttempt.status === terminalStatus &&
+    finalAttempt.outcome === (expectedPass ? "passed" : "substantive_rejection") && checker?.status === terminalStatus &&
+    input.run?.status === terminalStatus && input.run?.phase === terminalStatus && !finalAttempt.error && parseAndValidate("checker", output).ok
+  const finalOutputBound = !!finalAttempt && nativeOutputMatches(finalAttempt, attempts.length - 1)
+  const findings = output?.findings
   const finding = Array.isArray(findings) && findings.length === 1 ? findings[0] : undefined
   const expectedIds = new Set([evidence?.first_records?.intent?.sha256, evidence?.first_records?.terminal?.sha256])
-  const receipts = Array.isArray(input.retrieved) ? input.retrieved : []
+  const receipts: any[] = Array.isArray(finalAttempt?.retrieved_evidence) ? finalAttempt.retrieved_evidence : []
   const receiptIds = new Set(receipts.map(row => row?.id))
-  const checkerTools = hostTools(input.checker_history)
+  const checkerTools = hostTools(finalHistory)
   const reads = checkerTools.filter(part => part.tool === "alg_artifact")
-  const assistantMessages = input.checker_history.filter((message: any) => message?.info?.role === "assistant")
   const configuredCheckerObserved = typeof evidence?.checker_provider_id === "string" &&
-    typeof evidence?.checker_model_id === "string" && assistantMessages.length > 0 &&
-    assistantMessages.every((message: any) => message.info.providerID === evidence.checker_provider_id &&
-      message.info.modelID === evidence.checker_model_id)
+    typeof evidence?.checker_model_id === "string" && histories.length > 0 && histories.every(entry => {
+      const assistants = entry.messages.filter(message => message?.info?.role === "assistant")
+      return assistants.length > 0 && assistants.every(message => message.info.providerID === evidence.checker_provider_id &&
+        message.info.modelID === evidence.checker_model_id)
+    })
   const readHashes = new Set(reads.filter(part => part.state?.input?.evidence === "read").map(part => part.state?.input?.record_id))
   const producerActions = input.run?.nodes?.work?.attempts?.flatMap((row: any) => row?.action_evidence_ref ? [row.action_evidence_ref.sha256] : []) ?? []
   const passedEvidence = typeof evidence?.first_terminal?.exit_code === "number" && evidence.first_terminal.exit_code === 0
   const defectiveEvidence = typeof evidence?.first_terminal?.exit_code === "number" && evidence.first_terminal.exit_code !== 0
   const exactActionCardinality = evidence?.observed_calls === 10 && evidence?.completed === 10 && evidence?.unknown_terminal === 0 &&
     attempt?.action_evidence_ref?.sha256 === evidence?.manifest_sha256 && producerActions.length === 1 &&
-    input.run?.nodes?.work?.current_attempt === 1 && input.run?.nodes?.work?.attempts?.length === 1
-  const actualPageReads = expectedIds.size === 2 && [...expectedIds].every(id => {
+    input.run?.nodes?.work?.current_attempt === 1 && input.run?.nodes?.work?.attempts?.length === 1 &&
+    input.run?.nodes?.work?.status === "done" && attempt?.attempt === 1 && attempt?.status === "done" && attempt?.schema_ok === true
+  const actualPageReads = receipts.length === 2 && expectedIds.size === 2 && [...expectedIds].every((id, index) => {
     const receipt = receipts.find(row => row?.reference?.sha256 === id)
-    const tool = reads.find(part => part.state?.input?.evidence === "read" && part.state?.input?.record_id === id)
-    return !!receipt && receiptIds.has(receipt.id) && !!tool && parseJsonDeep(tool.state?.output).some(value =>
-      value.citation_id === receipt.id && isDeepStrictEqual(value.receipt, receipt))
+    const tool = reads[index + 1], reference = index === 0 ? evidence?.first_records?.intent : evidence?.first_records?.terminal
+    return !!receipt && receiptIds.has(receipt.id) && isDeepStrictEqual(receipt.reference, reference) && receipt.offset === 0 &&
+      receipt.length === receipt.total_bytes && tool?.state?.input?.evidence === "read" && tool.state.input.record_id === id &&
+      tool.state.input.offset === 0 && parseJsonDeep(tool.state?.output).some(value => {
+      if (value.citation_id !== receipt.id || !isDeepStrictEqual(value.receipt, receipt) || typeof value.content !== "string") return false
+      try { return isDeepStrictEqual(retrievedVerificationEvidence(receipt.reference, 0, value.content), receipt) } catch { return false }
+    })
   })
   const retrievedBothPages = actualPageReads && [...expectedIds].every(id => readHashes.has(id)) &&
     checkerTools.length === 3 && reads.length === 3 && reads.every(part => part.state?.status === "completed") &&
@@ -347,22 +425,50 @@ export function gradeLiveActionEvidenceCase(input: LiveActionEvidenceGradeInput)
   const citations = Array.isArray(finding?.evidence_ids) ? finding.evidence_ids : []
   const citationsBound = citations.length === 2 && new Set(citations).size === 2 && citations.every((id: unknown) => typeof id === "string" && receiptIds.has(id)) &&
     [...expectedIds].every(id => citations.some((citation: string) => receipts.some(row => row?.id === citation && row?.reference?.sha256 === id)))
+  const assessment = MechanicalAssessmentSchema.safeParse(finding?.mechanical_assessment)
+  const typedAssessmentUsed = finding?.criterion_id === "C1" && assessment.success &&
+    assessment.data.intent_id === receipts.find(row => row.reference?.sha256 === evidence?.first_records?.intent?.sha256)?.id &&
+    assessment.data.terminal_id === receipts.find(row => row.reference?.sha256 === evidence?.first_records?.terminal?.sha256)?.id &&
+    typeof assessment.data.intent_id === "string" && typeof assessment.data.terminal_id === "string"
+  // Evaluator-only C1 mapping: captured order, retention, linkage and reported exit; not command correctness.
+  const mechanicalC1Covered = typedAssessmentUsed && assessment.success && assessment.data.predicates.length === 4 &&
+    ["first_recorded_bash", "complete_command", "linked_pair", "exit_equals"].every(kind =>
+      assessment.data.predicates.some(predicate => predicate.kind === kind)) &&
+    assessment.data.predicates.some(predicate => predicate.kind === "exit_equals" && predicate.expected === 0)
   const outcomeValid = expectedPass ? finding?.outcome === "supported" : finding?.outcome === "disconfirmed"
   const expectedVerdict = expectedPass
-  const verdictCorrect = input.checker_output?.passed === expectedVerdict && finding?.criterion_id === "C1" &&
+  const verdictCorrect = output?.passed === expectedVerdict && finding?.criterion_id === "C1" &&
     outcomeValid && citationsBound && (expectedPass ? passedEvidence : defectiveEvidence)
-  const noReplay = producerActions.length === 1 && checker?.current_attempt === 1 && checker?.attempts?.length === 1 &&
-    (checker?.attempts?.[0]?.session_id !== attempt?.session_id)
-  const passed = exactActionCardinality && retrievedBothPages && verdictCorrect && noReplay && configuredCheckerObserved
-  return { passed, case_id: input.case_id, expected_verdict: expectedVerdict ? "pass" : "reject", observed_verdict: input.checker_output?.passed === true ? "pass" : input.checker_output?.passed === false ? "reject" : "missing",
+  const noReplay = exactActionCardinality && freshSessions && noFeedback
+  const repairValid = countBound && allowanceExact && priorRepairOnly && afterCompaction && sameAssignment
+  const passed = exactActionCardinality && retrievedBothPages && verdictCorrect && noReplay && configuredCheckerObserved &&
+    repairValid && historiesBound && finalTerminal && finalOutputBound && mechanicalC1Covered
+  return { passed, case_id: input.case_id, expected_verdict: expectedVerdict ? "pass" : "reject", observed_verdict: output?.passed === true ? "pass" : output?.passed === false ? "reject" : "missing",
     exact_action_cardinality: exactActionCardinality, retrieved_both_original_pages: retrievedBothPages, citations_bound_to_original_pages: citationsBound,
     no_producer_replay: noReplay, configured_real_checker_observed: configuredCheckerObserved,
+    checker_attempt_count: attempts.length, final_attempt: finalAttempt?.attempt ?? null,
+    repair_allowance: REPAIR_ALLOWANCE, bounded_checker_repair_only: repairValid,
+    first_attempt_category: attempts[0]?.outcome ?? null, first_attempt_repair_category: priorCategories[0] ?? "not_used",
+    prior_attempts_eligible: priorRepairOnly, prior_attempts_schema_invalid: priorCategories.every(category => category === "schema_invalid"),
+    same_criteria_submission_and_sources: sameAssignment, native_histories_bound: historiesBound,
+    final_attempt_outcome: finalAttempt?.outcome ?? null,
+    all_attempts_after_compaction: afterCompaction, final_schema_and_terminal_valid: finalTerminal, final_output_matches_native_response: finalOutputBound,
+    typed_assessment_used: typedAssessmentUsed, mechanical_assessment_covers_c1: mechanicalC1Covered,
+    final_mechanical_assessment: finding?.mechanical_assessment ?? null,
+    no_feedback_route: noFeedback, retrieval_recipe: "exactly index, intent read, terminal read; rereads remain disallowed",
     evidence_consistent_with_case: expectedPass ? passedEvidence : defectiveEvidence,
     failure_reasons: [!exactActionCardinality && "producer action count or immutable manifest identity was not exact",
       !retrievedBothPages && "checker did not retrieve both actual original intent and terminal pages",
       !citationsBound && "checker citations were missing, forged, or not bound to both original pages",
       !verdictCorrect && "checker verdict did not match the recorded action result and case contract",
-      !noReplay && "producer replay or unexpected checker retry was observed",
+      !noReplay && "producer replay, reused child session or substantive-feedback route was observed",
+      !repairValid && "checker attempts were outside the bounded schema/evidence-unavailable repair allowance or changed assignment",
+      !sameAssignment && "checker criteria, submission pin or original source manifests were missing, changed or misbound",
+      !historiesBound && "a checker attempt's native history was missing, foreign or misbound",
+      !finalTerminal && "final checker attempt was missing, invalid, exhausted or not in the required terminal state",
+      !finalOutputBound && "final validated output did not match the final native assistant response",
+      !typedAssessmentUsed && "final C1 did not use a typed mechanical assessment bound to both original pages",
+      !mechanicalC1Covered && "final C1 mechanical assessment did not contain exactly its four published predicates and expected exit zero",
       !configuredCheckerObserved && "checker session did not report the separately configured provider/model identity"].filter(Boolean) }
 }
 
@@ -519,37 +625,39 @@ export function parentDispatchReceipt(before: any[], compacted: any[], resumed: 
   const parentEmissions = emissions.filter(row => row.role === "parent")
   const emissionMatch = parentEmissions.length === 2 && parentEmissions[0]?.tool === "alg_run" &&
     parentEmissions[1]?.tool === "alg_resume" && new Set(parentEmissions.map(row => row.call_id)).size === 2 &&
-    parentEmissions.every(row => row.run_id === run.run_id && row.max_waves === 1)
+    parentEmissions.every((row, index) => row.run_id === run.run_id && row.max_waves === (index === 0 ? 1 : 2))
   const stage = (history: any[], expectedCount: number) => {
     const parts = hostTools(history), actual = parts.filter(part => part.tool === "alg_run" || part.tool === "alg_resume")
     const matchedDispatches = actual.length === expectedCount && actual.every((part, index) => {
       const emitted = parentEmissions[index]
       return emitted && part.tool === emitted.tool && part.callID === emitted.call_id && part.state?.status === "completed" &&
-        isDeepStrictEqual(part.state.input, { run_id: run.run_id, max_waves: 1 })
+        isDeepStrictEqual(part.state.input, { run_id: run.run_id, max_waves: emitted.max_waves })
     })
     const cards = parts.filter(part => part.tool === "task" && ["work", "check"].some(nodeId => {
-      const node = run.nodes[nodeId], attempt = node?.attempts[0]
+      const node = run.nodes[nodeId]
       const dispatch = actual.find(row => row.tool === (nodeId === "work" ? "alg_run" : "alg_resume"))
-      // Exact native projector identity, completed attempt, parent message and child binding; arbitrary task calls fail.
-      return attempt?.attempt === 1 && (attempt.status === "done" || nodeId === "check" && attempt.status === "failed") && dispatch &&
+      // Exact native projector identity, parent message and child binding; arbitrary task calls fail.
+      return node?.attempts.some(attempt => (attempt.status === "done" || nodeId === "check" && attempt.status === "failed") && dispatch &&
         part.callID === `call_alg_${sha(`${run.run_id}\0${nodeId}\0${attempt.attempt}`).slice(0, 24)}` &&
         part.sessionID === run.owner_session_id && part.messageID === dispatch.messageID &&
         part.state?.status === (attempt.status === "done" ? "completed" : "error") &&
-        isDeepStrictEqual(part.state.input, { description: nodeId,
+        isDeepStrictEqual(part.state.input, { description: attempt.attempt === 1 ? nodeId : `${nodeId} · attempt ${attempt.attempt}`,
           prompt: `ALG run ${run.run_id}, node ${nodeId}, attempt ${attempt.attempt}.`, subagent_type: node!.agent }) &&
-        part.state.metadata?.sessionId === attempt.session_id && part.state.metadata?.parentSessionId === run.owner_session_id
+        part.state.metadata?.sessionId === attempt.session_id && part.state.metadata?.parentSessionId === run.owner_session_id)
     }))
     const unknown = parts.length - actual.length - cards.length
     return { alg_run: actual.filter(part => part.tool === "alg_run").length,
       alg_resume: actual.filter(part => part.tool === "alg_resume").length, task_cards: cards.length,
       total_tool_parts: parts.length, unexpected_tool_parts: unknown,
       dispatches_match: matchedDispatches,
-      passed: matchedDispatches && unknown === 0 && new Set(cards.map(part => part.callID)).size === cards.length &&
+      passed: matchedDispatches && unknown === 0 && cards.length === (expectedCount === 1 ? 1 : 1 + (run.nodes.check?.attempts.length ?? 0)) &&
+        new Set(cards.map(part => part.callID)).size === cards.length &&
         parts.every(part => typeof part.id === "string") && new Set(parts.map(part => part.id)).size === parts.length }
   }
   const beforeCompaction = stage(before, 1), afterCompaction = stage(compacted, 1), afterResume = stage(resumed, 2)
-  const runCountsMatch = run.global_attempts === 2 && run.nodes.work?.current_attempt === 1 && run.nodes.work?.attempts.length === 1 &&
-    run.nodes.work?.status === "done" && run.nodes.check?.current_attempt === 1 && run.nodes.check?.attempts.length === 1 &&
+  const checkerCount = run.nodes.check?.attempts.length ?? 0
+  const runCountsMatch = [1, 2].includes(checkerCount) && run.global_attempts === 1 + checkerCount && run.nodes.work?.current_attempt === 1 && run.nodes.work?.attempts.length === 1 &&
+    run.nodes.work?.status === "done" && run.nodes.check?.current_attempt === checkerCount &&
     ["done", "failed"].includes(run.nodes.check?.status ?? "")
   return { passed: emissionMatch && runCountsMatch && beforeCompaction.passed && afterCompaction.passed && afterResume.passed,
     before_compaction: beforeCompaction, after_compaction: afterCompaction, after_resume: afterResume,
@@ -558,10 +666,10 @@ export function parentDispatchReceipt(before: any[], compacted: any[], resumed: 
     global_attempts: run.global_attempts,
     producer_attempts: run.nodes.work?.current_attempt, checker_attempts: run.nodes.check?.current_attempt }
 }
-function validateCheckerRetrieval(project: string, run: ReturnType<typeof loadEvidenceRun>, producer: Json, history: any[]): Json {
-  const checker = run.nodes.check
-  if (!checker || checker.current_attempt !== 1 || checker.attempts.length !== 1) return { passed: false, issue: "checker_attempt_missing_or_retried", page_count: 0, tool_call_count: 0 }
-  const attempt = checker.attempts[0]!, retrieved = attempt.retrieved_evidence ?? []
+function validateCheckerRetrieval(project: string, run: ReturnType<typeof loadEvidenceRun>, producer: Json, history: readonly any[],
+  attempt = run.nodes.check?.attempts.at(-1)): Json {
+  if (!attempt) return { passed: false, issue: "checker_attempt_missing", page_count: 0, tool_call_count: 0 }
+  const retrieved = attempt.retrieved_evidence ?? []
   const expected = [producer.first_records.intent, producer.first_records.terminal].map(reference => {
     const page = evidencePage(project, run.run_id, reference, 0)
     if (page.next_offset !== null) throw new Error("fixed first record unexpectedly needs more than one evidence page")
@@ -611,6 +719,23 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     const rows = await sessionHistory(base, project, session, until)
     privateHostEvidence[label] = boundedPrivateHostEvidence(rows, authSecrets)
     return rows
+  }
+  const captureCheckers = async (run: ReturnType<typeof loadEvidenceRun>, label: string): Promise<CheckerAttemptHistory[]> => {
+    const histories: CheckerAttemptHistory[] = []
+    for (const attempt of run.nodes.check?.attempts ?? []) {
+      const key = `${label}_${attempt.attempt}`
+      // Keep metadata even if the host history fetch fails. No checker request is retried here.
+      privateHostEvidence[key] = checkerAttemptSnapshot(attempt, [], authSecrets)
+      try {
+        if (!host || !attempt.session_id) throw new Error("checker native session unavailable")
+        const messages = await sessionHistory(host.base, project, attempt.session_id, deadline)
+        privateHostEvidence[key] = checkerAttemptSnapshot(attempt, messages, authSecrets)
+        histories.push({ attempt: attempt.attempt, session_id: attempt.session_id, messages })
+      } catch (error) {
+        privateHostEvidence[key].history_error = privateError(error, authSecrets)
+      }
+    }
+    return histories
   }
   let ownerSessionId = "", runId = "", terminalStatus = "unknown", restartVerified = false
   let evidence: Json | null = null, failure: string | null = null, failureRun: Json | null = null
@@ -664,10 +789,10 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     const created = await api(host.base, project, "/session", "POST", { title: OWNER_TITLE }, deadline)
     ownerSessionId = typeof created?.id === "string" ? created.id : ""
     if (!ownerSessionId) throw new Error("OpenCode did not create the parent host session")
-    const graph = { name: "action-evidence-headless", max_global_attempts: 4, max_concurrency: 1, nodes: [
+    const graph = { name: "action-evidence-headless", max_global_attempts: 3, max_concurrency: 1, nodes: [
       { id: "work", agent: "implementer", depends_on: [], description: "Run the fixed harmless command sequence for action evidence acceptance.", loop: { max_attempts: 1, gate: "schema" } },
       { id: "check", agent: "checker", depends_on: ["work"], inputs: { claimed: "work" }, verification: { version: 1 },
-        isolated_check: true, loop: { max_attempts: 1, gate: "schema" } },
+        isolated_check: true, loop: { max_attempts: 2, gate: "schema" } },
     ] }
     const run = createRun({ runId: RUN_ID, projectDirectory: project, ownerSessionId, parentSessionId: ownerSessionId,
       goal: GOAL, criteria: [CRITERION], graph, modelSnapshot: {
@@ -730,27 +855,31 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     provider.resumeNext()
     const resumed = await api(host.base, project, `/session/${encodeURIComponent(ownerSessionId)}/message`, "POST", {
       model: { providerID: LOCAL_PROVIDER, modelID: "deterministic" }, agent: "orchestrator",
-      parts: [{ type: "text", text: `${RESUME_MARKER}\nCall alg_resume once for ${runId} with max_waves=1 to run the checker, then stop.` }],
+      parts: [{ type: "text", text: `${RESUME_MARKER}\nCall alg_resume once for ${runId} with max_waves=2 to run the checker, then stop.` }],
     }, deadline, MAX_RUN_MS)
     persisted = loadEvidenceRun(project, runId)
     terminalStatus = persisted.status
+    const checkerHistories = await captureCheckers(persisted, "checker_attempt")
+    const checkerAttemptsBeforeRestart = structuredClone(persisted.nodes.check?.attempts ?? [])
     evidence = validateEvidence(project, persisted, options.caseId)
     evidence.native_host_consistency = nativeHostConsistency
     freezeJournal("after_resume", evidence)
-    if (persisted.global_attempts !== 2 || persisted.nodes.work?.status !== "done" || persisted.nodes.work.current_attempt !== 1 ||
-      persisted.nodes.work.attempts.length !== 1 || persisted.nodes.check?.current_attempt !== 1 || persisted.nodes.check?.attempts.length !== 1 ||
-      provider.requests.filter(row => row.role === "implementer").length !== producerRequestCount)
-      throw new Error("resume must issue exactly one checker attempt without repeating producer work")
-    const checkerAttempt = persisted.nodes.check.attempts[0]!
-    if (!(Date.parse(checkerAttempt.started_at) >= summaryMarker.summary!.completedAt))
-      throw new Error("checker started before the actual parent summary completed")
-    compaction.checker_started_at = checkerAttempt.started_at
-    const checkerHistory = await observeHistory("checker", host.base, checkerAttempt.session_id!)
+    const checkerHistory = checkerHistories.at(-1)?.messages ?? []
+    compaction.checker_started_at = checkerAttemptsBeforeRestart.map(attempt => attempt.started_at)
     evidence.checker_provider_id = options.providerID
     evidence.checker_model_id = options.modelID
+    evidence.checker_attempts = checkerAttemptsBeforeRestart.map(attempt => ({ ...attempt,
+      retrieval: validateCheckerRetrieval(project, persisted, evidence!,
+        checkerHistories.find(entry => entry.attempt === attempt.attempt)?.messages ?? [], attempt) }))
+    evidence.complete_checker_history_preservation = checkerAttemptsBeforeRestart.length > 0 && checkerAttemptsBeforeRestart.every(attempt => {
+      const snapshot = privateHostEvidence[`checker_attempt_${attempt.attempt}`]
+      return snapshot && !snapshot.truncated && !snapshot.history_error
+    })
     evidence.checker_retrieval = validateCheckerRetrieval(project, persisted, evidence, checkerHistory)
     evidence.case_grade = gradeLiveActionEvidenceCase({ case_id: options.caseId, run: persisted, producer: evidence,
-      checker_output: checkerAttempt.output, retrieved: checkerAttempt.retrieved_evidence ?? [], checker_history: checkerHistory })
+      checker_histories: checkerHistories, compaction_completed_at: summaryMarker.summary!.completedAt })
+    if (provider.requests.filter(row => row.role === "implementer").length !== producerRequestCount)
+      throw new Error("resume repeated deterministic producer work")
     const providerRoles = provider.requests.map(row => row.role)
     if (!providerRoles.includes("parent") || !providerRoles.includes("implementer") || providerRoles.includes("unknown")) throw new Error("deterministic producer/parent provider did not observe the expected roles")
     const history = await observeHistory("parent_after_resume", host.base, ownerSessionId)
@@ -782,9 +911,11 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     const afterRestart = validateEvidence(project, persisted, options.caseId)
     freezeJournal("after_restart", afterRestart)
     if (afterRestart.manifest_sha256 !== evidence.manifest_sha256 || afterRestart.first_command_sha256 !== evidence.first_command_sha256) throw new Error("persisted action evidence changed across server restart")
-    const restartedChecker = validateCheckerRetrieval(project, persisted, afterRestart,
-      await observeHistory("checker_after_restart", host.base, persisted.nodes.check!.attempts[0]!.session_id!))
-    if (!isDeepStrictEqual(restartedChecker, evidence.checker_retrieval)) throw new Error("checker page receipts changed across server restart")
+    const restartedHistories = await captureCheckers(persisted, "checker_after_restart_attempt")
+    const restartedChecker = validateCheckerRetrieval(project, persisted, afterRestart, restartedHistories.at(-1)?.messages ?? [])
+    if (!isDeepStrictEqual(restartedChecker, evidence.checker_retrieval) ||
+      !isDeepStrictEqual(persisted.nodes.check?.attempts, checkerAttemptsBeforeRestart) ||
+      !isDeepStrictEqual(restartedHistories, checkerHistories)) throw new Error("checker attempts, native histories or page receipts changed across server restart")
     const restartedMarkers = observeCompactionMarkers(await observeHistory("parent_after_restart", host.base, ownerSessionId))
     compaction.completed_summary_count_after_restart = restartedMarkers.filter(marker => marker.summary).length
     if (!isDeepStrictEqual(restartedMarkers, markers) || provider.requests.length !== providerRequestsBeforeRestart)
@@ -792,7 +923,7 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     if (provider.errors.length !== 0) throw new Error("deterministic provider recorded an error; inspect the safe provider diagnostics")
     restartVerified = true
     evidence = { ...evidence, after_restart: { same_owner_session: true, same_done_run: true, same_manifest_sha256: true,
-      same_first_command_sha256: true, same_checker_receipts: true } }
+      same_first_command_sha256: true, same_checker_receipts: true, same_all_checker_attempts_and_native_histories: true } }
     sourceAfter = verificationPluginConfiguration().source.digest
     globalAfter = snapshotGlobalOpenCodeConfig(roots, hmacKey)
     if (sourceAfter !== sourceBefore) throw new Error("plugin source identity changed during headless run")
@@ -800,8 +931,10 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
   } catch (error) {
     failure = privateError(error, authSecrets)
     if (runId) try {
-      const failedRun = loadRun(project, runId)
+      const failedRun = loadEvidenceRun(project, runId)
       if (failedRun) {
+        if (!(failedRun.nodes.check?.attempts ?? []).every(attempt => privateHostEvidence[`checker_attempt_${attempt.attempt}`]))
+          await captureCheckers(failedRun, "checker_failure_attempt")
         terminalStatus = failedRun.status
         failureRun = { status: failedRun.status, global_attempts: failedRun.global_attempts,
           nodes: Object.entries(failedRun.nodes).map(([id, node]: [string, any]) => ({ id, status: node.status, current_attempt: node.current_attempt,
@@ -826,15 +959,16 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     try { globalAfter = snapshotGlobalOpenCodeConfig(roots, hmacKey) } catch { globalAfter = { entries: [], sha256: "unavailable" } as any }
     const base = { schema_version: 1, kind: "opencode-alg-v1-action-evidence-headless", generated_at: new Date().toISOString(),
       passed: failure === null && !!evidence && evidence.case_grade?.passed === true &&
+        evidence.complete_checker_history_preservation === true &&
         evidence.native_host_consistency?.passed === true &&
         evidence.checker_retrieval?.passed === true && evidence.parent_dispatch?.passed === true &&
         compaction?.completed_summary_count === 1 && compaction?.receipt?.continuation?.completionLinked === true &&
         Object.keys(journalCheckpoints).length === 4 && new Set(Object.values(journalCheckpoints)).size === 1 &&
         restartVerified && hostStopped && providerStopped && (!authCopyPath || !existsSync(authCopyPath)) &&
         provider.nonLoopbackRequests === 0 && sourceAfter === sourceBefore && globalAfter.sha256 === globalBefore.sha256,
-      scope: "diagnostic: deterministic local parent/producer, one independently configured real checker; no production claim", case_id: options.caseId,
+      scope: "diagnostic: deterministic local parent/producer, at most two fresh independently configured real checker attempts; no production claim", case_id: options.caseId,
       model: { providerID: options.providerID, modelID: options.modelID, configured_output_limit: 8_192 },
-      fixture_version: FIXTURE_VERSION, criterion_sha256: sha(CRITERION),
+      fixture_version: FIXTURE_VERSION, repair_allowance: REPAIR_ALLOWANCE, criterion_sha256: sha(CRITERION),
       host: { executable, version, platform: process.platform, starts: hostCleanup.starts, spawn_attempts: hostCleanup.spawn_attempts,
       clean_stops: hostCleanup.host_stopped }, version_probe: versionProbe, private_host_evidence: privateHostEvidence,
       run: { run_id: runId || null, owner_session_id: ownerSessionId || null, terminal_status: terminalStatus,
@@ -892,10 +1026,10 @@ if (import.meta.main) {
     let complete = false, haltReason: string | null = null
     const makeSummary = () => ({ schema_version: 1, kind: "opencode-alg-v1-action-evidence-live-regression", generated_at: new Date().toISOString(),
       passed: complete && outcomes.every(row => row.passed === true), complete, issued_case_limit: 2, issued_cases: CASES.length,
-      bounds: { per_case_ms: MAX_RUN_MS, total_ms: MAX_TOTAL_MS, output_tokens: 8_192 },
+      bounds: { per_case_ms: MAX_RUN_MS, total_ms: MAX_TOTAL_MS, output_tokens: 8_192, producer_attempts: 1, checker_max_attempts: 2, resume_max_waves: 2 },
       execution_note: "Producer and parent use deterministic local fixture roles. Each checker is a fresh real configured OpenCode provider/model. Diagnostic only; deterministic producer is disclosed.",
       model: { providerID: config.providerID, modelID: config.modelID }, source_sha256: sourceDigest, harness_sha256: harnessDigest,
-      fixture_version: FIXTURE_VERSION, criterion: CRITERION, criterion_sha256: sha(CRITERION),
+      fixture_version: FIXTURE_VERSION, repair_allowance: REPAIR_ALLOWANCE, criterion: CRITERION, criterion_sha256: sha(CRITERION),
       elapsed_ms: Date.now() - started, outcomes })
     mkdirSync(dirname(config.outputPath), { recursive: true })
     writeFileSync(planPath, `${JSON.stringify({ ...makeSummary(), kind: "opencode-alg-v1-action-evidence-live-regression-plan",

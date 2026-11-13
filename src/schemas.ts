@@ -37,6 +37,7 @@ import {
 import { boundDiagnosticList, safeDiagnosticText } from "./diagnostics.ts"
 import { failureListCommitment, sha256Json } from "./persistence.ts"
 import { FindingSchema, VerificationSchema, VerificationBasisSchema, RetrievedVerificationEvidenceSchema, criteriaDigest, validateVerification, classifyVerificationEvidenceGap } from "./verification.ts"
+import { hasMechanicalAssessment } from "./checker-consistency.ts"
 import { EvidenceSourcesSchema } from "./evidence-retrieval.ts"
 import { ACTION_EVIDENCE_MAX_MANIFEST_BYTES } from "./action-evidence.ts"
 import { GraphRevisionReceiptsSchema } from "./graph-revision.ts"
@@ -1184,8 +1185,16 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
   if (context.task_evidence_required && launched && !taskRef) add("launched admitted checker requires its task evidence reference")
   if (context.verification_required && launched && !attempt.verification_basis)
     add("launched verified checker attempt requires its persisted input basis")
+  if (hasMechanicalAssessment(attempt.output) && !attempt.verification_basis)
+    add("mechanical assessment requires a persisted verification basis")
   if (attempt.verification_basis) {
     const basis = attempt.verification_basis
+    const pin = basis.claimed_submission
+    if (pin) {
+      const reference = parseInputExpression(pin.reference)
+      if (pin.run_id !== runId || pin.node_id === nodeId || reference.kind !== "reference" || reference.node !== pin.node_id)
+        add("claimed submission pin must bind another node in this run")
+    }
     const taskEntries = basis.evidence.filter(entry => entry.source.kind === "host_task")
     if (taskRef ? taskEntries.length !== 1 || taskEntries[0]!.source.reference !== taskRef.artifact_path ||
       taskEntries[0]!.source.attempt !== expected || taskEntries[0]!.json_sha256 !== taskRef.sha256 ||

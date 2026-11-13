@@ -12,14 +12,15 @@ import {
 } from "./graph.ts"
 import { canonicalJson, sha256Json } from "./persistence.ts"
 import { buildCheckerEvidence, checkerRelatedNodes, isCheckerEvidencePort } from "./checker-evidence.ts"
-import { buildVerificationBasis, validateVerification, effectiveCriteria, classifyVerificationEvidenceGap } from "./verification.ts"
+import { buildVerificationBasis, pinClaimedSubmission, validateVerification, effectiveCriteria, classifyVerificationEvidenceGap } from "./verification.ts"
+import { hasMechanicalAssessment } from "./checker-consistency.ts"
 import { ActionEvidenceJournal, assertActionEvidenceManifestIdentity } from "./action-evidence.ts"
-import { EvidenceRetrieval, type EvidenceSources, type EvidenceRecord } from "./evidence-retrieval.ts"
+import { EvidenceRetrieval, type EvidenceSource, type EvidenceSources, type EvidenceRecord } from "./evidence-retrieval.ts"
 import { assertManagedGraph, graphPolicy } from "./graph-policy.ts"
 import { assertTaskState } from "./task-contract.ts"
 import { taskEvidence, type TaskEvidence } from "./task-evidence.ts"
 import { captureTaskBaseline } from "./task-baseline.ts"
-import { parseAndValidate } from "./schemas.ts"
+import { parseAndValidate, parseInputExpression } from "./schemas.ts"
 import {
   acquireRunLock,
   writeTaskEvidence,
@@ -31,6 +32,8 @@ import {
   linkSession,
   loadRun,
   persistRunFenced,
+  validateCheckerActionConsistency,
+  resolveCheckerSubmissionActionOrigin,
   type RunLock,
 } from "./store.ts"
 import { awaitLock } from "./filesystem-mutex.ts"
@@ -393,13 +396,22 @@ async function runOneNode(
     log(options, `node ${definition.id} attempt ${attempt}/${localLimit}`)
 
     const inputs = wireInputs(definition, run)
+    const claimed = inputs.claimed ?? Object.fromEntries(Object.entries(inputs).filter(([key]) => !isCheckerEvidencePort(key)))
+    const claimedSource = definition.inputs?.claimed === undefined ? undefined : parseInputExpression(definition.inputs.claimed)
     const evidence = definition.agent === "checker"
       ? buildCheckerEvidence(definition, run, graphPolicy(run.graph)?.checkerEvidencePorts?.[definition.id], task) : undefined
     let actionRecords: EvidenceRecord[] = []
+    let claimedActionSource: EvidenceSource | undefined
     if (definition.agent === "checker" && options.actionEvidence && !dry) {
       const sources: EvidenceSources = { version: 1, journals: [], omitted: 0, unavailable: 0 }
       for (const nodeId of checkerRelatedNodes(definition, run, graphPolicy(run.graph)?.checkerEvidencePorts?.[definition.id])) {
-        for (const prior of run.nodes[nodeId]?.attempts ?? []) {
+        const producer = run.nodes[nodeId]
+        const priors = [...(producer?.attempts ?? [])]
+        const submission = producer?.attempts.find(row => row.attempt === producer.current_attempt)
+        const origin = submission?.reused_output_from === undefined ? submission :
+          resolveCheckerSubmissionActionOrigin(run, nodeId, submission.attempt)
+        if (origin && !priors.some(row => row.attempt === origin.attempt)) priors.push(origin)
+        for (const prior of priors.sort((a, b) => a.attempt - b.attempt)) {
           if (!prior.session_id) continue
           const identity = { run_id: run.run_id, node_id: nodeId, attempt: prior.attempt }
           const reference = prior.action_evidence_ref ?? options.actionEvidence.journal.recover(identity, prior.session_id)
@@ -407,7 +419,10 @@ async function runOneNode(
           if (sources.journals.length >= 64) { sources.omitted++; continue }
           const manifest = options.actionEvidence.journal.readManifest(reference, identity)
           assertActionEvidenceManifestIdentity(manifest, identity, prior.session_id)
-          sources.journals.push({ ...identity, child_session_id: prior.session_id, reference })
+          const source = { ...identity, child_session_id: prior.session_id, reference }
+          sources.journals.push(source)
+          if (inputs.claimed != null && claimedSource?.kind === "reference" && claimedSource.node === nodeId && prior.attempt === origin?.attempt)
+            claimedActionSource = source
           actionRecords.push({ reference, node_id: nodeId, attempt: prior.attempt, kind: "manifest" })
           actionRecords.push(...manifest.entries.map(({ artifact_path, sha256, byte_size, kind, ordinal }) => ({
             reference: { artifact_path, sha256, byte_size }, node_id: nodeId, attempt: prior.attempt, kind, ordinal,
@@ -417,7 +432,12 @@ async function runOneNode(
       attemptRecord.action_evidence_sources = sources
     }
     if (definition.verification) {
-      attemptRecord.verification_basis = buildVerificationBasis(run.criteria, evidence)
+      const reference = definition.inputs?.claimed
+      const source = claimedSource
+      const producerAttempt = source?.kind === "reference" ? run.nodes[source.node]?.current_attempt : undefined
+      const submission = source?.kind === "reference" && reference !== undefined && producerAttempt && inputs.claimed != null
+        ? pinClaimedSubmission({ run_id: run.run_id, node_id: source.node, reference, attempt: producerAttempt }, claimed) : undefined
+      attemptRecord.verification_basis = buildVerificationBasis(run.criteria, evidence, submission)
       // Persist the basis before any child/model call, including runners that fail before session creation.
       await save(run, options)
     }
@@ -491,7 +511,9 @@ async function runOneNode(
             actionEvidenceAvailable: Boolean(options.actionEvidence),
             taskContract: run.task_contract,
             criteria: run.criteria.length ? run.criteria : ["Output must be complete and match the goal."],
-            claimed: inputs.claimed ?? Object.fromEntries(Object.entries(inputs).filter(([key]) => !isCheckerEvidencePort(key))),
+            claimed,
+            claimedSubmission: attemptRecord.verification_basis?.claimed_submission,
+            claimedActionSource,
             evidence,
             verification: definition.verification,
             priorFailures: state.attempts.at(-2)?.outcome === "substantive_rejection" ? [] : state.last_failures,
@@ -571,6 +593,12 @@ async function runOneNode(
         if (definition.verification && attemptRecord.verification_basis) {
           const bindingFailures = validateVerification(rawOutput, attemptRecord.verification_basis, attemptRecord.retrieved_evidence)
           if (bindingFailures.length) { schemaOk = false; failures.push(...bindingFailures) }
+        }
+        if (definition.agent === "checker" && schemaOk && hasMechanicalAssessment(rawOutput)) {
+          let consistencyFailures: string[]
+          try { consistencyFailures = validateCheckerActionConsistency(run, definition.id, attemptRecord, rawOutput) }
+          catch (cause) { throw new PersistenceBoundaryError(cause) }
+          if (consistencyFailures.length) { schemaOk = false; failures.push(...consistencyFailures) }
         }
         if (definition.agent === "implementer" && rawOutput && typeof rawOutput === "object") {
           const filesTouched = (rawOutput as { files_touched?: unknown }).files_touched
@@ -711,7 +739,11 @@ async function runOneNode(
     // checker output and SDK/gate failures retry the node itself.
     const awaitsFeedbackRouting = definition.agent === "checker" && Boolean(definition.feedback_to) &&
       attemptRecord.outcome === "substantive_rejection"
-    state.status = !awaitsFeedbackRouting && state.current_attempt < localLimit ? "pending" : "failed"
+    // A valid substantive verdict ends a verified review of this submission.
+    // Explicit feedback may repair the producer; schema/evidence gaps keep their shared attempt bound.
+    const completedVerifiedReview = definition.agent === "checker" && Boolean(definition.verification) &&
+      attemptRecord.outcome === "substantive_rejection"
+    state.status = !awaitsFeedbackRouting && !completedVerifiedReview && state.current_attempt < localLimit ? "pending" : "failed"
     await save(run, options)
     log(options, `node ${definition.id} failed attempt ${attempt}: ${persistedFailures.join("; ")}`)
 }
@@ -806,7 +838,8 @@ export function prepareRunForResume(run: RunState): RunState {
       state.last_failure_texts_truncated = undefined
       state.status = state.current_attempt < limit ? "pending" : "failed"
       if (state.status === "pending") reopened = true
-    } else if (state.status === "failed" && state.current_attempt < limit) {
+    } else if (state.status === "failed" && state.current_attempt < limit &&
+      !(definition.agent === "checker" && definition.verification && state.attempts.at(-1)?.outcome === "substantive_rejection")) {
       state.status = "pending"
       reopened = true
     } else if (state.status === "skipped") {
@@ -1013,6 +1046,9 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
     await save(run, options)
 
     const maxWaves = Math.max(1, Math.min(options.maxWaves ?? 128, 1_000))
+    // A persisted substantive rejection may have stopped before its feedback
+    // transaction. Resume routes producer repair before making its checker ready.
+    if (operation === "resume") await applyCheckerFeedback(run, options)
     // An infrastructure failure stops this node for this invocation, without
     // burning its remaining attempts or preventing independent siblings.
     const setupStopped = new Set<string>()

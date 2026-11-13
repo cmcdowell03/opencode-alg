@@ -3,18 +3,35 @@ import { z } from "zod"
 import type { CheckerEvidence } from "./checker-evidence.ts"
 import type { RunDataReference } from "./types.ts"
 import { sha256Json } from "./persistence.ts"
+import { MAX_CHECKER_PROMPT_BYTES } from "./limits.ts"
 
 /** Opt-in linkage contract. A valid citation is not a guarantee that a claim is true. */
 export const VerificationSchema = z.object({ version: z.literal(1), mandate: z.string().trim().min(1).max(2_000).optional() }).strict()
 export type Verification = z.infer<typeof VerificationSchema>
+const RetrievedIdSchema = z.string().regex(/^R[a-f0-9]{64}$/)
+export const MechanicalAssessmentSchema = z.object({
+  version: z.literal(1),
+  scope: z.literal("whole_criterion"),
+  intent_id: RetrievedIdSchema.optional(),
+  terminal_id: RetrievedIdSchema.optional(),
+  predicates: z.array(z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("complete_command") }).strict(),
+    z.object({ kind: z.literal("linked_pair") }).strict(),
+    z.object({ kind: z.literal("exit_equals"), expected: z.number().int() }).strict(),
+    z.object({ kind: z.literal("ordinal_equals"), expected: z.number().int().positive() }).strict(),
+    z.object({ kind: z.literal("first_recorded_bash") }).strict(),
+  ])).min(1).max(5).refine(items => new Set(items.map(item => item.kind)).size === items.length),
+}).strict()
 export const FindingSchema = z.object({
   criterion_id: z.string().regex(/^C[1-9][0-9]{0,2}$/),
   outcome: z.enum(["supported", "disconfirmed", "unsupported", "inconclusive"]),
   evidence_ids: z.array(z.string().regex(/^(?:E[1-8]|R[a-f0-9]{64})$/)).max(8),
-  // Explain why the cited observations establish, contradict, lack necessary
-  // support, or fail to discriminate the criterion. Inconclusive means conflicting
-  // or non-discriminating evidence; missing necessary observations are unsupported.
+  // Supported requires observations establishing the criterion; disconfirmed
+  // requires cited contradiction. Unsupported requires adequate observations of
+  // an unmet requirement. Missing, unavailable, conflicting or non-discriminating
+  // required evidence is inconclusive.
   reason: z.string().trim().min(1).max(1_000),
+  mechanical_assessment: MechanicalAssessmentSchema.optional(),
 }).strict()
 export type VerificationFinding = z.infer<typeof FindingSchema>
 const digest = z.string().regex(/^[a-f0-9]{64}$/)
@@ -63,10 +80,27 @@ export function retrievedVerificationEvidence(
 }
 
 const RetrievedVerificationEvidenceListSchema = z.array(RetrievedVerificationEvidenceSchema).max(32)
+export const ClaimedSubmissionSchema = z.object({
+  run_id: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
+  node_id: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
+  reference: z.string().min(1).max(4_096),
+  attempt: z.number().int().positive().max(10_000),
+  json_bytes: z.number().int().nonnegative().max(MAX_CHECKER_PROMPT_BYTES),
+  json_sha256: digest,
+}).strict()
+export type ClaimedSubmission = z.infer<typeof ClaimedSubmissionSchema>
+/** Host-owned identity of the actual wired claim; this is not another evidence citation. */
+export function pinClaimedSubmission(source: Omit<ClaimedSubmission, "json_bytes" | "json_sha256">, claimed: unknown): ClaimedSubmission {
+  const json = JSON.stringify(claimed)
+  if (json === undefined) throw new Error("claimed submission is unavailable")
+  return ClaimedSubmissionSchema.parse({ ...source, json_bytes: Buffer.byteLength(json),
+    json_sha256: createHash("sha256").update(json).digest("hex") })
+}
 export const VerificationBasisSchema = z.object({
   version: z.literal(1),
   criteria_sha256: digest,
   criterion_ids: z.array(z.string().regex(/^C[1-9][0-9]{0,2}$/)).min(1).max(100),
+  claimed_submission: ClaimedSubmissionSchema.optional(),
   evidence: z.array(z.object({
     id: z.string().regex(/^E[1-8]$/),
     port: z.string().min(1).max(64),
@@ -95,10 +129,11 @@ export function effectiveCriteria(criteria: string[]): string[] {
 export function criteriaDigest(criteria: string[]): string {
   return createHash("sha256").update(JSON.stringify(effectiveCriteria(criteria))).digest("hex")
 }
-export function buildVerificationBasis(criteria: string[], evidence?: CheckerEvidence): VerificationBasis {
+export function buildVerificationBasis(criteria: string[], evidence?: CheckerEvidence, claimedSubmission?: ClaimedSubmission): VerificationBasis {
   return VerificationBasisSchema.parse({
     version: 1, criteria_sha256: criteriaDigest(criteria),
     criterion_ids: effectiveCriteria(criteria).map((_, i) => `C${i + 1}`),
+    ...(claimedSubmission ? { claimed_submission: claimedSubmission } : {}),
     evidence: (evidence?.entries ?? []).map(({ value: _value, ...entry }, i) => ({ ...entry, id: `E${i + 1}` })),
     omitted_entries: evidence?.omitted_entries ?? 0,
   })
@@ -134,6 +169,11 @@ export function validateVerification(
     if (new Set(finding.evidence_ids).size !== finding.evidence_ids.length || finding.evidence_ids.some(id => !available.has(id)) ||
       (["supported", "disconfirmed"].includes(finding.outcome) && finding.evidence_ids.length === 0)) {
       return ["schema: findings: code=evidence_binding; cite only supplied included evidence IDs; support or contradiction requires a citation"]
+    }
+    const assessment = finding.mechanical_assessment
+    if (assessment && ([assessment.intent_id, assessment.terminal_id].some(id => id !== undefined &&
+      (!finding.evidence_ids.includes(id) || !retrievedIds.includes(id))) || finding.outcome === "unsupported")) {
+      return ["schema: findings: code=mechanical_binding; mechanical targets require cited registered pages and a supported, disconfirmed or inconclusive outcome"]
     }
   }
   if (verdict.passed !== findings.every(finding => finding.outcome === "supported")) {

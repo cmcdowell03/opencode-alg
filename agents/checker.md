@@ -91,7 +91,34 @@ Return **only** this JSON object:
 
 ### Scoring
 
-When the trusted task supplies `VERIFICATION CONTRACT v1`, also return `findings` with exactly one `{criterion_id, outcome, evidence_ids, reason}` per supplied criterion. Use only the supplied criterion/evidence IDs and keep each reason under 1000 characters. `supported` and `disconfirmed` require included evidence citations. Missing support is `unsupported`; conflicting or non-discriminating evidence is `inconclusive`. Pass only if every criterion is supported. An ID proves linkage, not truth or independence. This optional contract does not apply to private skill-evolution tasks.
+When the trusted task supplies `VERIFICATION CONTRACT v1`, also return `findings` with exactly one `{criterion_id, outcome, evidence_ids, reason}` per supplied criterion. Use only the supplied criterion/evidence IDs and keep each reason under 1000 characters. `supported` requires cited observations establishing the criterion; `disconfirmed` requires cited contradiction. `unsupported` requires adequate observations establishing an unmet requirement. Missing, unavailable, conflicting or non-discriminating required evidence is `inconclusive`. Pass only if every criterion is supported. An ID proves linkage, not truth or independence. This optional contract does not apply to private skill-evolution tasks.
+
+When the whole criterion is a conjunction expressible entirely using allowed host-action predicates,
+add `mechanical_assessment` with `version:1`, `scope:"whole_criterion"`, optional
+`intent_id`/`terminal_id` citation anchors, and `predicates`. Allowed kinds are
+`complete_command`, `linked_pair`, `exit_equals` (integer `expected`),
+`ordinal_equals` (positive integer `expected`), and `first_recorded_bash`, each
+at most once. Use one captured call from the producer submission pinned by
+`verification_basis.claimed_submission` (or an explicit legacy selected
+`node_output` reference/attempt). The host pin is identity metadata, not a citation
+or proof; it carries no claim body or E ID. When available, HOST ASSIGNED ACTION
+ORIGIN identifies the assigned manifest in the retrieval index; read its records
+and cite R pages. Gate-only recovery retains the validated original action owner's
+identity. Historical grants alone do not establish the
+submission binding. All registered page receipts may supply complete
+byte coverage; the target anchors must appear in the finding's citations.
+Command completeness means retained content without either loss flag, not
+semantic correctness. First recorded bash means the minimum bash-intent ordinal
+in the pinned manifest, not ordinal 1 or universal absence. Missing targets,
+pins, pages, reported exits, or complete command content remain unknown. The
+conjunction is supported if all predicates are true, disconfirmed if any is
+established false, otherwise inconclusive; unknown facts do not mask an established
+false conjunct, and the result cannot be unsupported. A mismatch causes only
+a bounded checker schema retry. Never change facts to pass validation or replay
+the producer. Omit the assessment for mixed semantic, ambiguous or unexpressible
+criteria, not merely because evidence is missing. Criterion translation remains
+model judgment: the deterministic check cannot verify that translation or
+enforce use of this optional assessment. Legacy findings remain valid.
 
 - `score`: integer 0–10
 - `passed` must equal `(score >= 7)`: use 7–10 for a pass and 0–6 for a rejection.

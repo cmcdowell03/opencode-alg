@@ -172,3 +172,74 @@ responses as correct. Qualify the native-history comparison locally, then issue
 the complete positive/negative pair under the same time bounds. Keep the
 sixteen-arm task contracts, scorer and allowances unchanged. This diagnostic
 cannot support a claim that wording alone improved model reliability.
+
+## Completion follow-up: factual consistency and measured deployment cost
+
+The V3 diagnostic at `c23269c` rejected the real defect correctly but falsely
+rejected the valid action despite citing its original records and describing
+them as supportive. Both cases retained their evidence through one parent
+compaction and one restart. The planned sixteen-arm comparison was not issued.
+Fresh/update package acceptance passed on both platforms; Windows deployment
+latency remained unresolved. These results and the earlier failures stay fixed.
+
+The next runtime change validates structured checker assertions about bounded,
+host-verifiable facts against their assigned, retrieved action records. It must
+check complete citation coverage, record identity, linkage and integrity. A
+contradictory assessment is invalid checker output and can use the existing
+bounded checker-only retry. It must never become an automatic pass or replay
+producer work. Semantic criteria remain model judgments. Translating a user
+criterion into mechanical predicates is itself a model judgment; consistency
+does not establish the translation's correctness. Legacy evidence remains readable.
+
+A schema-valid substantive rejection ends a verified review of that submission;
+ordinary resume must not reopen it for blind resampling. Explicit producer
+feedback routing remains available and must repair the producer before fresh
+verification. Invalid output and evidence uncertainty retain their existing
+bounded checker-only retry behavior.
+
+Before live use, local controls must cover contradictory acceptance and
+rejection, absent and partial evidence, redaction/truncation, forged citations,
+wrong run/attempt/session, genuine defects, reload validation, bounded repair
+and exhausted repair. Retry diagnostics must use code-owned vocabulary and
+must not echo arbitrary child content. No model-specific behavior is permitted.
+
+The separately versioned V4 diagnostic permits at most two fresh checker
+attempts per case and exactly one producer attempt. Both cases use that same
+allowance, unchanged producer commands and the V3 criterion. Any first failed
+checker attempt remains recorded. A second attempt is eligible only after an
+output-contract failure (`schema_invalid`, `schema_ok=false`) or evidence
+uncertainty (`evidence_unavailable`, `schema_ok=true`) with retained validated
+output containing at least one `inconclusive` finding and otherwise only
+`supported` findings. Substantive rejection, SDK errors and gate failures are
+ineligible. Criteria, the pinned submission and source manifests stay unchanged.
+Both categories share the two-attempt total; they do not grant separate retries.
+Report the initial category separately from the final result. All child histories
+and model identities are measured.
+Final grading uses the final attempt's actual evidence reads and registered
+citations. No producer repair or case replay is allowed. The original
+15-minute case and 35-minute pair limits remain unchanged. Commit the new
+runtime, harness, controls and protocol before issuing the complete pair.
+
+To demonstrate the new consistency path, final admission requires a mechanical
+assessment of the whole C1 criterion, anchored to the original intent and
+terminal citations. Its order-independent predicate set must be exactly
+`first_recorded_bash`, `complete_command`, `linked_pair`, and
+`exit_equals(expected: 0)`. Each maps directly to a clause of the unchanged
+criterion. `ordinal_equals(1)` cannot replace first-recorded-bash selection:
+non-bash hooks also increment ordinals. These grading expectations remain
+outside the model context; the checker receives the ordinary criterion and
+generic plugin instructions. This validates use of the contract for these
+development cases, not model-independent correctness of criterion translation.
+
+Only a passing V4 pair and independent scorer qualification admit the existing
+eight-pair/sixteen-arm comparison. Its tasks, scoring and prospective allowances
+above remain unchanged. A failure closes this diagnostic attempt; it does not
+license repeated paid attempts to obtain a pass.
+
+Deployment optimization must follow measured profiling of filesystem,
+containment, hashing and serialization work. Preserve the existing source,
+staging and installed-release integrity boundaries. Compare the original and
+changed verifier on matched inputs and retain failures and timing variability.
+Qualify the final exact package with fresh/update and server/TUI checks on both
+Windows PowerShell and native WSL Bash. No GitHub runners, global configuration
+changes or V2 work are involved.
