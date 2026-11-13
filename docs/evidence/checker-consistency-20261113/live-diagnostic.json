@@ -42,11 +42,11 @@
       "journal_hashes_identical": true,
       "after_restart": {
         "same_owner_session": true,
-        "same_done_run": true,
         "same_manifest_sha256": true,
         "same_first_command_sha256": true,
         "same_checker_receipts": true,
-        "same_all_checker_attempts_and_native_histories": true
+        "same_all_checker_attempts_and_native_histories": true,
+        "same_terminal_run": true
       },
       "no_producer_replay": true,
       "source_unchanged": true,
@@ -77,11 +77,11 @@
       "journal_hashes_identical": true,
       "after_restart": {
         "same_owner_session": true,
-        "same_done_run": true,
         "same_manifest_sha256": true,
         "same_first_command_sha256": true,
         "same_checker_receipts": true,
-        "same_all_checker_attempts_and_native_histories": true
+        "same_all_checker_attempts_and_native_histories": true,
+        "same_terminal_run": true
       },
       "no_producer_replay": true,
       "source_unchanged": true,

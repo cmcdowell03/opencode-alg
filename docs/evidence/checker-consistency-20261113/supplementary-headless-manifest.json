@@ -1,0 +1,185 @@
+{
+  "note": "Hashes of retained private CLI receipts; no raw histories or workspace paths published.",
+  "artifacts": [
+    {
+      "name": "linux-0512-f14/l2-headless-f14.copy-manifest.json",
+      "bytes": 5774,
+      "sha256": "37afcb78212276c902cf002cf82440a08e5f5ad1d8e1d966ea5e657e5b5b0f09",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/l2-headless-f14.json",
+      "bytes": 36122,
+      "sha256": "49c601ee9e1c7437c28c2c41c74a3ef45dcf3fb587142828ba176991a69d75d4",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/l2-headless-f14.json.alg.events.jsonl",
+      "bytes": 1215,
+      "sha256": "ab12022ce7f0e4f755940890308d4574abe440ac1510a1d389c1691e7524a9d7",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/l2-headless-f14.json.alg.json",
+      "bytes": 16033,
+      "sha256": "905f1fd51137fdd3b7893e837216f50b1c30c6fc97bb868283fee08c1e6f9b83",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/l2-headless-f14.json.build.events.jsonl",
+      "bytes": 1215,
+      "sha256": "4a0738945492a5a844ac8f5d4aa21529ef4ada00d5a462b16cf387071f02da28",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/l2-headless-f14.json.build.json",
+      "bytes": 16061,
+      "sha256": "6547da52ef740a51ad7da3ac21e2f7d44beafb3999f04b0b42f2b22d6c4d2765",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/l2-headless-f14.launch-receipt.json",
+      "bytes": 1591,
+      "sha256": "eb0f6652cb6dc765fc9ea9b589c62993a962f019a695743189001ceac5e81f4d",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/l2-headless-f14.process.json",
+      "bytes": 545,
+      "sha256": "384d389cbb5725e255f5994be968c415198b925ba7d64b19173e83553eea9e3c",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/l2-headless-f14.receipt-review.json",
+      "bytes": 3565,
+      "sha256": "b1a14b5febbc6d001c30dc6b3165768c95f8b1604e8e8519673dad4df600f76d",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/l2-headless-f14.source-after.json",
+      "bytes": 518,
+      "sha256": "f4ad3033086a6d107886be3b5bb91f0029d45f9ea02c224b0e1539fd071e1e35",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/l2-headless-f14.source-before.json",
+      "bytes": 518,
+      "sha256": "f4ad3033086a6d107886be3b5bb91f0029d45f9ea02c224b0e1539fd071e1e35",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/l2-headless-f14.stderr.private.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/l2-headless-f14.stdout.private.log",
+      "bytes": 204,
+      "sha256": "7e7f96172c75c735f767d6920c28994916d3f8098bc73a60984619982ab2dd14",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/handoff.json",
+      "bytes": 1644,
+      "sha256": "a3a4fc5c6207d1634612bbb6c9528ebee08d5473352a67f16cd81bf07bca5ead",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/receipt-copy-manifest.json",
+      "bytes": 20434,
+      "sha256": "77e8bd4419403473c56ea1a38b233a7cbdeb88e6649763e77eb21a07e4e1bb2d",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/raw-log-hashes.json",
+      "bytes": 22164,
+      "sha256": "b9e370769e842f56f291ae0002495c33c51e30f95f029451b21ae788855a9b5a",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/supplemental-copy-manifest.json",
+      "bytes": 12729,
+      "sha256": "b711b5ccd93cce7c0558840bf19a0b3156d34c26a8cf083dcd55147b176deec2",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/l2-headless-f14-exit.json",
+      "bytes": 164,
+      "sha256": "d20d81ff353a3c47729071fbd0005a8ac262d906536e4ba136ad7cfa956a8f49",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/l2-headless-f14.private.log",
+      "bytes": 319,
+      "sha256": "d83cb7dbe70cea942d2b44d39bd81ff865f0ac8f526de0c0e7d378cb8972f4db",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/l2-headless-f14.json",
+      "bytes": 36135,
+      "sha256": "955fcad87b88c6e11ddaaa655dcb6305204ec9c4f0f3eb178b6e6070a929dc46",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/clean-source/tests/long-session-headless.test.ts",
+      "bytes": 2042,
+      "sha256": "51d5a88808b016a9cc567be234c19495e8fa143698b7c6e9689c850482bef841",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/l2-headless-f14.json.build.json",
+      "bytes": 16060,
+      "sha256": "d3b89672476fcc8b5d2505caa8b9e3b22733d784e12d09e7dbf4250be1a6a8b2",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/l2-headless-f14.json.build.events.jsonl",
+      "bytes": 1215,
+      "sha256": "09a4e5a8a87683d4cdcb29a23dc0c2b3fff42490771532b48f8faa33cbcf3de3",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/l2-headless-f14.json.alg.json",
+      "bytes": 16032,
+      "sha256": "ce244470ce8251dd3ba11128c89d125ec7260e8059e5b2a40c86caeaa93c5f1e",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/l2-headless-f14.json.alg.events.jsonl",
+      "bytes": 1215,
+      "sha256": "f98cf65a599bc2fc86ab3c7111b8c38374a2428f34649e59cd6d6ab7a91bbf5e",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "l2-wrapper-test-qualification.json",
+      "bytes": 1845,
+      "sha256": "607814f3b573aee662f060902bc5cd84b7463c21eda77fc746cb329477c67950",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "l2-wrapper-receipt-control-final-gate.json",
+      "bytes": 2477,
+      "sha256": "c4ebe7e832e1696963ff83abe39afe1b64e67946b04f8e1986d7178812cc9727",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "l2-wrapper-receipt-control-final.log",
+      "bytes": 515,
+      "sha256": "e5945348cfe9c1c014daace69bd7cb3728d58afcd9bea59d47050c1616f03a1e",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "final-test-wrapper-typecheck.json",
+      "bytes": 164,
+      "sha256": "109db1968eebfe91ef6dc39e56a6e2bdc2a1d4edfdc368bdaec4f0bce86a4da1",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "final-test-wrapper-typecheck.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f",
+      "visibility": "private receipt; sanitized summary drafted"
+    }
+  ]
+}

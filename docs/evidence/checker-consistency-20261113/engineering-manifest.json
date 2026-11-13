@@ -1,0 +1,40 @@
+{
+  "scope": "Supplementary private engineering and review receipts; earlier failures remain preserved",
+  "receipts": [
+    {
+      "private_receipt_name": "deployment-async-freeze-handoff.json",
+      "sha256": "84968bc0c9507561ad59bdf2fc1f96afb1615ef4d6249f5d8b4862c35326f111",
+      "bytes": 10569
+    },
+    {
+      "private_receipt_name": "deployment-freeze-six-file-hashes.json",
+      "sha256": "92525196ed02176b7733873545d3935742174e3a9b0b0e5c20832914beee5a1e",
+      "bytes": 2008
+    },
+    {
+      "private_receipt_name": "manager-async-comparison-a2/comparison-summary.json",
+      "sha256": "e196679f6518278bc96314efaa45a930329efacd49db192941ab3d8beb6b3534",
+      "bytes": 16495
+    },
+    {
+      "private_receipt_name": "manager-async-comparison-a2/source-map.json",
+      "sha256": "295701e5f7417ebfe6cd2e44e11ee20c93d33dfb58f43d5a6e5865d1c52c2b0e",
+      "bytes": 6003
+    },
+    {
+      "private_receipt_name": "windows-async-validation-final/manager-interruption-verified.json",
+      "sha256": "df74644c6070c9b3cbec2d82cbcd91e557c6c0a60c59a89da4a74cc9ec91f635",
+      "bytes": 1054
+    },
+    {
+      "private_receipt_name": "v5-harness-qualification.json",
+      "sha256": "3b9f6d7dc046d29b103982ab35202e618c8682c2eb1039d79382e4829d1cf2a4",
+      "bytes": 4013
+    },
+    {
+      "private_receipt_name": "public-evidence-final-review-74add17.json",
+      "sha256": "69e085cf2b1ee111d1c8cdc23e016653b4c089d3c3d76923e4d6c458f34e8dae",
+      "bytes": 5323
+    }
+  ]
+}

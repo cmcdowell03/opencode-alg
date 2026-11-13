@@ -1,0 +1,583 @@
+{
+  "source_commit": "f14bb1489773800c78dce62684d688aa94c32321",
+  "runtime_reference": "7a327082cc985c6ce5c95f21f81c3c1d1eaf1dff",
+  "runtime_digest": "a2ea71bb3d694468dc039debff5ac8f9b78fdc0c4e90496b52da0335128a0c3f",
+  "status": "PACKAGE_ACCEPTANCE_PASSED",
+  "release_status": "DRAFT_NO_MERGE",
+  "supplementary_headless": {
+    "receipt": "supplementary-headless.json",
+    "linux_cli_passed": true,
+    "windows_cli_passed": true,
+    "unit_test_executed": false,
+    "full_suite_17_skips_unchanged": true
+  },
+  "copied_receipt_rows_verified": 68,
+  "real_checker_gate": "V4_FAILED_UNCHANGED",
+  "cohort_issued": false,
+  "paid_package_calls": 0,
+  "scope": "One local Windows host and its native WSL Linux environment; package and host-registration evidence only.",
+  "limitations": [
+    "Different host environments and versions; descriptive timings only.",
+    "Doctor/ack checks a clean recovery state, not an injected mid-deployment crash.",
+    "Server/TUI identity and package acceptance do not establish model-task success or repair the failed V4 diagnostic.",
+    "Configuration preservation covers the recorded isolated snapshots and custom settings, not every user-global file.",
+    "Windows qualification is scoped; the full-suite result is the separately recorded native Linux run."
+  ],
+  "preserved_attempts": [
+    {
+      "id": "linux-0512",
+      "status": "FAILED_PRESERVED",
+      "source_commit": "74add17135112a4e7207c23ebaac0fee72ad318f",
+      "stage": "full-linux-tests",
+      "counts": {
+        "pass": 1636,
+        "skip": 17,
+        "fail": 1,
+        "assertions": 17711
+      },
+      "exit_code": 1,
+      "seconds": 516.0668066469999,
+      "reason": "Release-version metadata mismatch in npm lock authority; preserved failed full-suite attempt",
+      "receipts": [
+        "package-preparation/linux-0512/candidate-failure.json",
+        "package-preparation/linux-0512/full-linux-tests.receipt.json",
+        "package-preparation/linux-0512/full-linux-tests.stderr.private.log"
+      ]
+    },
+    {
+      "id": "windows-0512",
+      "status": "STOPPED_SUPERSEDED_METADATA",
+      "source_commit": "74add17135112a4e7207c23ebaac0fee72ad318f",
+      "passed": false,
+      "server_tui_stage_started": false,
+      "reason": "Superseded by lock-version metadata repair; stopped before server/TUI acceptance",
+      "receipts": [
+        "package-preparation/windows-0512/superseded-cleanup-receipt.json",
+        "package-preparation/windows-0512/preparation-result.json"
+      ]
+    },
+    {
+      "id": "windows-broad-manager",
+      "status": "INTERRUPTED_NOT_PASS",
+      "reason": "Explicit user stop of only the broad Windows manager-test child",
+      "exit_observed": true,
+      "interruption_exit_code": -1,
+      "process_receipt_exit_code": 4294967295,
+      "seconds": 408.7548054,
+      "scope": "Working-tree manager tests; interrupted, not a full-suite pass",
+      "receipts": [
+        "windows-async-validation-final/manager-interruption-verified.json",
+        "windows-async-validation-final/manager.receipt.json",
+        "windows-async-validation-final/validation-summary.json"
+      ]
+    },
+    {
+      "id": "linux-partial-missing-lock",
+      "status": "PARTIAL_NOT_FULL_SUITE",
+      "base_commit": "7a327082cc985c6ce5c95f21f81c3c1d1eaf1dff",
+      "scope": "Git archive of frozen core + six LF-normalized deployment scope files; engineering check only, not final release gate",
+      "manager_counts": {
+        "pass": 95,
+        "skip": 6,
+        "fail": 1,
+        "assertions": 801
+      },
+      "manager_exit_code": 1,
+      "manager_seconds": 86.889712999,
+      "reason": "Partial engineering fixture omitted bun.lock; manager launcher fixture failed before a complete release gate",
+      "receipts": [
+        "linux-async-validation/source-provenance.json",
+        "linux-async-validation/manager.receipt.json",
+        "linux-async-validation/manager.stderr.private.log",
+        "linux-async-validation/progress.jsonl"
+      ]
+    }
+  ],
+  "platforms": [
+    {
+      "platform": "windows-powershell",
+      "source_commit": "f14bb1489773800c78dce62684d688aa94c32321",
+      "runtime_reference": "f14bb1489773800c78dce62684d688aa94c32321",
+      "runtime_digest": "a2ea71bb3d694468dc039debff5ac8f9b78fdc0c4e90496b52da0335128a0c3f",
+      "package_version": "0.5.12",
+      "target": {
+        "platform": "win32",
+        "arch": "x64",
+        "runtime": "bun",
+        "node_major": null,
+        "bun_major": 1,
+        "libc": "not-applicable"
+      },
+      "manifest_sha256": "4f4346e93ab98852d02619eb1a0331013e64c4d216233124dc15728c22578d08",
+      "manifest_file_sha256": "bb022e6b482b2ea13b876b136c50e70c6385e3153800b55471efd0fc5dc44d1a",
+      "artifact_sha256": "628203d9d7eaa6636039eab6516b08951f90482c96e3d301e8b1df7d8d05702e",
+      "production_identity": {
+        "sha256": "bc0fc88f681a2349e000b97e39aafe4290897609b6cb917e73ebd62a6c9cc50b",
+        "files": 10104,
+        "bytes": 126814923
+      },
+      "archive_sha256": "b5becac659978b4029fee2d4e2f70526e310037dc969a55da7197de17cd31518",
+      "archive_bytes": 29737415,
+      "stock_prepare_script_sha256": "3e51eabd17e54146c4a146d0879fe75a114f2bcdb3e0f0710d21547e4653b206",
+      "archive_name": "opencode-alg-0.5.12-f14bb1489773-win32-bun.tgz",
+      "runner_preparation_elapsed_seconds": 491.3052908,
+      "total_elapsed_seconds": 2149.2427788,
+      "wrapper_status": "PACKAGE_ACCEPTANCE_PASSED",
+      "wrapper_exit_code": 0,
+      "preparation_stages": [
+        {
+          "stage": "stock-prepare",
+          "seconds": 227.9469406,
+          "exit_code": 0
+        },
+        {
+          "stage": "archive-create",
+          "seconds": 7.2998830999999775,
+          "exit_code": 0
+        },
+        {
+          "stage": "archive-extract",
+          "seconds": 11.735312999999994,
+          "exit_code": 0
+        },
+        {
+          "stage": "extracted-full-manifest-once",
+          "seconds": 241.03449039999998,
+          "status": "passed"
+        }
+      ],
+      "upgrade": {
+        "passed": true,
+        "update_exercised": true,
+        "baseline_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+        "checks": {
+          "server_tui_identity_verified": true,
+          "isolated_global_snapshot_unchanged": true,
+          "owned_process_cleanup_verified": true,
+          "custom_config_preserved": true,
+          "custom_agent_preserved": true,
+          "recovery_doctor_clean": true,
+          "exact_redeploy_noop": true
+        },
+        "relocation": {
+          "passed": true,
+          "roots": 3,
+          "artifact_sha256": "628203d9d7eaa6636039eab6516b08951f90482c96e3d301e8b1df7d8d05702e",
+          "manifest_sha256": "4f4346e93ab98852d02619eb1a0331013e64c4d216233124dc15728c22578d08",
+          "inventory_entries": 12926
+        },
+        "stages": [
+          {
+            "stage": "candidate-package-readiness",
+            "seconds": 5.5514928,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-package-readiness",
+            "seconds": 3.9620551,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-deploy",
+            "seconds": 584.5632845,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-server-tui-live",
+            "seconds": 13.0758068,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-doctor-ack",
+            "seconds": 11.8986267,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-deploy",
+            "seconds": 402.6055585,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-relocation-inventory",
+            "seconds": 9.1665928,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-server-tui-live",
+            "seconds": 8.8557894,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-doctor-ack",
+            "seconds": 8.6531141,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-noop",
+            "seconds": 16.5312463,
+            "exit_code": 0
+          }
+        ]
+      },
+      "fresh": {
+        "passed": true,
+        "update_exercised": false,
+        "baseline_commit": null,
+        "checks": {
+          "server_tui_identity_verified": true,
+          "isolated_global_snapshot_unchanged": true,
+          "owned_process_cleanup_verified": true,
+          "custom_config_preserved": true,
+          "custom_agent_preserved": true,
+          "recovery_doctor_clean": true,
+          "exact_redeploy_noop": true
+        },
+        "relocation": {
+          "passed": true,
+          "roots": 3,
+          "artifact_sha256": "628203d9d7eaa6636039eab6516b08951f90482c96e3d301e8b1df7d8d05702e",
+          "manifest_sha256": "4f4346e93ab98852d02619eb1a0331013e64c4d216233124dc15728c22578d08",
+          "inventory_entries": 12926
+        },
+        "stages": [
+          {
+            "stage": "candidate-package-readiness",
+            "seconds": 5.7844276,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-deploy",
+            "seconds": 402.1884562,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-relocation-inventory",
+            "seconds": 9.2314606,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-server-tui-live",
+            "seconds": 7.6270471,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-doctor-ack",
+            "seconds": 10.5486245,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-noop",
+            "seconds": 17.1364576,
+            "exit_code": 0
+          }
+        ]
+      },
+      "live_receipts": [
+        {
+          "lane": "upgrade",
+          "stage": "baseline",
+          "name": "live-verification-36e4c23c63346d1e-687ce7cc-bce7-4a10-a3ec-11bc0f32431f.json",
+          "sha256": "16a8ffb1a3b0110fe99b43986c339e0ff9ad0bdfe7151b77863d9368677370ec",
+          "host_version": "1.19.5",
+          "source_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+          "runtime_digest": "36e4c23c63346d1e580df7ff42ab2032772c8a4f82f2e344f6531e2bbcc56b8c",
+          "registered_tools": 21,
+          "version_probe_exit_code": 0,
+          "server_cleanup": true,
+          "tui_cleanup": true,
+          "server_cleanup_scope": "root-process",
+          "tui_cleanup_scope": "root-process",
+          "global_unchanged": true,
+          "temporary_environment_removed": true,
+          "no_model_calls": true
+        },
+        {
+          "lane": "upgrade",
+          "stage": "candidate",
+          "name": "live-verification-a2ea71bb3d694468-057a0891-fc00-4688-af86-ed129f0544d2.json",
+          "sha256": "a1ff206444c1b6202003e2c7dea7dae070431f8057680bbb94853af134acfa1d",
+          "host_version": "1.19.5",
+          "source_commit": "f14bb1489773800c78dce62684d688aa94c32321",
+          "runtime_digest": "a2ea71bb3d694468dc039debff5ac8f9b78fdc0c4e90496b52da0335128a0c3f",
+          "registered_tools": 21,
+          "version_probe_exit_code": 0,
+          "server_cleanup": true,
+          "tui_cleanup": true,
+          "server_cleanup_scope": "root-process",
+          "tui_cleanup_scope": "root-process",
+          "global_unchanged": true,
+          "temporary_environment_removed": true,
+          "no_model_calls": true
+        },
+        {
+          "lane": "fresh",
+          "stage": "candidate",
+          "name": "live-verification-a2ea71bb3d694468-f2524cd9-b15e-4659-9483-be26041020a1.json",
+          "sha256": "d3f90627d459a5d62048414257c2920e9a4eb0f759901caeb182a1adb536d362",
+          "host_version": "1.19.5",
+          "source_commit": "f14bb1489773800c78dce62684d688aa94c32321",
+          "runtime_digest": "a2ea71bb3d694468dc039debff5ac8f9b78fdc0c4e90496b52da0335128a0c3f",
+          "registered_tools": 21,
+          "version_probe_exit_code": 0,
+          "server_cleanup": true,
+          "tui_cleanup": true,
+          "server_cleanup_scope": "root-process",
+          "tui_cleanup_scope": "root-process",
+          "global_unchanged": true,
+          "temporary_environment_removed": true,
+          "no_model_calls": true
+        }
+      ]
+    },
+    {
+      "platform": "native-wsl-bash",
+      "source_commit": "f14bb1489773800c78dce62684d688aa94c32321",
+      "runtime_reference": "f14bb1489773800c78dce62684d688aa94c32321",
+      "runtime_digest": "a2ea71bb3d694468dc039debff5ac8f9b78fdc0c4e90496b52da0335128a0c3f",
+      "package_version": "0.5.12",
+      "target": {
+        "platform": "linux",
+        "arch": "x64",
+        "runtime": "bun",
+        "node_major": null,
+        "bun_major": 1,
+        "libc": "glibc-2.39"
+      },
+      "manifest_sha256": "e6431d249d2083e2f7d772fa8b5afe86e089ce869febc735e3bca4ab59a758b6",
+      "manifest_file_sha256": "5ecc3dc94b10038e6f8f553a52af8166d3763c3d490c3ec634d9cc5e1c9cf931",
+      "artifact_sha256": "62934ae341a7d4d052b752b795ab8fe97124b1ce52792d872116cd181fd126f9",
+      "production_identity": {
+        "sha256": "54f8178bf71d1463e170941096e52c8bec0ce8acb7af2bd96e41d987a2e96d40",
+        "files": 10052,
+        "bytes": 126621872
+      },
+      "archive_sha256": "eec6138058c9d0055001d96350adf8c998fd23a4414c13a5e65adde125cb5709",
+      "archive_bytes": 30201928,
+      "stock_prepare_script_sha256": "3e51eabd17e54146c4a146d0879fe75a114f2bcdb3e0f0710d21547e4653b206",
+      "archive_name": "opencode-alg-0.5.12-f14bb1489773-linux-bun.tgz",
+      "runner_preparation_elapsed_seconds": 552.835156171,
+      "total_elapsed_seconds": 647.210690583,
+      "wrapper_status": "PACKAGE_ACCEPTANCE_PASSED",
+      "wrapper_exit_code": 0,
+      "preparation_stages": [
+        {
+          "stage": "stock-prepare",
+          "seconds": 5.656192035000073,
+          "exit_code": 0
+        },
+        {
+          "stage": "archive-create",
+          "seconds": 4.218346214000019,
+          "exit_code": 0
+        },
+        {
+          "stage": "archive-extract",
+          "seconds": 1.036726590999984,
+          "exit_code": 0
+        },
+        {
+          "stage": "extracted-full-manifest-once",
+          "seconds": 0.3797742079999298,
+          "status": "passed"
+        }
+      ],
+      "full_suite": {
+        "passed": 1637,
+        "skipped": 17,
+        "failed": 0,
+        "assertions": 17714,
+        "seconds": 521.4173233380001,
+        "exit_code": 0,
+        "typecheck_exit_code": 0,
+        "typecheck_seconds": 18.495197709,
+        "skips_by_guard": {
+          "windows_only": 11,
+          "powershell_unavailable": 5,
+          "opt_in_host_lifecycle": 1
+        }
+      },
+      "upgrade": {
+        "passed": true,
+        "update_exercised": true,
+        "baseline_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+        "checks": {
+          "server_tui_identity_verified": true,
+          "isolated_global_snapshot_unchanged": true,
+          "owned_process_cleanup_verified": true,
+          "custom_config_preserved": true,
+          "custom_agent_byte_preserved": true,
+          "recovery_doctor_clean": true,
+          "exact_redeploy_noop": true
+        },
+        "relocation": {
+          "passed": true,
+          "roots": 3,
+          "artifact_sha256": "62934ae341a7d4d052b752b795ab8fe97124b1ce52792d872116cd181fd126f9",
+          "manifest_sha256": "e6431d249d2083e2f7d772fa8b5afe86e089ce869febc735e3bca4ab59a758b6",
+          "inventory_entries": 12892
+        },
+        "stages": [
+          {
+            "stage": "candidate-package-readiness",
+            "seconds": 0.353379487991333,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-package-readiness",
+            "seconds": 0.4278542995452881,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-deploy",
+            "seconds": 6.536879777908325,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-server-tui-live",
+            "seconds": 18.4014790058136,
+            "exit_code": 0
+          },
+          {
+            "stage": "baseline-doctor-ack",
+            "seconds": 0.808173656463623,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-deploy",
+            "seconds": 7.372008800506592,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-relocation-inventory",
+            "seconds": 1.0259690284729004,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-server-tui-live",
+            "seconds": 18.49378204345703,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-doctor-ack",
+            "seconds": 0.9171531200408936,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-noop",
+            "seconds": 2.230131149291992,
+            "exit_code": 0
+          }
+        ]
+      },
+      "fresh": {
+        "passed": true,
+        "update_exercised": false,
+        "baseline_commit": null,
+        "checks": {
+          "server_tui_identity_verified": true,
+          "isolated_global_snapshot_unchanged": true,
+          "owned_process_cleanup_verified": true,
+          "custom_config_preserved": true,
+          "custom_agent_byte_preserved": true,
+          "recovery_doctor_clean": true,
+          "exact_redeploy_noop": true
+        },
+        "relocation": {
+          "passed": true,
+          "roots": 3,
+          "artifact_sha256": "62934ae341a7d4d052b752b795ab8fe97124b1ce52792d872116cd181fd126f9",
+          "manifest_sha256": "e6431d249d2083e2f7d772fa8b5afe86e089ce869febc735e3bca4ab59a758b6",
+          "inventory_entries": 12892
+        },
+        "stages": [
+          {
+            "stage": "candidate-package-readiness",
+            "seconds": 0.31816959381103516,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-deploy",
+            "seconds": 9.49122953414917,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-relocation-inventory",
+            "seconds": 1.3064727783203125,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-server-tui-live",
+            "seconds": 19.083223342895508,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-doctor-ack",
+            "seconds": 0.8567342758178711,
+            "exit_code": 0
+          },
+          {
+            "stage": "candidate-noop",
+            "seconds": 2.2682478427886963,
+            "exit_code": 0
+          }
+        ]
+      },
+      "live_receipts": [
+        {
+          "lane": "upgrade",
+          "stage": "baseline",
+          "name": "live-verification-36e4c23c63346d1e-54aa389f-6c1b-4222-ad73-0223e6d22586.json",
+          "sha256": "5d537087b1bb5a3c7ca3824193bbf1cb3394e158f228f3e7378e373e05045673",
+          "host_version": "1.18.35",
+          "source_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0",
+          "runtime_digest": "36e4c23c63346d1e580df7ff42ab2032772c8a4f82f2e344f6531e2bbcc56b8c",
+          "registered_tools": 21,
+          "version_probe_exit_code": 0,
+          "server_cleanup": true,
+          "tui_cleanup": true,
+          "server_cleanup_scope": "posix-process-group",
+          "tui_cleanup_scope": "posix-process-group",
+          "global_unchanged": true,
+          "temporary_environment_removed": true,
+          "no_model_calls": true
+        },
+        {
+          "lane": "upgrade",
+          "stage": "candidate",
+          "name": "live-verification-a2ea71bb3d694468-5c016a27-efe7-4ade-9e27-a8d5669b15ae.json",
+          "sha256": "8ed30c5ce4a96ffe9c67c6157008c904138c507f03bbbafeb720729d8655e691",
+          "host_version": "1.18.35",
+          "source_commit": "f14bb1489773800c78dce62684d688aa94c32321",
+          "runtime_digest": "a2ea71bb3d694468dc039debff5ac8f9b78fdc0c4e90496b52da0335128a0c3f",
+          "registered_tools": 21,
+          "version_probe_exit_code": 0,
+          "server_cleanup": true,
+          "tui_cleanup": true,
+          "server_cleanup_scope": "posix-process-group",
+          "tui_cleanup_scope": "posix-process-group",
+          "global_unchanged": true,
+          "temporary_environment_removed": true,
+          "no_model_calls": true
+        },
+        {
+          "lane": "fresh",
+          "stage": "candidate",
+          "name": "live-verification-a2ea71bb3d694468-643c01a7-1dfa-4b12-ac51-3a0f2bc48e63.json",
+          "sha256": "49394a3a94d8ad735b130d425310924fd3f92099d005573a7b1bc54f4f6bbbaa",
+          "host_version": "1.18.35",
+          "source_commit": "f14bb1489773800c78dce62684d688aa94c32321",
+          "runtime_digest": "a2ea71bb3d694468dc039debff5ac8f9b78fdc0c4e90496b52da0335128a0c3f",
+          "registered_tools": 21,
+          "version_probe_exit_code": 0,
+          "server_cleanup": true,
+          "tui_cleanup": true,
+          "server_cleanup_scope": "posix-process-group",
+          "tui_cleanup_scope": "posix-process-group",
+          "global_unchanged": true,
+          "temporary_environment_removed": true,
+          "no_model_calls": true
+        }
+      ]
+    }
+  ]
+}

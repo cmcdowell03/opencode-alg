@@ -1,0 +1,443 @@
+{
+  "note": "Hashes of original private receipts; no credentials, raw histories, or workspace paths are published.",
+  "artifacts": [
+    {
+      "name": "f14-freeze.json",
+      "bytes": 731,
+      "sha256": "8a49e9a4822108d53d7e58772d41dbb7cafc24d107202ca55d485bf3d9cb8e12",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "v4-live-diagnostic-public.json",
+      "bytes": 3650,
+      "sha256": "288b944b94c1c888e11cb183ae1ca548a1f7f3855cda58901f770db1a50f45cb",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/receipt-copy-manifest.json",
+      "bytes": 20434,
+      "sha256": "77e8bd4419403473c56ea1a38b233a7cbdeb88e6649763e77eb21a07e4e1bb2d",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/supplemental-copy-manifest.json",
+      "bytes": 12729,
+      "sha256": "b711b5ccd93cce7c0558840bf19a0b3156d34c26a8cf083dcd55147b176deec2",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "preserved-attempt-history.json",
+      "bytes": 5794,
+      "sha256": "14e3593d1d6dd210af77137f80a25dda7d1c2e64fedbb354a39df92edeb1f031",
+      "visibility": "private derived index; original receipts separately hashed"
+    },
+    {
+      "name": "package-preparation/linux-0512/candidate-failure.json",
+      "bytes": 5603,
+      "sha256": "219a687a897a5d3d52d310d97305a13b2a6115aee3cb2ae38ada6b1ad797b802",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "package-preparation/linux-0512/full-linux-tests.receipt.json",
+      "bytes": 359,
+      "sha256": "00c7a6b15c8b950f00b86fe6a4730a78c55c4f3fe89cb06925549a178dfec844",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "package-preparation/linux-0512/full-linux-tests.stderr.private.log",
+      "bytes": 213111,
+      "sha256": "3245c873f0ecf2fa36ac7ed50d2fab03e3c145f1326cf278a9a431c1be486b0b",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "package-preparation/windows-0512/superseded-cleanup-receipt.json",
+      "bytes": 13034,
+      "sha256": "671f014b8fc9174076e3e20043e693f466e0ab6d3882e80bb5bac5b1f98108be",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "package-preparation/windows-0512/preparation-result.json",
+      "bytes": 11138,
+      "sha256": "4a7157e0c3422224006eb544796534afddc6e928d916cf3bb4f5548c0e85d713",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-async-validation-final/manager-interruption-verified.json",
+      "bytes": 1054,
+      "sha256": "df74644c6070c9b3cbec2d82cbcd91e557c6c0a60c59a89da4a74cc9ec91f635",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-async-validation-final/manager.receipt.json",
+      "bytes": 275,
+      "sha256": "1c14e126435cadb22d88f3f8fb15552da977d3c502a2989eabce6b3545a25d92",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-async-validation-final/validation-summary.json",
+      "bytes": 2609,
+      "sha256": "4ad312cff6b0cbfa595e0762982732d3c61d2e0ac9c8a9f07aa00c3cee3a6f2f",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-async-validation/source-provenance.json",
+      "bytes": 975,
+      "sha256": "8ce0da03784f391e8b95b5ed610a0e8afafa933e37d7d780c4017d10f12b1a45",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-async-validation/manager.receipt.json",
+      "bytes": 87,
+      "sha256": "ff38ccd7f8cb53f18ef767a660f923100b79ec3faeddc478975c26373a9122b5",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-async-validation/manager.stderr.private.log",
+      "bytes": 16052,
+      "sha256": "43f3604ac0f8769a0134f8c84abde9dbab8dd828bb317696b7066492259290ac",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-async-validation/progress.jsonl",
+      "bytes": 532,
+      "sha256": "3730d85bf20400bae56fb0f28fc9875433909327a9275cf281b81b8b75ed8eac",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/candidate-result.json",
+      "bytes": 13261,
+      "sha256": "97bee0f7499ce6b6bc97d5988c473e65dc39f7f0f3c624f6624d88d35bf3eac8",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/preparation-result.json",
+      "bytes": 11266,
+      "sha256": "6971dea75eeaf8b20b2762f541b5e7c3fd12fd7152e493586008184e0cdb1c47",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "package-preparation/windows-0512-f14-runner-exit.json",
+      "bytes": 138,
+      "sha256": "a3b5e59534e2e82bec318ce71c4105ac4de0681fcc066d8d550ff41910cb0392",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/progress.jsonl",
+      "bytes": 16544,
+      "sha256": "b74f3acbfdaff2bb4902c65c0739e460cc340037766028d7497014857d169430",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/extracted-bundle/alg-bundle.json",
+      "bytes": 2723961,
+      "sha256": "bb022e6b482b2ea13b876b136c50e70c6385e3153800b55471efd0fc5dc44d1a",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/acceptance/acceptance-summary.json",
+      "bytes": 1020,
+      "sha256": "c359401ee304f68b77a62dd5de9e8361133ffc193740f95e6d530998e279407e",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/acceptance/acceptance-progress.jsonl",
+      "bytes": 6791,
+      "sha256": "4d5b3c123d8705b049d74bf45da0de537c24d86db3c0734784a5eeb8b40209de",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/acceptance/candidate-relocation-inventory.private.log",
+      "bytes": 222,
+      "sha256": "bb86644b27941ae729838d11ce91463a1cfd48aa50d0b0d33124cfae6330831e",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/acceptance/candidate-deploy.private.log",
+      "bytes": 3923,
+      "sha256": "fc572159d05dbcbabe8e478dc880be63c8da7fc5487f006edd562fbf7134d100",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/acceptance/candidate-noop.private.log",
+      "bytes": 1168,
+      "sha256": "b9ca3e498b1ded29aea80e3ce1164164ab57fbacb4c2e87d3fe9ee70cbc72191",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/acceptance/candidate-doctor-ack.private.log",
+      "bytes": 1743,
+      "sha256": "11fc35826c079b40be81a71e9e3aaba68e3be6c0c286c70cba49cce7561bf8c4",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/acceptance/candidate-package-readiness.private.log",
+      "bytes": 820,
+      "sha256": "0262ac932d4fc7f53beb29b20dae02d07a605afb695f3492230d2a450b64a19c",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/acceptance/live-evidence-index.jsonl",
+      "bytes": 1381,
+      "sha256": "e2e7623a85f3ea907bca2db38ac9091fee6532646b275d5f9ee8e30d40394987",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/live-receipts/live-verification-36e4c23c63346d1e-687ce7cc-bce7-4a10-a3ec-11bc0f32431f.json",
+      "bytes": 48319,
+      "sha256": "16a8ffb1a3b0110fe99b43986c339e0ff9ad0bdfe7151b77863d9368677370ec",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/live-receipts/live-verification-a2ea71bb3d694468-057a0891-fc00-4688-af86-ed129f0544d2.json",
+      "bytes": 54101,
+      "sha256": "a1ff206444c1b6202003e2c7dea7dae070431f8057680bbb94853af134acfa1d",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/fresh-acceptance/acceptance-summary.json",
+      "bytes": 983,
+      "sha256": "cfa8672b0d952ecfa91b050a3c5f3bbf8fe51e634934dada42267bd4a4083528",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/fresh-acceptance/acceptance-progress.jsonl",
+      "bytes": 4156,
+      "sha256": "8e6012ba49f8cc0ff714bd591ef713899b30d87695650bb3dd95146c0e64f85e",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/fresh-acceptance/candidate-relocation-inventory.private.log",
+      "bytes": 222,
+      "sha256": "bb86644b27941ae729838d11ce91463a1cfd48aa50d0b0d33124cfae6330831e",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/fresh-acceptance/candidate-deploy.private.log",
+      "bytes": 3362,
+      "sha256": "b60ffbf61edaa8af55911d78f949971619cded5617fbcf76ba05a35ee1339777",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/fresh-acceptance/candidate-noop.private.log",
+      "bytes": 1180,
+      "sha256": "fea7a5492b936d91931a9f751f2056500ed013ceac44295a59f32088603ff0c6",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/fresh-acceptance/candidate-doctor-ack.private.log",
+      "bytes": 1732,
+      "sha256": "6baff8c7ce9491f66b0dc9456c2bdf1648723ffb91fe9e69bc65d01925af361b",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/fresh-acceptance/candidate-package-readiness.private.log",
+      "bytes": 820,
+      "sha256": "0262ac932d4fc7f53beb29b20dae02d07a605afb695f3492230d2a450b64a19c",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/fresh-acceptance/live-evidence-index.jsonl",
+      "bytes": 691,
+      "sha256": "ecb1c1e5ce769bd947b606f39b7b7ec7a0c57289e7cd6c13bd0b6b0eda14a5fc",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "windows-0512-f14/live-receipts/live-verification-a2ea71bb3d694468-f2524cd9-b15e-4659-9483-be26041020a1.json",
+      "bytes": 54316,
+      "sha256": "d3f90627d459a5d62048414257c2920e9a4eb0f759901caeb182a1adb536d362",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/candidate-result.json",
+      "bytes": 9471,
+      "sha256": "23928af2c7dee2e306618a6ffd051fa6dc7580e1f677efc51a5640eb2b87813c",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/preparation-result.json",
+      "bytes": 8389,
+      "sha256": "f79e37371dbf910732c9163eed7bccf67581b6ebe78ecd8ab0324a06b9c3e85e",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "package-preparation/linux-0512-f14-launch-receipt.json",
+      "bytes": 713,
+      "sha256": "cf54ace861c89831f61470caa395330f563fbdabd04b563676bf31cb5d43574a",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/progress.jsonl",
+      "bytes": 13530,
+      "sha256": "ca0fd0de65f1f50a10d3356e581b619852c42cc47d650f6afba23cf264696b97",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/extracted-bundle/alg-bundle.json",
+      "bytes": 2716568,
+      "sha256": "5ecc3dc94b10038e6f8f553a52af8166d3763c3d490c3ec634d9cc5e1c9cf931",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/acceptance/acceptance-summary.json",
+      "bytes": 987,
+      "sha256": "6d11eed657a49d3643a060b62c7c617e9416e8277d91b78b6e2fbe4606ec1408",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/acceptance/acceptance-progress.jsonl",
+      "bytes": 1354,
+      "sha256": "9c083bc0085bfde5ba824a89d0678b34d812d0c99a0572ee253806207eca8d82",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/acceptance/candidate-relocation-inventory.private.log",
+      "bytes": 222,
+      "sha256": "f4035786ea28785b7a91102e1d867a565abf73169dd112295aac3cde759480a1",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/acceptance/candidate-deploy.private.log",
+      "bytes": 2521,
+      "sha256": "dfa8eac96461473a822eaa08abc7dfb189e6dfe1ff523c7be66322bdf87dd50d",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/acceptance/candidate-noop.private.log",
+      "bytes": 932,
+      "sha256": "427bf9de709afaaaa1cdbce680f25fba8b34f352ce99f1e14236e8836c674fd5",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/acceptance/candidate-doctor-ack.private.log",
+      "bytes": 1625,
+      "sha256": "52f6aacede53791b811d1883c5ff05ab7b6cace1a4773c9e2d6ed6e6d1b90622",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/acceptance/candidate-package-readiness.private.log",
+      "bytes": 820,
+      "sha256": "0262ac932d4fc7f53beb29b20dae02d07a605afb695f3492230d2a450b64a19c",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/acceptance/live-evidence-index.jsonl",
+      "bytes": 1177,
+      "sha256": "735167b4e259d094871046326a666e3698a5945b730953f1e3c06cfd43519be7",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/live-receipts/live-verification-36e4c23c63346d1e-54aa389f-6c1b-4222-ad73-0223e6d22586.json",
+      "bytes": 47690,
+      "sha256": "5d537087b1bb5a3c7ca3824193bbf1cb3394e158f228f3e7378e373e05045673",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/live-receipts/live-verification-a2ea71bb3d694468-5c016a27-efe7-4ade-9e27-a8d5669b15ae.json",
+      "bytes": 47885,
+      "sha256": "8ed30c5ce4a96ffe9c67c6157008c904138c507f03bbbafeb720729d8655e691",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/fresh-acceptance/acceptance-summary.json",
+      "bytes": 950,
+      "sha256": "212e1154af7132df1c40d91b8f7b36356313cdd28c28f7266f4fe47fd753e497",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/fresh-acceptance/acceptance-progress.jsonl",
+      "bytes": 821,
+      "sha256": "0d47fc9915c878e63dfd2298dcfc3d24fc53c3aca77e57fea5e4e34430c8b103",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/fresh-acceptance/candidate-relocation-inventory.private.log",
+      "bytes": 222,
+      "sha256": "f4035786ea28785b7a91102e1d867a565abf73169dd112295aac3cde759480a1",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/fresh-acceptance/candidate-deploy.private.log",
+      "bytes": 2193,
+      "sha256": "1f30585a8719c09a5bf4392a5ca139b3950f605184ea65fef5b047d136667774",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/fresh-acceptance/candidate-noop.private.log",
+      "bytes": 944,
+      "sha256": "f84f261b4ec51427a258d3166b57b6c6d52504e76b35676f31ade63d33121ed9",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/fresh-acceptance/candidate-doctor-ack.private.log",
+      "bytes": 1614,
+      "sha256": "b7571bb0515de66855fd5c79c70a075306082e4d28c89a147868bb53efdbafea",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/fresh-acceptance/candidate-package-readiness.private.log",
+      "bytes": 820,
+      "sha256": "0262ac932d4fc7f53beb29b20dae02d07a605afb695f3492230d2a450b64a19c",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/fresh-acceptance/live-evidence-index.jsonl",
+      "bytes": 595,
+      "sha256": "eb07c821b825a8a78d5b66b2fd51f6f4b6e23a95aabb827ef1e87c39cec37e44",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/live-receipts/live-verification-a2ea71bb3d694468-643c01a7-1dfa-4b12-ac51-3a0f2bc48e63.json",
+      "bytes": 47884,
+      "sha256": "49394a3a94d8ad735b130d425310924fd3f92099d005573a7b1bc54f4f6bbbaa",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/full-linux-tests.receipt.json",
+      "bytes": 367,
+      "sha256": "1a73216531fb91eaa4326bf16882d18125668de814bc390ccc9021982354aa59",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/typecheck.receipt.json",
+      "bytes": 341,
+      "sha256": "cb66342e7c100af8546d3dfa9b8b47cd6fc42bd11efcb3508078361fc412d870",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "linux-0512-f14/full-linux-tests.stderr.private.log",
+      "bytes": 211823,
+      "sha256": "2e861aaf3c8d05d09bcc5448381dbf0c62edd6dfffe1a26195beee78c7048d5f",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "skip-guards/tests/shell.test.ts",
+      "bytes": 33031,
+      "sha256": "440fc0c73a043e0b7ffb7aec21232ec3a6f091bfae32f04b6c1f68ba4b682b4b",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "skip-guards/tests/shell-setup.test.ts",
+      "bytes": 7195,
+      "sha256": "52e75ef31e3469345c51d29175446ff45fa0eb6b94dbdb2d81e4bae48cb7da2b",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "skip-guards/tests/manager-launchers.test.ts",
+      "bytes": 20878,
+      "sha256": "e96eeb09bcd749405e22036991d7e6533d771e3aaef2f48a58fbe68eda9f76f6",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "skip-guards/tests/long-session-headless.test.ts",
+      "bytes": 2042,
+      "sha256": "51d5a88808b016a9cc567be234c19495e8fa143698b7c6e9689c850482bef841",
+      "visibility": "private receipt; sanitized summary drafted"
+    },
+    {
+      "name": "supplementary-headless-public.json",
+      "bytes": 7357,
+      "sha256": "8222aa6f7967191e9600d8415a97bd454a22af27dc36cd82be746463ea875118",
+      "visibility": "private receipt; sanitized summary drafted"
+    }
+  ]
+}

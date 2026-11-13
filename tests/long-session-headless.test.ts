@@ -12,7 +12,6 @@ test.skipIf(!host)("actual OpenCode L2 synthetic lifecycle completes for Build a
   let passed = false
   try {
     const result = await runLongSessionHeadless({ hostExecutable: host!, outputPath, timeoutMs: 10 * 60_000 })
-    passed = true
     expect(result.evidence.passed).toBe(true)
     expect(result.evidence.results.map((item: any) => item.arm)).toEqual(["build", "alg"])
     for (const arm of result.evidence.results) {
@@ -25,9 +24,20 @@ test.skipIf(!host)("actual OpenCode L2 synthetic lifecycle completes for Build a
       expect(arm.summary?.id).toBeTruthy()
       expect(arm.host.restarts).toBe(1)
       expect(arm.ownershipTransferCoverage).toBe(false)
-      expect(arm.handoffMechanics).toContain("new OpenCode session")
+      // Distinct observed host sessions; this does not establish ownership transfer.
+      const [q0, qh] = arm.evidence.checkpoints
+      const handoff = arm.evidence.transitions.find((item: any) => item.phase === "qh")
+      expect(q0?.sessionId).toMatch(/\S/)
+      expect(qh?.sessionId).toMatch(/\S/)
+      expect(qh.sessionId).not.toBe(q0.sessionId)
+      expect(handoff).toMatchObject({ status: "completed", receipt: {
+        kind: "new_session_only", ownershipTransferCoverage: false,
+        sourceSessionId: q0.sessionId, recipientSessionId: qh.sessionId,
+      } })
+      expect(arm.census.sessionIds).toEqual(expect.arrayContaining([q0.sessionId, qh.sessionId]))
       expect(arm.credentialsInherited).toBe(false)
     }
+    passed = true
   } catch (error) {
     // The runner retains outputPath and per-arm receipts for parent diagnosis.
     throw new Error(`${String(error)}; retained evidence at ${outputPath}`, { cause: error })
