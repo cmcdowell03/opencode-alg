@@ -2,6 +2,8 @@ import { z } from "zod"
 
 export const MANAGER_VERSION = "0.2.0"
 export const MAX_GENERATIONS = 16
+// Historical format compatibility outlives the bounded set of retained installations.
+export const MAX_COMPATIBLE_PACKAGE_VERSIONS = 64
 export const RECEIPT_FILE = "receipt.json"
 
 const AbsolutePathSchema = z.string().min(1).max(4_096)
@@ -14,7 +16,7 @@ export const DurableStateCompatibilitySchema = z.object({
   format: z.literal("alg-run-state"),
   current_schema: z.number().int().positive(),
   compatible_schemas: z.array(z.number().int().positive()).min(1).max(8),
-  compatible_package_versions: z.array(StableVersionSchema).min(1).max(16),
+  compatible_package_versions: z.array(StableVersionSchema).min(1).max(MAX_COMPATIBLE_PACKAGE_VERSIONS),
 }).strict()
 
 export const BUNDLED_AGENT_NAMES = ["checker.md", "explorer.md", "implementer.md", "orchestrator.md", "researcher.md"] as const

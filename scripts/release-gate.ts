@@ -153,6 +153,7 @@ export const RELEASE_CONTROL_PATHS = [
   "docs/v1-adversarial-evaluation.md", "docs/v1-benchmark-failure-analysis.md", "docs/v1-build-benchmark.md",
   "docs/v1-graph-evolution-adversarial-review.md", "docs/v1-reliability-and-build-comparison-plan.md",
   "docs/v1-hard-development-cohort-protocol.md",
+  "docs/v1-hard-development-findings.md", "docs/v1-hard-development-repair-followup.md",
 ] as const
 
 export function expectedPackedPaths(root = ROOT): string[] {

@@ -51,6 +51,7 @@ import { resolveNpmInvocation } from "./npm-invocation.ts"
 import { inventoryDeploymentTree, readAndVerifyDeploymentBundle } from "./deployment.ts"
 import {
   BUNDLED_AGENT_NAMES,
+  DurableStateCompatibilitySchema,
   MANAGER_VERSION,
   MAX_GENERATIONS,
   ManagerJournalSchema,
@@ -921,12 +922,12 @@ function packageDurableCompatibility(pkg: Record<string, any>, version: string):
     !Array.isArray(declaration.compatiblePackageVersions) || !declaration.compatiblePackageVersions.every((item: unknown) => typeof item === "string" && /^\d+\.\d+\.\d+$/.test(item))) {
     throw new Error("Package durable-state compatibility declaration is missing or invalid")
   }
-  return {
+  return DurableStateCompatibilitySchema.parse({
     format: "alg-run-state",
     current_schema: declaration.currentSchema,
     compatible_schemas: [...new Set<number>(declaration.compatibleSchemas)],
     compatible_package_versions: [...new Set<string>(declaration.compatiblePackageVersions)],
-  }
+  })
 }
 
 function validatePackageAndLock(root: string, tag: string): {

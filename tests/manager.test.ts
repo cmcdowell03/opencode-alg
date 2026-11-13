@@ -27,7 +27,7 @@ import {
   type CommandResult,
   type CommandRunner,
 } from "../scripts/manager-core.ts"
-import { ManagerReceiptSchema } from "../scripts/manager-schema.ts"
+import { DurableStateCompatibilitySchema, MAX_COMPATIBLE_PACKAGE_VERSIONS, ManagerReceiptSchema } from "../scripts/manager-schema.ts"
 import { decodeConfigBytes, encodeConfigText } from "../src/config-editor.ts"
 import { removeProject, tempProject } from "./helpers.ts"
 
@@ -285,6 +285,32 @@ describe("bounded production dependency identity", () => {
 })
 
 describe("v0.2 side-by-side release manager", () => {
+  test.each([MAX_COMPATIBLE_PACKAGE_VERSIONS, MAX_COMPATIBLE_PACKAGE_VERSIONS + 1])("bounded compatibility history: %i versions are validated before activation", (count) => {
+    const source = sourceFixture(), config = tempProject("alg-manager-compatibility-bound-")
+    sandboxes.push(config)
+    const packagePath = join(source, "package.json")
+    const pkg = JSON.parse(readFileSync(packagePath, "utf8"))
+    const historic = [...pkg.opencodeAlg.durableState.compatiblePackageVersions]
+    const versions = [...historic, ...Array.from({ length: count - historic.length }, (_, index) => `9.0.${index}`)]
+    pkg.opencodeAlg.durableState.compatiblePackageVersions = versions
+    writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`)
+    advanceToV02(source)
+    const runner = new LocalGitRunner()
+    const declaration = { format: "alg-run-state", current_schema: 2, compatible_schemas: [1, 2], compatible_package_versions: versions }
+    if (count <= MAX_COMPATIBLE_PACKAGE_VERSIONS) {
+      expect(DurableStateCompatibilitySchema.parse(declaration).compatible_package_versions).toEqual(versions)
+      runManager({ command: "install", configDir: config, source }, { runner })
+      expect(receipt(config).generations[0]!.durable_state.compatible_package_versions).toEqual(versions)
+      expect(() => runManager({ command: "doctor", configDir: config }, { runner })).not.toThrow()
+    } else {
+      expect(DurableStateCompatibilitySchema.safeParse(declaration).success).toBe(false)
+      expect(() => runManager({ command: "install", configDir: config, source }, { runner })).toThrow("compatible_package_versions")
+      expect(existsSync(join(config, "opencode.jsonc"))).toBe(false)
+      expect(existsSync(join(config, ".opencode-alg", "receipt.json"))).toBe(false)
+      expect(runner.requests.some(isNpmRequest)).toBe(false)
+    }
+  }, 60_000)
+
   test("deliberately accepts an old v0.1 generation and receipt with no capability fields", () => {
     const source = sourceFixture(false)
     const config = tempProject("alg-manager-old-no-capability-")
@@ -293,7 +319,7 @@ describe("v0.2 side-by-side release manager", () => {
     runManager({ command: "install", configDir: config, source }, { runner })
     const state = receipt(config)
     expect(state.generations[0]?.capabilities).toBeUndefined()
-    expect(state.generations[0]?.durable_state.compatible_package_versions).toEqual(["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1", "0.5.0", "0.5.1", "0.5.2", "0.5.3", "0.5.4", "0.5.5", "0.5.6", "0.5.7", "0.5.8", "0.5.9", "0.5.10"])
+    expect(state.generations[0]?.durable_state.compatible_package_versions).toEqual(["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.4.1", "0.5.0", "0.5.1", "0.5.2", "0.5.3", "0.5.4", "0.5.5", "0.5.6", "0.5.7", "0.5.8", "0.5.9", "0.5.10", "0.5.11"])
     expect(runManager({ command: "doctor", configDir: config }, { runner }).capability_status).toMatchObject({
       status: "disabled", enabled: false, manifest: "not-recorded", runtime_check: "not-run",
     })

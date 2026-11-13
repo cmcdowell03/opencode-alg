@@ -47,6 +47,11 @@ test("actual extracted package has the full reviewed inventory and dependency-re
     expect(offlineReport.configuration.status).toBe("absent")
     expect(archive.files.some((f: { path: string }) => f.path.startsWith("docs/evidence/") ||
       f.path === "scripts/build-benchmark.ts" || f.path.startsWith("scripts/hard-benchmark-"))).toBe(false)
+    for (const path of ["docs/v1-hard-development-findings.md", "docs/v1-hard-development-repair-followup.md"]) {
+      expect(existsSync(join(ROOT, path))).toBe(true)
+      expect(archive.files.some((file: { path: string }) => file.path === path)).toBe(false)
+      expect(expectedPackedPaths()).not.toContain(path)
+    }
     const retentionInput = join(directory, "retention-input.json")
     const retentionOutput = join(directory, "retention-output.json")
     writeFileSync(retentionInput, JSON.stringify({ schema: "alg-retention-input-v1", events: [], expectedFacts: [] }))
