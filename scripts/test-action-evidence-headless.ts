@@ -119,7 +119,7 @@ function toolChoice(body: any, name: string, args: Json): { name: string; args: 
   }
   return { name, args: normalized }
 }
-function providerResponse(response: ServerResponse, body: any, choice: { text?: string; tool?: { name: string; args: Json } }): void {
+function providerResponse(response: ServerResponse, body: any, choice: { text?: string; tool?: { name: string; args: Json } }): string {
   const model = String(body?.model ?? "local-deterministic"), id = `action-evidence-${randomUUID()}`
   const message = choice.tool
     ? { role: "assistant", content: null, tool_calls: [{ id, type: "function", function: { name: choice.tool.name, arguments: JSON.stringify(choice.tool.args) } }] }
@@ -132,16 +132,19 @@ function providerResponse(response: ServerResponse, body: any, choice: { text?: 
     response.write(`data: ${JSON.stringify({ id, object: "chat.completion.chunk", created, model, choices: [{ index: 0, delta, finish_reason: null }] })}\n\n`)
     response.write(`data: ${JSON.stringify({ id, object: "chat.completion.chunk", created, model, choices: [{ index: 0, delta: {}, finish_reason: choice.tool ? "tool_calls" : "stop" }] })}\n\n`)
     response.end("data: [DONE]\n\n")
-    return
+    return id
   }
   response.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ id, object: "chat.completion", created: 1, model,
     choices: [{ index: 0, message, finish_reason: choice.tool ? "tool_calls" : "stop" }], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } }))
+  return id
 }
 interface ProviderCall { role: "parent" | "implementer" | "checker" | "summary" | "compaction_followup" | "unknown"; tool_names: string[]; calls: string[]; call_count: number }
 interface ProviderError { role: ProviderCall["role"]; code: string; message: string }
+interface ProviderEmission { role: ProviderCall["role"]; tool: string; call_id: string; run_id: string | null; max_waves: number | null }
 function createProvider() {
   const requests: ProviderCall[] = []
   const errors: ProviderError[] = []
+  const emissions: ProviderEmission[] = []
   let nonLoopbackRequests = 0
   let forceSummary = false, compacting = false
   const server = createServer((request: IncomingMessage, response: ServerResponse) => {
@@ -203,7 +206,11 @@ function createProvider() {
               findings: [{ criterion_id: "C1", outcome: "supported", evidence_ids: citations.slice(0, 2), reason: "The retained intent and terminal page establish the fixed harmless command and its reported successful exit." }] }) }
           }
         } else throw new Error("provider could not classify the OpenCode request from its live prompt")
-        providerResponse(response, body, choice)
+        if (choice.tool && emissions.length >= 64) throw new Error("provider tool emission bound exceeded")
+        const callId = providerResponse(response, body, choice)
+        if (choice.tool) emissions.push({ role, tool: choice.tool.name, call_id: callId,
+          run_id: typeof choice.tool.args.run_id === "string" ? choice.tool.args.run_id : null,
+          max_waves: typeof choice.tool.args.max_waves === "number" ? choice.tool.args.max_waves : null })
       } catch (error) {
         const message = safeError(error)
         const code = /omitted first intent/.test(message) ? "index_missing_first_intent" :
@@ -215,7 +222,7 @@ function createProvider() {
       }
     })
   })
-  return { server, requests, errors, get nonLoopbackRequests() { return nonLoopbackRequests },
+  return { server, requests, errors, emissions, get nonLoopbackRequests() { return nonLoopbackRequests },
     summaryNext: () => { forceSummary = true; compacting = true },
     resumeNext: () => { forceSummary = false; compacting = false },
     listen: () => new Promise<string>((ok, no) => { server.once("error", no); server.listen(0, "127.0.0.1", () => ok(`http://127.0.0.1:${(server.address() as any).port}/v1`)) }),
@@ -322,6 +329,48 @@ async function sessionHistory(base: string, project: string, session: string, de
 }
 function hostTools(history: any[]): any[] {
   return history.flatMap(message => (message.parts ?? []).filter((part: any) => part?.type === "tool"))
+}
+function parentDispatchReceipt(before: any[], compacted: any[], resumed: any[], emissions: ProviderEmission[],
+  run: ReturnType<typeof loadEvidenceRun>): Json {
+  // Incoming provider histories include native task cards. Only responses we emitted are model dispatches.
+  const parentEmissions = emissions.filter(row => row.role === "parent")
+  const emissionMatch = parentEmissions.length === 2 && parentEmissions[0]?.tool === "alg_run" &&
+    parentEmissions[1]?.tool === "alg_resume" && new Set(parentEmissions.map(row => row.call_id)).size === 2 &&
+    parentEmissions.every(row => row.run_id === run.run_id && row.max_waves === 1)
+  const stage = (history: any[], expectedCount: number) => {
+    const parts = hostTools(history), actual = parts.filter(part => part.tool === "alg_run" || part.tool === "alg_resume")
+    const matchedDispatches = actual.length === expectedCount && actual.every((part, index) => {
+      const emitted = parentEmissions[index]
+      return emitted && part.tool === emitted.tool && part.callID === emitted.call_id && part.state?.status === "completed" &&
+        isDeepStrictEqual(part.state.input, { run_id: run.run_id, max_waves: 1 })
+    })
+    const cards = parts.filter(part => part.tool === "task" && ["work", "check"].some(nodeId => {
+      const node = run.nodes[nodeId], attempt = node?.attempts[0]
+      const dispatch = actual.find(row => row.tool === (nodeId === "work" ? "alg_run" : "alg_resume"))
+      // Exact native projector identity, completed attempt, parent message and child binding; arbitrary task calls fail.
+      return attempt?.attempt === 1 && attempt.status === "done" && dispatch &&
+        part.callID === `call_alg_${sha(`${run.run_id}\0${nodeId}\0${attempt.attempt}`).slice(0, 24)}` &&
+        part.sessionID === run.owner_session_id && part.messageID === dispatch.messageID && part.state?.status === "completed" &&
+        isDeepStrictEqual(part.state.input, { description: nodeId,
+          prompt: `ALG run ${run.run_id}, node ${nodeId}, attempt ${attempt.attempt}.`, subagent_type: node!.agent }) &&
+        part.state.metadata?.sessionId === attempt.session_id && part.state.metadata?.parentSessionId === run.owner_session_id
+    }))
+    const unknown = parts.length - actual.length - cards.length
+    return { alg_run: actual.filter(part => part.tool === "alg_run").length,
+      alg_resume: actual.filter(part => part.tool === "alg_resume").length, task_cards: cards.length,
+      total_tool_parts: parts.length, unexpected_tool_parts: unknown,
+      passed: matchedDispatches && unknown === 0 && new Set(cards.map(part => part.callID)).size === cards.length &&
+        parts.every(part => typeof part.id === "string") && new Set(parts.map(part => part.id)).size === parts.length }
+  }
+  const beforeCompaction = stage(before, 1), afterCompaction = stage(compacted, 1), afterResume = stage(resumed, 2)
+  const runCountsMatch = run.global_attempts === 2 && ["work", "check"].every(nodeId =>
+    run.nodes[nodeId]?.current_attempt === 1 && run.nodes[nodeId]?.attempts.length === 1 && run.nodes[nodeId]?.status === "done")
+  return { passed: emissionMatch && runCountsMatch && beforeCompaction.passed && afterCompaction.passed && afterResume.passed,
+    before_compaction: beforeCompaction, after_compaction: afterCompaction, after_resume: afterResume,
+    emitted_parent_tool_calls: parentEmissions.length, emitted_alg_calls: parentEmissions.filter(row => row.tool === "alg_run" || row.tool === "alg_resume").length,
+    provider_call_ids_match: emissionMatch && beforeCompaction.passed && afterCompaction.passed && afterResume.passed,
+    global_attempts: run.global_attempts,
+    producer_attempts: run.nodes.work?.current_attempt, checker_attempts: run.nodes.check?.current_attempt }
 }
 function validateCheckerRetrieval(project: string, run: ReturnType<typeof loadEvidenceRun>, producer: Json, history: any[]): Json {
   const checker = run.nodes.check
@@ -478,10 +527,10 @@ export async function runActionEvidenceHeadless(options: ActionEvidenceHeadlessO
     if (!providerRoles.includes("parent") || !providerRoles.includes("implementer") || !providerRoles.includes("checker") || providerRoles.includes("unknown")) throw new Error("provider did not observe all expected live model roles")
     const checkerCalls = provider.requests.filter(row => row.role === "checker").flatMap(row => row.calls)
     if (!checkerCalls.includes("alg_artifact") || checkerCalls.some(name => !["alg_artifact"].includes(name))) throw new Error("checker attempted a tool outside assigned evidence retrieval")
-    const history = await sessionHistory(host.base, project, ownerSessionId, deadline), parentTools = hostTools(history)
-    if (parentTools.length !== 2 || parentTools[0]?.tool !== "alg_run" || parentTools[1]?.tool !== "alg_resume" ||
-      parentTools.some(part => part.state?.status !== "completed" || part.state.input?.max_waves !== 1 || part.state.input?.run_id !== runId))
-      throw new Error("parent transcript must retain exactly one initial wave and one resume")
+    const history = await sessionHistory(host.base, project, ownerSessionId, deadline)
+    evidence.parent_dispatch = parentDispatchReceipt(beforeMessages, afterMessages, history, provider.emissions, persisted)
+    if (!evidence.parent_dispatch.passed)
+      throw new Error("parent dispatch history must match one emitted initial wave and one resume; only bound native task cards are permitted")
     const continuationUser = history.find(message => message.info?.role === "user" &&
       message.parts?.some((part: any) => part.type === "text" && part.text?.includes(RESUME_MARKER)))
     compaction.receipt = compactionReceipt({ requestId, requestedAt, rootSessionId: ownerSessionId, response: summaryResponse,
@@ -548,6 +597,7 @@ export async function runActionEvidenceHeadless(options: ActionEvidenceHeadlessO
       clean_stops: hostStopped }, run: { run_id: runId || null, owner_session_id: ownerSessionId || null, terminal_status: terminalStatus,
         graph_done: terminalStatus === "done", evidence, failure_state: failureRun }, compaction, journal_checkpoints: journalCheckpoints,
       provider: { endpoint: "loopback-only", request_count: provider.requests.length, requests: provider.requests.slice(0, 64),
+        emitted_tools: provider.emissions,
         errors: provider.errors.slice(0, 16), error_log_truncated: provider.errors.length > 16,
         request_log_truncated: provider.requests.length > 64, non_loopback_requests: provider.nonLoopbackRequests, no_auth: true },
       isolation: { credentials_inherited: false, real_user_global_config_unchanged: globalAfter.sha256 === globalBefore.sha256,
