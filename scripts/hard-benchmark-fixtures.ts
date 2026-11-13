@@ -75,13 +75,19 @@ export function createAcceptedQueryLostAckFixture(seed = 0): CreatedHardFixture 
     sourceId: "particle-map", revision: "r7",
     rows: particleRows(window, 41 + seed % 11, [0, 3, 8, 14, 21, 30 + seed % 7, ...(seed % 2 ? [32] : [])]),
   }
-  return created(`accepted-query-lost-ack-v1-${seed}`, "Recover a bounded particle summary after an accepted query loses its acknowledgement.",
+  return created(`accepted-query-lost-ack-v1-${seed}`, "Recover a bounded particle summary after an accepted query loses its acknowledgement. Write report.json at the workspace root as a JSON object with exactly the fields specified in sources/request.json.",
     ["Submit once for the requested window and revision. Recover by lookup, check the job and read its complete result.", "Leave process controls unchanged."], {
       "README.md": rawPrimitives,
       "sources/request.json": json({ sourceId: source.sourceId, revision: source.revision, window, idempotencyKey: key,
         aggregation: "Within the requested window, an observation is identified by (lot, observation) and is affected if any of its rows is affected.",
+        reportPath: report,
         reportFields: ["numerator", "denominator", "rate", "affectedLots", "sourceRevision", "jobId", "resultDigest"],
-        procedure: "read and report only" }),
+        reportFormat: { numerator: "Affected observation count as an integer", denominator: "Distinct observation count as an integer",
+          rate: "Numerator divided by denominator as a JSON number, without rounding",
+          affectedLots: "Sorted distinct affected lot IDs as an array of strings",
+          sourceRevision: "Revision string from the recovered job", jobId: "ID string from the recovered job",
+          resultDigest: "Digest string from the recovered job" },
+        procedure: "Read service data and write only report.json; leave process controls and supplied evidence unchanged" }),
     }, { kind: "accepted-query-lost-ack", source, key, window })
 }
 
@@ -95,7 +101,7 @@ export function createPartialInvestigationRestartFixture(): CreatedHardFixture {
     { sourceId: "recipe-check", revision: "r2", rows: [{ lot: "L2", recipe: "legacy", highRisk: true }] },
   ] as const
   const unavailable = { sourceId: "recipe-check", revision: "r3", available: false, rows: [] }
-  return created("partial-investigation-restart-v1", "After restart, reconcile completed results against current sources and bound the investigation while the recipe branch is unavailable.",
+  return created("partial-investigation-restart-v1", "After restart, reconcile completed results against current sources and bound the investigation while the recipe branch is unavailable. Write report.json at the workspace root as a JSON object matching sources/report-contract.json.",
     ["Find the completed jobs by their checkpoint keys. Check current revisions and statuses before reuse.",
       "Deduplicate particle observations by (lot, observation) and report affected observations in review-shift and the affected lots that intersect overlapping maintenance.",
       "Report unresolved recipe status from the current source. Preserve the existing accepted-work ledger."], {

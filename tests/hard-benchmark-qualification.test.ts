@@ -69,6 +69,16 @@ describe("arm-neutral hard benchmark development qualification", () => {
     expect(broken.passed).toBe(false)
   })
 
+  test("unavailable execution cannot qualify negative or tamper controls as rejected code", async () => {
+    const fixture = createHardBenchmarkFixtures().find(item => item.contestant.family === "multi-repo-compatibility")!
+    for (const [testCase, arm] of [["negative", hardBenchmarkNegativeArm], ["tamper", hardBenchmarkTamperArm]] as const) {
+      const result = await qualifyHardBenchmarkCase(fixture, arm, testCase, { multiRepoRunner: null })
+      expect(result.status).toBe("blocked")
+      expect(result.passed).toBe(false)
+      expect(result.grade.checks).toEqual([{ id: "runner:available", passed: false, detail: "local runner unavailable" }])
+    }
+  })
+
   test("equivalent factory stratum order remains valid", async () => {
     const fixture = createHardBenchmarkFixtures().find(item => item.contestant.family === "factory-evidence")!
     const result = await qualifyHardBenchmarkCase(fixture, async context => {

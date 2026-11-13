@@ -25,7 +25,26 @@ export class HardBenchmarkRunnerUnavailableError extends Error {}
 function isRunnerUnavailableError(error: unknown): boolean {
   if (error instanceof HardBenchmarkRunnerUnavailableError) return true
   const code = error !== null && typeof error === "object" && "code" in error ? error.code : undefined
-  return code === "EPERM" || code === "EACCES"
+  return ["EPERM", "EACCES", "ENOENT", "ENOEXEC", "ENOSYS"].includes(String(code))
+}
+
+/** Shared live/qualification development scorer. The local child is bounded, not OS isolated. */
+export async function scoreHardDevelopmentFixture(fixture: CreatedHardFixture, submission: FixtureSubmission,
+  options: { service?: HardBenchmarkService; multiRepoRunner?: MultiRepoRunner | null; compatibilitySeed?: number } = {}) {
+  if (fixture.contestant.family !== "multi-repo-compatibility")
+    return scoreHardFixture(fixture, submission, { service: options.service })
+  const runner = options.multiRepoRunner === undefined ? executeLocalMultiRepo : options.multiRepoRunner
+  if (!runner) throw new HardBenchmarkRunnerUnavailableError("hard_multi_repo_runner_unavailable: no runner configured")
+  let unavailable = false
+  const grade = await scoreHardFixture(fixture, submission, { compatibilitySeed: options.compatibilitySeed,
+    multiRepoRunner: async (...args) => {
+      try { return await runner(...args) }
+      catch (error) { if (isRunnerUnavailableError(error)) unavailable = true; throw error }
+    } })
+  // The core scorer converts child exceptions into failed execution checks.
+  // Missing host facilities are unavailable evidence, not candidate code failures.
+  if (unavailable) throw new HardBenchmarkRunnerUnavailableError("hard_multi_repo_runner_unavailable: host runner could not execute")
+  return grade
 }
 
 export interface HardBenchmarkQualificationResult {
@@ -248,7 +267,7 @@ export async function qualifyHardBenchmarkCase(
   fixture: CreatedHardFixture,
   arm: HardBenchmarkArm,
   testCase: QualificationCase,
-  options: { multiRepoRunner?: MultiRepoRunner; compatibilitySeed?: number } = {},
+  options: { multiRepoRunner?: MultiRepoRunner | null; compatibilitySeed?: number } = {},
 ): Promise<HardBenchmarkQualificationResult> {
   const directory = await mkdtemp(join(tmpdir(), "hard-benchmark-qualification-"))
   try {
@@ -258,22 +277,17 @@ export async function qualifyHardBenchmarkCase(
     const context = { fixture: visible, ...(service ? { service: serviceClient(service) } : {}) }
     const submission = await arm(context)
     let runnerUnavailable = false
-    const runner = options.multiRepoRunner ?? executeLocalMultiRepo
-    const grade = await scoreHardFixture(fixture, submission, {
-      ...(fixture.contestant.family === "multi-repo-compatibility" ? { multiRepoRunner: async (...args: Parameters<MultiRepoRunner>) => {
-        try { return await runner(...args) }
-        catch (error) {
-          if (isRunnerUnavailableError(error)) runnerUnavailable = true
-          throw error
-        }
-      } } : service ? { service } : {}),
-      ...(options.compatibilitySeed === undefined ? {} : { compatibilitySeed: options.compatibilitySeed }),
-    })
+    let grade: FixtureScore
+    try { grade = await scoreHardDevelopmentFixture(fixture, submission, { ...options, service }) }
+    catch (error) {
+      if (!isRunnerUnavailableError(error)) throw error
+      runnerUnavailable = true
+      grade = { passed: false, checks: [{ id: "runner:available", passed: false, detail: "local runner unavailable" }], metrics: {} }
+    }
     const expected = testCase === "positive" ? "accept" : "reject"
-    const blockedByLocalRunner = testCase === "positive" && runnerUnavailable
-    const passed = grade.passed === (expected === "accept")
+    const passed = !runnerUnavailable && grade.passed === (expected === "accept")
     return { fixtureId: fixture.contestant.id, family: fixture.contestant.family, case: testCase,
-      status: passed ? "passed" : blockedByLocalRunner ? "blocked" : "failed", passed, expected, grade,
+      status: runnerUnavailable ? "blocked" : passed ? "passed" : "failed", passed, expected, grade,
       isolation: "same-user-development-only-not-os-isolated" }
   } finally { await rm(directory, { recursive: true, force: true }) }
 }

@@ -7,7 +7,7 @@ import { execFileSync } from "node:child_process"
 import { BENCHMARK_CASES } from "../scripts/build-benchmark-fixtures.ts"
 import { createAcceptedQueryLostAckFixture, createHardBenchmarkFixtures, createMultiRepoCompatibilityFixture } from "../scripts/hard-benchmark-fixtures.ts"
 import { benchmarkTaskPrompt, collectHardProject, collectHardRunProgress, HARD_COLLECTION_LIMITS, HARD_PROGRESS_LIMITS, HARD_ISOLATION, hardBenchmarkIdentity,
-  hardRunnerCase, HardLimitsSchema, prepareBenchmarkWorkload, readHardQualification, scheduleBenchmarkWorkload,
+  hardRunnerCase, HardLimitsSchema, prepareBenchmarkWorkload, qualifyHardBenchmarkCohortInputs, readHardQualification, scheduleBenchmarkWorkload,
   scoreHardDevelopmentFixture, terminalHardRows, validateHardQualification, type WorkloadOptions } from "../scripts/hard-benchmark-cohort.ts"
 import { hardBenchmarkReferenceArm, HardBenchmarkRunnerUnavailableError } from "../scripts/hard-benchmark-qualification.ts"
 import { summarizeIssuedArms } from "../scripts/build-benchmark-protocol.ts"
@@ -153,6 +153,27 @@ describe("hard development prospective selection", () => {
     }
   })
 
+  test("both service arms receive an explicit report destination and public format", () => {
+    for (const record of createHardBenchmarkFixtures().filter(f =>
+      ["accepted-query-lost-ack", "partial-investigation-restart"].includes(f.contestant.family))) {
+      const converted = hardRunnerCase(record)
+      const build = benchmarkTaskPrompt("Do not use network services.", converted.initialPrompt, "http://127.0.0.1:49321")
+      const alg = benchmarkTaskPrompt("Do not use network services.", converted.initialPrompt, "http://127.0.0.1:49321")
+      expect(build).toBe(alg)
+      expect(build).toContain("Write report.json at the workspace root as a JSON object")
+      if (record.contestant.family === "accepted-query-lost-ack") {
+        const request = JSON.parse(converted.files["sources/request.json"]!)
+        expect(request.reportPath).toBe("report.json")
+        expect(Object.keys(request.reportFormat).sort()).toEqual([...request.reportFields].sort())
+        expect(request.reportFormat.rate).toContain("without rounding")
+        expect(build).toContain("sources/request.json")
+      } else {
+        expect(build).toContain("sources/report-contract.json")
+        expect(JSON.parse(converted.files["sources/report-contract.json"]!)).toHaveProperty("retained")
+      }
+    }
+  })
+
   test("the common service exception and Node fetch usage are identical for both arms", () => {
     const common = "Work locally. Do not install packages or use network services."
     const task = hardRunnerCase(createAcceptedQueryLostAckFixture()).initialPrompt
@@ -262,6 +283,17 @@ describe("bounded complete hard project collection", () => {
 
 describe("external development qualification evidence", () => {
   const fixtures = createHardBenchmarkFixtures()
+  test("real admission qualification exercises the shared live scorer through direct and HTTP paths", async () => {
+    const evidence = await qualifyHardBenchmarkCohortInputs(repo)
+    expect(evidence.development).toMatchObject({ passed: true, caseCount: 18, acceptedPositive: 6,
+      rejectedNegativeOrTamper: 12, blockedCases: 0, failedCases: 0 })
+    expect(evidence.public_http).toMatchObject({ passed: true, caseCount: 6, acceptedPositive: 2,
+      rejectedNegativeOrTamper: 4, blockedCases: 0, failedCases: 0 })
+    const code = evidence.development.results.find(row => row.family === "multi-repo-compatibility" && row.case === "positive")!
+    for (const id of ["code:executed-all-cases", "code:client-uses-api"])
+      expect(code.grade.checks.find(check => check.id === id)?.passed).toBe(true)
+    expect(validateHardQualification(evidence, hardBenchmarkIdentity(repo, fixtures), fixtures)).toEqual(evidence)
+  }, 60_000)
   function mockEvidence() {
     const result = (selected: typeof fixtures) => {
       const results = selected.flatMap(f => (["positive", "negative", "tamper"] as const).map(kind => ({
