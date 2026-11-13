@@ -1,0 +1,11 @@
+{
+  "source_commit": "5500ad6afad56b5ccc3bfdd0b90c568b3413a56d",
+  "exit_codes": {
+    "typecheck": 0,
+    "focused_tests": 0,
+    "headless": 0,
+    "identity": 0
+  },
+  "full_suite": false,
+  "passed": true
+}

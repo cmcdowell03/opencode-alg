@@ -35,6 +35,16 @@ exposure from continuation success. Their local qualification is separate from
 the frozen paid cohort. No long-session information-loss or general superiority
 result exists.
 
+Candidate `5500ad6` passed the continuation increment's local qualification:
+Windows 60 focused passes and package extraction; native Linux 123 focused
+passes; typecheck and actual headless acceptance on both. Each host recovered
+the ordinary wave pause across one compaction and two restarts, completed the
+checker, and retained the 1→1→2 ledger with zero extra launches after exhaustion.
+All 136 runtime files match after LF normalization.
+[Exact receipts and preserved setup/development failures](evidence/wave-continuation-20261113/README.md).
+This is focused qualification, not a rerun of the earlier full suite or the
+paid comparison.
+
 ## Priority clarification — capability before efficiency
 
 The development objective is reliable, independently verified solutions to hard

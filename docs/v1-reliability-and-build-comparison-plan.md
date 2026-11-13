@@ -485,3 +485,14 @@ The initial envelope is 45 minutes, 120 observed assistant turns, 600,000 cumula
 Freeze expected obligations and the independently scored previous artifacts before each requested boundary. Score the resumed phase from its artifacts and executed utility/tests. Compare only unchanged obligations that demonstrably passed before the boundary; changed phase IDs, next actions and procedure revisions are new compliance checks, not forgotten facts. A later recovery does not erase an earlier failed phase. Separately preserve host marker/summary/continuation links, skill-use calls and the final read-only database census. Unknown or incomplete exposure cannot become a zero-loss result.
 
 This measures observable task compliance with durable mission files available. It does not measure hidden context contents, establish compaction as the cause of an error, test expensive MCP searches, or demonstrate superiority to Build. Report actual task duration, observed natural/requested events, restarts and scored boundary exposure. A completed short task is not a multi-hour soak. This development diagnostic does not replace the hard paired comparison or relax its confirmation gates.
+
+### Next L2 design: separate exposure, handoff and restart
+
+The [prospective L2 draft](evidence/hard-scope-20261113/l2-design-draft.md)
+separates requested compaction from restart and controller handoff, keeps
+failed continuations in the exposure record, and requires independently
+established pre-transition behavior. It specifies missingness, common-eligible
+obligations, native pruning and root-versus-session-tree accounting. It is not a
+frozen or executed study. Commit `5500ad6` implements the independent summary
+exposure fields only; the remaining milestone schedule and live obligation
+collector still need implementation and local qualification before paid use.

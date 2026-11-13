@@ -1,0 +1,71 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\allowance-headless-probe.test.ts:
+(pass) probe declares bounded root-wide scope in every phase and keeps its fresh checker [33.95ms]
+(pass) both scope cases use the existing local synthetic response before phase-specific behavior [2.40ms]
+(pass) recorder binds real persisted baseline, child delegation and emitted delivery receipt [2720.58ms]
+(pass) scope success alone cannot attest absent host delivery writes [2015.86ms]
+(pass) compaction delivery is not mislabeled as a child's system hook [2422.73ms]
+(pass) recorder rejects an older delivery or a different baseline identity [2508.41ms]
+(pass) report accepts old receipts without new fields and validates new bounded fields when present [7.13ms]
+(pass) SDK transport calibration retains 2/1 exhaustion and independently blocks user drift without a fourth prompt [6676.83ms]
+
+tests\executor.test.ts:
+(pass) executor semantics > global attempts are enforced and zero is rejected by graph validation [1190.34ms]
+(pass) executor semantics > terminal failed dependencies deterministically skip descendants [730.23ms]
+(pass) executor semantics > explicit checker metadata routes generic feedback without resetting history [2553.13ms]
+(pass) executor semantics > schema-valid checker pass with a failed shell gate retries only the checker [1759.61ms]
+(pass) executor semantics > exactly 100 checker failures plus a shell failure persist within the cap and retry only the checker [2044.10ms]
+(pass) executor semantics > maximum valid graph and failure history reaches a bounded final save and reload [44375.20ms]
+(pass) executor semantics > maximum executor error is prefixed within the persisted field cap [644.55ms]
+
+tests\task-allowance-execution.test.ts:
+(pass) phases, beginTask, compaction and a fresh controller share one allowance [3613.55ms]
+(pass) a saved reservation before attempt persistence is reused, never double charged [1757.16ms]
+(pass) an interrupted committed attempt remains charged while a retry consumes another dispatch [1651.93ms]
+(pass) a transferred run and subsequent phase retain the original root ledger [2850.42ms]
+(pass) gate-only recovery consumes no child allowance and leaves the final checker reserved [1910.31ms]
+(pass) bound runs fail closed without a controller and their binding cannot be erased [200.68ms]
+(pass) concurrent real-store runs cannot dispatch past the shared bound [2242.60ms]
+(pass) checkpoint write failure cannot create a run attempt or child [399.76ms]
+(pass) new tool plans share a task reference with memory disabled and surface its status [436.38ms]
+
+tests\task-recovery.test.ts:
+(pass) an explicit resume repairs a missing file without rerunning completed unrelated work [4213.45ms]
+(pass) missing native evidence can be repaired by a new scoped producer attempt [2727.40ms]
+(pass) explicit prerequisite repair respects the original budget {"local":1} [1248.84ms]
+(pass) explicit prerequisite repair respects the original budget {"global":2} [1274.34ms]
+(pass) prerequisite repair refuses a project deliverable redirected outside the worktree [1242.00ms]
+(pass) persistent missing evidence does not trigger a producer/checker prompt loop [2016.48ms]
+(pass) existing-file drift reopens only the checker and its descendants [4392.26ms]
+(pass) same-command cwd/timeout repair requires an actual setup failure (%s) [3011.68ms]
+(pass) same-command cwd/timeout repair requires an actual setup failure (%s) [1457.61ms]
+
+tests\wave-continuation.test.ts:
+47 |     expect(response.next).toContain("original attempts")
+48 |     const resumed = prepareRunForResume(loadRun(root, run.run_id)!)
+49 |     await executeRun(resumed, { ...options, operation: "resume" })
+50 |     expect(resumed).toMatchObject({ status: "done", phase: "done", global_attempts: 4 })
+51 |     expect(calls).toEqual(["implementer", "checker", "implementer", "checker"])
+52 |     expect(JSON.stringify(resumed.nodes.work!.attempts[0])).toBe(first)
+                                                                 ^
+error: expect(received).toBe(expected)
+
+Expected: "{"attempt":1,"status":"done","started_at":"2026-11-13T05:07:07.543Z","failures":[],"output_ref":{"artifact_path":".opencode/runs/finish-verification-20261113050707-070b948747a2/artifacts/work-attempt-1-output-54a9d70927667c0560129bbcd7d60aa0fca71c561342c9a0af64f51f54154cc4.json","sha256":"54a9d70927667c0560129bbcd7d60aa0fca71c561342c9a0af64f51f54154cc4","byte_size":80},"detail_ref":{"artifact_path":".opencode/runs/finish-verification-20261113050707-070b948747a2/history/work-attempt-1-detail-fc144c78c85202f77e43408895ff771829ac8ada5e8f259385f958f70c162483.json","sha256":"fc144c78c85202f77e43408895ff771829ac8ada5e8f259385f958f70c162483","byte_size":272},"session_id":"work-1","finished_at":"2026-11-13T05:07:07.784Z","output":{"summary":["work"],"files_touched":[],"commands_run":[],"risks":[],"done":true},"schema_ok":true,"outcome":"passed"}"
+Received: "{"attempt":1,"status":"done","session_id":"work-1","started_at":"2026-11-13T05:07:07.543Z","finished_at":"2026-11-13T05:07:07.784Z","output":{"summary":["work"],"files_touched":[],"commands_run":[],"risks":[],"done":true},"failures":[],"schema_ok":true,"outcome":"passed","output_ref":{"artifact_path":".opencode/runs/finish-verification-20261113050707-070b948747a2/artifacts/work-attempt-1-output-54a9d70927667c0560129bbcd7d60aa0fca71c561342c9a0af64f51f54154cc4.json","sha256":"54a9d70927667c0560129bbcd7d60aa0fca71c561342c9a0af64f51f54154cc4","byte_size":80},"detail_ref":{"artifact_path":".opencode/runs/finish-verification-20261113050707-070b948747a2/history/work-attempt-1-detail-fc144c78c85202f77e43408895ff771829ac8ada5e8f259385f958f70c162483.json","sha256":"fc144c78c85202f77e43408895ff771829ac8ada5e8f259385f958f70c162483","byte_size":272}}"
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\alg-scope-repair\tests\wave-continuation.test.ts:52:61)
+(fail) a bounded checker repair continues the same durable run without replaying or refunding attempts [3409.18ms]
+(pass) a cancel stop is not advertised as a wave pause [775.25ms]
+(pass) a sdk stop is not advertised as a wave pause [575.61ms]
+(pass) a prerequisite stop is not advertised as a wave pause [364.04ms]
+(pass) an exhausted global allowance remains terminal at the wave boundary [759.33ms]
+(pass) a shell setup failure at a wave boundary still requires prerequisite repair [854.67ms]
+
+1 tests failed:
+(fail) a bounded checker repair continues the same durable run without replaying or refunding attempts [3409.18ms]
+
+ 38 pass
+ 1 fail
+ 234 expect() calls
+Ran 39 tests across 5 files. [113.88s]

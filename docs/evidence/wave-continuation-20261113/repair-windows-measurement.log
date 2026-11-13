@@ -1,0 +1,90 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\build-benchmark-protocol.test.ts:
+(pass) benchmark protocol integrity > observed cumulative limits stop at equality including maintenance and resumed-phase usage [0.35ms]
+(pass) benchmark protocol integrity > database census requires exact session/message IDs, ownership, uniqueness and quiescence [0.51ms]
+(pass) benchmark protocol integrity > issues matched default Build/ALG pairs and isolates targeted compatibility as opt-in [0.72ms]
+(pass) benchmark protocol integrity > binds a non-contiguous case subset to its own pairs and execution order [0.26ms]
+(pass) benchmark protocol integrity > keeps every upfront-issued arm in the denominator when the suite stops before its launch [0.27ms]
+(pass) benchmark protocol integrity > separates preflight rows from issued trials and closes a terminal stopped trial [0.09ms]
+(pass) benchmark protocol integrity > accepts the SDK boolean only with a new marker, linked terminal summary, and scored continuation [2.82ms]
+(pass) benchmark protocol integrity > rejects old markers, errored or unlinked summaries, rejected acceptance, and unscored continuation [0.97ms]
+(pass) benchmark protocol integrity > completed summaries remain exposure after failed, missing, or wrong continuations [0.83ms]
+(pass) benchmark protocol integrity > final census waits within its grace and retains missing or in-flight usage as unknown [1.77ms]
+(pass) benchmark protocol integrity > census needs two consecutive stable quiet samples with known absence of pending work [0.44ms]
+(pass) benchmark protocol integrity > artifact outcome is independent from workflow and operational eligibility [0.12ms]
+
+tests\build-benchmark-retention-boundaries.test.ts:
+(pass) per-compaction retention boundaries > completed summaries remain boundaries when later behavior is wrong or unobserved [10.09ms]
+(pass) per-compaction retention boundaries > preserves first-boundary failure when the next boundary recovers [0.73ms]
+(pass) per-compaction retention boundaries > distinguishes durable presence, context omission, retrieval, and behavior [0.48ms]
+(pass) per-compaction retention boundaries > missing or incomplete evidence is unknown rather than a zero or pass [0.36ms]
+(pass) per-compaction retention boundaries > requires actual governed action exposure to assess prohibited or revoked use [1.11ms]
+(pass) per-compaction retention boundaries > uses exact snapshots; a complete empty snapshot differs from an absent snapshot [0.56ms]
+(pass) per-compaction retention boundaries > reports stale retrieval even if later behavior is correct [0.32ms]
+(pass) per-compaction retention boundaries > separates reassignment from compaction and scopes unrelated task/session evidence [0.29ms]
+(pass) per-compaction retention boundaries > flags invalid time order and prevents observations crossing the next task boundary [0.42ms]
+(pass) per-compaction retention boundaries > empty input is unavailable, and schema rejects model-authored provenance and unknown fields [1.09ms]
+(pass) per-compaction retention boundaries > flags summary evidence that does not bind the externally frozen obligation set [0.44ms]
+(pass) per-compaction retention boundaries > matching caller hash fields cannot substitute for canonical frozen values [0.41ms]
+(pass) per-compaction retention boundaries > failed summary, partial census, ambiguous identity, and model-only behavior cannot clear retention [0.96ms]
+(pass) per-compaction retention boundaries > interleaved tasks cannot hide the next task boundary or union snapshots [0.54ms]
+(pass) per-compaction retention boundaries > global duplicate evidence invalidates every affected report [0.62ms]
+(pass) per-compaction retention boundaries > revoked use needs a complete exposed window to clear, while observed misuse remains a failure [1.07ms]
+
+tests\build-benchmark-retention.test.ts:
+(pass) build benchmark retention measurement > aggregates compaction exposure across a stable task and session lineage [5.25ms]
+(pass) build benchmark retention measurement > distinguishes changed criteria, stale skills, pending loss, and retrieval after context omission [4.11ms]
+(pass) build benchmark retention measurement > does not infer avoidability from equivalent keys and treats incomplete census as unknown exposure [1.47ms]
+(pass) build benchmark retention measurement > a complete zero-exposure census is zero and incomplete telemetry never fills missing denominators [0.26ms]
+(pass) build benchmark retention measurement > an incomplete census publishes observed counts without rates or assumed failures [1.50ms]
+(pass) compaction intervals retain one task timeline after reassignment [1.76ms]
+(pass) root and child turns follow session ancestry, and accepted compaction counts despite failed recovery [0.85ms]
+(pass) a wrong completed answer remains summary exposure with either complete or incomplete census [0.87ms]
+(pass) unlinked success is unverified, not an observed failed summary [0.35ms]
+(pass) only repeated accepted work can be a classified duplicate and only cross-boundary repeats count after compaction [0.53ms]
+
+tests\hard-benchmark-cohort.test.ts:
+warning: in the working copy of 'bounded-path-segment/bounded-path-segment/bounded-path-segment/bounded-path-segment/bounded-path-segment/README.md', LF will be replaced by CRLF the next time Git touches it
+(pass) disposable Git setup indexes long nested paths from a short working directory [729.98ms]
+(pass) live hard development code scoring > the default path executes reference code and the API dependency probe [212.80ms]
+(pass) live hard development code scoring > missing or unavailable runners are explicit apparatus errors; executed code errors remain failures [1.95ms]
+(pass) live hard development code scoring > the local child runner bounds output and terminates nonreturning candidate code [5127.63ms]
+(pass) hard development prospective selection > historic controls retain limits, subset order, arm order and disabled native compaction [0.83ms]
+(pass) hard development prospective selection > hard admission requires explicit bounded limits, seed, qualification and the complete six cases [44.78ms]
+(pass) hard development prospective selection > seeded fixture and alternating arm order are bound before all twelve issues [100.29ms]
+(pass) hard development prospective selection > case conversion supplies original criteria and never serializes the grader [20.67ms]
+(pass) hard development prospective selection > both service arms receive an explicit report destination and public format [13.75ms]
+(pass) hard development prospective selection > the common service exception and Node fetch usage are identical for both arms [0.30ms]
+(pass) hard development prospective selection > fatal termination keeps all issued arms with terminal error receipts [34.08ms]
+(pass) bounded complete hard project collection > progress collection tolerates real native card metadata but rejects unknown unsafe namespaces [191.18ms]
+(pass) bounded complete hard project collection > post-stop runtime progress is bounded and remains outside grader input [32.98ms]
+(pass) bounded complete hard project collection > preserves protected evidence and unknown writes while excluding only known runtime metadata [32.08ms]
+(pass) bounded complete hard project collection > a fixture file under a runtime name remains visible with all sibling writes [17.75ms]
+(pass) bounded complete hard project collection > symlinks, oversized and non-UTF8 files reject collection instead of hiding writes [14.69ms]
+(pass) external development qualification evidence > real admission qualification exercises the shared live scorer through direct and HTTP paths [2628.26ms]
+(pass) external development qualification evidence > identities bind frozen fixtures and all host, grader, service, qualification and runner inputs [39.06ms]
+(pass) external development qualification evidence > strict receipt parsing recomputes coverage and grade agreement instead of trusting passed [44.82ms]
+
+tests\hard-benchmark-qualification.test.ts:
+(pass) arm-neutral hard benchmark development qualification > reference solutions pass and negative/tamper/extra-field submissions fail for every frozen fixture [2151.50ms]
+(pass) arm-neutral hard benchmark development qualification > arm receives a contestant-only snapshot and no grader-evidence methods [102.72ms]
+(pass) arm-neutral hard benchmark development qualification > individual negative and tamper controls fail closed [1842.92ms]
+(pass) arm-neutral hard benchmark development qualification > only an explicit unavailable runner blocks a positive code qualification [24.34ms]
+(pass) arm-neutral hard benchmark development qualification > unavailable execution cannot qualify negative or tamper controls as rejected code [21.98ms]
+(pass) arm-neutral hard benchmark development qualification > equivalent factory stratum order remains valid [35.57ms]
+(pass) arm-neutral hard benchmark development qualification > factory reference matches hand-enumerated seed-zero strata and outcomes [38.44ms]
+
+tests\live-retention-runner.test.ts:
+(pass) live retention runner evidence guards > apparatus continuation cannot reset time or usage or replay already compacted work [2.88ms]
+(pass) live retention runner evidence guards > observed stop thresholds include equality and wall expiry [0.23ms]
+(pass) live retention runner evidence guards > vanished and duplicate checks count as loss; changed expectations leave the denominator [0.72ms]
+(pass) live retention runner evidence guards > rates require complete, linked, quiescent, persisted evidence [0.34ms]
+(pass) live retention runner evidence guards > headline retention excludes unqualified summary boundaries but preserves their diagnostic losses [0.44ms]
+(pass) live retention runner evidence guards > summary exposure retains failed, wrong, and missing continuations without changing historical fields [1.21ms]
+(pass) live retention runner evidence guards > fixture skill discovery requires exact location and current body [1.02ms]
+
+ 71 pass
+ 0 fail
+ 488 expect() calls
+Ran 71 tests across 6 files. [13.86s]
