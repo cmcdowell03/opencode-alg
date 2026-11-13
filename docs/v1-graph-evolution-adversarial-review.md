@@ -18,6 +18,26 @@ The paired evaluation in `scripts/adversarial-evaluation.ts` compares an ordinar
 
 The broader contracts below remain design targets where they exceed this bounded increment. See the implementation status and paired-evaluation receipt for exact tested scope and limitations. New fields require the 0.5.4 reader; do not roll older readers over newly written state.
 
+### Capability-first graph improvement
+
+The [V1 development plan](v1-reliability-and-build-comparison-plan.md#capability-first-objective--user-priority-clarification)
+sets the broader objective: independently verified solutions to difficult tasks
+come before token efficiency. A costlier graph can be an improvement when its
+additional discovery, falsification or recovery makes a supported solution
+possible. Choose an added branch for a named unresolved evidence obligation or
+a hypothesis that needs a discriminating test; agent count, agreement and
+self-reported confidence are not measures of progress. Capture required prior
+state before edits so a later checker does not ask workers to invent it.
+
+The historical two-call memo comparison remains a component experiment with its
+original limits and results. It does not set the resource ceiling for future
+hard investigations. Future graph candidates receive the same realistic maximum
+headroom as their comparators, with completion/quality primary and actual cost
+reported separately. A resource ladder must be frozen before issuance; no
+selective top-ups or favorable-tier selection. Current hard graph/attempt limits
+still apply: this design neither replenishes them nor adds recursive fanout or
+automatic graph promotion.
+
 ### Evaluation-target boundary
 
 The [bounded model comparison](v1-adversarial-evaluation.md) exposed a distinction this contract cannot settle through citation checks: a child can verify a review memo's method while passing an original claim that the memo contradicts. Write each criterion as a proposition about the original claim; express required methods separately. A probe memo supplies leads, never a replacement claim or acceptance criterion. The recorded criterion/evidence basis protects identity and consistency of references, not semantic interpretation. A later V1 extension should give the original claim its own host-pinned identity and separate it structurally from advisory memos, then qualify that interface on a fresh frozen cohort. This is a design follow-up, not a retroactive repair or promotion of the current evaluation result.
@@ -115,7 +135,7 @@ These are proposed measurable gates, not current test results. Keep deterministi
 - **Revision and budget conservation:** every revision has a parent and complete diff/provenance; criteria, scope, history, and remaining root budget are conserved. Exhausted/completed runs cannot regain capacity. Invalidated descendants rerun only from remaining budget.
 - **No duplicate remote work:** crash/timeout at every admission/dispatch/result boundary reconciles the same request/job before any resend; compatible completed results are reused, while an explicitly budgeted independent probe is visible and counted.
 - **Bounded adversary:** maximum reviewer count, concurrency, tool set, prompt/evidence bytes, retries, and spend are enforced by the host; no recursive fanout or permission change is possible. Every call/probe is included in root accounting. Disagreement and evidence gaps remain visible.
-- **Measured improvement:** paired candidate/incumbent evaluation uses the same frozen cohort and total budget, reports verified outcomes, regressions, unresolved/censored cases, elapsed time and complete known cost; promotion eligibility cannot rewrite active runs and cannot authorize publication by itself.
+- **Measured improvement:** paired candidate/incumbent evaluation uses the same frozen cohort and realistic maximum headroom; verified completion and evidence adequacy are primary. Actual consumption may differ. Report regressions, unresolved/resource-stopped cases, elapsed time and complete known cost separately; lower cost cannot compensate for incorrect work. Promotion eligibility cannot rewrite active runs and cannot authorize publication by itself.
 
 ## Constraints and sequencing
 

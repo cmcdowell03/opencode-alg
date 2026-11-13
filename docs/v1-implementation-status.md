@@ -2,6 +2,24 @@
 
 PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current pending candidate is 0.5.8 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as acceptance of the current candidate.
 
+## Priority clarification — capability before efficiency
+
+The development objective is reliable, independently verified solutions to hard
+problems. Additional effort is justified when it buys a correct supported answer;
+token minimization is not the primary success criterion. The
+[capability-first evaluation design](v1-reliability-and-build-comparison-plan.md#capability-first-objective--user-priority-clarification)
+keeps historical small-budget controls intact and gives future hard-task studies
+realistic, equally available headroom. Verified completion at that ceiling is
+primary; time/cost and quality-versus-resource curves are separate results.
+
+Next, establish criterion-specific verification coverage before writes, preserve
+durable progress, and route repairs according to their cause. A missing original
+baseline cannot be repaired by spending more turns on already-correct code.
+Shared accounting protects continuity and explicit hard limits; it should not
+make a soft planning estimate a premature terminal failure. These are prospective
+design priorities, not new runtime behavior, larger existing trial limits, or a
+superiority result. No new paid cohort or V2 work is launched by this update.
+
 ## 0.5.8 follow-up — preserve current user-request details
 
 The [verification-repair follow-up](evidence/evidence-repair-20261112/README.md)
@@ -59,7 +77,7 @@ The clean native Linux `bun run check` at `7c60070` passed **1,316 tests / 15,26
 
 The 5,100-transaction state-journal tests retained a 16,493-byte journal across restart. Timing varies across runs; [all observations](evidence/task-admission-20261112/delivery-journal-observations.json) are retained without a constant-latency or platform-performance claim. These are durable journal transactions, not model compactions. Neither that stress test nor the short deterministic headless sessions establishes long-task behavioral retention.
 
-**Still required before the new paid hard pilot:** qualify the external service interface and oracle isolation, enforce one shared allowance across task phases/root/children/compaction, demonstrate feasible reference solutions through the same raw primitives available to Build, and freeze the paired cohort and budgets. These are explicit prerequisites. The runner currently marks isolation unqualified; an artifact pass cannot qualify a superiority claim. P4 graph adaptation remains evidence-driven; no automatic promotion, new soak, V2 implementation or confirmation run is implied by this increment.
+**Still required before the new paid hard pilot:** qualify the external service interface and oracle isolation, close verification coverage before edits, account for the whole task and qualify the external limits actually enforced, demonstrate feasible reference solutions through the same raw primitives available to Build, and freeze a realistic paired hard-task envelope. These are explicit prerequisites. ALG dispatch reservations do not establish a hard cap on root/child/compaction provider calls or billing. The runner currently marks isolation unqualified; an artifact pass cannot qualify a superiority claim. P4 graph adaptation remains evidence-driven; no automatic promotion, new soak, V2 implementation or confirmation run is implied by this increment.
 
 **Current disposition, 12 November 2026:** the earlier 80% estimate remains withdrawn. The confirmed ledger defects and the missing local workflow contracts are implemented. Native MCP translation is configurable and tested against fixtures, not verified against the real air-gapped datalake-mcp. The 0.5.5 increment implemented bounded setup recovery, host execution/preservation evidence and compact-task/plan-to-run guidance in response to the [native Build comparison](v1-build-benchmark.md); 0.5.6 adds the mechanical repairs below. Local Windows and native Ubuntu regressions support these repairs; headless recovery evidence retains its 0.5.5 identity. The [post-repair validation](v1-benchmark-failure-analysis.md#post-repair-validation--windows-and-linux) preserves the hosted Terra failures: cumulative usage and task/template mismatch still prevent some workflows completing. Historical harness transport/skill-discovery defects remain accounted separately. The PR remains unmerged. Production service qualification, scientific usefulness and general long-session reliability remain unestablished.
 
