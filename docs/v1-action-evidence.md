@@ -14,6 +14,9 @@ outside this capture scope. These records live beneath the existing run's
 `artifacts/action-evidence/` directory. They contain permitted, redacted command
 and output text, never reasoning transcripts or model-supplied execution claims.
 An attempt stores a content-addressed manifest reference, not its full journal.
+Capture admits at most 256 tool calls, retains at most 64 KiB per command/cwd or
+output field and 32 MiB per attempt, and limits each manifest to 512 KiB. Source
+escaping can enlarge serialized records; retained-byte limits still apply.
 
 Existing bounded child-history retrieval can reconcile a missing terminal
 observation with the same session and call ID. It cannot infer an intent, claim
