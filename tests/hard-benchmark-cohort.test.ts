@@ -5,10 +5,11 @@ import { dirname, join, relative, resolve } from "node:path"
 import { BUILD_BENCHMARK_CONTROL_LIMITS, initializeBenchmarkWorkspaceGit } from "../scripts/build-benchmark.ts"
 import { execFileSync } from "node:child_process"
 import { BENCHMARK_CASES } from "../scripts/build-benchmark-fixtures.ts"
-import { createAcceptedQueryLostAckFixture, createHardBenchmarkFixtures } from "../scripts/hard-benchmark-fixtures.ts"
+import { createAcceptedQueryLostAckFixture, createHardBenchmarkFixtures, createMultiRepoCompatibilityFixture } from "../scripts/hard-benchmark-fixtures.ts"
 import { benchmarkTaskPrompt, collectHardProject, collectHardRunProgress, HARD_COLLECTION_LIMITS, HARD_PROGRESS_LIMITS, HARD_ISOLATION, hardBenchmarkIdentity,
   hardRunnerCase, HardLimitsSchema, prepareBenchmarkWorkload, readHardQualification, scheduleBenchmarkWorkload,
-  terminalHardRows, validateHardQualification, type WorkloadOptions } from "../scripts/hard-benchmark-cohort.ts"
+  scoreHardDevelopmentFixture, terminalHardRows, validateHardQualification, type WorkloadOptions } from "../scripts/hard-benchmark-cohort.ts"
+import { hardBenchmarkReferenceArm, HardBenchmarkRunnerUnavailableError } from "../scripts/hard-benchmark-qualification.ts"
 import { summarizeIssuedArms } from "../scripts/build-benchmark-protocol.ts"
 import { sha256Json } from "../src/persistence.ts"
 import { createRun, persistRun } from "../src/store.ts"
@@ -44,6 +45,48 @@ function put(root: string, path: string, content: string | Buffer) {
 const limits = { trialMs: 1_000, assistantTurns: 8, reportedComponents: 1_000, outputTokens: 128, suiteMs: 12_000 }
 const hardConfig = (): WorkloadOptions => ({ workload: "hard-development", hardLimits: { ...limits }, orderSeed: 12345, hardQualification: "external-qualification.json" })
 const select = (options: WorkloadOptions) => prepareBenchmarkWorkload(options, BENCHMARK_CASES, BUILD_BENCHMARK_CONTROL_LIMITS)
+
+describe("live hard development code scoring", () => {
+  test("the default path executes reference code and the API dependency probe", async () => {
+    const fixture = createMultiRepoCompatibilityFixture()
+    const submission = await hardBenchmarkReferenceArm({ fixture: fixture.contestant })
+    const score = await scoreHardDevelopmentFixture(fixture, submission)
+    expect(score.passed).toBe(true)
+    expect(score.checks.find(check => check.id === "code:executed-all-cases")?.passed).toBe(true)
+    expect(score.checks.find(check => check.id === "code:client-uses-api")?.passed).toBe(true)
+  })
+
+  test("missing or unavailable runners are explicit apparatus errors; executed code errors remain failures", async () => {
+    const fixture = createMultiRepoCompatibilityFixture()
+    const submission = await hardBenchmarkReferenceArm({ fixture: fixture.contestant })
+    await expect(scoreHardDevelopmentFixture(fixture, submission, { multiRepoRunner: null }))
+      .rejects.toBeInstanceOf(HardBenchmarkRunnerUnavailableError)
+    for (const error of [new HardBenchmarkRunnerUnavailableError("injected"),
+      Object.assign(new Error("injected permission failure"), { code: "EPERM" })]) {
+      await expect(scoreHardDevelopmentFixture(fixture, submission, { multiRepoRunner: async () => { throw error } }))
+        .rejects.toThrow("hard_multi_repo_runner_unavailable")
+    }
+    const score = await scoreHardDevelopmentFixture(fixture, submission, {
+      multiRepoRunner: async () => { throw new Error("candidate code failed") },
+    })
+    expect(score.passed).toBe(false)
+    expect(score.checks.find(check => check.id === "code:executed-all-cases")?.passed).toBe(false)
+  })
+
+  test("the local child runner bounds output and terminates nonreturning candidate code", async () => {
+    const fixture = createMultiRepoCompatibilityFixture()
+    const submission = await hardBenchmarkReferenceArm({ fixture: fixture.contestant })
+    for (const api of ['process.stdout.write("x".repeat(128 * 1024 + 1)); while (true) {}', "while (true) {}"]) {
+      const started = Date.now()
+      const score = await scoreHardDevelopmentFixture(fixture, { files: { ...submission.files,
+        "repos/api/src/index.ts": api + '\nexport const summarizeLot = () => []; export const eventCount = () => 0',
+      } })
+      expect(score.passed).toBe(false)
+      expect(score.checks.find(check => check.id === "code:executed-all-cases")?.passed).toBe(false)
+      expect(Date.now() - started).toBeLessThan(10_000)
+    }
+  }, 20_000)
+})
 
 describe("hard development prospective selection", () => {
   test("historic controls retain limits, subset order, arm order and disabled native compaction", () => {

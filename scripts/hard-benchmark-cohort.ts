@@ -6,11 +6,13 @@ import { dirname, join, relative, resolve } from "node:path"
 import { z } from "zod"
 import { sha256Json } from "../src/persistence.ts"
 import type { BenchmarkCase } from "./build-benchmark-fixtures.ts"
-import { createHardBenchmarkFixtures, openHardFixtureService, scoreHardFixture, type CreatedHardFixture } from "./hard-benchmark-fixtures.ts"
+import { createHardBenchmarkFixtures, executeLocalMultiRepo, openHardFixtureService, scoreHardFixture,
+  type CreatedHardFixture, type FixtureSubmission, type MultiRepoRunner } from "./hard-benchmark-fixtures.ts"
 import { scheduleIssuedPairs, type BenchmarkTrack } from "./build-benchmark-protocol.ts"
 import { createHardBenchmarkHttpClient, hardBenchmarkHostUsage, startHardBenchmarkHost } from "./hard-benchmark-host.ts"
-import { hardBenchmarkReferenceArm, hardBenchmarkNegativeArm, hardBenchmarkTamperArm, qualifyHardBenchmarkDevelopment,
+import { hardBenchmarkReferenceArm, hardBenchmarkNegativeArm, hardBenchmarkTamperArm, HardBenchmarkRunnerUnavailableError, qualifyHardBenchmarkDevelopment,
   type HardBenchmarkQualificationResult } from "./hard-benchmark-qualification.ts"
+import type { HardBenchmarkService } from "./hard-benchmark-service.ts"
 
 export type BenchmarkLimits = { trialMs: number; assistantTurns: number; reportedComponents: number; outputTokens: number; suiteMs: number }
 // Validation ceilings only. There is deliberately no prospective hard protocol default.
@@ -24,6 +26,33 @@ export const HardLimitsSchema = z.object({
   "hard suiteMs must accommodate all twelve issued arm time envelopes")
 const OrderSeedSchema = z.number().int().min(0).max(0xffff_ffff)
 export const HARD_ISOLATION = "same-user-development-only-not-os-isolated" as const
+/**
+ * Live development grading uses the same local child runner as qualification:
+ * fresh temporary cwd, selected source files only, no inherited credentials,
+ * 5 seconds and 128 KiB stdout per pass. It is not an OS security boundary.
+ */
+export async function scoreHardDevelopmentFixture(fixture: CreatedHardFixture, submission: FixtureSubmission,
+  options: { service?: HardBenchmarkService; multiRepoRunner?: MultiRepoRunner | null } = {}) {
+  if (fixture.contestant.family !== "multi-repo-compatibility")
+    return scoreHardFixture(fixture, submission, { service: options.service })
+  const runner = options.multiRepoRunner === undefined ? executeLocalMultiRepo : options.multiRepoRunner
+  if (!runner) throw new HardBenchmarkRunnerUnavailableError("hard_multi_repo_runner_unavailable: no runner configured")
+  let unavailable = false
+  const grade = await scoreHardFixture(fixture, submission, { multiRepoRunner: async (...args) => {
+    try { return await runner(...args) }
+    catch (error) {
+      const code = error !== null && typeof error === "object" && "code" in error ? error.code : undefined
+      if (error instanceof HardBenchmarkRunnerUnavailableError || ["EPERM", "EACCES", "ENOENT", "ENOEXEC", "ENOSYS"].includes(String(code)))
+        unavailable = true
+      throw error
+    }
+  } })
+  // The core scorer converts child exceptions into failed execution checks.
+  // A missing host facility is unavailable evidence, not a candidate code result.
+  if (unavailable) throw new HardBenchmarkRunnerUnavailableError("hard_multi_repo_runner_unavailable: host runner could not execute")
+  return grade
+}
+
 export const HARD_INTERPRETATION = "DEVELOPMENT ONLY; same user; NOT OS ISOLATED; unqualified for confirmation. Native auto/prune compaction is enabled prospectively; hard L1 requests no host compaction. Existing telemetry distinguishes observed markers, linked completed summaries and continuation evidence. No forced boundary implies no information-loss estimate, not zero loss. The preseeded service restart is not model compaction."
 export interface WorkloadOptions {
   workload?: "controls" | "hard-development"
