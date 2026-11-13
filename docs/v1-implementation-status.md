@@ -18,9 +18,22 @@ baseline cannot be repaired by spending more turns on already-correct code.
 Shared accounting protects continuity and explicit hard limits; it should not
 make a soft planning estimate a premature terminal failure. These are prospective
 design priorities, not larger existing trial limits or a
-superiority result. No new paid cohort or V2 work is launched by this update.
+superiority result. The next paid comparison follows the separately frozen
+[hard development protocol](v1-hard-development-cohort-protocol.md). No V2 work.
 
-## 0.5.10 — shared dispatch allowance (qualification in progress)
+## 0.5.10 — shared dispatch allowance and qualified development runner
+
+Candidate `5a2e8a6` passed the full native Linux gate (1,437 passes, 16 platform
+skips, zero failures), focused Windows regressions and the Windows package matrix
+(114 passes, one skip). Both actual V1 hosts passed one requested compaction and
+two restarts with a retained reservation, successful checker continuation and
+zero extra child calls after exhaustion. All 136 runtime files match after line
+ending normalization. [Receipts and preserved failures](evidence/task-allowance-20261113/README.md).
+
+The six hard fixtures passed 18 direct reference/negative/tamper qualification
+cases and six public HTTP cases. All twelve no-generation preflight arms passed.
+These qualify the development apparatus, not ALG's solve rate. The latest paid
+historical controls remain Build 2/2 and ALG 0/2 until a new cohort is reported.
 
 New live plans share a host-generated task identity in the existing root session
 checkpoint. Each run retains its own immutable phase contract; the task ledger

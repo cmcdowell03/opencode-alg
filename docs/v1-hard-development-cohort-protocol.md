@@ -42,8 +42,9 @@ Both arms have the same prospective envelope:
 The runner deterministically orders all six cases and alternates Build/ALG arm
 order. No case selection, adaptive extra attempts, arm-specific top-up or silent
 restart is permitted after issuance. Natural compaction is enabled at the same
-catalog context capacity for both arms; no artificial context reduction or
-requested compaction is added to this L1 cohort. ALG's durable dispatch limit is
+configured context capacity for both arms (128,000 tokens); the provider's native
+maximum is not established by this configured catalog entry. No further context
+reduction or requested compaction is added to this L1 cohort. ALG's durable dispatch limit is
 an additional product constraint, not a claim that Build has an identical ledger.
 
 Turn and usage-component cutoffs are observed by polling and may overshoot. The

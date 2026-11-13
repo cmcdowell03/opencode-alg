@@ -1,0 +1,197 @@
+{
+  "task_allowance_probe": null,
+  "checker_probe": null,
+  "task_admission_probe": null,
+  "schema_version": 1,
+  "kind": "opencode-alg-v1-headless-acceptance",
+  "generated_at": "2026-11-13T02:25:01.827Z",
+  "passed": false,
+  "failure": "Allowance probe did not reserve one actual child",
+  "evidence_path": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\task-allowance-windows-headless-second.json",
+  "task_contract": {
+    "run_id": "441e471f2a6dd37c269092723a8bbca6fe61c0b35a02cc1c32b370e2602f2daa",
+    "input": {
+      "version": 1,
+      "kind": "read_only",
+      "discovery": "required",
+      "phase": "complete",
+      "deliverables": [
+        {
+          "destination": "response",
+          "producer_node": "confirm"
+        }
+      ],
+      "verification": {
+        "checker_node": "check",
+        "execution": "none"
+      },
+      "preserve_paths": [],
+      "evidence_plan": [
+        {
+          "criterion": 1,
+          "observations": [
+            {
+              "kind": "deliverable",
+              "index": 0
+            }
+          ]
+        }
+      ]
+    },
+    "original_goal": "Run bounded synthetic data investigation acceptance",
+    "original_criteria": [
+      "Use only deterministic local fixture data"
+    ],
+    "requirements_sha256": "98781e7178aa9576bd709eeab74d7096b9d5e4709b5c0616b5632073c934d30f",
+    "contract_sha256": "7f31f234a5a36680862e8181666b6510b58ee1846178fb2b75c111da31c70f1c",
+    "persisted_before_compaction": true,
+    "persisted_after_compaction": false,
+    "persisted_after_restart": false,
+    "persisted_after_final_restart": false,
+    "digests_stable": false,
+    "user_request_captured": true,
+    "user_request_sha256": "4ae38716ff0f43f983be0cd4248bd46591d4c1e84f53442f87c5b4f18ba65330"
+  },
+  "source": {
+    "package_version": "0.5.10",
+    "root": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\opencode-alg-v1",
+    "loaded_root": "D:\\Docker\\model-temp\\alg-v1-headless-xvfJkB\\runtime-source",
+    "sha256": "88c65c3e7f27eea8dd7458c419992d71fd984fef51f9bc68ac950b7dacd627f7",
+    "node": "24.3.0",
+    "bun": "1.3.14"
+  },
+  "host": {
+    "executable": "C:\\Users\\codym\\AppData\\Roaming\\npm\\node_modules\\opencode-ai\\bin\\opencode.exe",
+    "version": "1.19.5",
+    "platform": "win32",
+    "arch": "x64",
+    "libc": "not-applicable",
+    "starts": 1,
+    "restarts": 0,
+    "pids": [
+      1616552
+    ],
+    "clean_exits": [
+      true
+    ]
+  },
+  "isolation": {
+    "temporary_root": "D:\\Docker\\model-temp\\alg-v1-headless-xvfJkB",
+    "project": "D:\\Docker\\model-temp\\alg-v1-headless-xvfJkB\\project",
+    "config_home": "D:\\Docker\\model-temp\\alg-v1-headless-xvfJkB\\xdg-config",
+    "config_path": "D:\\Docker\\model-temp\\alg-v1-headless-xvfJkB\\opencode.json",
+    "sidecar_path": "D:\\Docker\\model-temp\\alg-v1-headless-xvfJkB\\alg-options.json",
+    "provider_endpoint": "http://127.0.0.1:4158/v1",
+    "server_bind_host": "127.0.0.1",
+    "credentials_inherited": false,
+    "real_user_config_unchanged": true,
+    "config_before_sha256": "1c4eb14e01ef1ccfdc66edf4cce154be937ed07fb7367e2128bd0aedeedff3df",
+    "config_after_sha256": "1c4eb14e01ef1ccfdc66edf4cce154be937ed07fb7367e2128bd0aedeedff3df"
+  },
+  "session": {
+    "id": "ses_e2d47183effecQ1ccjQgOzFLZK",
+    "persisted_same_id": false,
+    "initial_tool_calls": [
+      "alg_context_status",
+      "alg_plan",
+      "alg_investigation"
+    ],
+    "followup_tool_calls": [],
+    "tool_registry_ids": [
+      "alg_templates",
+      "alg_models",
+      "alg_criteria",
+      "alg_plan",
+      "alg_run",
+      "alg_status",
+      "alg_resume",
+      "alg_artifact",
+      "alg_transfer",
+      "alg_skill_evolution_status",
+      "alg_skill_evolution_audit",
+      "alg_skill_evolution_historical",
+      "alg_skill_evolution_review",
+      "alg_skill_evolution_promote",
+      "alg_skill_evolution_rollback",
+      "alg_skill",
+      "alg_memory_search",
+      "alg_memory_read",
+      "alg_context_status",
+      "alg_memory_propose",
+      "alg_investigation"
+    ],
+    "registry_exact": true,
+    "plugin_startup_proofs": [
+      true
+    ],
+    "initial_memory_checkpoint": {
+      "revision": 6,
+      "generation": 0,
+      "result_pins": [
+        "71292520437773170655964b5394b5b9afd646da3d21e4b0549ea6449e92c794"
+      ],
+      "result_persisted": true
+    },
+    "compacted_memory_checkpoint": null,
+    "recovered_compaction_message": false,
+    "recovered_reference_and_result": false,
+    "final_memory_checkpoint": null
+  },
+  "synthetic_provider": {
+    "endpoint": "http://127.0.0.1:4158/v1",
+    "received_requests": 6,
+    "non_loopback_requests": 0,
+    "phases": [
+      "initial",
+      "initial",
+      "initial",
+      "initial",
+      "initial",
+      "initial"
+    ],
+    "context_status_seen": true,
+    "plan_tool_seen": true,
+    "investigation_query_tool_seen": true,
+    "query_result_observed_by_model": true,
+    "compaction_saw_initial_result": false,
+    "followup_saw_persisted_reference": false,
+    "no_non_loopback_requests": true
+  },
+  "investigation": {
+    "enabled": true,
+    "mcp_server_name": "alg-headless-synthetic",
+    "mcp_server_version": "1.32.2-fixture.1",
+    "profile_schema_hashes": {
+      "submit": "8f96cf996df3ceb5927c28688bead79b03e999da7ea93945a4adb981c422d610",
+      "lookup": "853817dd743deb499325778f6aaf1e1ca21828411cd40b8f82e0785426aff47c",
+      "validate": "802cda9d18a48a0c460f2546e5672a9e56312aad00acf6c172bcd0ecd712fb36",
+      "read": "5d4843c64cba757b727351493dc17717b4ad0dafabbaeed08436d75820143ff1",
+      "cancel": "a1f3edfb447fba0789fa3d0cfc8948cb46aacca3ea4c96c4c4f8e16876f9c4cf"
+    },
+    "submit_calls": 1,
+    "accepted_remote_jobs": 1,
+    "validation_calls": 2,
+    "read_calls": 1,
+    "lookup_calls": 2,
+    "read_result_tool_calls": 1,
+    "query_tool_calls": 1,
+    "same_work_key": false,
+    "same_result_reference": false,
+    "result_revalidated_after_restarts": false,
+    "actual_tool_results": [
+      {
+        "status": "reusable",
+        "work_key": "17d94925ca995e85427a1a21b32876fe95a5b8694851dba7d737cefe91e76121",
+        "manifest_ref": "synthetic://alg-headless/manifest/readings-v1",
+        "digest": "57d1f764111f08be633cbcb9282598b5cc7320f8360bfc1229aa30dfda5bbac2"
+      }
+    ]
+  },
+  "cleanup": {
+    "host_processes_stopped": true,
+    "provider_stopped": true,
+    "mcp_service_stopped": true,
+    "temporary_environment_removed": true,
+    "evidence_persisted_before_environment_removal": true
+  }
+}
