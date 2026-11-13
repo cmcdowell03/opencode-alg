@@ -2,7 +2,7 @@ import { join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import {
   managerErrorMessage,
-  runManager,
+  runManagerAsync,
   serializeManagerJson,
   type AgentPolicy,
   type ManagerCommand,
@@ -127,7 +127,7 @@ if (isMain) {
   try {
     const options = parseManagerArgs(process.argv.slice(2))
     json = Boolean(options.json)
-    const result = runManager(options)
+    const result = await runManagerAsync(options)
     if (json) console.log(serializeManagerJson(result))
     else printHuman(result)
     if (!result.ok) process.exitCode = 1

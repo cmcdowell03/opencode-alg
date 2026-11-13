@@ -48,7 +48,7 @@ import {
 } from "../src/paths.ts"
 import { computeAlgSourceIdentity } from "../src/source-identity.ts"
 import { resolveNpmInvocation } from "./npm-invocation.ts"
-import { inventoryDeploymentTree, readAndVerifyDeploymentBundle } from "./deployment.ts"
+import { inventoryDeploymentTree, inventoryDeploymentTreeAsync, readAndVerifyDeploymentBundle, type AsyncInventoryOptions } from "./deployment.ts"
 import {
   BUNDLED_AGENT_NAMES,
   DurableStateCompatibilitySchema,
@@ -165,6 +165,8 @@ export interface ManagerFaults {
 
 export interface ManagerDependencies {
   runner?: CommandRunner
+  /** Test-only I/O seam; asynchronous staged inventory still enforces every policy check. */
+  inventoryOpen?: AsyncInventoryOptions["open"]
   link?: typeof linkSync
   unlink?: typeof unlinkSync
   faults?: ManagerFaults
@@ -1523,12 +1525,17 @@ function assertCompatibleOfflineHost(runner: CommandRunner): void {
   }
 }
 
-function stageRelease(
+type StagedInventory = { root: string; excludeManifest: boolean }
+type InventoryTree = ReturnType<typeof inventoryDeploymentTree>
+type ManagerSteps<T> = Generator<StagedInventory, T, InventoryTree>
+
+function* stageRelease(
   options: ManagerOptions,
   paths: ManagerPaths,
   receipt: ManagerReceipt | undefined,
   dependencies: ManagerDependencies,
-): StagedRelease {
+  assertHeld: () => void,
+): ManagerSteps<StagedRelease> {
   const runner = dependencies.runner ?? new DefaultCommandRunner()
   if (options.bundleRoot) {
     if (!options.trustBundleHash) throw new Error("Offline deployment requires --trust-bundle with the reviewed manifest SHA-256")
@@ -1555,7 +1562,10 @@ function stageRelease(
     try {
       cpSync(packagePath, stagingPath, { recursive: true, errorOnExist: true, force: false, preserveTimestamps: true, verbatimSymlinks: true })
       const stagingIdentity = regularDirectoryIdentity(stagingPath)
-      if (JSON.stringify(inventoryDeploymentTree(stagingPath, true)) !== JSON.stringify(manifest.dependencies.tree)) {
+      const inventory = yield { root: stagingPath, excludeManifest: true }
+      assertHeld()
+      if (!sameFileIdentity(regularDirectoryIdentity(stagingPath), stagingIdentity)) throw new Error("Generation staging root identity changed")
+      if (JSON.stringify(inventory) !== JSON.stringify(manifest.dependencies.tree)) {
         throw new Error("Prepared bundle changed while it was being staged")
       }
       const packageRoot = canonicalDirectory(stagingPath)
@@ -2894,18 +2904,19 @@ function verifiedActiveBundleNoop(
   }
 }
 
-function installOrUpdate(
+function* installOrUpdate(
   options: ManagerOptions & { command: "install" | "update" },
   paths: ManagerPaths,
   dependencies: ManagerDependencies,
-): ManagerResult {
+  assertHeld: () => void,
+): ManagerSteps<ManagerResult> {
   const receipt = readReceipt(paths, options.command === "update")
   if (options.command === "update" && !receipt?.installed) throw new Error("Update requires an installed active receipt")
   const verifiedNoop = verifiedActiveBundleNoop(options, paths, receipt, dependencies)
   if (verifiedNoop) return verifiedNoop
   const excelIntent = excelActivationIntent(options, receipt, paths)
   const policy = options.agentPolicy ?? "managed"
-  const staged = stageRelease(options, paths, receipt, dependencies)
+  const staged = yield* stageRelease(options, paths, receipt, dependencies, assertHeld)
   let targetRoot = staged.stagingPath
   let generation = staged.generation
   try {
@@ -3652,8 +3663,8 @@ function validateOptionCombinations(options: ManagerOptions): void {
   }
 }
 
-/** Shared manager API. Launchers and tests call the same implementation. */
-export function runManager(options: ManagerOptions, dependencies: ManagerDependencies = {}): ManagerResult {
+/** One transaction implementation; only staged inventory scheduling differs between drivers. */
+function* managerSteps(options: ManagerOptions, dependencies: ManagerDependencies): ManagerSteps<ManagerResult> {
   validateOptionCombinations(options)
   const paths = managerPaths(options)
   const doctorMutation = options.command === "doctor" && (options.repairJournal || options.ackRestart)
@@ -3661,6 +3672,9 @@ export function runManager(options: ManagerOptions, dependencies: ManagerDepende
 
   createPaths(paths)
   const mutex = acquireFilesystemMutex(paths.lockPath, { owner: `opencode-alg-manager:${options.command}` })
+  // Synchronous callers can block heartbeats while hashing. Renew only our still-owned token,
+  // then assert it before resuming publication; an awaited reader must retain the same authority.
+  const assertHeld = (): void => { mutex.renew(); mutex.assertHeld() }
   try {
     if (options.command === "doctor") {
       if (options.repairJournal) {
@@ -3675,7 +3689,7 @@ export function runManager(options: ManagerOptions, dependencies: ManagerDepende
     if (options.ackRestart) throw new Error("--ack-restart is doctor-only")
     if (options.command === "deploy") {
       const effectiveCommand = readReceipt(paths, false)?.installed ? "update" : "install"
-      const result = installOrUpdate({ ...options, command: effectiveCommand }, paths, dependencies)
+      const result = yield* installOrUpdate({ ...options, command: effectiveCommand }, paths, dependencies, assertHeld)
       const receipt = readReceipt(paths, true)
       const active = receipt?.installed ? activeGeneration(receipt) : undefined
       return {
@@ -3694,11 +3708,38 @@ export function runManager(options: ManagerOptions, dependencies: ManagerDepende
       }
     }
     if (options.command === "install" || options.command === "update") {
-      return installOrUpdate(options as ManagerOptions & { command: "install" | "update" }, paths, dependencies)
+      return yield* installOrUpdate(options as ManagerOptions & { command: "install" | "update" }, paths, dependencies, assertHeld)
     }
     if (options.command === "rollback") return rollbackManager(options as ManagerOptions & { command: "rollback" }, paths, dependencies)
     return uninstallManager(options as ManagerOptions & { command: "uninstall" }, paths, dependencies)
   } finally {
     mutex.release()
   }
+}
+
+/** Synchronous API retained for existing callers and tests. */
+export function runManager(options: ManagerOptions, dependencies: ManagerDependencies = {}): ManagerResult {
+  const steps = managerSteps(options, dependencies)
+  let step = steps.next()
+  while (!step.done) {
+    let inventory: InventoryTree
+    try { inventory = inventoryDeploymentTree(step.value.root, step.value.excludeManifest) }
+    catch (error) { step = steps.throw(error); continue }
+    step = steps.next(inventory)
+  }
+  return step.value
+}
+
+/** Cold staged files use four bounded readers; source/installed authority and no-op checks stay synchronous. */
+export async function runManagerAsync(options: ManagerOptions, dependencies: ManagerDependencies = {}): Promise<ManagerResult> {
+  const steps = managerSteps(options, dependencies)
+  let step = steps.next()
+  while (!step.done) {
+    let inventory: InventoryTree
+    try { inventory = await inventoryDeploymentTreeAsync(step.value.root, step.value.excludeManifest, { open: dependencies.inventoryOpen }) }
+    // Re-enter the transaction on rejection so its catch/finally boundaries release the mutex.
+    catch (error) { step = steps.throw(error); continue }
+    step = steps.next(inventory)
+  }
+  return step.value
 }

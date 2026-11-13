@@ -5,6 +5,15 @@
   Keep evidence-gap retries on the checker and preserve legacy records, unknown
   outcomes and cumulative allowances. See `docs/v1-action-evidence.md`.
 
+## 0.5.12 candidate — check factual consistency before accepting a verdict
+
+- Pin the actual submitted dependency separately from citable evidence, including its validated action origin after gate-only recovery. Preserve existing evidence IDs and context budgets.
+- Let checkers declare bounded mechanical assessments of retrieved action records. Recompute those facts on receipt and reload; contradictory output uses the existing checker-only repair allowance. Missing facts remain unknown, and the plugin never converts a verdict into an automatic pass. Criterion interpretation and semantic judgments remain model responsibilities.
+- Keep a schema-valid substantive rejection terminal across ordinary resume. Explicit feedback can repair the producer before fresh verification; invalid output and evidence uncertainty share the existing attempt bound.
+- New submission pins and mechanical assessments require the 0.5.12 reader. Older compatible state remains readable; do not downgrade over newly written fields.
+- Verify staged deployment files with four bounded readers while preserving source, installed-release, containment, identity and full-hash checks. Preparation moves its owned stage into place instead of copying it again; transaction ownership is rechecked after asynchronous work. Exact package checks and measured timings remain separately identified.
+- Qualify the prospective V4 diagnostic and unchanged paired comparison separately. Earlier failures retain their original grades; implementation alone establishes no reliability or superiority claim. V1 only, model agnostic, local testing only.
+
 ## 0.5.11 candidate — distinguish runtime state from project changes
 
 - Add paired live obligation measurements before/after controller handoff, requested compaction and host restart. Keep all issued outcomes, pre-existing errors and unmeasured follow-up separate; a summary does not prove retention.

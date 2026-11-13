@@ -61,6 +61,12 @@ the work or rerun its producer. Semantic judgments and the translation of user
 criteria remain the model's responsibility. The [evaluation protocol](docs/v1-evidence-recovery-evaluation.md)
 requires a passing real-checker diagnostic before the paired comparison.
 
+The `7a32708` V4 diagnostic failed that admission gate. Contradictory positive
+verdicts were correctly rejected, but the checker did not recover within its
+allowance. A correct negative verdict separately exceeded the diagnostic's
+retrieval recipe. The comparison remains unissued; see the [measured results
+and preserved limitations](docs/evidence/checker-consistency-20261113/README.md).
+
 A verified substantive rejection ends review of that submission, including on
 resume. An explicit graph feedback route can repair the producer before fresh
 review. Output-contract failures and evidence uncertainty can retry the checker

@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process"
-import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
+import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmdirSync, symlinkSync, writeFileSync } from "node:fs"
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 import { computeProductionDependencyIdentity, verifyBundleProductionDependencies } from "./manager-core.ts"
@@ -146,6 +146,42 @@ function copyCommittedPackage(source: string, commit: string, stage: string): Re
   return pkg
 }
 
+/** Move only the preparation-owned child into its otherwise empty output root.
+ * This is not the manager's concurrent/no-clobber generation publication path.
+ * Renaming preserves file identities and avoids copying npm's complete tree a
+ * second time. All package/dependency verification still runs at the output.
+ */
+export function publishPreparedPackage(stage: string, output: string): void {
+  if (!isAbsolute(stage) || !isAbsolute(output) || resolve(stage) !== join(resolve(output), ".package-stage")) {
+    throw new Error("Preparation publication requires its own .package-stage child")
+  }
+  for (const directory of [output, stage]) {
+    const stat = lstatSync(directory)
+    if (!stat.isDirectory() || stat.isSymbolicLink() || relative(realpathSync.native(directory), directory) !== "") {
+      throw new Error("Preparation publication directory is redirected")
+    }
+  }
+  const outputNames = readdirSync(output)
+  if (outputNames.length !== 1 || outputNames[0] !== ".package-stage") {
+    throw new Error("Preparation output gained content; preserving the staging tree")
+  }
+  for (const name of readdirSync(stage)) {
+    const destination = join(output, name)
+    // The output was newly created for this preparation, never an installed
+    // generation. Refuse unexpected content rather than overwrite it.
+    try {
+      lstatSync(destination)
+      throw new Error(`Preparation output entry already exists: ${name}`)
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
+    }
+    renameSync(join(stage, name), destination)
+  }
+  // A failed move or unexpected remaining entry stays available for inspection.
+  // Never recursively delete an incomplete preparation tree.
+  rmdirSync(stage)
+}
+
 export function prepareDeploymentBundle(sourceInput: string, outputInput: string): { output: string; manifestSha256: string; sourceCommit: string; artifactSha256: string } {
   if (!process.versions.bun && Number(process.versions.node.split(".")[0]) < 22) throw new Error("Bundle preparation requires Node.js 22 or newer")
   if (!isAbsolute(sourceInput) || !isAbsolute(outputInput)) throw new Error("Bundle source and output paths must be absolute")
@@ -180,8 +216,7 @@ export function prepareDeploymentBundle(sourceInput: string, outputInput: string
       if (sha256(readFileSync(join(stage, name))) !== expected) throw new Error(`Preparation dependency install modified frozen input ${name}`)
     }
     // Publish the package at the output root; the directory name is descriptive only.
-    for (const name of readdirSync(stage)) cpSync(join(stage, name), join(output, name), { recursive: true, preserveTimestamps: true, verbatimSymlinks: true })
-    rmSync(stage, { recursive: true, force: true })
+    publishPreparedPackage(stage, output)
     const identity = computeProductionDependencyIdentity(output, Object.keys(pkg.dependencies ?? {}).sort())
     verifyBundleProductionDependencies(output, Object.keys(pkg.dependencies ?? {}).sort())
     const tree = inventoryDeploymentTree(output)

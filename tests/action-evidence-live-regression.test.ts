@@ -16,10 +16,12 @@ const digest = (text: string) => createHash("sha256").update(text).digest("hex")
 const boundary = Date.parse("2026-09-04T12:00:00Z")
 const criterion = "The first recorded bash call within the producer attempt has its captured command retained exactly, and its linked host terminal explicitly reports exit code zero."
 
-function fixture(caseId: "correct" | "defective", repair: boolean | "evidence_unavailable" = false): any {
+function fixture(caseId: "correct" | "defective", repair: boolean | "evidence_unavailable" = false, partialManifest = false): any {
   const contents = [JSON.stringify({ command: firstCommand(caseId) }), JSON.stringify({ exit_code: caseId === "correct" ? 0 : 1 })]
-  const manifestHash = "3".repeat(64)
-  const manifestReference = { artifact_path: `.opencode/runs/neutral-run/artifacts/manifest-${manifestHash}.json`, sha256: manifestHash, byte_size: 128 }
+  const refs = contents.map((content, index) => ({ artifact_path: `.opencode/runs/neutral-run/artifacts/${index}-${digest(content)}.json`, sha256: digest(content), byte_size: Buffer.byteLength(content) }))
+  const manifestContent = JSON.stringify({ entries: refs, padding: partialManifest ? "x".repeat(9_000) : "" })
+  const manifestHash = digest(manifestContent)
+  const manifestReference = { artifact_path: `.opencode/runs/neutral-run/artifacts/manifest-${manifestHash}.json`, sha256: manifestHash, byte_size: Buffer.byteLength(manifestContent) }
   const producerOutput = { done: true, summary: "Completed the fixed action sequence.", files_changed: [], blocking_issues: [] }
   const submission = JSON.stringify(producerOutput)
   const basis = { version: 1, criteria_sha256: criteriaDigest([criterion]), criterion_ids: ["C1"], omitted_entries: 0,
@@ -27,7 +29,6 @@ function fixture(caseId: "correct" | "defective", repair: boolean | "evidence_un
       json_sha256: digest(submission), json_bytes: Buffer.byteLength(submission) }, evidence: [] }
   const sources = { version: 1, journals: [{ run_id: "neutral-run", node_id: "work", attempt: 1,
     child_session_id: "producer-session", reference: manifestReference }], omitted: 0, unavailable: 0 }
-  const refs = contents.map((content, index) => ({ artifact_path: `.opencode/runs/run/artifacts/${index}.json`, sha256: digest(content), byte_size: Buffer.byteLength(content) }))
   const receipts = refs.map((reference, index) => retrievedVerificationEvidence(reference, 0, contents[index]!))
   const tools = [
     { tool: "alg_artifact", state: { status: "completed", input: { evidence: "index" }, output: JSON.stringify({ records: refs.map((reference, index) => ({ record_id: reference.sha256, kind: index ? "terminal" : "intent" })) }) } },
@@ -36,7 +37,8 @@ function fixture(caseId: "correct" | "defective", repair: boolean | "evidence_un
   ]
   const exitCode = caseId === "correct" ? 0 : 1
   const producer = { manifest_sha256: manifestHash, observed_calls: 10, completed: 10, unknown_terminal: 0,
-    first_records: { intent: refs[0], terminal: refs[1] }, first_terminal: { exit_code: exitCode },
+    first_records: structuredClone({ intent: refs[0], terminal: refs[1] }), first_terminal: { exit_code: exitCode },
+    canonical_pages: structuredClone({ intent: receipts[0], terminal: receipts[1], manifest: retrievedVerificationEvidence(manifestReference, 0, manifestContent.slice(0, 8_192)) }),
     checker_provider_id: "openai", checker_model_id: "gpt-6-luna" }
   const output = { passed: caseId === "correct", failures: caseId === "correct" ? [] : ["The linked terminal reports a nonzero exit."],
     score: caseId === "correct" ? 10 : 0, findings: [{ criterion_id: "C1", outcome: caseId === "correct" ? "supported" : "disconfirmed",
@@ -65,11 +67,23 @@ function fixture(caseId: "correct" | "defective", repair: boolean | "evidence_un
       action_evidence_ref: manifestReference, session_id: "producer-session" }] },
     check: { agent: "checker", status, current_attempt: count, attempts },
   } }
-  return { case_id: caseId, run, producer, checker_histories: histories, compaction_completed_at: boundary }
+  return { case_id: caseId, run, producer, checker_histories: histories, compaction_completed_at: boundary, manifest_content: manifestContent }
 }
 const finalAttempt = (data: any) => data.run.nodes.check.attempts.at(-1)
 function syncNativeOutput(data: any) {
   data.checker_histories.at(-1).messages.at(-1).parts.at(-1).text = JSON.stringify(finalAttempt(data).output)
+}
+function addManifestRead(data: any, position = 3, cite = true) {
+  const final = finalAttempt(data), parts = data.checker_histories.at(-1).messages[0].parts
+  const receipt = structuredClone(data.producer.canonical_pages.manifest), content = data.manifest_content.slice(0, 8_192)
+  const tool = { ...structuredClone(parts[0]), id: "manifest-read", state: { status: "completed",
+    input: { evidence: "read", record_id: receipt.reference.sha256, offset: 0 },
+    output: JSON.stringify({ citation_id: receipt.id, receipt, content }) } }
+  parts.splice(position, 0, tool)
+  final.retrieved_evidence.push(receipt)
+  if (cite) final.output.findings[0].evidence_ids.push(receipt.id)
+  syncNativeOutput(data)
+  return tool
 }
 
 test("live action-evidence grader accepts the correct original action and the observed defective action", () => {
@@ -172,8 +186,8 @@ test("schema and evidence-unavailable repairs share the same two-attempt total a
   expect(gradeLiveActionEvidenceCase(exhausted)).toMatchObject({ passed: false, final_schema_and_terminal_valid: false })
 })
 
-test("v4 rejects missing, forged, foreign and earlier-attempt-only citations or page evidence", () => {
-  for (const corruption of ["missing", "forged-citation", "forged-page", "foreign-reference", "earlier-only", "extra-read", "wrong-order"]) {
+test("v5 rejects missing, forged, foreign and earlier-attempt-only citations or page evidence", () => {
+  for (const corruption of ["missing", "forged-citation", "forged-page", "foreign-reference", "earlier-only", "extra-read"]) {
     const data = fixture("correct", true), final = finalAttempt(data), parts = data.checker_histories.at(-1).messages[0].parts
     if (corruption === "missing") final.retrieved_evidence.pop()
     if (corruption === "forged-citation") final.output.findings[0].evidence_ids[0] = `R${"f".repeat(64)}`
@@ -183,9 +197,106 @@ test("v4 rejects missing, forged, foreign and earlier-attempt-only citations or 
     if (corruption === "foreign-reference") final.retrieved_evidence[0].reference.sha256 = "f".repeat(64)
     if (corruption === "earlier-only") { data.run.nodes.check.attempts[0].retrieved_evidence = final.retrieved_evidence; final.retrieved_evidence = [] }
     if (corruption === "extra-read") parts.splice(3, 0, { ...structuredClone(parts[1]), id: "reread" })
-    if (corruption === "wrong-order") [parts[1], parts[2]] = [parts[2], parts[1]]
     syncNativeOutput(data)
     expect(gradeLiveActionEvidenceCase(data).passed, corruption).toBe(false)
+  }
+})
+
+test("v5 allows one optional canonical manifest first page after the index, in either original-page order", () => {
+  for (const caseId of ["correct", "defective"] as const) for (const partial of [false, true]) {
+    for (const position of [1, 2, 3]) for (const cite of [false, true]) {
+      const data = fixture(caseId, false, partial), parts = data.checker_histories[0].messages[0].parts
+      ;[parts[1], parts[2]] = [parts[2], parts[1]]
+      addManifestRead(data, position, cite)
+      expect(gradeLiveActionEvidenceCase(data)).toMatchObject({ passed: true, verdict_correct: true, retrieval: {
+        retrieved_both_original_pages: true, citations_bound_to_original_pages: true, manifest_read: true, manifest_cited: cite,
+        manifest_page_partial: partial, page_count: 3, tool_call_count: 4, recipe_valid: true } })
+    }
+  }
+})
+
+test("v5 rejects forged manifest bytes, wrong sources, unknown extras and incomplete original evidence", () => {
+  for (const corruption of ["manifest-bytes", "manifest-rehashed", "manifest-reference", "manifest-read-source", "foreign-run",
+    "missing-read", "missing-receipt", "missing-citation", "partial-original", "unknown-extra", "unread-manifest-citation"]) {
+    const data = fixture("defective", false, true), tool = addManifestRead(data), final = finalAttempt(data)
+    const parts = data.checker_histories[0].messages[0].parts, finding = final.output.findings[0]
+    if (corruption === "manifest-bytes") {
+      const page = JSON.parse(tool.state.output); page.content = "forged"; tool.state.output = JSON.stringify(page)
+    }
+    if (["manifest-rehashed", "manifest-reference", "partial-original"].includes(corruption)) {
+      const target = corruption === "partial-original" ? parts[1] : tool
+      const page = JSON.parse(target.state.output), oldId = page.receipt.id
+      if (corruption === "manifest-reference") page.receipt.reference.artifact_path = ".opencode/runs/foreign/artifacts/manifest.json"
+      if (corruption === "manifest-rehashed") page.content = "f".repeat(page.content.length)
+      if (corruption === "partial-original") page.content = page.content.slice(0, -1)
+      page.receipt = retrievedVerificationEvidence(page.receipt.reference, 0, page.content); page.citation_id = page.receipt.id
+      target.state.output = JSON.stringify(page)
+      final.retrieved_evidence[final.retrieved_evidence.findIndex((row: any) => row.id === oldId)] = page.receipt
+      finding.evidence_ids[finding.evidence_ids.indexOf(oldId)] = page.receipt.id
+      if (corruption === "partial-original") finding.mechanical_assessment.intent_id = page.receipt.id
+    }
+    if (corruption === "manifest-read-source") tool.state.input.record_id = "f".repeat(64)
+    if (corruption === "foreign-run") (tool.state.input as any).run_id = "foreign"
+    if (corruption === "missing-read") parts.splice(1, 1)
+    if (corruption === "missing-receipt") final.retrieved_evidence.shift()
+    if (corruption === "missing-citation") finding.evidence_ids.shift()
+    if (corruption === "unknown-extra") parts.splice(4, 0, { ...structuredClone(tool), id: "unknown", tool: "unknown_tool" })
+    if (corruption === "unread-manifest-citation") { parts.splice(3, 1); final.retrieved_evidence.pop() }
+    syncNativeOutput(data)
+    expect(gradeLiveActionEvidenceCase(data), corruption).toMatchObject({ passed: false, verdict_correct: true })
+  }
+})
+
+test("v5 recipe violations retain an independently correct verdict and canonical original evidence", () => {
+  for (const corruption of ["reread-original", "reread-manifest", "duplicate-index", "duplicate-receipt", "duplicate-citation", "index-last", "excess"]) {
+    const data = fixture("defective"), tool = addManifestRead(data), final = finalAttempt(data), parts = data.checker_histories[0].messages[0].parts
+    if (corruption === "reread-original") parts.splice(4, 0, { ...structuredClone(parts[1]), id: "reread" })
+    if (corruption === "reread-manifest") parts.splice(4, 0, { ...structuredClone(tool), id: "reread" })
+    if (corruption === "duplicate-index") parts.splice(4, 0, { ...structuredClone(parts[0]), id: "reindex" })
+    if (corruption === "duplicate-receipt") final.retrieved_evidence.push(structuredClone(final.retrieved_evidence[2]))
+    if (corruption === "duplicate-citation") final.output.findings[0].evidence_ids.push(final.retrieved_evidence[2].id)
+    if (corruption === "index-last") parts.splice(3, 0, parts.shift())
+    if (corruption === "excess") for (let i = 0; i < 3; i++) parts.splice(4, 0, { ...structuredClone(tool), id: `extra-${i}` })
+    syncNativeOutput(data)
+    const grade = gradeLiveActionEvidenceCase(data)
+    expect(grade, corruption).toMatchObject({ passed: false, verdict_validity: "available", verdict_correct: true,
+      retrieved_both_original_pages: true, citations_bound_to_original_pages: true, retrieval: { recipe_valid: false, canonical_registered_native_reads: true } })
+    expect(grade.failure_reasons).toHaveLength(1)
+    expect(grade.failure_reasons[0]).toContain("retrieval recipe limit or ordering violation")
+  }
+  const missing = fixture("correct"), missingParts = missing.checker_histories[0].messages[0].parts
+  missingParts.splice(1, 1); finalAttempt(missing).retrieved_evidence.shift(); finalAttempt(missing).output.findings[0].evidence_ids.shift()
+  syncNativeOutput(missing)
+  expect(gradeLiveActionEvidenceCase(missing).retrieval).toMatchObject({ missing_original_pages: true, missing_original_citations: true, wrong_source: false })
+})
+
+test("v5 isolates final-attempt receipts and native reads while allowing the same R IDs after actual rereads", () => {
+  for (const corruption of ["none", "prior-only-receipt", "prior-only-read", "prior-only-manifest"]) {
+    const data = fixture("correct", true), final = finalAttempt(data)
+    addManifestRead(data)
+    const prior = data.run.nodes.check.attempts[0], priorMessage = data.checker_histories[0].messages[0]
+    prior.retrieved_evidence = structuredClone(final.retrieved_evidence)
+    const finalParts = data.checker_histories[1].messages[0].parts
+    const priorTools = finalParts.filter((part: any) => part.type === "tool").map((part: any, index: number) => ({ ...structuredClone(part),
+      id: `prior-read-${index}`, sessionID: prior.session_id, messageID: priorMessage.info.id }))
+    priorMessage.parts.unshift(...priorTools)
+    if (corruption === "prior-only-receipt") final.retrieved_evidence.shift()
+    if (corruption === "prior-only-read") finalParts.splice(1, 1)
+    if (corruption === "prior-only-manifest") { finalParts.splice(3, 1); final.retrieved_evidence.pop() }
+    expect(gradeLiveActionEvidenceCase(data).passed, corruption).toBe(corruption === "none")
+    expect(checkerAttemptSnapshot(prior, [priorMessage]).json_text).toContain("invalid_original_output")
+  }
+})
+
+test("v5 reports invalid final output as unavailable rather than an incorrect verdict", () => {
+  for (const corruption of ["schema-false", "missing-output", "invalid-output"]) {
+    const data = fixture("correct"), final = finalAttempt(data)
+    if (corruption === "schema-false") final.schema_ok = false
+    if (corruption === "missing-output") delete final.output
+    if (corruption === "invalid-output") { delete final.output.score; syncNativeOutput(data) }
+    const grade = gradeLiveActionEvidenceCase(data)
+    expect(grade, corruption).toMatchObject({ passed: false, verdict_validity: "unavailable", verdict_correct: null })
+    expect(grade.failure_reasons).not.toContain("checker verdict did not match the case contract")
   }
 })
 

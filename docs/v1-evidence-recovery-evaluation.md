@@ -243,3 +243,30 @@ changed verifier on matched inputs and retain failures and timing variability.
 Qualify the final exact package with fresh/update and server/TUI checks on both
 Windows PowerShell and native WSL Bash. No GitHub runners, global configuration
 changes or V2 work are involved.
+
+## V4 outcome and unissued diagnostic repair (2026-11-13)
+
+The frozen `7a32708` V4 pair failed admission. The positive case exhausted two
+checker attempts: one returned a rejecting aggregate with a supported finding,
+and the next contradicted the host-verifiable command facts. The runtime
+correctly rejected both outputs. The negative case produced a valid typed
+rejection, but an additional valid manifest read/citation exceeded the frozen
+diagnostic's exact retrieval recipe. Independent review confirmed that its
+citations were valid; the combined missing/forged diagnostic was misleading.
+Both original grades remain unchanged. No sixteen-arm comparison was issued.
+
+V5 repairs the future diagnostic apparatus only. It still requires the final
+checker's registered, complete original intent and terminal pages, with exact
+source/attempt binding and the same four mechanical predicates. It permits
+one additional read and citation of that same source's manifest. It does not
+permit duplicate reads, arbitrary extra pages, forged or cross-source
+citations, missing original pages, or borrowing receipts from another attempt.
+Recipe/cardinality failures are reported separately from invalid citations;
+a correct verdict is not described as incorrect merely because retrieval
+qualification failed. Synthetic controls must exercise both allowed extra
+manifest evidence and each rejected case.
+
+V5 is unissued against real models. Its local controls cannot turn V4 into a
+pass, establish successful model repair, or admit the comparative cohort.
+Any future paid diagnostic requires a separately frozen prospective issuance;
+the limits and failed outcomes above are not reset by this apparatus change.

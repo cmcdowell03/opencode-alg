@@ -1,13 +1,14 @@
 import { spawnSync } from "node:child_process"
-import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { open } from "node:fs/promises"
+import { chmodSync, cpSync, existsSync, linkSync, lstatSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, utimesSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { afterEach, describe, expect, test } from "bun:test"
 import { parseManagerArgs } from "../scripts/manager-cli.ts"
-import { runManager, type CommandRunner } from "../scripts/manager-core.ts"
+import { runManager, runManagerAsync, type CommandRunner } from "../scripts/manager-core.ts"
 import { resolveNpmInvocation } from "../scripts/npm-invocation.ts"
-import { prepareDeploymentBundle } from "../scripts/prepare-deployment.ts"
+import { prepareDeploymentBundle, publishPreparedPackage } from "../scripts/prepare-deployment.ts"
 import { currentLibcIdentity, inventoryDeploymentTree, readAndVerifyDeploymentBundle, sealBundleManifest, sha256 } from "../scripts/deployment.ts"
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..")
@@ -40,6 +41,67 @@ function fixture() {
   writeFileSync(join(root, "alg-bundle.json"), JSON.stringify(manifest))
   return { root, manifest }
 }
+
+describe("preparation publication", () => {
+  function staging() {
+    const output = mkdtempSync(join(tmpdir(), "alg-prepare-publication-"))
+    roots.push(output)
+    const stage = join(output, ".package-stage")
+    mkdirSync(stage)
+    return { output, stage }
+  }
+
+  test("preserves the exact tree, file identities, timestamps, modes and hard links", () => {
+    const { output, stage } = staging()
+    mkdirSync(join(stage, "nested", "empty"), { recursive: true })
+    const path = join(stage, "nested", "binary")
+    writeFileSync(path, Buffer.from([0, 255, 13, 10, 127]))
+    chmodSync(path, 0o755)
+    utimesSync(path, new Date("2020-01-02T03:04:05Z"), new Date("2020-01-02T03:04:05Z"))
+    linkSync(path, join(stage, "hard-link"))
+    writeFileSync(join(stage, "package.json"), '{"name":"fixture"}\n')
+    const inventory = inventoryDeploymentTree(stage)
+    const before = lstatSync(path, { bigint: true })
+    publishPreparedPackage(stage, output)
+    expect(inventoryDeploymentTree(output)).toEqual(inventory)
+    const after = lstatSync(join(output, "nested", "binary"), { bigint: true })
+    expect([after.dev, after.ino, after.mode, after.mtimeNs]).toEqual([before.dev, before.ino, before.mode, before.mtimeNs])
+    expect(lstatSync(join(output, "hard-link"), { bigint: true }).ino).toBe(before.ino)
+    expect(existsSync(stage)).toBe(false)
+  })
+
+  test("preserves unexpected output and the complete staging tree on rejection", () => {
+    const { output, stage } = staging()
+    writeFileSync(join(stage, "package.json"), "candidate")
+    writeFileSync(join(output, "package.json"), "foreign")
+    expect(() => publishPreparedPackage(stage, output)).toThrow(/gained content/)
+    expect(readFileSync(join(output, "package.json"), "utf8")).toBe("foreign")
+    expect(readFileSync(join(stage, "package.json"), "utf8")).toBe("candidate")
+    expect(() => publishPreparedPackage(stage, dirname(output))).toThrow(/own .package-stage child/)
+  })
+
+  test("rejects a redirected staging directory without touching its target", () => {
+    const output = mkdtempSync(join(tmpdir(), "alg-prepare-redirect-"))
+    const outside = mkdtempSync(join(tmpdir(), "alg-prepare-outside-"))
+    roots.push(output, outside)
+    writeFileSync(join(outside, "keep"), "unchanged")
+    const stage = join(output, ".package-stage")
+    symlinkSync(outside, stage, process.platform === "win32" ? "junction" : "dir")
+    expect(() => publishPreparedPackage(stage, output)).toThrow(/redirected/)
+    expect(readFileSync(join(outside, "keep"), "utf8")).toBe("unchanged")
+  })
+
+  test.skipIf(process.platform === "win32")("preserves contained relative symlinks", () => {
+    const { output, stage } = staging()
+    mkdirSync(join(stage, "content"))
+    writeFileSync(join(stage, "content", "file"), "bytes")
+    symlinkSync("content/file", join(stage, "relative-link"))
+    const inventory = inventoryDeploymentTree(stage)
+    publishPreparedPackage(stage, output)
+    expect(inventoryDeploymentTree(output)).toEqual(inventory)
+    expect(readFileSync(join(output, "relative-link"), "utf8")).toBe("bytes")
+  })
+})
 
 describe("offline deployment bundle", () => {
   test("requires approval of the exact manifest identity and validates the package inventory", () => {
@@ -76,7 +138,7 @@ describe("offline deployment bundle", () => {
     expect(() => parseManagerArgs(["deploy", "--trust-bundle", trustedHash, "--config-dir", resolve(tmpdir())])).toThrow(/requires --offline/)
   })
 
-  test("prepares from a real commit and deploys a complete offline bundle transaction", () => {
+  test("prepares from a real commit and deploys a complete offline bundle transaction", async () => {
     const sandbox = mkdtempSync(join(tmpdir(), "alg-deployment-integration-"))
     roots.push(sandbox)
     const source = join(sandbox, "source")
@@ -155,16 +217,60 @@ describe("offline deployment bundle", () => {
     const stableReceipt = readFileSync(receiptPath)
     expect(() => runManager({ command: "deploy", configDir: config, bundleRoot: output, trustBundleHash: "0".repeat(64) }, { runner })).toThrow(/explicitly approved/)
     expect(readFileSync(receiptPath)).toEqual(stableReceipt)
-    const installed = runManager({ command: "deploy", configDir: config, bundleRoot: output, trustBundleHash: prepared.manifestSha256 }, { runner })
+    const installed = await runManagerAsync({ command: "deploy", configDir: config, bundleRoot: output, trustBundleHash: prepared.manifestSha256 }, { runner })
     expect(installed.ok).toBe(true)
     expect(installed.release_identity).toMatchObject({ source_commit: commit, manifest_sha256: prepared.manifestSha256, artifact_sha256: prepared.artifactSha256 })
     let stagingCleanupCalls = 0
-    const noOp = runManager(
+    const noOp = await runManagerAsync(
       { command: "deploy", configDir: config, bundleRoot: output, trustBundleHash: prepared.manifestSha256 },
-      { runner, faults: { beforeGenerationStagingCleanup: () => { stagingCleanupCalls++ } } },
+      { runner, inventoryOpen: async () => { throw new Error("No-op must not stage files") }, faults: { beforeGenerationStagingCleanup: () => { stagingCleanupCalls++ } } },
     )
     expect(noOp.changed).toBe(false)
     expect(stagingCleanupCalls).toBe(0)
+    // The async transaction must hold its mutex across awaited reads and release it on rejection.
+    const failedConfig = join(sandbox, "failed-config")
+    const failedOptions = { command: "deploy" as const, configDir: failedConfig, bundleRoot: output, trustBundleHash: prepared.manifestSha256 }
+    let opened = 0
+    let closed = 0
+    await expect(runManagerAsync(failedOptions, { runner, inventoryOpen: async (path, flags) => {
+      expect(existsSync(join(failedConfig, ".opencode-alg", "manager.lock"))).toBe(true)
+      expect(() => runManager(failedOptions, { runner })).toThrow(/mutex.*held/)
+      const file = await open(path, flags)
+      opened++
+      return {
+        stat: () => file.stat({ bigint: true }),
+        read: async () => { await new Promise(resolve => setTimeout(resolve, 5)); throw new Error("injected staged read failure") },
+        close: async () => { await file.close(); closed++ },
+      }
+    } })).rejects.toThrow(/Offline bundle staging failed.*injected staged read failure/)
+    expect(opened).toBeGreaterThan(0)
+    expect(closed).toBe(opened)
+    expect(existsSync(join(failedConfig, ".opencode-alg", "manager.lock"))).toBe(false)
+    expect(existsSync(join(failedConfig, ".opencode-alg", "receipt.json"))).toBe(false)
+    expect(existsSync(join(failedConfig, "opencode.jsonc"))).toBe(false)
+    const fresh = await runManagerAsync({ ...failedOptions, configDir: join(sandbox, "fresh-config") }, { runner })
+    expect(fresh.ok).toBe(true)
+    expect(fresh.release_identity?.source_commit).toBe(commit)
+    expect(fresh.release_identity?.artifact_sha256).toBe(installed.release_identity?.artifact_sha256)
+    const lostConfig = join(sandbox, "lost-lock-config")
+    const lockPath = join(lostConfig, ".opencode-alg", "manager.lock")
+    let foreignLock: Buffer<ArrayBuffer> | undefined
+    await expect(runManagerAsync({ ...failedOptions, configDir: lostConfig }, { runner, inventoryOpen: async (path, flags) => {
+      if (!foreignLock) {
+        const lock = JSON.parse(readFileSync(lockPath, "utf8"))
+        foreignLock = Buffer.from(JSON.stringify({ ...lock, token: "00000000-0000-4000-8000-000000000000" }))
+        writeFileSync(lockPath, foreignLock)
+      }
+      const file = await open(path, flags)
+      return {
+        stat: () => file.stat({ bigint: true }),
+        read: async (buffer, length, position) => (await file.read(buffer, 0, length, position)).bytesRead,
+        close: () => file.close(),
+      }
+    } })).rejects.toThrow(/mutex|token/)
+    expect(readFileSync(lockPath)).toEqual(foreignLock!)
+    expect(existsSync(join(lostConfig, ".opencode-alg", "receipt.json"))).toBe(false)
+    expect(existsSync(join(lostConfig, "opencode.jsonc"))).toBe(false)
     const bundleScript = join(output, "scripts", "fixture.txt")
     const approvedScriptBytes = readFileSync(bundleScript)
     writeFileSync(bundleScript, "changed after approval\n")

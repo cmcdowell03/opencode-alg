@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto"
-import { existsSync, lstatSync, readFileSync, readdirSync, readlinkSync, realpathSync } from "node:fs"
+import { constants, existsSync, lstatSync, readFileSync, readdirSync, readlinkSync, realpathSync, type BigIntStats } from "node:fs"
+import { open } from "node:fs/promises"
 import { isAbsolute, join, relative } from "node:path"
 import { z } from "zod"
 
@@ -32,9 +33,14 @@ export function currentLibcIdentity(): string {
   return typeof glibc === "string" ? `glibc-${glibc}` : "non-glibc-or-unidentified"
 }
 
-/** Canonical, bounded inventory. Links are recorded as links and must resolve inside the bundle. */
-export function inventoryDeploymentTree(root: string, excludeManifest = false): DeploymentBundleManifest["dependencies"]["tree"] {
-  const entries: DeploymentBundleManifest["dependencies"]["tree"] = []
+type InventoryTree = DeploymentBundleManifest["dependencies"]["tree"]
+type InventoryFile = { full: string; stat: BigIntStats; entry: Extract<InventoryTree[number], { kind: "file" }> }
+
+/** One policy traversal for synchronous hashing, bounded async hashing, and the post-read census. */
+function planInventory(root: string, excludeManifest: boolean, hashFile?: (full: string) => string) {
+  const entries: InventoryTree = []
+  const files: InventoryFile[] = []
+  const identities: Array<[string, BigIntStats]> = [["", lstatSync(root, { bigint: true })]]
   const names = new Set<string>()
   let regularFiles = 0
   let totalBytes = 0
@@ -48,8 +54,9 @@ export function inventoryDeploymentTree(root: string, excludeManifest = false): 
       if (names.has(folded)) throw new Error(`Bundle contains an ambiguous path: ${path}`)
       names.add(folded)
       const full = join(directory, child.name)
-      const stat = lstatSync(full)
-      const mode = stat.mode & 0o777
+      const stat = lstatSync(full, { bigint: true })
+      identities.push([path, stat])
+      const mode = Number(stat.mode & 0o777n)
       if (stat.isSymbolicLink()) {
         const target = readlinkSync(full).replaceAll("\\", "/")
         if (!target || !isInside(root, realpathSync.native(full))) throw new Error(`Bundle link escapes its root: ${path}`)
@@ -58,18 +65,117 @@ export function inventoryDeploymentTree(root: string, excludeManifest = false): 
         entries.push({ path, kind: "directory", mode })
         visit(full, path, depth + 1)
       } else if (stat.isFile()) {
-        if (++regularFiles > 40_000 || stat.size > 64 * 1024 * 1024 || totalBytes + stat.size > 1024 * 1024 * 1024) {
+        if (++regularFiles > 40_000 || stat.size > 64n * 1024n * 1024n || totalBytes + Number(stat.size) > 1024 * 1024 * 1024) {
           throw new Error("Bundle exceeds file count or aggregate inventory bounds")
         }
-        totalBytes += stat.size
-        entries.push({ path, kind: "file", mode, sha256: sha256(readFileSync(full)) })
+        totalBytes += Number(stat.size)
+        const entry = { path, kind: "file" as const, mode, sha256: "" }
+        // Preserve the original immediate stat/read ordering for synchronous authority paths.
+        if (hashFile) entry.sha256 = hashFile(full)
+        entries.push(entry)
+        if (!hashFile) files.push({ full, stat, entry })
       }
       else throw new Error(`Bundle has unsupported filesystem entry: ${path}`)
       if (entries.length > 50_000) throw new Error("Bundle inventory exceeds 50000 entries")
     }
   }
   visit(root)
-  return entries
+  return { entries, files, identities }
+}
+
+/** Canonical, bounded inventory. Links are recorded as links and must resolve inside the bundle. */
+export function inventoryDeploymentTree(root: string, excludeManifest = false): InventoryTree {
+  return planInventory(root, excludeManifest, full => sha256(readFileSync(full))).entries
+}
+
+/** Narrow I/O seam for deterministic interleaving/error tests; all policy checks remain here. */
+export interface InventoryReadHandle {
+  stat(): Promise<BigIntStats>
+  read(buffer: Buffer, length: number, position: number): Promise<number>
+  close(): Promise<void>
+}
+export interface AsyncInventoryOptions {
+  concurrency?: number
+  open?: (path: string, flags: number) => Promise<InventoryReadHandle>
+}
+
+async function openInventoryFile(path: string, flags: number): Promise<InventoryReadHandle> {
+  const handle = await open(path, flags)
+  return {
+    stat: () => handle.stat({ bigint: true }),
+    read: async (buffer, length, position) => (await handle.read(buffer, 0, length, position)).bytesRead,
+    close: () => handle.close(),
+  }
+}
+
+function sameInventoryIdentity(a: BigIntStats, b: BigIntStats): boolean {
+  return a.dev === b.dev && a.ino === b.ino && a.mode === b.mode && a.size === b.size &&
+    a.mtimeNs === b.mtimeNs && a.ctimeNs === b.ctimeNs
+}
+
+/** Hash every byte with bounded handles/buffers; fail closed on changes across asynchronous reads. */
+export async function inventoryDeploymentTreeAsync(root: string, excludeManifest = false, options: AsyncInventoryOptions = {}): Promise<InventoryTree> {
+  const concurrency = options.concurrency ?? 4
+  if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 8) throw new Error("Inventory concurrency must be between 1 and 8")
+  if (!lstatSync(root).isDirectory()) throw new Error("Inventory root must be a direct directory")
+  const canonicalRoot = realpathSync.native(root)
+  const plan = planInventory(canonicalRoot, excludeManifest)
+  const openFile = options.open ?? openInventoryFile
+  let cursor = 0
+  let failed = false
+  let failure: unknown
+  const fail = (error: unknown): void => { if (!failed) { failed = true; failure = error } }
+  const worker = async (): Promise<void> => {
+    // One buffer per worker, independent of file size; at most four in the manager.
+    const buffer = Buffer.alloc(64 * 1024)
+    while (!failed) {
+      const file = plan.files[cursor++]
+      if (!file) return
+      let handle: InventoryReadHandle | undefined
+      try {
+        if (realpathSync.native(file.full) !== file.full) throw new Error(`Bundle file redirected: ${file.entry.path}`)
+        // A file replaced by a FIFO must not block before the descriptor type check.
+        handle = await openFile(file.full, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0))
+        const before = await handle.stat()
+        if (!before.isFile() || !sameInventoryIdentity(file.stat, before)) throw new Error(`Bundle file changed before read: ${file.entry.path}`)
+        const hash = createHash("sha256")
+        const size = Number(before.size)
+        let position = 0
+        for (;;) {
+          const length = Math.min(buffer.length, size - position + 1)
+          const count = await handle.read(buffer, length, position)
+          if (!Number.isInteger(count) || count < 0 || count > length) throw new Error("Invalid inventory read length")
+          if (count === 0) break
+          position += count
+          if (position > size) throw new Error(`Bundle file grew during read: ${file.entry.path}`)
+          hash.update(buffer.subarray(0, count))
+        }
+        if (position !== size || !sameInventoryIdentity(before, await handle.stat()) ||
+          !sameInventoryIdentity(before, lstatSync(file.full, { bigint: true })) || realpathSync.native(file.full) !== file.full) {
+          throw new Error(`Bundle file changed during read: ${file.entry.path}`)
+        }
+        file.entry.sha256 = hash.digest("hex")
+      } catch (error) {
+        fail(error)
+      } finally {
+        if (handle) {
+          try { await handle.close() } catch (error) { fail(error) }
+        }
+      }
+    }
+  }
+  // Workers never reject early: every started handle is closed before the first error is returned.
+  await Promise.all(Array.from({ length: concurrency }, worker))
+  if (failed) throw failure
+  const final = planInventory(canonicalRoot, excludeManifest)
+  if (realpathSync.native(root) !== canonicalRoot || !sameInventoryIdentity(lstatSync(root, { bigint: true }), plan.identities[0]![1]) ||
+    final.identities.length !== plan.identities.length || final.identities.some(([path, stat], index) => {
+      const prior = plan.identities[index]!
+      return path !== prior[0] || !sameInventoryIdentity(stat, prior[1])
+    }) || JSON.stringify(final.entries) !== JSON.stringify(plan.entries.map(entry => entry.kind === "file" ? { ...entry, sha256: "" } : entry))) {
+    throw new Error("Bundle tree changed during inventory")
+  }
+  return plan.entries
 }
 
 function isInside(root: string, target: string): boolean {

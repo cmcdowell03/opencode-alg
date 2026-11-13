@@ -299,8 +299,9 @@ function createProvider(caseId: CaseId) {
 const OWNER_TITLE = "ALG real-checker action evidence diagnostic parent"
 const RUN_ID = "action-evidence-live-regression"
 const GOAL = "Execute a fixed harmless command sequence and verify its persisted host evidence."
-const FIXTURE_VERSION = "action-evidence-live-v4"
-const REPAIR_ALLOWANCE = "v4-pre-issuance-schema-or-validated-evidence-unavailable"
+const FIXTURE_VERSION = "action-evidence-live-v5"
+const REPAIR_ALLOWANCE = "v5-schema-or-validated-evidence-unavailable"
+const RETRIEVAL_RECIPE = "one index first; complete original intent and terminal pages in either order; optional one canonical manifest first page (possibly partial); at most 4 tools, 3 registered pages and 3 citations; no duplicate reads or citations"
 const CRITERION = "The first recorded bash call within the producer attempt has its captured command retained exactly, and its linked host terminal explicitly reports exit code zero."
 const LOCAL_PROVIDER = "action-evidence-fixture"
 type CaseId = "correct" | "defective"
@@ -318,6 +319,65 @@ export interface CheckerAttemptHistory { attempt: number; session_id: string; me
 export function checkerAttemptSnapshot(attempt: unknown, history: readonly any[], secrets: readonly string[] = []) {
   // Invalid JSON is absent from durable attempt.output; retain its original host text as well.
   return boundedPrivateHostEvidence({ attempt, native_history: history }, secrets)
+}
+
+/** Evaluator-only source commitments; none of these IDs or recipe rules enter the checker prompt. */
+function checkerRetrievalReceipt(runId: string, producer: Json, manifest: any, attempt: any, history: readonly any[]): Json {
+  const references = [producer.first_records?.intent, producer.first_records?.terminal, manifest]
+  const expected = [producer.canonical_pages?.intent, producer.canonical_pages?.terminal, producer.canonical_pages?.manifest]
+  const oracleValid = new Set(references.map(ref => ref?.sha256)).size === 3 && expected.every((page, index) =>
+    page && references[index] && isDeepStrictEqual(page.reference, references[index]) && page.offset === 0 &&
+    page.length > 0 && page.length <= 8_192 && page.total_bytes === references[index].byte_size &&
+    (index === 2 || page.length === page.total_bytes))
+  const receipts: any[] = Array.isArray(attempt?.retrieved_evidence) ? attempt.retrieved_evidence : []
+  const tools = hostTools(history), indexes = tools.filter(tool => tool.tool === "alg_artifact" && tool.state?.input?.evidence === "index")
+  const reads = tools.filter(tool => tool.tool === "alg_artifact" && tool.state?.input?.evidence === "read")
+  const findings = attempt?.output?.findings, finding = Array.isArray(findings) && findings.length === 1 ? findings[0] : undefined
+  const citations: any[] = Array.isArray(finding?.evidence_ids) ? finding.evidence_ids : []
+  const matchesTool = (receipt: any, tool: any) => tool.state?.status === "completed" &&
+    tool.state?.input?.record_id === receipt.reference?.sha256 && tool.state?.input?.offset === 0 &&
+    parseJsonDeep(tool.state?.output).some(value => {
+      if (value.citation_id !== receipt.id || !isDeepStrictEqual(value.receipt, receipt) || typeof value.content !== "string") return false
+      try { return isDeepStrictEqual(retrievedVerificationEvidence(receipt.reference, 0, value.content), receipt) } catch { return false }
+    })
+  const verified = receipts.filter(receipt => oracleValid && expected.some(page => isDeepStrictEqual(page, receipt)) &&
+    reads.some(tool => matchesTool(receipt, tool)))
+  const wrongSource = receipts.some(receipt => !references.some(ref => ref && isDeepStrictEqual(ref, receipt?.reference))) ||
+    reads.some(tool => !references.some(ref => ref && ref.sha256 === tool.state?.input?.record_id)) ||
+    [...indexes, ...reads].some(tool => tool.state?.input?.run_id !== undefined && tool.state.input.run_id !== runId)
+  const missingOriginal = references.slice(0, 2).some(ref => !ref ||
+    !reads.some(tool => tool.state?.input?.record_id === ref.sha256) || !receipts.some(receipt => receipt?.reference?.sha256 === ref.sha256))
+  const retrievedOriginals = oracleValid && expected.slice(0, 2).every(page => verified.some(receipt => isDeepStrictEqual(page, receipt)))
+  const pagesBound = oracleValid && verified.length === receipts.length && reads.every(tool => verified.some(receipt => matchesTool(receipt, tool)))
+  const missingCitations = expected.slice(0, 2).some(page => !page || !citations.includes(page.id))
+  const invalidCitations = citations.some(id => typeof id !== "string" || !verified.some(receipt => receipt.id === id))
+  const citationsBound = !missingCitations && !invalidCitations
+  const recipeIssues = [tools.length > 4 && "tool_limit", reads.length > 3 && "read_limit", receipts.length > 3 && "registered_page_limit",
+    citations.length > 3 && "citation_limit", indexes.length !== 1 && "index_count", tools[0] !== indexes[0] && "index_first",
+    tools.length !== indexes.length + reads.length && "unexpected_tool",
+    tools.some(tool => tool.state?.status !== "completed") && "incomplete_tool",
+    reads.some(tool => tool.state?.input?.offset !== 0) && "first_page_only",
+    indexes.some(tool => tool.state?.input?.offset !== undefined && tool.state.input.offset !== 0) && "index_offset",
+    new Set(reads.map(tool => tool.state?.input?.record_id)).size !== reads.length && "duplicate_read",
+    new Set(receipts.map(receipt => receipt?.id)).size !== receipts.length && "duplicate_registered_page",
+    new Set(citations).size !== citations.length && "duplicate_citation"].filter(Boolean)
+  const manifestRead = !!manifest && reads.some(tool => tool.state?.input?.record_id === manifest.sha256)
+  return { passed: retrievedOriginals && pagesBound && citationsBound && !wrongSource && recipeIssues.length === 0,
+    retrieved_both_original_pages: retrievedOriginals, citations_bound_to_original_pages: citationsBound,
+    canonical_registered_native_reads: pagesBound, wrong_source: wrongSource, missing_original_pages: missingOriginal,
+    missing_original_citations: missingCitations, invalid_citation_binding: invalidCitations,
+    recipe_valid: recipeIssues.length === 0, recipe_violations: recipeIssues, retrieval_recipe: RETRIEVAL_RECIPE,
+    manifest_read: manifestRead, manifest_cited: !!expected[2] && citations.includes(expected[2].id),
+    manifest_page_partial: manifestRead && !!expected[2] && expected[2].length < expected[2].total_bytes,
+    page_count: receipts.length, tool_call_count: tools.length, receipt_ids: receipts.map(receipt => receipt.id), pages: receipts,
+    finding_citation_ids: citations,
+    failure_reasons: [!oracleValid && "evaluator canonical source-page commitments are missing or invalid",
+      recipeIssues.length > 0 && `retrieval recipe limit or ordering violation: ${recipeIssues.join(", ")}`,
+      wrongSource && "read or receipt references a source outside the original intent, terminal and assigned manifest",
+      missingOriginal && "required original intent or terminal read/registration is missing",
+      !pagesBound && !wrongSource && "page bytes or receipts do not match canonical registered evidence and actual native reads",
+      missingCitations && "required original intent or terminal citation is missing",
+      invalidCitations && "citation is unregistered, forged or not bound to a canonical native read in the final attempt"].filter(Boolean) }
 }
 
 /** Deterministic host-side oracle. It validates provenance and model verdict; it never feeds the oracle to the checker. */
@@ -390,18 +450,14 @@ export function gradeLiveActionEvidenceCase(input: LiveActionEvidenceGradeInput)
   const finalOutputBound = !!finalAttempt && nativeOutputMatches(finalAttempt, attempts.length - 1)
   const findings = output?.findings
   const finding = Array.isArray(findings) && findings.length === 1 ? findings[0] : undefined
-  const expectedIds = new Set([evidence?.first_records?.intent?.sha256, evidence?.first_records?.terminal?.sha256])
   const receipts: any[] = Array.isArray(finalAttempt?.retrieved_evidence) ? finalAttempt.retrieved_evidence : []
-  const receiptIds = new Set(receipts.map(row => row?.id))
-  const checkerTools = hostTools(finalHistory)
-  const reads = checkerTools.filter(part => part.tool === "alg_artifact")
+  const retrieval = checkerRetrievalReceipt(input.run?.run_id, evidence, attempt?.action_evidence_ref, finalAttempt, finalHistory)
   const configuredCheckerObserved = typeof evidence?.checker_provider_id === "string" &&
     typeof evidence?.checker_model_id === "string" && histories.length > 0 && histories.every(entry => {
       const assistants = entry.messages.filter(message => message?.info?.role === "assistant")
       return assistants.length > 0 && assistants.every(message => message.info.providerID === evidence.checker_provider_id &&
         message.info.modelID === evidence.checker_model_id)
     })
-  const readHashes = new Set(reads.filter(part => part.state?.input?.evidence === "read").map(part => part.state?.input?.record_id))
   const producerActions = input.run?.nodes?.work?.attempts?.flatMap((row: any) => row?.action_evidence_ref ? [row.action_evidence_ref.sha256] : []) ?? []
   const passedEvidence = typeof evidence?.first_terminal?.exit_code === "number" && evidence.first_terminal.exit_code === 0
   const defectiveEvidence = typeof evidence?.first_terminal?.exit_code === "number" && evidence.first_terminal.exit_code !== 0
@@ -409,22 +465,6 @@ export function gradeLiveActionEvidenceCase(input: LiveActionEvidenceGradeInput)
     attempt?.action_evidence_ref?.sha256 === evidence?.manifest_sha256 && producerActions.length === 1 &&
     input.run?.nodes?.work?.current_attempt === 1 && input.run?.nodes?.work?.attempts?.length === 1 &&
     input.run?.nodes?.work?.status === "done" && attempt?.attempt === 1 && attempt?.status === "done" && attempt?.schema_ok === true
-  const actualPageReads = receipts.length === 2 && expectedIds.size === 2 && [...expectedIds].every((id, index) => {
-    const receipt = receipts.find(row => row?.reference?.sha256 === id)
-    const tool = reads[index + 1], reference = index === 0 ? evidence?.first_records?.intent : evidence?.first_records?.terminal
-    return !!receipt && receiptIds.has(receipt.id) && isDeepStrictEqual(receipt.reference, reference) && receipt.offset === 0 &&
-      receipt.length === receipt.total_bytes && tool?.state?.input?.evidence === "read" && tool.state.input.record_id === id &&
-      tool.state.input.offset === 0 && parseJsonDeep(tool.state?.output).some(value => {
-      if (value.citation_id !== receipt.id || !isDeepStrictEqual(value.receipt, receipt) || typeof value.content !== "string") return false
-      try { return isDeepStrictEqual(retrievedVerificationEvidence(receipt.reference, 0, value.content), receipt) } catch { return false }
-    })
-  })
-  const retrievedBothPages = actualPageReads && [...expectedIds].every(id => readHashes.has(id)) &&
-    checkerTools.length === 3 && reads.length === 3 && reads.every(part => part.state?.status === "completed") &&
-    reads[0]?.state?.input?.evidence === "index"
-  const citations = Array.isArray(finding?.evidence_ids) ? finding.evidence_ids : []
-  const citationsBound = citations.length === 2 && new Set(citations).size === 2 && citations.every((id: unknown) => typeof id === "string" && receiptIds.has(id)) &&
-    [...expectedIds].every(id => citations.some((citation: string) => receipts.some(row => row?.id === citation && row?.reference?.sha256 === id)))
   const assessment = MechanicalAssessmentSchema.safeParse(finding?.mechanical_assessment)
   const typedAssessmentUsed = finding?.criterion_id === "C1" && assessment.success &&
     assessment.data.intent_id === receipts.find(row => row.reference?.sha256 === evidence?.first_records?.intent?.sha256)?.id &&
@@ -437,14 +477,16 @@ export function gradeLiveActionEvidenceCase(input: LiveActionEvidenceGradeInput)
     assessment.data.predicates.some(predicate => predicate.kind === "exit_equals" && predicate.expected === 0)
   const outcomeValid = expectedPass ? finding?.outcome === "supported" : finding?.outcome === "disconfirmed"
   const expectedVerdict = expectedPass
-  const verdictCorrect = output?.passed === expectedVerdict && finding?.criterion_id === "C1" &&
-    outcomeValid && citationsBound && (expectedPass ? passedEvidence : defectiveEvidence)
+  const verdictAvailable = finalAttempt?.schema_ok === true && parseAndValidate("checker", output).ok && finding?.criterion_id === "C1"
+  const verdictCorrect = verdictAvailable ? output.passed === expectedVerdict && outcomeValid : null
   const noReplay = exactActionCardinality && freshSessions && noFeedback
   const repairValid = countBound && allowanceExact && priorRepairOnly && afterCompaction && sameAssignment
-  const passed = exactActionCardinality && retrievedBothPages && verdictCorrect && noReplay && configuredCheckerObserved &&
-    repairValid && historiesBound && finalTerminal && finalOutputBound && mechanicalC1Covered
+  const passed = exactActionCardinality && retrieval.passed && verdictCorrect === true && (expectedPass ? passedEvidence : defectiveEvidence) &&
+    noReplay && configuredCheckerObserved && repairValid && historiesBound && finalTerminal && finalOutputBound && mechanicalC1Covered
   return { passed, case_id: input.case_id, expected_verdict: expectedVerdict ? "pass" : "reject", observed_verdict: output?.passed === true ? "pass" : output?.passed === false ? "reject" : "missing",
-    exact_action_cardinality: exactActionCardinality, retrieved_both_original_pages: retrievedBothPages, citations_bound_to_original_pages: citationsBound,
+    exact_action_cardinality: exactActionCardinality, retrieved_both_original_pages: retrieval.retrieved_both_original_pages,
+    citations_bound_to_original_pages: retrieval.citations_bound_to_original_pages, retrieval,
+    verdict_validity: verdictAvailable ? "available" : "unavailable", verdict_correct: verdictCorrect,
     no_producer_replay: noReplay, configured_real_checker_observed: configuredCheckerObserved,
     checker_attempt_count: attempts.length, final_attempt: finalAttempt?.attempt ?? null,
     repair_allowance: REPAIR_ALLOWANCE, bounded_checker_repair_only: repairValid,
@@ -455,12 +497,12 @@ export function gradeLiveActionEvidenceCase(input: LiveActionEvidenceGradeInput)
     all_attempts_after_compaction: afterCompaction, final_schema_and_terminal_valid: finalTerminal, final_output_matches_native_response: finalOutputBound,
     typed_assessment_used: typedAssessmentUsed, mechanical_assessment_covers_c1: mechanicalC1Covered,
     final_mechanical_assessment: finding?.mechanical_assessment ?? null,
-    no_feedback_route: noFeedback, retrieval_recipe: "exactly index, intent read, terminal read; rereads remain disallowed",
+    no_feedback_route: noFeedback, retrieval_recipe: RETRIEVAL_RECIPE,
     evidence_consistent_with_case: expectedPass ? passedEvidence : defectiveEvidence,
     failure_reasons: [!exactActionCardinality && "producer action count or immutable manifest identity was not exact",
-      !retrievedBothPages && "checker did not retrieve both actual original intent and terminal pages",
-      !citationsBound && "checker citations were missing, forged, or not bound to both original pages",
-      !verdictCorrect && "checker verdict did not match the recorded action result and case contract",
+      ...retrieval.failure_reasons,
+      verdictCorrect === false && "checker verdict did not match the case contract",
+      !(expectedPass ? passedEvidence : defectiveEvidence) && "recorded original action result did not match the declared case",
       !noReplay && "producer replay, reused child session or substantive-feedback route was observed",
       !repairValid && "checker attempts were outside the bounded schema/evidence-unavailable repair allowance or changed assignment",
       !sameAssignment && "checker criteria, submission pin or original source manifests were missing, changed or misbound",
@@ -556,9 +598,15 @@ export function validateEvidence(project: string, run: any, caseId: CaseId): Jso
     const entry = manifest.entries.find(entry => entry.kind === kind && entry.ordinal === 1)!
     return [kind, { artifact_path: entry.artifact_path, sha256: entry.sha256, byte_size: entry.byte_size }]
   }))
+  const canonicalPages = Object.fromEntries(Object.entries({ ...firstReferences, manifest: reference }).map(([kind, ref]) => {
+    const page = evidencePage(project, run.run_id, ref, 0)
+    if (kind !== "manifest" && page.next_offset !== null) throw new Error("fixed first record unexpectedly needs more than one evidence page")
+    return [kind, page.receipt]
+  }))
   return { manifest_sha256: reference.sha256, manifest_path: reference.artifact_path, child_session_id: session,
     // readManifest verified every referenced record's bytes before this commitment is computed.
     journal_sha256: sha(JSON.stringify({ manifest: reference, entries: manifest.entries })), first_records: firstReferences,
+    canonical_pages: canonicalPages,
     observed_calls: manifest.coverage.observed_calls, completed: manifest.coverage.completed, unknown_terminal: manifest.coverage.unknown_terminal,
     first_command_bytes: Buffer.byteLength(firstIntent.command, "utf8"), first_command_sha256: sha(firstIntent.command),
     first_call_id_sha256: firstIntent.call_id_sha256, declared_node_exit_code: caseId === "correct" ? 0 : 7,
@@ -666,28 +714,10 @@ export function parentDispatchReceipt(before: any[], compacted: any[], resumed: 
     global_attempts: run.global_attempts,
     producer_attempts: run.nodes.work?.current_attempt, checker_attempts: run.nodes.check?.current_attempt }
 }
-function validateCheckerRetrieval(project: string, run: ReturnType<typeof loadEvidenceRun>, producer: Json, history: readonly any[],
+function validateCheckerRetrieval(run: ReturnType<typeof loadEvidenceRun>, producer: Json, history: readonly any[],
   attempt = run.nodes.check?.attempts.at(-1)): Json {
-  if (!attempt) return { passed: false, issue: "checker_attempt_missing", page_count: 0, tool_call_count: 0 }
-  const retrieved = attempt.retrieved_evidence ?? []
-  const expected = [producer.first_records.intent, producer.first_records.terminal].map(reference => {
-    const page = evidencePage(project, run.run_id, reference, 0)
-    if (page.next_offset !== null) throw new Error("fixed first record unexpectedly needs more than one evidence page")
-    return page.receipt
-  })
-  const output = attempt.output as any, findings = output?.findings
-  const citations = Array.isArray(findings) && findings.length === 1 ? findings[0]?.evidence_ids : undefined
-  const tools = hostTools(history).filter(part => part.tool === "alg_artifact")
-  let readsExact = tools.length === 3 && tools[0]?.state?.input?.evidence === "index"
-  for (const [index, receipt] of expected.entries()) {
-    const tool = tools[index + 1], input = tool?.state?.input
-    if (input?.evidence !== "read" || input.record_id !== receipt.reference.sha256 || input.offset !== 0 || tool?.state?.status !== "completed" ||
-      !parseJsonDeep(tool?.state?.output).some(value => value.citation_id === receipt.id && isDeepStrictEqual(value.receipt, receipt))) readsExact = false
-  }
-  const retrievedExact = retrieved.length === 2 && expected.every(receipt => retrieved.some(actual => isDeepStrictEqual(actual, receipt)))
-  return { passed: retrievedExact && readsExact, page_count: retrieved.length, receipt_ids: retrieved.map((receipt: any) => receipt.id), pages: retrieved,
-    finding_citation_ids: citations ?? [], tool_call_count: tools.length, retrieved_exact_original_pages: retrievedExact, host_reads_exact: readsExact,
-    checker_attempt_status: attempt.status, checker_outcome: attempt.outcome ?? null, checker_output: output ?? null }
+  return { ...checkerRetrievalReceipt(run.run_id, producer, run.nodes.work?.attempts[0]?.action_evidence_ref, attempt, history),
+    checker_attempt_status: attempt?.status ?? null, checker_outcome: attempt?.outcome ?? null, checker_output: attempt?.output ?? null }
 }
 
 export interface ActionEvidenceLiveRegressionOptions {
@@ -869,13 +899,13 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     evidence.checker_provider_id = options.providerID
     evidence.checker_model_id = options.modelID
     evidence.checker_attempts = checkerAttemptsBeforeRestart.map(attempt => ({ ...attempt,
-      retrieval: validateCheckerRetrieval(project, persisted, evidence!,
+      retrieval: validateCheckerRetrieval(persisted, evidence!,
         checkerHistories.find(entry => entry.attempt === attempt.attempt)?.messages ?? [], attempt) }))
     evidence.complete_checker_history_preservation = checkerAttemptsBeforeRestart.length > 0 && checkerAttemptsBeforeRestart.every(attempt => {
       const snapshot = privateHostEvidence[`checker_attempt_${attempt.attempt}`]
       return snapshot && !snapshot.truncated && !snapshot.history_error
     })
-    evidence.checker_retrieval = validateCheckerRetrieval(project, persisted, evidence, checkerHistory)
+    evidence.checker_retrieval = validateCheckerRetrieval(persisted, evidence, checkerHistory)
     evidence.case_grade = gradeLiveActionEvidenceCase({ case_id: options.caseId, run: persisted, producer: evidence,
       checker_histories: checkerHistories, compaction_completed_at: summaryMarker.summary!.completedAt })
     if (provider.requests.filter(row => row.role === "implementer").length !== producerRequestCount)
@@ -912,7 +942,7 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
     freezeJournal("after_restart", afterRestart)
     if (afterRestart.manifest_sha256 !== evidence.manifest_sha256 || afterRestart.first_command_sha256 !== evidence.first_command_sha256) throw new Error("persisted action evidence changed across server restart")
     const restartedHistories = await captureCheckers(persisted, "checker_after_restart_attempt")
-    const restartedChecker = validateCheckerRetrieval(project, persisted, afterRestart, restartedHistories.at(-1)?.messages ?? [])
+    const restartedChecker = validateCheckerRetrieval(persisted, afterRestart, restartedHistories.at(-1)?.messages ?? [])
     if (!isDeepStrictEqual(restartedChecker, evidence.checker_retrieval) ||
       !isDeepStrictEqual(persisted.nodes.check?.attempts, checkerAttemptsBeforeRestart) ||
       !isDeepStrictEqual(restartedHistories, checkerHistories)) throw new Error("checker attempts, native histories or page receipts changed across server restart")
@@ -968,7 +998,7 @@ export async function runActionEvidenceLiveRegressionCase(options: ActionEvidenc
         provider.nonLoopbackRequests === 0 && sourceAfter === sourceBefore && globalAfter.sha256 === globalBefore.sha256,
       scope: "diagnostic: deterministic local parent/producer, at most two fresh independently configured real checker attempts; no production claim", case_id: options.caseId,
       model: { providerID: options.providerID, modelID: options.modelID, configured_output_limit: 8_192 },
-      fixture_version: FIXTURE_VERSION, repair_allowance: REPAIR_ALLOWANCE, criterion_sha256: sha(CRITERION),
+      fixture_version: FIXTURE_VERSION, repair_allowance: REPAIR_ALLOWANCE, retrieval_recipe: RETRIEVAL_RECIPE, criterion_sha256: sha(CRITERION),
       host: { executable, version, platform: process.platform, starts: hostCleanup.starts, spawn_attempts: hostCleanup.spawn_attempts,
       clean_stops: hostCleanup.host_stopped }, version_probe: versionProbe, private_host_evidence: privateHostEvidence,
       run: { run_id: runId || null, owner_session_id: ownerSessionId || null, terminal_status: terminalStatus,
@@ -1029,7 +1059,7 @@ if (import.meta.main) {
       bounds: { per_case_ms: MAX_RUN_MS, total_ms: MAX_TOTAL_MS, output_tokens: 8_192, producer_attempts: 1, checker_max_attempts: 2, resume_max_waves: 2 },
       execution_note: "Producer and parent use deterministic local fixture roles. Each checker is a fresh real configured OpenCode provider/model. Diagnostic only; deterministic producer is disclosed.",
       model: { providerID: config.providerID, modelID: config.modelID }, source_sha256: sourceDigest, harness_sha256: harnessDigest,
-      fixture_version: FIXTURE_VERSION, repair_allowance: REPAIR_ALLOWANCE, criterion: CRITERION, criterion_sha256: sha(CRITERION),
+      fixture_version: FIXTURE_VERSION, repair_allowance: REPAIR_ALLOWANCE, retrieval_recipe: RETRIEVAL_RECIPE, criterion: CRITERION, criterion_sha256: sha(CRITERION),
       elapsed_ms: Date.now() - started, outcomes })
     mkdirSync(dirname(config.outputPath), { recursive: true })
     writeFileSync(planPath, `${JSON.stringify({ ...makeSummary(), kind: "opencode-alg-v1-action-evidence-live-regression-plan",
