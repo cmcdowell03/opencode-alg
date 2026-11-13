@@ -15,7 +15,8 @@ import { fileURLToPath } from "node:url"
 import { z } from "zod"
 import { checkerProbeResponse, runCheckerHeadlessProbe } from "./checker-headless-probe.ts"
 import { runTaskAdmissionHostProbe } from "./task-headless-probe.ts"
-import { allowanceProbeResponse, startAllowanceHostProbe, finishAllowanceHostProbe } from "./allowance-headless-probe.ts"
+import { allowanceProbeResponse, startAllowanceHostProbe, finishAllowanceHostProbe, runScopeViolationHostProbe,
+  AllowanceScopeEvidenceSchema, ScopeViolationEvidenceSchema } from "./allowance-headless-probe.ts"
 import {
   ALG_TOOL_IDS,
   findSourceIdentityLine,
@@ -56,7 +57,9 @@ export const HEADLESS_INITIAL_PROMPT = `${INITIAL_MARKER} Check workspace readin
 export const EvidenceSchema = z.object({
   task_allowance_probe: z.object({ passed: z.boolean(), run_id: z.string(), task_id: z.string().regex(/^[a-f0-9]{64}$/),
     reserved_before_compaction: z.number().int(), reserved_after_restarts: z.number().int(), reserved_after_checker: z.number().int(),
-    additional_dispatches_after_exhaustion: z.number().int(), checker_parent_verified: z.boolean(), scope: z.string().max(512) }).strict().nullable().optional(),
+    additional_dispatches_after_exhaustion: z.number().int(), checker_parent_verified: z.boolean(), scope: z.string().max(512),
+    scope_regression: AllowanceScopeEvidenceSchema.optional() }).strict().nullable().optional(),
+  task_scope_violation_probe: ScopeViolationEvidenceSchema.nullable().optional(),
   checker_probe: z.object({ passed: z.boolean(), run_id: z.string(), attempts: z.number().int(), distinct_children: z.number().int(), host_verified_parents: z.number().int(),
     verification_basis_recovered: z.boolean(),
     nodes: z.array(z.object({ id: z.string(), status: z.string(), outcome: z.string().nullable(), failures: z.array(z.string().max(2048)).max(3) })).max(3) }).nullable(),
@@ -557,6 +560,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     rmSync(temporaryRoot, { recursive: true, force: true })
   }
   const project = join(temporaryRoot, "project")
+  const scopeProject = join(temporaryRoot, "scope-negative-project")
   const home = join(temporaryRoot, "home")
   const configHome = join(temporaryRoot, "xdg-config")
   const configPath = join(temporaryRoot, "opencode.json")
@@ -578,6 +582,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
   let taskAdmissionProbe: Awaited<ReturnType<typeof runTaskAdmissionHostProbe>> | null = null
   let allowanceStart: Awaited<ReturnType<typeof startAllowanceHostProbe>> | null = null
   let allowanceProbe: Awaited<ReturnType<typeof finishAllowanceHostProbe>> | null = null
+  let scopeViolationProbe: Awaited<ReturnType<typeof runScopeViolationHostProbe>> | null = null
   let initialCheckpoint: HeadlessAcceptanceEvidence["session"]["initial_memory_checkpoint"] = null
   let compactCheckpoint: HeadlessAcceptanceEvidence["session"]["compacted_memory_checkpoint"] = null
   let finalCheckpoint: HeadlessAcceptanceEvidence["session"]["final_memory_checkpoint"] = null
@@ -602,7 +607,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
   let compactionSawInitial = false
   let followupSawRef = false
   try {
-    for (const directory of [project, home, configHome, join(temporaryRoot, "xdg-data"), join(temporaryRoot, "xdg-cache"), join(temporaryRoot, "tmp"), join(temporaryRoot, "appdata"), join(temporaryRoot, "localappdata")]) mkdirSync(directory, { recursive: true, mode: 0o700 })
+    for (const directory of [project, scopeProject, home, configHome, join(temporaryRoot, "xdg-data"), join(temporaryRoot, "xdg-cache"), join(temporaryRoot, "tmp"), join(temporaryRoot, "appdata"), join(temporaryRoot, "localappdata")]) mkdirSync(directory, { recursive: true, mode: 0o700 })
     seedVerificationHostDependencies(join(configHome, "opencode"), checkoutPlugin.source.root)
     const projectRoot = realpathSync.native(project)
     mcpService.bindProject(new MemoryStore(projectRoot).projectId)
@@ -623,6 +628,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     writeFileSync(join(projectRoot, "README.md"), "Synthetic headless host acceptance fixture.\n", { flag: "wx" })
     mkdirSync(join(projectRoot, ".opencode"), { recursive: true, mode: 0o700 })
     seedVerificationHostDependencies(join(projectRoot, ".opencode"), checkoutPlugin.source.root)
+    seedVerificationHostDependencies(join(scopeProject, ".opencode"), checkoutPlugin.source.root)
     writeFileSync(join(projectRoot, ".opencode", "ALG.workspace.json"), JSON.stringify({ schema_version: 1, operations: [
       { id: "headless-smoke", requirements: [{ id: "fixture-readme", kind: "document", ref: "README.md", intent: "required" }] },
       { id: "data.investigate.read", coverage: "advisory", boundary: "alg_investigation", effects: ["read"], requirements: [] },
@@ -771,6 +777,8 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
     provider.setPhase("background")
     allowanceProbe = await finishAllowanceHostProbe(third.base, projectRoot, sessionId, allowanceStart!)
     if (!allowanceProbe.passed) throw new Error("Actual child allowance did not survive compaction/restarts or stop exhausted work")
+    scopeViolationProbe = await runScopeViolationHostProbe(third.base, realpathSync.native(scopeProject), projectRoot, sessionId)
+    if (!scopeViolationProbe.passed) throw new Error("Actual host scope violation did not block the checker without another dispatch")
     const probeParent = await jsonRequest<any>(`${third.base}/session?${query}`, "POST", { title: "Isolated checker evidence fixture" })
     if (typeof probeParent.value?.id !== "string") throw new Error("Checker probe parent session was not created")
     checkerProbe = await runCheckerHeadlessProbe(third.base, projectRoot, probeParent.value.id)
@@ -815,7 +823,8 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
       user_request_captured: taskContractBefore?.userRequestMatches === true,
       user_request_sha256: taskContractBefore?.userRequestSha256 ?? null,
     }
-    const wasPassed = failure === null && allowanceProbe?.passed === true && checkerProbe?.passed === true && taskAdmissionProbe?.passed === true && taskAdmissionProbe.child_calls === 0 && !credentialsInherited && globalConfigUnchanged && started.length === 3 && exited.filter(Boolean).length === 3 && pluginProofs.length === 3 && pluginProofs.every(Boolean) && taskContractDigestsStable &&
+    const wasPassed = failure === null && allowanceProbe?.passed === true && allowanceProbe.scope_regression.passed === true &&
+      scopeViolationProbe?.passed === true && checkerProbe?.passed === true && taskAdmissionProbe?.passed === true && taskAdmissionProbe.child_calls === 0 && !credentialsInherited && globalConfigUnchanged && started.length === 3 && exited.filter(Boolean).length === 3 && pluginProofs.length === 3 && pluginProofs.every(Boolean) && taskContractDigestsStable &&
       ids.length === ALG_TOOL_IDS.length && ALG_TOOL_IDS.every((id) => ids.includes(id)) && initialToolCalls.includes("alg_context_status") && initialToolCalls.includes("alg_investigation") &&
       followupToolCalls.filter((name) => name === "alg_investigation").length === 2 && planToolSeen && queryToolSeen && providerStopped && mcpStopped &&
       provider.nonLoopbackRequests === 0 && mcpService.counters.nonLoopbackRequests === 0 && mcpService.counters.submitCalls === 1 && mcpService.counters.acceptedRemoteJobs === 1 &&
@@ -826,6 +835,7 @@ export async function runV1HeadlessAcceptance(outputInput?: string): Promise<{ e
       checker_probe: checkerProbe,
       task_admission_probe: taskAdmissionProbe,
       task_allowance_probe: allowanceProbe,
+      task_scope_violation_probe: scopeViolationProbe,
       failure: globalConfigUnchanged ? failure : "real-user OpenCode configuration changed during the isolated host run",
       evidence_path: evidencePath, task_contract: taskContractEvidence,
       source: { package_version: plugin.package_version, root: checkoutPlugin.source.root, loaded_root: plugin.source.root, sha256: plugin.source.digest, node: process.versions.node, bun: process.versions.bun ?? null },
@@ -903,6 +913,8 @@ if (import.meta.main) {
       source_sha256: result.evidence.source.sha256, opencode_version: result.evidence.host.version, server_starts: result.evidence.host.starts,
       server_restarts: result.evidence.host.restarts, tool_registry_count: result.evidence.session.tool_registry_ids.length, initial_tool_calls: result.evidence.session.initial_tool_calls,
       followup_tool_calls: result.evidence.session.followup_tool_calls, compaction_recovered: result.evidence.session.recovered_compaction_message,
+      scope_hooks_and_checker_passed: result.evidence.task_allowance_probe?.scope_regression?.passed ?? false,
+      scope_violation_blocked_without_dispatch: result.evidence.task_scope_violation_probe?.passed ?? false,
       memory_result_persisted: result.evidence.session.final_memory_checkpoint?.result_persisted ?? false, failure: result.evidence.failure }))
     if (!result.evidence.passed) process.exitCode = 1
   } catch (error) {
