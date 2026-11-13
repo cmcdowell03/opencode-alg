@@ -1,0 +1,133 @@
+# V1 action-evidence evaluation follow-up
+
+This protocol follows the local mechanical acceptance at `23fffd8` and
+`d3776b0`. It evaluates whether a real model can use retained evidence, then
+measures the complete Build/ALG workflow. It does not replace historical scores,
+promise an ALG win, authorize a merge, or add V2 behavior.
+
+The runtime, harness, fixture, scorer, host, model configuration and qualification
+hashes must be frozen in the issued run manifests before generation. This
+document and the evaluation harness must be committed first. If a preflight or
+regression exposes an apparatus defect, preserve that failure and repair it
+before issuing the comparison; never change a live cohort's rules.
+
+## 1. Real-model evidence regression
+
+Use two declared diagnostic cases: an independently correct long action and a
+genuinely defective action/result. Execute ten harmless native tool calls, with
+the decisive first command longer than 3 KiB. The early evidence must not be
+replaced by a later model assertion. Pause after the producer, observe an actual
+parent compaction, then run a fresh configured checker and restart the host.
+
+Deterministic producer/controller roles are allowed only for this diagnostic;
+the checker must be the actual configured model and use the ordinary plugin
+instructions. Do not supply the expected verdict, citation IDs or a
+case-specific retrieval recipe to the checker. It must choose appropriate
+evidence and judge the original criterion. The negative must remain negative;
+do not permit a feedback route that repairs the producer during this check.
+
+Record both issued outcomes, tool/page reads, exact cited bytes, verdict,
+journal hashes at each boundary, attempt counts, model/host identities and
+cleanup. A positive needs adequate original evidence and the correct verdict;
+a negative needs adequate evidence and rejection of the real defect. Missing
+evidence, wrong verdicts and malformed output are distinct failures. No silent
+case replay is allowed. Bound each case at 15 minutes and the diagnostic at
+35 minutes. A fixture/collector failure is not a model success.
+
+Initial evaluation model: `openai/gpt-6-luna`. This is an evaluation choice,
+not a production branch or prompt exception. No Grok or local Gemma calls.
+
+## 2. Paired hard continuity cohort
+
+After the diagnostic and independent scorer qualification, issue all eight
+existing L2 pairs together: two synthetic service/factory incidents crossed
+with H0C0, H0C1, H1C0 and H1C1. H denotes controller handoff; C denotes one
+requested summary. Every arm also has a host restart. These are two incident
+clusters, not eight independent scientific replicates. This repeats a known
+development workload; it is not a fresh holdout confirmation.
+
+Use the same Luna model, OpenCode host, fixture data, public service interface,
+permissions, output contracts and external allowances for Build and ALG.
+Keep the existing independent grader and all hard criteria. Seed 20261113
+deterministically orders the cells and alternates arm order. The whole cohort
+is sixteen issued arms; timeouts, auth failures, runner failures and unstarted
+arms remain visible. No selective replay, arm-specific extension or
+retrospective reinterpretation is allowed.
+
+| Shared prospective allowance | Limit |
+| --- | ---: |
+| Active arm deadline | 40 minutes |
+| Observed assistant turns, root plus descendants and maintenance | 512 |
+| Cumulative reported usage components, including cache fields | 8,000,000 |
+| Configured output limit per generation | 8,192 tokens |
+| Suite deadline including setup and cleanup | 12 hours |
+
+These are ceilings, not target durations. The larger prospective envelope
+addresses the previous cohort's five ALG component-limit stops without
+changing any historical limit or outcome. Turn/component enforcement is polled
+and may overshoot; reported usage is not invoice cost. ALG's internal durable
+allowance remains an additional product constraint. Do not reset it across
+handoff, compaction, restart or repair.
+
+Monitor aggregate reported usage, provider auth/quota errors and owned host
+processes while the cohort runs. Account balance and invoice spend are not
+available from these receipts. An availability failure or necessary interruption
+remains an issued operational outcome; it cannot justify dropping or replacing
+an arm.
+
+Native auto-compaction and pruning stay enabled at the configured catalog
+capacity, with no artificial padding or context reduction. The requested
+summary is an intervention, not a native compaction-rate observation. Common
+capability/API instructions remain repeated as in the existing apparatus;
+retaining those instructions unaided is therefore not an evaluated claim.
+
+## 3. Outcomes and information loss
+
+Primary outcome is independently verified completion of every required
+checkpoint and criterion across all issued arms. Report correct artifacts
+separately from completed ALG verification and completed host workflows.
+Report paired wins/losses/ties by cell and incident, all failed criteria,
+substantive checker rejection, evidence insufficiency, mechanical failure,
+allowance stops, repeated/accepted service work, elapsed time, observed turns,
+usage, citation use and cleanup. Count every child and maintenance session
+that the host exposes; incomplete telemetry must remain explicit.
+
+For each transition, freeze external obligations before the boundary. Only a
+correct latest pre-transition observation with the same truth digest is eligible
+for a behavioral regression. Independently grade the post-state. Wrong initial
+answers, missing follow-up, invalid evidence and changed truth remain separate.
+A persisted summary or copied report does not prove a fresh action occurred.
+Multiple intervening compactions make single-boundary attribution unknown.
+The existing public pagination instruction requires an observed ordered chain
+from a starting result read through returned cursors to the terminal page.
+Coverage alone is insufficient; harmless rereads and legitimate recovery remain
+allowed. Wrong-job identity, gaps in the service trace and complete empty
+follow-up windows must have explicit negative controls before issuance.
+
+Report natural and requested compactions separately, completed-summary
+exposure, actual durations, pre-correct denominators, retained/regressed/unknown
+obligations and missingness bounds. Conditional common-eligible comparisons
+are descriptive; do not pool obligations as independent trials or claim a
+causal compaction-loss rate. Short completed arms do not establish multi-hour
+reliability. Same-user evaluator files do not provide an OS isolation boundary.
+
+## 4. Repair decision and release qualification
+
+After the cohort is terminal, classify the dominant measured failure. Fix
+reproducible plugin mechanics without weakening the checker, scorer, evidence
+requirements or task. A changed runtime requires its own local qualification;
+the original cohort remains immutable. Judge later improvements on fresh
+declared cases before making a superiority claim. Do not launch an unbounded
+series of paid attempts to obtain a win.
+
+Qualify the final exact candidate package independently in isolated Windows
+PowerShell and native Linux Bash: pack/extract, dependency readiness,
+single-command installation, server/TUI identity, restart/update recovery,
+custom-configuration preservation and owned-process cleanup. Use existing
+deployment machinery and local dependencies; do not change user-global
+configuration. Preserve failed receipts and distinguish source-checkout tests
+from packaged installation. No GitHub runners or production datalake calls.
+
+Keep PR #14 draft until the real-model regression, necessary mechanical repairs
+and package acceptance are resolved. A merge decision and an ALG superiority
+claim are separate decisions; neither is licensed by a single favorable case.

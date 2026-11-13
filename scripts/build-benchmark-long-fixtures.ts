@@ -311,7 +311,11 @@ export async function gradeLongCheckpoint(c: LongCase, files: Files, context: Co
     // Recovery and harmless page rereads are allowed. Count unique, verified
     // offsets, not response lengths: repeating one page cannot fill a missing one.
     const covered = new Set<number>()
-    let terminal = false
+    // A page contributes to a complete chain only after its request cursor
+    // appeared in an earlier observed response (or starts at the first page).
+    // Keep reachable cursors across harmless rereads and interrupted attempts.
+    const reachableCursors = new Set<string | undefined>([undefined])
+    let linkedTerminal = false
     for (const op of readOps.filter(op => op.status === 200)) {
       const page = valueOf(op), limit = op.args?.limit, prefix = `${job.job.jobId}:`
       const cursor = op.args?.cursor
@@ -323,9 +327,12 @@ export async function gradeLongCheckpoint(c: LongCase, files: Files, context: Co
       const next = offset + page.rows.length, expectedNext = next < job.job.rowCount ? `${prefix}${next}` : undefined
       if (page.nextCursor !== expectedNext) return false
       for (let i = offset; i < next; i++) covered.add(i)
-      terminal ||= page.nextCursor === undefined
+      if ((cursor === undefined || typeof cursor === "string") && reachableCursors.has(cursor)) {
+        if (page.nextCursor === undefined) linkedTerminal = true
+        else reachableCursors.add(page.nextCursor)
+      }
     }
-    return terminal && covered.size === job.job.rowCount
+    return linkedTerminal && covered.size === job.job.rowCount
   })
   add("pending:fresh-current-result-read", "evidence", true, complete ? freshReads : undefined, true, complete)
   const submissions = current.filter(op => op.path === "/submit")

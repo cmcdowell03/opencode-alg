@@ -132,6 +132,91 @@ describe("disjoint long-session L2 fixtures and checkpoint grader", () => {
     })
   })
 
+  test("accepts an ordered full read after harmless rereads and an interrupted attempt", async () => {
+    const c = createLongSessionCases().find(item => item.incident === "accepted-lost-ack")!
+    await withService(c.base, async service => {
+      const audit = auditedClient(service)
+      const files = await longReferenceCheckpoint(c, audit.client, "q0", "initial")
+      const fromSequence = audit.lastSequence()
+      await audit.client.currentRevision("particle-map")
+      await audit.client.sourceStatus("particle-map")
+      const job = await audit.client.lookup("particle-review")
+      expect(job).toBeDefined()
+      await audit.client.status(job!.jobId)
+      const first = await audit.client.readPage(job!.jobId, undefined, 7, "current")
+      expect(first.nextCursor).toBeDefined()
+      await audit.client.readPage(job!.jobId, undefined, 7, "current") // harmless reread
+      const second = await audit.client.readPage(job!.jobId, first.nextCursor, 7, "current")
+      await audit.client.readPage(job!.jobId, undefined, 7, "current") // interrupted attempt restarts
+      let cursor = second.nextCursor
+      while (cursor !== undefined) cursor = (await audit.client.readPage(job!.jobId, cursor, 7, "current")).nextCursor
+      await audit.client.ledger()
+      const followup = { ...files, "checkpoint.json": encode({
+        phase: "qh", nonce: "recovered", procedureVersion: "2", report: "report.json", factory: "factory.json",
+      }) }
+      const result = await gradeLongCheckpoint(c, followup, {
+        service, operations: audit.operations, auditComplete: true, fromSequence, phase: "qh", nonce: "recovered",
+      })
+      expect(result.passed).toBe(true)
+      expect(result.checks.find(item => item.id === "pending:fresh-current-result-read")?.passed).toBe(true)
+    })
+  })
+
+  test("rejects complete page coverage without an observed linked cursor chain", async () => {
+    const c = createLongSessionCases().find(item => item.incident === "accepted-lost-ack")!
+    await withService(c.base, async service => {
+      const audit = auditedClient(service)
+      const files = await longReferenceCheckpoint(c, audit.client, "q0", "initial")
+      const fromSequence = audit.lastSequence()
+      await audit.client.currentRevision("particle-map")
+      await audit.client.sourceStatus("particle-map")
+      const job = await audit.client.lookup("particle-review")
+      expect(job).toBeDefined()
+      await audit.client.status(job!.jobId)
+      // Every verified row is read, but later cursors are requested before
+      // the response that would have disclosed them.
+      for (let offset = Math.floor((job!.rowCount - 1) / 7) * 7; offset >= 0; offset -= 7) {
+        await audit.client.readPage(job!.jobId, offset === 0 ? undefined : `${job!.jobId}:${offset}`, 7, "current")
+      }
+      const observedRows = audit.operations.filter(op => op.sequence > fromSequence && op.path === "/readPage")
+        .reduce((sum, op) => sum + op.response.value.rows.length, 0)
+      expect(observedRows).toBe(job!.rowCount)
+      const followup = { ...files, "checkpoint.json": encode({
+        phase: "qh", nonce: "disconnected", procedureVersion: "2", report: "report.json", factory: "factory.json",
+      }) }
+      const result = await gradeLongCheckpoint(c, followup, {
+        service, operations: audit.operations, auditComplete: true, fromSequence, phase: "qh", nonce: "disconnected",
+      })
+      expect(result.checks.find(item => item.id === "trace:complete-current-window")?.passed).toBe(true)
+      expect(result.checks.find(item => item.id === "pending:lookup-each-accepted-intent")?.passed).toBe(true)
+      expect(result.checks.find(item => item.id === "pending:fresh-current-result-read")).toMatchObject({
+        known: true, passed: false,
+      })
+    })
+  })
+
+  test("rejects a lookup response naming the wrong accepted job", async () => {
+    const c = createLongSessionCases().find(item => item.incident === "accepted-lost-ack")!
+    await withService(c.base, async service => {
+      const audit = auditedClient(service)
+      const files = await longReferenceCheckpoint(c, audit.client, "q0", "initial")
+      const fromSequence = audit.lastSequence()
+      const followup = await longReferenceCheckpoint(c, audit.client, "qh", "wrong-job", files)
+      const operations = structuredClone(audit.operations)
+      const lookup = operations.find(op => op.sequence > fromSequence && op.path === "/lookup" &&
+        op.args?.idempotencyKey === "particle-review")
+      expect(lookup).toBeDefined()
+      lookup!.response.value.jobId = "foreign-job"
+      const result = await gradeLongCheckpoint(c, followup, {
+        service, operations, auditComplete: true, fromSequence, phase: "qh", nonce: "wrong-job",
+      })
+      expect(result.checks.find(item => item.id === "trace:complete-current-window")?.passed).toBe(true)
+      expect(result.checks.find(item => item.id === "pending:lookup-each-accepted-intent")).toMatchObject({
+        known: true, passed: false,
+      })
+    })
+  })
+
   test("an observed unused service cannot count empty job sets as retained lookups or reads", async () => {
     const c = createLongSessionCases().find(item => item.incident === "accepted-lost-ack")!
     await withService(c.base, async service => {
@@ -210,6 +295,9 @@ describe("disjoint long-session L2 fixtures and checkpoint grader", () => {
       expect(unobserved.checks.find(item => item.id === "trace:complete-current-window")?.known).toBe(false)
       const gap = await gradeLongCheckpoint(c, files, { ...context, operations: audit.operations.slice(1) })
       expect(gap.checks.find(item => item.id === "trace:complete-current-window")?.known).toBe(false)
+      const interiorGap = await gradeLongCheckpoint(c, files, { ...context,
+        operations: audit.operations.filter(op => op.sequence !== 2) })
+      expect(interiorGap.checks.find(item => item.id === "trace:complete-current-window")?.known).toBe(false)
 
       const tampered = { ...files, "evidence/incident.json": "{}\n" }
       expect((await gradeLongCheckpoint(c, tampered, context)).checks.find(item => item.id === "outputs:disclosed-paths-and-bounds")?.passed).toBe(false)
