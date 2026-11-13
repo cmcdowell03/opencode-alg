@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.11 candidate — distinguish runtime state from project changes
+
+- Pin bounded runtime-store exclusions in new change-scope baselines so session-memory and context-delivery writes do not block fresh checking. Keep explicit/protected paths, skills, configuration and unknown project files observable; legacy baselines retain their original policy.
+- Repair hard-development benchmark timestamp comparison, code-runner wiring, runtime-card diagnostics and bounded multi-session telemetry. Preserve original results and label posthoc diagnoses separately.
+- Document real paired outcomes and measurement defects without claiming superiority. V1 only; model agnostic; local validation only.
+
 ## 0.5.10 candidate — cumulative task dispatch allowance
 
 - Bind new live plans to a host-owned task allowance in the existing root checkpoint, including when skill memory is off. Further phases, replanning, retries and transferred runs retain that identity and its pinned limits.

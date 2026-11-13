@@ -1,6 +1,21 @@
 # V1 Phase One implementation status
 
-PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current pending candidate is 0.5.10 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as acceptance of the current candidate.
+PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current pending candidate is 0.5.11 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as acceptance of the current candidate.
+
+## 0.5.11 — repair measured runtime and evaluation failures
+
+The expanded six-case comparison finished all twelve issued arms: eleven
+completed, one stopped on a collector timeout. It found four ALG scope blockers
+caused by the plugin's own state writes, an API-work capability mismatch, and
+three grading/diagnostic defects. A separate posthoc audit accepts the eight
+factory/code artifacts affected by grader defects; this does not repair blocked
+ALG checking or establish superiority. The restart-recovery case is a concrete
+ALG pass versus a Build failure. See the [full findings and limitations](v1-hard-development-findings.md).
+
+New scope baselines now pin narrowly defined project-root runtime stores as
+exclusions. Explicit and protected paths still count; old baselines are never
+rebased. Actual-host regression and final candidate qualification are required
+before another paid comparison. No long-session information-loss result exists.
 
 ## Priority clarification — capability before efficiency
 
