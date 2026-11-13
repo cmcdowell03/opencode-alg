@@ -1,4 +1,4 @@
-import { spawn, execFileSync } from "node:child_process"
+import { spawn, execFileSync, type ChildProcess } from "node:child_process"
 import { createServer } from "node:net"
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync, readdirSync, copyFileSync, unlinkSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
@@ -155,8 +155,13 @@ export async function collectFinalSessionCensus(options:{api:CensusApi;sessions:
 type Tracked = ReturnType<typeof launch>
 function launch(exe:string,args:string[],cwd:string,env:NodeJS.ProcessEnv){
   const child=spawn(exe,args,{cwd,env,shell:false,windowsHide:true,stdio:["ignore","pipe","pipe"]})
+  return trackBenchmarkProcess(child)
+}
+/** Root exit and stdio closure differ when a descendant inherits the pipes. */
+export function trackBenchmarkProcess(child:ChildProcess){
   let stdout="",stderr="",closed=false,code:number|null=null
-  child.stdout.on("data",b=>stdout=(stdout+b.toString()).slice(-131072));child.stderr.on("data",b=>stderr=(stderr+b.toString()).slice(-131072))
+  child.stdout?.on("data",b=>stdout=(stdout+b.toString()).slice(-131072));child.stderr?.on("data",b=>stderr=(stderr+b.toString()).slice(-131072))
+  child.on("exit",c=>{closed=true;code=c})
   child.on("close",c=>{closed=true;code=c});child.on("error",()=>closed=true)
   return {child,stdout:()=>stdout,stderr:()=>stderr,exit:()=>({observed:closed||child.exitCode!==null,code:code??child.exitCode,signal:child.signalCode})}
 }
@@ -249,6 +254,7 @@ export async function runBuildBenchmark(config:Config){
       let longGradedFilesDigest:string|null=null
       const operations:HardHostOperation[]=[]
       let operationBytes=0
+      const hostCleanupReceipts:Awaited<ReturnType<typeof stopCapturedProcess>>[]=[]
       let hardService:HardBenchmarkService|undefined,hardHost:Awaited<ReturnType<typeof startHardBenchmarkHost>>|undefined,server:Tracked|undefined
       let hostStopAttempted=false,hardCollection:ReturnType<typeof collectHardProject>|undefined,serviceStop:Promise<void>|undefined
       const serviceReceipt:any={required:!!hardFixture&&needsHardService(hardFixture),started:false,stopped:false,ledger_before:null,ledger_after:null,errors:[] as string[]}
@@ -335,7 +341,7 @@ export async function runBuildBenchmark(config:Config){
           }}:undefined);serviceReceipt.started=true
           json(join(dir,"service-before.json"),serviceReceipt.ledger_before)
         }
-        await launchHost();const registered=await api!("/experimental/tool/ids"),availableAgents=await api!("/agent"),providers=await api!("/provider")
+        await launchHost();const registered=await api!("/experimental/tool/ids",undefined,long?45_000:15_000),availableAgents=await api!("/agent"),providers=await api!("/provider")
         const selected=providers.all.find((p:any)=>p.id===config.providerID)?.models?.[config.modelID]
         if(!selected||!providers.connected.includes(config.providerID))throw Error("selected model unavailable")
         if(selected.limit?.output!==limits.outputTokens)throw Error("provider output limit differs from protocol")
@@ -418,7 +424,7 @@ export async function runBuildBenchmark(config:Config){
                 return {sourceSessionId:source,recipientSessionId:rootSession,transfers}
               }),
               restart:()=>transition("restart",async()=>{
-                const stopped=await stopCapturedProcess(server!);cleanup&&=stopped.passed
+                const stopped=await stopCapturedProcess(server!);hostCleanupReceipts.push(stopped);cleanup&&=stopped.passed
                 if(!stopped.passed)throw Error("restart cleanup failed")
                 await launchHost();restarted=true;await collect()
                 return {sessionId:rootSession,stopped,processes:[...processes]}
@@ -454,7 +460,7 @@ export async function runBuildBenchmark(config:Config){
               request.response=await api!(`/session/${rootSession}/summarize`,{providerID:config.providerID,modelID:config.modelID},limits.trialMs) as SessionSummarizeResponses[200]
               return request.response
             })
-            const stopped=await stopCapturedProcess(server!);cleanup&&=stopped.passed;event({event:"restart_stop",passed:stopped.passed});if(!stopped.passed)throw Error("restart cleanup failed")
+            const stopped=await stopCapturedProcess(server!);hostCleanupReceipts.push(stopped);cleanup&&=stopped.passed;event({event:"restart_stop",passed:stopped.passed});if(!stopped.passed)throw Error("restart cleanup failed")
             await launchHost();restarted=true
             const request=compactionInput!
             request.afterMessages=await api!(`/session/${rootSession}/message`)
@@ -482,7 +488,7 @@ export async function runBuildBenchmark(config:Config){
           meteringComplete=finalCensusReceipt.outcome==="quiescent"
           if(!meteringComplete)stopReason??="final_census_unresolved"
           hostStopAttempted=true
-          const stopped=await stopCapturedProcess(server);cleanup&&=stopped.passed;json(join(dir,"host-log.json"),{stdout:server.stdout(),stderr:server.stderr()})
+          const stopped=await stopCapturedProcess(server);hostCleanupReceipts.push(stopped);cleanup&&=stopped.passed;json(join(dir,"host-log.json"),{stdout:server.stdout(),stderr:server.stderr()})
         }
         if(hard){await stopService();cleanup&&=serviceReceipt.errors.length===0&&(!hardHost||serviceReceipt.stopped)}
         if(existsSync(authCopy))unlinkSync(authCopy)
@@ -552,7 +558,7 @@ export async function runBuildBenchmark(config:Config){
           recovery:{requested:!!compactionInput,recoveryRequired:!!fixture.followupPrompt,restarted,compactionRecovered:compactionIsQualified(compaction),compaction,phase1},retention:retention.tasks[0]??{status:"unavailable_preflight"},alg_states:algStates,alg_progress_coverage:algProgressCoverage,budget_observed_overshoot:childBudgetOvershoot,
           retention_boundaries:retention.boundaryRetention,
           ...(long?{live_obligations:longEvidence??null}:{}),
-          cleanup,metering_complete:null,observed_metering_stable:meteringComplete,final_census:finalCensusReceipt,
+          cleanup,host_cleanup:hostCleanupReceipts,metering_complete:null,observed_metering_stable:meteringComplete,final_census:finalCensusReceipt,
           coverage:{historical_message_pagination:databaseCensus.qualified?"IDs_reconciled_with_stopped_host_database":"unqualified",provider_usage:"session_reported_fields_only",quiescent_snapshot:finalCensusReceipt?.outcome==="quiescent"},databaseCensus,
           reported_component_overshoot:Math.max(0,metric.usage.totalReportedTokens-limits.reportedComponents),eligibility:qualification,auth_copy_removed:!existsSync(authCopy),processes,source_unchanged:sourceUnchanged(),arm_config_sha256:armConfigHash,
           final_files:stateFiles,usage_monitors:usageMonitors,measurement_limits:protocol.unmeasured}
@@ -563,12 +569,12 @@ export async function runBuildBenchmark(config:Config){
         updateResult(pair.pairId,arm,{status:config.preflightOnly?"preflight_failed":"stopped",stopReason:String(error),passed:false,scored_task_success:false,setup_or_finalization_error:true,cleanup:false})
       }finally{
         if(hard){
-          if(server&&!hostStopAttempted){hostStopAttempted=true;try{const stopped=await stopCapturedProcess(server);if(!stopped.passed)serviceReceipt.errors.push("contestant_stop_failed")}catch(error){serviceReceipt.errors.push(`contestant_stop:${String(error)}`)}}
+          if(server&&!hostStopAttempted){hostStopAttempted=true;try{const stopped=await stopCapturedProcess(server);hostCleanupReceipts.push(stopped);if(!stopped.passed)serviceReceipt.errors.push("contestant_stop_failed")}catch(error){serviceReceipt.errors.push(`contestant_stop:${String(error)}`)}}
           await stopService()
           try{if(existsSync(authCopy))unlinkSync(authCopy)}catch(error){serviceReceipt.errors.push(`auth_cleanup:${String(error)}`)}
           const row=results.find(r=>r.pairId===pair.pairId&&r.arm===arm)!
           if(serviceReceipt.errors.length)updateResult(pair.pairId,arm,{status:config.preflightOnly?"preflight_failed":"stopped",passed:false,scored_task_success:false,cleanup:false})
-          Object.assign(row,{hard_service:serviceReceipt,isolation:HARD_ISOLATION,confirmation_qualified:false,
+          Object.assign(row,{hard_service:serviceReceipt,host_cleanup:hostCleanupReceipts,isolation:HARD_ISOLATION,confirmation_qualified:false,
             requested_host_compaction:longCase?.cell.compact??false,native_compaction:selection.compaction,alg_state_diagnostics:"bounded_post_stop_private_progress_projection_excluded_from_grader",
             compaction_evidence:{basis:long?"independently_graded_live_obligations_and_private_service_trace":"existing_metrics_and_retention_receipts",requested_boundary:longCase?.cell.compact?"assigned":"not_requested",information_loss:long?"see_conditional_behavioral_regression_and_missingness_bounds":"not_measured"},
             final_files_coverage:hardCollection?"complete_user_files_with_declared_runtime_exclusions":"unavailable_collection_or_setup_failure"})
