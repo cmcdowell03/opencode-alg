@@ -224,7 +224,9 @@ export function collectHardRunProgress(project: string) {
   const directory = opendirSync(runs)
   try {
     for (let entry = directory.readSync(); entry; entry = directory.readSync()) {
-      if (entry.name === "_owners") continue
+      // These exact runtime namespaces contain owner indexes and native task cards.
+      // Other unsafe entries must still fail collection, rather than vanish.
+      if (entry.name === "_owners" || entry.name === "_cards") continue
       if (++runDirectories > HARD_PROGRESS_LIMITS.runs) throw new Error("hard runtime progress run bound exceeded")
       if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(entry.name)) throw new Error("unsafe hard runtime run name")
       const runDirectory = join(runs, entry.name)

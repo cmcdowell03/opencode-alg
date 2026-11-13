@@ -193,6 +193,40 @@ describe("hard benchmark grading against raw evidence and executed work", () => 
     })
   }
 
+  test("factory window accepts equivalent UTC precision and explicit zero offset", async () => {
+    const fixture = createFactoryEvidenceFixture("confounded")
+    const [, kind, cells, comparison] = worlds[1]!
+    const good = factoryReport(fixture, kind, cells, comparison)
+    for (const suffix of ["Z", ".0Z", ".000Z", ".000000Z", "+00:00", ".0000+00:00"]) {
+      const window = { start: `2026-05-01T11:00:00${suffix}`, endExclusive: `2026-05-01T17:00:00${suffix}` }
+      expect(failed(await scoreHardFixture(fixture, submit(fixture, "report.json", { ...good, window })))).toEqual([])
+    }
+  })
+
+  test("factory window rejects shifted, non-UTC and invalid endpoints without calendar normalization", async () => {
+    const fixture = createFactoryEvidenceFixture("confounded")
+    const [, kind, cells, comparison] = worlds[1]!
+    const good = factoryReport(fixture, kind, cells, comparison)
+    const invalidWindows = [
+      { ...good.window, start: "2026-05-01T11:00:01Z" },
+      { ...good.window, endExclusive: "2026-05-01T17:00:00.000001Z" },
+      // Equivalent instants in nonzero offsets are not UTC representations.
+      { start: "2026-05-01T06:00:00-05:00", endExclusive: "2026-05-01T18:00:00+01:00" },
+      { ...good.window, start: "2026-05-01T11:00:00-00:00" }, // unknown offset, not explicit UTC
+      { ...good.window, start: "2026-05-01T11:00:00" },
+      { ...good.window, start: "2026-04-31T11:00:00Z" }, // Date.parse rolls this to the correct day
+      { ...good.window, endExclusive: "2026-04-31T17:00:00Z" },
+      { ...good.window, start: "2026-05-01T11:00:60Z" },
+      { ...good.window, start: "2026-05-01T11:00:00.Z" },
+      { ...good.window, start: "2026-05-01T11:00:00Z\n" },
+      { ...good.window, start: null },
+      { start: good.window.endExclusive, endExclusive: good.window.start },
+      { ...good.window, extra: true },
+    ]
+    for (const window of invalidWindows)
+      expect(failed(await scoreHardFixture(fixture, submit(fixture, "report.json", { ...good, window })))).toEqual(["report:window"])
+  })
+
   test("rejects plausible keywords, stale citations, wrong UTC edges, wrong strata and vague follow-up", async () => {
     const fixture = createFactoryEvidenceFixture("insufficient")
     const [, kind, cells, comparison, nextMeasurement] = worlds[2]!

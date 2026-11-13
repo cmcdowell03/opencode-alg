@@ -406,6 +406,27 @@ function readReport(files: Files, path: string): Record<string, unknown> | undef
   try { return object(JSON.parse(body)) } catch { return undefined }
 }
 
+/** The public contract requires UTC, without fixing fractional-second precision. */
+function canonicalUtcTimestamp(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined
+  const match = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d+))?(?:Z|\+00:00)$/.exec(value)
+  if (!match || match[0] !== value) return undefined
+  const seconds = match[1]!, parsed = new Date(`${seconds}Z`)
+  // Date parsing can roll April 31 into May 1 or 24:00 into the next day.
+  // Require exact calendar/time round-trip before comparing representations.
+  if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 19) !== seconds) return undefined
+  const fraction = (match[2] ?? "").replace(/0+$/, "")
+  // Preserve sub-millisecond differences rather than rounding them away.
+  return `${seconds}${fraction ? `.${fraction}` : ""}Z`
+}
+
+function canonicalUtcWindow(value: unknown): Record<string, string> | undefined {
+  const window = object(value)
+  if (!window || !same(Object.keys(window).sort(), ["endExclusive", "start"])) return undefined
+  const start = canonicalUtcTimestamp(window.start), endExclusive = canonicalUtcTimestamp(window.endExclusive)
+  return start && endExclusive ? { start, endExclusive } : undefined
+}
+
 function particleOracle(source: SourceSnapshot, window: string) {
   const rows = source.rows.filter(row => row.window === window)
   const affected = rows.filter(row => row.affected === true)
@@ -492,9 +513,11 @@ export async function scoreHardFixture(fixture: CreatedHardFixture, submission: 
     fields(answer, { retained, particle: result, overlapLots, unresolved: { sourceId, revision, available: false }, causalIdentified: false }, "report")
   } else if (scenario.kind === "factory-evidence") {
     const { measurements, ...expected } = factoryOracle(contestant.files)
-    const normalized: Record<string, unknown> | undefined = answer && { ...answer, ...(Object.hasOwn(answer, "strata") ? { strata: unorderedStrata(answer.strata) } : {}) }
+    const normalized: Record<string, unknown> | undefined = answer && { ...answer,
+      ...(Object.hasOwn(answer, "window") ? { window: canonicalUtcWindow(answer.window) } : {}),
+      ...(Object.hasOwn(answer, "strata") ? { strata: unorderedStrata(answer.strata) } : {}) }
     const { nextMeasurement, ...rest } = normalized ?? {}
-    fields(normalized && rest, { ...expected, strata: unorderedStrata(expected.strata) }, "report")
+    fields(normalized && rest, { ...expected, window: canonicalUtcWindow(expected.window), strata: unorderedStrata(expected.strata) }, "report")
     check("report:nextMeasurement", measurements.some(measurement => same(nextMeasurement, measurement)))
   } else {
     const visible: IngestRow[] = JSON.parse(contestant.files[ingestionPath]!).rows

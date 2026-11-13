@@ -11,6 +11,8 @@ import { benchmarkTaskPrompt, collectHardProject, collectHardRunProgress, HARD_C
   terminalHardRows, validateHardQualification, type WorkloadOptions } from "../scripts/hard-benchmark-cohort.ts"
 import { summarizeIssuedArms } from "../scripts/build-benchmark-protocol.ts"
 import { sha256Json } from "../src/persistence.ts"
+import { createRun, persistRun } from "../src/store.ts"
+import { RunCardProjector } from "../src/run-cards.ts"
 
 const repo = resolve(import.meta.dir, "..")
 const roots: string[] = []
@@ -136,6 +138,29 @@ describe("hard development prospective selection", () => {
 })
 
 describe("bounded complete hard project collection", () => {
+  test("progress collection tolerates real native card metadata but rejects unknown unsafe namespaces", async () => {
+    const root = project()
+    const run = createRun({ goal: "collect runtime progress", criteria: [], projectDirectory: root,
+      ownerSessionId: "owner", runId: "progress-with-card", mode: "live",
+      graph: { name: "progress-test", nodes: [{ id: "explore", agent: "explorer", depends_on: [] }],
+        max_global_attempts: 1, max_concurrency: 1 } })
+    persistRun(run, root)
+    const cards = new RunCardProjector({ project: root, runId: run.run_id, parentSessionId: "owner",
+      messageId: "msg_parent", transport: { upsert: async () => {} } })
+    cards.prime(run)
+    run.nodes.explore!.attempts.push({ attempt: 1, status: "running", session_id: "child",
+      started_at: new Date().toISOString(), failures: [] })
+    cards.observe(run)
+    try {
+      const sidecar = JSON.parse(readFileSync(join(root, ".opencode/runs/_cards", run.run_id + ".json"), "utf8"))
+      expect(sidecar.cards[0].state.metadata.sessionId).toBe("child")
+      expect(collectHardRunProgress(root)).toMatchObject({ coverage: "complete_inline", runDirectories: 1,
+        states: [{ run_id: run.run_id }] })
+      mkdirSync(join(root, ".opencode/runs/_unknown"))
+      expect(() => collectHardRunProgress(root)).toThrow("unsafe hard runtime run name")
+    } finally { await cards.settle() }
+  })
+
   test("post-stop runtime progress is bounded and remains outside grader input", () => {
     const root = project(), fixture = createAcceptedQueryLostAckFixture()
     put(root, ".opencode/runs/run_a/progress.json", JSON.stringify({ run_id: "run_a", status: "blocked", phase: "task-allowance",
