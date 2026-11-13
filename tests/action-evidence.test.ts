@@ -92,7 +92,7 @@ describe("durable action evidence", () => {
       expect(manifest.coverage).toMatchObject({ observed_calls: 256, completed: 256, unknown_terminal: 0, capture_gaps: 1 })
       expect(manifest.entries).toHaveLength(513)
     } finally { removeProject(project) }
-  })
+  }, 30_000) // Fsynced file-count boundary, not a five-second throughput benchmark.
 
   test("unsupported tools are gaps and do not block the owned tool hook", () => {
     const project = tempProject("action-evidence-gap-")

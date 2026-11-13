@@ -13,6 +13,7 @@ scripts/datascience-project.ts text eol=lf
 scripts/verify-duckdb-manifest.ts text eol=lf
 capabilities/datascience/** text eol=lf
 capabilities/connectors/** text eol=lf
+*.sh text eol=lf
 docs/evidence/current-control-20261112/** -text
 docs/evidence/evidence-repair-20261112/** -text
 docs/evidence/request-source-20261112/** -text

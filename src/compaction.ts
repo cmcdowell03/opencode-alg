@@ -55,7 +55,13 @@ const RUN_SUMMARY_DETAIL: readonly RunSummaryDetail[] = [
     nodes: COMPACTION_NODE_COUNT, failures: COMPACTION_FAILURE_COUNT, failureChars: COMPACTION_FAILURE_CHARS },
   { goalChars: 400, criteria: 8, criterionChars: 160, nodes: 32, failures: 1, failureChars: 120 },
   { goalChars: 160, criteria: 0, criterionChars: 0, nodes: 12, failures: 0, failureChars: 0 },
+  { goalChars: 160, criteria: 0, criterionChars: 0, nodes: 0, failures: 0, failureChars: 0 },
 ]
+
+function actionEvidencePointer(run: RunState): string[] {
+  return Object.values(run.nodes).some(node => node.attempts.some(attempt => attempt.action_evidence_ref || attempt.action_evidence_sources))
+    ? ["- Evidence gaps: inspect attempt records; do not replay work or remote submissions."] : []
+}
 
 /** What must survive any allowance comes first: which run, its state, and how to continue it. */
 function renderRunSummary(run: RunState, detail: RunSummaryDetail): string {
@@ -72,7 +78,7 @@ function renderRunSummary(run: RunState, detail: RunSummaryDetail): string {
     ...allowancePointer(run),
     ...(run.task_baseline ? [`- task_baseline: ${sha256Json(run.task_baseline)}; immutable before-first-child observations in alg_status(detail=full).task_baseline; do not recapture.`] : []),
     "- continue with alg_resume; alg_status and alg_artifact hold the authoritative details.",
-    "- Evidence gaps do not authorize replay. Action journal references and checker retrieval receipts remain in attempt state; recover and inspect them before repeating work. Managed remote jobs retain their original submission IDs and reconciliation rules.",
+    ...actionEvidencePointer(run),
     `- path: .opencode/runs/${run.run_id}/`,
     "",
     "### Nodes",
@@ -134,7 +140,7 @@ export function formatCompactionContext(run: RunState, maximumBytes?: number): s
     ...requestSourcePointer(run),
     ...allowancePointer(run),
     "- criteria:",
-    "- Action evidence stays in attempt references. Evidence gaps do not authorize replay or a new remote submission.",
+    ...actionEvidencePointer(run),
     ...(run.task_baseline ? [`- task_baseline: ${sha256Json(run.task_baseline)}; immutable before-first-child observations in alg_status(detail=full).task_baseline; do not recapture.`] : []),
     ...(run.criteria.length
       ? run.criteria.slice(0, COMPACTION_CRITERIA_COUNT).map((criterion) =>
