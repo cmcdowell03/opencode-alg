@@ -1,5 +1,10 @@
 # Changelog
 
+- V1 candidate: retain run-contained host action intents and terminal observations;
+  let assigned checkers retrieve bounded, hash-bound pages across producer attempts.
+  Keep evidence-gap retries on the checker and preserve legacy records, unknown
+  outcomes and cumulative allowances. See `docs/v1-action-evidence.md`.
+
 ## 0.5.11 candidate — distinguish runtime state from project changes
 
 - Add paired live obligation measurements before/after controller handoff, requested compaction and host restart. Keep all issued outcomes, pre-existing errors and unmeasured follow-up separate; a summary does not prove retention.

@@ -6,6 +6,7 @@ import type { TaskContract } from "./task-contract.ts"
 import { projectFileDigest, finishPreservationEvidence } from "./preservation-evidence.ts"
 import { finishChangeScopeEvidence, ChangeScopeExclusionsSchema } from "./change-scope-evidence.ts"
 import { assertTaskBaseline, type TaskBaseline } from "./task-baseline.ts"
+import { ActionEvidenceJournal, assertActionEvidenceManifestIdentity } from "./action-evidence.ts"
 
 export const MAX_TASK_EVIDENCE_BYTES = 32 * 1024
 const digest = z.string().regex(/^[a-f0-9]{64}$/)
@@ -133,16 +134,30 @@ export function taskEvidence(run: Pick<RunState, "task_contract" | "task_baselin
     const attempt = node?.attempts.find(a => a.attempt === node.current_attempt)
     const shell = verification.execution === "shell_gate"
     const receipt = shell ? attempt?.gate_evidence : attempt?.execution_evidence
+    let actionDigest: string | undefined
+    const origin = attempt?.reused_output_from === undefined ? attempt : node?.attempts.find(a => a.attempt === attempt.reused_output_from)
+    if (!shell && node?.status === "done" && origin?.action_evidence_ref && origin.session_id) {
+      const journal = new ActionEvidenceJournal(run.project_directory)
+      const identity = { run_id: run.run_id, node_id: verification.execution_node!, attempt: origin.attempt }
+      const manifest = journal.readManifest(origin.action_evidence_ref, identity)
+      assertActionEvidenceManifestIdentity(manifest, identity, origin.session_id)
+      // This establishes only an observed successful command, not criterion relevance or remote acceptance.
+      if (manifest.entries.some(entry => {
+        if (entry.kind !== "terminal") return false
+        const record = journal.readRecord(entry, { ...identity, child_session_id: origin.session_id! })
+        return record.kind === "terminal" && record.tool_status === "completed" && record.exit_code_status === "reported" && record.exit_code === 0
+      })) actionDigest = origin.action_evidence_ref.sha256
+    }
     const valid = node?.status === "done" && attempt?.status === "done" && receipt?.run_id === run.run_id &&
       receipt.node_id === verification.execution_node && receipt.retrieval_status === "available" &&
       (shell ? receipt.attempt === attempt.attempt && receipt.child_session_id === undefined :
         receipt.attempt === (attempt.reused_output_from ?? attempt.attempt) && !!receipt.child_session_id &&
         (attempt.reused_output_from !== undefined || receipt.child_session_id === attempt.session_id))
-    if (valid && receipt.commands.some(c => c.tool === (shell ? "shell_gate" : "bash") &&
+    if (actionDigest || (valid && receipt.commands.some(c => c.tool === (shell ? "shell_gate" : "bash") &&
       (!shell || c.gate_ok === true) && c.tool_status === "completed" && c.exit_code_status === "reported" &&
-      c.exit_code === 0 && !c.timed_out && !c.cancelled && !c.setup_failed && !c.termination_failed)) {
+      c.exit_code === 0 && !c.timed_out && !c.cancelled && !c.setup_failed && !c.termination_failed))) {
       execution = "successful_command_observed"
-      execution_sha256 = sha256Json(receipt)
+      execution_sha256 = actionDigest ?? sha256Json(receipt)
     } else {
       execution = "unavailable"
       failures.push("task_execution_unavailable: required successful command evidence is missing; model claims cannot replace it")

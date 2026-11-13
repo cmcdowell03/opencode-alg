@@ -164,7 +164,10 @@ export function attemptOutcomeCounts(attempts: readonly NodeAttempt[]): AttemptO
     gate_failure: 0,
     legacy_unknown: 0,
   }
-  for (const attempt of attempts) counts[attempt.outcome ?? "legacy_unknown"]++
+  for (const attempt of attempts) {
+    const outcome = attempt.outcome ?? "legacy_unknown"
+    counts[outcome] = (counts[outcome] ?? 0) + 1
+  }
   return counts
 }
 
@@ -268,6 +271,9 @@ function projectAttempt(run: RunState, nodeId: string, attempt: NodeAttempt): No
       )
     : attempt.detail_ref
   const projected: NodeAttempt = {
+    ...(attempt.action_evidence_ref ? { action_evidence_ref: attempt.action_evidence_ref } : {}),
+    ...(attempt.action_evidence_sources ? { action_evidence_sources: attempt.action_evidence_sources } : {}),
+    ...(attempt.retrieved_evidence ? { retrieved_evidence: attempt.retrieved_evidence } : {}),
     ...(attempt.execution_evidence ? { execution_evidence: attempt.execution_evidence } : {}),
     ...(attempt.gate_evidence ? { gate_evidence: attempt.gate_evidence } : {}),
     ...(attempt.preservation_evidence ? { preservation_evidence: attempt.preservation_evidence } : {}),

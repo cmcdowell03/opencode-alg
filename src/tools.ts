@@ -53,6 +53,7 @@ import { captureTaskRequest } from "./task-request.ts"
 import type { SessionMemoryRuntime } from "./session-memory/runtime.ts"
 import { buildRunProgress, parseRunProgress, type AlgRunProgress } from "./run-progress.ts"
 import { createRunCardProjector, type RunCardProjector, type SubagentCardMode } from "./run-cards.ts"
+import type { ExecuteOptions } from "./executor.ts"
 
 type Detail = "compact" | "full"
 
@@ -156,6 +157,7 @@ function rootAuthorization(run: RunState, detail: Detail = "compact") {
 import type { OperationalRuntime } from "./operational-runtime.ts"
 
 export interface AlgToolRuntime {
+  actionEvidence?: ExecuteOptions["actionEvidence"]
   taskAllowancePolicy?: TaskAllowancePolicy
   operations?: OperationalRuntime
   sessionMemory?: SessionMemoryRuntime
@@ -216,6 +218,8 @@ function compactNodes(run: RunState) {
         ...(attempt.output_ref ? { output_ref: attempt.output_ref } : {}),
         ...(attempt.detail_ref ? { detail_ref: attempt.detail_ref } : {}),
         ...(attempt.task_evidence_ref ? { task_evidence_ref: attempt.task_evidence_ref } : {}),
+        ...(attempt.action_evidence_ref ? { action_evidence_ref: attempt.action_evidence_ref } : {}),
+        ...(attempt.retrieved_evidence ? { retrieved_evidence_pages: attempt.retrieved_evidence.length } : {}),
       }
     })
     const visibleSessionCount = node.attempts.filter((attempt) => Boolean(attempt.session_id)).length
@@ -314,6 +318,7 @@ function routingSummary(run: RunState) {
     schema_invalid: 0,
     sdk_error: 0,
     substantive_rejection: 0,
+    evidence_unavailable: 0,
     incomplete: 0,
     gate_failure: 0,
     legacy_unknown: 0,
@@ -337,7 +342,7 @@ function routingSummary(run: RunState) {
     if (!reference) continue
     if (reference.outcome_counts) {
       for (const outcome of Object.keys(outcomes) as Array<keyof typeof outcomes>) {
-        outcomes[outcome] += reference.outcome_counts[outcome]
+        outcomes[outcome] += reference.outcome_counts[outcome] ?? 0
       }
       if (node.agent === "checker") checkerSchemaInvalid += reference.outcome_counts.schema_invalid
       else nodeSchemaInvalid += reference.outcome_counts.schema_invalid
@@ -1051,6 +1056,7 @@ export function createAlgTools(
           cards = runCards(run, project, context)
           const events: string[] = []
           const updated = await executeWithMemory(runtime.sessionMemory, run, {
+            actionEvidence: runtime.actionEvidence,
             taskAllowance: new TaskAllowanceRuntime(runtime.sessionMemory?.store ?? new MemoryStore(project), runtime.taskAllowancePolicy),
             client,
             parentSessionId: context.sessionID,
@@ -1273,6 +1279,7 @@ export function createAlgTools(
           cards = runCards(run, project, context)
           const events: string[] = []
           const updated = await executeWithMemory(runtime.sessionMemory, run, {
+            actionEvidence: runtime.actionEvidence,
             taskAllowance: new TaskAllowanceRuntime(runtime.sessionMemory?.store ?? new MemoryStore(project), runtime.taskAllowancePolicy),
             client,
             parentSessionId: context.sessionID,
@@ -1319,8 +1326,11 @@ export function createAlgTools(
     }),
 
     alg_artifact: tool({
-      description: "Read a node output or a content-addressed historical graph version from an owned run. Compact by default; detail=full returns complete content.",
+      description: "Read an owned node output or historical graph. Assigned checkers may use evidence=index/read for bounded host evidence pages; index pointers are not proof.",
       args: {
+        evidence: tool.schema.enum(["index", "read"]).optional(),
+        record_id: tool.schema.string().regex(/^[a-f0-9]{64}$/).optional(),
+        offset: tool.schema.number().int().nonnegative().optional(),
         node_id: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/).optional(),
         graph_sha256: tool.schema.string().regex(/^[a-f0-9]{64}$/).optional(),
         run_id: tool.schema.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/).optional(),
@@ -1329,6 +1339,13 @@ export function createAlgTools(
       async execute(args, context) {
         try {
           const { project } = roots(plugin, context)
+          if (args.evidence !== undefined) {
+            if (!runtime.actionEvidence || args.node_id !== undefined || args.graph_sha256 !== undefined || args.detail !== undefined)
+              throw new Error("invalid checker evidence request")
+            try { return ok("alg evidence", runtime.actionEvidence.retrieval.execute(context.sessionID, { ...args, evidence: args.evidence })) }
+            catch { throw new Error("assigned evidence unavailable or retrieval allowance exhausted; preserve uncertainty and do not replay work") }
+          }
+          if (args.record_id !== undefined || args.offset !== undefined) throw new Error("evidence selector required")
           const run = await awaitLock(() => ownedRun(project, context.sessionID, args.run_id))
           if (!run) throw new Error("No owned run found.")
           if ((args.graph_sha256 === undefined) === (args.node_id === undefined)) {

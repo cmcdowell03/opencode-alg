@@ -11,8 +11,10 @@ import {
   wireInputs,
 } from "./graph.ts"
 import { canonicalJson, sha256Json } from "./persistence.ts"
-import { buildCheckerEvidence, isCheckerEvidencePort } from "./checker-evidence.ts"
-import { buildVerificationBasis, validateVerification, effectiveCriteria } from "./verification.ts"
+import { buildCheckerEvidence, checkerRelatedNodes, isCheckerEvidencePort } from "./checker-evidence.ts"
+import { buildVerificationBasis, validateVerification, effectiveCriteria, classifyVerificationEvidenceGap } from "./verification.ts"
+import { ActionEvidenceJournal, assertActionEvidenceManifestIdentity } from "./action-evidence.ts"
+import { EvidenceRetrieval, type EvidenceSources, type EvidenceRecord } from "./evidence-retrieval.ts"
 import { assertManagedGraph, graphPolicy } from "./graph-policy.ts"
 import { assertTaskState } from "./task-contract.ts"
 import { taskEvidence, type TaskEvidence } from "./task-evidence.ts"
@@ -67,6 +69,7 @@ const MAX_SUMMARY_FAILURE_ENTRIES = 2
 const MAX_SUMMARY_FAILURE_SIZE = 256
 
 export interface ExecuteOptions {
+  actionEvidence?: { journal: ActionEvidenceJournal; retrieval: EvidenceRetrieval }
   taskAllowance?: TaskAllowanceRuntime
   client: Client
   parentSessionId: string
@@ -392,11 +395,33 @@ async function runOneNode(
     const inputs = wireInputs(definition, run)
     const evidence = definition.agent === "checker"
       ? buildCheckerEvidence(definition, run, graphPolicy(run.graph)?.checkerEvidencePorts?.[definition.id], task) : undefined
+    let actionRecords: EvidenceRecord[] = []
+    if (definition.agent === "checker" && options.actionEvidence && !dry) {
+      const sources: EvidenceSources = { version: 1, journals: [], omitted: 0, unavailable: 0 }
+      for (const nodeId of checkerRelatedNodes(definition, run, graphPolicy(run.graph)?.checkerEvidencePorts?.[definition.id])) {
+        for (const prior of run.nodes[nodeId]?.attempts ?? []) {
+          if (!prior.session_id) continue
+          const identity = { run_id: run.run_id, node_id: nodeId, attempt: prior.attempt }
+          const reference = prior.action_evidence_ref ?? options.actionEvidence.journal.recover(identity, prior.session_id)
+          if (!reference) { sources.unavailable++; continue }
+          if (sources.journals.length >= 64) { sources.omitted++; continue }
+          const manifest = options.actionEvidence.journal.readManifest(reference, identity)
+          assertActionEvidenceManifestIdentity(manifest, identity, prior.session_id)
+          sources.journals.push({ ...identity, child_session_id: prior.session_id, reference })
+          actionRecords.push({ reference, node_id: nodeId, attempt: prior.attempt, kind: "manifest" })
+          actionRecords.push(...manifest.entries.map(({ artifact_path, sha256, byte_size, kind, ordinal }) => ({
+            reference: { artifact_path, sha256, byte_size }, node_id: nodeId, attempt: prior.attempt, kind, ordinal,
+          })))
+        }
+      }
+      attemptRecord.action_evidence_sources = sources
+    }
     if (definition.verification) {
       attemptRecord.verification_basis = buildVerificationBasis(run.criteria, evidence)
       // Persist the basis before any child/model call, including runners that fail before session creation.
       await save(run, options)
     }
+    else if (attemptRecord.action_evidence_sources) await save(run, options)
     let sessionId: string | undefined
     let rawOutput: unknown
     let error: string | undefined
@@ -463,6 +488,7 @@ async function runOneNode(
         ? previousAttempt.outcome : undefined
       const prompt = checker
         ? buildCheckerPrompt({
+            actionEvidenceAvailable: Boolean(options.actionEvidence),
             taskContract: run.task_contract,
             criteria: run.criteria.length ? run.criteria : ["Output must be complete and match the goal."],
             claimed: inputs.claimed ?? Object.fromEntries(Object.entries(inputs).filter(([key]) => !isCheckerEvidencePort(key))),
@@ -482,7 +508,8 @@ async function runOneNode(
             description: definition.description,
             taskContract: run.task_contract,
           })
-      const result = await sessionRunner({
+      let result: NodePromptResult
+      try { result = await sessionRunner({
         client: options.client,
         parentSessionId: options.parentSessionId,
         agent: definition.agent,
@@ -491,10 +518,12 @@ async function runOneNode(
         directory: options.directory,
         model: run.model_snapshot[definition.agent],
         abort: options.toolContext.abort,
-        disabledTools: options.workerDisabledTools,
-        ...(definition.agent === "implementer" ? { execution_evidence_identity: {
+        disabledTools: checker && options.actionEvidence
+          ? options.workerDisabledTools?.filter(id => id !== "alg_artifact") : options.workerDisabledTools,
+        ...(definition.agent === "implementer" || (!checker && options.actionEvidence) ? { execution_evidence_identity: {
           run_id: run.run_id, node_id: definition.id, attempt,
         } } : {}),
+        onEvidenceMessages: (child, messages) => options.actionEvidence?.journal.reconcileHistory(child, messages),
         onSessionCreated: async (createdSessionId) => {
           try {
             linkSession(run, options.worktree, definition.id, attempt, createdSessionId)
@@ -502,9 +531,22 @@ async function runOneNode(
             attemptRecord.session_id = createdSessionId
             await save(run, options)
             await options.beforeChildPrompt?.(createdSessionId, checker ? "checker" : "worker", definition)
+            if (options.actionEvidence) {
+              if (checker) options.actionEvidence.retrieval.grant(createdSessionId, run.run_id, attemptRecord.action_evidence_sources!, actionRecords)
+              else options.actionEvidence.journal.bind(createdSessionId, { run_id: run.run_id, node_id: definition.id, attempt })
+            }
           } catch (error) { throw new PersistenceBoundaryError(error) }
         },
-      })
+      }) } finally {
+        const child = attemptRecord.session_id
+        if (child && options.actionEvidence) {
+          if (checker) attemptRecord.retrieved_evidence = options.actionEvidence.retrieval.take(child)
+          else if (options.actionEvidence.journal.has(child)) {
+            try { attemptRecord.action_evidence_ref = options.actionEvidence.journal.finish(child) }
+            finally { options.actionEvidence.journal.unbind(child) }
+          }
+        }
+      }
       sessionId = result.session_id || undefined
       attemptRecord.execution_evidence = result.execution_evidence
       if (sessionId && !attemptRecord.session_id) {
@@ -527,7 +569,7 @@ async function runOneNode(
         schemaOk = true
         rawOutput = validation.data
         if (definition.verification && attemptRecord.verification_basis) {
-          const bindingFailures = validateVerification(rawOutput, attemptRecord.verification_basis)
+          const bindingFailures = validateVerification(rawOutput, attemptRecord.verification_basis, attemptRecord.retrieved_evidence)
           if (bindingFailures.length) { schemaOk = false; failures.push(...bindingFailures) }
         }
         if (definition.agent === "implementer" && rawOutput && typeof rawOutput === "object") {
@@ -641,7 +683,7 @@ async function runOneNode(
           : shellGateFailed
             ? "gate_failure"
             : checkerRejected
-              ? "substantive_rejection"
+              ? definition.verification && classifyVerificationEvidenceGap(rawOutput) ? "evidence_unavailable" : "substantive_rejection"
             : definition.agent === "implementer" && (rawOutput as { done?: boolean } | undefined)?.done === false
               ? "incomplete"
               : "gate_failure"
@@ -839,7 +881,8 @@ function reopenTaskPrerequisites(run: RunState): { producers: Set<string>; block
     .map(item => item.producer_node))
   if (evidence.failures.some(f => f.startsWith("task_baseline_missing") || f.startsWith("task_change_scope_unverified")))
     return { producers: new Set(), blocked: "task_baseline_or_scope_unverified: inspect original evidence and restore declared scope; do not rerun a producer to manufacture before-work proof" }
-  if (evidence.execution === "unavailable") producers.add(input.verification.execution_node!)
+  if (evidence.execution === "unavailable" && run.nodes[input.verification.execution_node!]?.status === "done")
+    return { producers: new Set(), blocked: "task_execution_evidence_unavailable: completed work lacks required host evidence; reconcile retained action records before review, do not replay the producer to manufacture proof" }
   for (const id of producers) {
     if (run.nodes[id]?.status !== "done") producers.delete(id)
   }

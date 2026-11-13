@@ -72,6 +72,7 @@ function renderRunSummary(run: RunState, detail: RunSummaryDetail): string {
     ...allowancePointer(run),
     ...(run.task_baseline ? [`- task_baseline: ${sha256Json(run.task_baseline)}; immutable before-first-child observations in alg_status(detail=full).task_baseline; do not recapture.`] : []),
     "- continue with alg_resume; alg_status and alg_artifact hold the authoritative details.",
+    "- Evidence gaps do not authorize replay. Action journal references and checker retrieval receipts remain in attempt state; recover and inspect them before repeating work. Managed remote jobs retain their original submission IDs and reconciliation rules.",
     `- path: .opencode/runs/${run.run_id}/`,
     "",
     "### Nodes",
@@ -82,6 +83,9 @@ function renderRunSummary(run: RunState, detail: RunSummaryDetail): string {
     const failures = node.last_failures.slice(0, detail.failures).map((failure) => cap(failure, detail.failureChars))
     lines.push(`- ${node.id} [${node.agent}] ${node.status} attempts=${node.current_attempt}` +
       (failures.length ? ` failures=${failures.join(" | ")}` : ""))
+    const latest = node.attempts.at(-1)
+    if (latest?.action_evidence_ref) lines.push(`  action_manifest=${latest.action_evidence_ref.sha256}; exact reference in alg_status attempt state`)
+    if (latest?.outcome === "evidence_unavailable") lines.push("  evidence_unavailable: inspect retained records; do not replay the producer")
   }
   if (definitions.length > detail.nodes) lines.push(`- (${definitions.length - detail.nodes} more nodes not shown)`)
   lines.push("", `- goal: ${cap(run.goal, detail.goalChars)}`, `- criteria_locked: ${run.criteria_locked}`)
@@ -130,6 +134,7 @@ export function formatCompactionContext(run: RunState, maximumBytes?: number): s
     ...requestSourcePointer(run),
     ...allowancePointer(run),
     "- criteria:",
+    "- Action evidence stays in attempt references. Evidence gaps do not authorize replay or a new remote submission.",
     ...(run.task_baseline ? [`- task_baseline: ${sha256Json(run.task_baseline)}; immutable before-first-child observations in alg_status(detail=full).task_baseline; do not recapture.`] : []),
     ...(run.criteria.length
       ? run.criteria.slice(0, COMPACTION_CRITERIA_COUNT).map((criterion) =>
@@ -150,6 +155,9 @@ export function formatCompactionContext(run: RunState, maximumBytes?: number): s
       `- ${node.id} [${node.agent}] ${node.status} attempts=${node.current_attempt}` +
       (failures.length ? ` failures=${failures.join(" | ")}` : ""),
     )
+    const latest = node.attempts.at(-1)
+    if (latest?.action_evidence_ref) lines.push(`  action_manifest=${latest.action_evidence_ref.sha256}; exact reference in alg_status attempt state`)
+    if (latest?.outcome === "evidence_unavailable") lines.push("  evidence_unavailable: inspect retained records; do not replay the producer")
   }
   lines.push("", "Use alg_status / alg_resume / alg_artifact for authoritative details.")
   const context = lines.join("\n")

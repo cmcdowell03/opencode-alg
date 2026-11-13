@@ -30,10 +30,7 @@ export function isCheckerEvidencePort(port: string): boolean {
 }
 
 /** Select only explicitly wired evidence. Hashes identify JSON bytes, not truth. */
-export function buildCheckerEvidence(definition: NodeDef, run: RunState, legacyPorts: readonly string[] = [],
-  task?: { value: TaskEvidence; reference: RunDataReference }): CheckerEvidence | undefined {
-  const ports = Object.entries(definition.inputs ?? {}).filter(([port]) => isCheckerEvidencePort(port) || legacyPorts.includes(port))
-    .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
+export function checkerRelatedNodes(definition: NodeDef, run: RunState, legacyPorts: readonly string[] = []): Set<string> {
   const relatedNodes = new Set<string>()
   if (definition.id === run.task_contract?.input.verification.checker_node) {
     for (const item of run.task_contract.input.deliverables) relatedNodes.add(item.producer_node)
@@ -44,6 +41,14 @@ export function buildCheckerEvidence(definition: NodeDef, run: RunState, legacyP
     const parsed = parseInputExpression(expression)
     if (parsed.kind === "reference") relatedNodes.add(parsed.node)
   }
+  return relatedNodes
+}
+
+export function buildCheckerEvidence(definition: NodeDef, run: RunState, legacyPorts: readonly string[] = [],
+  task?: { value: TaskEvidence; reference: RunDataReference }): CheckerEvidence | undefined {
+  const ports = Object.entries(definition.inputs ?? {}).filter(([port]) => isCheckerEvidencePort(port) || legacyPorts.includes(port))
+    .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
+  const relatedNodes = checkerRelatedNodes(definition, run, legacyPorts)
   const receiptPairs: Array<{ execution?: ReturnType<typeof ExecutionEvidenceSchema.parse>; gate?: ReturnType<typeof ExecutionEvidenceSchema.parse>; preservation?: PreservationEvidence; nodeId: string }> = []
   let archivedRun: RunState | undefined
   for (const nodeId of [...relatedNodes].sort()) {

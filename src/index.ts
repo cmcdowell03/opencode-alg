@@ -11,6 +11,8 @@ import { ALG_PLUGIN_ID, ALG_TOOL_IDS, algServerStartupMessage } from "./types.ts
 import { createAlgTools } from "./tools.ts"
 import { findLatestIncompleteRunForSession, findLatestIncompleteRunForTurn } from "./store.ts"
 import { isAlgWorkerSession } from "./sessions.ts"
+import { ActionEvidenceJournal } from "./action-evidence.ts"
+import { EvidenceRetrieval } from "./evidence-retrieval.ts"
 import { awaitLock } from "./filesystem-mutex.ts"
 import { ContextBudgetOptionsSchema, SessionWindows, type ContextPart } from "./context-budget.ts"
 import { configuredAgentModels, configuredModelResolutions } from "./models.ts"
@@ -81,7 +83,8 @@ const server: Plugin = async (ctx, pluginOptions) => {
       project: pluginConfiguration.environmentMemory.project ?? ctx.project.id,
     })
     : null
-  const tools = createAlgTools(ctx, () => structuredClone(configuredModels), () => structuredClone(modelResolutions), { sessionMemory: memory, operations, subagentCards: pluginConfiguration.subagentCards, taskAllowancePolicy: pluginConfiguration.taskAllowance })
+  const actionEvidence = { journal: new ActionEvidenceJournal(projectDirectory), retrieval: new EvidenceRetrieval(projectDirectory) }
+  const tools = createAlgTools(ctx, () => structuredClone(configuredModels), () => structuredClone(modelResolutions), { actionEvidence, sessionMemory: memory, operations, subagentCards: pluginConfiguration.subagentCards, taskAllowancePolicy: pluginConfiguration.taskAllowance })
   const authorizeMemory = async (owner: string) => {
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -179,11 +182,19 @@ const server: Plugin = async (ctx, pluginOptions) => {
     },
 
     "tool.execute.before": async (input, output) => {
+      if (actionEvidence.journal.has(input.sessionID)) actionEvidence.journal.before(input, output.args)
       if (!operations.workspace.enabled || !memory.enabled) return
       const operation = detectWorkspaceOperation(input.tool, output.args)
       if (!operation) return
       await authorizeMemory(input.sessionID)
       await operations.plan(input.sessionID, operation)
+    },
+
+    "tool.execute.after": async (input, output) => {
+      if (actionEvidence.journal.has(input.sessionID)) {
+        // A missing terminal record stays unknown. Evidence failures must not rewrite a tool's result.
+        try { actionEvidence.journal.after(input, output) } catch { /* intent remains durable for reconciliation */ }
+      }
     },
 
     config: async (config) => {

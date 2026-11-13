@@ -17,7 +17,7 @@ import {
   writeFileSync,
 } from "node:fs"
 import { basename, dirname, isAbsolute, join } from "node:path"
-import { randomUUID } from "node:crypto"
+import { createHash, randomUUID } from "node:crypto"
 import { isDeepStrictEqual, types as utilTypes } from "node:util"
 import { z } from "zod"
 import type {
@@ -33,6 +33,10 @@ import type {
 import { ALG_SCHEMA_VERSION } from "./types.ts"
 import { assertTaskState } from "./task-contract.ts"
 import { assertTaskEvidence, MAX_TASK_EVIDENCE_BYTES, type TaskEvidence } from "./task-evidence.ts"
+import { readActionManifest, assertActionEvidenceManifestIdentity, actionEvidenceRecordReferences } from "./action-evidence.ts"
+import { evidencePage } from "./evidence-retrieval.ts"
+import { checkerRelatedNodes } from "./checker-evidence.ts"
+import { graphPolicy } from "./graph-policy.ts"
 import { initNodeStates, validateGraph } from "./graph.ts"
 import {
   parsePersistedNodeAttempt,
@@ -332,6 +336,9 @@ function assertRunArtifactMetadataContained(state: RunState, projectDirectory: s
       ...node.attempts.map((attempt) => attempt.output_ref),
       ...node.attempts.map((attempt) => attempt.detail_ref),
       ...node.attempts.map((attempt) => attempt.task_evidence_ref),
+       ...node.attempts.map((attempt) => attempt.action_evidence_ref),
+       ...node.attempts.flatMap((attempt) => attempt.action_evidence_sources?.journals.map(source => source.reference) ?? []),
+       ...node.attempts.flatMap((attempt) => attempt.retrieved_evidence?.map(receipt => receipt.reference) ?? []),
     ]) {
       if (!reference) continue
       try {
@@ -707,6 +714,9 @@ function verifyFailureCommitment(
 
 const ATTEMPT_DETAIL_IDENTITY_FIELDS = [
   "task_evidence_ref",
+  "action_evidence_ref",
+  "action_evidence_sources",
+  "retrieved_evidence",
   "execution_evidence",
   "gate_evidence",
   "preservation_evidence",
@@ -769,6 +779,85 @@ function parseAttemptBeforeHydration(state: RunState, nodeId: string, value: unk
       `attempt ${nodeId}/${expected} schema mismatch before hydration: ${error instanceof Error ? error.message : String(error)}`,
       { cause: error },
     )
+  }
+}
+
+function plainReference(reference: RunDataReference): RunDataReference {
+  return { artifact_path: reference.artifact_path, sha256: reference.sha256, byte_size: reference.byte_size }
+}
+
+/** Validate the transitive evidence tree, including checker pages, on every authoritative load. */
+function verifyAttemptActionEvidence(state: RunState, nodeId: string, attempt: NodeAttempt): void {
+  const identity = { run_id: state.run_id, node_id: nodeId, attempt: attempt.attempt }
+  if (attempt.action_evidence_ref) {
+    if (!attempt.session_id) throw new StoreError("action evidence session binding is missing")
+    try {
+      const manifest = readActionManifest(state.project_directory, attempt.action_evidence_ref, identity)
+      assertActionEvidenceManifestIdentity(manifest, identity, attempt.session_id)
+      const sessionHash = createHash("sha256").update(attempt.session_id).digest("hex")
+      if (attempt.action_evidence_ref.artifact_path !==
+        `.opencode/runs/${state.run_id}/artifacts/action-evidence/${sessionHash}/manifest-${attempt.action_evidence_ref.sha256}.json`) {
+        throw new Error("manifest path does not bind the child session")
+      }
+    } catch (cause) {
+      throw new StoreError("action evidence manifest integrity or identity failed", { cause })
+    }
+  }
+  if (!attempt.action_evidence_sources && !attempt.retrieved_evidence) return
+  if (state.nodes[nodeId]?.agent !== "checker" || !attempt.action_evidence_sources ||
+    ((attempt.retrieved_evidence?.length ?? 0) > 0 && !attempt.session_id)) {
+    throw new StoreError("checker evidence source binding is missing")
+  }
+  const definition = state.graph.nodes.find(node => node.id === nodeId)
+  if (!definition) throw new StoreError("checker evidence source node is missing")
+  const related = checkerRelatedNodes(definition, state, graphPolicy(state.graph)?.checkerEvidencePorts?.[nodeId])
+  const allowed = new Map<string, RunDataReference>()
+  const seenSources = new Set<string>()
+  for (const source of attempt.action_evidence_sources.journals) {
+    const key = `${source.node_id}/${source.attempt}`
+    if (source.run_id !== state.run_id || !related.has(source.node_id) || source.node_id === nodeId || seenSources.has(key)) {
+      throw new StoreError("checker evidence source is unrelated or repeated")
+    }
+    seenSources.add(key)
+    const producer = state.nodes[source.node_id]
+    let prior = producer?.attempts.find(row => row.attempt === source.attempt)
+    if (!prior && producer?.attempt_history_ref && source.attempt <= producer.attempt_history_ref.attempt_count) {
+      prior = readAttemptHistoryDocument(state, source.node_id)?.attempts.find(row => row.attempt === source.attempt)
+    }
+    if (!prior || prior.session_id !== source.child_session_id ||
+      (prior.action_evidence_ref && !isDeepStrictEqual(prior.action_evidence_ref, source.reference))) {
+      throw new StoreError("checker evidence source attempt binding failed")
+    }
+    try {
+      const sourceIdentity = { run_id: state.run_id, node_id: source.node_id, attempt: source.attempt }
+      const manifest = readActionManifest(state.project_directory, source.reference, sourceIdentity)
+      assertActionEvidenceManifestIdentity(manifest, sourceIdentity, source.child_session_id)
+      const sessionHash = createHash("sha256").update(source.child_session_id).digest("hex")
+      if (source.reference.artifact_path !==
+        `.opencode/runs/${state.run_id}/artifacts/action-evidence/${sessionHash}/manifest-${source.reference.sha256}.json`) {
+        throw new Error("source manifest path does not bind the child session")
+      }
+      allowed.set(source.reference.artifact_path, plainReference(source.reference))
+      for (const entry of actionEvidenceRecordReferences(manifest)) {
+        allowed.set(entry.artifact_path, plainReference(entry))
+      }
+    } catch (cause) {
+      throw new StoreError("checker evidence source manifest integrity failed", { cause })
+    }
+  }
+  const seenPages = new Set<string>()
+  for (const receipt of attempt.retrieved_evidence ?? []) {
+    const assigned = allowed.get(receipt.reference.artifact_path)
+    if (!assigned || !isDeepStrictEqual(assigned, receipt.reference) || seenPages.has(receipt.id)) {
+      throw new StoreError("retrieved evidence page is unassigned or repeated")
+    }
+    seenPages.add(receipt.id)
+    try {
+      const recomputed = evidencePage(state.project_directory, state.run_id, assigned, receipt.offset).receipt
+      if (!isDeepStrictEqual(recomputed, receipt)) throw new Error("retrieved page commitment mismatch")
+    } catch (cause) {
+      throw new StoreError("retrieved evidence page integrity failed", { cause })
+    }
   }
 }
 
@@ -861,6 +950,7 @@ function hydrateAttemptData(
       throw new StoreError("task evidence integrity or contract binding failed", { cause })
     }
   }
+  verifyAttemptActionEvidence(state, nodeId, complete)
 
   if (outputReference) {
     const output = readAndVerifyReference(state, outputReference)
@@ -1474,12 +1564,31 @@ function runReferences(state: RunState): RunDataReference[] {
       node.output_ref,
       node.attempt_history_ref,
       node.last_failures_ref,
-      ...node.attempts.flatMap((attempt) => [attempt.output_ref, attempt.detail_ref, attempt.task_evidence_ref]),
+      ...node.attempts.flatMap((attempt) => [attempt.output_ref, attempt.detail_ref, attempt.task_evidence_ref,
+        attempt.action_evidence_ref, ...(attempt.action_evidence_sources?.journals.map(source => source.reference) ?? []),
+        ...(attempt.retrieved_evidence?.map(receipt => receipt.reference) ?? [])]),
     ]) {
       if (reference) references.push(reference)
     }
   }
   return references
+}
+
+function addActionRecordPaths(paths: Set<string>, state: RunState, nodeId: string, attempt: NodeAttempt): void {
+  const add = (reference: RunDataReference, sourceNode: string, sourceAttempt: number, session: string) => {
+    const manifest = readActionManifest(state.project_directory, reference,
+      { run_id: state.run_id, node_id: sourceNode, attempt: sourceAttempt })
+    assertActionEvidenceManifestIdentity(manifest,
+      { run_id: state.run_id, node_id: sourceNode, attempt: sourceAttempt }, session)
+    for (const entry of actionEvidenceRecordReferences(manifest)) paths.add(entry.artifact_path)
+  }
+  if (attempt.action_evidence_ref) {
+    if (!attempt.session_id) throw new StoreError("action evidence session binding is missing")
+    add(attempt.action_evidence_ref, nodeId, attempt.attempt, attempt.session_id)
+  }
+  for (const source of attempt.action_evidence_sources?.journals ?? []) {
+    add(source.reference, source.node_id, source.attempt, source.child_session_id)
+  }
 }
 
 function protectedReferencePaths(
@@ -1491,6 +1600,9 @@ function protectedReferencePaths(
   const addManifest = (manifest: RunState): void => {
     for (const reference of runReferences(manifest)) paths.add(reference.artifact_path)
     for (const node of Object.values(manifest.nodes)) {
+      try {
+        for (const attempt of node.attempts) addActionRecordPaths(paths, manifest, node.id, attempt)
+      } catch { uncertainBackup = true }
       if (!node.attempt_history_ref) continue
       try {
         const document = readAttemptHistoryDocument(manifest, node.id)
@@ -1499,6 +1611,10 @@ function protectedReferencePaths(
           if (attempt.output_ref) paths.add(attempt.output_ref.artifact_path)
           if (attempt.detail_ref) paths.add(attempt.detail_ref.artifact_path)
           if (attempt.task_evidence_ref) paths.add(attempt.task_evidence_ref.artifact_path)
+          if (attempt.action_evidence_ref) paths.add(attempt.action_evidence_ref.artifact_path)
+          for (const source of attempt.action_evidence_sources?.journals ?? []) paths.add(source.reference.artifact_path)
+          for (const receipt of attempt.retrieved_evidence ?? []) paths.add(receipt.reference.artifact_path)
+          addActionRecordPaths(paths, manifest, node.id, attempt)
         }
       } catch {
         uncertainBackup = true
@@ -1764,6 +1880,9 @@ function recoveryReachablePaths(state: RunState): Set<string> | null {
     }
     for (const reference of runReferences(manifest)) reachable.add(reference.artifact_path)
     for (const [nodeId, node] of Object.entries(manifest.nodes)) {
+      try {
+        for (const attempt of node.attempts) addActionRecordPaths(reachable, manifest, nodeId, attempt)
+      } catch { return null }
       if (!node.attempt_history_ref) continue
       try {
         const document = readAttemptHistoryDocument(manifest, nodeId)
@@ -1772,6 +1891,10 @@ function recoveryReachablePaths(state: RunState): Set<string> | null {
           if (attempt.output_ref) reachable.add(attempt.output_ref.artifact_path)
           if (attempt.detail_ref) reachable.add(attempt.detail_ref.artifact_path)
           if (attempt.task_evidence_ref) reachable.add(attempt.task_evidence_ref.artifact_path)
+          if (attempt.action_evidence_ref) reachable.add(attempt.action_evidence_ref.artifact_path)
+          for (const source of attempt.action_evidence_sources?.journals ?? []) reachable.add(source.reference.artifact_path)
+          for (const receipt of attempt.retrieved_evidence ?? []) reachable.add(receipt.reference.artifact_path)
+          addActionRecordPaths(reachable, manifest, nodeId, attempt)
         }
       } catch {
         return null
@@ -1905,14 +2028,24 @@ function prepareRunForImmutableCommit(candidate: RunState, current: RunState): R
     }
   }
 
-  const checker = current.task_contract?.input.verification.checker_node
-  if (checker) {
-    const committed = current.nodes[checker]!
-    const archived = readAttemptHistoryDocument(current, checker)?.attempts ?? []
-    const next = prepared.nodes[checker]!.attempts
+  for (const definition of current.graph.nodes) {
+    const committed = current.nodes[definition.id]!
+    const archived = readAttemptHistoryDocument(current, definition.id)?.attempts ?? []
+    const next = prepared.nodes[definition.id]!.attempts
     for (const attempt of [...archived, ...committed.attempts]) {
-      if (attempt.task_evidence_ref && !isDeepStrictEqual(attempt.task_evidence_ref, next[attempt.attempt - 1]?.task_evidence_ref))
+      const candidate = next[attempt.attempt - 1]
+      if (attempt.task_evidence_ref && !isDeepStrictEqual(attempt.task_evidence_ref, candidate?.task_evidence_ref))
         throw new StoreError("committed checker task evidence reference is immutable")
+      if (attempt.action_evidence_ref && !isDeepStrictEqual(attempt.action_evidence_ref, candidate?.action_evidence_ref))
+        throw new StoreError("committed action evidence manifest is immutable")
+      if (attempt.action_evidence_sources && !isDeepStrictEqual(attempt.action_evidence_sources, candidate?.action_evidence_sources))
+        throw new StoreError("committed checker evidence sources are immutable")
+      const pages = attempt.retrieved_evidence ?? []
+      const candidatePages = candidate?.retrieved_evidence ?? []
+      if (candidatePages.length < pages.length || !isDeepStrictEqual(candidatePages.slice(0, pages.length), pages) ||
+        (attempt.status !== "running" && candidatePages.length !== pages.length)) {
+        throw new StoreError("committed retrieved evidence pages are immutable")
+      }
     }
   }
   if (prepared.filesystem_root_authorizations_ref) {

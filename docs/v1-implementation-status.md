@@ -4,6 +4,12 @@ PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experi
 
 ## 0.5.11 — repair measured runtime and evaluation failures
 
+The next follow-up separates durable host action observations from checker prompt
+previews, adds scoped retrieval across related producer attempts, and distinguishes
+evidence recovery from substantive repair. See the [V1 action evidence contract](v1-action-evidence.md).
+Local mechanical qualification is in progress; the prior paid L2 cohort remains
+unchanged and does not establish an ALG advantage.
+
 The expanded six-case comparison finished all twelve issued arms: eleven
 completed, one stopped on a collector timeout. It found four ALG scope blockers
 caused by the plugin's own state writes, an API-work capability mismatch, and

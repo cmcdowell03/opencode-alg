@@ -160,6 +160,7 @@ export type AttemptOutcome =
   | "substantive_rejection"
   | "incomplete"
   | "gate_failure"
+  | "evidence_unavailable"
 
 /** Exact outcome distribution for a validated archived attempt prefix. */
 export interface AttemptOutcomeCounts {
@@ -170,6 +171,8 @@ export interface AttemptOutcomeCounts {
   incomplete: number
   gate_failure: number
   legacy_unknown: number
+  /** Absent on legacy archives; zero is not serialized for compatibility. */
+  evidence_unavailable?: number
 }
 
 export interface AttemptHistoryReference extends RunDataReference {
@@ -201,6 +204,12 @@ export interface FilesystemRootAuthorizationReference extends RunDataReference {
 }
 
 export interface NodeAttempt {
+  /** Immutable host action journal, independent of the prompt preview. */
+  action_evidence_ref?: RunDataReference
+  /** Frozen, related producer journals assigned before this checker starts. */
+  action_evidence_sources?: import("./evidence-retrieval.ts").EvidenceSources
+  /** Exact pages actually delivered by the scoped evidence tool. */
+  retrieved_evidence?: import("./verification.ts").RetrievedVerificationEvidence[]
   /** Exact host task observations used by this checker; immutable contained sidecar. */
   task_evidence_ref?: RunDataReference
   /** Host observations, never populated from the worker's claimed JSON. */

@@ -147,7 +147,8 @@ function unavailable(identity: ExecutionEvidenceIdentity, reason: NonNullable<Ex
 /** Read a bounded child-message window after the child turn; this never reads transcript text/reasoning. */
 export async function captureChildExecutionEvidence(
   client: PluginInput["client"],
-  identity: ExecutionEvidenceIdentity & { directory?: string; timeout_ms?: number; message_limit?: number; signal?: AbortSignal },
+  identity: ExecutionEvidenceIdentity & { directory?: string; timeout_ms?: number; message_limit?: number; signal?: AbortSignal;
+    on_messages?: (messages: unknown[]) => void },
 ): Promise<ExecutionEvidence> {
   const sessionId = identity.child_session_id
   if (!sessionId) return unavailable(identity, "missing_session")
@@ -175,6 +176,7 @@ export async function captureChildExecutionEvidence(
     if (envelope?.error) return unavailable(identity, "sdk_error")
     const messages = envelope && Array.isArray(envelope.data) ? envelope.data : undefined
     if (!messages) return unavailable(identity, "invalid_response")
+    identity.on_messages?.(messages)
     const all: ExecutionCommandEvidence[] = []
     let foreignMessagesOmitted = 0
     for (const messageValue of messages) {

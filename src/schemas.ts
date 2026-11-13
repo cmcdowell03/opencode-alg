@@ -1,4 +1,5 @@
 import { isAbsolute } from "node:path"
+import { createHash } from "node:crypto"
 import { z } from "zod"
 import { GateRecoverySchema } from "./gate-recovery.ts"
 import { ExecutionEvidenceSchema } from "./execution-evidence.ts"
@@ -35,7 +36,9 @@ import {
 } from "./limits.ts"
 import { boundDiagnosticList, safeDiagnosticText } from "./diagnostics.ts"
 import { failureListCommitment, sha256Json } from "./persistence.ts"
-import { FindingSchema, VerificationSchema, VerificationBasisSchema, criteriaDigest, validateVerification } from "./verification.ts"
+import { FindingSchema, VerificationSchema, VerificationBasisSchema, RetrievedVerificationEvidenceSchema, criteriaDigest, validateVerification, classifyVerificationEvidenceGap } from "./verification.ts"
+import { EvidenceSourcesSchema } from "./evidence-retrieval.ts"
+import { ACTION_EVIDENCE_MAX_MANIFEST_BYTES } from "./action-evidence.ts"
 import { GraphRevisionReceiptsSchema } from "./graph-revision.ts"
 import { TaskContractSchema, assertTaskState } from "./task-contract.ts"
 import { TaskBaselineSchema, assertTaskBaseline } from "./task-baseline.ts"
@@ -444,6 +447,7 @@ const AttemptOutcomeCountsSchema: z.ZodType<AttemptOutcomeCounts> = z.object({
   incomplete: z.number().int().nonnegative().max(100),
   gate_failure: z.number().int().nonnegative().max(100),
   legacy_unknown: z.number().int().nonnegative().max(100),
+  evidence_unavailable: z.number().int().nonnegative().max(100).optional(),
 }).strict()
 
 const AttemptHistoryReferenceSchema: z.ZodType<AttemptHistoryReference> = z.object({
@@ -497,6 +501,9 @@ const FilesystemRootAuthorizationReferenceSchema: z.ZodType<FilesystemRootAuthor
   )
 
 const NodeAttemptDetailShape = {
+    action_evidence_ref: RunDataReferenceBaseSchema.optional(),
+    action_evidence_sources: EvidenceSourcesSchema.optional(),
+    retrieved_evidence: z.array(RetrievedVerificationEvidenceSchema).max(32).optional(),
     task_evidence_ref: RunDataReferenceBaseSchema.optional(),
     execution_evidence: ExecutionEvidenceSchema.optional(),
     gate_evidence: ExecutionEvidenceSchema.optional(),
@@ -517,7 +524,7 @@ const NodeAttemptDetailShape = {
     schema_ok: z.boolean().optional(),
     error: shortText.optional(),
     feedback_applied: z.boolean().optional(),
-    outcome: z.enum(["passed", "schema_invalid", "sdk_error", "substantive_rejection", "incomplete", "gate_failure"]).optional(),
+    outcome: z.enum(["passed", "schema_invalid", "sdk_error", "substantive_rejection", "incomplete", "gate_failure", "evidence_unavailable"]).optional(),
 } as const
 
 /** Canonical full attempt detail. Projection references/commitments/omissions are never valid here. */
@@ -1149,6 +1156,27 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
   const add = (message: string): void => { issues.push(message) }
   const { agent, run_id: runId, node_id: nodeId, expected_attempt: expected } = context
   const taskRef = attempt.task_evidence_ref
+  const actionRef = attempt.action_evidence_ref
+  const sessionHash = attempt.session_id ? createHash("sha256").update(attempt.session_id).digest("hex") : undefined
+  if (actionRef && (agent === "checker" || agent === "shell" || !attempt.session_id ||
+    actionRef.artifact_path !== `.opencode/runs/${runId}/artifacts/action-evidence/${sessionHash}/manifest-${actionRef.sha256}.json` ||
+    actionRef.byte_size > ACTION_EVIDENCE_MAX_MANIFEST_BYTES)) {
+    add("action evidence reference must bind a worker session and bounded run manifest")
+  }
+  if (attempt.action_evidence_sources) {
+    if (agent !== "checker") add("action evidence sources require a checker")
+    for (const source of attempt.action_evidence_sources.journals) {
+      const sourceHash = createHash("sha256").update(source.child_session_id).digest("hex")
+      if (source.run_id !== runId || source.node_id === nodeId ||
+        source.reference.artifact_path !== `.opencode/runs/${runId}/artifacts/action-evidence/${sourceHash}/manifest-${source.reference.sha256}.json`) {
+        add("action evidence source identity is invalid")
+      }
+    }
+  }
+  if (attempt.retrieved_evidence && (agent !== "checker" || !attempt.action_evidence_sources ||
+    (attempt.retrieved_evidence.length > 0 && !attempt.session_id))) {
+    add("retrieved evidence requires a bound checker source set")
+  }
   if (taskRef && (agent !== "checker" || context.task_evidence_required === false || taskRef.byte_size > MAX_TASK_EVIDENCE_BYTES ||
     taskRef.artifact_path !== `.opencode/runs/${runId}/artifacts/task-evidence-${nodeId}-a${expected}-${taskRef.sha256}.json`))
     add("task evidence reference must bind the admitted checker attempt and bounded content")
@@ -1168,7 +1196,7 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
     if (basis.evidence.some(entry => entry.source.run_id !== runId)) add("verification evidence belongs to another run")
     if (context.verification_criteria && (basis.criteria_sha256 !== criteriaDigest(context.verification_criteria) ||
       basis.criterion_ids.length !== Math.max(1, context.verification_criteria.length))) add("verification criteria changed")
-    if (attempt.output !== undefined && validateVerification(attempt.output, basis).length) add("checker output violates its persisted verification basis")
+    if (attempt.output !== undefined && validateVerification(attempt.output, basis, attempt.retrieved_evidence).length) add("checker output violates its persisted verification basis")
   }
   const knownAgent = AlgAgentSchema.safeParse(agent)
   if (!knownAgent.success) add(`unknown ALG agent: ${agent}`)
@@ -1271,7 +1299,7 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
     add("recorded error requires sdk_error outcome")
   }
   if ((attempt.outcome === "substantive_rejection" || attempt.outcome === "incomplete" ||
-    attempt.outcome === "gate_failure") && attempt.schema_ok !== true) {
+    attempt.outcome === "gate_failure" || attempt.outcome === "evidence_unavailable") && attempt.schema_ok !== true) {
     add(`${attempt.outcome} outcome requires schema_ok=true`)
   }
   const liveShellGate = context.requires_shell === true && context.mode !== "dry"
@@ -1310,6 +1338,14 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
       (attempt.output !== undefined && (attempt.output as { passed?: unknown })?.passed !== false))) {
     add("substantive_rejection requires validated passed=false checker output")
   }
+  if (attempt.outcome === "evidence_unavailable" &&
+    (!knownAgent.success || knownAgent.data !== "checker" || attempt.schema_ok !== true ||
+      (!attempt.verification_basis && !attempt.detail_ref) ||
+      (attempt.output === undefined && !attempt.output_ref && !attempt.detail_ref) ||
+      (attempt.output !== undefined && ((attempt.output as { passed?: unknown }).passed !== false ||
+        !classifyVerificationEvidenceGap(attempt.output))))) {
+    add("evidence_unavailable requires a validated inconclusive checker finding")
+  }
   if (knownAgent.success && knownAgent.data === "checker" && attempt.output !== undefined) {
     const checkerPassed = (attempt.output as { passed?: unknown }).passed === true
     const rejected = !checkerPassed
@@ -1321,7 +1357,7 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
       add("passed=true checker gate_failure requires a proved shell gate failure")
     }
     if (rejected && !shellFailed && attempt.error === undefined && attempt.status === "failed" && attempt.outcome !== undefined &&
-      attempt.outcome !== "substantive_rejection") {
+      attempt.outcome !== "substantive_rejection" && attempt.outcome !== "evidence_unavailable") {
       add("validated passed=false checker output requires substantive_rejection outcome")
     }
     if (!rejected && attempt.outcome === "substantive_rejection") {

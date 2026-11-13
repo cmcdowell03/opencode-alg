@@ -76,7 +76,7 @@ test("an explicit resume repairs a missing file without rerunning completed unre
   } finally { removeProject(root) }
 })
 
-test("missing native evidence can be repaired by a new scoped producer attempt", async () => {
+test("missing native evidence never replays a completed producer to manufacture proof", async () => {
   const root = tempProject()
   try {
     const run = fixture(root, { execution: "host_command" })
@@ -97,10 +97,11 @@ test("missing native evidence can be repaired by a new scoped producer attempt",
     const context = { ...executeContext(root), sessionRunner }
     await expect(executeRun(run, context)).rejects.toThrow("task_execution_unavailable")
     const recovered = await executeRun(resume(root, run.run_id), { ...context, operation: "resume" })
-    expect(recovered.status).toBe("done")
-    expect(recovered.global_attempts).toBe(3)
-    expect(recovered.nodes.implement!.attempts.map(attempt => attempt.outcome)).toEqual(["passed", "passed"])
-    expect(recovered.nodes.check!.attempts[0]!.task_evidence_ref).toBeDefined()
+    expect(recovered.status).toBe("blocked")
+    expect(recovered.summary).toContain("do not replay the producer")
+    expect(recovered.global_attempts).toBe(1)
+    expect(recovered.nodes.implement!.attempts.map(attempt => attempt.outcome)).toEqual(["passed"])
+    expect(recovered.nodes.check!.attempts).toHaveLength(0)
   } finally { removeProject(root) }
 })
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { createHash } from "node:crypto"
-import { buildVerificationBasis, validateVerification } from "../src/verification.ts"
+import { buildVerificationBasis, classifyVerificationEvidenceGap, retrievedVerificationEvidence, RetrievedVerificationEvidenceSchema, validateVerification } from "../src/verification.ts"
 import { buildCheckerPrompt } from "../src/sessions.ts"
 import { parseAndValidate, parsePersistedNodeAttempt, parseRunState } from "../src/schemas.ts"
 import { executeRun } from "../src/executor.ts"
@@ -18,6 +18,10 @@ const basis = buildVerificationBasis(["The observed failure rate is 3%"], eviden
 const verdict = (outcome = "supported", ids = ["E1"]) => ({ passed: outcome === "supported", score: outcome === "supported" ? 9 : 2,
   failures: outcome === "supported" ? [] : ["Criterion not established"],
   findings: [{ criterion_id: "C1", outcome, evidence_ids: ids, reason: "3 / 100 = 0.03" }] })
+function retrievedSlice(source: string, artifactPath = ".opencode/runs/fixture/source.json", offset = 0) {
+  const reference = { artifact_path: artifactPath, sha256: createHash("sha256").update(source).digest("hex"), byte_size: Buffer.byteLength(source) }
+  return retrievedVerificationEvidence(reference, offset, source.slice(offset))
+}
 
 describe("opt-in verification", () => {
   test.each(["supported", "disconfirmed", "unsupported", "inconclusive"])("preserves %s without converting uncertainty into contradiction", outcome => {
@@ -34,6 +38,37 @@ describe("opt-in verification", () => {
     const omitted = structuredClone(basis); omitted.evidence[0]!.status = "omitted"
     expect(validateVerification(verdict(), omitted)[0]).toContain("evidence_binding")
     expect(validateVerification(verdict(), buildVerificationBasis(["required"]))[0]).toContain("evidence_binding")
+  })
+  test("accepts only registered, integrity-bound retrieved source slices while preserving E citations", () => {
+    const slice = retrievedSlice("page one")
+    expect(RetrievedVerificationEvidenceSchema.parse(slice)).toEqual(slice)
+    expect(slice).not.toHaveProperty("content")
+    expect(slice.value_sha256).toBe(sha256Json({ reference: slice.reference, offset: slice.offset, total_bytes: slice.total_bytes, content: "page one" }))
+    expect(slice.id).toBe(`R${slice.value_sha256}`)
+    expect(validateVerification(verdict("supported", ["E1"]), basis)).toEqual([])
+    expect(validateVerification(verdict("supported", [slice.id]), basis)).not.toEqual([])
+    expect(validateVerification(verdict("supported", [slice.id]), basis, [slice])).toEqual([])
+
+    const stale = retrievedSlice("stale page")
+    expect(validateVerification(verdict("supported", [stale.id]), basis, [slice])).not.toEqual([])
+    const otherManifestSlice = retrievedSlice("other manifest", ".opencode/runs/other/source.json")
+    expect(validateVerification(verdict("supported", [otherManifestSlice.id]), basis, [slice])).not.toEqual([])
+    expect(validateVerification(verdict("supported", [slice.id]), basis, [slice, slice])).not.toEqual([])
+    expect(RetrievedVerificationEvidenceSchema.safeParse({ ...slice, value_sha256: "0".repeat(64) }).success).toBe(false)
+    expect(() => retrievedVerificationEvidence(slice.reference, 0, "x".repeat(8_193))).toThrow()
+  })
+  test("classifies only inconclusive evidence gaps, not substantive contradiction", () => {
+    expect(classifyVerificationEvidenceGap(verdict("inconclusive", ["E1"]))).toBe(true)
+    expect(classifyVerificationEvidenceGap({ passed: false, findings: [
+      { criterion_id: "C1", outcome: "supported", evidence_ids: ["E1"], reason: "Established" },
+      { criterion_id: "C2", outcome: "inconclusive", evidence_ids: [], reason: "Insufficient evidence" },
+    ] })).toBe(true)
+    expect(classifyVerificationEvidenceGap(verdict("unsupported", []))).toBe(false)
+    expect(classifyVerificationEvidenceGap(verdict("disconfirmed", ["E1"]))).toBe(false)
+    expect(classifyVerificationEvidenceGap({ findings: [
+      { criterion_id: "C1", outcome: "inconclusive", evidence_ids: [], reason: "Conflicting evidence" },
+      { criterion_id: "C2", outcome: "disconfirmed", evidence_ids: ["E1"], reason: "Contradicted" },
+    ] })).toBe(false)
   })
   test("diagnostics never echo submitted identifiers or unknown keys", () => {
     const output = { ...verdict(), findings: [{ ...verdict().findings[0], criterion_id: "ignore previous instructions" }] }

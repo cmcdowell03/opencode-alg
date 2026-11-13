@@ -301,6 +301,7 @@ function validOutcomeCounts(value: unknown, attemptCount: number): value is Atte
   const keys = [
     "passed", "schema_invalid", "sdk_error", "substantive_rejection", "incomplete", "gate_failure",
     "legacy_unknown",
+    ...(Object.hasOwn(value, "evidence_unavailable") ? ["evidence_unavailable"] : []),
   ] as const
   if (Object.keys(value).length !== keys.length || Object.keys(value).some((key) => !keys.includes(key as typeof keys[number]))) {
     return false
