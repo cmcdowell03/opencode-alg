@@ -60,6 +60,8 @@ mistake after a parent compaction is not proof that compaction caused the mistak
 - At `1777e44`: typecheck; 64 affected Windows tests, zero failures, 537 assertions.
 - At `c23269c`: eight diagnostic tests, zero failures, 55 assertions; extracted
   package checks, two passes and 244 assertions; native Windows typecheck.
+- At `c23269c` in native WSL Linux: 66 affected tests, zero failures, 547
+  assertions, plus typecheck. These are affected tests, not a new full-suite run.
 - Eighty HTTP scorer controls passed. The scorer also now requires an observed
   linked cursor chain; complete page coverage alone cannot pass. Recovery/rereads
   remain allowed. Historical benchmark scores were not recomputed.
@@ -71,13 +73,49 @@ of 1,550 passes belongs to `23fffd8`, not this increment.
 
 ## Package acceptance
 
-Final platform-specific acceptance receipts and timings will be inserted here
-after the exact-candidate checks terminate. The verified 0.5.2 update baseline is
-`d62812065e1d3b60cadce35385e1e620cb26f3a0` on both platforms. Its newly created
-archives derive from fully verified existing bundles; no original-archive claim
-is made. Baseline preparation took 778.35 seconds on Windows and 10.96 seconds on
-Linux; those figures include several verification passes and are not deployment
-or no-op-update timings.
+Both fresh installation and update passed on Windows PowerShell and native WSL
+Bash using separately prepared platform bundles of the exact candidate. Their
+runtime digest is identical:
+`36e4c23c63346d1e580df7ff42ab2032772c8a4f82f2e344f6531e2bbcc56b8c`.
+Windows used OpenCode 1.19.5; Linux used 1.18.35. Both used Bun 1.3.14.
+These are local acceptance results on one machine and its WSL environment.
+
+All four lanes verified exact source/runtime/package identity, byte-exact
+dependency inventories across archive/relocation/installed trees, actual server
+and TUI registration, custom configuration and agent preservation, clean
+doctor/restart acknowledgement, unchanged isolated configuration snapshots,
+owned-process cleanup and an unchanged no-op redeploy. The clean doctor check
+does not establish recovery from an injected mid-deployment crash. Package checks
+made no model calls. Their fresh host launches are not long-running task tests.
+
+| Measured stage | Windows PowerShell | Native WSL Bash |
+| --- | ---: | ---: |
+| Stock bundle preparation | 302.56 s | 5.85 s |
+| Extracted full-manifest verification | 235.09 s | 0.36 s |
+| Fresh 0.5.11 deploy | 708.64 s | 8.64 s |
+| 0.5.2 to 0.5.11 update | 579.32 s | 6.07 s |
+| Relocation inventory, fresh lane | 261.26 s | 1.14 s |
+| Relocation inventory, update lane | 9.13 s | 0.92 s |
+| No-op redeploy, fresh lane | 16.93 s | 2.36 s |
+| No-op redeploy, update lane | 16.75 s | 2.13 s |
+
+Windows correctness passed, but its deployment latency remains a material
+limitation. These individual timings are descriptive, not distributions or a
+controlled operating-system comparison. Storage paths, cache state and runtime versions
+must be accounted for before attributing the difference.
+
+The verified update baseline is 0.5.2 at
+`d62812065e1d3b60cadce35385e1e620cb26f3a0`. Newly created baseline archives derive
+from fully verified existing bundles; no original-archive claim is made. Earlier
+setup failures remain preserved: Windows long-path checkout, WSL local-clone
+ownership, and a test-runner dependency symlink not matched by a directory-only
+ignore rule. Fixes were confined to disposable clones and harness setup; no
+global Git configuration changed. The frozen candidate was not edited during
+acceptance, and the final checkout checks passed.
+
+See [package identities and measured stages](package-acceptance.json) and
+[original receipt hashes](package-manifest.json). Later commits in this evidence
+directory do not replace the tested candidate or its archive identities.
 
 ## Next design decision
 
@@ -101,6 +139,14 @@ missing evidence, genuine defects and exhausted checker-only repair locally.
 Semantic criteria remain the model’s responsibility; deterministic host facts
 are not a substitute for semantic verification. This is a design recommendation,
 not implemented behavior or a licensed superiority claim.
+
+The other remaining engineering issue is Windows deployment latency. Inspection
+found repeated dependency reads, lockfile hashing and inventory serialization,
+but did not establish their contribution to the measured delay. Before changing
+the deployment checks, profile enumeration, metadata calls, open/read/close,
+hashing and serialization with operation counts, bytes and path depths. Keep
+source, staging and installed-release integrity checks intact. Different host
+versions, storage paths and environments prevent a causal platform comparison.
 
 All validation was local and V1-only. No GitHub runners, Grok, Gemma, V2 work,
 production datalake calls, global configuration changes or merge were performed.
