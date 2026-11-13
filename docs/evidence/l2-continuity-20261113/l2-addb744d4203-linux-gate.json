@@ -1,0 +1,11 @@
+{
+  "source_commit": "addb744d420375337cbf9d05e09408b26e23e395",
+  "exit_codes": {
+    "typecheck": 0,
+    "focused_tests": 0,
+    "headless": 0,
+    "qualification": 0
+  },
+  "full_suite": false,
+  "passed": true
+}

@@ -1,0 +1,7 @@
+{
+  "checkedAt": "2026-11-13T08:54:15.0109323Z",
+  "recordedHostProcesses": 28,
+  "stillPresent": [],
+  "terminationAttempted": false,
+  "interpretation": "Read-only check of recorded host PIDs; any reuse requires identity inspection before cleanup."
+}

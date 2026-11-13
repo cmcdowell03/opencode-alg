@@ -499,3 +499,24 @@ implements the paired schedule, private live obligation collector, native
 service action evidence and common-eligible reporting. Source-bound local
 qualification and real-model execution are separate gates; implementation
 alone supplies no measured information-loss rate or superiority result.
+
+The first [real Luna L2 development cohort](evidence/l2-continuity-20261113/README.md)
+is now terminal: Build passed 1/8 whole tasks; ALG passed 0/8, with five ALG
+usage-limit stops. Seven requested summaries, two owned-run transfers and 12
+host restarts were observed, with no native automatic compactions. All 16
+cleanup/auth/source/global checks passed. ALG's one fully correct initial
+checkpoint stopped before compaction, so semantic loss for a successful ALG
+task remains unestablished. Original conditional observations include grader
+weaknesses diagnosed during the run and are preserved as diagnostic evidence,
+not promoted into acceptance or superiority claims.
+
+Post-study repairs clarify delivery scope and template routing, require actual
+expected job identities in retention checks, distinguish omitted actions from
+missing telemetry, and make future output contracts explicit and retrievable.
+The next measured repair is bounded execution provenance: independently correct
+artifacts were rejected internally when truncated command evidence could not
+prove the original submission/recovery. Qualify action references, truncation,
+redaction and missing-evidence negatives before another frozen paired study.
+Do not weaken the checker, count bookkeeping as a retained diagnosis, or extend
+this cohort's original allowance. Sustained L3 and independent confirmation
+remain outstanding.

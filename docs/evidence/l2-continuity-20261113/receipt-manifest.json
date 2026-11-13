@@ -1,0 +1,973 @@
+{
+  "schema": "alg-l2-evidence-manifest-v1",
+  "terminal": true,
+  "source_commit": "addb744d420375337cbf9d05e09408b26e23e395",
+  "manifest": [
+    {
+      "source": "l2-windows-final-tests.log",
+      "sha256": "8805e753536ba6ca37134ebfb9f4da4af5bb332eb658814e662234db2172f5ce",
+      "bytes": 27144,
+      "published": "l2-windows-final-tests.log"
+    },
+    {
+      "source": "l2-b974cb2-windows-typecheck.log",
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f",
+      "bytes": 67,
+      "published": "l2-b974cb2-windows-typecheck.log"
+    },
+    {
+      "source": "l2-windows-headless-tools.json",
+      "sha256": "722e8aa7a299a73df44fd2cfb789e56623400b324bcd9e8b3e4a3ee5903f765b",
+      "bytes": 36135,
+      "published": "l2-windows-headless-tools.json"
+    },
+    {
+      "source": "l2-process-repair-windows-tests.log",
+      "sha256": "32f7c1544ec37ad8c44140d078c061046e737f9feec9e907b654988d113ec4bf",
+      "bytes": 10397,
+      "published": "l2-process-repair-windows-tests.log"
+    },
+    {
+      "source": "l2-process-repair-windows-typecheck.log",
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f",
+      "bytes": 67,
+      "published": "l2-process-repair-windows-typecheck.log"
+    },
+    {
+      "source": "l2-windows-launch-repair-qualification.json",
+      "sha256": "6c636e33dc279e641d796fc256a5306cdf98951ddf71bc9ee40ead3ccba70511",
+      "bytes": 178827,
+      "published": "l2-windows-launch-repair-qualification.json"
+    },
+    {
+      "source": "l2-addb744d4203-linux-gate.json",
+      "sha256": "d292032a6cd71354a6d2604d17992908d68b0218dcfd621ec052de496f7f5545",
+      "bytes": 216,
+      "published": "l2-addb744d4203-linux-gate.json"
+    },
+    {
+      "source": "l2-addb744d4203-linux-tests.log",
+      "sha256": "16c18788043dee1bd50b7f1da6abf04322bc41821f3c584b198f9c6f20cdd882",
+      "bytes": 26623,
+      "published": "l2-addb744d4203-linux-tests.log"
+    },
+    {
+      "source": "l2-addb744d4203-linux-typecheck.log",
+      "sha256": "d773539b4007a1c6e881b39c4bad4ce65837992453c5228198f10bd7ca4677c6",
+      "bytes": 66,
+      "published": "l2-addb744d4203-linux-typecheck.log"
+    },
+    {
+      "source": "l2-addb744d4203-linux-headless.json",
+      "sha256": "28c675edab3b2c680155be8c068ff1086b59b288e845a4b510485b41cfc7ce38",
+      "bytes": 36122,
+      "published": "l2-addb744d4203-linux-headless.json"
+    },
+    {
+      "source": "l2-addb744d4203-linux-qualification.json",
+      "sha256": "8baa6ad24b3a651f0b94aa89e2d7ff58d65cdfeb9d8e28214acd037159cb47f4",
+      "bytes": 178827,
+      "published": "l2-addb744d4203-linux-qualification.json"
+    },
+    {
+      "source": "l2-luna-20261113-preflight/result.json",
+      "sha256": "bb713823fcf712f682c7f6881fa9699dd51fc5fe322ee21b452c376792b56037",
+      "bytes": 163335,
+      "published": "preflight-history.json"
+    },
+    {
+      "source": "l2-luna-20261113-preflight/plan.json",
+      "sha256": "bd1952480ad82b4e414165fa89a158688839a9e4cafb5b0b6a11e3e2e4d0c150",
+      "bytes": 49566,
+      "published": "preflight-history.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair-preflight/result.json",
+      "sha256": "b42cb6f661776143c08b8769587bafe72d96cc835fe15454d69b5541a634b9f7",
+      "bytes": 173607,
+      "published": "preflight-history.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair-preflight/plan.json",
+      "sha256": "750ba11cf0d72b5d7965bc03a99ccbfb0664fc7050b390103c5a6f128cf67f00",
+      "bytes": 49566,
+      "published": "preflight-history.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/plan.json",
+      "sha256": "a28b1be1f370a7d1fd194c1f2d20ad4904ff04b1d66992f7b97256798e86bd01",
+      "bytes": 49567,
+      "published": "cohort-plan.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/result.json",
+      "sha256": "8d40755134616518ea557281c28e7381277ddc3a6707428158d3017ad3db7f52",
+      "bytes": 5005962,
+      "published": "cohort-result.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-alg/live-obligations-final.json",
+      "sha256": "d949f7bb4306a24e69d2b84ec87db4b99d806927ba28b75f940017a892159bb6",
+      "bytes": 186813,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-alg/messages.json",
+      "sha256": "04157fab247d82ad66a9fd9f6369f4f4dcffc9c3f71b00150fef34692060f87a",
+      "bytes": 831308,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-alg/sessions.json",
+      "sha256": "bb04964ad482c1d1d5c68b882809ec5f6be6ea85722998b0b57a5d55a8361e7a",
+      "bytes": 15295,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-alg/samples.json",
+      "sha256": "a68670d88dc9523db5055e2cc1148a3928823982b44da7aa4d343870b454fd00",
+      "bytes": 39416,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-alg/hard-grader-receipt.json",
+      "sha256": "f7047f181b65405d606cc4dbfb73350130f5716b3757d9d1dac8a9807bf83d0e",
+      "bytes": 39720,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-alg/service-receipt.json",
+      "sha256": "1d1c1926ee0986aeca7c5d7dcfaeb1b57348087150c4a7cf6c286b01f42f2c28",
+      "bytes": 386,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-alg/result.json",
+      "sha256": "6c5729d34988ac3139bb8ed354526e0b60527075cd77e7bd6ade8dc70c0aa81e",
+      "bytes": 333145,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-bld/live-obligations-final.json",
+      "sha256": "954e6c0b2c3e18e7d0c653b520128519afce03685440b895cb7ef16a0f6dbdb3",
+      "bytes": 191576,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-bld/service-operations.jsonl",
+      "sha256": "d5ae974597f3df0de9d229f6a28c2c044464a0658d065c196077310a31b7d9f7",
+      "bytes": 30795,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-bld/messages.json",
+      "sha256": "9f634e316a16944cba455f07e1b7c37a36798e19244ba0c67ba8de9afac7a7ef",
+      "bytes": 530332,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-bld/sessions.json",
+      "sha256": "d13df188a99223e39a3b2039accc6286a15836372aac9397cd6107ed63d50328",
+      "bytes": 914,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-bld/samples.json",
+      "sha256": "a1c78232af9c2f99b9c6e7e748405e1b0c782ac750ceb797314f7a681227e36c",
+      "bytes": 26803,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-bld/hard-grader-receipt.json",
+      "sha256": "0b70e272f2e486d3b06ff321f0076024e635f3ae130a7a41dc79d1b23504ece3",
+      "bytes": 45397,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-bld/service-receipt.json",
+      "sha256": "1d1c1926ee0986aeca7c5d7dcfaeb1b57348087150c4a7cf6c286b01f42f2c28",
+      "bytes": 386,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/01-bld/result.json",
+      "sha256": "5741265f241d4914d42162d60060434b5f69606a25a43377d2c951971d03bba9",
+      "bytes": 343404,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-alg/live-obligations-final.json",
+      "sha256": "ad917dbd7514b792ce6af69fa60a756aae4d0ccb5184efd7f7da4bec55d093d2",
+      "bytes": 61490,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-alg/service-operations.jsonl",
+      "sha256": "0d847c1e9550ba1c3697380a86f08c8d308800fde24ccdf90138ff0e09824542",
+      "bytes": 25198,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-alg/messages.json",
+      "sha256": "cbf0498186a9ff2112cf6812bcf030ecec1d94ce73dde36601353f4e83c70786",
+      "bytes": 2209310,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-alg/sessions.json",
+      "sha256": "65b03e80f3a313f7fd065e78ea0664cf61f2d2bf8f785d118ad45fd113774a7b",
+      "bytes": 23903,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-alg/samples.json",
+      "sha256": "f7d1e88a16d752e32626907e70424cb73a70417594f62056953b943e84580768",
+      "bytes": 79380,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-alg/hard-grader-receipt.json",
+      "sha256": "7c311d634b7789ce7e6ed4050466b0cc93c93d8492bc9a16b7fce70d2c7ad428",
+      "bytes": 12913,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-alg/service-receipt.json",
+      "sha256": "f7a61bdf1bb42179bec92c9fab62a0d9f5dcbdd04bb28526d664b8410ee8ae39",
+      "bytes": 385,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-alg/result.json",
+      "sha256": "834244553553b555dd76cb01d8d12b1aa313b1320d90fff88fdceb9c826ec593",
+      "bytes": 133835,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-bld/live-obligations-final.json",
+      "sha256": "7cea5b51eb70050c2636a38a65ea14be350d3901061a6a47f411f836c4f3861d",
+      "bytes": 192228,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-bld/service-operations.jsonl",
+      "sha256": "4e49aeebbab529a8ccfeac628281b40dbf9e1f035c7b454f8ee255195f327dae",
+      "bytes": 24953,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-bld/messages.json",
+      "sha256": "8d53e91b1066b4718ff8efc8e460e59abb977afd7d120dfec8806a51d431adcc",
+      "bytes": 562974,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-bld/sessions.json",
+      "sha256": "c54ff77c1bddf376049b3e5e1d5a67780b07a956ba204fab54a77eff9d1510cb",
+      "bytes": 2089,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-bld/samples.json",
+      "sha256": "c3494ff24b839c392f256c9e0c82d0f9b0be523f2ee8a1009b0b231999d524d8",
+      "bytes": 30537,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-bld/hard-grader-receipt.json",
+      "sha256": "e8db90786b7beb277dd35bad5c5be9f97bcab5fd8a0ffe7b5466d2c9d9bfd83d",
+      "bytes": 45223,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-bld/service-receipt.json",
+      "sha256": "f7a61bdf1bb42179bec92c9fab62a0d9f5dcbdd04bb28526d664b8410ee8ae39",
+      "bytes": 385,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/02-bld/result.json",
+      "sha256": "c2d11f2e23fd9da51c71f7971fd9877c1ee9f0ab4990f94b822ca34cccfd290c",
+      "bytes": 345636,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-alg/live-obligations-final.json",
+      "sha256": "40b4bcdd1eb39ccd9cde13bd900ba5b01d220d20c8aef74b2dc87925fe8c2c67",
+      "bytes": 121998,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-alg/service-operations.jsonl",
+      "sha256": "fb35e8d1173716dcae21030952f9977625ebf880c13c1b89a03b7592c21778c9",
+      "bytes": 5537,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-alg/messages.json",
+      "sha256": "3daca575d73f1cdd6c510782675c2a9faffddf3c71728dc2e91346a9f1a8510f",
+      "bytes": 2412952,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-alg/sessions.json",
+      "sha256": "1670850a66e913b78068e037823c8e4924d3b2a8f4bd8369328feb54ea4a6038",
+      "bytes": 24856,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-alg/samples.json",
+      "sha256": "e42634d09519046ac093031ce401656b93d8056e3fb8aee2b8977adac46c36b6",
+      "bytes": 63336,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-alg/hard-grader-receipt.json",
+      "sha256": "0c2d37f86a9b24118190e456b166bd241c5d7c6022f6e14cb6ca1f7aec88b7fa",
+      "bytes": 19284,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-alg/service-receipt.json",
+      "sha256": "fdffffa39df13fc3ac5692ad0a444e41624e176e5b253fb5270f93243a85edca",
+      "bytes": 384,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-alg/result.json",
+      "sha256": "f9ffcf88fb4691de5a40721bbc11f4767375bba4ff871aff714e992ed8339d87",
+      "bytes": 224435,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-bld/live-obligations-final.json",
+      "sha256": "220cad37e7c65167573fbfae925a1f383c951366586bd24d13b8f122c81d0003",
+      "bytes": 192900,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-bld/service-operations.jsonl",
+      "sha256": "e358bd9c96c4cd4a295433ee8248974423f369c83cf03c8808fefb4d6ac5292d",
+      "bytes": 26198,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-bld/messages.json",
+      "sha256": "16ca0ee199e600f7a4528e1714a0412c97ad0c7212f4fd70aa6fad53e1dd3445",
+      "bytes": 509230,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-bld/sessions.json",
+      "sha256": "53a632bc7892e4ad3a506cf85d010e851de07a4c74818f4f3e704175b51fbca5",
+      "bytes": 1825,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-bld/samples.json",
+      "sha256": "488ca118790238e126199a6ab62bcd0a5c806e18870bae7918b319a3bf98d17e",
+      "bytes": 24717,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-bld/hard-grader-receipt.json",
+      "sha256": "7fb88e2b5faa77f9bb1bd1bea65b2c060f5a0c021ad6260df41faebb7992096b",
+      "bytes": 45222,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-bld/service-receipt.json",
+      "sha256": "f7a61bdf1bb42179bec92c9fab62a0d9f5dcbdd04bb28526d664b8410ee8ae39",
+      "bytes": 385,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/03-bld/result.json",
+      "sha256": "f9d63cd6e7bf5a1afc6ab0f995e4ff8e0d3097ab9aaa573badeb1db993372ccc",
+      "bytes": 345044,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-alg/live-obligations-final.json",
+      "sha256": "9a4fd251e8cb0d53ca2e82f3ac3dbf859072c05483c5c5bb5adcca6d8bfdf584",
+      "bytes": 719,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-alg/service-operations.jsonl",
+      "sha256": "ab1e98ca03d9b14ca9e4ec9cd4084825baa19c749c2ebd7959b9a866181181f4",
+      "bytes": 30092,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-alg/messages.json",
+      "sha256": "5933050ac7de56816b7285666d95aa609174ab85154d65dbc58bd90ccf35009c",
+      "bytes": 2252188,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-alg/sessions.json",
+      "sha256": "11d001181c9b22eaa1c09bade0616f6535c1a474643e89e3c6296585728df7f4",
+      "bytes": 23905,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-alg/samples.json",
+      "sha256": "ba3a876ee1ac32d3f76420cef10f2592db61bf68a8e8743f93ad43a9dadcb68e",
+      "bytes": 69875,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-alg/hard-grader-receipt.json",
+      "sha256": "160a7859726d1a9eedb0c3262757b3a1723b4d13d617d27ee2d593cd860648ac",
+      "bytes": 4637,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-alg/service-receipt.json",
+      "sha256": "1d1c1926ee0986aeca7c5d7dcfaeb1b57348087150c4a7cf6c286b01f42f2c28",
+      "bytes": 386,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-alg/result.json",
+      "sha256": "035b310e9ad385c01848d85a09f03f73aead41103e32a6d11a2b5c93b4987d76",
+      "bytes": 34489,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-bld/live-obligations-final.json",
+      "sha256": "5fb38e2c9bae94337e9e0a3703ade101e32626910ebd7ce237e1438fae899fae",
+      "bytes": 188917,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-bld/service-operations.jsonl",
+      "sha256": "87848d3016a380cc4f3b91cbee36a5acdcd4673f58959412f0d4a2838ad08c85",
+      "bytes": 32424,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-bld/messages.json",
+      "sha256": "e628d5604d81c5a00b5325d139e4dc2d79f45e88cedf7d1be21eb30ec82a9b2b",
+      "bytes": 664608,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-bld/sessions.json",
+      "sha256": "31b3a6f1b4ccc4bce539195e3aebeef08b0354e38fe47429b5690254ab0509f1",
+      "bytes": 1821,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-bld/samples.json",
+      "sha256": "d6bfecd3667442a5f8a4654424f282bfd49712e78f2a305df83dba5c67fe4cac",
+      "bytes": 36659,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-bld/hard-grader-receipt.json",
+      "sha256": "3bbb09c559ebfa36938e8be8eceaf469ef2c8508ac7ca5be73ff1730566a6f91",
+      "bytes": 43230,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-bld/service-receipt.json",
+      "sha256": "1d1c1926ee0986aeca7c5d7dcfaeb1b57348087150c4a7cf6c286b01f42f2c28",
+      "bytes": 386,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/04-bld/result.json",
+      "sha256": "9c313e597a175ed8b19662f92f0e9a185a968a80a311a7d278c18d353c2e2756",
+      "bytes": 333704,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-alg/live-obligations-final.json",
+      "sha256": "262b50f4e975eed83496ea4f393dc324292fae08e32dede8470fee8a9f188deb",
+      "bytes": 182031,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-alg/service-operations.jsonl",
+      "sha256": "12668c2a587fbf79fbdf7fa4215bc81dadb0b1bf470d8eb7a166c01a3de55b8c",
+      "bytes": 14193,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-alg/messages.json",
+      "sha256": "8a12725a25815eeef980e8165dc004776ae2cfa7de445287523acfbb92748cdc",
+      "bytes": 1312681,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-alg/sessions.json",
+      "sha256": "ce531cb00fddf1a58bdca4fd548b47a8caecfbe72f92b076c1381806d4f7301c",
+      "bytes": 7610,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-alg/samples.json",
+      "sha256": "b0587686538d31e754c928fc0bfa086840b9432f230deefdbb704b7253bcdd88",
+      "bytes": 52763,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-alg/hard-grader-receipt.json",
+      "sha256": "7aebcb2a4e91aa04c2af48d3fddc0f023bb33778789c6ca7b041cdece6e0f189",
+      "bytes": 27345,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-alg/service-receipt.json",
+      "sha256": "1d1c1926ee0986aeca7c5d7dcfaeb1b57348087150c4a7cf6c286b01f42f2c28",
+      "bytes": 386,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-alg/result.json",
+      "sha256": "7f6f18e8cb92b382fe73df9e38d58efdb75c39f35034d7b3a96acdd312b9d761",
+      "bytes": 314428,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-bld/live-obligations-final.json",
+      "sha256": "b3063d573c4083df0d00189be2c64f61f82dc17b75216162e70e7928c0cf5d13",
+      "bytes": 189421,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-bld/service-operations.jsonl",
+      "sha256": "a8fe307211bf626d226d27c8d4dc62a6298b1cf76142c9bc5b6e70466b3e9fc7",
+      "bytes": 30603,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-bld/messages.json",
+      "sha256": "54bde7b4532a26e44a06011870ec078cb329296f2b8b8d1496167dc938ab507b",
+      "bytes": 863033,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-bld/sessions.json",
+      "sha256": "e56eba93fec5df48f3ff00b1fb7e84fef826fd0719a982e5cde50f5cb1a8798a",
+      "bytes": 1822,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-bld/samples.json",
+      "sha256": "8f58bc8c9c477eeea1032e6a27117d382593ba758c5b4b256574ceed70325fcf",
+      "bytes": 47425,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-bld/hard-grader-receipt.json",
+      "sha256": "ef91faa01bb243d8a56b0c7629f86707c3391562e9deb2edb86a18cb49087589",
+      "bytes": 43226,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-bld/service-receipt.json",
+      "sha256": "1d1c1926ee0986aeca7c5d7dcfaeb1b57348087150c4a7cf6c286b01f42f2c28",
+      "bytes": 386,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/05-bld/result.json",
+      "sha256": "19fcb0e7511f0f4f1a538779e6657d2930bb64835eedc2f3957bae470cb48ac5",
+      "bytes": 336003,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-alg/live-obligations-final.json",
+      "sha256": "e022c22821b2069b519a01201b066292fafb80a5df33a445120a09f55377efc2",
+      "bytes": 192378,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-alg/service-operations.jsonl",
+      "sha256": "7ae8bd775bd644f3b29cd77f0cfe23e68207d46442ca0d610d780e7bd4a3a39d",
+      "bytes": 3268,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-alg/messages.json",
+      "sha256": "3ddc144b096f04e796703a36de6a05beff43508c6c6e3f803fde6f288eac5bbf",
+      "bytes": 1552237,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-alg/sessions.json",
+      "sha256": "83855654fe1c66dc9d9995290daed8f30673547799f233aa13f97b886970b47a",
+      "bytes": 21968,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-alg/samples.json",
+      "sha256": "de7413e5ebcdce7933ad09ba6b274cb5ab4e93b3b59e1a8724aee54c5182cdb8",
+      "bytes": 53206,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-alg/hard-grader-receipt.json",
+      "sha256": "f4219f7343b733521efb50b22c381267fe29b6bd33e76d4245987320c5276da4",
+      "bytes": 42146,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-alg/service-receipt.json",
+      "sha256": "fdffffa39df13fc3ac5692ad0a444e41624e176e5b253fb5270f93243a85edca",
+      "bytes": 384,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-alg/result.json",
+      "sha256": "aff018658afec192bc6f99577b837b54e5f4ee5d0a29b50f147a28bd5b3bfa34",
+      "bytes": 350378,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-bld/live-obligations-final.json",
+      "sha256": "305335df5dd3b078524cc1bdf6312155eae7b0273d6119b8ebd3be2a30a87ff3",
+      "bytes": 190079,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-bld/service-operations.jsonl",
+      "sha256": "c62c2f36c52d71578ad3d87b3e63fde15e946140ed9dad7fd7b6b2214f9842f6",
+      "bytes": 29838,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-bld/messages.json",
+      "sha256": "1ba8d5dd22a50a935e13fd0b529edcd5488f192ae6b45a71afb60bdae2256861",
+      "bytes": 825134,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-bld/sessions.json",
+      "sha256": "2baf09d018af0362d3b94147a96c8cd9d53f38b10c783b0814c4db0a3298bc20",
+      "bytes": 1829,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-bld/samples.json",
+      "sha256": "8bf1a0cd99be2095f7c80e0ab7be9f457af2d51786984b58b248f5576155c46d",
+      "bytes": 39904,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-bld/hard-grader-receipt.json",
+      "sha256": "6ad90c36545131d5b6f55ef7665ccc58eff88dc1bbb5ce0b82dd61cec37a9f38",
+      "bytes": 43050,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-bld/service-receipt.json",
+      "sha256": "f7a61bdf1bb42179bec92c9fab62a0d9f5dcbdd04bb28526d664b8410ee8ae39",
+      "bytes": 385,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/06-bld/result.json",
+      "sha256": "29fbaf96a7c0f2806f30b5032f0a97767c48e04452ee22bd01081e1078763ec0",
+      "bytes": 336484,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-alg/live-obligations-final.json",
+      "sha256": "c5a49e09e3bee8fc10359d9e877fd4cf4e7406c12ca8847bacc5095e5720ea0a",
+      "bytes": 187336,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-alg/messages.json",
+      "sha256": "79972a8499cad35bf72c8b4073fdea2c3e4b6490d1321350cfd87dd73a76b9d3",
+      "bytes": 151563,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-alg/sessions.json",
+      "sha256": "97b271c7f7bd9b552f8068051a1f57e6c2a29a1b6ff70b145e85aa8e83098ba3",
+      "bytes": 926,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-alg/samples.json",
+      "sha256": "5c8f0dc5eae6ff61cd421206a1f566c635d2f1ed54fa80f5cc705ee40b8aa11b",
+      "bytes": 10563,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-alg/hard-grader-receipt.json",
+      "sha256": "633cbb453e450a34cef3051f161d50393cd9ea4aec672e292edfd5c4a95d63e5",
+      "bytes": 39696,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-alg/service-receipt.json",
+      "sha256": "1d1c1926ee0986aeca7c5d7dcfaeb1b57348087150c4a7cf6c286b01f42f2c28",
+      "bytes": 386,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-alg/result.json",
+      "sha256": "e8020e83629fd4d34010b6763d027831dbe035b4e028f9aae35fec4e58897841",
+      "bytes": 322462,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-bld/live-obligations-final.json",
+      "sha256": "17cb052c2860f44c03cb334f9d00fce434639fb3ed5a4b3f9467b2965ce51af7",
+      "bytes": 192093,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-bld/service-operations.jsonl",
+      "sha256": "4c4936262adfa67122384f45ff3060b8c584e6c0d3664d2c4b4736d0e36d5d40",
+      "bytes": 32956,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-bld/messages.json",
+      "sha256": "2d1d286a2f9cb9cd6fba745ccbd034c4077501b5842c61c4fac750010212621f",
+      "bytes": 559424,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-bld/sessions.json",
+      "sha256": "980f088ca045175f2283accd5747cbbb641452733e9d6d684c19797c3cd4bfab",
+      "bytes": 914,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-bld/samples.json",
+      "sha256": "15f7f1c31f2984db590a381690eba4c345631179594d47bd89b20feee1f32f59",
+      "bytes": 30751,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-bld/hard-grader-receipt.json",
+      "sha256": "5f4989d6ae64897cc17433c30dbb057a62c7163c95a8e025165d8ba42da34e96",
+      "bytes": 45397,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-bld/service-receipt.json",
+      "sha256": "1d1c1926ee0986aeca7c5d7dcfaeb1b57348087150c4a7cf6c286b01f42f2c28",
+      "bytes": 386,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/07-bld/result.json",
+      "sha256": "312ca05176a92157893ba397b739dcdfcb175ee015f590a39bd236f3ed967fc4",
+      "bytes": 345780,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-alg/live-obligations-final.json",
+      "sha256": "0ea09e40e75e8802b1cc26a402128ecd6bdd9c870f9b64618f6160f2a9472ba1",
+      "bytes": 61479,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-alg/service-operations.jsonl",
+      "sha256": "999569c74b65a501bf36354c80fd82344cc7ec37723fad35bab660571d4051e5",
+      "bytes": 28328,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-alg/messages.json",
+      "sha256": "630757d16597ea8946041c14e03cce081e64e9586f477a71914e16bc82f3f5a7",
+      "bytes": 2433764,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-alg/sessions.json",
+      "sha256": "873aac41d4bb0de44358559c8dcb1ad924b6544beb21444f34dd0590c7ddc1b3",
+      "bytes": 35382,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-alg/samples.json",
+      "sha256": "55c1dfb30138aed50a79c47e9ce04022cb7819b983633746bb344497b5f2c076",
+      "bytes": 89224,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-alg/hard-grader-receipt.json",
+      "sha256": "fd32a1f3abad60e1f6647cedf78f8fe4e8a8eeb17e0ea8fccc45e87bea9e7fe7",
+      "bytes": 12910,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-alg/service-receipt.json",
+      "sha256": "f7a61bdf1bb42179bec92c9fab62a0d9f5dcbdd04bb28526d664b8410ee8ae39",
+      "bytes": 385,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-alg/result.json",
+      "sha256": "984de34e3373ef5407691524f599df17e01afba2a0ecd2babedc90fa8548addd",
+      "bytes": 137507,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-bld/live-obligations-final.json",
+      "sha256": "6b314015cc521a495e73c1b677d71f15f27b439e067458920ab686e9e22499a4",
+      "bytes": 192692,
+      "published": "live-obligations-final.json"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-bld/service-operations.jsonl",
+      "sha256": "5554e4aa4add0ffc2e5dc59561beb9affc6753dfb2cd9e09b210de80b4a3949e",
+      "bytes": 24014,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-bld/messages.json",
+      "sha256": "306b79ca5c0ccd65d7faaded2dd3a270043463c04b17d1958bd35a192eef514b",
+      "bytes": 455739,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-bld/sessions.json",
+      "sha256": "c40287f7abb87ecf9fb6818a7b68edcdce8cf3cb50f7b9cc9677b7bb92cded70",
+      "bytes": 916,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-bld/samples.json",
+      "sha256": "70f6bedbb1b09ddee7f5ef4e6dc705e57ea5e78a1eb08ef5d3f85be555fc81b4",
+      "bytes": 25295,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-bld/hard-grader-receipt.json",
+      "sha256": "691d536aa04be15a964d2c6d30e147ca5c6b14417fd22a4e4805e02af306747a",
+      "bytes": 45198,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-bld/service-receipt.json",
+      "sha256": "f7a61bdf1bb42179bec92c9fab62a0d9f5dcbdd04bb28526d664b8410ee8ae39",
+      "bytes": 385,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-luna-20261113-repair/08-bld/result.json",
+      "sha256": "8984e02b4579a0b53ce00f2446b0716f7f80fdce81682d88fa7b42268ccbed29",
+      "bytes": 346124,
+      "published": "hash-only-private-original"
+    },
+    {
+      "source": "l2-followup-windows-tests.log",
+      "sha256": "4b281c0c27098094c835ce27069c75637bedc784c69bde930e88c8ca4731f4cb",
+      "bytes": 49142,
+      "published": "l2-followup-windows-tests.log"
+    },
+    {
+      "source": "l2-followup-windows-typecheck.log",
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f",
+      "bytes": 67,
+      "published": "l2-followup-windows-typecheck.log"
+    },
+    {
+      "source": "l2-followup-windows-typecheck-sandbox-failed.log",
+      "sha256": "7b7f57f82e9f1451cd29689ff22cadc066dc54a3c4626b389feb7de234ccff31",
+      "bytes": 98,
+      "published": "l2-followup-windows-typecheck-sandbox-failed.log"
+    },
+    {
+      "source": "l2-fd0b77441471-windows-headless-arguments-failed.log",
+      "sha256": "bbe7edfe3ff096e4094aeb2b79f1115efa35d7d4177626a38864c2bed872043f",
+      "bytes": 959,
+      "published": "l2-fd0b77441471-windows-headless-arguments-failed.log"
+    },
+    {
+      "source": "l2-fd0b77441471-windows-headless.log",
+      "sha256": "d90b990cfb1b3c82325520a7f79b6cde11701742dd4960f2431b8577084bb08e",
+      "bytes": 2141,
+      "published": "l2-fd0b77441471-windows-headless.log"
+    },
+    {
+      "source": "l2-fd0b77441471-windows-headless.json",
+      "sha256": "af6874e806a979e7bbdd0228b0c4009c097deb716cb9df75f44b57fbbc455ff4",
+      "bytes": 18612,
+      "published": "l2-fd0b77441471-windows-headless.json"
+    },
+    {
+      "source": "l2-fd0b77441471-windows-headless.json.alg.json",
+      "sha256": "4416bb9c36ba13ceb8a79b1cd84fe025a8064f1f2921efc0275765baf471ebad",
+      "bytes": 682,
+      "published": "l2-fd0b77441471-windows-headless.json.alg.json"
+    },
+    {
+      "source": "l2-fd0b77441471-windows-headless-sequential.log",
+      "sha256": "ff29c877d9a62d71d202efab742bd757fafa043182ebb68559ee0d74ae4d2389",
+      "bytes": 286,
+      "published": "l2-fd0b77441471-windows-headless-sequential.log"
+    },
+    {
+      "source": "l2-fd0b77441471-windows-headless-sequential.json",
+      "sha256": "c7c539dd439d4c370b166ee9576a53eb31f5579c5c7649f1ca86974741e9a302",
+      "bytes": 36135,
+      "published": "l2-fd0b77441471-windows-headless-sequential.json"
+    },
+    {
+      "source": "l2-fd0b77441471-windows-qualification.json",
+      "sha256": "0a31d8f2632d39f2c5880835f61a8c47a28732f91af899c9e95077315cb6af2a",
+      "bytes": 178787,
+      "published": "l2-fd0b77441471-windows-qualification.json"
+    },
+    {
+      "source": "l2-fd0b77441471-linux-gate.json",
+      "sha256": "31c22c6813ee8e8b03a9beaefa3e84a04d753422195457b7f256e34f973d4d5d",
+      "bytes": 216,
+      "published": "l2-fd0b77441471-linux-gate.json"
+    },
+    {
+      "source": "l2-fd0b77441471-linux-tests.log",
+      "sha256": "dcc3de5fbfa4beb4a5c6921dcb962a40745c5d3c124a204b2f20a1416569eafc",
+      "bytes": 48392,
+      "published": "l2-fd0b77441471-linux-tests.log"
+    },
+    {
+      "source": "l2-fd0b77441471-linux-typecheck.log",
+      "sha256": "d773539b4007a1c6e881b39c4bad4ce65837992453c5228198f10bd7ca4677c6",
+      "bytes": 66,
+      "published": "l2-fd0b77441471-linux-typecheck.log"
+    },
+    {
+      "source": "l2-fd0b77441471-linux-headless.json",
+      "sha256": "6e1c371155e4b69b48616dd9eeb70c8ca8d84b67c5d2840f824fa052069e7861",
+      "bytes": 36122,
+      "published": "l2-fd0b77441471-linux-headless.json"
+    },
+    {
+      "source": "l2-fd0b77441471-linux-qualification.json",
+      "sha256": "eeea115c92af2863316b2fb82f4e58bae5d76430e9a29d758ed1ccc38c39c12f",
+      "bytes": 178787,
+      "published": "l2-fd0b77441471-linux-qualification.json"
+    },
+    {
+      "source": "l2-followup-final-review.json",
+      "sha256": "d734de4d32e76dd3be35092a99db96abd7833c9baf9efe8d7fd0de3ec3797d53",
+      "bytes": 642,
+      "published": "l2-followup-final-review.json"
+    },
+    {
+      "source": "l2-terminal-summary.json",
+      "sha256": "6a4b1eb1f246a2396dde7b4114a46d8c35157f9a3b151f420ea5ef56b76173fd",
+      "bytes": 242788,
+      "published": "summary.json"
+    },
+    {
+      "source": "l2-terminal-process-check.json",
+      "sha256": "a93a72d7a0b038744efffb76c5f4162fbceac967f1e18105cd8fe0408e846e63",
+      "bytes": 260,
+      "published": "process-cleanup.json"
+    }
+  ]
+}
