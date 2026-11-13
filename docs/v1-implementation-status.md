@@ -4,11 +4,18 @@ PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experi
 
 ## 0.5.11 — repair measured runtime and evaluation failures
 
-The next follow-up separates durable host action observations from checker prompt
+The implemented follow-up separates durable host action observations from checker prompt
 previews, adds scoped retrieval across related producer attempts, and distinguishes
 evidence recovery from substantive repair. See the [V1 action evidence contract](v1-action-evidence.md).
-Local mechanical qualification is in progress; the prior paid L2 cohort remains
-unchanged and does not establish an ALG advantage.
+Local mechanical qualification passed: native Linux full suite **1,550 passed,
+17 skipped, zero failed**; immutable Windows affected suite **71 passed, one
+skipped, zero failed**; actual Windows/Linux hosts retained ten observed calls
+through one real compaction and one restart, with two original pages retrieved
+and cited by the checker and no producer replay. Runtime `23fffd8` and the
+harness-only `d3776b0` follow-up are bound in the
+[acceptance record](evidence/action-evidence-20261113/README.md). These are local
+deterministic-provider mechanics; the prior paid L2 cohort remains unchanged
+and does not establish an ALG advantage.
 
 The expanded six-case comparison finished all twelve issued arms: eleven
 completed, one stopped on a collector timeout. It found four ALG scope blockers

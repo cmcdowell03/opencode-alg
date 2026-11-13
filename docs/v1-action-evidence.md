@@ -101,5 +101,23 @@ actual OpenCode V1 plugin in PowerShell and Linux Bash. It tests mechanics rathe
 than model reasoning. Results and limitations belong in a separate immutable
 evidence receipt; implementation alone does not establish ALG superiority.
 
+The completed local increment is recorded in
+[action-evidence acceptance](evidence/action-evidence-20261113/README.md).
+Runtime commit `23fffd8` passed the native Linux full suite (1,550 passes,
+17 skips) and the immutable Windows affected suite (71 passes, one skip).
+Harness-only follow-up `d3776b0` passed on OpenCode 1.19.5/Windows and
+1.18.35/Linux. Each completed ten real tool calls, one actual parent compaction,
+two exact checker page reads/citations and one server restart. The same journal
+hash survived every boundary; producer attempts remained one. Native task
+visibility cards were checked separately from provider-emitted dispatch calls.
+
+The summary is deliberately content-free and the continuation is driven by the
+fixture. This establishes retained evidence and retrieval mechanics, not a model
+spontaneously finding the evidence, semantic retention through multi-hour work,
+remote exactly-once acceptance or improved performance against Build. Package
+inventory/extraction passes are separate from installing this increment on a
+new machine; no new offline deployment bundle or full TUI qualification is
+claimed. Earlier paid scores and failed development checks remain unchanged.
+
 No V2 implementation, GitHub runner execution or new paid benchmark cohort is
 part of this change.
