@@ -18,7 +18,7 @@ the frozen result and project files were unchanged by the diagnostic audit.
 | --- | --- | --- |
 | Three factory evidence cases | Both arms failed only the timestamp-window check. The posthoc audit accepts all six artifacts. | `Z` timestamps without fractional seconds denoted the same UTC instants as `.000Z`. String equality created false negatives. |
 | Partial investigation after service restart | ALG passed every original check; Build failed `report:particle`. | A concrete paired ALG win on this case, not general superiority or proof that adversarial review caused the win. |
-| Accepted query with lost acknowledgement | ALG made no service request; Build completed the service sequence and returned a textual summary. Both failed the file-based report checks. | ALG selected a researcher without Node execution capability. The public artifact contract must be audited separately before attributing the Build report failure to the model. |
+| Accepted query with lost acknowledgement | ALG made no service request; Build completed the service sequence and returned a textual summary. Both failed the file-based report checks. | ALG selected a researcher without Node execution capability. The public input omitted the required filename; that Build grading failure is not a demonstrated model error. Future fixtures explicitly publish the artifact contract for both arms. |
 | API/client compatibility | Both failed only the two execution checks. Both pass actual code execution in the posthoc audit. | The live runner omitted the code-runner dependency supplied by qualification. Those original failures establish no code defect. |
 
 ALG's own durable run states were four `blocked`, one `failed`, and one `done`.
@@ -53,6 +53,14 @@ value of adversarial checking.
 The fixes are model agnostic. No permissions are widened to make a benchmark
 pass. A research graph's lack of shell access is a capability-planning issue;
 it is not justification for giving all researchers unrestricted execution.
+Orchestrator guidance now makes that route distinction explicit; this is not
+automatic semantic discovery of every tool a task will need.
+
+The fixed default host-store namespaces are covered. An optional
+environment-memory database at an arbitrary configured project-local path is
+still observable; place it outside the measured scope or account for its exact
+database/sidecar writes. New v2 baselines require the 0.5.11 reader. The older
+0.5.10 loader rejects and can quarantine them; downgrade is unsupported.
 
 ## Compaction and resource interpretation
 

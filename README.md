@@ -688,6 +688,13 @@ observed or protected paths remain observable; skills, configuration and unknown
 original exclusions and hashes. Upgrading does not erase an existing scope
 violation or silently rebase an already blocked run.
 
+The new v2 scope records require the 0.5.11 reader; downgrade is unsupported.
+An older reader can quarantine an incompatible progress file while failing
+closed. Optional environment-memory databases use an operator-configured path:
+keep that database outside the measured project scope or explicitly account for
+its database/sidecar writes. Arbitrary configured locations are not implicitly
+excluded, and the configuration file itself remains observable.
+
 - `coding-diamond`: explore (up to 2) → research (up to 2) → implement (up to 5) → fresh-child checker (up to 5), with schema-valid substantive checker failures routed to its direct implementer dependency when both still have capacity; global cap 14.
 - `research-diamond`: two explorers in parallel (up to 2 each) → research (up to 2) → fresh-child checker (up to 2), with schema-valid substantive feedback to its direct research dependency; global cap 8.
 - `spreadsheet-diamond`: staged-copy research (up to 2) → `alg_excel` implementer plus caller-supplied deterministic validator shell gate (up to 4) → fresh-child checker (up to 4); formulas are explicitly not recalculated; global cap 10.
