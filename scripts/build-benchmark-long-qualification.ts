@@ -66,7 +66,7 @@ export async function qualifyLongSession(repo = resolve(import.meta.dir, "..")) 
           if (control === "extra-output") candidate["unrequested.json"] = "{}"
           if (control === "revoked-procedure") candidate["checkpoint.json"] = JSON.stringify({ ...JSON.parse(candidate["checkpoint.json"]!), procedureVersion: "1" })
           const result = await gradeLongCheckpoint(c, candidate, { service, phase, nonce,
-            operations: control === "missing-fresh-actions" ? [] : operations,
+            operations: control === "missing-fresh-actions" ? operations.filter(op => op.sequence <= fromSequence) : operations,
             auditComplete: control !== "incomplete-audit" && host.auditComplete === true, fromSequence })
           rows.push({ caseId: c.fixture.contestant.id, phase, control, expected: control === "positive", passed: result.passed,
             evidenceDigest: result.evidenceDigest, checks: result.checks.map(({ id, passed }) => ({ id, passed })) })

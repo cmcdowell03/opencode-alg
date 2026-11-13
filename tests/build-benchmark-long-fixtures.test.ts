@@ -132,6 +132,41 @@ describe("disjoint long-session L2 fixtures and checkpoint grader", () => {
     })
   })
 
+  test("an observed unused service cannot count empty job sets as retained lookups or reads", async () => {
+    const c = createLongSessionCases().find(item => item.incident === "accepted-lost-ack")!
+    await withService(c.base, async service => {
+      expect((await service.evidence()).jobs).toHaveLength(0)
+      const result = await gradeLongCheckpoint(c, c.fixture.contestant.files, {
+        service, operations: [], auditComplete: true, fromSequence: 0, phase: "q0", nonce: "unused",
+      })
+      expect(result.checks.find(item => item.id === "trace:complete-current-window")?.passed).toBe(true)
+      for (const id of ["pending:lookup-each-accepted-intent", "pending:fresh-current-result-read", "pending:initial-intent-established"]) {
+        expect(result.checks.find(item => item.id === id)?.known).toBe(true)
+        expect(result.checks.find(item => item.id === id)?.passed).toBe(false)
+      }
+      expect(result.passed).toBe(false)
+    })
+  })
+
+  test("the partial-restart contract discloses numeric rates and rejects fraction strings", async () => {
+    const c = createLongSessionCases().find(item => item.incident === "partial-restart")!
+    expect(c.fixture.contestant.files["sources/report-contract.json"]).toContain("JSON number")
+    expect(c.fixture.contestant.files["sources/report-contract.json"]).toContain("not a string or fraction notation")
+    await withService(c.base, async service => {
+      const audit = auditedClient(service)
+      const files = await longReferenceCheckpoint(c, audit.client, "q0", "numeric-rate")
+      const context = { service, operations: audit.operations, auditComplete: true, fromSequence: 0, phase: "q0" as const, nonce: "numeric-rate" }
+      expect((await gradeLongCheckpoint(c, files, context)).passed).toBe(true)
+      const report = JSON.parse(files["report.json"]!)
+      expect(typeof report.particle.rate).toBe("number")
+      report.particle.rate = `${report.particle.numerator}/${report.particle.denominator}`
+      const result = await gradeLongCheckpoint(c, { ...files, "report.json": encode(report) }, context)
+      expect(result.checks.find(item => item.id === "task:base-independent-scorer")?.known).toBe(true)
+      expect(result.checks.find(item => item.id === "task:base-independent-scorer")?.passed).toBe(false)
+      expect(result.passed).toBe(false)
+    })
+  })
+
   test("fails closed for replayed phase nonce, incomplete trace, tampering, malformed outputs and duplicate submits", async () => {
     const c = createLongSessionCases()[0]!
     await withService(c.base, async service => {
@@ -142,6 +177,15 @@ describe("disjoint long-session L2 fixtures and checkpoint grader", () => {
       const stale = await gradeLongCheckpoint(c, staleNonce, context)
       expect(stale.checks.find(item => item.id === "checkpoint:exact-current-phase-nonce")?.passed).toBe(false)
 
+      const publicContract = JSON.parse(files["mission.json"]!).checkpointContract
+      const checkpoint = JSON.parse(files["checkpoint.json"]!)
+      expect(Object.keys(checkpoint).sort()).toEqual(publicContract.required.slice().sort())
+      expect(publicContract.additionalProperties).toBe(false)
+      const extended = await gradeLongCheckpoint(c, { ...files, "checkpoint.json": encode({ ...checkpoint, acceptedJobs: [] }) }, context)
+      expect(extended.checks.find(item => item.id === "checkpoint:exact-current-phase-nonce")?.known).toBe(true)
+      expect(extended.checks.find(item => item.id === "checkpoint:exact-current-phase-nonce")?.passed).toBe(false)
+      expect(extended.checks.find(item => item.id === "task:base-independent-scorer")?.known).toBe(false)
+
       const incomplete = await gradeLongCheckpoint(c, files, { ...context, auditComplete: false })
       expect(incomplete.checks.find(item => item.id === "trace:complete-current-window")?.passed).toBe(false)
       expect(incomplete.checks.find(item => item.id === "trace:complete-current-window")?.known).toBe(false)
@@ -149,6 +193,21 @@ describe("disjoint long-session L2 fixtures and checkpoint grader", () => {
       expect(stale.checks.find(item => item.id === "task:base-independent-scorer")?.known).toBe(false)
       const empty = await gradeLongCheckpoint(c, files, { ...context, operations: [], fromSequence: audit.lastSequence() })
       expect(empty.checks.find(item => item.id === "trace:complete-current-window")?.known).toBe(false)
+      // Unlike a missing prefix, a complete trace ending at the frozen boundary
+      // proves that required follow-up calls were omitted.
+      const omitted = await gradeLongCheckpoint(c, files, { ...context, fromSequence: audit.lastSequence() })
+      expect(omitted.checks.find(item => item.id === "trace:complete-current-window")?.passed).toBe(true)
+      for (const id of ["source:fresh-revision-and-availability-checks", "pending:lookup-each-accepted-intent", "pending:fresh-current-result-read"]) {
+        expect(omitted.checks.find(item => item.id === id)?.known).toBe(true)
+        expect(omitted.checks.find(item => item.id === id)?.passed).toBe(false)
+      }
+      expect(omitted.passed).toBe(false)
+      const neverCalled = await gradeLongCheckpoint(c, files, { ...context, operations: [], fromSequence: 0 })
+      expect(neverCalled.checks.find(item => item.id === "trace:complete-current-window")?.passed).toBe(true)
+      expect(neverCalled.checks.find(item => item.id === "source:fresh-revision-and-availability-checks")?.known).toBe(true)
+      expect(neverCalled.checks.find(item => item.id === "source:fresh-revision-and-availability-checks")?.passed).toBe(false)
+      const unobserved = await gradeLongCheckpoint(c, files, { ...context, operations: [], fromSequence: 0, auditComplete: false })
+      expect(unobserved.checks.find(item => item.id === "trace:complete-current-window")?.known).toBe(false)
       const gap = await gradeLongCheckpoint(c, files, { ...context, operations: audit.operations.slice(1) })
       expect(gap.checks.find(item => item.id === "trace:complete-current-window")?.known).toBe(false)
 

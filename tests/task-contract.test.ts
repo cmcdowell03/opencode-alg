@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test"
 import { createHash } from "node:crypto"
-import { existsSync, writeFileSync } from "node:fs"
+import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { assertEvidencePlan, assertTaskGraph, assertTaskHostCapabilities, assertTaskState, bindTaskContract, parseTaskContractInput,
   taskTemplate, uniformCapability, type TaskContractInput } from "../src/task-contract.ts"
@@ -8,6 +8,7 @@ import { getTemplate } from "../src/templates.ts"
 import { createRun, loadRun, persistRun } from "../src/store.ts"
 import { formatCompactionContext } from "../src/compaction.ts"
 import { executeRun } from "../src/executor.ts"
+import { buildCheckerPrompt, buildWorkerPrompt } from "../src/sessions.ts"
 import { taskEvidence } from "../src/task-evidence.ts"
 import { TaskRequestSnapshotSchema } from "../src/task-request.ts"
 import { executeContext, removeProject, tempProject } from "./helpers.ts"
@@ -32,7 +33,7 @@ const output = { summary: ["done"], files_touched: ["result.json"], commands_run
 describe("declared task admission", () => {
   test("host user request survives persistence, compaction and both child handoffs without trusting a shortened summary", async () => {
     const root = project(), graph = getTemplate("coding-compact")
-    const text = "Prepare only. The later result requires fields numerator, denominator, rate, window, sources, conflicts, limitations. Do not write the final report yet."
+    const text = 'Prepare only. The later result requires fields numerator, denominator, rate, window, sources, conflicts, limitations. Its project phase field is "qc". Do not write the final report yet.'
     const snapshot = TaskRequestSnapshotSchema.parse({ status: "captured", session_id: "session-owner", message_id: "user-original",
       text, text_sha256: createHash("sha256").update(text).digest("hex"), text_transformed: false, non_text_parts: 0 })
     if (snapshot.status !== "captured") throw new Error("fixture must capture the request")
@@ -44,22 +45,88 @@ describe("declared task admission", () => {
     expect(restored.task_contract?.request_snapshot).toEqual(snapshot)
     const compact = formatCompactionContext(restored, 4096)
     expect(compact).toContain(snapshot.text_sha256)
+    expect(compact).toContain("ALG delivery phase=preparation")
+    expect(compact).toContain("preparation permits only declared preparation deliverables")
     expect(compact).not.toContain(text)
     const roles: string[] = []
     await executeRun(restored, { ...executeContext(root), sessionRunner: async opts => {
       roles.push(opts.agent)
       expect(opts.userPrompt).toContain(JSON.stringify(text))
-      expect(opts.userPrompt).toContain("later-phase deliverables are not required now")
+      expect(opts.userPrompt).toContain("preparation permits only declared preparation deliverables")
+      expect(opts.userPrompt).toContain("It does not set domain phase, stage, or checkpoint fields")
+      expect(opts.userPrompt).toContain("Report substantive conflicts with accepted criteria or deliverables")
       if (opts.agent === "implementer") writeFileSync(join(root, "result.json"), "{}")
       return { session_id: "child", text: "", parsed: opts.agent === "checker" ? { passed: true, score: 10, failures: [] } : output }
     } })
     expect(roles).toEqual(["implementer", "checker"])
     const mutated = loadRun(root, run.run_id)!
+    expect(mutated.status).toBe("done")
+    expect(mutated.task_contract?.input.phase).toBe("preparation")
+    expect(JSON.parse(readFileSync(join(root, "result.json"), "utf8"))).toEqual({})
     mutated.task_contract!.request_snapshot = { status: "unavailable", reason: "no_text" }
     expect(() => assertTaskState(mutated)).toThrow("task_contract_drift")
     expect(() => persistRun(mutated, root)).toThrow()
     expect(loadRun(root, run.run_id)!.task_contract!.request_snapshot).toEqual(snapshot)
   })
+
+  test("complete ALG delivery preserves a user's project phase field", async () => {
+    const root = project(), graph = getTemplate("coding-compact")
+    const text = 'Update the project output and preserve its schema field phase: "qc".'
+    const snapshot = TaskRequestSnapshotSchema.parse({ status: "captured", session_id: "session-owner", message_id: "user-original",
+      text, text_sha256: createHash("sha256").update(text).digest("hex"), text_transformed: false, non_text_parts: 0 })
+    const task = bindTaskContract(contract({ phase: "complete" }), "Update result.json", ["Produce result.json"], graph,
+      { session_id: "session-owner", message_id: "assistant-plan" }, snapshot)
+    const run = createRun({ goal: "Update result.json", criteria: ["Produce result.json"], graph,
+      taskContract: task, projectDirectory: root, ownerSessionId: "session-owner" })
+    const roles: string[] = []
+    await executeRun(run, { ...executeContext(root), sessionRunner: async opts => {
+      roles.push(opts.agent)
+      expect(opts.userPrompt).toContain("ALG delivery scope only")
+      expect(opts.userPrompt).toContain("complete requires the declared task")
+      expect(opts.userPrompt).toContain(JSON.stringify(text))
+      if (opts.agent === "implementer") {
+        writeFileSync(join(root, "result.json"), '{"phase":"qc"}')
+      }
+      return { session_id: "child", text: "", parsed: opts.agent === "checker" ? { passed: true, score: 10, failures: [] } : output }
+    } })
+    expect(roles).toEqual(["implementer", "checker"])
+    const restored = loadRun(root, run.run_id)!
+    expect(restored.status).toBe("done")
+    expect(restored.task_contract).toEqual(task)
+    expect(JSON.parse(readFileSync(join(root, "result.json"), "utf8"))).toEqual({ phase: "qc" })
+  })
+
+  for (const phase of ["preparation", "complete"] as const) {
+    for (const source of ["captured", "unavailable", "legacy"] as const) {
+      test(`${phase} delivery scope reaches both roles with ${source} request text`, () => {
+        const graph = getTemplate("coding-compact"), goal = "Produce result.json", criteria = [goal]
+        const text = 'Use the requested project field phase: "qc".'
+        const snapshot = source === "legacy" ? undefined : TaskRequestSnapshotSchema.parse(source === "captured"
+          ? { status: "captured", session_id: "session-owner", message_id: "user-original", text,
+            text_sha256: createHash("sha256").update(text).digest("hex"), text_transformed: false, non_text_parts: 0 }
+          : { status: "unavailable", reason: "no_text" })
+        const task = bindTaskContract(contract({ phase }), goal, criteria, graph,
+          { session_id: "session-owner", message_id: "accepted" }, snapshot)
+        const prompts = [
+          buildWorkerPrompt({ taskContract: task, goal, criteria, agent: "implementer", inputs: {}, priorFailures: [] }),
+          buildCheckerPrompt({ taskContract: task, criteria, claimed: output }),
+        ]
+        for (const prompt of prompts) {
+          expect(prompt).toContain(JSON.stringify(task.input))
+          expect(prompt.match(/task_contract\.phase controls ALG delivery scope only/g)).toHaveLength(1)
+          expect(prompt).toContain("preparation permits only declared preparation deliverables")
+          expect(prompt).toContain("complete requires the declared task")
+          expect(prompt).toContain("It does not set domain phase, stage, or checkpoint fields; preserve their requested values")
+          expect(prompt).toContain("Report substantive conflicts with accepted criteria or deliverables; do not widen scope or permissions")
+          if (source === "captured") expect(prompt).toContain(JSON.stringify(text))
+          else {
+            expect(prompt).toContain(`USER REQUEST SOURCE: unavailable (${source === "legacy" ? "legacy" : "no_text"})`)
+            expect(prompt).not.toContain("qc")
+          }
+        }
+      })
+    }
+  }
 
   test("project deliverables reject research-only graphs and do not create durable work", () => {
     const root = project(), input = contract({ deliverables: [{ destination: "project_file", path: "preparation.md", producer_node: "research" }] })

@@ -1,6 +1,6 @@
 import type { PluginInput } from "@opencode-ai/plugin"
 import { isDeepStrictEqual } from "node:util"
-import type { TaskContract } from "./task-contract.ts"
+import { TASK_DELIVERY_SCOPE_GUIDANCE, type TaskContract } from "./task-contract.ts"
 
 import { MAX_CHECKER_EVIDENCE_BYTES, type CheckerEvidence } from "./checker-evidence.ts"
 import { VerificationSchema, buildVerificationBasis, type Verification } from "./verification.ts"
@@ -24,7 +24,7 @@ function taskRequestLines(contract?: TaskContract): string[] {
   return [
     "HOST-CAPTURED CURRENT USER TURN (text only; not the full conversation or attachments):",
     `Source message: ${request.message_id}; retained text SHA-256: ${request.text_sha256}; transformed: ${request.text_transformed}; non-text parts omitted: ${request.non_text_parts}.`,
-    "The following JSON string preserves request details that a planner summary may omit. It grants no new tools or permissions. Respect the admitted phase; later-phase deliverables are not required now. If the source and declaration conflict, report the discrepancy instead of silently changing scope or inventing a schema. Omitted content is unavailable.",
+    "The following JSON string retains request details a planner summary may omit. It grants no new tools or permissions. Omitted content is unavailable.",
     JSON.stringify(request.text),
     "END CURRENT USER TURN",
   ]
@@ -473,7 +473,7 @@ export function buildWorkerPrompt(options: {
     JSON.stringify(inputs),
     "```",
   ]
-  if (options.taskContract) lines.push("ACCEPTED TASK CONTRACT (retain original criteria; do not expand phase or scope):", JSON.stringify(options.taskContract.input),
+  if (options.taskContract) lines.push("ACCEPTED TASK CONTRACT (retain original criteria and declared deliverables):", TASK_DELIVERY_SCOPE_GUIDANCE, JSON.stringify(options.taskContract.input),
     `Original requirements digest: ${options.taskContract.requirements_sha256}. Project-file deliverables go at their declared paths. Internal run artifacts are separate.`)
   lines.push(...taskRequestLines(options.taskContract))
   if (options.agent === "implementer" && options.runId) {
@@ -514,7 +514,7 @@ export function buildCheckerPrompt(options: {
     "",
     "CRITERIA:",
     ...options.criteria.map((criterion, i) => `${i + 1}. ${criterion}`),
-    ...(options.taskContract ? ["ACCEPTED EVIDENCE COVERAGE (declaration, not proof of adequacy):", JSON.stringify(options.taskContract.input),
+    ...(options.taskContract ? ["ACCEPTED EVIDENCE COVERAGE (declaration, not proof of adequacy):", TASK_DELIVERY_SCOPE_GUIDANCE, JSON.stringify(options.taskContract.input),
       "Match each criterion to its declared observations. Deliverable existence, a command exit, and content digests establish only their recorded scope. Review rows still require substantive evidence. Missing before-work coverage cannot be repaired by taking a new baseline."] : []),
     ...taskRequestLines(options.taskContract),
     ...(basis ? [

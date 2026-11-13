@@ -2,6 +2,11 @@
 
 ## 0.5.11 candidate — distinguish runtime state from project changes
 
+- Add paired live obligation measurements before/after controller handoff, requested compaction and host restart. Keep all issued outcomes, pre-existing errors and unmeasured follow-up separate; a summary does not prove retention.
+- Clarify that task-contract `phase` controls ALG delivery scope, not a user's domain, stage or checkpoint values. Workers, fresh checkers and compaction retain the distinction without relaxing preparation-only limits or permissions.
+- Scope `data-investigation` routing to its configured managed workflow. Data-related subject matter alone does not select it; host permissions and managed-service guards remain authoritative.
+- Require expected job identities before crediting lookup/read retention. A complete empty operation window establishes omitted required actions; an incomplete or gapped trace remains unknown. Explicitly disclose numeric rates in future partial-investigation fixtures; preserve earlier grades and their disclosure caveat.
+- Persist the future benchmark checkpoint schema in the public mission so a new controller can retrieve its exact contract; supplementary job metadata belongs in notes. Earlier cohorts keep their original input and grades.
 - Distinguish an ordinary bounded-wave pause from prerequisites; continue the same authorized run with original attempts and allowance. Cancellation, setup failures, uncertain SDK outcomes and hard limits retain their stop rules.
 - Disclose strict report shapes and output bounds in future development fixtures. Add extra-field qualification controls without regrading issued results.
 - Record completed-summary exposure independently of successful continuation, retaining missing scores explicitly. This supplies measurement plumbing, not a measured long-session retention advantage.

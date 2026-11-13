@@ -79,6 +79,15 @@ function compose(base: CreatedHardFixture, factory: CreatedHardFixture, id: stri
       currentSkill: "skills/current-analysis.md",
       revokedDistractor: "skills/revoked-procedure-v1.md",
       outputs: { report: "report.json", factory: "factory.json", checkpoint: "checkpoint.json", notes: "notes.md" },
+      checkpointContract: {
+        type: "object", additionalProperties: false,
+        required: ["phase", "nonce", "procedureVersion", "report", "factory"],
+        properties: {
+          phase: { enum: ["q0", "qh", "qc", "qr"] }, nonce: { type: "string" },
+          procedureVersion: { const: procedure }, report: { const: "report.json" }, factory: { const: "factory.json" },
+        },
+        description: "Use the exact current phase and nonce from the current request. Put supplementary job/accounting details in notes.md. The protected sources/checkpoint.json is separate service input, not this output contract.",
+      },
       bounds: { reportBytes: 65536, factoryBytes: 65536, notesBytes: 8192 },
       phaseEvidence: ["At every checkpoint, make fresh currentRevision and sourceStatus checks for every task source.",
         "Look up and status-check every accepted job; read each currently valid result completely through its nextCursor chain.",
@@ -202,12 +211,16 @@ function check(
 }
 
 function operationTrace(ops: readonly LongOperation[], context: Context) {
-  const allSequenceValuesValid = ops.every(op => Number.isSafeInteger(op.sequence) && op.sequence > 0)
-  const current = ops.filter(op => Number.isSafeInteger(op.sequence) && op.sequence > context.fromSequence)
-    .slice().sort((left, right) => left.sequence - right.sequence)
-  const sequencesValid = allSequenceValuesValid && current.length > 0 && current.every((op, index) =>
-    op.sequence === context.fromSequence + index + 1 && typeof op.path === "string" && Number.isInteger(op.status) &&
-    Object.hasOwn(op, "response"))
+  // The host retains the entire bounded trace. A contiguous prefix also proves
+  // an empty current window; absence of required calls is then a known failure.
+  // A missing historical prefix, invalid boundary or recorder failure cannot
+  // supply that proof merely by presenting an empty array.
+  const ordered = ops.slice().sort((left, right) => left.sequence - right.sequence)
+  const sequencesValid = Number.isSafeInteger(context.fromSequence) && context.fromSequence >= 0 &&
+    context.fromSequence <= ordered.length && ordered.every((op, index) =>
+      Number.isSafeInteger(op.sequence) && op.sequence === index + 1 && typeof op.path === "string" &&
+      Number.isInteger(op.status) && Object.hasOwn(op, "response"))
+  const current = ordered.filter(op => op.sequence > context.fromSequence)
   return { current, sequencesValid, complete: context.auditComplete && sequencesValid }
 }
 
@@ -275,14 +288,21 @@ export async function gradeLongCheckpoint(c: LongCase, files: Files, context: Co
   add("source:fresh-revision-and-availability-checks", "source", true,
     complete ? freshRevisions && freshStatuses : undefined, true, complete)
 
-  const expectedJobs = evidence.jobs
+  const requiredIntents = scenario.kind === "accepted-query-lost-ack"
+    ? [{ key: scenario.key, source: scenario.source }]
+    : scenario.kind === "partial-investigation-restart" ? scenario.sources.map(source => ({ key: source.sourceId, source })) : []
+  const expectedJobs = requiredIntents.flatMap(({ key, source }) => {
+    const job = evidence.jobs.find(job => job.idempotencyKey === key && job.job.sourceId === source.sourceId && job.job.sourceRevision === source.revision)
+    return job ? [job] : []
+  })
+  const expectedJobsPresent = requiredIntents.length > 0 && expectedJobs.length === requiredIntents.length
   const freshLookups = expectedJobs.every(job => successful("/lookup", (args, value) => args.idempotencyKey === job.idempotencyKey && value?.jobId === job.job.jobId))
   const freshStatusesForJobs = expectedJobs.every(job => successful("/status", (args, value) => args.jobId === job.job.jobId && value?.jobId === job.job.jobId))
   add("pending:lookup-each-accepted-intent", "pending_intent", true,
-    complete ? freshLookups && freshStatusesForJobs : undefined, true, complete)
+    complete ? expectedJobsPresent && freshLookups && freshStatusesForJobs : undefined, true, complete)
   const currentJobs = scenario.kind === "accepted-query-lost-ack" ? expectedJobs
     : scenario.kind === "partial-investigation-restart" ? expectedJobs.filter(job => job.job.sourceId !== scenario.sources[2].sourceId) : []
-  const freshReads = currentJobs.every(job => {
+  const freshReads = expectedJobsPresent && currentJobs.length > 0 && currentJobs.every(job => {
     const readOps = current.filter(op => op.path === "/readPage" && op.args?.jobId === job.job.jobId && op.args?.consistency !== "snapshot")
     const expectedSource = scenario.kind === "accepted-query-lost-ack" ? scenario.source
       : scenario.kind === "partial-investigation-restart" ? scenario.sources.find(source => source.sourceId === job.job.sourceId) : undefined

@@ -5,6 +5,8 @@ import type { GraphDef, RunState } from "./types.ts"
 import { TaskRequestSnapshotSchema, type TaskRequestSnapshot } from "./task-request.ts"
 import { ChangeScopeInputSchema } from "./change-scope-evidence.ts"
 
+export const TASK_DELIVERY_SCOPE_GUIDANCE = "task_contract.phase controls ALG delivery scope only: preparation permits only declared preparation deliverables; complete requires the declared task. It does not set domain phase, stage, or checkpoint fields; preserve their requested values. Report substantive conflicts with accepted criteria or deliverables; do not widen scope or permissions."
+
 const id = z.string().min(1).max(64).refine(isSafeId)
 const path = z.string().min(1).max(512).refine(value => isSafeProjectRelativePath(value) &&
   !/^\.opencode\/runs(?:\/|$)/i.test(value))

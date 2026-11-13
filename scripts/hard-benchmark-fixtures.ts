@@ -113,7 +113,7 @@ export function createPartialInvestigationRestartFixture(): CreatedHardFixture {
         reportFields: ["retained", "particle", "overlapLots", "unresolved", "causalIdentified"],
         objectPolicy: "The report must contain exactly reportFields. Nested objects must contain exactly the keys in their declared shapes. No additional properties; contract metadata itself is not an output field.",
         retained: "{ [sourceId]: { jobId, sourceRevision, resultDigest } } for the two current jobs",
-        particle: "{ numerator, denominator, rate, affectedLots }: integer observation counts, rate as numerator/denominator without rounding, and sorted distinct affected lot IDs. An observation is affected if any matching row is affected.",
+        particle: "{ numerator, denominator, rate, affectedLots }: integer observation counts; rate must be a JSON number from numerator / denominator using JavaScript number division, serialized without decimal rounding (not a string or fraction notation); and sorted distinct affected lot IDs. An observation is affected if any matching row is affected.",
         overlapLots: "Sorted distinct affected lots with at least one overlaps=true maintenance row",
         unresolved: "{ sourceId, revision, available: false }",
         causalIdentified: false,
