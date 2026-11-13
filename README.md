@@ -679,6 +679,15 @@ Pass original user criteria directly to `alg_plan`; new task contracts lock them
 
 ### Templates and attempt semantics
 
+Candidate 0.5.11 separates the plugin's internal state from project change
+scope. New baselines retain the `.git`, `node_modules` and `.opencode/runs`
+exclusions and pin applicable root-level `.opencode/session-memory`,
+`.opencode/skill-evolution` and `.opencode/experience` exclusions. Explicitly
+observed or protected paths remain observable; skills, configuration and unknown
+`.opencode` content are not broadly excluded. Legacy baselines keep their
+original exclusions and hashes. Upgrading does not erase an existing scope
+violation or silently rebase an already blocked run.
+
 - `coding-diamond`: explore (up to 2) → research (up to 2) → implement (up to 5) → fresh-child checker (up to 5), with schema-valid substantive checker failures routed to its direct implementer dependency when both still have capacity; global cap 14.
 - `research-diamond`: two explorers in parallel (up to 2 each) → research (up to 2) → fresh-child checker (up to 2), with schema-valid substantive feedback to its direct research dependency; global cap 8.
 - `spreadsheet-diamond`: staged-copy research (up to 2) → `alg_excel` implementer plus caller-supplied deterministic validator shell gate (up to 4) → fresh-child checker (up to 4); formulas are explicitly not recalculated; global cap 10.
