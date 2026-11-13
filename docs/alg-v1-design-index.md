@@ -1,6 +1,6 @@
 # ALG V1 Design Index and Delivery Roadmap
 
-Draft revised 12 November 2026. V1 means the OpenCode 1 host; document revisions use dates. No OpenCode 2 implementation is included.
+Draft revised 13 November 2026. V1 means the OpenCode 1 host; document revisions use dates. No OpenCode 2 implementation is included.
 
 ## Purpose
 
@@ -16,7 +16,7 @@ This index owns sequencing within this draft set. The existing four owner contra
 
 **Later V1 work.** Curated cases and useful candidates precede measured skill promotion. Selection and parameterization of existing templates precede free-form graph authoring and lifecycle-safe revisions. The requested artifact skill remains an optional extension. Recursive orchestrators, shared multi-user synchronization and new analytics engines are outside Phase One.
 
-**Reliability and comparative development follow-up to PR #14.** Follow the [V1 development and Build-comparison plan](v1-reliability-and-build-comparison-plan.md): qualify independent measurement alongside task admission; preserve criteria, skills and evidence across recovery; enforce a shared allowance; then improve checking and pending graph work only where measured failures justify it. The hard semiconductor investigation, controlled fault cases and ordinary controls have separate roles. Twelve-trial discovery and twenty-trial rehearsal precede a separately powered sealed confirmation; none is launched by this design. The earlier post-repair benchmark does not establish superiority. Difficulty must not come from exclusive ALG tools/data, broken prerequisites or selectively reported trials.
+**Reliability and comparative development follow-up to PR #14.** The [capability augmentation plan](v1-capability-augmentation-plan.md) owns the next prospective sequence: host-derived mechanical verification and cause-specific repair; actionable obligation/skill recovery; qualified investigation and multi-repository workflows; then selective adversarial probes and measured graph improvement. Independent evaluation develops alongside these changes. It extends the [V1 development and Build-comparison plan](v1-reliability-and-build-comparison-plan.md) without changing any issued trial. Diagnostic development and a qualification rehearsal precede a separately powered, frozen confirmation; no fixed small cohort guarantees a superiority conclusion. Difficulty must not come from exclusive ALG tools/data, broken prerequisites or selectively reported trials.
 
 The older umbrella's baseline/visibility and recovery work maps into Phase 1a/1b. Former A–E labels identify capability families, not another implementation order.
 
@@ -49,11 +49,19 @@ Do not reward faster unsupported causal claims, silence about missing procedures
 - [Graph evolution and adversarial review](v1-graph-evolution-adversarial-review.md): implemented opt-in citation-linked verdicts, bounded pending-node graph revisions and paired probe evaluation; stronger provenance and automatic promotion remain design.
 - [Measured graph/review evaluation](v1-adversarial-evaluation.md): bounded Gemma/Luna comparisons, preserved failures, criterion ambiguity and exact local host/recovery evidence. Exploratory results do not authorize automatic promotion.
 - [V1 development and rigorous comparison with native Build](v1-reliability-and-build-comparison-plan.md): work packages and exit gates, task/capability admission, durable evidence/skills, resource accounting, bounded graph improvement, hard semiconductor scenarios, independent oracle qualification and powered confirmation rules.
+- [V1 capability augmentation and superiority plan](v1-capability-augmentation-plan.md): current A-E sequence, verification authority, live obligations and action-time reuse, domain workflows, selective adversarial graphs and the evidence required for a scoped superiority claim.
 
 ## Canonical documentation
 
 This repository copy is the canonical implementation design. Earlier local artifacts remain historical drafts. This index owns the current phase order; the existing owner contracts retain semantic authority. The implementation PR tracks progress and local evidence without treating draft features as shipped.
 
 ## Implementation tracking
+
+Current pending candidate: **0.5.12**, evidence head aec6f2d. Exact package and
+local lifecycle acceptance are recorded in the
+[current receipts](evidence/checker-consistency-20261113/README.md).
+The real-model V4 diagnostic failed, V5 is unissued, and the larger comparison
+was withheld. The earlier 0.5.6 milestone below is historical; the augmentation
+plan remains proposed work, not delivered capability.
 
 Candidate 0.5.6 is tracked in PR #14. The November 10 review withdrew the 80% estimate. Its confirmed ledger defects and missing local contracts now have implementations: assigned recipe orders, bounded result reads/cache, in-host job continuation, reviewed profile migration, native MCP mappings and workspace fact sources. Exact local acceptance and the remaining boundaries are recorded separately: the real datalake-mcp is unqualified, host waits are bounded rather than a daemon, and one successful local-model session after the duplicate-plan correction does not establish general long-session reliability. See [implementation status](v1-implementation-status.md), [V1 operator usage](v1-investigations.md) and [prepared deployment](deployment.md) for the implemented surfaces. The design remains broader than this first delivery: measured promotion, template improvement, recursive delegation, shared cross-user knowledge and OpenCode V2 are not activated by this PR. Local acceptance results are recorded against exact commits; draft design status does not count as a shipped or validated feature.

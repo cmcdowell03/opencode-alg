@@ -4,6 +4,13 @@ Status: **V1 umbrella design with an opt-in 0.5.4 implementation increment, 11 N
 
 ## Current implementation — 0.5.4 candidate
 
+This section records the original increment. The
+[13 November augmentation plan](v1-capability-augmentation-plan.md) defines the
+next prospective work against 0.5.12, including host-owned mechanical decisions
+and measured selective probes. Its new output contracts require explicit
+versioning; they do not change legacy verdicts, activate managed graph mutation,
+or treat the exploratory comparison as confirmation.
+
 PR #14 implements an opt-in first increment. Models author graphs through `alg_plan.graph_json`; the existing finite DAG validator, ownership lease, attempt ledger and OpenCode permissions still govern execution. There is no recursive scheduler or automatic graph promotion. The fixed data-investigation graph is unchanged.
 
 A checker opts in with `verification: {"version": 1, "mandate": "bounded question"}`. ALG assigns C1… criterion IDs and E1… evidence IDs, supplies a bounded mandate (2,000 characters), and requires one typed finding per criterion. Outcomes are `supported`, `disconfirmed`, `unsupported` and `inconclusive`, with included evidence IDs and a short rationale. Missing/omitted evidence cannot be cited; support and contradiction require a citation. The top-level verdict must agree with all findings: only all-supported can pass. Invalid bindings use fixed diagnostics on retry. A dry run cannot claim verified success.

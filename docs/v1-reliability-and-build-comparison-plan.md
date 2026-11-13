@@ -8,6 +8,12 @@ The sections below define the first product changes; the added **Development wor
 
 ## Decision and evidence
 
+The [13 November augmentation plan](v1-capability-augmentation-plan.md) defines
+the next implementation increments against 0.5.12: explicit verification
+authority, cause-specific repair, live obligation recovery, qualified domain
+workflows and selective graph improvement. It refines the sequence below while
+preserving the capability-first objective and all historical evaluation rules.
+
 ALG should earn its overhead on tasks requiring durable recovery, bounded expensive work and independently checked evidence. It need not replace native Build for a small known edit. A benchmark designed to force Build to fail would not tell us which tool to use. Preserve easy controls, native Build delegation/checkpointing, all failures and identical external rules.
 
 ### Capability-first objective — user priority clarification

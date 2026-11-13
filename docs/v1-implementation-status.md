@@ -1,6 +1,16 @@
 # V1 Phase One implementation status
 
-PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current pending candidate is 0.5.11 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as acceptance of the current candidate.
+PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current pending candidate is 0.5.12 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as acceptance of the current candidate.
+
+## 0.5.12 — qualified package, unresolved real-checker behavior
+
+Evidence head aec6f2d records the checker consistency and staged deployment
+repairs, exact Windows/Linux package acceptance, Linux full suite (1,637 passed,
+17 skipped), and supplementary deterministic lifecycle checks. The real Luna V4
+diagnostic failed; V5 and the larger continuity cohort remain unissued.
+See [exact outcomes and limitations](evidence/checker-consistency-20261113/README.md).
+The [capability augmentation plan](v1-capability-augmentation-plan.md) is a new
+prospective design, not additional implemented behavior or a superiority result.
 
 ## 0.5.11 — repair measured runtime and evaluation failures
 
