@@ -1,0 +1,194 @@
+{
+  "scenario": "Isolated OpenCode investigation recovery with manual compaction",
+  "date": "2026-11-18",
+  "harness_commit": "ae50ce2a3920f00e75eb10f9d42e55288382cb34",
+  "runtime_source_commit": "3e41dbd1ea97d946a54e55680850cd4fc5e8dcf1",
+  "v1_base": "6de71d38ff4e28a90a9dfc4cdf94a73a37b9b717",
+  "scope": "Real host processes and SDK. Loopback scripted provider and synthetic factory data. One final scenario per platform. No model efficacy, background-compaction or endurance claim.",
+  "focused_tests_per_platform": {
+    "passed": 15,
+    "failed": 0,
+    "assertions": 172,
+    "preview_typecheck": "pass"
+  },
+  "platforms": {
+    "windows": {
+      "v2_receipt_sha256": "51e82c78ed5bd1c90d76068335852c08a28f94b29004d1f5904055a879339653",
+      "v2_host": {
+        "version": "2.3.2",
+        "arch": "x64",
+        "binary_sha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3"
+      },
+      "package_manifest_sha256": "7cd1fe9c5ac16c62caae0fcbdbc194d75bb859ce9bb808ffce426d5a59369820",
+      "loaded_js_sha256": "ed517402dd956d6d3c381ad93ee88cb9ac3b2735430619b0026392c566114ffb",
+      "package_files": 2,
+      "native_control_passed": [
+        "host_boot",
+        "plugin_absence",
+        "primary_transport",
+        "forced_compaction"
+      ],
+      "preview_claims": {
+        "host_boot": "PASS",
+        "active_runtime": "PASS",
+        "accepted_ack_withheld_at_kill": "PASS",
+        "restart_same_session": "PASS",
+        "single_remote_admission": "PASS",
+        "forced_compaction_stale_checkpoint": "PASS",
+        "fresh_checker": "PASS",
+        "checker_bounded_cited_read": "PASS",
+        "revocation_denied_read": "PASS",
+        "cross_project_denied_read": "PASS",
+        "current_next_measurement": "PASS",
+        "end_user_measurement_handoff": "PASS",
+        "background_compaction_race": "NOT_OBSERVED"
+      },
+      "host_killed_after_accept": {
+        "killed": true,
+        "acknowledgement": "withheld",
+        "accepted": 1
+      },
+      "job_recovery": {
+        "submits": 1,
+        "accepted": 1,
+        "sameSubmissionLookup": true,
+        "replayDenied": true
+      },
+      "checker": {
+        "childrenBefore": 0,
+        "childrenAfter": 1,
+        "userPrompts": 1,
+        "pageRows": 16,
+        "serviceReads": 1,
+        "unpromptedValueReported": true
+      },
+      "foreign_project_before_revoke": {
+        "refusal": "CHECKER_GRANT_REQUIRED",
+        "sameProjectResultBeforeDenial": "result_recorded",
+        "serviceReadsBefore": 1,
+        "serviceReadsAfter": 1
+      },
+      "after_revoke": {
+        "refusal": "INVESTIGATION_OPERATION_REFUSED",
+        "status": "result_authority_unverified",
+        "serviceReadsBefore": 1,
+        "serviceReadsAfter": 1
+      },
+      "next_measurement": {
+        "revision": 2,
+        "staleWriteDenied": true,
+        "currentInSubsequentProviderSystem": true,
+        "staleInCurrentProjection": false,
+        "staleSummaryInRequest": true,
+        "usedCheckerWitness": true,
+        "heldRemoteAdmissions": 1,
+        "remoteSubmissions": 1
+      },
+      "v1_coexistence": {
+        "receipt_sha256": "b6385713b084d7e5a12bd459295a17d808d6db434ff3188380b6213d1f56c19f",
+        "version": "1.19.5",
+        "restarts": 2,
+        "tool_count": 21,
+        "compaction_recovered": true,
+        "accepted_jobs": 1,
+        "same_session": true,
+        "cleanup": {
+          "host_processes_stopped": true,
+          "provider_stopped": true,
+          "mcp_service_stopped": true,
+          "temporary_environment_removed": true,
+          "evidence_persisted_before_environment_removal": true
+        }
+      }
+    },
+    "linux_wsl_ext4": {
+      "v2_receipt_sha256": "7bb1473541fa7ebdd2dd1eddd361ecf9e3f74281162ba9ed9b2950f012e3cfc4",
+      "v2_host": {
+        "version": "2.3.2",
+        "arch": "x64",
+        "binary_sha256": "e6543f6e5c39c40971ba38afd1819ac852c29ac735b5a89065d3d148d47f27ad"
+      },
+      "package_manifest_sha256": "7cd1fe9c5ac16c62caae0fcbdbc194d75bb859ce9bb808ffce426d5a59369820",
+      "loaded_js_sha256": "ed517402dd956d6d3c381ad93ee88cb9ac3b2735430619b0026392c566114ffb",
+      "package_files": 2,
+      "native_control_passed": [
+        "host_boot",
+        "plugin_absence",
+        "primary_transport",
+        "forced_compaction"
+      ],
+      "preview_claims": {
+        "host_boot": "PASS",
+        "active_runtime": "PASS",
+        "accepted_ack_withheld_at_kill": "PASS",
+        "restart_same_session": "PASS",
+        "single_remote_admission": "PASS",
+        "forced_compaction_stale_checkpoint": "PASS",
+        "fresh_checker": "PASS",
+        "checker_bounded_cited_read": "PASS",
+        "revocation_denied_read": "PASS",
+        "cross_project_denied_read": "PASS",
+        "current_next_measurement": "PASS",
+        "end_user_measurement_handoff": "PASS",
+        "background_compaction_race": "NOT_OBSERVED"
+      },
+      "host_killed_after_accept": {
+        "killed": true,
+        "acknowledgement": "withheld",
+        "accepted": 1
+      },
+      "job_recovery": {
+        "submits": 1,
+        "accepted": 1,
+        "sameSubmissionLookup": true,
+        "replayDenied": true
+      },
+      "checker": {
+        "childrenBefore": 0,
+        "childrenAfter": 1,
+        "userPrompts": 1,
+        "pageRows": 16,
+        "serviceReads": 1,
+        "unpromptedValueReported": true
+      },
+      "foreign_project_before_revoke": {
+        "refusal": "CHECKER_GRANT_REQUIRED",
+        "sameProjectResultBeforeDenial": "result_recorded",
+        "serviceReadsBefore": 1,
+        "serviceReadsAfter": 1
+      },
+      "after_revoke": {
+        "refusal": "INVESTIGATION_OPERATION_REFUSED",
+        "status": "result_authority_unverified",
+        "serviceReadsBefore": 1,
+        "serviceReadsAfter": 1
+      },
+      "next_measurement": {
+        "revision": 2,
+        "staleWriteDenied": true,
+        "currentInSubsequentProviderSystem": true,
+        "staleInCurrentProjection": false,
+        "staleSummaryInRequest": true,
+        "usedCheckerWitness": true,
+        "heldRemoteAdmissions": 1,
+        "remoteSubmissions": 1
+      },
+      "v1_coexistence": {
+        "receipt_sha256": "513dd41caa3dd9bef1e616a933184cb5831e487124831dd3bbcf5582f813698f",
+        "version": "1.19.5",
+        "restarts": 2,
+        "tool_count": 21,
+        "compaction_recovered": true,
+        "accepted_jobs": 1,
+        "same_session": true,
+        "cleanup": {
+          "host_processes_stopped": true,
+          "provider_stopped": true,
+          "mcp_service_stopped": true,
+          "temporary_environment_removed": true,
+          "evidence_persisted_before_environment_removal": true
+        }
+      }
+    }
+  }
+}

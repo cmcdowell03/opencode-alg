@@ -65,6 +65,23 @@ and `revoke` withdraws its result access. To change the next measurement, send
 `set_next_measurement` with `next_action` and the `expected_decision_revision`
 from the latest status. A stale revision is refused.
 
+## Local qualification
+
+The same two-file package passed on Windows x64 and Linux x64 under WSL on
+November 18, 2026. Each installed OpenCode 2.3.2 host passed four native
+control checks and twelve preview checks. After a forced process kill, the
+restarted session recovered the single accepted job by its original ID. One
+fresh checker read 16 rows and cited its page. A neutral user turn returned
+the corrected measurement using a value from that page while the stale
+compaction summary was still present. Both a foreign project and a revoked
+checker were denied without another service read.
+
+Each platform also passed 15 focused tests and an isolated OpenCode 1.19.5
+coexistence run with two restarts. The [qualification receipt](evidence/recovery-2.3.2.json)
+records the executable, package and raw-receipt hashes. The provider was
+scripted and the factory service synthetic. Automatic background compaction,
+long-session endurance and real-model decision quality remain unmeasured.
+
 ## Scope
 
 The first scenario covers one owner, one accepted external investigation job
