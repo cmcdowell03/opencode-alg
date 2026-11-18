@@ -8,12 +8,14 @@ import { getTemplate } from "../src/templates.ts"
 import { createRun, loadRun, persistRun } from "../src/store.ts"
 import { sha256Json } from "../src/persistence.ts"
 import { formatCompactionContext } from "../src/compaction.ts"
-import { executeRun } from "../src/executor.ts"
+import { executeRun, prepareRunForResume } from "../src/executor.ts"
 import { buildCheckerPrompt, buildWorkerPrompt } from "../src/sessions.ts"
 import { taskEvidence } from "../src/task-evidence.ts"
 import { TaskRequestSnapshotSchema } from "../src/task-request.ts"
 import { ActionEvidenceJournal } from "../src/action-evidence.ts"
 import { EvidenceRetrieval } from "../src/evidence-retrieval.ts"
+import { MemoryStore } from "../src/session-memory/store.ts"
+import { TaskAllowanceRuntime } from "../src/task-allowance.ts"
 import { executeContext, removeProject, tempProject } from "./helpers.ts"
 
 const projects: string[] = []
@@ -63,6 +65,8 @@ describe("declared task admission", () => {
     ] }), "Check action", [criterion], preservationGraph, { session_id: "session-owner", message_id: "plan" }, snapshot(criterion))
       .mechanical_verification).toBeUndefined()
     expect(bind([criterion, "The result is substantively correct"], `${criterion}\nThe result is substantively correct`)
+      .mechanical_verification?.criteria.map(row => row.mode)).toEqual(["mechanical", "semantic"])
+    expect(bind([criterion, "Check accuracy"], `${criterion}\r\nCheck accuracy`)
       .mechanical_verification?.criteria.map(row => row.mode)).toEqual(["mechanical", "semantic"])
     expect(bind([criterion], criterion).mechanical_verification?.criteria[0]).not.toHaveProperty("expected_command")
   })
@@ -150,6 +154,31 @@ describe("declared task admission", () => {
     expect(completed.nodes.check!.attempts[0]!.host_mechanical_evidence).toHaveLength(2)
   })
 
+  test("dry mechanical verification keeps absent evidence inconclusive without a checker session", async () => {
+    const root = project(), graph = getTemplate("coding-compact")
+    const criterion = 'Mechanical action: first recorded bash command is exactly "echo expected"; its linked terminal exit code equals 7.'
+    const task = bindTaskContract(contract({ evidence_plan: [{ criterion: 1, observations: [{ kind: "action" }] }] }),
+      criterion, [criterion], graph, { session_id: "session-owner", message_id: "planner" }, {
+        status: "captured", session_id: "session-owner", message_id: "user-original", text: criterion,
+        text_sha256: createHash("sha256").update(criterion).digest("hex"), text_transformed: false, non_text_parts: 0,
+      })
+    const run = createRun({ goal: criterion, criteria: [criterion], graph, taskContract: task,
+      mode: "dry", projectDirectory: root, ownerSessionId: "session-owner" })
+    const completed = await executeRun(run, { ...executeContext(root), sessionRunner: async () => {
+      throw new Error("dry run cannot launch a child")
+    } })
+    expect(completed.nodes.implement!.current_attempt).toBe(1)
+    const restored = loadRun(root, run.run_id)!
+    expect(restored.mode).toBe("dry")
+    expect(restored.status).toBe("failed")
+    const check = restored.nodes.check!.attempts[0]!
+    expect(check).toMatchObject({ outcome: "evidence_unavailable", schema_ok: true,
+      output: { passed: false, findings: [{ criterion_id: "C1", outcome: "inconclusive", evidence_ids: [] }] } })
+    expect(check.session_id).toBeUndefined()
+    expect(check.host_mechanical_evidence).toBeUndefined()
+    expect(check.action_evidence_sources).toBeUndefined()
+  })
+
   test("host-only verdict cannot bypass the separately declared deliverable gate", async () => {
     const root = project(), graph = getTemplate("coding-compact")
     const criterion = 'Mechanical action: first recorded bash command is exactly "echo expected"; its linked terminal exit code equals 7.'
@@ -166,6 +195,46 @@ describe("declared task admission", () => {
     } })).rejects.toThrow("task_deliverable_unavailable")
     expect(roles).toEqual(["implementer"])
     expect(run.nodes.check!.attempts).toHaveLength(0)
+  })
+
+  test("missing terminal exit evidence on ordinary resume retries only the checker and spends no new dispatch", async () => {
+    const root = project(), graph = getTemplate("coding-compact")
+    const criterion = 'Mechanical action: first recorded bash command is exactly "echo expected"; its linked terminal exit code equals 7.'
+    const snapshot = TaskRequestSnapshotSchema.parse({ status: "captured", session_id: "session-owner", message_id: "user-original",
+      text: criterion, text_sha256: createHash("sha256").update(criterion).digest("hex"), text_transformed: false, non_text_parts: 0 })
+    const task = bindTaskContract(contract({ evidence_plan: [{ criterion: 1, observations: [{ kind: "action" }] }] }),
+      criterion, [criterion], graph, { session_id: "session-owner", message_id: "planner" }, snapshot)
+    const allowance = new TaskAllowanceRuntime(new MemoryStore(root), { max_dispatches: 4, verification_reserve: 1 })
+    const taskAllowance = await allowance.admit("session-owner", task.contract_sha256)
+    const run = createRun({ goal: criterion, criteria: [criterion], graph, taskContract: task, taskAllowance,
+      projectDirectory: root, ownerSessionId: "session-owner" })
+    const journal = new ActionEvidenceJournal(root), retrieval = new EvidenceRetrieval(root)
+    const roles: string[] = []
+    const sessionRunner = async (opts: Parameters<NonNullable<Parameters<typeof executeRun>[1]["sessionRunner"]>>[0]) => {
+      roles.push(opts.agent)
+      if (opts.agent !== "implementer") throw new Error("mechanical checker must not launch a model child")
+      writeFileSync(join(root, "result.json"), "{}")
+      const child = "implement-child"
+      await opts.onSessionCreated?.(child)
+      const call = { tool: "bash", sessionID: child, callID: "missing-exit" }
+      journal.before(call, { command: "echo expected" })
+      journal.after(call, { output: "finished", metadata: {} })
+      return { session_id: child, text: "", parsed: output }
+    }
+    const first = await executeRun(run, { ...executeContext(root), taskAllowance: allowance,
+      actionEvidence: { journal, retrieval }, sessionRunner })
+    expect(first.nodes.check!.attempts.at(-1)!.outcome).toBe("evidence_unavailable")
+    expect(allowance.status(taskAllowance)).toMatchObject({ reserved: 1, producer_reserved: 1, verification_reserved: 0 })
+    const resumed = loadRun(root, run.run_id)!
+    prepareRunForResume(resumed)
+    const afterResume = await executeRun(resumed, { ...executeContext(root), operation: "resume", taskAllowance: allowance,
+      actionEvidence: { journal, retrieval }, sessionRunner })
+    expect(afterResume.nodes.implement!.attempts).toHaveLength(1)
+    expect(afterResume.nodes.implement!.current_attempt).toBe(1)
+    expect(afterResume.nodes.check!.attempts).toHaveLength(2)
+    expect(afterResume.nodes.check!.attempts.at(-1)!.outcome).toBe("evidence_unavailable")
+    expect(roles).toEqual(["implementer"])
+    expect(allowance.status(taskAllowance)).toMatchObject({ reserved: 1, producer_reserved: 1, verification_reserved: 0 })
   })
 
   test("a mixed mechanical/semantic contract retains the fresh checker", async () => {

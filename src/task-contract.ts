@@ -145,7 +145,7 @@ export function bindTaskContract(input: TaskContractInput, goal: string, criteri
 export function closedMechanicalVerification(criteria: string[], input: TaskContractInput,
   requestSnapshot?: TaskRequestSnapshot): TaskMechanicalVerification | undefined {
   if (!criteria.length || requestSnapshot?.status !== "captured" || requestSnapshot.text_transformed || requestSnapshot.non_text_parts !== 0) return undefined
-  const lines = requestSnapshot.text.split("\n")
+  const lines = requestSnapshot.text.split(/\r?\n/)
   // A recipe can govern the complete task only when the captured literal is
   // exactly the ordered accepted criteria. Extra prose/requirements require review.
   if (lines.length !== criteria.length || lines.some((line, index) => line !== criteria[index])) return undefined
