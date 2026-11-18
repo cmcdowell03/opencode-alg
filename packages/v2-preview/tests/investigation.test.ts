@@ -235,6 +235,21 @@ test("isolates project, on-disk project root, and owner authority", async () => 
   expect(f.calls.reads).toBe(0)
 })
 
+test("a refuted hypothesis and its next measurement survive restart together", async () => {
+  const f = fixture()
+  const { bridge, selection } = await completed(f)
+  const input = { expected_decision_revision: 0, next_action: "Compare monitor wafers by exposure.",
+    refutation: { id: "chamber-a", statement: "Chamber A explains the shift.", manifest_digest: selection.manifest_digest } }
+  await expect(bridge.setNextMeasurement(f.owner, { ...input, refutation: { ...input.refutation, manifest_digest: "f".repeat(64) } }))
+    .rejects.toThrow("current recorded manifest")
+  expect(bridge.primary(f.owner)?.decision_revision).toBe(0)
+  const recorded = await bridge.setNextMeasurement(f.owner, input)
+  expect(f.bridge().primary(f.owner)?.projection).toBe(recorded.projection)
+  expect(recorded.decision.hypotheses[0]).toMatchObject({ id: "chamber-a", status: "refuted", evidence_refs: [selection.manifest_digest] })
+  expect(recorded.decision.next_action).toBe(input.next_action)
+  await expect(bridge.setNextMeasurement(f.owner, input)).rejects.toThrow("stale investigation decision")
+})
+
 test("each primary request projects the latest durable decision under the hard byte bound", async () => {
   const f = fixture()
   const bridge = f.bridge()

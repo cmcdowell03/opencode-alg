@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto"
 import { existsSync, realpathSync } from "node:fs"
 import { isAbsolute } from "node:path"
+import { z } from "zod"
 import { acquireFilesystemMutexAsync } from "../../../src/filesystem-mutex.ts"
 import { decisionEvidence } from "../../../src/investigation/decision.ts"
 import {
@@ -34,7 +35,12 @@ export interface V2InvestigationOptions {
 
 type ResultSelection = Pick<CheckerResultGrantInput, "work_key" | "manifest_digest">
 type CheckerSelection = ResultSelection & { grant_id: string }
-type NextMeasurement = { expected_decision_revision: number; next_action: string }
+export const refutationSchema = z.object({
+  id: z.string().regex(/^[a-z0-9][a-z0-9_-]{0,63}$/),
+  statement: z.string().trim().min(1).refine(text => Buffer.byteLength(JSON.stringify(text)) <= 480),
+  manifest_digest: z.string().regex(/^[a-f0-9]{64}$/),
+}).strict()
+type NextMeasurement = { expected_decision_revision: number; next_action: string; refutation?: z.infer<typeof refutationSchema> }
 
 const MAX_PROJECTION_BYTES = 3072
 const MAX_DECISION_BYTES = 1024
@@ -242,7 +248,20 @@ export function createV2InvestigationBridge({ port, approvedJob }: V2Investigati
           throw new Error("next measurement exceeds the 1024-byte JSON budget or is empty")
         }
         if (revision === Number.MAX_SAFE_INTEGER) throw new Error("investigation decision revision exhausted")
+        const patch: Partial<typeof ledger.checkpoint> = {}
+        if (input.refutation !== undefined) {
+          const refutation = refutationSchema.parse(input.refutation)
+          const work = ledger.work[0]
+          if (!work || !["result_recorded", "reusable"].includes(work.status) || work.result?.digest !== refutation.manifest_digest)
+            throw new Error("refutation requires the current recorded manifest")
+          // A decision records the owner's interpretation of cited evidence. It grants no checker verdict.
+          const hypothesis = { id: refutation.id, statement: refutation.statement, status: "refuted" as const,
+            evidence_refs: [refutation.manifest_digest], updated_at: new Date().toISOString() }
+          patch.hypotheses = [...ledger.checkpoint.hypotheses.filter(item => item.id !== hypothesis.id), hypothesis]
+          patch.decision_focus = { hypothesis_ids: [hypothesis.id], contradictions: [] }
+        }
         await store.updateCheckpoint({
+          ...patch,
           next_action: action,
           scope: { ...ledger.checkpoint.scope, v2_decision_revision: revision + 1 },
         })
