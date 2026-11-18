@@ -14,6 +14,8 @@ The native Linux full suite at runtime commit `55482a3` passed 1,669 tests with 
 
 Actual headless OpenCode 1.19.5 loaded the same runtime digest on Windows and Linux (`cd7eade8cd124a5ad52e53a4a85f1b0ac9141d806e10a46ea8e8f0d42976f173`). Each session recovered its compaction message, survived two process restarts, and revalidated the same result after one job submission. Every host, provider and test service stopped, and both temporary environments were removed. The final receipt SHA-256 values are `8015f4ac6065395b4b9986d869e61c0d068b8f97b8518131a014aefeb492fdbf` (PowerShell) and `40f7c644f56d0a4120f80f26971146ca217e50fc14aa2f3178f630914ed15e4c` (Bash).
 
+Linux also passed typecheck and all 34 focused benchmark, package and release tests on the nine-file `89abcaa` delta. The [comparison receipts](v1-comparative-factory-benchmark.md#measured-windows-and-linux-results) record the six completed cells per platform and the separate Linux filesystem setup failure.
+
 This increment covers the first host verification recipe and recovery of investigation decisions. A general criterion-by-criterion obligation ledger, production datalake service qualification and measured promotion of agent-authored graphs are still open in the [larger plan](v1-capability-augmentation-plan.md#delivery-order-gates-and-first-implementation-slice).
 
 ## 0.5.12 — qualified package, unresolved real-checker behavior

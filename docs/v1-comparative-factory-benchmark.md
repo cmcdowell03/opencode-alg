@@ -23,6 +23,8 @@ bun scripts/comparative-benchmark.ts --output <evidence-dir>/fixture.json
 
 For the headless integration run, install OpenCode V1 and create a JSON file with these fields. Set `hostExecutable` to the absolute path of the local executable and `outputRoot` to a directory that does not yet exist.
 
+In WSL, place `outputRoot` under your Linux home directory. The runner initializes a Git worktree for each case. A Windows mount that denies Git's `chmod` on `.git/config.lock` will stop the case during setup. Copy the completed receipts to a shared drive afterward.
+
 ```json
 {
   "hostExecutable": "/absolute/path/to/opencode",
@@ -38,14 +40,16 @@ bun scripts/comparative-benchmark-opencode.ts --config <path-to-config.json>
 
 Qualification exercises positive controls and deliberately wrong answers, missing reads, stale revisions, reordered job operations and duplicate submissions. Headless smoke uses isolated OpenCode sessions and a scripted loopback provider. Its result measures whether the host, tools, handoff, and scorer work together. A comparative capability claim requires a separately qualified real-model trial on held-out incidents. The broader V1 claim criteria are in the [capability augmentation plan](v1-capability-augmentation-plan.md).
 
-## Measured Windows result
+## Measured Windows and Linux results
 
-OpenCode 1.19.5 on Windows passed all six cells on the two development incidents. All 26 scorer controls passed. Every recipient read the correct source before writing, cited the returned manifest and completed without a duplicate submission. For both memory-enabled configurations the harness observed the bound skill in the continuation's system request.
+OpenCode 1.19.5 passed all six cells on each operating system. Both runs passed all 26 scorer controls. Every recipient read the correct source before writing, cited the returned manifest and completed without a duplicate submission. For both memory-enabled configurations the harness observed the bound skill in the continuation's system request.
 
-| Configuration | Incidents solved | Recorded arm duration |
-| --- | ---: | --- |
-| Native Build | 2/2 | 18.8 s and 20.8 s |
-| Build with ALG memory | 2/2 | 30.1 s and 31.7 s |
-| ALG graph | 2/2 | 35.2 s and 35.5 s |
+| Configuration | Incidents solved per platform | Windows duration by incident | Linux duration by incident |
+| --- | ---: | --- | --- |
+| Native Build | 2/2 | 18.8 s and 20.8 s | 8.1 s and 8.5 s |
+| Build with ALG memory | 2/2 | 30.1 s and 31.7 s | 9.0 s and 8.6 s |
+| ALG graph | 2/2 | 35.2 s and 35.5 s | 9.5 s and 8.3 s |
 
-The identical results qualify the comparison mechanics. The scripted provider follows the procedure in every arm, so these timings describe this smoke run and the scores cannot establish a reasoning advantage. [Windows receipt summary](evidence/factory-handoff-0.5.13/windows.json)
+The first Linux launch put the case worktrees on a Windows mount. Git initialization failed in all six cells before a provider call. Its separate receipt SHA-256 is `a1bf117fa8e53904fe6cd076391778a3cb7916c2bdad0e3d32840349840e9705`. The Linux column records the subsequent run on ext4 with the same harness and qualification.
+
+The scripted provider follows the procedure in every arm. These observations qualify the comparison mechanics and show their elapsed time on these hosts. Reasoning capability and performance on new incidents require separate trials. [Windows receipt](evidence/factory-handoff-0.5.13/windows.json) · [Linux receipt](evidence/factory-handoff-0.5.13/linux.json)
