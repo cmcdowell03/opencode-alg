@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, test } from "bun:test"
+import { createHash } from "node:crypto"
+import { dirname, join } from "node:path"
 import { mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs"
-import { join } from "node:path"
+import { canonicalJson } from "../src/persistence.ts"
 import { InvestigationStore, investigationPortIsQualified, type InvestigationMcpPort, type InvestigationSubmission } from "../src/investigation/index.ts"
 
 const roots: string[] = []
@@ -18,6 +20,19 @@ const result = { manifest_ref: "lake-result:abc", digest: "a".repeat(64), source
 function fakePort(submit: (request: { submission_id: string; work_key: string; operation: string; query: Record<string, unknown> }) => Promise<InvestigationSubmission>,
   lookup: InvestigationMcpPort["lookup"] = async () => ({ kind: "unknown", reason: "fixture has no lookup" })) {
   return { capabilities, submit, lookup } satisfies InvestigationMcpPort
+}
+function replaceLedgerSnapshot(projectDirectory: string, transform: (ledger: any) => void) {
+  const rootPath = join(projectDirectory, ".opencode", "runs", "run-a", "investigation")
+  const headPath = join(rootPath, "head.json")
+  const head = JSON.parse(readFileSync(headPath, "utf8"))
+  const ledgerPath = head.snapshot_ref as string
+  const ledger = JSON.parse(readFileSync(ledgerPath, "utf8"))
+  transform(ledger)
+  const body = canonicalJson(ledger)
+  const sha256 = createHash("sha256").update(body).digest("hex")
+  const snapshotRef = join(dirname(ledgerPath), `ledger-${sha256}.json`)
+  writeFileSync(snapshotRef, body)
+  writeFileSync(headPath, canonicalJson({ ...head, snapshot_ref: snapshotRef, sha256 }))
 }
 
 describe("durable investigation core", () => {
@@ -43,6 +58,57 @@ describe("durable investigation core", () => {
     expect(changed.work_key).not.toBe(first.work_key)
     expect(store.snapshot.work).toHaveLength(2)
     expect(store.snapshot.reserved_cost).toBe(20)
+  })
+
+  test("durable dispatch guard sees the locked assignment and rejects before submission intent", async () => {
+    const store = InvestigationStore.open(scope(root()), { create: true, costLimit: 100 })
+    const work = await store.admit({ ...workInput, cohort: "affected", preprocessing_revision: "recipe-fp-1" }, capabilities)
+    expect(work).toMatchObject({ recipe_version: "3", cohort: "affected", preprocessing_revision: "recipe-fp-1" })
+    await store.authorizeNodes(work.work_key, ["process"])
+    await store.authorizeNodes(work.work_key, ["confirm"])
+    let submissions = 0
+    const port = fakePort(async () => { submissions++; return { kind: "running", external_job_id: "unexpected" } })
+    await expect(store.dispatch(work.work_key, port, (fresh) => {
+      if (fresh.authorized_nodes?.includes("confirm")) throw new Error("review required for locked confirmation assignment")
+    })).rejects.toThrow("review required")
+    expect(submissions).toBe(0)
+    expect(store.snapshot.work.find((item) => item.work_key === work.work_key)?.status).toBe("reserved")
+  })
+
+  test("0.5.12 reservation safely migrates on exact normalized re-admission and retains result reads", async () => {
+    const location = scope(root()), store = InvestigationStore.open(location, { create: true, costLimit: 100 })
+    const exact = { ...workInput, cohort: "affected", preprocessing_revision: "recipe-fp-3" }
+    const work = await store.admit(exact, capabilities)
+    const legacyPort: InvestigationMcpPort = { ...fakePort(async () => ({ kind: "result", result })),
+      validateResult: async (_result, current) => ({ valid: true, validity_key: current.validity_key, access_scope: result.access_scope }) }
+    await store.dispatch(work.work_key, legacyPort)
+    replaceLedgerSnapshot(location.project_directory, (ledger) => {
+      delete ledger.work[0].recipe_version
+      delete ledger.work[0].cohort
+      delete ledger.work[0].preprocessing_revision
+    })
+    const reopened = InvestigationStore.open(location)
+    const migrated = await reopened.admit(exact, capabilities)
+    expect(migrated).toMatchObject({ work_key: work.work_key, submission_id: work.submission_id,
+      status: "result_recorded", recipe_version: "3", cohort: "affected", preprocessing_revision: "recipe-fp-3" })
+    expect((await reopened.getReusableResult(work.work_key, legacyPort)).source_versions).toEqual(["snapshot:lot-7"])
+  })
+
+  test("legacy recipe metadata migration rejects a retained-payload mismatch", async () => {
+    const location = scope(root()), store = InvestigationStore.open(location, { create: true, costLimit: 100 })
+    const exact = { ...workInput, cohort: "affected", preprocessing_revision: "recipe-fp-3" }
+    const work = await store.admit(exact, capabilities)
+    replaceLedgerSnapshot(location.project_directory, (ledger) => {
+      delete ledger.work[0].recipe_version
+      delete ledger.work[0].cohort
+      delete ledger.work[0].preprocessing_revision
+      ledger.work[0].query = { recipe: "substituted", limit: 50 }
+    })
+    const reopened = InvestigationStore.open(location)
+    const revision = reopened.snapshot.revision
+    await expect(reopened.admit(exact, capabilities)).rejects.toThrow("legacy work identity does not match")
+    expect(InvestigationStore.open(location).snapshot.revision).toBe(revision)
+    expect(InvestigationStore.open(location).snapshot.work[0]?.work_key).toBe(work.work_key)
   })
 
   test("survives twenty compaction-style reconstructions and two independent stores", async () => {

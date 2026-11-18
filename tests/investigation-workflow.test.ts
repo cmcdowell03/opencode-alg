@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test"
-import { mkdtempSync, realpathSync } from "node:fs"
+import { spawnSync } from "node:child_process"
+import { existsSync, mkdtempSync, realpathSync } from "node:fs"
 import { join } from "node:path"
 import { createRun, loadRunForOwner, readNodeArtifactOutput } from "../src/store.ts"
 import { executeRun, prepareRunForResume } from "../src/executor.ts"
@@ -9,6 +10,7 @@ import server from "../src/index.ts"
 import { recordInvestigationReview, requireInvestigationReview } from "../src/investigation-review.ts"
 import { InvestigationStore, type InvestigationMcpPort, type InvestigationWorkInput } from "../src/investigation/index.ts"
 import { SessionMemoryRuntime } from "../src/session-memory/runtime.ts"
+import { hashObject } from "../src/session-memory/store.ts"
 import { getTemplate } from "../src/templates.ts"
 import { bindTaskContract } from "../src/task-contract.ts"
 import type { NodePromptOpts } from "../src/sessions.ts"
@@ -143,7 +145,9 @@ describe("V1 Phase One synthetic investigation acceptance", () => {
     const sessionRunner = async (prompt: NodePromptOpts) => {
       const nodeId = prompt.title.split("/").at(-2)!
       const child = `synthetic-child-${++childSequence}`
+      runtime.memory.delegate("owner", child, nodeId === "check" ? "checker" : "worker")
       await prompt.onSessionCreated?.(child)
+      if (nodeId === "confirm") expect(runtime.status(child)).toMatchObject({ confirmation_work_key: confirmation.work_key })
       const parsed = nodeId === "discover"
         ? { query: "Synthetic excursion scope", map: [{ path: "synthetic://catalog", role: "scoped fixture catalog" }],
           key_hits: [{ path: "synthetic://catalog", note: "11,000 deterministic local entries" }], next: "researcher" }
@@ -171,7 +175,48 @@ describe("V1 Phase One synthetic investigation acceptance", () => {
     expect(partial.nodes.confirm?.status).toBe("pending")
     expect(partial.nodes.check?.status).toBe("pending")
     expect(() => requireInvestigationReview(partial)).toThrow("engineer_review_required")
-    recordInvestigationReview(partial, "operator:synthetic-reviewer")
+    const confirmation = await runtime.admitWork("owner", { ...workInput, cohort: "affected",
+      source_dependencies: ["synthetic-catalog:fixture-1"] }, ["confirm"])
+    const substitute = await runtime.admitWork("owner", { ...workInput, cohort: "comparison",
+      source_dependencies: ["synthetic-catalog:fixture-2"] }, ["confirm"])
+    await expect(runtime.executeWork("owner", substitute.work_key)).rejects.toThrow("engineer_review_required")
+    const cli = join(import.meta.dir, "..", "scripts", "investigation-cli.ts")
+    const invokeCli = (...args: string[]) => spawnSync(process.execPath, [cli, "--project", path, "--owner", "owner",
+      "--run", run.run_id, ...args], { encoding: "utf8", cwd: path })
+    const preview = invokeCli("--preview", "--work-key", confirmation.work_key)
+    expect(preview.status).toBe(0)
+    const previewWork = JSON.parse(preview.stdout).confirmation_work[0]
+    const staleBasis = previewWork.basis_sha256 as string
+    expect(previewWork).toMatchObject({ work_key: confirmation.work_key, submission_id: confirmation.submission_id,
+      operation: workInput.operation, recipe_version: workInput.recipe_version, cohort: "affected",
+      source_dependencies: ["synthetic-catalog:fixture-1"], query: workInput.query, parameters: workInput.parameters,
+      reservation: expect.any(Number), reserved_cost_current: expect.any(Number),
+      purpose: "analysis", generation: 0, authorized_nodes: ["confirm"],
+      basis_sha256: expect.stringMatching(/^[a-f0-9]{64}$/) })
+    expect(staleBasis).toHaveLength(64)
+    await runtime.note("owner", { coverage: { changed_after_preview: true } })
+    const reviewPath = join(path, ".opencode", "runs", run.run_id, "investigation", "engineer-review.json")
+    const ledgerBeforeReject = InvestigationStore.open({ project_directory: path, project_id: memory.store.projectId,
+      owner_id: "owner", run_id: run.run_id }).snapshot
+    const runBeforeReject = loadRunForOwner(path, run.run_id, "owner")!
+    const rejectedReview = invokeCli("--engineer", "operator:synthetic-reviewer", "--proceed", "--work-key", confirmation.work_key,
+      `--expected-basis=${staleBasis}`)
+    expect(rejectedReview.status).not.toBe(0)
+    expect(rejectedReview.stderr).toContain("stale operator preview")
+    expect(existsSync(reviewPath)).toBe(false)
+    expect(InvestigationStore.open({ project_directory: path, project_id: memory.store.projectId,
+      owner_id: "owner", run_id: run.run_id }).snapshot).toEqual(ledgerBeforeReject)
+    expect(hashObject(loadRunForOwner(path, run.run_id, "owner"))).toBe(hashObject(runBeforeReject))
+
+    const currentPreview = invokeCli("--preview", "--work-key", confirmation.work_key)
+    expect(currentPreview.status).toBe(0)
+    const currentBasis = JSON.parse(currentPreview.stdout).confirmation_work[0].basis_sha256
+    const acceptedReview = invokeCli("--engineer", "operator:synthetic-reviewer", "--proceed", "--work-key", confirmation.work_key,
+      `--expected-basis=${currentBasis}`)
+    expect(acceptedReview.status).toBe(0)
+    expect(() => requireInvestigationReview(partial, confirmation.work_key)).not.toThrow()
+    await expect(runtime.executeWork("owner", confirmation.work_key)).resolves.toMatchObject({ work_key: confirmation.work_key })
+    expect(() => requireInvestigationReview(loadRunForOwner(path, run.run_id, "owner")!, confirmation.work_key)).not.toThrow()
 
     const reloaded = loadRunForOwner(path, run.run_id, "owner")!
     const completed = await executeRun(prepareRunForResume(reloaded), { ...common, operation: "resume" })
@@ -185,7 +230,7 @@ describe("V1 Phase One synthetic investigation acceptance", () => {
     expect(readNodeArtifactOutput(completed, "discover")).toMatchObject({ query: expect.any(String), map: expect.any(Array) })
     expect(readNodeArtifactOutput(completed, "check")).toMatchObject({ passed: true, score: 9 })
     expect(outputs).toHaveProperty("check")
-    expect(synthetic.calls.submit).toBe(1)
+    expect(synthetic.calls.submit).toBe(2)
     expect(synthetic.calls.lookup).toBe(0)
     // Replaying the observed redundant-plan sequence must not create a new run or spend.
     const tools = createAlgTools({ directory: path, worktree: path, client: inertClient() } as any,
@@ -202,7 +247,7 @@ describe("V1 Phase One synthetic investigation acceptance", () => {
     }
     expect(loadRunForOwner(path, run.run_id, "owner")!.global_attempts).toBe(completed.global_attempts)
     expect(childSequence).toBe(7)
-    expect(synthetic.calls.submit).toBe(1)
+    expect(synthetic.calls.submit).toBe(2)
     expect(runtime.status("owner")).toMatchObject({ execution_status: "done", terminal: true })
     expect(runtime.render("owner")).toContain("execution_status=done")
     expect(runtime.render("owner")).toContain("Report the existing outcome and stop")
@@ -219,8 +264,7 @@ describe("V1 Phase One synthetic investigation acceptance", () => {
       const compacted = { context: [] as string[] }
       await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compacted)
       for (const text of [normal.system.join("\n"), compacted.context.join("\n")]) {
-        expect(text).toContain("execution_status=done")
-        expect(text).toContain("Report the existing outcome and stop")
+        expect(text).toContain("Execution is complete. Report the existing outcome and stop")
         expect(text).not.toContain("discover metadata and establish coverage")
       }
     } finally { await hooks.dispose?.() }

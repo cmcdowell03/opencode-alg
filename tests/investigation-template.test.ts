@@ -1,9 +1,14 @@
 import { describe, expect, test } from "bun:test"
 import { initNodeStates, readyNodes, validateGraph, wireInputs } from "../src/graph.ts"
 import { DATA_INVESTIGATION, getTemplate, listTemplates } from "../src/templates.ts"
+import { hashObject } from "../src/session-memory/store.ts"
 import type { RunState } from "../src/types.ts"
 
 describe("data-investigation fixed V1 template", () => {
+  test("preserves the historical managed graph hash used by resume identity", () => {
+    expect(hashObject(getTemplate("data-investigation"))).toBe("476eb37b681318030878e0f825932a8f3f7ce690aff68086e69fd241990e88af")
+  })
+
   test("is registered, cloned, expanded, and valid under the existing graph schema", () => {
     const graph = getTemplate("data-investigation")
     expect(listTemplates().map(({ name }) => name)).toContain("data-investigation")

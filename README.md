@@ -52,7 +52,20 @@ See [implementation status and remaining completion gates](docs/implementation-s
 
 The SDK/plugin dependency used to compile this package is pinned at `1.18.3`; that dependency pin is not the runtime compatibility floor. Live verification accepts stable OpenCode versions satisfying the declared engine range. The recorded 0.5.11 package acceptance used OpenCode `1.19.5` on Windows and `1.18.35` in native WSL Linux; later candidates require their own qualification.
 
-## Pending 0.5.12 checker consistency
+## 0.5.13 investigation recovery and verification
+
+For long investigations, the orchestrator can preserve the next measurement
+with its relevant counterevidence, give a checker scoped access to the original
+result, and present an exact confirmation work order for engineer review. See
+[investigation usage](docs/v1-investigations.md).
+
+For an exact command requirement, ALG can compare the producer's first recorded
+`bash` call and its linked exit status with the original request. A semantic
+criterion still goes to a fresh checker. The host also checks declared
+deliverables and reconstructs mechanical findings when the run is reloaded.
+See the [supported action recipe](docs/v1-action-evidence.md#host-evaluated-command-criterion).
+
+## 0.5.12 checker consistency
 
 The candidate checks structured assessments of host-verifiable action facts
 against the original cited records. A contradiction is invalid checker output

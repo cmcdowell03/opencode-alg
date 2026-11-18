@@ -49,6 +49,33 @@ At most two expensive jobs may be active. A finite admission count also bounds z
 
 ## Typed requests and operator recovery
 
+To have a fresh checker inspect an existing producer result, the investigation
+owner calls `grant_checker_result` with its `work_key`, `manifest_digest`,
+`producer_node` and `checker_node`. For an assigned upstream producer, this lets
+the nominated checker use `read_result` on the recorded material. A separate
+experiment requires its own admitted order. Use `revoke_checker_result` with the
+same fields to withdraw access. The service's scope, validity and expiration
+checks still apply to the original result.
+
+The orchestrator can pin the hypotheses and contrary observations relevant to
+its next decision. For example, after creating hypothesis `chamber`, send this
+request to `alg_investigation`.
+
+```json
+{"request":{"action":"note","patch":{"next_action":"Compare inspection revisions within each product","contradictions":["The chamber association disappears within product."],"decision_focus":{"hypothesis_ids":["chamber"],"contradictions":["The chamber association disappears within product."]}}}
+```
+
+The `contradictions` patch replaces that checkpoint list. Preserve existing
+observations when adding one. A focus can reference an observation already
+recorded, in which case omit the outer list from the patch. The optional
+`decision_focus` records the orchestrator's selection. Changing the next action clears the selection unless the same update
+supplies a replacement. When the normal or compaction context runs out of room,
+retrieve the decision using `{"request":{"action":"decision"}}`. For each
+`next_page`, send its index as `page` and echo the returned `revision`.
+Concatenating the text pages yields one JSON document. A stale revision requires
+starting again at page zero. The full stored checkpoint retains the evidence
+references omitted from the bounded view.
+
 The tool takes a structured `request` union, not JSON embedded in a string. For example, admit a configured recipe with `{ "request": { "action": "admit_recipe", "operation": "bounded-read", "version": "1", "parameters": {}, "node_ids": ["process"] } }`, then execute with `{ "request": { "action": "query", "work_key": "<returned key>" } }`. The operation/version must already exist in trusted configuration; the example names are illustrative. Argument failures return bounded issue codes and safe field names, without unknown keys or values.
 
 The operator CLI supports `--abandon-work KEY --statement REASON` for unsubmitted or terminal work, `--retry-unaccepted KEY --reserve-cost REVIEWED_MAXIMUM --statement REASON` only after zero-cost nonacceptance is proven, and `--migrate-profile PATH --statement REASON` for an explicitly reviewed qualified-profile change. Migration requires no active jobs and no uncertain remote outcomes; it retains the old work, evidence, receipts and profile history while recording the new profile decision. These actions require the existing project, owner, run and engineer arguments. Recovery records the operator contribution in the same ledger transaction and retains the submission idempotency ID on retry. Neither action can conceal potentially active remote work or erase spent budget. Cancellation still needs terminal confirmation.
@@ -60,10 +87,14 @@ Older candidate ledgers remain inspectable/reconcilable, but new admissions to a
 Before the `confirm` node, the run blocks without spending a confirmation attempt. Review the initial evidence and record an operator decision with:
 
 ```sh
-bun run scripts/investigation-cli.ts --project "/path/to/project" --owner "session-id" --run "run-id" --engineer "engineer-reference" --statement "Reviewed the initial evidence and its coverage" --scope "initial findings" --proceed
+bun run scripts/investigation-cli.ts --project "/path/to/project" --owner "session-id" --run "run-id" --engineer "engineer-reference" --statement "Reviewed the initial evidence and its coverage" --scope "initial findings"
+bun run scripts/investigation-cli.ts --project "/path/to/project" --owner "session-id" --run "run-id" --preview
+# Inspect operation, recipe version, cohort, source dependencies/revisions, query and parameters; then pass the selected work key:
+bun run scripts/investigation-cli.ts --project "/path/to/project" --owner "session-id" --run "run-id" --preview --work-key "<work-key>"
+bun run scripts/investigation-cli.ts --project "/path/to/project" --owner "session-id" --run "run-id" --engineer "engineer-reference" --proceed --work-key "<work-key>" --expected-basis "<basis-sha256>"
 ```
 
-Then use `alg_resume`. The receipt binds the reviewed graph, criteria and completed initial findings; changed findings require a new review. Engineer contributions are labelled reported knowledge, not automatically verified causal evidence. The CLI is an application-level approval boundary. A same-account agent with unrestricted shell/filesystem access is not isolated by an OS security boundary; deployments requiring that separation must restrict those permissions externally.
+`--preview` is read-only and exposes the current review basis digest plus every decision-critical order field. New CLI approvals require the exact `--expected-basis` digest from that preview; the CLI compares it with the fresh basis inside the owned-run mutation before writing the receipt. A stale digest rejects with no review or run write. The approval is committed in the investigation ledger under the same lock as durable dispatch intent. The receipt binds the reviewed graph, criteria, completed initial findings, and the selected order's operation, recipe version, cohort, source dependencies, query, parameters, immutable admission reservation, purpose, generation, assignment, and submission ID. The work key commits the complete admitted identity, including qualified service revisions. Drift or a substituted work key blocks both the confirmation batch and owner/worker dispatch; durable dispatch repeats the check under the ledger lock. Legacy sidecar receipts remain readable for their original evidence, but do not authorize fresh dispatch. Then use `alg_resume`. Engineer contributions are labelled reported knowledge, not automatically verified causal evidence. The CLI is an application-level approval boundary. A same-account agent with unrestricted shell/filesystem access is not isolated by an OS security boundary; deployments requiring that separation must restrict those permissions externally.
 
 
 ### Intentional new tasks

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.13 candidate
+
+- The host can decide an explicitly admitted first-command and exit-code criterion from the submitted producer's action journal. Semantic findings retain a fresh checker. Reload verifies the evidence against the original contract.
+- Investigations can pin the hypotheses and contrary observations behind the next measurement. Normal context and compaction recover that selection. A paged decision read handles larger records.
+- Engineers can preview a confirmation query and approve its exact work key. Investigation owners can grant a checker read access to a particular producer result for an independent audit.
+- New investigation fields require the 0.5.13 reader once written. The operator documentation describes the confirmation and result-sharing commands.
+
+## Earlier V1 action evidence
+
 - V1 candidate: retain run-contained host action intents and terminal observations;
   let assigned checkers retrieve bounded, hash-bound pages across producer attempts.
   Keep evidence-gap retries on the checker and preserve legacy records, unknown

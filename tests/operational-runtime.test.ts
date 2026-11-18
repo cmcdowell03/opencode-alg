@@ -7,6 +7,8 @@ import { mutateOwnedRunAsync } from "../src/ownership.ts"
 import { SessionMemoryRuntime } from "../src/session-memory/runtime.ts"
 import { OperationalRuntime } from "../src/operational-runtime.ts"
 import { createOperationalTools } from "../src/operational-tools.ts"
+import { decisionEvidence } from "../src/investigation/decision.ts"
+import server from "../src/index.ts"
 import { getTemplate } from "../src/templates.ts"
 import { investigationReviewBasis, recordInvestigationReview, requireInvestigationReview } from "../src/investigation-review.ts"
 import { InvestigationStore, type InvestigationMcpPort, type InvestigationWorkInput } from "../src/investigation/index.ts"
@@ -40,6 +42,68 @@ function fixture(path = project()) {
 }
 
 describe("operational investigation host", () => {
+  test("legacy decisions rank shared evidence first and disclose omitted contrary observations", () => {
+    const hypotheses = Array.from({ length: 8 }, (_, i) => ({ id: String(i), statement: "Test " + i,
+      status: "active" as const, evidence_refs: i === 0 ? ["result-A"] : [],
+      updated_at: "2026-11-17T12:00:00Z" }))
+    const checkpoint = { hypotheses, objective: "", scope: {}, completed_tests: [], coverage: {}, evidence_refs: [],
+      next_action: "Check product mix", engineer_contributions: [], contradictions: ["a", "b", "c", "d", "e"],
+      analytical_result: { status: "unresolved" as const, claim: "Possible chamber effect", evidence_refs: ["result-A"],
+        authority: "reported_analysis" as const } }
+    const recovered = decisionEvidence(checkpoint)
+    expect(recovered.hypotheses.map(item => item.id)).toEqual(["0", "7", "6", "5"])
+    expect(recovered).toMatchObject({ other_hypotheses: 4, other_contradictions: 1,
+      contradiction_selection: "recorded_order" })
+    expect(checkpoint.hypotheses.map(item => item.id)).toEqual(["0", "1", "2", "3", "4", "5", "6", "7"])
+  })
+  test("restart recovers the selected older counterevidence and fences decision pagination", async () => {
+    const f = fixture()
+    await f.runtime.begin(f.run)
+    const contrary = "Within the matched product the chamber effect disappears."
+    for (let i = 0; i <= 10; i++) {
+      await f.runtime.hypothesis("owner", { id: "h" + i, statement: "Hypothesis " + i,
+        status: "active", evidence_refs: [] })
+    }
+    await f.runtime.note("owner", {
+      next_action: "Compare matched inspection strata",
+      contradictions: [contrary, ...Array.from({ length: 10 }, (_, i) => "Other observation " + i)],
+      decision_focus: { hypothesis_ids: ["h0"], contradictions: [contrary] },
+      coverage: { notes: "x".repeat(1000) },
+    })
+    const restored = new OperationalRuntime(new SessionMemoryRuntime(f.path, { mode: "assist" }), {},
+      { enabled: true, perJobReservation: 5 }, () => f.port)
+    const recovered = restored.render("owner", 850)
+    expect(Buffer.byteLength(recovered)).toBeLessThanOrEqual(850)
+    expect(recovered).toContain(contrary)
+    expect(recovered).toContain("Hypothesis 0")
+    expect(recovered).not.toContain("Hypothesis 10")
+    const hooks = await server({ directory: f.path, worktree: f.path, project: { id: "fixture" }, client: {
+      session: { get: async () => ({ data: { id: "owner", projectID: "fixture", directory: f.path } }),
+        messages: async () => ({ data: [] }) }, app: { log: async () => ({}) },
+    } } as any, { sessionMemory: { mode: "assist" }, investigation: { enabled: true }, skillEvolution: { enabled: false } } as any)
+    try {
+      const normal = { system: [] as string[] }, compacted = { context: [] as string[] }
+      await hooks["experimental.chat.system.transform"]!({ sessionID: "owner", model: { limit: { context: 32000, output: 4096 } } } as any, normal)
+      await hooks["experimental.session.compacting"]!({ sessionID: "owner" }, compacted)
+      expect(normal.system.join("\n")).toContain(contrary)
+      expect(compacted.context.join("\n")).toContain(contrary)
+    } finally { await hooks.dispose?.() }
+    const refs = ["one", "two", "three", "four", "contrary-observation-source"]
+    await restored.hypothesis("owner", { id: "h0", statement: "A🔬".repeat(1100), status: "active", evidence_refs: refs })
+    expect(restored.render("owner", 850)).toContain("alg_investigation decision")
+    const first = restored.decision("owner", 0)
+    expect(first.next_page).toBe(1)
+    const second = restored.decision("owner", 1, first.revision)
+    const decision = JSON.parse(first.text + second.text)
+    expect(decision.contradictions).toEqual([contrary])
+    expect(decision.hypotheses[0].evidence_refs).toEqual(refs)
+    expect(decision.hypotheses[0].statement).toEqual("A🔬".repeat(1100))
+    await expect(restored.note("owner", { contradictions: ["different"] })).rejects.toThrow()
+    expect(restored.decision("owner", 0).revision).toBe(first.revision)
+    await restored.note("owner", { next_action: "Review a different comparison" })
+    expect(() => restored.decision("owner", 1, first.revision)).toThrow("revision")
+    expect(restored.status("owner")).toMatchObject({ checkpoint: { next_action: "Review a different comparison" } })
+  }, 60_000)
   test("models cannot manufacture fresh work through purpose or generation", async () => {
     const f = fixture()
     await f.runtime.begin(f.run)
@@ -183,6 +247,115 @@ describe("operational investigation host", () => {
     expect(() => f.runtime.status("child")).toThrow("lost its parent")
   })
 
+  test("checker reads only the owner-granted exact upstream result and cannot execute or duplicate it", async () => {
+    const f = fixture()
+    await f.runtime.begin(f.run)
+    let submits = 0, reads = 0, validations = 0
+    let signalReadStarted!: () => void, completeRead!: () => void
+    let signalValidationStarted!: () => void, completeValidation!: () => void, holdValidation = false
+    const readStarted = new Promise<void>((resolve) => { signalReadStarted = resolve })
+    const releaseRead = new Promise<void>((resolve) => { completeRead = resolve })
+    const validationStarted = new Promise<void>((resolve) => { signalValidationStarted = resolve })
+    const releaseValidation = new Promise<void>((resolve) => { completeValidation = resolve })
+    const port: InvestigationMcpPort = {
+      ...f.port,
+      submit: async (request) => { submits++; const result = { manifest_ref: `synthetic://producer/${request.operation}`,
+        digest: (submits === 1 ? "c" : "d").repeat(64), source_versions: ["snapshot-1"], coverage: { rows: 1 },
+        observed_at: new Date().toISOString(), access_scope: "reader" }; return { kind: "result", result, actual_cost: 1 } },
+      validateResult: async (result, work) => { validations++; if (holdValidation) { holdValidation = false; signalValidationStarted(); await releaseValidation }
+        return { valid: true, validity_key: work.validity_key, access_scope: result.access_scope } },
+      readResult: async (result, request) => { reads++; if (request.cursor === "race") { signalReadStarted(); await releaseRead }
+        return { manifest_ref: result.manifest_ref, digest: result.digest,
+          access_scope: result.access_scope, cursor: request.cursor, next_cursor: null,
+          rows: [{ producer_record: result.digest[0] === "c" ? "original one" : "original two" }], coverage: { rows: 1 } } },
+    }
+    const runtime = new OperationalRuntime(f.memory, {}, { enabled: true, costLimit: 20, perJobReservation: 5,
+      continuation: { waitMs: 0, pollIntervalMs: 100 } }, () => port)
+    const producerOrder = await runtime.admitWork("owner", input, ["reconcile"])
+    await runtime.executeWork("owner", producerOrder.work_key)
+    const secondOrder = await runtime.admitWork("owner", { ...input, operation: "second-result" }, ["reconcile"])
+    await runtime.executeWork("owner", secondOrder.work_key)
+    const firstDigest = "c".repeat(64), secondDigest = "d".repeat(64)
+    const ownerStatus = runtime.status("owner")
+    if (!("work" in ownerStatus)) throw new Error("expected attached owner status")
+    expect(ownerStatus.work).toEqual(expect.arrayContaining([
+      expect.objectContaining({ work_key: producerOrder.work_key, manifest_digest: firstDigest }),
+      expect.objectContaining({ work_key: secondOrder.work_key, manifest_digest: secondDigest }),
+    ]))
+
+    f.memory.delegate("owner", "checker-session", "checker")
+    await mutateOwnedRunAsync(f.path, f.run.run_id, "owner", (run) => {
+      run.status = "running"
+      run.phase = "run"
+      run.global_attempts = 1
+      run.nodes.check!.status = "running"
+      run.nodes.check!.current_attempt = 1
+      run.nodes.check!.attempts.push({ attempt: 1, status: "running", session_id: "checker-session",
+        started_at: new Date().toISOString(), failures: [] })
+    })
+    const current = loadRunForOwner(f.path, f.run.run_id, "owner")!
+    await runtime.child(current, "checker-session", current.graph.nodes.find((node) => node.id === "check")!)
+
+    const grant = { work_key: producerOrder.work_key, manifest_digest: firstDigest, producer_node: "reconcile", checker_node: "check" }
+    await expect(runtime.readResult("checker-session", producerOrder.work_key)).rejects.toThrow("not assigned")
+    await expect(runtime.grantCheckerResult("checker-session", grant)).rejects.toThrow("delegated")
+    await expect(runtime.grantCheckerResult("owner", { ...grant, manifest_digest: secondDigest })).rejects.toThrow("exact recorded result")
+    await expect(runtime.grantCheckerResult("owner", { ...grant, producer_node: "check" })).rejects.toThrow("exact recorded result")
+    const tool = createOperationalTools(runtime, async () => {}).alg_investigation
+    const grantReply = await tool.execute({ request: { action: "grant_checker_result", ...grant } } as never,
+      { sessionID: "owner", worktree: f.path, directory: f.path } as never)
+    if (typeof grantReply === "string") throw new Error("expected structured grant result")
+    const issued = JSON.parse(grantReply.output)
+    expect(issued).toMatchObject({ ...grant, granted_by: "owner" })
+    holdValidation = true
+    const beforeFetch = runtime.readResult("checker-session", producerOrder.work_key, "pre-fetch")
+    await validationStarted
+    const revokeBeforeFetch = await tool.execute({ request: { action: "revoke_checker_result", ...grant,
+      grant_id: issued.grant_id } } as never,
+      { sessionID: "owner", worktree: f.path, directory: f.path } as never)
+    if (typeof revokeBeforeFetch === "string") throw new Error("expected structured revoke result")
+    completeValidation()
+    await expect(beforeFetch).rejects.toThrow("checker result grant changed")
+    expect(reads).toBe(0)
+    const reissuedBeforeFetch = await runtime.grantCheckerResult("owner", grant)
+    expect(reissuedBeforeFetch.grant_id).not.toBe(issued.grant_id)
+    const page = await runtime.readResult("checker-session", producerOrder.work_key, null, 10)
+    expect(page).toMatchObject({ evidence_only: true, page: { rows: [{ producer_record: "original one" }] } })
+    await expect(runtime.readResult("checker-session", secondOrder.work_key)).rejects.toThrow("not assigned")
+    const checkerStatus = runtime.status("checker-session")
+    if (!("work" in checkerStatus)) throw new Error("expected attached checker status")
+    expect(checkerStatus.work.find((entry) => entry.work_key === producerOrder.work_key)).toMatchObject({ manifest_digest: firstDigest })
+    expect(checkerStatus.work.find((entry) => entry.work_key === secondOrder.work_key)?.manifest_digest).toBeUndefined()
+    expect(JSON.stringify(checkerStatus)).not.toContain(secondDigest)
+    expect(checkerStatus.checker_result_grants ?? []).toHaveLength(1)
+    const inFlight = runtime.readResult("checker-session", producerOrder.work_key, "race")
+    await readStarted
+    await expect(runtime.revokeCheckerResult("checker-session", { ...grant, grant_id: reissuedBeforeFetch.grant_id })).rejects.toThrow("delegated")
+    const revokeReply = await tool.execute({ request: { action: "revoke_checker_result", ...grant,
+      grant_id: reissuedBeforeFetch.grant_id } } as never,
+      { sessionID: "owner", worktree: f.path, directory: f.path } as never)
+    if (typeof revokeReply === "string") throw new Error("expected structured revoke result")
+    expect(JSON.parse(revokeReply.output)).toMatchObject({ revoked_by: "owner" })
+    const reissued = await runtime.grantCheckerResult("owner", grant)
+    expect(reissued.grant_id).not.toBe(issued.grant_id)
+    completeRead()
+    await expect(inFlight).rejects.toThrow("checker result grant changed")
+    const ledgerAfterRace = InvestigationStore.open({ project_directory: f.path, project_id: f.memory.store.projectId,
+      owner_id: "owner", run_id: f.run.run_id }).snapshot
+    expect(ledgerAfterRace.work.find((entry) => entry.work_key === producerOrder.work_key)?.result_pages).toHaveLength(1)
+    expect(await runtime.readResult("checker-session", producerOrder.work_key, "race")).toMatchObject({
+      page: { rows: [{ producer_record: "original one" }] },
+    })
+    await expect(runtime.executeWork("checker-session", producerOrder.work_key)).rejects.toThrow("not assigned")
+    await runtime.revokeCheckerResult("owner", { ...grant, grant_id: reissued.grant_id })
+    await expect(runtime.readResult("checker-session", producerOrder.work_key)).rejects.toThrow("not assigned")
+    const afterRevoke = runtime.status("checker-session")
+    if (!("work" in afterRevoke)) throw new Error("expected attached checker status after revoke")
+    expect(afterRevoke.work.find((entry) => entry.work_key === producerOrder.work_key)?.manifest_digest).toBeUndefined()
+    expect(runtime.render("checker-session", 8192)).not.toContain("synthetic://producer/bounded-read")
+    expect({ submits, reads, validations }).toEqual({ submits: 2, reads: 3, validations: 11 })
+  }, 30_000)
+
   test("recorded result is revalidated for each reuse and permission revocation never resubmits", async () => {
     const f = fixture()
     await f.runtime.begin(f.run)
@@ -302,20 +475,29 @@ describe("operational investigation host", () => {
       run.nodes[id]!.output = { finding: id, evidence: ["synthetic"] }
     }
     const basis = investigationReviewBasis(run)
+    const selected = await f.runtime.admitWork("owner", { ...input, cohort: "affected", source_dependencies: ["catalog:r7"] }, ["confirm"])
+    const substitute = await f.runtime.admitWork("owner", { ...input, cohort: "comparison", source_dependencies: ["catalog:r8"] }, ["confirm"])
+    const recipeSubstitute = await f.runtime.admitWork("owner", { ...input, recipe_version: "v2", cohort: "affected",
+      source_dependencies: ["catalog:r7"] }, ["confirm"])
+    const querySubstitute = await f.runtime.admitWork("owner", { ...input, cohort: "affected", query: { source: "other" },
+      source_dependencies: ["catalog:r7"] }, ["confirm"])
     await expect(f.runtime.beforeBatch(run, [run.graph.nodes.find((node) => node.id === "confirm")!]))
       .rejects.toThrow("engineer_review_required")
-    recordInvestigationReview(run, "engineer-1")
-    expect(() => requireInvestigationReview(run)).not.toThrow()
+    recordInvestigationReview(run, "engineer-1", selected.work_key)
+    expect(() => requireInvestigationReview(run, selected.work_key)).not.toThrow()
+    expect(() => requireInvestigationReview(run, substitute.work_key)).toThrow("engineer_review_required")
+    expect(() => requireInvestigationReview(run, recipeSubstitute.work_key)).toThrow("engineer_review_required")
+    expect(() => requireInvestigationReview(run, querySubstitute.work_key)).toThrow("engineer_review_required")
     await expect(f.runtime.beforeBatch(run, [run.graph.nodes.find((node) => node.id === "confirm")!]))
       .resolves.toBeUndefined()
     await f.runtime.note("owner", { analytical_result: { status: "unresolved",
       claim: "Two explanations remain", evidence_refs: ["manifest:1"], authority: "reported_analysis" } })
-    expect(() => requireInvestigationReview(run)).toThrow("engineer_review_required")
-    recordInvestigationReview(run, "engineer-1")
-    expect(() => requireInvestigationReview(run)).not.toThrow()
+    expect(() => requireInvestigationReview(run, selected.work_key)).toThrow("engineer_review_required")
+    recordInvestigationReview(run, "engineer-1", selected.work_key)
+    expect(() => requireInvestigationReview(run, selected.work_key)).not.toThrow()
     run.nodes.reconcile!.output = { finding: "different", evidence: ["synthetic"] }
     expect(investigationReviewBasis(run)).not.toBe(basis)
-    expect(() => requireInvestigationReview(run)).toThrow("engineer_review_required")
+    expect(() => requireInvestigationReview(run, selected.work_key)).toThrow("engineer_review_required")
     await expect(f.runtime.beforeBatch(run, [run.graph.nodes.find((node) => node.id === "confirm")!]))
       .rejects.toThrow("engineer_review_required")
   })

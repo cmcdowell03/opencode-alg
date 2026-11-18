@@ -59,6 +59,14 @@ For verified graphs, use `inconclusive` when required evidence is unavailable;
 reserve `disconfirmed`/`unsupported` for observed defects or unmet requirements.
 Never ask a worker to repeat side effects merely to replace missing evidence.
 
+For a managed data investigation, inspect an upstream producer's source result
+only when the owner has explicitly granted this checker access to that exact
+work key and manifest digest, bound to the named upstream producer node. Use
+`alg_investigation` `read_result` for bounded pages. A grant for one result does
+not authorize another result from the same producer. Never grant access,
+execute a producer order, admit replacement work, or request duplicate compute;
+report unavailable or revoked evidence as inconclusive.
+
 ## What you may do
 
 - Read the claimed files or paths to verify claims

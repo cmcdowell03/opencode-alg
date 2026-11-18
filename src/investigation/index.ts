@@ -123,10 +123,16 @@ export interface InvestigationCheckpoint {
   objective: string; scope: Record<string, unknown>; hypotheses: InvestigationHypothesis[]
   contradictions: string[]; completed_tests: string[]; coverage: Record<string, unknown>
   next_action: string; evidence_refs: string[]; engineer_contributions: EngineerContribution[]
+  /** Owner-selected material for next_action. Null clears the previous selection. */
+  decision_focus?: { hypothesis_ids: string[]; contradictions: string[] } | null
   analytical_result?: { status: "supported" | "contradicted" | "unresolved" | "blocked"; claim: string; evidence_refs: string[]; authority: "reported_analysis" }
 }
 export interface InvestigationWork {
   work_key: string; submission_id: string; operation: string; status: InvestigationStatus
+  /** Optional only for historical ledger reads; new admissions persist the inspectable identity. */
+  recipe_version?: string; cohort?: string; preprocessing_revision?: string
+  /** Immutable admission reservation; reserved_cost decreases when settlement releases it. */
+  admitted_reservation?: number
   query: Record<string, unknown>; parameters: Record<string, unknown>; reserved_cost: number
   actual_cost?: number; external_job_id?: string; result?: InvestigationResult; failure?: string
   nonacceptance_proven?: boolean
@@ -136,12 +142,27 @@ export interface InvestigationWork {
   source_dependencies: string[]; validity_key: string; created_at: string; updated_at: string
   lease_fence: number; purpose: InvestigationWorkInput["purpose"]; generation: number
 }
+export interface CheckerResultGrant {
+  grant_id: string; work_key: string; manifest_digest: string; producer_node: string; checker_node: string
+  granted_by: string; granted_at: string; revoked_by?: string; revoked_at?: string
+}
+export type CheckerResultGrantInput = Pick<CheckerResultGrant, "work_key" | "manifest_digest" | "producer_node" | "checker_node">
+export type CheckerResultGrantAuthority = CheckerResultGrantInput & { grant_id: string; granted_by: string }
+export type CheckerResultGrantRevokeInput = CheckerResultGrantInput & { grant_id: string }
+export interface InvestigationConfirmationReview {
+  schema_version: 2; basis: string; engineer_ref: string; reviewed_at: string
+  decision: "proceed"; authority: "application-operator"
+  confirmation_work_key: string; confirmation_binding: string
+}
 export interface InvestigationLedger {
   schema_version: 1; revision: number; scope: Omit<InvestigationScope, "project_directory">
   identity_version?: 2
   remote_profile?: InvestigationRemoteProfile
   created_at: string; updated_at: string; attachments: Array<{ session_id: string; attached_at: string }>
   cumulative_cost: number; reserved_cost: number; cost_limit: number; max_admissions: number; work: InvestigationWork[]
+  checker_result_grants?: CheckerResultGrant[]
+  /** Current authoritative review. Historical sidecar receipts remain readable as fallback only. */
+  confirmation_review?: InvestigationConfirmationReview
   checkpoint: InvestigationCheckpoint; history: Array<{ revision: number; at: string; kind: string; ref?: string }>
   budget_breach?: { work_key: string; reported_cost: number; reserved_cost: number; at: string }
 }
@@ -149,7 +170,9 @@ export interface InvestigationStatusView {
   reference: InvestigationReference; revision: number; cumulative_cost: number; reserved_cost: number; cost_limit: number
   max_admissions: number; admission_count: number; active_jobs: number
   budget_breach?: InvestigationLedger["budget_breach"]
-  work: Array<Pick<InvestigationWork, "work_key" | "operation" | "status" | "created_at" | "updated_at" | "external_job_id" | "failure" | "authorized_nodes">>
+  work: Array<Pick<InvestigationWork, "work_key" | "operation" | "status" | "created_at" | "updated_at" | "external_job_id" | "failure" | "authorized_nodes"> &
+    { manifest_ref?: string; manifest_digest?: string }>
+  checker_result_grants?: CheckerResultGrant[]
 }
 
 export interface InvestigationMcpCapabilities {
@@ -189,6 +212,9 @@ const HypothesisSchema = z.object({ id: z.string().min(1).max(128), statement: z
 const EngineerSchema = z.object({ id: z.uuid(), engineer_ref: z.string().min(1).max(256), statement: z.string().max(4_000).refine((v) => !hasCredentialMaterial(v)),
   scope: z.string().max(2_000).refine((v) => !hasCredentialMaterial(v)), source_ref: z.string().max(2_048).refine((v) => !hasCredentialMaterial(v)).optional(), classification: z.literal("reported_knowledge"), received_at: IsoDate }).strict()
 const WorkSchema = z.object({ work_key: z.string().regex(/^[a-f0-9]{64}$/), submission_id: z.uuid(), operation: z.string().min(1).max(128),
+  recipe_version: z.string().min(1).max(128).optional(), cohort: z.string().max(512).optional(),
+  preprocessing_revision: z.string().max(128).optional(),
+  admitted_reservation: CostSchema.optional(),
   status: InvestigationStatusSchema, query: JsonObjectSchema, parameters: JsonObjectSchema, reserved_cost: z.number().finite().nonnegative(),
   actual_cost: z.number().finite().nonnegative().optional(), external_job_id: z.string().max(1_024).optional(),
   nonacceptance_proven: z.boolean().optional(),
@@ -198,20 +224,36 @@ const WorkSchema = z.object({ work_key: z.string().regex(/^[a-f0-9]{64}$/), subm
   result: InvestigationResultSchema.optional(), failure: z.string().max(2_000).optional(), source_dependencies: z.array(z.string().max(512)).max(128),
   validity_key: z.string().regex(/^[a-f0-9]{64}$/), created_at: IsoDate, updated_at: IsoDate, lease_fence: z.number().int().nonnegative(),
   purpose: z.enum(["analysis", "independent_verification", "refresh", "recomputation"]), generation: z.number().int().nonnegative() }).strict()
+const CheckerResultGrantSchema = z.object({ grant_id: z.uuid(), work_key: z.string().regex(/^[a-f0-9]{64}$/), manifest_digest: z.string().regex(/^[a-f0-9]{64}$/),
+  producer_node: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/), checker_node: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
+  granted_by: z.string().min(1).max(256), granted_at: IsoDate,
+  revoked_by: z.string().min(1).max(256).optional(), revoked_at: IsoDate.optional() }).strict().superRefine((grant, ctx) => {
+    if (Boolean(grant.revoked_by) !== Boolean(grant.revoked_at)) ctx.addIssue({ code: "custom", path: ["revoked_at"], message: "grant revocation identity and time must be paired" })
+  })
+const ConfirmationReviewSchema = z.object({ schema_version: z.literal(2), basis: z.string().regex(/^[a-f0-9]{64}$/),
+  engineer_ref: z.string().min(1).max(256), reviewed_at: IsoDate, decision: z.literal("proceed"),
+  authority: z.literal("application-operator"), confirmation_work_key: z.string().regex(/^[a-f0-9]{64}$/),
+  confirmation_binding: z.string().regex(/^[a-f0-9]{64}$/) }).strict()
 const RemoteProfileSchema = z.object({ server_id: z.string().min(1).max(512), server_revision: z.string().min(1).max(512),
   tool_id: z.string().min(1).max(512), tool_schema_revision: z.string().min(1).max(512),
   principal_id: z.string().min(1).max(512), project_id: z.string().min(1).max(512) }).strict()
 const CheckpointSchema = z.object({ objective: z.string().max(4_000), scope: JsonObjectSchema, hypotheses: z.array(HypothesisSchema).max(64),
   contradictions: z.array(z.string().max(2_000)).max(128), completed_tests: z.array(z.string().max(2_000)).max(128), coverage: JsonObjectSchema,
   next_action: z.string().max(2_000), evidence_refs: z.array(z.string().max(2_048)).max(256), engineer_contributions: z.array(EngineerSchema).max(128),
+  decision_focus: z.object({
+    hypothesis_ids: z.array(z.string().min(1).max(128)).min(1).max(4),
+    contradictions: z.array(z.string().min(1).max(2_000)).max(4),
+  }).strict().nullish(),
   analytical_result: z.object({ status: z.enum(["supported", "contradicted", "unresolved", "blocked"]), claim: z.string().max(4_000),
     evidence_refs: z.array(z.string().max(2_048)).max(128), authority: z.literal("reported_analysis") }).strict().optional() }).strict()
-export const InvestigationNoteSchema = CheckpointSchema.pick({ scope: true, contradictions: true, completed_tests: true,
+export const InvestigationNoteSchema = CheckpointSchema.pick({ scope: true, contradictions: true, completed_tests: true, decision_focus: true,
   coverage: true, next_action: true, evidence_refs: true, analytical_result: true }).partial()
 const InvestigationLedgerSchema = z.object({ schema_version: z.literal(1), revision: z.number().int().nonnegative(),
   identity_version: z.literal(2).optional(),
   scope: z.object({ project_id: z.string().min(1).max(512), owner_id: z.string().min(1).max(512), run_id: z.string().min(1).max(512) }).strict(),
   remote_profile: RemoteProfileSchema.optional(),
+  checker_result_grants: z.array(CheckerResultGrantSchema).max(512).optional(),
+  confirmation_review: ConfirmationReviewSchema.optional(),
   budget_breach: z.object({ work_key: z.string().regex(/^[a-f0-9]{64}$/), reported_cost: z.number().finite().nonnegative(),
     reserved_cost: CostSchema, at: IsoDate }).strict().optional(),
   created_at: IsoDate, updated_at: IsoDate,
@@ -220,6 +262,16 @@ const InvestigationLedgerSchema = z.object({ schema_version: z.literal(1), revis
   max_admissions: z.number().int().positive().max(MAX_WORK), work: z.array(WorkSchema).max(MAX_WORK), checkpoint: CheckpointSchema,
   history: z.array(z.object({ revision: z.number().int().positive(), at: IsoDate, kind: z.string().min(1).max(128), ref: z.string().max(2_048).optional() }).strict()).max(MAX_HISTORY),
 }).strict().superRefine((ledger, ctx) => {
+  const checkpoint = ledger.checkpoint
+  if (checkpoint.decision_focus) {
+    const { hypothesis_ids, contradictions } = checkpoint.decision_focus
+    if (!checkpoint.next_action.trim() || new Set(hypothesis_ids).size !== hypothesis_ids.length ||
+      new Set(contradictions).size !== contradictions.length ||
+      hypothesis_ids.some(id => !checkpoint.hypotheses.some(h => h.id === id)) ||
+      contradictions.some(text => !checkpoint.contradictions.includes(text))) {
+      ctx.addIssue({ code: "custom", path: ["checkpoint", "decision_focus"], message: "decision focus must reference current investigation observations" })
+    }
+  }
   if (ledger.work.length && !ledger.remote_profile) ctx.addIssue({ code: "custom", path: ["remote_profile"], message: "work has no pinned remote profile" })
   if (!ledger.budget_breach && sumCost(ledger.cumulative_cost, ledger.reserved_cost) > ledger.cost_limit)
     ctx.addIssue({ code: "custom", path: ["reserved_cost"], message: "investigation budget invariant violated" })
@@ -235,6 +287,17 @@ const InvestigationLedgerSchema = z.object({ schema_version: z.literal(1), revis
   if (investigationCostUnits(reserved) !== investigationCostUnits(ledger.reserved_cost)) ctx.addIssue({ code: "custom", path: ["reserved_cost"], message: "reservation total does not match work ledger" })
   if (active > MAX_CONCURRENT_EXPENSIVE_JOBS) ctx.addIssue({ code: "custom", path: ["work"], message: "concurrent expensive job limit exceeded" })
   if (ledger.work.length > ledger.max_admissions) ctx.addIssue({ code: "custom", path: ["work"], message: "admission count exceeds configured limit" })
+  const grantBindings = new Set<string>()
+  for (const grant of ledger.checker_result_grants ?? []) {
+    const binding = safeJson({ work_key: grant.work_key, manifest_digest: grant.manifest_digest,
+      producer_node: grant.producer_node, checker_node: grant.checker_node })
+    const work = ledger.work.find((entry) => entry.work_key === grant.work_key)
+    if ((!grant.revoked_at && grantBindings.has(binding)) || grant.granted_by !== ledger.scope.owner_id || !work || work.purpose !== "analysis" ||
+      !work.authorized_nodes?.includes(grant.producer_node) || work.result?.digest !== grant.manifest_digest) {
+      ctx.addIssue({ code: "custom", path: ["checker_result_grants"], message: "checker result grant is not bound to its exact owner-authorized producer result" })
+    }
+    if (!grant.revoked_at) grantBindings.add(binding)
+  }
 })
 
 function digest(text: string): string { return createHash("sha256").update(text).digest("hex") }
@@ -322,8 +385,11 @@ export class InvestigationStore {
       admission_count: ledger.work.length,
       ...(ledger.budget_breach ? { budget_breach: ledger.budget_breach } : {}),
       active_jobs: ledger.work.filter((w) => ["submitting", "running", "outcome_unknown", "cancel_requested"].includes(w.status)).length,
-      work: ledger.work.map(({ work_key, operation, status, created_at, updated_at, external_job_id, failure, authorized_nodes }) =>
-        ({ work_key, operation, status, created_at, updated_at, authorized_nodes: authorized_nodes ?? [], ...(external_job_id ? { external_job_id } : {}), ...(failure ? { failure } : {}) })) }
+      work: ledger.work.map(({ work_key, operation, status, created_at, updated_at, external_job_id, failure, authorized_nodes, result }) =>
+        ({ work_key, operation, status, created_at, updated_at, authorized_nodes: authorized_nodes ?? [],
+          ...(result ? { manifest_ref: result.manifest_ref, manifest_digest: result.digest } : {}),
+          ...(external_job_id ? { external_job_id } : {}), ...(failure ? { failure } : {}) })),
+      ...(ledger.checker_result_grants ? { checker_result_grants: ledger.checker_result_grants } : {}) }
   }
 
   private initialize(): void {
@@ -418,8 +484,28 @@ export class InvestigationStore {
     } finally { held.release() }
   }
 
+  /** Commit engineer approval in the same ledger serialized against durable dispatch intent. */
+  recordConfirmationReviewSync(reviewValue: InvestigationConfirmationReview, expectedRevision: number): InvestigationConfirmationReview {
+    const review = ConfirmationReviewSchema.parse(reviewValue)
+    const held = acquireFilesystemMutex(this.paths.lock, { owner: `investigation:${this.scope.run_id}:confirmation-review`, leaseMs: 10_000 })
+    try {
+      const current = this.refresh()
+      if (current.revision !== expectedRevision) throw new Error("stale operator preview: investigation ledger changed before approval")
+      const work = current.work.find((entry) => entry.work_key === review.confirmation_work_key)
+      if (!work || !work.authorized_nodes?.includes("confirm") || !work.recipe_version || work.admitted_reservation === undefined)
+        throw new Error("selected confirmation work order is unavailable or legacy-uninspectable")
+      this.commitMutation("confirmation_review", (ledger) => {
+        if (ledger.revision !== expectedRevision) throw new Error("stale operator preview: investigation ledger changed before approval")
+        ledger.confirmation_review = review
+      })
+      return review
+    } finally { held.release() }
+  }
+
   async updateCheckpoint(patch: Partial<InvestigationCheckpoint>): Promise<InvestigationCheckpoint> {
     await this.mutate("checkpoint", (l) => {
+      if (patch.next_action !== undefined && patch.next_action !== l.checkpoint.next_action && patch.decision_focus === undefined)
+        delete l.checkpoint.decision_focus
       l.checkpoint = { ...l.checkpoint, ...structuredClone(patch) }
       if (l.checkpoint.hypotheses.length > 64 || l.checkpoint.engineer_contributions.length > 128) throw new Error("checkpoint limit exceeded")
       if (Buffer.byteLength(safeJson(l.checkpoint)) > MAX_METADATA_BYTES) throw new Error("checkpoint exceeds bounded context limit")
@@ -453,12 +539,39 @@ export class InvestigationStore {
       this.assertPinnedProfile(l, capabilities)
       if (!l.remote_profile) l.remote_profile = remoteProfile(capabilities)
       const existing = l.work.find((w) => w.work_key === identity.key)
-      if (existing) { result = existing; return }
+      if (existing) {
+        // 0.5.12 persisted the identity hash and executable payload but omitted
+        // the inspectable recipe tuple. Exact current key reproduction plus
+        // equality of retained payload proves a safe metadata-only migration.
+        const missingRecipe = existing.recipe_version === undefined
+        if (missingRecipe) {
+          const sameDependencies = safeJson([...new Set(existing.source_dependencies)].sort()) ===
+            safeJson([...new Set(input.source_dependencies)].sort())
+          if (existing.operation !== input.operation || safeJson(existing.query) !== safeJson(input.query) ||
+            safeJson(existing.parameters) !== safeJson(input.parameters) || !sameDependencies ||
+            existing.purpose !== (input.purpose ?? "analysis") || existing.generation !== (input.generation ?? 0) ||
+            existing.cohort !== undefined && existing.cohort !== input.cohort ||
+            existing.preprocessing_revision !== undefined && existing.preprocessing_revision !== input.preprocessing_revision)
+            throw new Error("legacy work identity does not match the current normalized recipe; operator review required")
+          existing.recipe_version = input.recipe_version
+          if (input.cohort !== undefined) existing.cohort = input.cohort
+          if (input.preprocessing_revision !== undefined) existing.preprocessing_revision = input.preprocessing_revision
+        } else if (existing.recipe_version !== input.recipe_version || existing.cohort !== input.cohort ||
+          existing.preprocessing_revision !== input.preprocessing_revision) {
+          throw new Error("work recipe identity does not match the current normalized recipe")
+        }
+        if (existing.admitted_reservation === undefined && ["reserved", "submitting", "running", "outcome_unknown", "cancel_requested"].includes(existing.status))
+          existing.admitted_reservation = existing.reserved_cost
+        result = existing; return
+      }
       if (l.budget_breach) throw new Error("investigation budget breach requires operator review; new work is blocked")
       if (l.work.length >= Math.min(MAX_WORK, l.max_admissions)) throw new Error("investigation admission count exhausted")
       if (sumCost(l.cumulative_cost, l.reserved_cost, input.reserved_cost) > l.cost_limit) throw new Error("investigation cost quota exhausted")
       const now = this.now().toISOString()
-      result = { work_key: identity.key, submission_id: randomUUID(), operation: input.operation, status: "reserved",
+      result = { work_key: identity.key, submission_id: randomUUID(), operation: input.operation, recipe_version: input.recipe_version,
+        ...(input.cohort !== undefined ? { cohort: input.cohort } : {}),
+        ...(input.preprocessing_revision !== undefined ? { preprocessing_revision: input.preprocessing_revision } : {}),
+        admitted_reservation: input.reserved_cost, status: "reserved",
         query: input.query, parameters: input.parameters, reserved_cost: input.reserved_cost, source_dependencies: input.source_dependencies,
         validity_key: identity.validity, created_at: now, updated_at: now, lease_fence: l.revision + 1,
         purpose: input.purpose ?? "analysis", generation: input.generation ?? 0 }
@@ -477,10 +590,41 @@ export class InvestigationStore {
     }
     remoteProfile(c)
   }
-  authorizeNodes(workKey: string, nodes: readonly string[]): Promise<InvestigationWork> {
+  authorizeNodes(workKey: string, nodes: readonly string[], validate?: (work: Readonly<InvestigationWork>) => void): Promise<InvestigationWork> {
     return this.updateWork(workKey, "work_order_authorized", (_ledger, work) => {
+      validate?.(structuredClone(work))
       work.authorized_nodes = [...new Set([...(work.authorized_nodes ?? []), ...nodes])].sort()
     })
+  }
+  async grantCheckerResult(input: CheckerResultGrantInput, owner: string): Promise<CheckerResultGrant> {
+    let grant!: CheckerResultGrant
+    await this.mutate("checker_result_granted", (ledger) => {
+      const work = ledger.work.find((entry) => entry.work_key === input.work_key)
+      if (owner !== ledger.scope.owner_id || !work || work.purpose !== "analysis" ||
+        !work.authorized_nodes?.includes(input.producer_node) || work.result?.digest !== input.manifest_digest ||
+        !["result_recorded", "reusable"].includes(work.status)) throw new Error("checker result grant does not match an owner-authorized recorded producer result")
+      const existing = ledger.checker_result_grants?.find((entry) => entry.work_key === input.work_key &&
+        entry.manifest_digest === input.manifest_digest && entry.producer_node === input.producer_node &&
+        entry.checker_node === input.checker_node && !entry.revoked_at)
+      if (existing) { grant = structuredClone(existing); return }
+      grant = { ...input, grant_id: randomUUID(), granted_by: owner, granted_at: this.now().toISOString() }
+      ;(ledger.checker_result_grants ??= []).push(grant)
+    })
+    return structuredClone(grant)
+  }
+  async revokeCheckerResult(input: CheckerResultGrantRevokeInput, owner: string): Promise<CheckerResultGrant> {
+    let grant!: CheckerResultGrant
+    await this.mutate("checker_result_revoked", (ledger) => {
+      if (owner !== ledger.scope.owner_id) throw new Error("only the investigation owner can revoke a checker result grant")
+      const existing = ledger.checker_result_grants?.find((entry) => entry.work_key === input.work_key &&
+        entry.manifest_digest === input.manifest_digest && entry.producer_node === input.producer_node &&
+        entry.checker_node === input.checker_node && entry.grant_id === input.grant_id && !entry.revoked_at)
+      if (!existing) throw new Error("active exact checker result grant unavailable")
+      existing.revoked_by = owner
+      existing.revoked_at = this.now().toISOString()
+      grant = structuredClone(existing)
+    })
+    return structuredClone(grant)
   }
   private assertPinnedProfile(ledger: InvestigationLedger, capabilities: InvestigationMcpCapabilities): void {
     if (ledger.work.length && !ledger.remote_profile) throw new Error("investigation remote profile is missing")
@@ -499,7 +643,8 @@ export class InvestigationStore {
     return result
   }
 
-  async dispatch(workKey: string, port: InvestigationMcpPort): Promise<InvestigationWork> {
+  async dispatch(workKey: string, port: InvestigationMcpPort,
+    validateBeforeSubmit?: (work: Readonly<InvestigationWork>, ledger: Readonly<InvestigationLedger>) => void): Promise<InvestigationWork> {
     this.assertCapabilities(port.capabilities)
     const ledger = this.refresh()
     this.assertPinnedProfile(ledger, port.capabilities)
@@ -508,6 +653,7 @@ export class InvestigationStore {
     if (["submitting", "running", "outcome_unknown", "cancel_requested"].includes(before.status)) return before
     if (before.status !== "reserved") throw new Error(`work cannot dispatch from ${before.status}`)
     const submitting = await this.updateWork(workKey, "submission_intent", (l, w) => {
+      validateBeforeSubmit?.(structuredClone(w), structuredClone(l))
       this.assertPinnedProfile(l, port.capabilities)
       if (l.budget_breach) throw new Error("investigation budget breach requires operator review; dispatch is blocked")
       if (w.status !== "reserved") throw new Error(`work cannot dispatch from ${w.status}`)
@@ -554,17 +700,27 @@ export class InvestigationStore {
       }
     }, expectedFence)
   }
-  async readResultPage(workKey: string, port: InvestigationMcpPort, cursor: string | null = null, maxRows = 50): Promise<InvestigationResultPage> {
+  async readResultPage(workKey: string, port: InvestigationMcpPort, cursor: string | null = null, maxRows = 50,
+    grant?: CheckerResultGrantAuthority): Promise<InvestigationResultPage> {
     if (!Number.isSafeInteger(maxRows) || maxRows < 1 || maxRows > 100 ||
       cursor !== null && (typeof cursor !== "string" || cursor.length > 1024)) throw new Error("invalid bounded result request")
     const work = await this.markReusable(workKey, port)
     if (!work.result) throw new Error("result unavailable")
+    const assertGrant = (ledger: InvestigationLedger) => {
+      if (grant && (grant.work_key !== workKey || !ledger.checker_result_grants?.some((entry) => entry.grant_id === grant.grant_id &&
+        entry.work_key === workKey && entry.manifest_digest === work.result!.digest &&
+        entry.manifest_digest === grant.manifest_digest && entry.producer_node === grant.producer_node &&
+        entry.checker_node === grant.checker_node && entry.granted_by === grant.granted_by && !entry.revoked_at)))
+        throw new Error("checker result grant changed during result read")
+    }
+    assertGrant(this.refresh())
     const key = digest(safeJson({ manifest_ref: work.result.manifest_ref, digest: work.result.digest,
       access_scope: work.result.access_scope, cursor, maxRows }))
     const cached = work.result_pages?.find((entry) => entry.key === key)
-    if (cached) return structuredClone(cached.page)
+    if (cached) { assertGrant(this.refresh()); return structuredClone(cached.page) }
     if ((work.result_pages?.length ?? 0) >= 8) throw new Error("bounded result-page cache is full; narrow the admitted recipe")
     if (!port.readResult) throw new Error("bounded result reading is not qualified")
+    assertGrant(this.refresh())
     const page = InvestigationResultPageSchema.parse(await port.readResult(work.result, { cursor, max_rows: maxRows }))
     if (page.manifest_ref !== work.result.manifest_ref || page.digest !== work.result.digest ||
       page.access_scope !== work.result.access_scope || page.cursor !== cursor || page.rows.length > maxRows ||
@@ -572,6 +728,7 @@ export class InvestigationStore {
     if (Buffer.byteLength(safeJson(page)) > port.capabilities.response_limit_bytes) throw new Error("result page exceeds qualified response bound")
     let published = page
     await this.updateWork(workKey, "result_page_recorded", (ledger, fresh) => {
+      assertGrant(ledger)
       this.assertPinnedProfile(ledger, port.capabilities)
       if (fresh.status !== "reusable" || !fresh.result ||
         fresh.result.manifest_ref !== page.manifest_ref || fresh.result.digest !== page.digest ||
