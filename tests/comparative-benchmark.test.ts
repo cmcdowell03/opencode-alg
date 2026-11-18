@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
-import { comparativeIdentity, COMPARATIVE_ARMS, contestantView, createComparativeCases, expectedParticleAnswer, particleCsv, scoreParticleAnswer, type JobReceipts } from "../scripts/comparative-benchmark-fixtures.ts"
-import { qualifyComparative } from "../scripts/comparative-benchmark-qualification.ts"
+import { comparativeIdentity, COMPARATIVE_ARMS, contestantView, createComparativeCases, expectedParticleAnswer, particleCsv, particleSourceSha256, scoreParticleAnswer, type JobReceipts } from "../scripts/comparative-benchmark-fixtures.ts"
+import { EXPECTED_QUALIFICATION_CONTROL_COUNT, qualifyComparative } from "../scripts/comparative-benchmark-qualification.ts"
+import { hostAccess } from "../scripts/comparative-benchmark-opencode.ts"
 import { runDeterministicComparative } from "../scripts/comparative-benchmark.ts"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
@@ -12,7 +13,7 @@ function receipts(c: ReturnType<typeof createComparativeCases>[number]): JobRece
   return { handoffSequence: 2, operations: [
     { sequence: 3, atMs: 300, action: "pending", key: c.acceptedJob.key, jobId: c.acceptedJob.id, revision: "particle-v3", status: 200 },
     { sequence: 4, atMs: 301, action: "lookup", key: c.acceptedJob.key, jobId: c.acceptedJob.id, revision: "particle-v3", status: 200 },
-    { sequence: 5, atMs: 302, action: "read", jobId: c.acceptedJob.id, revision: "particle-v3", status: 200 },
+    { sequence: 5, atMs: 302, action: "read", jobId: c.acceptedJob.id, revision: "particle-v3", manifestRef: "synthetic:manifest:test", status: 200 },
   ] }
 }
 describe("matched particle handoff comparison", () => {
@@ -64,22 +65,55 @@ describe("matched particle handoff comparison", () => {
   })
   test("scores numbers, the next measurement, post-handoff access, job recovery and duplicate submissions separately", () => {
     const c = createComparativeCases()[1]!, answer = expectedParticleAnswer(c), observed = [
-      { tool: "read", path: c.dataPath, sessionId: "new-controller", afterHandoff: true, callId: "tool1", resultObserved: true },
+      { tool: "read", path: c.dataPath, sessionId: "new-controller", afterHandoff: true, callId: "tool1", resultObserved: true,
+        readContentSha256: particleSourceSha256(c), startedAtMs: 400, completedAtMs: 410 },
+      { tool: "write", path: "answer.json", sessionId: "new-controller", afterHandoff: true, callId: "tool2", resultObserved: true,
+        startedAtMs: 411, completedAtMs: 420 },
     ]
+    expect(scoreParticleAnswer(c, answer, observed, receipts(c)).passed).toBe(false)
+    answer.manifestRef = "synthetic:manifest:test"
     const good = scoreParticleAnswer(c, answer, observed, receipts(c))
     expect(good.passed).toBe(true)
     expect(good.access.data_read_after_handoff_observed).toBe(true)
     const duplicate = receipts(c); duplicate.operations.push({ sequence: 1, atMs: 100, action: "submit", key: "unrelated-key", status: 409 })
     expect(scoreParticleAnswer(c, answer, observed, duplicate).job.duplicate_submissions).toBe(1)
-    const preHandoffOnly = [{ ...observed[0]!, sessionId: "old-controller", afterHandoff: false }]
+    const preHandoffOnly = [{ ...observed[0]!, sessionId: "old-controller", afterHandoff: false }, observed[1]!]
     expect(scoreParticleAnswer(c, answer, preHandoffOnly, receipts(c)).access.data_read_after_handoff_observed).toBe(false)
     const missingRead = receipts(c); missingRead.operations = missingRead.operations.filter(row => row.action !== "read")
     expect((scoreParticleAnswer(c, answer, observed, missingRead).job as any).passed).toBe(false)
   })
+  test("host native read must contain the complete source before the same recipient starts writing", () => {
+    const [c, other] = createComparativeCases()
+    const answer = { ...expectedParticleAnswer(c!), manifestRef: "synthetic:manifest:test" }
+    const wrapped = (csv: string) => ["<path>data/particles.csv</path>", "<type>file</type>", "<content>",
+      ...csv.trimEnd().split("\n").map((line, i) => `${i + 1}: ${line}`),
+      "", "(End of file - total 9 lines)", "</content>"].join("\r\n")
+    const read = (output: string, end: number, sessionID = "recipient", partSessionID = sessionID) => ({ sessionID, parts: [{
+      type: "tool", tool: "read", sessionID: partSessionID, callID: "read", state: { status: "completed", input: { filePath: c!.dataPath }, output,
+        time: { start: 100, end } },
+    }] })
+    const write = { sessionID: "recipient", parts: [{ type: "tool", tool: "write", callID: "write",
+      state: { status: "completed", input: { filePath: "answer.json" }, output: "saved", time: { start: 120, end: 130 } },
+    }] }
+    const grade = (message: ReturnType<typeof read>) => scoreParticleAnswer(c!, answer,
+      hostAccess([write, message], process.cwd(), new Set(["recipient", "other-recipient"])), receipts(c!))
+    const correct = wrapped(particleCsv(c!))
+    expect(grade(read(correct, 119)).access).toMatchObject({ data_read_after_handoff_observed: true,
+      source_sha256: particleSourceSha256(c!), source_read_call_id: "read", answer_write_call_id: "write" })
+    expect(grade(read(wrapped(particleCsv(other!)), 119)).passed).toBe(false)
+    expect(grade(read(correct, 120)).passed).toBe(false)
+    expect(grade(read(correct, 121)).passed).toBe(false)
+    expect(grade(read(correct, 119, "other-recipient")).passed).toBe(false)
+    expect(grade(read(correct, 119, "recipient", "old-controller")).passed).toBe(false)
+    expect(grade(read(correct.replace(/^9: .*\r\n/m, ""), 119)).passed).toBe(false)
+  })
   test("qualification exercises numeric, access, job and duplicate controls; dry run is labeled apparatus only", () => {
     const qualification = qualifyComparative()
     expect(qualification.passed).toBe(true)
-    expect(qualification.rows).toHaveLength(20)
+    expect(qualification.rows).toHaveLength(EXPECTED_QUALIFICATION_CONTROL_COUNT)
+    const accessControls = qualification.rows.filter(row => row.control === "wrong-read-contents" || row.control === "read-after-answer-write")
+    expect(accessControls).toHaveLength(4)
+    expect(accessControls.every(row => row.passed && row.job.passed && !row.access)).toBe(true)
     expect(qualification.identity).toEqual(comparativeIdentity())
     const result = runDeterministicComparative(42)
     expect(result.result_kind).toBe("deterministic_apparatus_only")

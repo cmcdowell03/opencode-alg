@@ -1,6 +1,14 @@
 # V1 Phase One implementation status
 
-PR [#14](https://github.com/cmcdowell03/opencode-alg/pull/14) contains an experimental local Phase 1a/1b implementation against main baseline 99b88cd. The current pending candidate is 0.5.12 and targets OpenCode >=1.18.0 and <2.0.0. It is not merged or released. Earlier receipts and statements below remain historical evidence for their named commits and are not relabeled as acceptance of the current candidate.
+The pending 0.5.13 candidate targets OpenCode >=1.18.0 and <2.0.0. Earlier receipts below apply to the commits they name. [Draft PR #14](https://github.com/cmcdowell03/opencode-alg/pull/14)
+
+## 0.5.13 investigation decisions and host verification
+
+A recovered controller can retrieve the selected next measurement, its hypotheses and the observations weighing against it. The owner can share one recorded result with a fresh checker and revoke that grant. Confirmation dispatch requires the exact order the engineer previewed. Local workflow tests exercise reconstruction, an in-flight revocation, a stale approval, and continuing the seven-node investigation with its existing computation. [Investigation guide](v1-investigations.md)
+
+One closed action recipe lets the host verify the original producer's command and reported exit code. A newly admitted mixed task sends its semantic criteria to a fresh checker. Reload re-evaluates the mechanical findings against the original journal. The Windows tests cover altered, missing and substituted evidence. [Action verification](v1-action-evidence.md#host-evaluated-command-criterion)
+
+The matched factory cases exercise ownership transfer, reuse and independent grading with an isolated scripted provider. The comparative capability gate still requires a qualified real model and held-out incidents. [Factory benchmark](v1-comparative-factory-benchmark.md)
 
 ## 0.5.12 — qualified package, unresolved real-checker behavior
 

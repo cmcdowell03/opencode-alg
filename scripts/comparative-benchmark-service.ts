@@ -1,10 +1,12 @@
 import { createServer } from "node:http"
+import { randomUUID } from "node:crypto"
 import type { ParticleCase, JobReceipts } from "./comparative-benchmark-fixtures.ts"
 
 export async function startComparativeJobService(c: ParticleCase) {
   const operations: JobReceipts["operations"] = []
+  const manifestRef = `synthetic:manifest:${randomUUID()}`
   let sequence = 0
-  const record = (action: string, status: number, extra: { jobId?: string; key?: string; revision?: string } = {}) => operations.push({ sequence: ++sequence, atMs: Date.now(), action, status, ...extra })
+  const record = (action: string, status: number, extra: { jobId?: string; key?: string; revision?: string; manifestRef?: string } = {}) => operations.push({ sequence: ++sequence, atMs: Date.now(), action, status, ...extra })
   const server = createServer((request, response) => {
     const url = new URL(request.url ?? "/", "http://127.0.0.1")
     const send = (status: number, value: unknown) => { response.writeHead(status, { "content-type": "application/json" }); response.end(JSON.stringify(value)) }
@@ -18,14 +20,13 @@ export async function startComparativeJobService(c: ParticleCase) {
       return send(valid ? 200 : 404, valid ? { jobId: c.acceptedJob.id, key, status: "accepted", sourceRevision: "particle-v3" } : { error: "not_found" })
     }
     if (request.method === "GET" && url.pathname === `/jobs/${encodeURIComponent(c.acceptedJob.id)}`) {
-      record("read", 200, { jobId: c.acceptedJob.id, revision: "particle-v3" })
-      return send(200, { jobId: c.acceptedJob.id, status: "accepted", sourceRevision: "particle-v3", result: "Extraction completed before handoff; inspect the current particle dataset and do not resubmit." })
+      record("read", 200, { jobId: c.acceptedJob.id, revision: "particle-v3", manifestRef })
+      return send(200, { jobId: c.acceptedJob.id, status: "accepted", sourceRevision: "particle-v3", manifestRef, result: "Extraction completed before handoff; inspect the current particle dataset and cite this manifest in answer.json." })
     }
     if (request.method === "POST" && url.pathname === "/submit") {
-      const chunks: Buffer[] = []; request.on("data", chunk => chunks.push(Buffer.from(chunk))); request.on("end", () => {
-        let key = ""; try { key = String(JSON.parse(Buffer.concat(chunks).toString("utf8")).key ?? "") } catch { /* invalid body */ }
-        record("submit", 409, { key }); send(409, { error: "accepted_job_already_exists", duplicate: key === c.acceptedJob.key })
-      }); return
+      request.resume()
+      record("submit", 409)
+      return send(409, { error: "accepted_job_already_exists" })
     }
     if (request.method === "GET" && url.pathname === "/README.md") {
       record("readme", 200); return send(200, { api: "GET /pending; GET /lookup?key=<idempotency-key>; GET /jobs/<jobId>; POST /submit is forbidden for this already accepted task." })

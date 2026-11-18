@@ -351,12 +351,6 @@ export function validateReleaseEvidenceSemantics(value: unknown, root = ROOT): R
   if (packageJson.name !== "opencode-alg" || packageJson.version !== evidence.package_version) {
     throw new Error("Release evidence package version differs from the current package")
   }
-  const source = computeAlgSourceIdentity(canonicalRoot)
-  if (evidence.source.sha256 !== source.digest || evidence.source.files !== source.file_count || evidence.source.bytes !== source.total_bytes) {
-    throw new Error("Release evidence source identity differs from the current checkout")
-  }
-  const releaseInputs = computeReleaseInputIdentity(canonicalRoot)
-  if (!exactJson(evidence.release_inputs, releaseInputs)) throw new Error("Release evidence full input identity differs from the current checkout")
   if (!exactJson(evidence.commands.map((item) => item.id), RELEASE_COMMAND_IDS) || new Set(evidence.commands.map((item) => item.id)).size !== RELEASE_COMMAND_IDS.length || evidence.commands.some((item) => item.exit_code !== 0)) {
     throw new Error("Release evidence must contain the exact sixteen successful commands")
   }
@@ -431,6 +425,13 @@ export function validateReleaseEvidenceSemantics(value: unknown, root = ROOT): R
   if (!exactJson(evidence.totals, { ...bunTotals, ...managerTotals, ...pythonTotals, ...duckdbPythonTotals }) || evidence.totals.bun_fail !== 0 || evidence.totals.manager_fail !== 0 || evidence.totals.bun_pass < 1 || evidence.totals.manager_pass < 1 || evidence.totals.python_run < 1 || evidence.totals.duckdb_python_run < 1 || evidence.totals.duckdb_python_skipped !== 0) {
     throw new Error("Release evidence test totals do not prove successful Bun, Python, and prepared DuckDB suites")
   }
+  // Reject malformed command and test receipts before hashing the complete checkout.
+  const source = computeAlgSourceIdentity(canonicalRoot)
+  if (evidence.source.sha256 !== source.digest || evidence.source.files !== source.file_count || evidence.source.bytes !== source.total_bytes) {
+    throw new Error("Release evidence source identity differs from the current checkout")
+  }
+  const releaseInputs = computeReleaseInputIdentity(canonicalRoot)
+  if (!exactJson(evidence.release_inputs, releaseInputs)) throw new Error("Release evidence full input identity differs from the current checkout")
   const manifest = verifyExcelManifest(canonicalRoot)
   const manifestOutput = finalJsonLine(byId.excel_manifest.stdout)
   if (manifestOutput?.ok !== true || manifestOutput.manifest_sha256 !== manifest.manifest_sha256 || !exactJson(manifestOutput.files, manifest.files) ||

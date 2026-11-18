@@ -10,7 +10,7 @@ Each incident runs under three controller configurations.
 | Build with ALG memory | The same materials, a scoped handoff note and a bound recovery skill delivered by ALG's system hook |
 | ALG graph | The scoped materials and a recorded producer submission, followed by ownership transfer and a separate continuation node |
 
-The scorer compares the saved numeric answers and proposed measurement with the matched case. OpenCode tool history supplies the data-read observation. A loopback job service records the order and revision of lookup and read operations and counts submission attempts. A persisted delivery receipt records which skill the plugin emitted. The local deterministic provider can also observe the text it actually received. Handoff exposure and compaction exposure are separate measurements.
+The scorer compares the saved numeric answers and proposed measurement with the matched case. It verifies that the recipient read the expected CSV bytes before writing its answer. A loopback service records the order and revision of lookup and read operations and counts submission attempts. The answer must cite the manifest reference returned by that service for this run. A persisted delivery receipt records which skill the plugin emitted. The local deterministic provider can also observe the text it actually received. Handoff exposure and compaction exposure are separate measurements.
 
 ## Run locally
 
