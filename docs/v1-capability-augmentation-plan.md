@@ -5,6 +5,10 @@ aec6f2d, runtime/package candidate 0.5.12. No implementation, model cohort,
 release, merge or V2 work is authorized by this document. Historical trial
 rules, failures and scores remain immutable.
 
+For the 0.5.13 implementation, see the [candidate status](v1-implementation-status.md)
+and the [three-way factory comparison](v1-comparative-factory-benchmark.md).
+The baseline below describes 0.5.12; the delivery table is the larger roadmap.
+
 ## Objective and claim
 
 Make ALG more reliable than native Build at completing difficult, evidence-heavy

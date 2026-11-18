@@ -10,6 +10,12 @@ One closed action recipe lets the host verify the original producer's command an
 
 The matched factory cases exercise ownership transfer, reuse and independent grading with an isolated scripted provider. The comparative capability gate still requires a qualified real model and held-out incidents. [Factory benchmark](v1-comparative-factory-benchmark.md)
 
+The native Linux full suite at runtime commit `55482a3` passed 1,669 tests with 17 platform skips and zero failures across 134 files. The source snapshot contained 1,524 byte-verified Git blobs. The full-suite log SHA-256 is `6ba31b7ebf81b282b73f372278f72a29306682d576fdcc9442fd530daedba9ab`. Subsequent commit `89abcaa` tightened the comparison and release-gate checks. On Windows its package and release suite passed 27 tests with one POSIX-only skip.
+
+Actual headless OpenCode 1.19.5 loaded the same runtime digest on Windows and Linux (`cd7eade8cd124a5ad52e53a4a85f1b0ac9141d806e10a46ea8e8f0d42976f173`). Each session recovered its compaction message, survived two process restarts, and revalidated the same result after one job submission. Every host, provider and test service stopped, and both temporary environments were removed. The final receipt SHA-256 values are `8015f4ac6065395b4b9986d869e61c0d068b8f97b8518131a014aefeb492fdbf` (PowerShell) and `40f7c644f56d0a4120f80f26971146ca217e50fc14aa2f3178f630914ed15e4c` (Bash).
+
+This increment covers the first host verification recipe and recovery of investigation decisions. A general criterion-by-criterion obligation ledger, production datalake service qualification and measured promotion of agent-authored graphs are still open in the [larger plan](v1-capability-augmentation-plan.md#delivery-order-gates-and-first-implementation-slice).
+
 ## 0.5.12 — qualified package, unresolved real-checker behavior
 
 Evidence head aec6f2d records the checker consistency and staged deployment
