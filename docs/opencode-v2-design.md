@@ -7,6 +7,25 @@ through the real host. Extract shared interfaces as this workflow needs them.
 The [preview guide](../packages/v2-preview/README.md) records the current
 installation boundary, measured behavior and remaining gaps.
 
+**Research investigation increment.** On the same 2.3.2 host, the second preview
+extends that path through a corrected decision, an approved procedure and up to
+two advisory researchers. The owner records a refuted hypothesis with its evidence
+digest in the investigation checkpoint. A researcher gets its assigned question
+and scoped manifest facts. The checker retains its separate, revocable read grant.
+An optional team reference binds a document in a named checkout to a registry
+digest, Git commit and content hash. These operations reuse the investigation ledger
+and workspace registry.
+
+The paired factory benchmark evaluates the same incident through native Build and
+installed ALG. Both arms can discover the same procedure and read the same scoped
+data. The checker receives independent clock-audit and controlled-monitor evidence.
+Qualification requires evidence of an older background summary in flight, continued
+root progress, a durable correction and an actual post-compaction answer. A scripted
+transport can demonstrate those mechanics. Claims about scientific performance
+require observations from real models and multiple matched cases. The
+[preview guide](../packages/v2-preview/README.md#paired-build-and-alg-benchmark)
+describes the local entry point.
+
 The October 2.0.27 research below is preserved for comparison. For this first
 increment the preview guide supersedes its phase order, release number, proposed
 version range, checker tool restrictions and references to deferring phase zero.
