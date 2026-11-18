@@ -2,15 +2,21 @@ import { createHash, randomUUID } from "node:crypto"
 import { readFile } from "node:fs/promises"
 import { z } from "zod"
 import type { Plugin } from "@opencode/plugin"
+import type { SessionContext } from "@opencode/plugin/promise/session"
 import { createV2InvestigationBridge, refutationSchema, type V2InvestigationSession, type V2InvestigationView } from "../core/investigation.ts"
 import { procedureDigestSchema } from "../core/procedure-pin.ts"
+import type { PreQueryGate } from "../core/pre-query.ts"
+import { createPreQueryGate, preQueryPolicySchema, PreQueryBlockedError } from "./pre-query.ts"
+import { createOwnerContinuation } from "./continuation.ts"
+import { OwnerBrief } from "./brief.ts"
+import { runContainedPath } from "../../../src/store.ts"
 import { registerTeamSources } from "./team-source.ts"
 import { registerResearchWorkers, researchRolesSchema, researchEvidenceOptionsSchema } from "./research-workers.ts"
 import { InvestigationWorkInputSchema } from "../../../src/investigation/index.ts"
 import { InvestigationHttpPort } from "../../../src/investigation-transport.ts"
 import { InvestigationAdapterSchema } from "../../../src/operational-options.ts"
 import { canonicalDirectory, HOST_VERSION, InvestigationHost, TOOL } from "./host.ts"
-import { type Binding, citationKeys, citationSchema, sameCitation, verdictSchema, WorkerJournal } from "./journal.ts"
+import { type Binding, citationKeys, citationSchema, sameCitation, verdictSchema, WorkerJournal, publishReceipt, readReceipt } from "./journal.ts"
 import { approvalFileSchema, pinOfProcedure, ResearchProcedure } from "./procedure.ts"
 
 const agentId = z.string().regex(/^[\w-]{1,80}$/)
@@ -25,6 +31,8 @@ const configSchema = z.object({
   researchEvidence: researchEvidenceOptionsSchema.optional(),
   approvedProcedure: approvalFileSchema.optional(),
   approvedProcedureSha256: procedureDigestSchema.optional(),
+  preQueryPolicy: preQueryPolicySchema.optional(),
+  continueOnEvidence: z.boolean().default(false),
 }).strict().refine(config => (config.approvedProcedure === undefined) === (config.approvedProcedureSha256 === undefined))
 
 const actions = [
@@ -89,7 +97,7 @@ type Session = Awaited<ReturnType<Context["session"]["get"]>>
 type Bridge = ReturnType<typeof createV2InvestigationBridge>
 type Registration = { dispose: () => Promise<void> }
 
-function trustedBridge(config: z.output<typeof configSchema>, project: string): Bridge | undefined {
+function trustedBridge(config: z.output<typeof configSchema>, project: string, preQuery?: PreQueryGate): Bridge | undefined {
   if (!config.enabled) return undefined
   const { adapter, approvedJob } = config
   if (!adapter || !approvedJob || !adapter.readResult || adapter.cancel || adapter.tokenEnv ||
@@ -103,7 +111,7 @@ function trustedBridge(config: z.output<typeof configSchema>, project: string): 
   }
   return createV2InvestigationBridge({
     port: new InvestigationHttpPort(adapter, project),
-    approvedJob,
+    approvedJob, preQuery,
   })
 }
 
@@ -118,7 +126,8 @@ function promptText(binding: Binding): string {
 
 function investigation(view: V2InvestigationView | null) {
   if (!view) return null
-  return { revision: view.revision, decision_revision: view.decision_revision, work: view.work, decision: view.decision, guidance: view.guidance }
+  return { revision: view.revision, decision_revision: view.decision_revision, work: view.work, decision: view.decision,
+    guidance: view.guidance, ...(view.preQuery ? { preQuery: view.preQuery } : {}) }
 }
 
 async function setup(ctx: Context): Promise<() => Promise<void>> {
@@ -131,9 +140,47 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
   const directory = await canonicalDirectory(ctx.location.directory)
   const host = new InvestigationHost(ctx, directory, config.ownerAgent, config.checkerAgent)
   const procedures = new ResearchProcedure(ctx, directory, config.approvedProcedure, config.approvedProcedureSha256)
-  const bridge = trustedBridge(config, ctx.location.project.id)
+  if (config.preQueryPolicy && (!config.enabled || !config.approvedProcedure)) throw new Error("PRE_QUERY_REQUIRES_APPROVED_PROCEDURE")
+  if (config.continueOnEvidence && !config.enabled) throw new Error("CONTINUATION_REQUIRES_ENABLED_INVESTIGATION")
+  const activationSchema = z.object({ source: procedureDigestSchema, body: procedureDigestSchema }).strict()
+  function activationPath(ownerId: string) {
+    return runContainedPath(directory, journal(ownerId).runId, "activated-" + config.preQueryPolicy!.procedure.sourceSha256 + ".json")
+  }
+  const gate = createPreQueryGate(config.preQueryPolicy, procedures, async (id, pin) => {
+    const seen = await readReceipt(activationPath(id), activationSchema)
+    return seen?.source === pin.sourceSha256 && seen.body === pin.sha256
+  })
+  const bridge = trustedBridge(config, ctx.location.project.id, gate)
+  const brief = bridge ? new OwnerBrief(host, async owner => {
+    const view = bridge.primary(scope(owner))
+    if (!view) return null
+    const current = await selectedProcedure(view, false).catch(() => undefined)
+    return { ...view, approval: current && config.approvedProcedureSha256
+      ? { revision: config.approvedProcedureSha256, procedure_sha256: current.sha256 } : null }
+  }) : undefined
   const registrations: Registration[] = []
   let disposed = false
+  let research: Awaited<ReturnType<typeof registerResearchWorkers>> | undefined
+  const continuation = config.continueOnEvidence && bridge ? createOwnerContinuation({
+    directory, project: ctx.location.project.id, session: ctx.session, watchExternal: true,
+    async owner(id) {
+      const agent = config.ownerAgent as NonNullable<Session["agent"]>
+      const owner = await host.owner({ sessionID: id, agent })
+      await ctx.permission.assert({ sessionID: id, agent, action: TOOL, resources: ["*"] })
+      return owner
+    },
+    primary: owner => bridge.primary(scope(owner)),
+    reconcile: owner => bridge.reconcile(scope(owner)),
+    researchBatchEvidence: async owner => research?.completedRevision?.(owner),
+    async checkerEvidence(owner) {
+      const store = journal(owner.id)
+      const status = await workerStatus(store)
+      if (status?.status !== "result_recorded") return
+      const result = await store.read("result")
+      if (result) return { work_key: result.citation.work_key, manifest_digest: result.citation.manifest_digest,
+        read_receipt: result.citation.read_receipt, result: result.result }
+    },
+  }) : undefined
 
   function scope(session: Session): V2InvestigationSession {
     return { sessionID: session.id, parentID: session.parentID, projectID: session.projectID, directory }
@@ -299,7 +346,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
           read.citation.grant_id !== grant.grant_id || read.citation.work_key !== grant.work_key ||
           read.citation.manifest_digest !== grant.manifest_digest) throw new Error("CHECKER_CITATION_UNVERIFIED")
 
-      return bridge.withCheckerGrant(scope(checker), grant, async () => {
+      const recorded = await bridge.withCheckerGrant(scope(checker), grant, async () => {
         await procedures.require(binding.procedure)
         const marker = { promptId: binding.promptId, citation: read.citation, result: input.result! }
         await store.publish("result", marker)
@@ -308,6 +355,8 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
             !sameCitation(stored.citation, marker.citation)) throw new Error("CHECKER_RESULT_ALREADY_RECORDED")
         return { worker: { runId: binding.runId, workerSessionId: binding.workerSessionId, promptId: binding.promptId, status: "result_recorded", result: stored.result } }
       })
+      await continuation?.checkerCompleted(child.parentID, call.signal).catch(() => {})
+      return recorded
     }
 
     const owner = await host.owner(call)
@@ -322,8 +371,18 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
     switch (action) {
       case "create": return { ...await verifiedInvestigation(bridge.create(scope(owner))) }
       case "admit": return { ...await verifiedInvestigation(await bridge.admit(scope(owner))) }
-      case "dispatch": return { ...await verifiedInvestigation(await bridge.dispatch(scope(owner))) }
-      case "reconcile": return { ...await verifiedInvestigation(await bridge.reconcile(scope(owner))), worker: await workerStatus(store) }
+      case "dispatch": {
+        const dispatched = await bridge.dispatch(scope(owner))
+        await continuation?.watchOutstanding(owner.id, call.signal).catch(() => {})
+        return { ...await verifiedInvestigation(dispatched) }
+      }
+      case "reconcile": {
+        const before = continuation ? bridge.primary(scope(owner)) : null
+        const result = await bridge.reconcile(scope(owner))
+        await continuation?.externalReconciled(owner.id, before, call.signal).catch(() => {})
+        await continuation?.watchOutstanding(owner.id, call.signal).catch(() => {})
+        return { ...await verifiedInvestigation(result), worker: await workerStatus(store) }
+      }
       case "set_next_measurement": {
         return { ...investigation(await bridge.setNextMeasurement(scope(owner), {
           expected_decision_revision: input.expected_decision_revision!,
@@ -333,7 +392,16 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
           return current && pinOfProcedure(current)
         })) }
       }
-      case "status": return { ...await verifiedInvestigation(bridge.primary(scope(owner))), worker: await workerStatus(store) }
+      case "status": {
+        const view = bridge.primary(scope(owner))
+        const worker = await workerStatus(store)
+        if (view?.procedurePin && !await selectedProcedure(view).catch(() => undefined)) {
+          return { work: view.work, revision: view.revision, decision_revision: view.decision_revision,
+            decision: { hypotheses: view.decision.hypotheses, contradictions: view.decision.contradictions, next_action: null },
+            procedure_authority: "unavailable", worker }
+        }
+        return { ...investigation(view), worker }
+      }
       case "start": return { worker: await launch(bridge, owner, store, call.signal) }
       case "revoke": {
         const binding = await store.read("binding")
@@ -361,12 +429,11 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
     }
   }
 
-  const recovery = async (request: {
-    sessionID: Session["id"]
-    agent: NonNullable<Session["agent"]>
-    system: Array<{ type: "text"; text: string }>
-  }, compacting: boolean) => {
+  const recovery = async (request: SessionContext, compacting: boolean) => {
     if (disposed) return
+    // The native host assembles keyed entries before either hook. Scrub inherited
+    // or unauthorized owner state even when this turn belongs to another agent.
+    const hasBrief = brief ? await brief.prepareRequest(request) : false
     const projectProcedure = ({ name, content, sha256 }: NonNullable<Awaited<ReturnType<typeof procedures.current>>>) => {
       const identity = "ALG current approved research procedure " + name + " (SHA-256 " + sha256 + ")"
       request.system.push({
@@ -405,18 +472,19 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
     }
     try {
       const view = bridge?.primary(scope(owner))
-      const pinned = view?.procedurePin ? await selectedProcedure(view, false) : undefined
       const store = journal(owner.id)
+      if (!view && !config.approvedProcedure) return
+      if (view && brief && !hasBrief) return
+      if (!hasBrief) {
+        try { await ctx.permission.assert({ sessionID: owner.id, agent: request.agent, action: TOOL, resources: ["*"] }) }
+        catch { return }
+      }
       if (view) {
         const binding = await store.read("binding")
-        request.system.push({
-          type: "text",
-          text: "ALG V2 investigation recovery\n" + view.projection +
-            (binding ? "\nChecker run " + binding.runId + ". Use status to reconcile the recorded child." : ""),
-        })
+        if (binding) request.system.push({ type: "text", text: "ALG checker run " + binding.runId + ". Use status to reconcile the recorded child." })
       }
       try {
-        const current = pinned ?? await selectedProcedure(view, false)
+        const current = await selectedProcedure(view, false)
         if (current) projectProcedure(current)
       } catch {
         request.system.push({ type: "text", text: "ALG research procedure unavailable. Use current verification before relying on prior procedure text." })
@@ -428,10 +496,34 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
 
   const cleanup = async () => {
     disposed = true
+    continuation?.dispose()
     await Promise.allSettled(registrations.splice(0).map(registration => registration.dispose()))
   }
 
   try {
+    if (brief) {
+      registrations.push(await ctx.session.hook("fork", event => brief.clearFork(event.sessionID)))
+      registrations.push(await ctx.session.hook("prompt", async event => {
+        // prepareRequest independently rechecks authority on the assembled input.
+        await brief.reconcilePrompt(event.sessionID).catch(() => {})
+      }))
+    }
+    if (continuation) registrations.push(await ctx.session.hook("experimental.idle", event => continuation.onIdle(event)))
+    if (config.preQueryPolicy) registrations.push(await ctx.tool.hook("execute.after", async event => {
+      if (disposed || event.tool !== "skill" || event.agent !== config.ownerAgent || event.status !== "completed") return
+      try {
+        const owner = await host.owner(event)
+        const pin = config.preQueryPolicy!.procedure
+        if (z.object({ id: z.literal(pin.id) }).safeParse(event.input).success) {
+          const selected = await procedures.require(pin, false)
+          const content = event.result.content
+          const parts = typeof content === "string" ? [content] : (content ?? []).flatMap(p => p.type === "text" ? [p.text] : [])
+          if (selected && parts.some(text => text.includes("<skill_content") && text.includes(selected.content))) {
+            await publishReceipt(activationPath(owner.id), { source: pin.sourceSha256, body: pin.sha256 })
+          }
+        }
+      } catch { /* An unverified native activation confers no authority. */ }
+    }))
     if (bridge || config.approvedProcedure) {
       registrations.push(await ctx.session.hook("context", request => recovery(request, false)))
       registrations.push(await ctx.session.hook("compaction", request => recovery(request, true)))
@@ -459,7 +551,9 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       registrations.push(await registerTeamSources(ctx, host, config.teamSourcesRegistrySha256))
     if (config.researchRoles) {
       if (!bridge) throw new Error("RESEARCH_REQUIRES_ENABLED_INVESTIGATION")
-      registrations.push(await registerResearchWorkers(ctx, host, bridge, config.researchRoles, config.researchEvidence))
+      research = await registerResearchWorkers(ctx, host, bridge, config.researchRoles, config.researchEvidence,
+        continuation ? id => continuation.researchCompleted(id) : undefined)
+      registrations.push(research)
     }
     if (config.researchEvidence && !config.researchRoles) throw new Error("RESEARCH_ROLES_REQUIRED")
     registrations.push(await ctx.tool.transform(editor => {
@@ -473,11 +567,18 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
           const parsed = inputSchema.safeParse(input)
           if (!parsed.success) return { content: JSON.stringify({ ok: false, runtimeSha256, error: "UNSUPPORTED_OR_INVALID_ACTION" }) }
           try {
-            return { content: JSON.stringify({ ok: true, runtimeSha256, ...await execute(parsed.data, call) }) }
+            const value = await execute(parsed.data, call)
+            if (brief && call.agent === config.ownerAgent && ["create", "admit", "dispatch", "reconcile", "set_next_measurement"].includes(parsed.data.action)) {
+              // A failed host-entry write must not turn a committed external action into a retry.
+              try { await brief.reconcile(call) }
+              catch { return { content: JSON.stringify({ ok: true, runtimeSha256, ...value, brief: "refresh_pending" }) } }
+            }
+            return { content: JSON.stringify({ ok: true, runtimeSha256, ...value }) }
           } catch (error) {
             const reason = error instanceof Error && /^[A-Z][A-Z_]+$/.test(error.message)
               ? error.message : "INVESTIGATION_OPERATION_REFUSED"
-            return { content: JSON.stringify({ ok: false, runtimeSha256, error: reason }) }
+            return { content: JSON.stringify({ ok: false, runtimeSha256, error: reason,
+              ...(error instanceof PreQueryBlockedError ? { preQuery: error.preQuery } : {}) }) }
           }
         },
       })

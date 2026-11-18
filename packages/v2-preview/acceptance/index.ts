@@ -168,7 +168,9 @@ async function runArm(binary: string, scratch: string, arm: Arm, runtime?: Await
     mark(arm, stage, service.ledger.acceptedComputations === 1 && submits.length === 1 && !!lookup &&
       blockedReplay.ok === false && recovered.ok === true && service.jobs[0]?.job.resultDigest === manifest,
     { submits: submits.length, accepted: service.ledger.acceptedComputations, sameSubmissionLookup: !!lookup,
-      replayDenied: blockedReplay.ok === false, manifestDigest: manifest ?? null })
+      replayDenied: blockedReplay.ok === false, reconciliation: recovered.ok === true ? "recorded" :
+        typeof recovered.error === "string" && /^[A-Z_]+$/.test(recovered.error) ? recovered.error : "unverified",
+      manifestDigest: manifest ?? null })
     if (typeof manifest !== "string") throw new Error("Recovered result has no manifest")
 
     stage = "forced_compaction_stale_checkpoint"

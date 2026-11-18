@@ -100,6 +100,7 @@ async function fixture() {
     model: { id: "fixture", providerID: "synthetic" }, time: {},
   }]])
   const counters = { create: 0, prompt: 0 }
+  const entries = new Map<string, Map<string, unknown>>()
   const state = {
     uncertainPrompt: false, checkerDenied: false, effectiveDeny: false,
     afterWorkerCreate: undefined as undefined | (() => Promise<void>),
@@ -143,6 +144,17 @@ async function fixture() {
       },
       session: {
         hook,
+        instructions: { entry: {
+          async list({ sessionID }: { sessionID: string }) {
+            return Array.from(entries.get(sessionID) ?? [], ([key, value]) => ({ key, value }))
+          },
+          async put({ sessionID, key, value }: { sessionID: string; key: string; value: unknown }) {
+            const scope = entries.get(sessionID) ?? new Map<string, unknown>()
+            scope.set(key, value)
+            entries.set(sessionID, scope)
+          },
+          async remove({ sessionID, key }: { sessionID: string; key: string }) { entries.get(sessionID)?.delete(key) },
+        } },
         async get({ sessionID }: { sessionID: string }) {
           const session = sessions.get(sessionID)
           if (!session) throw new Error("unknown")
@@ -223,11 +235,11 @@ test("pinned hook integration reattaches one worker, reprojects the decision, an
   expect(f.counters).toEqual({ create: 1, prompt: 1 })
 
   for (const name of ["context", "compaction"]) {
-    const request = { sessionID: owner, agent: "build", system: [] as { text: string }[] }
+    const request = { sessionID: owner, agent: "build", system: [] as { text: string }[], messages: [{ role: "user", content: "Continue." }] }
     await restarted.hooks.get(name)!(request)
-    expect(request.system[0]?.text).toContain(decision)
+    expect(JSON.stringify(request.messages)).toContain(decision)
     expect(request.system[0]?.text).toContain(runId)
-    const unrelated = { sessionID: workerSessionId, agent: checkerAgent, system: [] }
+    const unrelated = { sessionID: workerSessionId, agent: checkerAgent, system: [], messages: [] }
     await restarted.hooks.get(name)!(unrelated)
     expect(unrelated.system).toEqual([])
   }
@@ -285,7 +297,7 @@ test("pinned hook integration reattaches one worker, reprojects the decision, an
     .toMatchObject({ ok: true, worker: { status: "result_authority_unverified" } })
   const directory = f.sessions.get(owner)!.location.directory
   await writeFile(join(directory, ".opencode", "runs", runId, "binding.json"), "{invalid")
-  const unavailable = { sessionID: owner, agent: "build", system: [] as { type: "text"; text: string }[] }
+  const unavailable = { sessionID: owner, agent: "build", system: [] as { type: "text"; text: string }[], messages: [] }
   await restarted.hooks.get("context")!(unavailable)
   expect(unavailable.system).toEqual([{ type: "text", text: "ALG V2 investigation status unavailable; reconcile." }])
 })
@@ -389,9 +401,9 @@ test("a failed refutation leaves the decision revision available for a new appro
   })).toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
   const changed = await f.attach({ options: await f.installProcedure() })
   f.catalog.skills[0]!.content = skillBody
-  for (const action of ["status", "procedure"]) {
-    expect(await changed.call(action)).toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
-  }
+  expect(await changed.call("procedure")).toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
+  expect(await changed.call("status")).toMatchObject({ ok: true, procedure_authority: "unavailable",
+    decision: { next_action: null, hypotheses: [{ id: "fixture", status: "refuted" }] } })
   await rm(join(f.directory, approvalPath))
   expect(await restarted.call("procedure")).toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
 })
@@ -427,7 +439,7 @@ test("verified procedure survives compaction and restart while revocation fences
   const restarted = await f.attach({ options })
   const before = f.catalog.reloads
   for (const [sessionID, agent] of [[owner, "build"], [workerSessionId, checkerAgent]]) {
-    const request = { sessionID, agent, system: [] as { text: string }[] }
+    const request = { sessionID, agent, system: [] as { text: string }[], messages: [] }
     await restarted.hooks.get("compaction")!(request)
     expect(request.system.map(part => part.text).join("\n")).toContain("Omit its text from the summary.")
     expect(request.system.map(part => part.text).join("\n")).not.toContain(skillBody)
@@ -442,7 +454,7 @@ test("verified procedure survives compaction and restart while revocation fences
   expect(await restarted.call("result", verdict, workerSessionId, checkerAgent))
     .toMatchObject({ ok: true, worker: { status: "result_recorded" } })
   await rm(join(f.directory, approvalPath))
-  const revoked = { sessionID: workerSessionId, agent: checkerAgent, system: [] as { text: string }[] }
+  const revoked = { sessionID: workerSessionId, agent: checkerAgent, system: [] as { text: string }[], messages: [] }
   await restarted.hooks.get("context")!(revoked)
   expect(revoked.system[0]?.text).toContain("unavailable")
   expect(revoked.system[0]?.text).not.toContain(skillBody)

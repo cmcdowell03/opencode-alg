@@ -102,7 +102,8 @@ export async function registerResearchWorkers(
   bridge: Bridge | undefined,
   configured: z.input<typeof researchRolesSchema> | undefined,
   options: z.input<typeof researchEvidenceOptionsSchema> = {},
-): Promise<Registration> {
+  onWorkerIdle?: (ownerID: Session["id"]) => Promise<void>,
+): Promise<Registration & { completedRevision?: (owner: Session) => Promise<string | undefined> }> {
   if (!bridge || configured === undefined) return { dispose: async () => {} }
   const roles = researchRolesSchema.parse(configured)
   const optIn = researchEvidenceOptionsSchema.parse(options)
@@ -113,6 +114,7 @@ export async function registerResearchWorkers(
   const active = bridge
   const project = ctx.location.project.id
   const registrations: Registration[] = []
+  const lifecycle = new AbortController()
   let disposed = false
 
   function path(owner: string, kind: string) {
@@ -282,6 +284,7 @@ export async function registerResearchWorkers(
   }
 
   async function dispose() {
+    lifecycle.abort()
     disposed = true
     await Promise.allSettled(registrations.splice(0).map(r => r.dispose()))
   }
@@ -342,7 +345,27 @@ export async function registerResearchWorkers(
         },
       })
     }))
-    return { dispose }
+    // A status event only schedules inspection. The verified batch, both admitted
+    // child transcripts and the current evidence scope establish completion.
+    if (onWorkerIdle) {
+      const events = ctx.event.subscribe({ types: ["session.status"], signal: lifecycle.signal })
+      void (async () => {
+        for await (const event of events) {
+          if (disposed) return
+          if (event.type !== "session.status" || event.data.status.type !== "idle") continue
+          const child = await boundWorker(event.data.sessionID)
+          if (child?.parentID && !disposed) await onWorkerIdle(child.parentID).catch(() => {})
+        }
+      })().catch(() => { /* Owner idle also reconciles completed batches after a dropped event. */ })
+    }
+    return { dispose, async completedRevision(owner) {
+      const batch = await readBatch(owner.id)
+      if (!batch) return
+      const snapshot = await status(owner, batch)
+      if (snapshot.status !== "reserved" || !snapshot.workers.every(worker =>
+        "status" in worker && worker.status === "reported" && "report" in worker)) return
+      return digest([batch.evidence, snapshot.workers])
+    } }
   } catch (error) {
     await dispose()
     throw error

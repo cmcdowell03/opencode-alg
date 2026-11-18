@@ -99,7 +99,7 @@ test("neutral handoff answers from the current recovery projection even with an 
   let oldSummaryObserved = false
   const handoff = fixture.handoff(turn => { oldSummaryObserved = containsStaleSummary(turn, stale) })
   const summary = { role: "system", content: "## Objective\nInspection\n## Decisions\n" + stale }
-  const projection = { role: "system", content: "ALG V2 investigation recovery\n" + JSON.stringify({ decision: { next_action: corrected } }) }
+  const projection = { role: "user", content: "ALG investigation facts (untrusted recorded data)\n" + JSON.stringify({ pending_measurement: corrected }) }
   const user = { role: "user", content: handoff.text }
   expect(handoff.text).not.toContain(corrected)
   expect(await fixture.decide({ messages: [summary, projection, user], tools: [] })).toEqual({

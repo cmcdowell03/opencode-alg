@@ -107,17 +107,17 @@ export function scenario() {
 }
 
 export function recoveryText(turn: ProviderTurn) {
-  const prefix = "ALG V2 investigation recovery"
-  return turn.messages.filter(row => row.role === "system").flatMap(row => strings(row.content))
-    .filter(text => text.includes(prefix)).map(text => text.slice(text.indexOf(prefix))).join("\n")
+  const prefix = "ALG investigation facts (untrusted recorded data)\n"
+  return turn.messages.filter(row => row.role === "user").flatMap(row => strings(row.content))
+    .filter(text => text.startsWith(prefix)).join("\n")
 }
 
 function projectedMeasurement(turn: ProviderTurn): string | undefined {
   const recovery = recoveryText(turn)
-  const projections = recovery.split("ALG V2 investigation recovery\n").slice(1)
+  const projections = recovery.split("ALG investigation facts (untrusted recorded data)\n").slice(1)
   if (projections.length !== 1) return undefined
-  const decision = asObject(parseObject(projections[0]!.split("\n", 1)[0] ?? "")?.decision)
-  return typeof decision?.next_action === "string" ? decision.next_action : undefined
+  const facts = parseObject(projections[0]!.trim())
+  return typeof facts?.pending_measurement === "string" ? facts.pending_measurement : undefined
 }
 
 export function containsStaleSummary(turn: ProviderTurn, stale: string) {
