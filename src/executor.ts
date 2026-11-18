@@ -12,7 +12,8 @@ import {
 } from "./graph.ts"
 import { canonicalJson, sha256Json } from "./persistence.ts"
 import { buildCheckerEvidence, checkerRelatedNodes, isCheckerEvidencePort } from "./checker-evidence.ts"
-import { buildVerificationBasis, pinClaimedSubmission, validateVerification, effectiveCriteria, classifyVerificationEvidenceGap } from "./verification.ts"
+import { buildVerificationBasis, pinClaimedSubmission, validateVerification, effectiveCriteria, classifyVerificationEvidenceGap,
+  type HostMechanicalFindings } from "./verification.ts"
 import { hasMechanicalAssessment } from "./checker-consistency.ts"
 import { ActionEvidenceJournal, assertActionEvidenceManifestIdentity } from "./action-evidence.ts"
 import { EvidenceRetrieval, type EvidenceSource, type EvidenceSources, type EvidenceRecord } from "./evidence-retrieval.ts"
@@ -33,6 +34,7 @@ import {
   loadRun,
   persistRunFenced,
   validateCheckerActionConsistency,
+  evaluatePinnedMechanicalAction,
   resolveCheckerSubmissionActionOrigin,
   type RunLock,
 } from "./store.ts"
@@ -311,7 +313,7 @@ function preflightExecutableNodes(run: RunState, options: ExecuteOptions, batch?
   return reports.length > 0
 }
 
-function dryOutput(definition: NodeDef, run: RunState): unknown {
+function dryOutput(definition: NodeDef, run: RunState, hasMechanicalContract: boolean): unknown {
   switch (definition.agent) {
     case "explorer":
       return { query: run.goal, map: [{ path: "(dry-run)", role: "stub" }], key_hits: [], next: "researcher" }
@@ -327,8 +329,9 @@ function dryOutput(definition: NodeDef, run: RunState): unknown {
     case "implementer":
       return { summary: [`Dry implement: ${run.goal}`], files_touched: [], commands_run: [], risks: [], done: true }
     case "checker":
-      if (definition.verification) return { passed: false, failures: ["Dry execution does not verify evidence"], score: 0,
-        findings: effectiveCriteria(run.criteria).map((_, i) => ({ criterion_id: `C${i + 1}`, outcome: "unsupported", evidence_ids: [], reason: "Dry execution supplies no verified observations" })) }
+      if (definition.verification || hasMechanicalContract) return { passed: false, failures: ["Dry execution does not verify evidence"], score: 0,
+        findings: effectiveCriteria(run.criteria).map((_, i) => ({ criterion_id: `C${i + 1}`,
+          outcome: hasMechanicalContract ? "inconclusive" : "unsupported", evidence_ids: [], reason: "Dry execution supplies no verified observations" })) }
       return { passed: true, failures: [], score: 10, notes: "dry-run auto-pass" }
     case "shell":
       return {
@@ -374,6 +377,36 @@ function reserveAttempt(
   return attempt
 }
 
+function checkerMechanicalContract(run: RunState, definition: NodeDef) {
+  const task = run.task_contract
+  return definition.agent === "checker" && definition.id === task?.input.verification.checker_node
+    ? task.mechanical_verification : undefined
+}
+
+function hostMechanicalOnly(run: RunState, definition: NodeDef): boolean {
+  const criteria = checkerMechanicalContract(run, definition)?.criteria
+  return !!criteria?.length && criteria.every(row => row.mode === "mechanical")
+}
+
+function aggregateMechanicalOutput(evaluation: HostMechanicalFindings): unknown {
+  const passed = evaluation.findings.length > 0 && evaluation.findings.every(finding => finding.outcome === "supported")
+  return { passed, failures: passed ? [] : ["Host action evidence did not establish every mechanical criterion."],
+    score: passed ? 10 : 0, notes: "Host-derived action verdict; no model checker was dispatched.", findings: evaluation.findings }
+}
+
+function mergeMechanicalOutput(value: unknown, evaluation: HostMechanicalFindings, semanticIds: readonly string[]): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("semantic checker output is unavailable")
+  const output = value as { findings?: unknown }
+  if (!Array.isArray(output.findings)) throw new Error("semantic checker findings are unavailable")
+  const rows = output.findings as Array<{ criterion_id?: unknown; outcome?: unknown; evidence_ids?: unknown; reason?: unknown }>
+  if (rows.length !== semanticIds.length || rows.some((row, index) => row.criterion_id !== semanticIds[index]))
+    throw new Error("semantic checker must assess each semantic criterion exactly once")
+  const findings = [...evaluation.findings, ...rows]
+  const passed = findings.length > 0 && findings.every(row => row.outcome === "supported")
+  return { passed, failures: passed ? [] : ["One or more admitted criteria were not supported."], score: passed ? 10 : 0,
+    notes: "Mechanical findings were host-derived; remaining findings were assessed by a fresh checker.", findings }
+}
+
 type StagedTaskEvidence = { value: TaskEvidence; reference: RunDataReference }
 
 async function runOneNode(
@@ -402,6 +435,8 @@ async function runOneNode(
       ? buildCheckerEvidence(definition, run, graphPolicy(run.graph)?.checkerEvidencePorts?.[definition.id], task) : undefined
     let actionRecords: EvidenceRecord[] = []
     let claimedActionSource: EvidenceSource | undefined
+    const mechanicalContract = checkerMechanicalContract(run, definition)
+    const verificationActive = Boolean(definition.verification || mechanicalContract)
     if (definition.agent === "checker" && options.actionEvidence && !dry) {
       const sources: EvidenceSources = { version: 1, journals: [], omitted: 0, unavailable: 0 }
       for (const nodeId of checkerRelatedNodes(definition, run, graphPolicy(run.graph)?.checkerEvidencePorts?.[definition.id])) {
@@ -431,7 +466,7 @@ async function runOneNode(
       }
       attemptRecord.action_evidence_sources = sources
     }
-    if (definition.verification) {
+    if (verificationActive) {
       const reference = definition.inputs?.claimed
       const source = claimedSource
       const producerAttempt = source?.kind === "reference" ? run.nodes[source.node]?.current_attempt : undefined
@@ -442,6 +477,15 @@ async function runOneNode(
       await save(run, options)
     }
     else if (attemptRecord.action_evidence_sources) await save(run, options)
+    const mechanicalEvaluation = mechanicalContract
+      ? evaluatePinnedMechanicalAction(run, definition.id, attemptRecord) : undefined
+    if (mechanicalEvaluation) attemptRecord.host_mechanical_evidence = mechanicalEvaluation.receipts
+    const semanticCriteria = mechanicalContract?.criteria.filter(row => row.mode === "semantic").map(row =>
+      ({ criterion_id: row.criterion_id, criterion: run.criteria[Number(row.criterion_id.slice(1)) - 1]! }))
+    const mechanicalOnly = !!mechanicalContract?.criteria.length && mechanicalContract.criteria.every(row => row.mode === "mechanical")
+    const mechanicalOutput = mechanicalOnly && mechanicalEvaluation
+      ? aggregateMechanicalOutput(mechanicalEvaluation)
+      : undefined
     let sessionId: string | undefined
     let rawOutput: unknown
     let error: string | undefined
@@ -455,8 +499,12 @@ async function runOneNode(
     const retainedFailures: string[] = []
 
     if (dry) {
-      rawOutput = dryOutput(definition, run)
-      sessionId = `dry-${definition.id}-a${attempt}`
+      rawOutput = dryOutput(definition, run, !!mechanicalContract)
+      if (!mechanicalContract) sessionId = `dry-${definition.id}-a${attempt}`
+    } else if (mechanicalOutput !== undefined) {
+      // This is a real checker-node attempt and persisted verdict, but it does
+      // not create a child session or reserve a model dispatch allowance.
+      rawOutput = mechanicalOutput
     } else if (gateOnly) {
       if (!recoveryGate || !sameRecoveryBasis(run, definition, options, previous, recoveryGate)) {
         throw new Error("Gate-only recovery basis changed after admission")
@@ -510,12 +558,15 @@ async function runOneNode(
         ? buildCheckerPrompt({
             actionEvidenceAvailable: Boolean(options.actionEvidence),
             taskContract: run.task_contract,
-            criteria: run.criteria.length ? run.criteria : ["Output must be complete and match the goal."],
+            criteria: semanticCriteria?.length ? semanticCriteria.map(row => row.criterion) :
+              (run.criteria.length ? run.criteria : ["Output must be complete and match the goal."]),
             claimed,
             claimedSubmission: attemptRecord.verification_basis?.claimed_submission,
             claimedActionSource,
             evidence,
-            verification: definition.verification,
+            criterionIds: semanticCriteria?.map(row => row.criterion_id),
+            hostMechanicalFindings: mechanicalEvaluation?.findings,
+            verification: definition.verification ?? (mechanicalContract ? { version: 1 } : undefined),
             priorFailures: state.attempts.at(-2)?.outcome === "substantive_rejection" ? [] : state.last_failures,
             priorOutcome,
           })
@@ -562,7 +613,8 @@ async function runOneNode(
       }) } finally {
         const child = attemptRecord.session_id
         if (child && options.actionEvidence) {
-          if (checker) attemptRecord.retrieved_evidence = options.actionEvidence.retrieval.take(child)
+          if (checker) attemptRecord.retrieved_evidence = [...(attemptRecord.retrieved_evidence ?? []),
+            ...options.actionEvidence.retrieval.take(child)]
           else if (options.actionEvidence.journal.has(child)) {
             try { attemptRecord.action_evidence_ref = options.actionEvidence.journal.finish(child) }
             finally { options.actionEvidence.journal.unbind(child) }
@@ -590,8 +642,16 @@ async function runOneNode(
       if (validation.ok) {
         schemaOk = true
         rawOutput = validation.data
-        if (definition.verification && attemptRecord.verification_basis) {
-          const bindingFailures = validateVerification(rawOutput, attemptRecord.verification_basis, attemptRecord.retrieved_evidence)
+        if (definition.agent === "checker" && mechanicalEvaluation && !mechanicalOnly) {
+          try { rawOutput = mergeMechanicalOutput(rawOutput, mechanicalEvaluation, semanticCriteria?.map(row => row.criterion_id) ?? []) }
+          catch {
+            schemaOk = false
+            failures.push("schema: findings: code=criterion_coverage; return exactly the supplied semantic criterion findings")
+          }
+        }
+        if (verificationActive && attemptRecord.verification_basis) {
+          const bindingFailures = schemaOk ? validateVerification(rawOutput, attemptRecord.verification_basis, attemptRecord.retrieved_evidence,
+            attemptRecord.host_mechanical_evidence, mechanicalEvaluation?.mechanicalCriterionIds ?? []) : []
           if (bindingFailures.length) { schemaOk = false; failures.push(...bindingFailures) }
         }
         if (definition.agent === "checker" && schemaOk && hasMechanicalAssessment(rawOutput)) {
@@ -711,7 +771,7 @@ async function runOneNode(
           : shellGateFailed
             ? "gate_failure"
             : checkerRejected
-              ? definition.verification && classifyVerificationEvidenceGap(rawOutput) ? "evidence_unavailable" : "substantive_rejection"
+              ? verificationActive && classifyVerificationEvidenceGap(rawOutput) ? "evidence_unavailable" : "substantive_rejection"
             : definition.agent === "implementer" && (rawOutput as { done?: boolean } | undefined)?.done === false
               ? "incomplete"
               : "gate_failure"
@@ -741,8 +801,9 @@ async function runOneNode(
       attemptRecord.outcome === "substantive_rejection"
     // A valid substantive verdict ends a verified review of this submission.
     // Explicit feedback may repair the producer; schema/evidence gaps keep their shared attempt bound.
-    const completedVerifiedReview = definition.agent === "checker" && Boolean(definition.verification) &&
-      attemptRecord.outcome === "substantive_rejection"
+    const completedVerifiedReview = definition.agent === "checker" && verificationActive &&
+      (attemptRecord.outcome === "substantive_rejection" ||
+        (mechanicalEvaluation?.findings.some(finding => finding.outcome !== "supported") ?? false))
     state.status = !awaitsFeedbackRouting && !completedVerifiedReview && state.current_attempt < localLimit ? "pending" : "failed"
     await save(run, options)
     log(options, `node ${definition.id} failed attempt ${attempt}: ${persistedFailures.join("; ")}`)
@@ -1126,7 +1187,8 @@ export async function executeRun(run: RunState, options: ExecuteOptions): Promis
             const state = run.nodes[definition.id]!
             if (state.current_attempt >= (definition.loop?.max_attempts ?? 1) || available <= 0) continue
             available--
-            if (definition.agent !== "shell" && !gateRecoverySource(run, definition)) dispatches.push({ node: definition, attempt: state.current_attempt + 1 })
+            if (definition.agent !== "shell" && !gateRecoverySource(run, definition) && !hostMechanicalOnly(run, definition))
+              dispatches.push({ node: definition, attempt: state.current_attempt + 1 })
           }
           try { await options.taskAllowance!.reserve(run, dispatches, options.toolContext.abort) }
           catch (error) {

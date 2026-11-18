@@ -1,5 +1,7 @@
 import { z } from "zod"
-import { FindingSchema, type RetrievedVerificationEvidence } from "./verification.ts"
+import { createHash } from "node:crypto"
+import { isDeepStrictEqual } from "node:util"
+import { FindingSchema, type HostMechanicalFindings, type RetrievedVerificationEvidence } from "./verification.ts"
 import type { ActionEvidenceRecord } from "./action-evidence.ts"
 
 /** Material supplied only after store validation of source manifests and exact page receipts. */
@@ -11,6 +13,24 @@ export interface VerifiedCheckerRecord {
 }
 export const MECHANICAL_BINDING_FAILURE = "schema: findings: code=mechanical_binding; use cited records from the pinned producer submission and one captured call"
 export const MECHANICAL_CONSISTENCY_FAILURE = "schema: findings: code=mechanical_consistency; reconcile the declared whole-criterion assessment with its cited observations; preserve unknown facts and do not change criteria or repeat actions"
+const HOST_MECHANICAL_MISMATCH = "schema: findings: code=host_mechanical_binding; host findings and receipts must match the admitted recipe and pinned journal"
+
+/** Host findings use the admitted recipe. The remaining rows still use legacy child receipt rules. */
+export function validateHostMechanicalConsistency(output: unknown, receipts: RetrievedVerificationEvidence[] | undefined,
+  expected: HostMechanicalFindings | undefined): { failures: string[]; childOutput: unknown } {
+  if (!expected) return { failures: receipts === undefined ? [] : [HOST_MECHANICAL_MISMATCH], childOutput: output }
+  if (!isDeepStrictEqual(receipts, expected.receipts)) return { failures: [HOST_MECHANICAL_MISMATCH], childOutput: undefined }
+  if (output === undefined) return { failures: [], childOutput: undefined }
+
+  const parsed = z.array(FindingSchema).min(1).max(100).safeParse((output as { findings?: unknown } | null)?.findings)
+  if (!parsed.success) return { failures: [HOST_MECHANICAL_MISMATCH], childOutput: undefined }
+  const hostIds = new Set(expected.findings.map(finding => finding.criterion_id))
+  const actual = parsed.data.filter(finding => hostIds.has(finding.criterion_id))
+  return {
+    failures: isDeepStrictEqual(actual, expected.findings) ? [] : [HOST_MECHANICAL_MISMATCH],
+    childOutput: { findings: parsed.data.filter(finding => !hostIds.has(finding.criterion_id)) },
+  }
+}
 
 export function hasMechanicalAssessment(output: unknown): boolean {
   const findings = (output as { findings?: unknown } | undefined)?.findings
@@ -70,6 +90,9 @@ export function validateCheckerConsistency(output: unknown, receipts: RetrievedV
         case "complete_command": return i && typeof i.command === "string" && !i.command_redacted && !i.command_source_truncated ? true : undefined
         case "linked_pair": return i && t ? true : undefined
         case "exit_equals": return t?.exit_code_status === "reported" && t.exit_code !== undefined ? t.exit_code === predicate.expected : undefined
+        case "command_equals": return i && typeof i.command === "string" && !i.command_redacted && !i.command_source_truncated
+          ? Buffer.byteLength(i.command, "utf8") === predicate.expected_bytes &&
+            createHash("sha256").update(i.command, "utf8").digest("hex") === predicate.expected_sha256 : undefined
         case "ordinal_equals": return i ? i.ordinal === predicate.expected : undefined
         case "first_recorded_bash": return i && intent?.firstBashOrdinal !== undefined ? i.ordinal === intent.firstBashOrdinal : undefined
       }

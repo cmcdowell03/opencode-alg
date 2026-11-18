@@ -4,7 +4,7 @@ import { TASK_DELIVERY_SCOPE_GUIDANCE, type TaskContract } from "./task-contract
 
 import { MAX_CHECKER_EVIDENCE_BYTES, type CheckerEvidence } from "./checker-evidence.ts"
 import type { EvidenceSource } from "./evidence-retrieval.ts"
-import { VerificationSchema, buildVerificationBasis, type Verification, type ClaimedSubmission } from "./verification.ts"
+import { VerificationSchema, buildVerificationBasis, type Verification, type ClaimedSubmission, type HostMechanicalFindings } from "./verification.ts"
 import { jsonSchemaHint, parseAndValidate } from "./schemas.ts"
 import type { AlgAgent, AttemptOutcome, ModelRef } from "./types.ts"
 import {
@@ -502,6 +502,8 @@ export function buildCheckerPrompt(options: {
   actionEvidenceAvailable?: boolean
   taskContract?: TaskContract
   criteria: string[]
+  criterionIds?: string[]
+  hostMechanicalFindings?: HostMechanicalFindings["findings"]
   claimed: unknown
   claimedSubmission?: ClaimedSubmission
   claimedActionSource?: EvidenceSource
@@ -522,13 +524,18 @@ export function buildCheckerPrompt(options: {
     "Find reasons to reject. Never improve the work.",
     "",
     "CRITERIA:",
-    ...options.criteria.map((criterion, i) => `${i + 1}. ${criterion}`),
+    ...options.criteria.map((criterion, i) => `${options.criterionIds?.[i] ?? `C${i + 1}`}. ${criterion}`),
     ...(options.taskContract ? ["ACCEPTED EVIDENCE COVERAGE (declaration, not proof of adequacy):", TASK_DELIVERY_SCOPE_GUIDANCE, JSON.stringify(options.taskContract.input),
       "Match each criterion to its declared observations. Deliverable existence, a command exit, and content digests establish only their recorded scope. Review rows still require substantive evidence. Missing before-work coverage cannot be repaired by taking a new baseline."] : []),
+    ...(options.hostMechanicalFindings?.length ? [
+      "HOST-DERIVED MECHANICAL FINDINGS (fixed criterion IDs; do not replace or broaden these findings):",
+      JSON.stringify(options.hostMechanicalFindings),
+      "These findings establish only whether the pinned origin's first captured bash command bytes match the admitted digest/length and whether its linked terminal reports the declared exit code. They do not establish deliverable content, preservation, change scope, semantic correctness, causation or any other criterion. Assess only the semantic criteria listed above; preserve host findings verbatim in the final merged verdict.",
+    ] : []),
     ...taskRequestLines(options.taskContract),
     ...(basis ? [
       "VERIFICATION CONTRACT v1:",
-      `Criterion IDs correspond to the criteria above in order: ${basis.criterion_ids.join(", ")}.`,
+      `Criterion IDs correspond to the criteria above in order: ${(options.criterionIds ?? basis.criterion_ids).join(", ")}.`,
       `Evidence IDs correspond to SELECTED EVIDENCE entries in order: ${basis.evidence.map(entry => entry.id).join(", ") || "(none)"}.`,
       ...(basis.claimed_submission ? ["HOST CLAIMED SUBMISSION PIN (identity only; not a citation or proof):", JSON.stringify(basis.claimed_submission)] : []),
       ...(actionSource ? ["HOST ASSIGNED ACTION ORIGIN (selection hint only; match manifest_sha256 to the index, then read and cite R pages):",

@@ -210,6 +210,8 @@ export interface NodeAttempt {
   action_evidence_sources?: import("./evidence-retrieval.ts").EvidenceSources
   /** Exact pages actually delivered by the scoped evidence tool. */
   retrieved_evidence?: import("./verification.ts").RetrievedVerificationEvidence[]
+  /** Host-generated complete action-record pages; separate from child retrieval receipts. */
+  host_mechanical_evidence?: import("./verification.ts").RetrievedVerificationEvidence[]
   /** Exact host task observations used by this checker; immutable contained sidecar. */
   task_evidence_ref?: RunDataReference
   /** Host observations, never populated from the worker's claimed JSON. */

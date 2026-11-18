@@ -6,11 +6,14 @@ import { assertEvidencePlan, assertTaskGraph, assertTaskHostCapabilities, assert
   taskTemplate, uniformCapability, type TaskContractInput } from "../src/task-contract.ts"
 import { getTemplate } from "../src/templates.ts"
 import { createRun, loadRun, persistRun } from "../src/store.ts"
+import { sha256Json } from "../src/persistence.ts"
 import { formatCompactionContext } from "../src/compaction.ts"
 import { executeRun } from "../src/executor.ts"
 import { buildCheckerPrompt, buildWorkerPrompt } from "../src/sessions.ts"
 import { taskEvidence } from "../src/task-evidence.ts"
 import { TaskRequestSnapshotSchema } from "../src/task-request.ts"
+import { ActionEvidenceJournal } from "../src/action-evidence.ts"
+import { EvidenceRetrieval } from "../src/evidence-retrieval.ts"
 import { executeContext, removeProject, tempProject } from "./helpers.ts"
 
 const projects: string[] = []
@@ -31,6 +34,185 @@ function fixture(input = contract()) {
 const output = { summary: ["done"], files_touched: ["result.json"], commands_run: [], risks: [], done: true }
 
 describe("declared task admission", () => {
+  test("the closed action grammar binds only when the complete literal request is exactly admitted criteria", () => {
+    const graph = getTemplate("coding-compact")
+    const criterion = 'Mechanical action: first recorded bash command is exactly "echo expected"; its linked terminal exit code equals 7.'
+    const snapshot = (text: string) => TaskRequestSnapshotSchema.parse({ status: "captured", session_id: "session-owner",
+      message_id: "original", text, text_sha256: createHash("sha256").update(text).digest("hex"),
+      text_transformed: false, non_text_parts: 0 })
+    const bind = (criteria: string[], text: string) => bindTaskContract(contract({ evidence_plan: criteria.map((value, index) =>
+      value.startsWith("Mechanical action:")
+        ? { criterion: index + 1, observations: [{ kind: "action" as const }] }
+        : { criterion: index + 1, observations: [{ kind: "review" as const, rationale: "semantic review" }] }) }),
+      "Check action", criteria, graph, { session_id: "session-owner", message_id: "plan" }, snapshot(text))
+    expect(bind([criterion], criterion).mechanical_verification).toMatchObject({ evaluator: "task-evidence-v1", criteria: [
+      { criterion_id: "C1", mode: "mechanical", recipe: "pinned_first_bash", expected_command_sha256: createHash("sha256").update("echo expected").digest("hex"), expected_command_bytes: 13, expected_exit_code: 7 },
+    ] })
+    expect(bind([criterion], `Please verify this statement: ${criterion}`).mechanical_verification).toBeUndefined()
+    expect(bind([criterion], `${criterion}\nExtra unadmitted requirement`).mechanical_verification).toBeUndefined()
+    const bindPlan = (evidence_plan: TaskContractInput["evidence_plan"]) => bindTaskContract(
+      contract(evidence_plan === undefined ? {} : { evidence_plan }), "Check action", [criterion], graph,
+      { session_id: "session-owner", message_id: "plan" }, snapshot(criterion))
+    expect(bindPlan(undefined).mechanical_verification).toBeUndefined()
+    expect(bindPlan([{ criterion: 1, observations: [{ kind: "action" }, { kind: "deliverable", index: 0 }] }])
+      .mechanical_verification).toBeUndefined()
+    const preservationGraph = structuredClone(graph)
+    preservationGraph.nodes.find(node => node.agent === "implementer")!.inputs!.preserve_paths = JSON.stringify(["protected.json"])
+    expect(bindTaskContract(contract({ preserve_paths: ["protected.json"], evidence_plan: [
+      { criterion: 1, observations: [{ kind: "action" }, { kind: "preservation", paths: ["protected.json"] }] },
+    ] }), "Check action", [criterion], preservationGraph, { session_id: "session-owner", message_id: "plan" }, snapshot(criterion))
+      .mechanical_verification).toBeUndefined()
+    expect(bind([criterion, "The result is substantively correct"], `${criterion}\nThe result is substantively correct`)
+      .mechanical_verification?.criteria.map(row => row.mode)).toEqual(["mechanical", "semantic"])
+    expect(bind([criterion], criterion).mechanical_verification?.criteria[0]).not.toHaveProperty("expected_command")
+  })
+
+  test("new ordinary semantic contracts bind and reload; unversioned legacy contracts stay unqualified", () => {
+    const root = project(), graph = getTemplate("coding-compact"), criterion = "Review the result for substantive correctness."
+    const snapshot = TaskRequestSnapshotSchema.parse({ status: "captured", session_id: "session-owner", message_id: "user-original",
+      text: criterion, text_sha256: createHash("sha256").update(criterion).digest("hex"), text_transformed: false, non_text_parts: 0 })
+    const task = bindTaskContract(contract(), criterion, [criterion], graph,
+      { session_id: "session-owner", message_id: "planner" }, snapshot)
+    expect(task.verification_contract_version).toBe(1)
+    expect(task.mechanical_verification).toBeUndefined()
+    const run = createRun({ goal: criterion, criteria: [criterion], graph, taskContract: task, projectDirectory: root,
+      ownerSessionId: "session-owner" })
+    expect(loadRun(root, run.run_id)!.task_contract).toEqual(task)
+    assertTaskState(loadRun(root, run.run_id)!)
+
+    const legacy = structuredClone(task)
+    delete legacy.verification_contract_version
+    delete legacy.mechanical_verification
+    const { contract_sha256: _oldHash, ...legacyBase } = legacy
+    legacy.contract_sha256 = sha256Json(legacyBase)
+    const legacyRun = structuredClone(run)
+    legacyRun.task_contract = legacy
+    assertTaskState(legacyRun)
+
+    const recipe = 'Mechanical action: first recorded bash command is exactly "echo x"; its linked terminal exit code equals 0.'
+    const recipeSnapshot = TaskRequestSnapshotSchema.parse({ status: "captured", session_id: "session-owner", message_id: "user-original",
+      text: recipe, text_sha256: createHash("sha256").update(recipe).digest("hex"), text_transformed: false, non_text_parts: 0 })
+    const legacyMechanical = bindTaskContract(contract({ evidence_plan: [{ criterion: 1, observations: [{ kind: "action" }] }] }),
+      recipe, [recipe], graph, { session_id: "session-owner", message_id: "planner" }, recipeSnapshot)
+    delete legacyMechanical.verification_contract_version
+    delete legacyMechanical.mechanical_verification
+    const { contract_sha256: _legacyMechanicalHash, ...legacyMechanicalBase } = legacyMechanical
+    legacyMechanical.contract_sha256 = sha256Json(legacyMechanicalBase)
+    const legacyMechanicalRun = createRun({ goal: recipe, criteria: [recipe], graph, taskContract: legacyMechanical,
+      projectDirectory: root, ownerSessionId: "session-owner" })
+    assertTaskState(legacyMechanicalRun)
+    expect(legacyMechanicalRun.task_contract?.mechanical_verification).toBeUndefined()
+  })
+
+  test.each([{ actualExit: 7, outcome: "supported", status: "done" },
+    { actualExit: 1, outcome: "disconfirmed", status: "failed" }] as const)(
+    "host preserves $outcome from pinned first-bash bytes and linked terminal exit", async ({ actualExit, outcome, status }) => {
+    const root = project(), graph = structuredClone(getTemplate("coding-compact"))
+    delete graph.nodes.find(node => node.agent === "checker")!.feedback_to
+    const criterion = 'Mechanical action: first recorded bash command is exactly "echo expected"; its linked terminal exit code equals 7.'
+    const input = contract({ evidence_plan: [{ criterion: 1, observations: [{ kind: "action" }] }] })
+    const text = criterion
+    const snapshot = TaskRequestSnapshotSchema.parse({ status: "captured", session_id: "session-owner", message_id: "user-original",
+      text, text_sha256: createHash("sha256").update(text).digest("hex"), text_transformed: false, non_text_parts: 0 })
+    const task = bindTaskContract(input, "Check the recorded action", [criterion], graph, { session_id: "session-owner", message_id: "planner" }, snapshot)
+    const run = createRun({ goal: "Check the recorded action", criteria: [criterion], graph, taskContract: task, projectDirectory: root,
+      ownerSessionId: "session-owner" })
+    const journal = new ActionEvidenceJournal(root), retrieval = new EvidenceRetrieval(root)
+    const roles: string[] = []
+    const completed = await executeRun(run, { ...executeContext(root), actionEvidence: { journal, retrieval }, sessionRunner: async opts => {
+      roles.push(opts.agent)
+      if (opts.agent === "implementer") {
+        writeFileSync(join(root, "result.json"), "{}")
+        const child = "implement-child"
+        await opts.onSessionCreated?.(child)
+        for (const [index, command] of ["echo expected", "unrelated later call"].entries()) {
+          const call = { tool: "bash", sessionID: child, callID: `call-${index}` }
+          journal.before(call, { command })
+          journal.after(call, { output: "finished", metadata: { exit_code: index === 0 ? actualExit : 0 } })
+        }
+        return { session_id: child, text: "", parsed: output }
+      }
+      throw new Error("mechanical checker must not launch a model child")
+    } })
+    expect(completed.status, JSON.stringify({ summary: completed.summary, attempts: completed.nodes.check!.attempts })).toBe(status)
+    expect(roles).toEqual(["implementer"])
+    expect(completed.global_attempts).toBe(2)
+    expect(completed.nodes.check!.attempts[0]).toMatchObject({ status: status === "done" ? "done" : "failed",
+      outcome: status === "done" ? "passed" : "substantive_rejection", task_evidence_ref: expect.anything(),
+      verification_basis: { criterion_ids: ["C1"], evidence: [{ source: { kind: "host_task" }, status: "included" }] },
+      output: { passed: status === "done", score: status === "done" ? 10 : 0,
+        findings: [{ criterion_id: "C1", outcome }] } })
+    expect((completed.nodes.check!.attempts[0]!.output as { findings: Array<{ evidence_ids: string[] }> }).findings[0]!.evidence_ids[0])
+      .toMatch(/^R[a-f0-9]{64}$/)
+    expect(completed.nodes.check!.attempts[0]!.session_id).toBeUndefined()
+    expect(loadRun(root, run.run_id)!.nodes.check!.attempts[0]!.output).toEqual(completed.nodes.check!.attempts[0]!.output)
+    expect(completed.nodes.check!.attempts[0]!.retrieved_evidence).toBeUndefined()
+    expect(completed.nodes.check!.attempts[0]!.host_mechanical_evidence).toHaveLength(2)
+  })
+
+  test("host-only verdict cannot bypass the separately declared deliverable gate", async () => {
+    const root = project(), graph = getTemplate("coding-compact")
+    const criterion = 'Mechanical action: first recorded bash command is exactly "echo expected"; its linked terminal exit code equals 7.'
+    const snapshot = TaskRequestSnapshotSchema.parse({ status: "captured", session_id: "session-owner", message_id: "user-original",
+      text: criterion, text_sha256: createHash("sha256").update(criterion).digest("hex"), text_transformed: false, non_text_parts: 0 })
+    const task = bindTaskContract(contract({ evidence_plan: [{ criterion: 1, observations: [{ kind: "action" }] }] }),
+      criterion, [criterion], graph, { session_id: "session-owner", message_id: "planner" }, snapshot)
+    const run = createRun({ goal: criterion, criteria: [criterion], graph, taskContract: task, projectDirectory: root,
+      ownerSessionId: "session-owner" })
+    const roles: string[] = []
+    await expect(executeRun(run, { ...executeContext(root), sessionRunner: async opts => {
+      roles.push(opts.agent)
+      return { session_id: `${opts.agent}-child`, text: "", parsed: output }
+    } })).rejects.toThrow("task_deliverable_unavailable")
+    expect(roles).toEqual(["implementer"])
+    expect(run.nodes.check!.attempts).toHaveLength(0)
+  })
+
+  test("a mixed mechanical/semantic contract retains the fresh checker", async () => {
+    const root = project(), graph = getTemplate("coding-compact")
+    const canonical = 'Mechanical action: first recorded bash command is exactly "echo expected"; its linked terminal exit code equals 7.'
+    const input = contract({ evidence_plan: [{ criterion: 1, observations: [{ kind: "action" }] },
+        { criterion: 2, observations: [{ kind: "review", rationale: "semantic adequacy" }] }] })
+    const criteria = [canonical, "The result is substantively correct"]
+    const sourceText = criteria.join("\n")
+    const snapshot = TaskRequestSnapshotSchema.parse({ status: "captured", session_id: "session-owner", message_id: "user-original",
+      text: sourceText, text_sha256: createHash("sha256").update(sourceText).digest("hex"), text_transformed: false, non_text_parts: 0 })
+    const task = bindTaskContract(input, "Verify execution and result", criteria, graph,
+      { session_id: "session-owner", message_id: "planner" }, snapshot)
+    expect(task.mechanical_verification?.criteria.map(row => row.mode)).toEqual(["mechanical", "semantic"])
+    const run = createRun({ goal: "Verify execution and result", criteria, graph, taskContract: task,
+      projectDirectory: root, ownerSessionId: "session-owner" })
+    const roles: string[] = []
+    let checkerPrompt = ""
+    await executeRun(run, { ...executeContext(root), sessionRunner: async opts => {
+      roles.push(opts.agent)
+      if (opts.agent === "implementer") {
+        writeFileSync(join(root, "result.json"), "{}")
+        const child = "implement-child"
+        return { session_id: child, text: "", parsed: output, execution_evidence: {
+          version: 1, run_id: run.run_id, node_id: "implement", attempt: 1, child_session_id: child,
+          retrieval_status: "available", commands: [{ tool: "bash", command: "true", tool_status: "completed",
+            exit_code_status: "reported", exit_code: 0, output_truncated: false, command_truncated: false, cwd_truncated: false }],
+          omitted_commands: 0, window_may_be_incomplete: false, foreign_messages_omitted: 0,
+        } }
+      }
+      checkerPrompt = opts.userPrompt
+      return { session_id: "semantic-checker", text: "", parsed: { passed: true, failures: [], score: 10, findings: [
+        { criterion_id: "C2", outcome: "supported", evidence_ids: ["E1"], reason: "semantic assessment" },
+      ] } }
+    } })
+    expect(roles).toEqual(["implementer", "checker"])
+    expect(checkerPrompt).toContain("HOST-DERIVED MECHANICAL FINDINGS (fixed criterion IDs")
+    expect(checkerPrompt).toContain('"criterion_id":"C1"')
+    expect(checkerPrompt).toContain("They do not establish deliverable content, preservation, change scope, semantic correctness, causation")
+    expect(checkerPrompt).toContain("Assess only the semantic criteria listed above")
+    expect(run.nodes.check!.attempts[0]!.session_id).toBe("semantic-checker")
+    expect(run.nodes.check!.attempts[0]!.output).toMatchObject({ passed: false, score: 0, findings: [
+      { criterion_id: "C1", outcome: "inconclusive", evidence_ids: [] },
+      { criterion_id: "C2", outcome: "supported" },
+    ] })
+  })
+
   test("host user request survives persistence, compaction and both child handoffs without trusting a shortened summary", async () => {
     const root = project(), graph = getTemplate("coding-compact")
     const text = 'Prepare only. The later result requires fields numerator, denominator, rate, window, sources, conflicts, limitations. Its project phase field is "qc". Do not write the final report yet.'

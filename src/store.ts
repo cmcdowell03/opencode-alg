@@ -34,12 +34,12 @@ import { ALG_SCHEMA_VERSION } from "./types.ts"
 import { assertTaskState } from "./task-contract.ts"
 import { assertTaskEvidence, MAX_TASK_EVIDENCE_BYTES, type TaskEvidence } from "./task-evidence.ts"
 import { readActionManifest, readActionRecord, assertActionEvidenceManifestIdentity, actionEvidenceRecordReferences, type ActionEvidenceIdentity, type ActionEvidenceRecordReference } from "./action-evidence.ts"
-import { hasMechanicalAssessment, validateCheckerConsistency, MECHANICAL_BINDING_FAILURE, type VerifiedCheckerRecord } from "./checker-consistency.ts"
+import { hasMechanicalAssessment, validateCheckerConsistency, validateHostMechanicalConsistency, MECHANICAL_BINDING_FAILURE, type VerifiedCheckerRecord } from "./checker-consistency.ts"
 import { evidencePage } from "./evidence-retrieval.ts"
 import { checkerRelatedNodes } from "./checker-evidence.ts"
 import { graphPolicy } from "./graph-policy.ts"
 import { initNodeStates, resolveInputValue, validateGraph } from "./graph.ts"
-import { pinClaimedSubmission } from "./verification.ts"
+import { classifyVerificationEvidenceGap, evaluateMechanicalActionCriteria, pinClaimedSubmission, validateVerification, type ClaimedSubmission, type HostMechanicalFindings, type MechanicalActionObservation } from "./verification.ts"
 import {
   parsePersistedNodeAttempt,
   parseInputExpression,
@@ -342,6 +342,7 @@ function assertRunArtifactMetadataContained(state: RunState, projectDirectory: s
        ...node.attempts.map((attempt) => attempt.action_evidence_ref),
        ...node.attempts.flatMap((attempt) => attempt.action_evidence_sources?.journals.map(source => source.reference) ?? []),
        ...node.attempts.flatMap((attempt) => attempt.retrieved_evidence?.map(receipt => receipt.reference) ?? []),
+       ...node.attempts.flatMap((attempt) => attempt.host_mechanical_evidence?.map(receipt => receipt.reference) ?? []),
     ]) {
       if (!reference) continue
       try {
@@ -720,6 +721,7 @@ const ATTEMPT_DETAIL_IDENTITY_FIELDS = [
   "action_evidence_ref",
   "action_evidence_sources",
   "retrieved_evidence",
+  "host_mechanical_evidence",
   "execution_evidence",
   "gate_evidence",
   "preservation_evidence",
@@ -760,6 +762,9 @@ function persistedAttemptContext(
 ): Parameters<typeof parsePersistedNodeAttempt>[1] {
   const definition = state.graph.nodes.find((candidate) => candidate.id === nodeId)
   if (!definition) throw new StoreError(`attempt belongs to unknown node ${nodeId}`)
+  const hostCriteria = state.task_contract?.input.verification.checker_node === nodeId
+    ? state.task_contract.mechanical_verification?.criteria.filter(row => row.mode === "mechanical").map(row => row.criterion_id)
+    : undefined
   return {
     agent: definition.agent,
     run_id: state.run_id,
@@ -768,8 +773,9 @@ function persistedAttemptContext(
     mode: state.mode,
     requires_shell: definition.agent === "shell" || definition.loop?.gate === "shell" ||
       definition.loop?.gate === "all",
-    verification_required: !!definition.verification,
+    verification_required: !!definition.verification || !!hostCriteria?.length,
     verification_criteria: state.criteria,
+    host_mechanical_criterion_ids: hostCriteria,
     task_evidence_required: state.task_contract?.input.verification.checker_node === nodeId && state.mode !== "dry",
   }
 }
@@ -834,6 +840,43 @@ function verifyClaimedSubmission(state: RunState, nodeId: string, attempt: NodeA
     if (claimed == null || !isDeepStrictEqual(pin, pinClaimedSubmission({ run_id: state.run_id, node_id: pin.node_id,
       reference, attempt: pin.attempt }, claimed))) throw new Error("submission content mismatch")
   } catch (cause) { throw new StoreError("checker claimed submission integrity or identity failed", { cause }) }
+}
+
+/** The live executor and reload derive closed findings from the same original journal. */
+export function evaluatePinnedMechanicalAction(state: RunState, nodeId: string, attempt: NodeAttempt): HostMechanicalFindings | undefined {
+  const task = state.task_contract
+  if (state.mode === "dry" || task?.input.verification.checker_node !== nodeId || !task.mechanical_verification) return undefined
+  if (!attempt.verification_basis?.claimed_submission) throw new StoreError("host mechanical evidence requires a pinned producer submission")
+  verifyClaimedSubmission(state, nodeId, attempt)
+  return evaluateMechanicalActionCriteria(task.mechanical_verification, loadPinnedMechanicalObservations(state, attempt.verification_basis.claimed_submission))
+}
+
+function loadPinnedMechanicalObservations(state: RunState, pin: ClaimedSubmission): MechanicalActionObservation[] {
+  const origin = resolveCheckerSubmissionActionOrigin(state, pin.node_id, pin.attempt)
+  if (!origin?.action_evidence_ref) return []
+  if (!origin.session_id) throw new StoreError("host mechanical action journal has no producer session")
+  const identity = { run_id: state.run_id, node_id: pin.node_id, attempt: origin.attempt, child_session_id: origin.session_id }
+  try {
+    const manifest = readActionManifest(state.project_directory, origin.action_evidence_ref, identity)
+    assertActionEvidenceManifestIdentity(manifest, identity, identity.child_session_id)
+    const first = manifest.entries.find(entry => entry.kind === "intent")
+    if (!first) return []
+    const gaps = manifest.entries.filter(entry => entry.kind === "gap")
+    const priorGap = manifest.coverage.capture_gaps > gaps.length || gaps.some(entry => {
+      if (entry.ordinal > first.ordinal) return false
+      const record = readActionRecord(state.project_directory, entry, identity)
+      return record.kind === "gap" && record.reason !== "unsupported_tool"
+    })
+    const terminal = manifest.entries.find(entry => entry.kind === "terminal" && entry.ordinal === first.ordinal)
+    return (terminal ? [first, terminal] : [first]).map(reference => ({
+      reference: plainReference(reference),
+      record: readActionRecord(state.project_directory, reference, identity),
+      firstBashOrdinal: first.ordinal,
+      priorGap,
+    }))
+  } catch (cause) {
+    throw new StoreError("host mechanical action journal integrity or identity failed", { cause })
+  }
 }
 
 /** Validate the transitive evidence tree, including checker pages, on every authoritative load. */
@@ -935,11 +978,27 @@ function verifyAttemptActionEvidence(state: RunState, nodeId: string, attempt: N
 
 /** The live checker and hydrated persistence boundary use this same evaluator. */
 export function validateCheckerActionConsistency(state: RunState, nodeId: string, attempt: NodeAttempt, output: unknown = attempt.output): string[] {
-  verifyClaimedSubmission(state, nodeId, attempt)
-  const mechanical = hasMechanicalAssessment(output)
+  const expected = output !== undefined || attempt.host_mechanical_evidence !== undefined
+    ? evaluatePinnedMechanicalAction(state, nodeId, attempt)
+    : undefined
+  if (!expected) verifyClaimedSubmission(state, nodeId, attempt)
+  if (expected?.findings.length === state.criteria.length && attempt.session_id !== undefined)
+    return [MECHANICAL_BINDING_FAILURE]
+  const findings = validateHostMechanicalConsistency(output, attempt.host_mechanical_evidence, expected)
+  if (findings.failures.length) return findings.failures
+  if (expected && output !== undefined && attempt.verification_basis) {
+    const binding = validateVerification(output, attempt.verification_basis, attempt.retrieved_evidence,
+      attempt.host_mechanical_evidence, expected.findings.map(finding => finding.criterion_id))
+    if (binding.length) return binding
+    if (attempt.status === "failed" && !attempt.error && attempt.shell_ok !== false) {
+      const rejection = classifyVerificationEvidenceGap(output) ? "evidence_unavailable" : "substantive_rejection"
+      if (attempt.outcome !== rejection) return [MECHANICAL_BINDING_FAILURE]
+    }
+  }
+  const mechanical = hasMechanicalAssessment(findings.childOutput)
   const records = verifyAttemptActionEvidence(state, nodeId, attempt, mechanical)
   if (mechanical && !attempt.verification_basis) return [MECHANICAL_BINDING_FAILURE]
-  return validateCheckerConsistency(output, attempt.retrieved_evidence ?? [], records)
+  return validateCheckerConsistency(findings.childOutput, attempt.retrieved_evidence ?? [], records)
 }
 
 function hydrateAttemptData(
@@ -1648,7 +1707,8 @@ function runReferences(state: RunState): RunDataReference[] {
       node.last_failures_ref,
       ...node.attempts.flatMap((attempt) => [attempt.output_ref, attempt.detail_ref, attempt.task_evidence_ref,
         attempt.action_evidence_ref, ...(attempt.action_evidence_sources?.journals.map(source => source.reference) ?? []),
-        ...(attempt.retrieved_evidence?.map(receipt => receipt.reference) ?? [])]),
+         ...(attempt.retrieved_evidence?.map(receipt => receipt.reference) ?? []),
+         ...(attempt.host_mechanical_evidence?.map(receipt => receipt.reference) ?? [])]),
     ]) {
       if (reference) references.push(reference)
     }
@@ -1696,6 +1756,7 @@ function protectedReferencePaths(
           if (attempt.action_evidence_ref) paths.add(attempt.action_evidence_ref.artifact_path)
           for (const source of attempt.action_evidence_sources?.journals ?? []) paths.add(source.reference.artifact_path)
           for (const receipt of attempt.retrieved_evidence ?? []) paths.add(receipt.reference.artifact_path)
+           for (const receipt of attempt.host_mechanical_evidence ?? []) paths.add(receipt.reference.artifact_path)
           addActionRecordPaths(paths, manifest, node.id, attempt)
         }
       } catch {
@@ -1976,6 +2037,7 @@ function recoveryReachablePaths(state: RunState): Set<string> | null {
           if (attempt.action_evidence_ref) reachable.add(attempt.action_evidence_ref.artifact_path)
           for (const source of attempt.action_evidence_sources?.journals ?? []) reachable.add(source.reference.artifact_path)
           for (const receipt of attempt.retrieved_evidence ?? []) reachable.add(receipt.reference.artifact_path)
+          for (const receipt of attempt.host_mechanical_evidence ?? []) reachable.add(receipt.reference.artifact_path)
           addActionRecordPaths(reachable, manifest, nodeId, attempt)
         }
       } catch {
@@ -2124,6 +2186,9 @@ function prepareRunForImmutableCommit(candidate: RunState, current: RunState): R
         throw new StoreError("committed checker evidence sources are immutable")
       if (attempt.verification_basis && !isDeepStrictEqual(attempt.verification_basis, candidate?.verification_basis))
         throw new StoreError("committed checker verification basis is immutable")
+      if (attempt.host_mechanical_evidence !== undefined &&
+        !isDeepStrictEqual(attempt.host_mechanical_evidence, candidate?.host_mechanical_evidence))
+        throw new StoreError("committed host mechanical evidence is immutable")
       const pages = attempt.retrieved_evidence ?? []
       const candidatePages = candidate?.retrieved_evidence ?? []
       if (candidatePages.length < pages.length || !isDeepStrictEqual(candidatePages.slice(0, pages.length), pages) ||

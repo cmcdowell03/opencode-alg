@@ -2,12 +2,33 @@ import { createHash } from "node:crypto"
 import { z } from "zod"
 import type { CheckerEvidence } from "./checker-evidence.ts"
 import type { RunDataReference } from "./types.ts"
-import { sha256Json } from "./persistence.ts"
+import { canonicalJson, sha256Json } from "./persistence.ts"
 import { MAX_CHECKER_PROMPT_BYTES } from "./limits.ts"
+import type { ActionEvidenceRecord } from "./action-evidence.ts"
 
 /** Opt-in linkage contract. A valid citation is not a guarantee that a claim is true. */
 export const VerificationSchema = z.object({ version: z.literal(1), mandate: z.string().trim().min(1).max(2_000).optional() }).strict()
 export type Verification = z.infer<typeof VerificationSchema>
+/** Closed, host-evaluated recipes. Free text never selects an evaluator. */
+export const TaskMechanicalVerificationSchema = z.object({
+  version: z.literal(1),
+  evaluator: z.literal("task-evidence-v1"),
+  criteria: z.array(z.object({
+    criterion_id: z.string().regex(/^C[1-9][0-9]{0,2}$/),
+    mode: z.enum(["mechanical", "semantic"]),
+    recipe: z.literal("pinned_first_bash").optional(),
+    expected_command_sha256: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+    expected_command_bytes: z.number().int().min(0).max(8_192).optional(),
+    expected_exit_code: z.number().int().min(-1).max(255).optional(),
+  }).strict()).min(1).max(100),
+}).strict().superRefine((contract, ctx) => {
+  if (contract.criteria.some((row, index) => row.criterion_id !== `C${index + 1}` ||
+    ((row.mode === "mechanical") !== (row.recipe !== undefined)) || (row.mode === "mechanical" &&
+      (row.recipe !== "pinned_first_bash" || row.expected_command_sha256 === undefined ||
+        row.expected_command_bytes === undefined || row.expected_exit_code === undefined))))
+    ctx.addIssue({ code: "custom", message: "mechanical criteria must use an ordered supported recipe" })
+})
+export type TaskMechanicalVerification = z.infer<typeof TaskMechanicalVerificationSchema>
 const RetrievedIdSchema = z.string().regex(/^R[a-f0-9]{64}$/)
 export const MechanicalAssessmentSchema = z.object({
   version: z.literal(1),
@@ -18,6 +39,7 @@ export const MechanicalAssessmentSchema = z.object({
     z.object({ kind: z.literal("complete_command") }).strict(),
     z.object({ kind: z.literal("linked_pair") }).strict(),
     z.object({ kind: z.literal("exit_equals"), expected: z.number().int() }).strict(),
+    z.object({ kind: z.literal("command_equals"), expected_sha256: z.string().regex(/^[a-f0-9]{64}$/), expected_bytes: z.number().int().nonnegative() }).strict(),
     z.object({ kind: z.literal("ordinal_equals"), expected: z.number().int().positive() }).strict(),
     z.object({ kind: z.literal("first_recorded_bash") }).strict(),
   ])).min(1).max(5).refine(items => new Set(items.map(item => item.kind)).size === items.length),
@@ -123,6 +145,104 @@ export const VerificationBasisSchema = z.object({
 })
 export type VerificationBasis = z.infer<typeof VerificationBasisSchema>
 
+export interface MechanicalActionObservation {
+  reference: RunDataReference
+  record: ActionEvidenceRecord
+  firstBashOrdinal?: number
+  priorGap?: boolean
+}
+export interface HostMechanicalFindings {
+  findings: VerificationFinding[]
+  receipts: RetrievedVerificationEvidence[]
+  mechanicalCriterionIds: string[]
+}
+
+/** Derive closed action findings from authenticated records for the pinned submission only. */
+export function evaluateMechanicalActionCriteria(contract: TaskMechanicalVerification | undefined,
+  observations: readonly MechanicalActionObservation[]): HostMechanicalFindings | undefined {
+  if (!contract?.criteria.some(row => row.mode === "mechanical")) return undefined
+  const intents = observations.filter(value => value.record.kind === "intent" && value.record.tool === "bash")
+  const firstOrdinal = intents.length ? Math.min(...intents.map(value => value.record.ordinal)) : undefined
+  const intentObservation = intents.find(value => value.record.ordinal === firstOrdinal)
+  const intentRecord = intentObservation?.record.kind === "intent" ? intentObservation.record : undefined
+  const terminalObservation = intentObservation && intentRecord && observations.find(value => value.record.kind === "terminal" &&
+    value.record.intent_sha256 === intentObservation.reference.sha256 && value.record.ordinal === intentRecord.ordinal &&
+    value.record.call_id_sha256 === intentRecord.call_id_sha256)
+  const receipts: RetrievedVerificationEvidence[] = []
+  const receiptsByReference = new Map<string, RetrievedVerificationEvidence[]>()
+  try {
+    // Only the selected first bash intent and its linked terminal need page
+    // receipts. The manifest already authenticates unrelated-call ordering.
+    const targets = [intentObservation, terminalObservation].filter((value): value is MechanicalActionObservation => !!value)
+    for (const observation of targets) {
+      const bytes = Buffer.from(canonicalJson(observation.record), "utf8")
+      if (bytes.byteLength !== observation.reference.byte_size ||
+        createHash("sha256").update(bytes).digest("hex") !== observation.reference.sha256) continue
+      const pages: RetrievedVerificationEvidence[] = []
+      for (let offset = 0; offset < bytes.byteLength; ) {
+        let end = Math.min(bytes.byteLength, offset + 8_192)
+        while (end < bytes.byteLength && (bytes[end]! & 0xc0) === 0x80) end--
+        if (end <= offset) throw new Error("action evidence page boundary is invalid")
+        const page = retrievedVerificationEvidence(observation.reference, offset, bytes.subarray(offset, end).toString("utf8"))
+        pages.push(page); receipts.push(page); offset = end
+        if (receipts.length > 32) throw new Error("action evidence page cap exceeded")
+      }
+      receiptsByReference.set(observation.reference.artifact_path, pages)
+    }
+  } catch { return { findings: contract.criteria.filter(row => row.mode === "mechanical").map(row => ({
+    criterion_id: row.criterion_id, outcome: "inconclusive", evidence_ids: [], reason: "Host action evidence is incomplete or exceeds the bounded receipt limit.",
+  })), receipts: [], mechanicalCriterionIds: contract.criteria.filter(row => row.mode === "mechanical").map(row => row.criterion_id) } }
+  const findings: VerificationFinding[] = []
+  for (const row of contract.criteria) {
+    if (row.mode !== "mechanical" || row.recipe !== "pinned_first_bash") continue
+    const priorGap = intentObservation?.priorGap === true
+    const intentRecord = intentObservation?.record
+    const terminalRecord = terminalObservation?.record
+    const intentReceipts = intentObservation ? receiptsByReference.get(intentObservation.reference.artifact_path) ?? [] : []
+    const terminalReceipts = terminalObservation ? receiptsByReference.get(terminalObservation.reference.artifact_path) ?? [] : []
+    const intentCovered = covered(intentObservation?.reference.byte_size, intentReceipts)
+    const terminalCovered = !terminalObservation || covered(terminalObservation.reference.byte_size, terminalReceipts)
+    const commandAvailable = !priorGap && intentRecord?.kind === "intent" && typeof intentRecord.command === "string" &&
+      !intentRecord.command_redacted && !intentRecord.command_source_truncated && intentCovered
+    const commandMatches = commandAvailable && Buffer.byteLength(intentRecord.command!, "utf8") === row.expected_command_bytes &&
+      createHash("sha256").update(intentRecord.command!, "utf8").digest("hex") === row.expected_command_sha256
+    const linkAvailable = intentRecord !== undefined && terminalRecord?.kind === "terminal" && terminalCovered &&
+      terminalRecord.intent_sha256 === intentObservation!.reference.sha256 &&
+      terminalRecord.identity.run_id === intentRecord.identity.run_id && terminalRecord.identity.node_id === intentRecord.identity.node_id &&
+      terminalRecord.identity.attempt === intentRecord.identity.attempt && terminalRecord.identity.child_session_id === intentRecord.identity.child_session_id
+    const exitAvailable = linkAvailable && terminalRecord?.kind === "terminal" && terminalRecord.tool_status === "completed" &&
+      terminalRecord.exit_code_status === "reported" && terminalRecord.exit_code !== undefined
+    const values: Array<boolean | undefined> = [
+      commandAvailable ? commandMatches : undefined,
+      !priorGap && firstOrdinal !== undefined && intentObservation ? intentObservation.record.ordinal === firstOrdinal : undefined,
+      !priorGap && exitAvailable ? terminalRecord!.kind === "terminal" && terminalRecord.exit_code === row.expected_exit_code : undefined,
+    ]
+    const outcome = values.includes(false) ? "disconfirmed" : values.every(value => value === true) ? "supported" : "inconclusive"
+    const intentId = intentCovered ? intentReceipts.at(-1)?.id : undefined
+    const terminalId = terminalCovered && terminalObservation ? terminalReceipts.at(-1)?.id : undefined
+    const evidenceIds = [...new Set([intentId, terminalId].filter((id): id is string => !!id))]
+    findings.push({ criterion_id: row.criterion_id, outcome, evidence_ids: evidenceIds,
+      reason: "Host comparison of the pinned first bash intent and its linked terminal record.",
+      ...(intentId && !priorGap ? { mechanical_assessment: { version: 1 as const, scope: "whole_criterion" as const, intent_id: intentId,
+        ...(terminalId ? { terminal_id: terminalId } : {}), predicates: [
+          { kind: "complete_command" }, { kind: "linked_pair" },
+          { kind: "command_equals", expected_sha256: row.expected_command_sha256!, expected_bytes: row.expected_command_bytes! },
+          { kind: "first_recorded_bash" }, { kind: "exit_equals", expected: row.expected_exit_code! },
+        ] } } : {}) })
+  }
+  return { findings, receipts, mechanicalCriterionIds: contract.criteria.filter(row => row.mode === "mechanical").map(row => row.criterion_id) }
+}
+
+function covered(total: number | undefined, pages: RetrievedVerificationEvidence[]): boolean {
+  if (total === undefined || !pages.length) return false
+  let end = 0
+  for (const page of [...pages].sort((a, b) => a.offset - b.offset)) {
+    if (page.offset > end) return false
+    end = Math.max(end, page.offset + page.length)
+  }
+  return end === total
+}
+
 export function effectiveCriteria(criteria: string[]): string[] {
   return criteria.length ? criteria : ["Output must be complete and match the goal."]
 }
@@ -144,13 +264,17 @@ export function validateVerification(
   output: unknown,
   basis: VerificationBasis,
   retrievedEvidence: RetrievedVerificationEvidence[] = [],
+  hostEvidence: RetrievedVerificationEvidence[] = [],
+  hostCriterionIds: readonly string[] = [],
 ): string[] {
   const retrieved = RetrievedVerificationEvidenceListSchema.safeParse(retrievedEvidence)
-  if (!retrieved.success) {
+  const host = RetrievedVerificationEvidenceListSchema.safeParse(hostEvidence)
+  if (!retrieved.success || !host.success) {
     return ["schema: findings: code=evidence_binding; retrieved evidence receipts must be host-registered and well-formed"]
   }
   const retrievedIds = retrieved.data.map(entry => entry.id)
-  if (new Set(retrievedIds).size !== retrievedIds.length) {
+  const hostIds = host.data.map(entry => entry.id)
+  if (new Set([...retrievedIds, ...hostIds]).size !== retrievedIds.length + hostIds.length) {
     return ["schema: findings: code=evidence_binding; retrieved evidence identities must be unique"]
   }
   const verdict = output as { passed?: unknown; findings?: unknown }
@@ -166,13 +290,15 @@ export function validateVerification(
     ...retrievedIds,
   ])
   for (const finding of findings) {
-    if (new Set(finding.evidence_ids).size !== finding.evidence_ids.length || finding.evidence_ids.some(id => !available.has(id)) ||
+    const hostCriterion = hostCriterionIds.includes(finding.criterion_id)
+    const allowed = hostCriterion ? new Set(hostIds) : available
+    if (new Set(finding.evidence_ids).size !== finding.evidence_ids.length || finding.evidence_ids.some(id => !allowed.has(id)) ||
       (["supported", "disconfirmed"].includes(finding.outcome) && finding.evidence_ids.length === 0)) {
       return ["schema: findings: code=evidence_binding; cite only supplied included evidence IDs; support or contradiction requires a citation"]
     }
     const assessment = finding.mechanical_assessment
     if (assessment && ([assessment.intent_id, assessment.terminal_id].some(id => id !== undefined &&
-      (!finding.evidence_ids.includes(id) || !retrievedIds.includes(id))) || finding.outcome === "unsupported")) {
+      (!finding.evidence_ids.includes(id) || !(hostCriterion ? hostIds : retrievedIds).includes(id))) || finding.outcome === "unsupported")) {
       return ["schema: findings: code=mechanical_binding; mechanical targets require cited registered pages and a supported, disconfirmed or inconclusive outcome"]
     }
   }

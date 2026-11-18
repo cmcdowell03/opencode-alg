@@ -1,9 +1,11 @@
+import { createHash } from "node:crypto"
 import { z } from "zod"
 import { sha256Json } from "./persistence.ts"
 import { isSafeId, isSafeProjectRelativePath } from "./paths.ts"
 import type { GraphDef, RunState } from "./types.ts"
 import { TaskRequestSnapshotSchema, type TaskRequestSnapshot } from "./task-request.ts"
 import { ChangeScopeInputSchema } from "./change-scope-evidence.ts"
+import { TaskMechanicalVerificationSchema, type TaskMechanicalVerification } from "./verification.ts"
 
 export const TASK_DELIVERY_SCOPE_GUIDANCE = "task_contract.phase controls ALG delivery scope only: preparation permits only declared preparation deliverables; complete requires the declared task. It does not set domain phase, stage, or checkpoint fields; preserve their requested values. Report substantive conflicts with accepted criteria or deliverables; do not widen scope or permissions."
 
@@ -13,6 +15,7 @@ const path = z.string().min(1).max(512).refine(value => isSafeProjectRelativePat
 const observation = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("deliverable"), index: z.number().int().min(0).max(15) }).strict(),
   z.object({ kind: z.literal("execution") }).strict(),
+  z.object({ kind: z.literal("action") }).strict(),
   z.object({ kind: z.literal("preservation"), paths: z.array(path).min(1).max(8) }).strict(),
   z.object({ kind: z.literal("change_scope") }).strict(),
   z.object({ kind: z.literal("review"), rationale: z.string().trim().min(1).max(500) }).strict(),
@@ -69,6 +72,8 @@ export const TaskContractSchema = z.object({
   source: z.object({ session_id: z.string().min(1).max(256), message_id: z.string().min(1).max(256),
     authority: z.literal("accepted-planner-declaration") }).strict(),
   requirements_sha256: z.string().regex(/^[a-f0-9]{64}$/),
+  verification_contract_version: z.literal(1).optional(),
+  mechanical_verification: TaskMechanicalVerificationSchema.optional(),
   contract_sha256: z.string().regex(/^[a-f0-9]{64}$/),
   request_snapshot: TaskRequestSnapshotSchema.optional(),
 }).strict().superRefine((task, ctx) => {
@@ -126,19 +131,67 @@ export function bindTaskContract(input: TaskContractInput, goal: string, criteri
   if (!criteria.length) throw new Error("task_criteria_required: supply the original acceptance criteria before planning")
   assertEvidencePlan(input, criteria.length)
   assertTaskGraph(input, graph)
+  const mechanicalVerification = closedMechanicalVerification(criteria, input, requestSnapshot)
+  if (mechanicalVerification?.criteria.some(row => row.mode === "mechanical")) assertMechanicalSource(input, graph)
   const base = { version: 1 as const, input, source: { ...source, authority: "accepted-planner-declaration" as const },
     requirements_sha256: sha256Json({ goal, criteria }),
+    verification_contract_version: 1 as const,
+    ...(mechanicalVerification ? { mechanical_verification: mechanicalVerification } : {}),
     ...(requestSnapshot ? { request_snapshot: TaskRequestSnapshotSchema.parse(requestSnapshot) } : {}) }
   return TaskContractSchema.parse({ ...base, contract_sha256: sha256Json(base) })
+}
+
+/** Only exact user-authored canonical criterion text may opt into the sole V1 recipe. */
+export function closedMechanicalVerification(criteria: string[], input: TaskContractInput,
+  requestSnapshot?: TaskRequestSnapshot): TaskMechanicalVerification | undefined {
+  if (!criteria.length || requestSnapshot?.status !== "captured" || requestSnapshot.text_transformed || requestSnapshot.non_text_parts !== 0) return undefined
+  const lines = requestSnapshot.text.split("\n")
+  // A recipe can govern the complete task only when the captured literal is
+  // exactly the ordered accepted criteria. Extra prose/requirements require review.
+  if (lines.length !== criteria.length || lines.some((line, index) => line !== criteria[index])) return undefined
+  const recipe = /^Mechanical action: first recorded bash command is exactly ("(?:[^"\\]|\\.)*"); its linked terminal exit code equals (-?\d+)\.$/
+  const rows = criteria.map((criterion, index) => {
+    // Host authority covers exactly this one observation. If the planner has
+    // also declared preservation, deliverable, execution, or review evidence,
+    // leave the whole criterion to the fresh semantic checker.
+    const declared = input.evidence_plan?.[index]
+    if (!declared || declared.criterion !== index + 1 || declared.observations.length !== 1 ||
+      declared.observations[0]?.kind !== "action")
+      return { criterion_id: `C${index + 1}`, mode: "semantic" as const }
+    const match = recipe.exec(criterion)
+    if (!match || lines.filter(line => line === criterion).length !== 1) return { criterion_id: `C${index + 1}`, mode: "semantic" as const }
+    let command: unknown
+    try { command = JSON.parse(match[1]!) } catch { return { criterion_id: `C${index + 1}`, mode: "semantic" as const } }
+    if (typeof command !== "string" || Buffer.byteLength(command, "utf8") > 8_192) return { criterion_id: `C${index + 1}`, mode: "semantic" as const }
+    const expectedExit = Number(match[2])
+    if (!Number.isInteger(expectedExit) || expectedExit < -1 || expectedExit > 255) return { criterion_id: `C${index + 1}`, mode: "semantic" as const }
+    return { criterion_id: `C${index + 1}`, mode: "mechanical" as const, recipe: "pinned_first_bash" as const,
+      expected_command_sha256: createHash("sha256").update(command, "utf8").digest("hex"),
+      expected_command_bytes: Buffer.byteLength(command, "utf8"), expected_exit_code: expectedExit }
+  })
+  if (!rows.some(row => row.mode === "mechanical")) return undefined
+  return TaskMechanicalVerificationSchema.parse({ version: 1, evaluator: "task-evidence-v1", criteria: rows })
+}
+
+function assertMechanicalSource(input: TaskContractInput, graph: GraphDef): void {
+  const checker = graph.nodes.find(node => node.id === input.verification.checker_node)
+  const producerIds = new Set(input.deliverables.map(item => item.producer_node))
+  const claimed = checker?.inputs?.claimed
+  if (typeof claimed !== "string" || !producerIds.has(claimed))
+    throw new Error("task_mechanical_source_required: closed action recipes require the checker to pin one declared deliverable producer output")
 }
 export function assertTaskState(run: Pick<RunState, "task_contract" | "goal" | "criteria" | "criteria_locked" | "graph">): void {
   const contract = run.task_contract
   if (!contract) return // Old persisted runs remain explicitly unqualified.
   const { contract_sha256, ...base } = contract
   if (!run.criteria_locked || !run.criteria.length || sha256Json(base) !== contract_sha256 ||
-    contract.requirements_sha256 !== sha256Json({ goal: run.goal, criteria: run.criteria }))
+    contract.requirements_sha256 !== sha256Json({ goal: run.goal, criteria: run.criteria }) ||
+    (contract.verification_contract_version === 1 && sha256Json(contract.mechanical_verification ?? null) !==
+      sha256Json(closedMechanicalVerification(run.criteria, contract.input, contract.request_snapshot) ?? null)) ||
+    (contract.verification_contract_version === undefined && contract.mechanical_verification !== undefined))
     throw new Error("task_contract_drift: original criteria, goal and contract are immutable")
   assertTaskGraph(contract.input, run.graph)
+  if (contract.mechanical_verification?.criteria.some(row => row.mode === "mechanical")) assertMechanicalSource(contract.input, run.graph)
   assertEvidencePlan(contract.input, run.criteria.length)
 }
 
@@ -154,6 +207,7 @@ export function assertEvidencePlan(input: TaskContractInput, count: number, requ
   for (const row of plan) for (const item of row.observations) {
     if ((item.kind === "deliverable" && !input.deliverables[item.index]) ||
       (item.kind === "execution" && input.verification.execution === "none") ||
+      (item.kind === "action" && !input.deliverables.length) ||
       (item.kind === "preservation" && (new Set(item.paths).size !== item.paths.length || item.paths.some(p => !input.preserve_paths.includes(p)))) ||
       (item.kind === "change_scope" && !input.change_scope))
       throw new Error("task_evidence_binding: observation must name a declared deliverable, command, protected path or change scope")
@@ -213,6 +267,7 @@ export function taskContractSummary(run: Pick<RunState, "task_contract">) {
   const task = run.task_contract
   return task ? { status: "declared-and-admitted", contract_sha256: task.contract_sha256,
     requirements_sha256: task.requirements_sha256, phase: task.input.phase, kind: task.input.kind,
+    mechanical_verification: task.mechanical_verification ?? "semantic-checker-required",
     deliverables: task.input.deliverables, verification: task.input.verification,
     evidence_plan: task.input.evidence_plan ?? "legacy-unqualified",
     change_scope: task.input.change_scope,

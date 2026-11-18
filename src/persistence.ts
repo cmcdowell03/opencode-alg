@@ -274,6 +274,7 @@ function projectAttempt(run: RunState, nodeId: string, attempt: NodeAttempt): No
     ...(attempt.action_evidence_ref ? { action_evidence_ref: attempt.action_evidence_ref } : {}),
     ...(attempt.action_evidence_sources ? { action_evidence_sources: attempt.action_evidence_sources } : {}),
     ...(attempt.retrieved_evidence ? { retrieved_evidence: attempt.retrieved_evidence } : {}),
+    ...(attempt.host_mechanical_evidence ? { host_mechanical_evidence: attempt.host_mechanical_evidence } : {}),
     ...(attempt.execution_evidence ? { execution_evidence: attempt.execution_evidence } : {}),
     ...(attempt.gate_evidence ? { gate_evidence: attempt.gate_evidence } : {}),
     ...(attempt.preservation_evidence ? { preservation_evidence: attempt.preservation_evidence } : {}),

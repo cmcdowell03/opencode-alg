@@ -121,3 +121,28 @@ claimed. Earlier paid scores and failed development checks remain unchanged.
 
 No V2 implementation, GitHub runner execution or new paid benchmark cohort is
 part of this change.
+
+## Host-evaluated command criterion
+
+The 0.5.13 candidate supports a criterion for the exact command and exit code of
+the first recorded `bash` call by the producer whose output the checker receives.
+For example, the user's original request can contain these two lines.
+
+```text
+Mechanical action: first recorded bash command is exactly "bun run typecheck"; its linked terminal exit code equals 0.
+The change preserves compatibility with existing workspace configuration files.
+```
+
+Admit both lines, verbatim and in order, as the acceptance criteria. Bind the
+first criterion to a single `{"kind":"action"}` observation and assign the
+deliverable producer as the checker's claimed input. The checker judges the
+second criterion on its original ID. This option applies to complete text
+requests. For attachments, paraphrases or broader requests, use the normal
+semantic review path.
+
+The host compares the UTF-8 byte length and SHA-256 digest of the observed
+command and reads the exit code from its linked terminal record. Missing or
+insufficient evidence can leave the finding inconclusive. A fully mechanical
+check records an attempt without launching a checker child. Declared project
+deliverables must still exist. A successful test invocation establishes the
+requested execution fact. Test coverage or a diagnosis needs separate criteria.

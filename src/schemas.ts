@@ -505,6 +505,7 @@ const NodeAttemptDetailShape = {
     action_evidence_ref: RunDataReferenceBaseSchema.optional(),
     action_evidence_sources: EvidenceSourcesSchema.optional(),
     retrieved_evidence: z.array(RetrievedVerificationEvidenceSchema).max(32).optional(),
+    host_mechanical_evidence: z.array(RetrievedVerificationEvidenceSchema).max(32).optional(),
     task_evidence_ref: RunDataReferenceBaseSchema.optional(),
     execution_evidence: ExecutionEvidenceSchema.optional(),
     gate_evidence: ExecutionEvidenceSchema.optional(),
@@ -798,8 +799,12 @@ const RunStateCoreSchema: z.ZodType<RunState> = z
             expected_attempt: archivedAttempts + i + 1,
             mode: run.mode,
             requires_shell: def.agent === "shell" || def.loop?.gate === "shell" || def.loop?.gate === "all",
-            verification_required: !!def.verification,
+            verification_required: !!def.verification || (run.task_contract?.input.verification.checker_node === id &&
+              !!run.task_contract.mechanical_verification),
             verification_criteria: run.criteria,
+            host_mechanical_criterion_ids: run.task_contract?.input.verification.checker_node === id
+              ? run.task_contract.mechanical_verification?.criteria.filter(row => row.mode === "mechanical").map(row => row.criterion_id)
+              : undefined,
             task_evidence_required: run.mode !== "dry" && run.task_contract?.input.verification.checker_node === id,
           })
         } catch (error) {
@@ -1142,6 +1147,7 @@ export interface PersistedAttemptContext {
   requires_shell?: boolean
   verification_required?: boolean
   verification_criteria?: string[]
+  host_mechanical_criterion_ids?: string[]
   /** Undefined for consumers without the run contract context. */
   task_evidence_required?: boolean
 }
@@ -1178,6 +1184,8 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
     (attempt.retrieved_evidence.length > 0 && !attempt.session_id))) {
     add("retrieved evidence requires a bound checker source set")
   }
+  if (attempt.host_mechanical_evidence !== undefined && (agent !== "checker" || !context.host_mechanical_criterion_ids?.length ||
+    !attempt.verification_basis)) add("host mechanical evidence requires an admitted checker recipe and verification basis")
   if (taskRef && (agent !== "checker" || context.task_evidence_required === false || taskRef.byte_size > MAX_TASK_EVIDENCE_BYTES ||
     taskRef.artifact_path !== `.opencode/runs/${runId}/artifacts/task-evidence-${nodeId}-a${expected}-${taskRef.sha256}.json`))
     add("task evidence reference must bind the admitted checker attempt and bounded content")
@@ -1205,7 +1213,9 @@ export function parsePersistedNodeAttempt(raw: unknown, context: PersistedAttemp
     if (basis.evidence.some(entry => entry.source.run_id !== runId)) add("verification evidence belongs to another run")
     if (context.verification_criteria && (basis.criteria_sha256 !== criteriaDigest(context.verification_criteria) ||
       basis.criterion_ids.length !== Math.max(1, context.verification_criteria.length))) add("verification criteria changed")
-    if (attempt.output !== undefined && validateVerification(attempt.output, basis, attempt.retrieved_evidence).length) add("checker output violates its persisted verification basis")
+    if (attempt.output !== undefined && validateVerification(attempt.output, basis, attempt.retrieved_evidence,
+      attempt.host_mechanical_evidence, context.host_mechanical_criterion_ids ?? []).length)
+      add("checker output violates its persisted verification basis")
   }
   const knownAgent = AlgAgentSchema.safeParse(agent)
   if (!knownAgent.success) add(`unknown ALG agent: ${agent}`)
