@@ -1,16 +1,28 @@
 # OpenCode 2 support: design spec
 
-**Status:** Draft 0.4, reconciled 2026-10-17 with the
-[umbrella design](skill-knowledge-graph-design.md) and four component contracts.
-Based on Claude's Draft 0.2 of 2026-10-13; host-version research remains that dated
-snapshot, not a fresh compatibility certification. Nothing here is implemented.
+**November 2026 implementation decision.** The owner approved an isolated V2
+investigation preview on OpenCode and SDK **2.3.2**, based on the V1 candidate
+at `6de71d3`. First exercise one interrupted investigation and a fresh checker
+through the real host. Extract shared interfaces as this workflow needs them.
+The [preview guide](../packages/v2-preview/README.md) records the current
+installation boundary, measured behavior and remaining gaps.
 
-**Delivery boundary:** V2 remains unfinished design work. Do not begin its
-implementation phases or phase 0 runtime probe until the user finalizes this
-design and explicitly authorizes starting V2. The umbrella program is delivered
-on V1 first. Shared interfaces needed by V1 may anticipate these requirements;
-that does not authorize a V2 adapter, entry point, SDK dependency, installer or
-configuration/database migration, and V2 acceptance must not block V1 delivery.
+The October 2.0.27 research below is preserved for comparison. For this first
+increment the preview guide supersedes its phase order, release number, proposed
+version range, checker tool restrictions and references to deferring phase zero.
+The existing V1 package continues to declare its own host range.
+
+| October question | November design consequence |
+| --- | --- |
+| P4, asking permission | The 2.3.2 permission domain exposes `assert`. The preview admits one configured job. Enabling shell gates requires separate command, working-directory, deny and headless conformance tests. |
+| P5, access to history | The plugin can list sessions. Complete message history predating compaction still requires separate qualification before enabling mining. |
+| P7/P12, recovery | Keep host child identity, prompt admission and external submission identity distinct. Reconcile the external submission after an acknowledgment is lost, including when the caller's original session resumes. |
+| P9/P11, context | Background summaries can predate a durable decision change. Rebuild the primary request's bounded view from the committed ledger. Treat native compaction and concurrent background-summary replacement as distinct experiments. |
+| Worker permissions | An owner may grant a specific checker a bounded upstream read. The host verifies the project, location, parent and worker and ALG rechecks the live grant. The execution preview exposes only the operations it can qualify. |
+
+Upstream reference points for this increment are the [2.3.2 release](https://github.com/anomalyco/opencode/releases/tag/v2.3.2),
+[server plugin API](https://opencode.ai/docs/build/plugins/server) and
+[compaction behavior](https://opencode.ai/docs/compaction).
 
 The umbrella's first V1 phase is approved procedure continuity through compaction
 and restart, not phase 1 of the migration table below. It requires neither the
@@ -670,7 +682,7 @@ duplicate external actions.
 
 | # | Decision | Recommendation |
 |---|---|---|
-| D1 | May the phase 0 V2 probe or migration implementation start now? | No. The owner has deferred both until the V2 design is finalized and starting implementation is explicitly authorized; unresolved probe questions remain open meanwhile |
+| D1 | May the V2 probe and first vertical slice start? | Approved in November for the isolated investigation preview. Broader host support follows capability-specific evidence. |
 | D2 | Where does V2 live while both hosts are in use: a second machine, or an isolated binary, config directory and database on the workstation? | Isolated directories on the workstation; the air-gapped machine stays V1 until phase 5 |
 | D3 | Lowest V2 version supported | 2.0.27, the version the types and source were read from |
 | D4 | Raise the V1 floor from 1.18.0 to 1.18.29 | Yes. Both known installs (1.18.35, 1.18.32) are above it |
