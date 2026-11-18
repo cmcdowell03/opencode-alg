@@ -19,3 +19,4 @@
 /build-benchmark-long-reference.ts
 /build-benchmark-long-report.ts
 /test-long-session-headless.ts
+/comparative-benchmark*.ts

@@ -156,6 +156,9 @@ export const RELEASE_CONTROL_PATHS = [
   "docs/v1-graph-evolution-adversarial-review.md", "docs/v1-reliability-and-build-comparison-plan.md",
   "docs/v1-hard-development-cohort-protocol.md",
   "docs/v1-hard-development-findings.md", "docs/v1-hard-development-repair-followup.md",
+  "docs/v1-capability-augmentation-plan.md", "docs/v1-comparative-factory-benchmark.md",
+  "scripts/comparative-benchmark.ts", "scripts/comparative-benchmark-fixtures.ts", "scripts/comparative-benchmark-service.ts",
+  "scripts/comparative-benchmark-memory.ts", "scripts/comparative-benchmark-qualification.ts", "scripts/comparative-benchmark-opencode.ts",
 ] as const
 
 export function expectedPackedPaths(root = ROOT): string[] {
