@@ -465,11 +465,13 @@ are separate exposures. Do not pool many obligations or cells from one incident
 as independent replicates; descriptive before/after loss is not automatically
 a causal effect of compaction.
 
-For a narrow superiority claim, predeclare a practical completion gain (proposed
-starting target: at least 10 percentage points) and require an uncertainty
-interval excluding zero, using an incident-aware paired analysis. The precise
-threshold, sample size, interval and stopping rules must be frozen before
-confirmation. Repetitions of two incidents cannot support a broad claim.
+Use the comparison plan's 15 percentage-point development target for planning.
+For confirmation, freeze the workload, absolute completion floor, practical
+margin, sample size, interval method and stopping rules before issuing trials.
+A paired incident-level interval with a lower bound above zero supports positive
+benefit. A claim of a gain of at least ten percentage points requires a lower
+bound at or above ten points. The two-incident factory comparison tests the
+mechanisms and scorer during development.
 
 Also predeclare acceptable false-acceptance and regression margins with sufficient
 precision. Zero observed serious errors in a tiny cohort is not a zero-risk
