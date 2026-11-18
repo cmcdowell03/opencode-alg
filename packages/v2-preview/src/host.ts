@@ -1,6 +1,7 @@
 import { realpath } from "node:fs/promises"
 import { isAbsolute } from "node:path"
 import type { Plugin } from "@opencode/plugin"
+import type { ProcedurePin } from "./procedure.ts"
 
 export const TOOL = "alg_investigation"
 export const HOST_VERSION = "2.3.2"
@@ -21,6 +22,7 @@ export type WorkerBinding = {
   workerSessionId: string
   promptId: string
   checkerAgent: string
+  procedure?: ProcedurePin
 }
 
 const checkerRules = [
@@ -54,7 +56,9 @@ function allowsResult(permissions: NonNullable<Session["permissions"]>): boolean
 }
 
 function bindingMarker(binding: WorkerBinding): string {
-  return JSON.stringify([binding.runId, binding.ownerSessionId, binding.workerSessionId, binding.promptId, binding.checkerAgent])
+  const marker: unknown[] = [binding.runId, binding.ownerSessionId, binding.workerSessionId, binding.promptId, binding.checkerAgent]
+  if (binding.procedure) marker.push(binding.procedure)
+  return JSON.stringify(marker)
 }
 
 export class InvestigationHost {
@@ -154,20 +158,22 @@ export class InvestigationHost {
     }
   }
 
-  async authorizedResult(binding: WorkerBinding, caller: Caller, text: string): Promise<Session> {
+  async authorizedResult(binding: WorkerBinding, caller: Caller, text: string, admitted = false): Promise<Session> {
     if (caller.sessionID !== binding.workerSessionId || caller.agent !== binding.checkerAgent) {
       throw new Error("CHECKER_REQUIRED")
     }
     await this.configuredChecker()
     const session = await this.worker(binding)
     await this.assertResultPermission(session)
-    if (!await this.hasPrompt(session.id, binding, text)) throw new Error("PROMPT_UNVERIFIED")
+    if (!await this.hasPrompt(session.id, binding, text, admitted)) throw new Error("PROMPT_UNVERIFIED")
     return session
   }
 
-  async hasPrompt(sessionID: Session["id"], binding: WorkerBinding, text: string): Promise<boolean> {
+  async hasPrompt(sessionID: Session["id"], binding: WorkerBinding, text: string, admitted = false): Promise<boolean> {
     const history = await this.context.session.context({ sessionID })
     const users = history.filter(message => message.type === "user")
+    // For procedure-bound workers, the verified queue acknowledgement survives a compacted window.
+    if (users.length === 0 && binding.procedure && admitted) return true
     const message = users[0]
     return users.length === 1 && message?.type === "user" && message.id === binding.promptId &&
       message.text === text && message.metadata?.[BINDING] === bindingMarker(binding)

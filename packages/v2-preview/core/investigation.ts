@@ -18,6 +18,7 @@ import {
 } from "../../../src/investigation/index.ts"
 import { canonicalJson } from "../../../src/persistence.ts"
 import { runContainedPath } from "../../../src/store.ts"
+import { procedurePinSchema, type ProcedurePin } from "./procedure-pin.ts"
 
 /** Adapter input, resolved from the host for each call. Never parse it from tool arguments. */
 export interface V2InvestigationSession {
@@ -95,6 +96,14 @@ function decisionRevision(ledger: InvestigationLedger): number {
   return revision
 }
 
+function decisionProcedurePin(ledger: InvestigationLedger): ProcedurePin | undefined {
+  const raw = ledger.checkpoint.scope.v2_decision_procedure
+  if (raw === undefined) return undefined
+  const pin = procedurePinSchema.safeParse(raw)
+  if (!pin.success) throw new Error("RESEARCH_PROCEDURE_UNVERIFIED")
+  return pin.data
+}
+
 function view(ledger: InvestigationLedger) {
   const current = ledger.work[0]
   const work = current ? {
@@ -107,8 +116,9 @@ function view(ledger: InvestigationLedger) {
   const lifecycle = current ? guidance[current.status] : "Admit the approved synthetic job."
   if (!decision.next_action) decision.next_action = lifecycle
   const base = { revision: ledger.revision, decision_revision: decisionRevision(ledger), work, guidance: lifecycle }
+  const procedurePin = decisionProcedurePin(ledger)
   const full = JSON.stringify({ ...base, decision })
-  if (Buffer.byteLength(full) <= MAX_PROJECTION_BYTES) return { ...base, decision, projection: full }
+  if (Buffer.byteLength(full) <= MAX_PROJECTION_BYTES) return { ...base, procedurePin, decision, projection: full }
 
   // An oversized checkpoint should never push the work status or counterevidence notice out of context.
   const compact = {
@@ -120,7 +130,7 @@ function view(ledger: InvestigationLedger) {
   }
   const projection = JSON.stringify({ ...base, decision: compact })
   if (Buffer.byteLength(projection) > MAX_PROJECTION_BYTES) throw new Error("stored decision exceeds bounded projection")
-  return { ...base, decision: compact, projection }
+  return { ...base, procedurePin, decision: compact, projection }
 }
 
 export type V2InvestigationView = ReturnType<typeof view>
@@ -178,6 +188,13 @@ export function createV2InvestigationBridge({ port, approvedJob }: V2Investigati
     return lockedOperation(scope(ctx), operate)
   }
 
+  function ownerLedger(ctx: V2InvestigationSession): InvestigationLedger | undefined {
+    if (ctx.parentID != null) return undefined
+    const binding = scope(ctx)
+    if (!existsSync(runContainedPath(binding.project_directory, binding.run_id, "investigation", "head.json"))) return undefined
+    return InvestigationStore.open(binding).snapshot
+  }
+
   return {
     create(ctx: V2InvestigationSession): V2InvestigationView {
       const store = InvestigationStore.open(scope(ctx), {
@@ -187,10 +204,20 @@ export function createV2InvestigationBridge({ port, approvedJob }: V2Investigati
     },
 
     primary(ctx: V2InvestigationSession): V2InvestigationView | null {
-      if (ctx.parentID != null) return null
-      const binding = scope(ctx)
-      if (!existsSync(runContainedPath(binding.project_directory, binding.run_id, "investigation", "head.json"))) return null
-      return view(InvestigationStore.open(binding).snapshot)
+      const ledger = ownerLedger(ctx)
+      return ledger ? view(ledger) : null
+    },
+
+    /** Input to the research-role allowlist. This is a dated, settled observation. */
+    advisoryEvidence(ctx: V2InvestigationSession) {
+      const ledger = ownerLedger(ctx)
+      const work = ledger?.work[0]
+      if (!ledger || ledger.work.length !== 1 || !work?.result || work.purpose !== "analysis" ||
+          !work.authorized_nodes?.includes(approval) || !work.authorized_nodes.includes(PRODUCER) ||
+          (work.status !== "result_recorded" && work.status !== "reusable") ||
+          (work.result.expires_at && Date.parse(work.result.expires_at) <= Date.now())) return undefined
+      return { work_key: work.work_key, manifest_digest: work.result.digest, status: work.status,
+        revision: ledger.revision, decision_revision: decisionRevision(ledger), coverage: work.result.coverage }
     },
 
     admit(ctx: V2InvestigationSession): Promise<V2InvestigationView> {
@@ -238,7 +265,11 @@ export function createV2InvestigationBridge({ port, approvedJob }: V2Investigati
       })
     },
 
-    setNextMeasurement(ctx: V2InvestigationSession, input: NextMeasurement): Promise<V2InvestigationView> {
+    setNextMeasurement(
+      ctx: V2InvestigationSession,
+      input: NextMeasurement,
+      verifyProcedure?: () => Promise<ProcedurePin | undefined>,
+    ): Promise<V2InvestigationView> {
       return ownerOperation(ctx, async (store, ledger) => {
         assertWritable(ledger)
         const revision = decisionRevision(ledger)
@@ -260,10 +291,18 @@ export function createV2InvestigationBridge({ port, approvedJob }: V2Investigati
           patch.hypotheses = [...ledger.checkpoint.hypotheses.filter(item => item.id !== hypothesis.id), hypothesis]
           patch.decision_focus = { hypothesis_ids: [hypothesis.id], contradictions: [] }
         }
+        const previousPin = decisionProcedurePin(ledger)
+        const pin = await verifyProcedure?.()
+        if (!pin && previousPin) throw new Error("RESEARCH_PROCEDURE_UNVERIFIED")
+        // The checkpoint head is the sole publication point for the decision and its approval.
         await store.updateCheckpoint({
           ...patch,
           next_action: action,
-          scope: { ...ledger.checkpoint.scope, v2_decision_revision: revision + 1 },
+          scope: {
+            ...ledger.checkpoint.scope,
+            v2_decision_revision: revision + 1,
+            ...(pin ? { v2_decision_procedure: pin } : {}),
+          },
         })
         return view(store.snapshot)
       })

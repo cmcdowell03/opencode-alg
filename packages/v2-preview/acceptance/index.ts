@@ -8,6 +8,7 @@ import { startProvider } from "./provider.ts"
 import { runtimeIdentity, sha256, waitFor } from "./runtime.ts"
 import { containsStaleSummary, recoveryText, scenario } from "./scenario.ts"
 import { startFactory } from "./service.ts"
+import { prepareTeamReference } from "./team-fixture.ts"
 
 type Host = Awaited<ReturnType<typeof startHost>>
 type Grade = "PASS" | "FAIL" | "NOT_OBSERVED"
@@ -19,7 +20,7 @@ const previewClaims = [
   "host_boot", "active_runtime", "accepted_ack_withheld_at_kill", "restart_same_session", "single_remote_admission",
   "forced_compaction_stale_checkpoint", "fresh_checker", "checker_bounded_cited_read",
   "revocation_denied_read", "cross_project_denied_read", "current_next_measurement", "end_user_measurement_handoff",
-  "background_compaction_race",
+  "team_source_pinned_commit", "two_advisory_researchers", "background_compaction_race",
 ]
 const makeArm = (names: string[]): Arm => ({ claims: Object.fromEntries(names.map(name => [name, { grade: "NOT_OBSERVED" }])) })
 function mark(arm: Arm, name: string, passed: boolean, observed: unknown) {
@@ -43,6 +44,7 @@ async function runArm(binary: string, scratch: string, arm: Arm, runtime?: Await
     const project = await fixtureProject(scratch, "primary")
     const foreign = bundle ? await fixtureProject(scratch, "foreign") : undefined
     const settings = await hostSettings(join(scratch, "host"), provider.url, bundle, factory?.adapter)
+    const team = bundle ? await prepareTeamReference(scratch, project.directory, settings.env.OPENCODE_CONFIG) : undefined
     const launch = async () => {
       const host = await startHost(binary, project.directory, settings)
       children.push(host)
@@ -116,6 +118,18 @@ async function runArm(binary: string, scratch: string, arm: Arm, runtime?: Await
     mark(arm, stage, installed?.state.status === "active" && diagnostics.ok === true &&
       diagnostics.enabled === true && diagnostics.hostVersion === runtime.version,
     { pluginState: installed?.state.status ?? null, runtimeSha256: diagnostics.runtimeSha256, hostVersion: diagnostics.hostVersion })
+    if (team) {
+      stage = "team_source_pinned_commit"
+      const phase = controller.instruction({ operation: team.operation, source: team.source }, undefined, "alg_team_source")
+      await prompt(host.client, id, phase)
+      const calls = toolCalls(await afterPrompt(host.client, id, phase.id)).filter(call => call.name === "alg_team_source")
+      const state = calls.length === 1 && calls[0]!.state
+      const text = state && state.status === "completed" && state.content.find(part => part.type === "text")?.text
+      const receipt = text && parseObject(text)
+      mark(arm, stage, !!receipt && receipt.source === team.source && receipt.commit === team.commit &&
+        receipt.text === team.document && receipt.sha256 === team.digest, { commit: team.commit, digest: team.digest,
+          returnedCommittedBytes: !!receipt && receipt.text === team.document })
+    }
     const create = await turn("create")
     if (create.ok !== true || typeof create.decision_revision !== "number") throw new Error("Investigation creation failed")
     const stale = `Repeat control inspection ${randomUUID()}`
@@ -270,6 +284,32 @@ async function runArm(binary: string, scratch: string, arm: Arm, runtime?: Await
       toolCalls(handedOff).length === 0 && finalAccepted === 1 && finalSubmits === 1,
     { staleSummaryInRequest, committedAnswer: answer ?? null, usedCheckerWitness: typeof answer === "string" && answer.includes(factory.current),
       heldRemoteAdmissions: finalAccepted, remoteSubmissions: finalSubmits })
+    stage = "two_advisory_researchers"
+    const research = async (action: string) => {
+      const phase = controller.instruction({ action }, undefined, "alg_research")
+      await prompt(host.client, id, phase)
+      const call = toolCalls(await afterPrompt(host.client, id, phase.id)).find(call => call.name === "alg_research")
+      const content = call?.state.status === "completed" && call.state.content.find(part => part.type === "text")?.text
+      return content ? parseObject(content) : undefined
+    }
+    const batch = await research("start")
+    const assignments = Array.isArray(batch?.workers) ? batch.workers.map(asObject) : []
+    if (assignments.length !== 2) throw new Error("Host did not return two assigned researchers: " + (batch?.error ?? "missing batch"))
+    for (const assignment of assignments) {
+      if (typeof assignment?.sessionId !== "string") throw new Error("Missing worker session ID")
+      const child = await host.client.session.get({ sessionID: assignment.sessionId }, requestOptions())
+      if (child.parentID !== id || child.agent !== assignment.agent) throw new Error("Researcher outside its assigned role")
+      await waitFor(async () => (await transcript(host.client, child.id)).some(message => message.type === "idle"),
+        12_000, "Researcher did not finish")
+    }
+    const replay = await research("start")
+    const reports = Array.isArray(replay?.workers) ? replay.workers.map(asObject) : []
+    const ids = new Set(assignments.map(a => a?.sessionId))
+    const allChildren = await host.client.session.list({ parentID: id }, requestOptions())
+    mark(arm, stage, ids.size === 2 && reports.length === 2 && replay?.advisory === true &&
+      reports.every(r => r?.status === "reported" && typeof r.report === "string" && ids.has(r.sessionId)) &&
+      allChildren.data.length === childrenNow.data.length + 2 && (await factory.evidence()).ledger.acceptedComputations === 1,
+      { workers: ids.size, reports: reports.map(r => r?.status), totalChildren: allChildren.data.length })
   } catch (error) {
     arm.failure = `${stage}: ${boundedError(error)}`
     if (arm.claims[stage]?.grade === "NOT_OBSERVED") mark(arm, stage, false, { error: boundedError(error) })

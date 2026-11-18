@@ -22,14 +22,14 @@ function objects(value: unknown, depth = 0): Record<string, unknown>[] {
 
 export function scenario() {
   const marker = `V2-ACCEPTANCE-${randomUUID()}`
-  const actions = new Map<string, { args?: Record<string, unknown>; observe?: (turn: ProviderTurn) => void; handoff?: boolean }>()
+  const actions = new Map<string, { tool?: string; args?: Record<string, unknown>; observe?: (turn: ProviderTurn) => void; handoff?: boolean }>()
   let compact: { expected?: string; sawExpected: boolean } | undefined
   let child: { manifest: string; sawWitness?: string; toolNames?: readonly string[]; release: Promise<void> } | undefined
   let sequence = 0
   return {
-    instruction(args?: Record<string, unknown>, observe?: (turn: ProviderTurn) => void) {
+    instruction(args?: Record<string, unknown>, observe?: (turn: ProviderTurn) => void, tool = algTool) {
       const id = `${marker}:${++sequence}:`
-      actions.set(id, { args, observe })
+      actions.set(id, { args, observe, tool })
       return { id, text: `${id} Perform the scripted fixture turn.` }
     },
     handoff(observe: (turn: ProviderTurn) => void) {
@@ -64,7 +64,8 @@ export function scenario() {
       const text = strings(messages[user]?.content).join("\n")
       const phase = Array.from(actions.entries()).find(([id]) => text.includes(id))?.[1]
       const current = messages.slice(user + 1)
-      const issued = current.some(row => row.tool_calls?.some(call => call.function?.name === algTool))
+      const tool = phase?.tool ?? algTool
+      const issued = current.some(row => row.tool_calls?.some(call => call.function?.name === tool))
       if (phase) {
         if (!issued) phase.observe?.({ messages, tools })
         if (phase.handoff) {
@@ -72,8 +73,8 @@ export function scenario() {
           return { text: next === undefined ? "No current measurement in the durable projection."
             : JSON.stringify({ nextMeasurement: next }) }
         }
-        return phase.args && !issued && tools.includes(algTool)
-          ? { tool: algTool, args: phase.args }
+        return phase.args && !issued && tools.includes(tool)
+          ? { tool, args: phase.args }
           : { text: phase.args && !issued ? "Fixture tool unavailable." : "Fixture turn observed." }
       }
       const runId = text.match(/action read and runId (v2-checker-[a-f0-9]{48})/)?.[1]

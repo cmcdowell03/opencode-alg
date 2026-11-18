@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test"
 import { createHash } from "node:crypto"
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import type { Plugin } from "@opencode/plugin"
 import { Server } from "@modelcontextprotocol/sdk/server/index.js"
@@ -20,6 +20,11 @@ const checkerAgent = "alg-investigation-checker"
 const rules = [{ action: "*", resource: "*", effect: "deny" }, { action: TOOL, resource: "*", effect: "allow" }]
 const inputSchema = { type: "object" as const, properties: {}, additionalProperties: true }
 const schemaHash = hashObject({ inputSchema, outputSchema: null })
+const sha256 = (value: string) => createHash("sha256").update(value).digest("hex")
+const approvalPath = ".opencode/research-procedure.json"
+const sourcePath = ".opencode/skills/research/SKILL.md"
+const skillId = "native:fixture-research"
+const skillBody = "Observe the bounded synthetic result, then state the uncertainty."
 
 async function fixture() {
   const directory = await mkdtemp(join(import.meta.dir, ".host-"))
@@ -95,8 +100,26 @@ async function fixture() {
     model: { id: "fixture", providerID: "synthetic" }, time: {},
   }]])
   const counters = { create: 0, prompt: 0 }
-  const state = { uncertainPrompt: false, checkerDenied: false, effectiveDeny: false }
+  const state = {
+    uncertainPrompt: false, checkerDenied: false, effectiveDeny: false,
+    afterWorkerCreate: undefined as undefined | (() => Promise<void>),
+    afterReload: undefined as undefined | (() => Promise<void>),
+  }
   const histories = new Map<string, unknown[]>()
+  const catalog = {
+    directory, reloads: 0,
+    skills: [{ id: skillId, name: "Research Fixture", path: join(directory, sourcePath), content: skillBody },
+      { id: "other-skill", name: "Other Skill", path: join(directory, "other.md"), content: "UNSELECTED BODY" }],
+  }
+
+  async function installProcedure(content = skillBody, hash = sha256(content)) {
+    const raw = "---\nname: Research Fixture\n---\n" + content
+    await mkdir(join(directory, ".opencode", "skills", "research"), { recursive: true })
+    await writeFile(join(directory, sourcePath), raw)
+    const approval = JSON.stringify({ id: skillId, path: sourcePath, sha256: hash, sourceSha256: sha256(raw) }) + "\n"
+    await writeFile(join(directory, approvalPath), approval)
+    return { ...options, approvedProcedure: approvalPath, approvedProcedureSha256: sha256(approval) }
+  }
 
   async function attach(overrides: Record<string, unknown> = {}) {
     const hooks = new Map<string, Hook>()
@@ -114,6 +137,10 @@ async function fixture() {
           return { location: { directory }, data: { id: checkerAgent, mode: "subagent", permissions } }
         },
       },
+      skill: {
+        async reload() { catalog.reloads++; await state.afterReload?.() },
+        async list() { return { location: { directory: catalog.directory }, data: catalog.skills } },
+      },
       session: {
         hook,
         async get({ sessionID }: { sessionID: string }) {
@@ -125,6 +152,7 @@ async function fixture() {
           counters.create++
           const session = { ...input, projectID: "fixture-project", time: {} }
           sessions.set(input.id, session)
+          await state.afterWorkerCreate?.()
           return session
         },
         async prompt(input: { sessionID: string; id: string; text: string; metadata: unknown }) {
@@ -156,11 +184,11 @@ async function fixture() {
     return { call, detach, hooks }
   }
 
-  return { sessions, attach, counters, serviceCalls, state }
+  return { directory, sessions, histories, attach, counters, serviceCalls, state, catalog, installProcedure }
 }
 
-async function ready(f: Awaited<ReturnType<typeof fixture>>) {
-  const host = await f.attach()
+async function ready(f: Awaited<ReturnType<typeof fixture>>, options?: unknown) {
+  const host = await f.attach(options ? { options } : {})
   expect((await host.call("create")).ok).toBe(true)
   expect((await host.call("admit")).work.status).toBe("reserved")
   expect((await host.call("dispatch")).work.status).toBe("result_recorded")
@@ -277,4 +305,154 @@ test("an unconfirmed prompt stays blocked across plugin restart", async () => {
     .toMatchObject({ ok: false, error: "PROMPT_UNVERIFIED" })
   expect(f.counters).toEqual({ create: 1, prompt: 1 })
   expect(f.serviceCalls.filter(call => call === "read")).toEqual([])
+})
+
+test("procedure-only install checks the exact native winner and both digests", async () => {
+  const f = await fixture()
+  const options = await f.installProcedure()
+  const host = await f.attach({ options: {
+    approvedProcedure: options.approvedProcedure, approvedProcedureSha256: options.approvedProcedureSha256,
+  } })
+  expect(await host.call("procedure")).toMatchObject({ ok: true, procedure: { id: skillId, name: "Research Fixture", content: skillBody } })
+  const current = f.catalog.skills[0]!
+  for (const substitute of [
+    { ...current, id: "shadow-id" },
+    { ...current, path: join(f.directory, "shadow", "SKILL.md") },
+    { ...current, content: skillBody + "!" },
+  ]) {
+    f.catalog.skills[0] = substitute
+    expect(await host.call("procedure")).toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
+  }
+  f.catalog.skills[0] = current
+  f.catalog.skills.push({ ...current, path: join(f.directory, "same-id", "SKILL.md") })
+  expect(await host.call("procedure")).toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
+  f.catalog.skills.pop()
+  const wrongHash = await f.installProcedure(skillBody, "a".repeat(64))
+  const approvedWrongHash = await f.attach({ options: { ...wrongHash, enabled: false } })
+  expect(await approvedWrongHash.call("procedure")).toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
+  await expect(f.attach({ options: { approvedProcedure: approvalPath } })).rejects.toThrow("V2_PREVIEW_OPTIONS_UNSUPPORTED")
+})
+
+test("a project cannot replace its approval and skill together", async () => {
+  const f = await fixture()
+  const options = await f.installProcedure()
+  const host = await f.attach({ options: { ...options, enabled: false } })
+  const original = await readFile(join(f.directory, approvalPath))
+  const replacement = "Different instructions."
+  await f.installProcedure(replacement)
+  f.catalog.skills[0]!.content = replacement
+  expect(await host.call("procedure")).toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
+
+  await f.installProcedure()
+  f.catalog.skills[0]!.content = skillBody
+  f.state.afterReload = () => rm(join(f.directory, approvalPath))
+  expect(await host.call("procedure")).toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
+  await writeFile(join(f.directory, approvalPath), original)
+  f.state.afterReload = undefined
+  await writeFile(join(f.directory, sourcePath), "---\nname: Research Fixture\ndescription: metadata changed\n---\n" + skillBody)
+  expect(await host.call("procedure")).toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
+})
+
+test("a failed refutation leaves the decision revision available for a new approval", async () => {
+  const f = await fixture()
+  const host = await ready(f, await f.installProcedure())
+  const next = {
+    expected_decision_revision: 0,
+    next_action: "Measure the fixture count.",
+    refutation: { id: "fixture", statement: "The fixture contains no rows.", manifest_digest: "f".repeat(64) },
+  }
+  expect(await host.call("set_next_measurement", next))
+    .toMatchObject({ ok: false, error: "INVESTIGATION_OPERATION_REFUSED" })
+  expect(await host.call("status")).toMatchObject({ ok: true, decision_revision: 0 })
+  await host.detach()
+
+  const replacement = "Count the rows and report the uncertainty."
+  const options = await f.installProcedure(replacement)
+  f.catalog.skills[0]!.content = replacement
+  const reapproved = await f.attach({ options })
+  const before = f.catalog.reloads
+  expect(await reapproved.call("set_next_measurement", {
+    ...next, refutation: { ...next.refutation, manifest_digest: "a".repeat(64) },
+  })).toMatchObject({
+    ok: true, decision_revision: 1,
+    decision: { next_action: next.next_action, hypotheses: [{ id: "fixture", status: "refuted" }] },
+  })
+  expect(f.catalog.reloads - before).toBe(1)
+  await reapproved.detach()
+
+  const restarted = await f.attach({ options })
+  const pin = JSON.parse(await readFile(join(f.directory, approvalPath), "utf8"))
+  expect(await restarted.call("procedure")).toMatchObject({ ok: true, procedure: { ...pin, content: replacement } })
+  const unconfigured = await f.attach()
+  expect(await unconfigured.call("set_next_measurement", {
+    expected_decision_revision: 1, next_action: "Replace the pinned decision without approval.",
+  })).toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
+  const changed = await f.attach({ options: await f.installProcedure() })
+  f.catalog.skills[0]!.content = skillBody
+  for (const action of ["status", "procedure"]) {
+    expect(await changed.call(action)).toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
+  }
+  await rm(join(f.directory, approvalPath))
+  expect(await restarted.call("procedure")).toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
+})
+
+test("decision approval is rechecked after checker creation and before the grant", async () => {
+  const f = await fixture()
+  const host = await ready(f, await f.installProcedure())
+  const next = { expected_decision_revision: 0, next_action: "Measure the fixture count." }
+  const original = f.catalog.skills[0]!
+  f.catalog.skills[0] = { ...original, path: join(f.directory, "shadow", "SKILL.md") }
+  expect(await host.call("set_next_measurement", next)).toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
+  f.catalog.skills[0] = original
+  expect(await host.call("set_next_measurement", next)).toMatchObject({ ok: true, decision_revision: 1 })
+  f.state.afterWorkerCreate = () => rm(join(f.directory, approvalPath))
+  const launch = await host.call("start")
+  expect(launch.worker.status).toBe("prompt_not_dispatched")
+  expect(f.counters).toEqual({ create: 1, prompt: 0 })
+  const { workerSessionId, runId } = launch.worker
+  expect(await host.call("read", { runId }, workerSessionId, checkerAgent))
+    .toMatchObject({ ok: false, error: "CHECKER_GRANT_REQUIRED" })
+})
+
+test("verified procedure survives compaction and restart while revocation fences fresh reads and verdicts", async () => {
+  const f = await fixture()
+  const options = await f.installProcedure()
+  const host = await ready(f, options)
+  const { runId, workerSessionId } = (await host.call("start")).worker
+  const work = { runId }
+  const page = await host.call("read", work, workerSessionId, checkerAgent)
+  expect(page.ok).toBe(true)
+  await host.detach()
+  f.histories.set(workerSessionId, []) // Host context window no longer exposes the admitted prompt.
+  const restarted = await f.attach({ options })
+  const before = f.catalog.reloads
+  for (const [sessionID, agent] of [[owner, "build"], [workerSessionId, checkerAgent]]) {
+    const request = { sessionID, agent, system: [] as { text: string }[] }
+    await restarted.hooks.get("compaction")!(request)
+    expect(request.system.map(part => part.text).join("\n")).toContain("Omit its text from the summary.")
+    expect(request.system.map(part => part.text).join("\n")).not.toContain(skillBody)
+    request.system = []
+    await restarted.hooks.get("context")!(request)
+    expect(request.system.map(part => part.text).join("\n")).toContain(skillBody)
+    expect(request.system.map(part => part.text).join("\n")).not.toContain("UNSELECTED BODY")
+  }
+  expect(f.catalog.reloads).toBe(before)
+  expect(await restarted.call("procedure", work, workerSessionId, checkerAgent)).toMatchObject({ ok: true, procedure: { id: skillId } })
+  const verdict = { ...work, citation: page.citation, result: "pass" }
+  expect(await restarted.call("result", verdict, workerSessionId, checkerAgent))
+    .toMatchObject({ ok: true, worker: { status: "result_recorded" } })
+  await rm(join(f.directory, approvalPath))
+  const revoked = { sessionID: workerSessionId, agent: checkerAgent, system: [] as { text: string }[] }
+  await restarted.hooks.get("context")!(revoked)
+  expect(revoked.system[0]?.text).toContain("unavailable")
+  expect(revoked.system[0]?.text).not.toContain(skillBody)
+  const reads = f.serviceCalls.filter(call => call === "read").length
+  for (const [action, fields] of [
+    ["procedure", work], ["read", work], ["result", verdict],
+  ] as const) {
+    expect(await restarted.call(action, fields, workerSessionId, checkerAgent))
+      .toMatchObject({ ok: false, error: "RESEARCH_PROCEDURE_UNVERIFIED" })
+  }
+  expect(await restarted.call("status", work)).toMatchObject({ ok: true, worker: { status: "result_authority_unverified" } })
+  expect(f.serviceCalls.filter(call => call === "read")).toHaveLength(reads)
 })
