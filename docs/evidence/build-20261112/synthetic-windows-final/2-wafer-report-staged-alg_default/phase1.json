@@ -1,0 +1,98 @@
+{
+  "files": [
+    {
+      "path": ".opencode/session-memory/artifacts/46e146d906f58ca47269ab0233b6589879fe2ea1738b49452fa1606fb970db7a.txt",
+      "bytes": 27,
+      "sha256": "46e146d906f58ca47269ab0233b6589879fe2ea1738b49452fa1606fb970db7a"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107.txt",
+      "bytes": 1270,
+      "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/09c1ba75717cd91afbf59162642635d909191106a0ef0a5dcb4b85044b44becb.json",
+      "bytes": 1995,
+      "sha256": "09c1ba75717cd91afbf59162642635d909191106a0ef0a5dcb4b85044b44becb"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/b9cc09cc09dcb5cc798d5a65744f6ab3ba366cf2caff3a8186a1aed1fcf0b17b.json",
+      "bytes": 2089,
+      "sha256": "b9cc09cc09dcb5cc798d5a65744f6ab3ba366cf2caff3a8186a1aed1fcf0b17b"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/fc8f2d89392794d5dd21026c611d58aa6ce046a89b7fe24cd512910b5c6bfa7a.json",
+      "bytes": 1744,
+      "sha256": "fc8f2d89392794d5dd21026c611d58aa6ce046a89b7fe24cd512910b5c6bfa7a"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/157a15c0879561ec176cb93115e9090d7954530112d9e29146b85ec69ee4c107.json",
+      "bytes": 2350,
+      "sha256": "6cb00a4b8b58f5bd857361e3215636e16aab4d8fc8c1a7cd0275c3aaf73c706b"
+    },
+    {
+      "path": ".opencode/session-memory/heads/157a15c0879561ec176cb93115e9090d7954530112d9e29146b85ec69ee4c107.json",
+      "bytes": 218,
+      "sha256": "2735fd5ffc0e273763e91b6448ca0fc8df15f8a6422f360d7c0a326e25744416"
+    },
+    {
+      "path": ".opencode/session-memory/objects/0f0d8e48bff6c566a2f59787c130cc07745b9f2b0d8eb95b3cad23c4a0e0865a.json",
+      "bytes": 739,
+      "sha256": "0f0d8e48bff6c566a2f59787c130cc07745b9f2b0d8eb95b3cad23c4a0e0865a"
+    },
+    {
+      "path": ".opencode/session-memory/objects/7d2ad3656bb97d158bd29e9b363c473f6f6f3db17bac65d69fe3ef15da2c60f8.json",
+      "bytes": 563,
+      "sha256": "7d2ad3656bb97d158bd29e9b363c473f6f6f3db17bac65d69fe3ef15da2c60f8"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/157a15c0879561ec176cb93115e9090d7954530112d9e29146b85ec69ee4c107.json",
+      "bytes": 595,
+      "sha256": "cb092766930f1f583edfb571c4b4d26580c5728b0d3637c8f54cc41f4329778d"
+    },
+    {
+      "path": ".opencode/skills/wafer-analysis/SKILL.md",
+      "bytes": 1270,
+      "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+    },
+    {
+      "path": "data/manual-review.json",
+      "bytes": 359,
+      "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+    },
+    {
+      "path": "data/system-export.json",
+      "bytes": 558,
+      "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+    }
+  ],
+  "at_ms": 6904,
+  "preparation_content": null,
+  "report_absent": true,
+  "independent_score": {
+    "passed": false,
+    "checks": [
+      {
+        "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+        "passed": true
+      },
+      {
+        "id": "protected:data/system-export.json",
+        "passed": true
+      },
+      {
+        "id": "protected:data/manual-review.json",
+        "passed": true
+      },
+      {
+        "id": "preparation-artifact",
+        "passed": false,
+        "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-smoke-final-windows-20261112\\2-wafer-report-staged-alg_default\\project\\preparation.md'"
+      }
+    ],
+    "metrics": {
+      "protectedFiles": 3,
+      "preparationBytes": 0
+    }
+  }
+}

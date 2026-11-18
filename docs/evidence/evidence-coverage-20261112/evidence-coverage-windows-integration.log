@@ -1,0 +1,603 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\architecture-audit.test.ts:
+(pass) architecture audit remediation > worker payload retains one authoritative task and preserves differing advisory inputs [3.02ms]
+(pass) architecture audit remediation > README, operations, and orchestrator help document the local-integrity authenticity boundary [1.49ms]
+(pass) architecture audit remediation > aggregate output and worker/checker prompt payloads have byte caps [6.86ms]
+(pass) architecture audit remediation > structured incomplete implementer output validates but never completes a node [556.09ms]
+(pass) architecture audit remediation > executor rejects a safe artifact path belonging to another run [450.54ms]
+(pass) architecture audit remediation > session sidecar is atomically bound before progress child-id persistence [262.50ms]
+(pass) architecture audit remediation > checker feedback targets only arbitrary direct dependencies [1.65ms]
+(pass) architecture audit remediation > tight global retry allocation is graph-ordered regardless failure completion speed [1841.67ms]
+(pass) architecture audit remediation > compaction selects exact-owner active state and formats deterministic bounded text [58.27ms]
+(pass) architecture audit remediation > compaction output join is capped across chunks [0.24ms]
+(pass) architecture audit remediation > listing, explicit access, and compaction never mutate another owner's runs [220.26ms]
+(pass) architecture audit remediation > disabled skill evolution does not inject SKILL.md into chat or compact context [11.69ms]
+(pass) architecture audit remediation > compacting hook logs run-store failures instead of swallowing them [8.29ms]
+(pass) architecture audit remediation > compacting hook includes skill-evolution pointers when the store has pending rows [421.10ms]
+145 | 
+146 | export function isSafeId(value: string): boolean {
+147 |   return SAFE_ID_PATTERN.test(value) &&
+148 |     value !== "." &&
+149 |     value !== ".." &&
+150 |     !RESERVED_IDS.has(value.toLowerCase()) &&
+                            ^
+TypeError: undefined is not an object (evaluating 'value.toLowerCase')
+      at isSafeId (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\paths.ts:150:23)
+      at assertSafeId (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\paths.ts:155:8)
+      at runDir (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\store.ts:250:3)
+      at runContainedPath (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\store.ts:261:31)
+      at readAuthoritativeOrQuarantine (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\store.ts:3014:22)
+      at loadRun (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\store.ts:3030:19)
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\architecture-audit.test.ts:637:23)
+(fail) architecture audit remediation > merged config role models are snapped once and project overrides win [19.58ms]
+(pass) architecture audit remediation > transfer tool validates target session fields before ownership mutation [228.77ms]
+(pass) architecture audit remediation > shell command timeout overrides preserve cwd across helper, run, and resume [1687.74ms]
+(pass) architecture audit remediation > criteria requires a planned run and lock=false replaces while leaving unlocked [340.16ms]
+(pass) architecture audit remediation > persistence preserves unknown non-owned artifact files [113.04ms]
+
+tests\change-scope-evidence.test.ts:
+(pass) scope schema bounds and rejects unsafe, duplicate, overlapping, or out-of-root paths [3.49ms]
+(pass) content comparison reports allowed modifications, additions, and deletions [11.01ms]
+(pass) protected changes and changed-file count overages violate the scope [4.99ms]
+(pass) fixed exclusions are explicit and changes beneath them are invisible [8.67ms]
+(pass) a symlink at an excluded directory name is skipped without traversal [2.55ms]
+(pass) missing roots, symlink entries, and baseline tampering fail closed [6.57ms]
+(pass) file count, per-file bytes, and total bytes are bounded [344.29ms]
+
+tests\checker-evidence.test.ts:
+(pass) selected checker evidence > compiled policy retains legacy reconciliation without changing the persisted investigation graph [58.12ms]
+(pass) selected checker evidence > executor delivers selected shell evidence alongside the claim and excludes unrelated wiring [790.26ms]
+(pass) selected checker evidence > byte/count limits and missing references remain explicit without partial JSON [42.84ms]
+(pass) selected checker evidence > aggregate bound omits complete values even when each fits individually [39.61ms]
+
+tests\executor.test.ts:
+(pass) executor semantics > global attempts are enforced and zero is rejected by graph validation [681.34ms]
+(pass) executor semantics > terminal failed dependencies deterministically skip descendants [420.84ms]
+(pass) executor semantics > explicit checker metadata routes generic feedback without resetting history [1470.64ms]
+(pass) executor semantics > schema-valid checker pass with a failed shell gate retries only the checker [962.94ms]
+(pass) executor semantics > exactly 100 checker failures plus a shell failure persist within the cap and retry only the checker [965.61ms]
+(pass) executor semantics > maximum valid graph and failure history reaches a bounded final save and reload [20883.35ms]
+(pass) executor semantics > maximum executor error is prefixed within the persisted field cap [297.98ms]
+
+tests\graph-revision.test.ts:
+(pass) bounded V1 graph revisions > reload and revision retain completed work and spend while adding a bounded probe [1730.92ms]
+(pass) bounded V1 graph revisions > changes pending nodes and adds bounded work without changing caps or run identity [73.79ms]
+(pass) bounded V1 graph revisions > rejects stale hashes, raised caps, capacity growth beyond root budget, and feedback loops [76.67ms]
+(pass) bounded V1 graph revisions > preserves attempted definitions, state, history, and output exactly [162.23ms]
+(pass) bounded V1 graph revisions > rejects running, unknown, terminal, and managed-investigation runs [87.67ms]
+(pass) bounded V1 graph revisions > does not remove or weaken existing checker definitions and dependencies [90.87ms]
+198 |         task_contract: testTaskContract({ kind: "project_change", discovery: "not_required", phase: "complete",
+199 |           deliverables: [{ destination: "project_file", producer_node: "implement", path: "result.txt" }],
+200 |           verification: { checker_node: "check", execution: "none" }, preserve_paths: [] }) }, toolContext(f.project))
+201 |       const response = await result
+202 |       const output = JSON.parse((response as { output: string }).output)
+203 |       expect(output.error).toBeUndefined()
+                                 ^
+error: expect(received).toBeUndefined()
+
+Received: "task_host_capability_unknown: required read capability is not uniformly allowed; resolve the host prerequisite"
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\graph-revision.test.ts:203:28)
+(fail) bounded V1 graph revisions > uses immutable content-addressed run artifacts for graph-version retrieval [75.63ms]
+227 |         { id: "probe", agent: "researcher", depends_on: ["work"] },
+228 |         { id: "check", agent: "checker", depends_on: ["work"], isolated_check: true },
+229 |       ])
+230 |       const stale = await tools.alg_plan.execute({ revise_run_id: runId, expected_graph_sha256: "0".repeat(64),
+231 |         revision_reason: "stale", graph_json: JSON.stringify(revisionGraph) }, toolContext(project))
+232 |       expect(JSON.parse((stale as { output: string }).output).error).toContain("stale")
+                                                                           ^
+error: expect(received).toContain(expected)
+
+Expected to contain: "stale"
+Received: "goal is required when creating a new run"
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\graph-revision.test.ts:232:70)
+(fail) bounded V1 graph revisions > revises through alg_plan with ownership, CAS, persisted receipts, status digest, and historical artifact retrieval [5.19ms]
+
+tests\headless-harness.test.ts:
+(pass) headless synthetic provider contract > checker fixture rejects absent or spoofed evidence and requires its exact selected source [0.42ms]
+(pass) headless synthetic provider contract > query evidence excludes admission but retains failed query outputs [0.25ms]
+(pass) headless synthetic provider contract > drives the host through workspace, investigation plan, and query tools [0.99ms]
+(pass) headless synthetic provider contract > compaction only repeats references observed in the host request [0.10ms]
+(pass) headless synthetic provider contract > follow-up claims recovery only when both persisted markers are in context [0.09ms]
+(pass) isolated host dependency setup uses the pinned SDK and refuses an existing target [7.58ms]
+
+tests\investigation-hooks.test.ts:
+43 |       expect(output(await plan.execute({ ...admission, goal: "Investigate particles", template: "data-investigation", shell_gate: "echo changed" }, context(path))).error).toContain("unmodified fixed")
+44 |       expect(findLatestRunForSession(path, "owner")).toBeNull()
+45 |       expect(output(await plan.execute({ goal: "Ordinary work", template: "coding-diamond", criteria: ["Create result.json"],
+46 |         task_contract: testTaskContract({ kind: "project_change", discovery: "required", phase: "complete",
+47 |           deliverables: [{ destination: "project_file", path: "result.json", producer_node: "implement" }],
+48 |           verification: { checker_node: "check", execution: "none" }, preserve_paths: [] }) }, context(path))).run_id).toBeTruthy()
+                                                                                                                            ^
+error: expect(received).toBeTruthy()
+
+Received: undefined
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\investigation-hooks.test.ts:48:120)
+(fail) investigation host boundaries > fixed template planning fails closed when disabled and rejects graph or gate overrides [43.55ms]
+(pass) investigation host boundaries > actual plan seals the normalized graph and managed run blocks criterion and gate mutation [643.65ms]
+(pass) investigation host boundaries > an orphan investigation graph cannot execute and resume guard runs before reopening attempts [338.71ms]
+(pass) investigation host boundaries > batch guard fails before any child or attempt reservation [227.60ms]
+(pass) investigation host boundaries > normal and compaction hooks retain the durable pointer within the context ceiling [749.41ms]
+(pass) a simple host tool call records an advisory workspace operation without model-supplied operation [43.13ms]
+
+tests\investigation-planning.test.ts:
+(pass) durable investigation planning > simultaneous retries create one run and ledger; host reconstruction keeps its original budget [1072.48ms]
+(pass) durable investigation planning > changed criteria, mode or goal cannot replace the attached investigation [950.91ms]
+(pass) durable investigation planning > detach does not reset identity, while explicit task advancement permits an intentional repeat [1294.02ms]
+(pass) durable investigation planning > legacy attached random-ID plans are reused and other owners remain isolated [2775.25ms]
+(pass) durable investigation planning > a crash after durable run creation reuses that run rather than creating a second ledger [414.52ms]
+(pass) durable investigation planning > a task change during creation cannot attach an old-task run to the new task [122.59ms]
+(pass) durable investigation planning > an attachment interleaved before claim commit is not overwritten [368.15ms]
+(pass) durable investigation planning > explicit attach cannot replace the task claim with another owned run [645.56ms]
+
+tests\investigation-workflow.test.ts:
+(pass) V1 Phase One synthetic investigation acceptance > pages an 11,000-entry catalog with bounded frontier and correctly scoped negative coverage [6.80ms]
+(pass) V1 Phase One synthetic investigation acceptance > reuses one managed computation and cached pages across context reconstruction, then resumes the seven-node graph after review [8312.99ms]
+(pass) V1 Phase One synthetic investigation acceptance > four incident families preserve evidence provenance and represent missing evidence as uncertainty [0.43ms]
+
+tests\persistence-evidence-capacity.test.ts:
+{"fixture":"implementer","seeded_attempts":99,"completed_attempts":100,"archive_attempts":96,"archive_bytes":90562,"archive_limit":524288,"inline_attempts":4,"native_receipt_bytes":12288,"gate_receipt_bytes":5935,"preservation_bytes":13799,"basis_bytes":0}
+(pass) bounded receipt-bearing attempt archives > implementer receipts survive persist, reload and attempt 100 [15693.01ms]
+{"fixture":"checker","seeded_attempts":99,"completed_attempts":100,"archive_attempts":96,"archive_bytes":91042,"archive_limit":524288,"inline_attempts":4,"native_receipt_bytes":0,"gate_receipt_bytes":0,"preservation_bytes":0,"basis_bytes":17293}
+(pass) bounded receipt-bearing attempt archives > checker receipts survive persist, reload and attempt 100 [17883.18ms]
+
+tests\persistence-full-hydration.test.ts:
+(pass) transactional immutable persistence > progress current-rename failure preserves current and prior backup byte-for-byte [582.50ms]
+(pass) transactional immutable persistence > post-commit backup-update failure keeps the new current and prior backup exact [555.73ms]
+(pass) transactional immutable persistence > a pre-progress failure preserves authoritative and backup manifests plus every old sidecar byte [616.65ms]
+(pass) transactional immutable persistence > sidecar and fixed-mirror failures never advance progress or invalidate old references [573.20ms]
+(pass) transactional immutable persistence > successive manifests retain distinct immutable content and each hydrates its own bytes [630.53ms]
+(pass) transactional immutable persistence > an occupied immutable hash path with mismatched bytes fails closed [528.28ms]
+(pass) transactional immutable persistence > GC preserves current and backup reachability and never removes unknown files [666.82ms]
+(pass) transactional immutable persistence > a deterministic post-commit GC failure reports success and preserves committed recovery plus all candidates [541.99ms]
+(pass) transactional immutable persistence > immutable node and attempt outputs must already equal their parsed canonical form [2900.38ms]
+(pass) transactional immutable persistence > canonical immutable outputs hydrate unchanged and publication canonicalizes accepted defaults [715.65ms]
+(pass) transactional immutable persistence > successful save replaces stale references with the canonical committed execution reload in place [672.10ms]
+(pass) transactional immutable persistence > successful save removes configurable hidden string and symbol extensions while retaining identities [702.40ms]
+(pass) transactional immutable persistence > non-configurable run, node, and attempt extensions fail preflight without caller or authoritative mutation [1891.17ms]
+(pass) transactional immutable persistence > archived caller attempts are preflighted and configurable extras are stripped from detached identities [901.40ms]
+(pass) transactional immutable persistence > a non-configurable archived-attempt extra fails before caller or authoritative mutation [668.56ms]
+(pass) transactional immutable persistence > non-configurable canonical data properties allow invariant-safe updates and exact fixed values [570.04ms]
+(pass) transactional immutable persistence > incompatible canonical descriptors fail precommit without invoking accessors or changing state [951.17ms]
+(pass) transactional immutable persistence > custom prototypes and deterministic proxy trap rejection stay precommit and mutation-free [922.47ms]
+(pass) transactional immutable persistence > node:util types.isProxy rejects transparent and stateful proxies before any write [1002.83ms]
+(pass) transactional immutable persistence > descriptor post-validation catches stateful Proxy mutation without getter or durable write [1059.86ms]
+(pass) transactional immutable persistence > descriptor snapshot persistence accepts an ordinary graph and preserves canonical identities [637.47ms]
+(pass) transactional immutable persistence > cross-path node and attempt aliases fail precommit while ordinary identities persist [1280.85ms]
+(pass) transactional immutable persistence > post-save execution state keeps model snapshots immutable and node fields mutable [68.86ms]
+(pass) transactional immutable persistence > legacy fixed references load and migrate to immutable paths while fixed backup content remains recoverable [597.95ms]
+(pass) transactional immutable persistence > a transfer-only save recursively migrates nested legacy history while the old manifest still hydrates [700.47ms]
+(pass) transactional immutable persistence > a transfer rebinds and migrates a projected root-authorization archive without breaking legacy recovery [251.80ms]
+(pass) transactional immutable persistence > concurrent cross-process publication yields one fenced manifest and valid immutable content [2635.08ms]
+(pass) complete full hydration > archived projected records are strictly parsed before valid details can hydrate over them [983.29ms]
+(pass) complete full hydration > status, run, and resume full hydrate archived order plus every attempt field while compact stays projected [2772.88ms]
+(pass) complete full hydration > routing summaries count archived prefixes exactly, expose legacy unknowns, and reject forged metadata [1668.57ms]
+(pass) complete full hydration > full status list hydrates every owned run and reports a precise corrupt-run failure [1272.29ms]
+(pass) complete full hydration > owned listing reports malformed owned state without disclosing malformed other-owner state [211.69ms]
+(pass) complete full hydration > missing, corrupt, wrong-hash, escaping, and wrong-kind history/output references fail safely and clearly [2662.24ms]
+(pass) complete full hydration > a valid same-node failure sidecar cannot be substituted for the projected failure list [491.84ms]
+(pass) complete full hydration > attempt detail rejects the exact projection-only failures_commitment field before hydration [281.55ms]
+(pass) complete full hydration > failure sidecars preserve canonical strings and reject padded failure text instead of trimming [277.44ms]
+(pass) complete full hydration > root authorization sidecars accept canonical values and reject padded operation/session/path/ID fields [732.73ms]
+(pass) complete full hydration > same-prefix/count attempt and node failure suffix substitutions fail their independent commitments [270.05ms]
+
+tests\plan-execution-guidance.test.ts:
+(pass) plan execution intent > compact live plan directs requested artifacts to bounded execution without executing during planning [107.19ms]
+(pass) plan execution intent > compact dry plan keeps live execution out of its next action [89.34ms]
+(pass) plan execution intent > full live plan directs requested artifacts to bounded execution without executing during planning [96.42ms]
+(pass) plan execution intent > full dry plan keeps live execution out of its next action [77.96ms]
+(pass) plan execution intent > explicit plan-only goals remain unexecuted and receive a stop-at-planning exception [101.56ms]
+(pass) opt-in coding-compact workflow > ships one matching, registered, schema-valid graph without changing the default [2.22ms]
+(pass) opt-in coding-compact workflow > preserves original criteria, bounds attempts and keeps the independent checker when a shell gate is supplied [86.99ms]
+(pass) opt-in coding-compact workflow > fresh checker feedback stays within the original four-attempt cap (repaired) [1638.79ms]
+(pass) opt-in coding-compact workflow > fresh checker feedback stays within the original four-attempt cap (rejected) [1602.91ms]
+(pass) optional plan preservation inputs > compact validates project-relative files and requests snapshots without adding criteria [94.27ms]
+(pass) optional plan preservation inputs > full validates project-relative files and requests snapshots without adding criteria [94.48ms]
+(pass) optional plan preservation inputs > omission is opt-in and custom graph augmentation retains dependency inputs on only the first implementer [195.60ms]
+(pass) optional plan preservation inputs > enforces count, path length, normalization, existence and regular files before creating a run [85.70ms]
+(pass) optional plan preservation inputs > rejects a symlink or junction escape even when the target is a regular file [4.49ms]
+(pass) optional plan preservation inputs > rejects graphs without implementers and preserves the revision argument boundary [77.88ms]
+
+tests\release-gate.test.ts:
+(pass) every release command has a deadline and failed commands retain diagnostics [177.65ms]
+(pass) release command launch errors and deadlines return failure diagnostics [590.68ms]
+(pass) release output overflow is bounded without killing a successful command [121.36ms]
+(pass) bounded release-gate evidence > v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate [6.69ms]
+(pass) bounded release-gate evidence > source identity and npm allowlist automatically include every skill-evolution runtime module [155.67ms]
+(pass) bounded release-gate evidence > strict schema rejects unknown or contradictory fields [2.18ms]
+(pass) bounded release-gate evidence > release-input identity binds same-length manager script, documentation, and test changes [85.33ms]
+(pass) bounded release-gate evidence > redacts credentials and bounds UTF-8 output tails [0.35ms]
+(pass) bounded release-gate evidence > default release identity still binds graders and plans excluded from deployment [163.03ms]
+(pass) bounded release-gate evidence > writes only strict bounded external evidence and artifact scanning detects caches [23.03ms]
+(pass) bounded release-gate evidence > release evidence UUID collision never overwrites the existing final artifact [31.90ms]
+(pass) bounded release-gate evidence > release evidence same-byte replacement before-final-check is preserved and rejected [38.10ms]
+(pass) bounded release-gate evidence > release evidence same-byte replacement after-final-check is preserved and rejected [34.61ms]
+(pass) bounded release-gate evidence > release evidence preserves a replaced temporary and rejects cleanup [37.87ms]
+(pass) bounded release-gate evidence > strict release verification rejects a same-byte final identity replacement [39.71ms]
+(pass) bounded release-gate evidence > semantically verifies retained evidence against the current source, package, live proof, path, and hash [1997.65ms]
+(pass) bounded release-gate evidence > semantic verification rejects coherent-looking contradictory or stale evidence [6439.60ms]
+(pass) bounded release-gate evidence > strict live semantics reject minimal, empty, wrong-tool, manifest, and registration evidence [1071.56ms]
+(pass) bounded release-gate evidence > resolves npm by fixed canonical siblings with spaces and never parses a malicious cmd shim [3.26ms]
+(pass) bounded release-gate evidence > rejects unresolvable or non-file npm shims and supports a resolved POSIX executable [1.59ms]
+(pass) bounded release-gate evidence > accepts only the canonical Node POSIX bin/npm to lib/npm CLI layout [0.95ms]
+(skip) bounded release-gate evidence > resolves a real POSIX npm symlink inside the Node installation
+(pass) bounded release-gate evidence > rejects an actual npm CLI directory junction/symlink escape [3.16ms]
+(pass) bounded release-gate evidence > deterministic realpath seam rejects independent node executable escape [0.45ms]
+(pass) bounded release-gate evidence > deterministic realpath seam rejects independent CLI escape [0.20ms]
+(pass) bounded release-gate evidence > complete package allowlist rejects extras, missing paths, duplicates, unsafe paths, and bad modes [81.68ms]
+
+tests\reliability-observability.test.ts:
+(pass) reliability and observability hardening > portable root detection rejects each mutating call unless that call opts in [0.49ms]
+(pass) reliability and observability hardening > plan/run/resume tools reject the host root before lookup and require opt-in on each call [7.06ms]
+145 | 
+146 | export function isSafeId(value: string): boolean {
+147 |   return SAFE_ID_PATTERN.test(value) &&
+148 |     value !== "." &&
+149 |     value !== ".." &&
+150 |     !RESERVED_IDS.has(value.toLowerCase()) &&
+                            ^
+TypeError: undefined is not an object (evaluating 'value.toLowerCase')
+      at isSafeId (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\paths.ts:150:23)
+      at assertSafeId (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\paths.ts:155:8)
+      at runDir (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\store.ts:250:3)
+      at runContainedPath (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\store.ts:261:31)
+      at readAuthoritativeOrQuarantine (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\store.ts:3014:22)
+      at loadRun (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\store.ts:3030:19)
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\reliability-observability.test.ts:144:25)
+(fail) reliability and observability hardening > tool handlers reject before mutation and generate persisted per-call root authorization audits [6.58ms]
+(pass) reliability and observability hardening > built-in explorer nodes have one finite retry [0.35ms]
+(pass) reliability and observability hardening > explorer strict-output rejection consumes and retries only the explorer [725.10ms]
+(pass) reliability and observability hardening > more than 100 schema issues persist deterministically and retry only their node [779.74ms]
+(pass) reliability and observability hardening > schema-contradictory checker retries itself without reopening worker [1272.31ms]
+(pass) reliability and observability hardening > SDK diagnostics retain safe nested detail while redacting and bounding hostile values [1.01ms]
+(pass) reliability and observability hardening > request-like unknown fields stay opaque while exact SDK wrappers remain useful [0.80ms]
+(pass) reliability and observability hardening > diagnostics redact composite content keys and every quoted or unquoted authorization form [0.64ms]
+(pass) reliability and observability hardening > inline diagnostics redact entire quoted credential values and retain safe surroundings [0.35ms]
+(pass) reliability and observability hardening > escaped JSON credential assignments are fully redacted in text and SDK diagnostics [0.65ms]
+(pass) reliability and observability hardening > assignment redaction fails closed across bare, quoted, escaped, comma, space, and authorization values [0.50ms]
+(pass) reliability and observability hardening > approved scalar messages redact complete private-content assignments across serialization layers [0.92ms]
+(pass) reliability and observability hardening > unknown request-content containers never expose recognized descendants [0.38ms]
+(pass) reliability and observability hardening > diagnostic scalar fields reject structured values at every nesting level [0.93ms]
+(pass) reliability and observability hardening > unknown top-level scalar, object, array, and type fields stay opaque [0.66ms]
+(pass) reliability and observability hardening > approved diagnostic containers allowlist fields and never emit arbitrary values [0.86ms]
+(pass) reliability and observability hardening > approved container arrays and exact SDK wrappers use restricted semantics [0.52ms]
+(pass) reliability and observability hardening > three-component request content containers are opaque non-content markers [0.29ms]
+(pass) reliability and observability hardening > alg_status compact list reports a shortened goal even when no runs are omitted [102.87ms]
+(pass) reliability and observability hardening > alg_status list reports accurate run and field truncation counts and honors full completeness [1944.47ms]
+(pass) reliability and observability hardening > maximum prefixed SDK diagnostic persists within schema limits without leaking sentinels [736.26ms]
+(pass) reliability and observability hardening > session SDK response errors and primitive throws use safe useful diagnostics [2.43ms]
+(pass) reliability and observability hardening > model resolution records precedence, defaults, repair identity, and old-run fallback [85.81ms]
+1229 |         task_contract: projectTask("work", "check"),
+1230 |       }, context(project))
+1231 |       const compactPlan = output(compactPlanResult)
+1232 |       expect(compactPlan.goal).toBeUndefined()
+1233 |       expect(compactPlan.criteria).toBeUndefined()
+1234 |       expect(compactPlan.model_resolution.default.source).toBe("inherited-sdk-default")
+                                ^
+TypeError: undefined is not an object (evaluating 'compactPlan.model_resolution.default')
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\reliability-observability.test.ts:1234:26)
+(fail) reliability and observability hardening > compact status remains projected while full status and artifact hydrate complete typed detail [3.93ms]
+(pass) reliability and observability hardening > full run and resume retain bounded projected timing, outcome, and reference history [1096.28ms]
+(pass) reliability and observability hardening > maximum incomplete outputs compact every save while complete typed artifacts survive reload [2109.80ms]
+(pass) reliability and observability hardening > legacy inline-output progress reloads and migrates without losing full artifact access [597.22ms]
+1584 |           max_concurrency: 8,
+1585 |           nodes,
+1586 |         }),
+1587 |       }, context(project))
+1588 |       const planned = output(plannedResult)
+1589 |       expect(Object.keys(planned.nodes)).toHaveLength(24)
+                           ^
+TypeError: undefined is not an object (evaluating 'Object.keys(planned.nodes)')
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\reliability-observability.test.ts:1589:21)
+(fail) reliability and observability hardening > compact plan/run/status apply aggregate node, attempt, session, event, and byte bounds [4.72ms]
+(pass) reliability and observability hardening > persisted root authorization audit remains visible in compact and full status [181.41ms]
+(pass) reliability and observability hardening > projected root authorization history is immutable, fully hydratable, aggregated, legacy-honest, and fail-closed [443.56ms]
+(pass) reliability and observability hardening > compact root verification rejects a forged per-operation distribution with the same total [183.57ms]
+(pass) reliability and observability hardening > compact run and resume use one committed root projection above 64 approvals [872.15ms]
+(pass) reliability and observability hardening > legacy failure commitments report weaker verification and migrate on save [206.42ms]
+
+tests\runtime-completion.test.ts:
+(pass) creation validates execution directory before writes and pins it in the initial commit [89.41ms]
+49 |           { id: "work", agent: "implementer", depends_on: [] },
+50 |           { id: "gate", agent: "shell", depends_on: ["work"], shell_gate: { cmd: "synthetic", cwd: "." } },
+51 |           { id: "check", agent: "checker", depends_on: ["work", "gate"], isolated_check: true },
+52 |         ],
+53 |       }) }, context))
+54 |     expect(plan.execution_directory).toBe(directory)
+                                          ^
+error: expect(received).toBe(expected)
+
+Expected: "D:\\Docker\\model-temp\\alg-test-JCrPEP\\subdir"
+Received: undefined
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\runtime-completion.test.ts:54:38)
+(fail) plan and status expose the persisted child and relative-gate base [7.68ms]
+(pass) feedback cancellation preserves successful history and exhausted consumers prevent reopening [2587.01ms]
+(pass) checker retries receive schema failure context and explicit score contract [552.56ms]
+(pass) session sidecar persistence failure is not classified or retried as worker work [199.25ms]
+(pass) diagnostics canonicalize whitespace, redaction, Unicode and truncation [0.23ms]
+(pass) JSON literals and safe references agree with graph validation [50.75ms]
+(pass) shell failure survives save/load/resume with canonical stderr diagnostics [822.84ms]
+(pass) rejected workers retry; observer exceptions cannot rewrite DONE [534.68ms]
+(pass) failed branch with unfinished independent work is durably blocked [840.66ms]
+(pass) cancellation between batches reserves no later work and remains resumable [564.43ms]
+(pass) execution cwd remains pinned across subdirectory resumes; legacy uses project root [1537.65ms]
+
+tests\schemas.test.ts:
+(pass) strict contracts > persisted attempt session IDs reject surrounding whitespace instead of normalizing it [0.51ms]
+(pass) strict contracts > checker pass/failure/score invariants reject contradictions [0.51ms]
+(pass) strict contracts > checker outcomes require matching passed semantics and proved graph shell gates [1.06ms]
+(pass) strict contracts > implementer requires done=true and strict fields [0.37ms]
+(pass) strict contracts > implementer path metadata is normalized, project-relative, and traversal-safe [1.64ms]
+(pass) strict contracts > the prompt schema hint omits $schema and an echoed $schema marker does not fail validation [1.70ms]
+(pass) strict contracts > unknown agents are rejected instead of receiving a permissive record [0.19ms]
+(pass) strict contracts > graph rejects unknown agents, zero attempts, extra fields, and unordered refs [1.33ms]
+(pass) strict contracts > legacy omitted global cap receives local capacity while explicit bounded caps are preserved [0.25ms]
+(pass) strict contracts > traversal and prototype-shaped ids are rejected [0.11ms]
+(pass) strict contracts > run state validates exact graph/state identity and null-prototype maps [60.26ms]
+(pass) strict contracts > run state rejects forged outputs, attempts, statuses, and dependency completion [49.56ms]
+(pass) strict contracts > forged rejected checker output cannot support done attempt/node/run [990.72ms]
+(pass) strict contracts > ownership transfer history is a strict creator-rooted monotonic chain [60.86ms]
+(pass) strict contracts > persisted checker attempt scores reject fractions and scores without output [61.73ms]
+(pass) strict contracts > loaded implementer artifacts must belong to the current run id [1053.32ms]
+
+tests\shell-preflight.test.ts:
+(pass) read-only shell command preflight > rejects command_required:   [0.22ms]
+(pass) read-only shell command preflight > rejects command_not_text: echo   [0.02ms]
+(pass) read-only shell command preflight > rejects command_too_long: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+(pass) read-only shell command preflight > rejects prose_or_markdown: ```cmd
+echo ok
+```
+(pass) read-only shell command preflight > rejects prose_or_markdown: Allowed tools: bash | edit | {read} [0.02ms]
+(pass) read-only shell command preflight > rejects prose_or_markdown: Run the tests and then summarize th
+(pass) read-only shell command preflight > rejects missing_pipeline_command: | echo ok [0.02ms]
+(pass) read-only shell command preflight > rejects missing_pipeline_command: echo ok | [0.03ms]
+(pass) read-only shell command preflight > rejects missing_pipeline_command: echo ok && [0.03ms]
+(pass) read-only shell command preflight > rejects missing_pipeline_command: echo ok | | echo bad [0.02ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: python -m pytest tests/unit [0.13ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo "a | {b} & c" [0.06ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: node -e "console.log(1 > 0)" [0.03ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok | findstr ok [0.09ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok && echo done [0.06ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: "C:\Program Files\Node\node.exe" -v [0.05ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok > result.txt 2>&1 [0.04ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: if exist tests (echo ok) [0.01ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: cmd /c "echo ok | echo done" [0.02ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: cd /d "C:\Repo With Spaces" && python -m pytest tests/unit [0.04ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ^| escaped
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok
+echo done [0.01ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok & [0.01ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo "unterminated [0.01ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: missing-tool || echo fallback [0.03ms]
+(pass) read-only shell command preflight > missing tools use the actual shell and PATH, not a POSIX blacklist [0.35ms]
+(pass) read-only shell command preflight > bounded and conservative for scripts, dynamic commands and directory changes [0.44ms]
+(pass) read-only shell command preflight > executable lookup reads files only, honors PATHEXT, and never invokes a command [2.14ms]
+106 |       expect(result.error).toBeDefined()
+107 |       expect(existsSync(join(project, ".opencode"))).toBe(false)
+108 |     }
+109 |     const plan = decode(await tools.alg_plan.execute({ goal: "cwd", criteria: ["Resolve the shell gate cwd"], task_contract: taskContract(),
+110 |       shell_gate: "echo ok", shell_cwd: "repo with spaces" }, context))
+111 |     expect(plan.shell_gate_preflight.gates[0].cwd).toBe(nested)
+                      ^
+TypeError: undefined is not an object (evaluating 'plan.shell_gate_preflight.gates')
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\shell-preflight.test.ts:111:17)
+(fail) plan rejects malformed gates before persistence, and reports explicit nested cwd [9.58ms]
+(pass) custom graphs are checked; directory escape is rejected; future test files are not required [189.95ms]
+(pass) legacy missing command blocks before any child or counter and does not echo arguments [380.20ms]
+(pass) corrected gate resumes with completed sibling intact and no budget reset [2938.24ms]
+(pass) unreachable exhausted gates cannot block independent work on resume [1630.69ms]
+(pass) command and cwd overrides affect only the persisted target implementer [617.01ms]
+(pass) checker-reopened work is rechecked before another attempt and durably blocked until repaired [1732.85ms]
+(pass) real failing tests still retry; stdout-only failures retain safe shell and cwd diagnostics [710.19ms]
+(pass) public run and resume repair shell_cwd relative to pinned directory, not current UI directory [846.47ms]
+(pass) empty-output and timeout failures report their limits without guessing a parser defect [864.97ms]
+(pass) actual local gate runs in an explicit repository directory with spaces [3239.78ms]
+
+tests\store-ownership.test.ts:
+(pass) safe durable store and ownership > run ids are collision-resistant and safe [5.83ms]
+(pass) safe durable store and ownership > atomic persistence creates a usable backup [139.15ms]
+(pass) safe durable store and ownership > owner run projections update atomically on create, save, and transfer without becoming authoritative [380.13ms]
+(pass) safe durable store and ownership > parallel run creators merge the bounded owner projection without lost entries [453.59ms]
+(pass) safe durable store and ownership > an unverifiable projection lock cannot fail authoritative run creation [103.31ms]
+(pass) safe durable store and ownership > post-commit create hydration failure returns the loadable committed run without cleanup [72.00ms]
+(pass) safe durable store and ownership > parallel ownership transfers merge removals from the former owner projection [569.99ms]
+(pass) safe durable store and ownership > exclusive lock rejects overlap and releases for a later executor [128.56ms]
+(pass) safe durable store and ownership > heartbeat renews a short lease and prevents stale takeover [4294.16ms]
+(pass) safe durable store and ownership > expired-lock takeover cannot rename a lease renewed after observation [114.54ms]
+(pass) safe durable store and ownership > fenced persistence rejects replacement or expiry in the final current-rename hook without changing recovery [487.28ms]
+(pass) safe durable store and ownership > fenced persistence commits when the final current-rename boundary still holds the lock [255.01ms]
+(pass) safe durable store and ownership > fenced persistence reports success when expiry or replacement occurs only after commit [357.68ms]
+(pass) safe durable store and ownership > non-commit fenced callbacks retain their failure-producing postcheck [92.99ms]
+(pass) safe durable store and ownership > owned discovery streams only the scan bound plus one, reports truncation truthfully, closes, and leaks no other-owner content [65.12ms]
+(pass) safe durable store and ownership > owned mutation keeps lease verification and commit inside the takeover guard [154.93ms]
+(pass) safe durable store and ownership > malformed and identity-mismatched locks fail closed without takeover [79.52ms]
+(pass) safe durable store and ownership > loaded state cannot select another project root and is quarantined [63.50ms]
+(pass) safe durable store and ownership > failed run quarantine rename reports that corrupt progress remains in place [61.67ms]
+(pass) safe durable store and ownership > implicit and explicit access are exact-owner only; transfer is audited [233.55ms]
+(pass) safe durable store and ownership > owner-filtered listRuns preserves another owner's corrupt state and derived metadata [147.88ms]
+(pass) safe durable store and ownership > only a confirmed owner can quarantine envelope-valid corrupt progress [76.89ms]
+(pass) safe durable store and ownership > owned load CAS-reconciles a legacy running attempt from its valid session sidecar [221.01ms]
+(pass) safe durable store and ownership > CAS rejects stale commits, including stale execution after transfer [373.54ms]
+(pass) safe durable store and ownership > transfer uses the execution lock and rechecks ownership inside it [209.26ms]
+(pass) safe durable store and ownership > derived write failure preserves progress and load reconciles every mirror [1509.35ms]
+(pass) safe durable store and ownership > stale loader re-reads authoritative revision under the mirror lock [187.88ms]
+
+tests\task-admission.test.ts:
+33 |       return { data: path.messageID === "message"
+34 |         ? { info: { id: "message", sessionID: "owner", role: "assistant", parentID: "original-user" }, parts: [] }
+35 |         : { info: { id: "original-user", sessionID: "owner", role: "user" }, parts: [{ type: "text", text }] } }
+36 |     } })
+37 |     const result = data(await f.tools.alg_plan.execute({ goal: "Prepare according to required schema", criteria: ["Write preparation.md"], task_contract: f.task }, f.context))
+38 |     expect(result.error).toBeUndefined()
+                              ^
+error: expect(received).toBeUndefined()
+
+Received: "task_host_capability_unknown: required read capability is not uniformly allowed; resolve the host prerequisite"
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\task-admission.test.ts:38:26)
+(fail) tool task contract admission > planning captures the actual host user turn rather than trusting a lossy planner summary [4.36ms]
+(pass) tool task contract admission > new plans cannot silently omit contracts or original criteria [4.55ms]
+(pass) tool task contract admission > impossible producer is rejected without effective-permission or child calls [4.84ms]
+71 |     const result = data(await f.tools.alg_plan.execute({ goal: "Write preparation", criteria: ["Create preparation.md", "Stop before the report"],
+72 |       task_contract: { ...f.task, evidence_plan: [
+73 |         { criterion: 1, observations: [{ kind: "deliverable", index: 0 }] },
+74 |         { criterion: 2, observations: [{ kind: "review", rationale: "The fixture verifies planning stops before report generation." }] },
+75 |       ] } }, f.context))
+76 |     expect(result.error).toBeUndefined(); expect(result.template).toBe("coding-compact")
+                              ^
+error: expect(received).toBeUndefined()
+
+Received: "task_host_capability_unknown: required read capability is not uniformly allowed; resolve the host prerequisite"
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\task-admission.test.ts:76:26)
+(fail) tool task contract admission > known writes admit compact work and keep source and contract through status [4.97ms]
+90 |     expect(existsSync(join(f.project, ".opencode", "runs"))).toBe(false)
+91 |     const g = fixture()
+92 |     const admitted = data(await g.tools.alg_plan.execute({ goal: "Write preparation", criteria: ["Create preparation.md"], task_contract: g.task }, g.context))
+93 |     g.deny()
+94 |     const result = data(await g.tools.alg_run.execute({ run_id: admitted.run_id }, g.context))
+95 |     expect(result.error).toContain("task_host_capability_deny")
+                              ^
+error: expect(received).toContain(expected)
+
+Expected to contain: "task_host_capability_deny"
+Received: "No owned run found. Call alg_plan first."
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\task-admission.test.ts:95:26)
+(fail) tool task contract admission > host denial blocks before creation and changed permissions block before execution [7.64ms]
+ 98 |   })
+ 99 |   test("criteria cannot be weakened by the legacy unlock switch", async () => {
+100 |     const f = fixture()
+101 |     const admitted = data(await f.tools.alg_plan.execute({ goal: "Write preparation", criteria: ["Create preparation.md"], task_contract: f.task }, f.context))
+102 |     const result = data(await f.tools.alg_criteria.execute({ run_id: admitted.run_id, criteria: ["Say done"], lock: false }, f.context))
+103 |     expect(result.error).toContain("task_contract_locked")
+                               ^
+error: expect(received).toContain(expected)
+
+Expected to contain: "task_contract_locked"
+Received: "No owned planned run found. Call alg_plan first and pass criteria directly to alg_plan when possible."
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\task-admission.test.ts:103:26)
+(fail) tool task contract admission > criteria cannot be weakened by the legacy unlock switch [3.95ms]
+
+tests\task-baseline.test.ts:
+(pass) coverage must cover each criterion and bind actual collection declarations [71.24ms]
+(pass) baseline is durable before discovery, survives compaction/restart, and cannot be replaced [1752.21ms]
+(pass) an unavailable before-work file stops before the first child and attempt [146.05ms]
+(pass) discovery cannot change a protected file before its baseline is collected [965.10ms]
+(pass) out-of-scope change blocks checker and resume does not repeat the correct producer [1085.22ms]
+(pass) post-check content drift invalidates proof even when changed path count stays identical [1054.45ms]
+
+tests\task-contract.test.ts:
+(pass) declared task admission > host user request survives persistence, compaction and both child handoffs without trusting a shortened summary [1147.07ms]
+(pass) declared task admission > project deliverables reject research-only graphs and do not create durable work [1.13ms]
+(pass) declared task admission > routing uses declared work and uncertainty, not model/task-name keywords [0.34ms]
+(pass) declared task admission > missing checker, disconnected producer, execution and protected paths fail closed [0.27ms]
+(pass) declared task admission > typed paths cannot conflict or traverse; diagnostics do not echo unknown keys [0.53ms]
+(pass) declared task admission > evidence plans cover criteria in order and bind observations to declared inputs [0.51ms]
+108 |       { criterion: 1, observations: [{ kind: "review", rationale: "   " }] },
+109 |     ] })).toThrow("task_contract_invalid")
+110 |   })
+111 |   test("capabilities recognize only uniform host decisions", () => {
+112 |     const graph = getTemplate("coding-compact")
+113 |     expect(() => assertTaskHostCapabilities(contract(), graph, [{ name: "implementer", permission: { edit: "allow" } }])).not.toThrow()
+                                                                                                                                    ^
+error: expect(received).not.toThrow()
+
+Error name: "Error"
+Error message: "task_host_capability_unknown: required read capability is not uniformly allowed; resolve the host prerequisite"
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\task-contract.test.ts:113:127)
+(fail) declared task admission > capabilities recognize only uniform host decisions [0.61ms]
+(pass) declared task admission > original criteria and contract survive persistence and bounded context projection [101.77ms]
+(pass) declared task admission > removing an accepted contract cannot silently turn a new run into legacy [91.54ms]
+(pass) declared task admission > legacy persisted runs remain readable without invented admission [72.52ms]
+(pass) declared task admission > older directly bound contracts may retain an absent evidence plan [83.88ms]
+(pass) host-enforced task completion > passing model verdict cannot certify a missing declared file [567.92ms]
+(pass) host-enforced task completion > correct files pass; preparation contract is visible to workers and remains pinned [1051.28ms]
+(pass) host-enforced task completion > claimed commands do not satisfy the native command requirement [487.92ms]
+(pass) host-enforced task completion > accepted verification gate cannot be replaced at run time [136.33ms]
+
+tests\task-evidence-integrity.test.ts:
+(pass) checker task evidence references survive attempt archiving and hydration; tampering fails closed [5594.96ms]
+
+tests\task-recovery.test.ts:
+(pass) an explicit resume repairs a missing file without rerunning completed unrelated work [1985.60ms]
+(pass) missing native evidence can be repaired by a new scoped producer attempt [1349.13ms]
+(pass) explicit prerequisite repair respects the original budget {"local":1} [580.28ms]
+(pass) explicit prerequisite repair respects the original budget {"global":2} [576.19ms]
+(pass) prerequisite repair refuses a project deliverable redirected outside the worktree [645.67ms]
+(pass) persistent missing evidence does not trigger a producer/checker prompt loop [1398.20ms]
+(pass) existing-file drift reopens only the checker and its descendants [2547.87ms]
+(pass) same-command cwd/timeout repair requires an actual setup failure (%s) [1559.39ms]
+(pass) same-command cwd/timeout repair requires an actual setup failure (%s) [788.77ms]
+
+tests\task-request.test.ts:
+(pass) host captured current task request > captures the requested user message and exact project query [1.11ms]
+(pass) host captured current task request > resolves only the exact user parent of a requested assistant message [0.35ms]
+(pass) host captured current task request > rejects mismatched session, message, and role without guessing history [0.26ms]
+(pass) host captured current task request > maps SDK failures and absent legacy methods to static unavailable reasons [0.22ms]
+(pass) host captured current task request > collects literal text in order without decoding task requirements [0.46ms]
+(pass) host captured current task request > declines recognized credentials entirely, including prefixed and encoded assignments [0.61ms]
+(pass) host captured current task request > retains public schema type declarations and explicit credential placeholders [0.38ms]
+(pass) host captured current task request > accepts SDK envelopes with a null error and declines whitespace-only text [0.86ms]
+(pass) host captured current task request > enforces raw and retained byte limits without truncation, including Unicode [1.00ms]
+(pass) host captured current task request > bounds part count and distinguishes requests with no text [0.41ms]
+(pass) host captured current task request > snapshot schema rejects a bad digest and over-limit UTF-8 text [1.23ms]
+(pass) host captured current task request > times out and aborts the SDK signal without exposing rejection details [1514.21ms]
+(pass) host captured current task request > propagates tool cancellation to an in-flight SDK request [14.03ms]
+
+tests\verification-tui.test.ts:
+(pass) verified TUI archives > compact v3 archive validates its exact detail before navigation: valid [39.19ms]
+(pass) verified TUI archives > compact v3 archive validates its exact detail before navigation: session_mismatch [31.81ms]
+(pass) verified TUI archives > compact v3 archive validates its exact detail before navigation: missing_basis [32.59ms]
+(pass) verified TUI archives > rejects an archived failed call whose pre-call basis is missing [16.49ms]
+(pass) verified TUI archives > rejects a detail whose verification basis differs from its archive projection [28.79ms]
+(pass) visible task evidence is checked before navigation even without detail/output references: valid [15.06ms]
+(pass) visible task evidence is checked before navigation even without detail/output references: missing [16.13ms]
+(pass) visible task evidence is checked before navigation even without detail/output references: tampered [14.75ms]
+(pass) visible task evidence is checked before navigation even without detail/output references: wrong-contract [15.90ms]
+
+tests\verification.test.ts:
+(pass) opt-in verification > preserves supported without converting uncertainty into contradiction [0.30ms]
+(pass) opt-in verification > preserves disconfirmed without converting uncertainty into contradiction [0.08ms]
+(pass) opt-in verification > preserves unsupported without converting uncertainty into contradiction [0.04ms]
+(pass) opt-in verification > preserves inconclusive without converting uncertainty into contradiction [0.03ms]
+(pass) opt-in verification > refuses absent, duplicated, invented or omitted citations and incomplete criterion coverage [0.65ms]
+(pass) opt-in verification > diagnostics never echo submitted identifiers or unknown keys [0.25ms]
+(pass) opt-in verification > an unlaunched reservation may lack a basis, while a launched running attempt may not [0.40ms]
+(pass) opt-in verification > legacy remains legacy and bounded mandate is explicit [0.82ms]
+(pass) opt-in verification > executor persists basis before launch, informs retry, and recovers bound output [1116.16ms]
+(pass) opt-in verification > pins fallback criteria before parallel researcher completion and keeps the checker prompt stable [980.41ms]
+(pass) opt-in verification > revised graphs reject direct shell and live-mode overrides before work [49.54ms]
+(pass) opt-in verification > dry mode cannot claim evidence-qualified success [471.18ms]
+
+1 tests skipped:
+(skip) bounded release-gate evidence > resolves a real POSIX npm symlink inside the Node installation
+
+
+14 tests failed:
+(fail) architecture audit remediation > merged config role models are snapped once and project overrides win [19.58ms]
+(fail) bounded V1 graph revisions > uses immutable content-addressed run artifacts for graph-version retrieval [75.63ms]
+(fail) bounded V1 graph revisions > revises through alg_plan with ownership, CAS, persisted receipts, status digest, and historical artifact retrieval [5.19ms]
+(fail) investigation host boundaries > fixed template planning fails closed when disabled and rejects graph or gate overrides [43.55ms]
+(fail) reliability and observability hardening > tool handlers reject before mutation and generate persisted per-call root authorization audits [6.58ms]
+(fail) reliability and observability hardening > compact status remains projected while full status and artifact hydrate complete typed detail [3.93ms]
+(fail) reliability and observability hardening > compact plan/run/status apply aggregate node, attempt, session, event, and byte bounds [4.72ms]
+(fail) plan and status expose the persisted child and relative-gate base [7.68ms]
+(fail) plan rejects malformed gates before persistence, and reports explicit nested cwd [9.58ms]
+(fail) tool task contract admission > planning captures the actual host user turn rather than trusting a lossy planner summary [4.36ms]
+(fail) tool task contract admission > known writes admit compact work and keep source and contract through status [4.97ms]
+(fail) tool task contract admission > host denial blocks before creation and changed permissions block before execution [7.64ms]
+(fail) tool task contract admission > criteria cannot be weakened by the legacy unlock switch [3.95ms]
+(fail) declared task admission > capabilities recognize only uniform host decisions [0.61ms]
+
+ 334 pass
+ 1 skip
+ 14 fail
+ 7123 expect() calls
+Ran 349 tests across 26 files. [214.42s]

@@ -1,0 +1,15 @@
+$ bun ./node_modules/typescript/bin/tsc -p tsconfig.json --noEmit
+tests/session-memory.test.ts(89,44): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(expected: { mode: string; initialized: boolean; task_allowance_status: TaskAllowanceStatus | { task_id: string; state: string; } | undefined; checkpoint?: undefined; receipt?: undefined; origin?: undefined; delivery_error?: undefined; delivery?: undefined; coverage?: undefined; } | { ...; }): void', gave the following error.
+    Argument of type '{ mode: string; initialized: false; }' is not assignable to parameter of type '{ mode: string; initialized: boolean; task_allowance_status: TaskAllowanceStatus | { task_id: string; state: string; } | undefined; checkpoint?: undefined; receipt?: undefined; origin?: undefined; delivery_error?: undefined; delivery?: undefined; coverage?: undefined; } | { ...; }'.
+      Property 'task_allowance_status' is missing in type '{ mode: string; initialized: false; }' but required in type '{ mode: string; initialized: boolean; task_allowance_status: TaskAllowanceStatus | { task_id: string; state: string; } | undefined; checkpoint?: undefined; receipt?: undefined; origin?: undefined; delivery_error?: undefined; delivery?: undefined; coverage?: undefined; }'.
+  Overload 2 of 2, '(expected: NoInfer<{ mode: string; initialized: boolean; task_allowance_status: TaskAllowanceStatus | { task_id: string; state: string; } | undefined; checkpoint?: undefined; receipt?: undefined; origin?: undefined; delivery_error?: undefined; delivery?: undefined; coverage?: undefined; } | { ...; }>): void', gave the following error.
+    Argument of type '{ mode: string; initialized: false; }' is not assignable to parameter of type '{ mode: string; initialized: boolean; task_allowance_status: TaskAllowanceStatus | { task_id: string; state: string; } | undefined; checkpoint?: undefined; receipt?: undefined; origin?: undefined; delivery_error?: undefined; delivery?: undefined; coverage?: undefined; } | { ...; }'.
+      Property 'task_allowance_status' is missing in type '{ mode: string; initialized: false; }' but required in type '{ mode: string; initialized: boolean; task_allowance_status: TaskAllowanceStatus | { task_id: string; state: string; } | undefined; checkpoint?: undefined; receipt?: undefined; origin?: undefined; delivery_error?: undefined; delivery?: undefined; coverage?: undefined; }'.
+tests/task-allowance-execution.test.ts(95,3): error TS2554: Expected 2-3 arguments, but got 1.
+tests/task-allowance-execution.test.ts(97,3): error TS2554: Expected 2-3 arguments, but got 1.
+tests/task-allowance-execution.test.ts(135,16): error TS2554: Expected 2-3 arguments, but got 1.
+tests/task-allowance-execution.test.ts(151,16): error TS2339: Property 'output' does not exist on type 'ToolResult'.
+  Property 'output' does not exist on type 'string'.
+tests/task-allowance-execution.test.ts(155,93): error TS2339: Property 'output' does not exist on type 'ToolResult'.
+  Property 'output' does not exist on type 'string'.

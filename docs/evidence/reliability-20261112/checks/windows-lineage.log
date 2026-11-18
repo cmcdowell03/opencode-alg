@@ -1,0 +1,34 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\checker-evidence.test.ts:
+(pass) selected checker evidence > compiled policy retains legacy reconciliation without changing the persisted investigation graph [79.13ms]
+(pass) selected checker evidence > executor delivers selected shell evidence alongside the claim and excludes unrelated wiring [805.86ms]
+(pass) selected checker evidence > byte/count limits and missing references remain explicit without partial JSON [47.27ms]
+(pass) selected checker evidence > aggregate bound omits complete values even when each fits individually [45.29ms]
+
+tests\execution-evidence.test.ts:
+(pass) host-origin child execution evidence > captures only host bash tool records and requires exact exit metadata [1.69ms]
+(pass) host-origin child execution evidence > reports retrieval timeout and omitted command rows explicitly [21.14ms]
+(pass) host-origin child execution evidence > sanitizes and bounds command output while marking truncation [1.79ms]
+(pass) host-origin child execution evidence > checker evidence attaches only receipts from claimed or selected evidence inputs [0.87ms]
+(pass) host-origin child execution evidence > shell-gate helper retains exact host result, setup and containment flags [0.14ms]
+(pass) host-origin child execution evidence > receipt schema rejects oversized aggregates and foreign-session parts are counted [0.53ms]
+
+tests\gate-recovery.test.ts:
+(pass) gate setup recovery > runtime setup failure reserves no model or shell attempt and releases preparation [80.83ms]
+(pass) gate setup recovery > native shell gate receipts reach the checker on this platform [2979.45ms]
+(pass) gate setup recovery > setup failure stops retries; persisted explicit resume only reruns gate before checker [1350.65ms]
+(pass) gate setup recovery > repeated setup failures retain the original native receipt for the fresh checker [1838.44ms]
+(pass) gate setup recovery > changed file refuses reuse before another attempt is reserved [549.09ms]
+(pass) gate setup recovery > changed gate refuses reuse before another attempt is reserved [653.63ms]
+(pass) gate setup recovery > changed output refuses reuse before another attempt is reserved [623.26ms]
+(pass) gate setup recovery > interrupted running recovery retains its original output source across persisted resume [1603.53ms]
+(pass) gate setup recovery > interrupted gate call persists recovery intent before launch and never retries the implementer [1792.00ms]
+(pass) gate setup recovery > declared-file drift after admission blocks the invocation and preserves gate-only intent [2047.33ms]
+(pass) gate setup recovery > changed preservation paths refuse recovery without replacing the original basis [869.64ms]
+(pass) gate setup recovery > real test failure still retries implementation [1246.34ms]
+
+ 22 pass
+ 0 fail
+ 147 expect() calls
+Ran 22 tests across 3 files. [16.84s]

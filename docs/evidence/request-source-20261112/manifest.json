@@ -1,0 +1,119 @@
+{
+  "files": [
+    {
+      "path": "final-detector.log",
+      "bytes": 1745,
+      "sha256": "28e1eb486ee9582f65a04374803b0a55ab3d2b74ddc53b7ed0c788e9d8bb7d86"
+    },
+    {
+      "path": "final-focused.log",
+      "bytes": 11782,
+      "sha256": "926ff49a3ebbe3e675dbf21bf084dccc7f86a35ccd12b06fee20321906c3a4cd"
+    },
+    {
+      "path": "final-typecheck.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "linux-durable-live-final.log",
+      "bytes": 9418,
+      "sha256": "9a8fe60d3e8b9b53f0e411d80d54aadf875e25c2438008c046b8ec726ea97714"
+    },
+    {
+      "path": "linux-durable-live.log",
+      "bytes": 1510,
+      "sha256": "124a93d9372a83016e26918190d1a561b79091fb6b0dacaad8e10bb15e14add1"
+    },
+    {
+      "path": "linux-full-check.log",
+      "bytes": 194179,
+      "sha256": "d2c886543e01b832220bd57ef7fac65923a4a2077a48b1a3d0d4b41b25fef8b6"
+    },
+    {
+      "path": "linux-headless.json",
+      "bytes": 8096,
+      "sha256": "5561e617e6b61db39e33ed97698c097b6f000f30b6612a92d38e7f07b2ac9335"
+    },
+    {
+      "path": "linux-headless.json.before-cleanup.json",
+      "bytes": 8098,
+      "sha256": "dd1bc73e929245b72b2f8b071b5252caf87cc3b71ec57bca767fb9f88c89394b"
+    },
+    {
+      "path": "linux-headless.log",
+      "bytes": 701,
+      "sha256": "c56e2e8ffdb7739e54ceafc016677edefa35e603a5505fd02765293134c3b01e"
+    },
+    {
+      "path": "linux-identity.json",
+      "bytes": 32878,
+      "sha256": "9953c15071d73455d558af43865ae3c476643a246599b3001376bab8e33f7792"
+    },
+    {
+      "path": "linux-live.json",
+      "bytes": 41419,
+      "sha256": "e6457646bdc3e3e59bd3d43253a687797c5d027c4b9a1fd849ca88bd739c6160"
+    },
+    {
+      "path": "linux-tests.log",
+      "bytes": 19498,
+      "sha256": "500dc17d9ed5d5b0d2a42cacde36deca4ee7a5699723ef4a92fb0b645d6ce352"
+    },
+    {
+      "path": "prospective-fixture-linux.log",
+      "bytes": 5980,
+      "sha256": "3729eee35479f645bb3aee0f3dd66521e20770f3dc9a2582f79ecfbcd92a6936"
+    },
+    {
+      "path": "prospective-fixture-windows.log",
+      "bytes": 6071,
+      "sha256": "24e2b631f0f9a476b14326ac9962a37066cbe34e2ecec4a7d49d654553af5e6f"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 7368,
+      "sha256": "6303c43987a55f7363783e855e60fac6718084835afa8869d984f1e6c9c41798"
+    },
+    {
+      "path": "windows-full-check.log",
+      "bytes": 195511,
+      "sha256": "55e0083279797746676f1cf79486d92239bc21f79e45660ad9756afea86b38ac"
+    },
+    {
+      "path": "windows-headless.json",
+      "bytes": 8319,
+      "sha256": "9baedd647d179e4ee230f0f866df2abffbc5ccc57100f91e56e4eee67cc6fad5"
+    },
+    {
+      "path": "windows-headless.json.before-cleanup.json",
+      "bytes": 8321,
+      "sha256": "42f720c4496d8181b2676a8d16646963577170fc3f66f143148d8457a523fa7c"
+    },
+    {
+      "path": "windows-headless.log",
+      "bytes": 709,
+      "sha256": "b4333c378ab6f6cd4e3b02198c93dff3fd52c5318e0dba919141a1480bf3367c"
+    },
+    {
+      "path": "windows-identity.json",
+      "bytes": 33746,
+      "sha256": "a7b3af165bf5d029ec843facdb97e8d6b44cadc43e096ef9330d6e46fc140462"
+    },
+    {
+      "path": "windows-live.json",
+      "bytes": 43356,
+      "sha256": "5a61d967a490f95c52a68bcd6808dc139ee1d56ee2a9523ef07eca04d181ff18"
+    },
+    {
+      "path": "windows-package.log",
+      "bytes": 3750,
+      "sha256": "06b0139400a24ef2246f321be52727d265345d78a65b344d879c70aca093f837"
+    },
+    {
+      "path": "windows-tests.log",
+      "bytes": 15942,
+      "sha256": "4b9b1e454b4b40a64757c9979ab9e13a4894dfe5a111e155047255a68b7d8317"
+    }
+  ]
+}

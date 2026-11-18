@@ -13,6 +13,9 @@ import type { Operation, Checkpoint, RunCitation } from "./schemas.ts"
 export async function executeWithMemory(memory: SessionMemoryRuntime | undefined, run: RunState, options: ExecuteOptions) {
   if (!memory?.enabled) return executeRun(run, options)
   const owner = options.parentSessionId
+  if (run.investigation && memory.options.mode === "assist" && memory.deliveryUnavailable.has(owner)) {
+    throw new Error("needs_context: investigation recovery pointer is unavailable; restore context before execution")
+  }
   let state: Checkpoint, candidates: Checkpoint["skills"]
   try {
     if (canonicalDirectory(options.worktree) !== memory.store.project) throw new Error("memory adapter project mismatch")
@@ -27,9 +30,9 @@ export async function executeWithMemory(memory: SessionMemoryRuntime | undefined
     throw error
   }
   // Delegation happens at the actual SDK create->prompt boundary, not in an event observer.
-  const delegated: ExecuteOptions = { ...options, beforeChildPrompt: async (child, role) => {
+  const delegated: ExecuteOptions = { ...options, beforeChildPrompt: async (child, role, node) => {
     if (memory.options.mode === "assist") await awaitFirstLock(() => memory.delegate(owner, child, role))
-    await options.beforeChildPrompt?.(child, role)
+    await options.beforeChildPrompt?.(child, role, node)
   } }
   if (!candidates.length) return executeRun(run, delegated)
   if (memory.options.mode === "assist" && memory.deliveryUnavailable.has(owner)) {

@@ -1,0 +1,12 @@
+[
+  {
+    "log": "windows-stage-smoke.log",
+    "exit_code": 0,
+    "stage": "smoke"
+  },
+  {
+    "log": "windows-stage-check-live.log",
+    "exit_code": 1,
+    "stage": "check:live"
+  }
+]

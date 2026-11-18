@@ -1,0 +1,10 @@
+{
+  "source_commit": "5a2e8a604e0294d57f72ba21f85e0e77ddd395a7",
+  "exit_codes": {
+    "full_check": 0,
+    "live_receipt_copy": 0,
+    "headless": 0,
+    "identity": 0
+  },
+  "passed": true
+}

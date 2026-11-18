@@ -1,0 +1,585 @@
+{
+  "caseId": "wafer-report-staged",
+  "arm": "alg_targeted",
+  "status": "reported_token_limit",
+  "passed": false,
+  "independent_score": {
+    "passed": true,
+    "checks": [
+      {
+        "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+        "passed": true
+      },
+      {
+        "id": "protected:data/system-export.json",
+        "passed": true
+      },
+      {
+        "id": "protected:data/manual-review.json",
+        "passed": true
+      },
+      {
+        "id": "preparation-artifact",
+        "passed": true
+      },
+      {
+        "id": "arithmetic-distinct-wafers",
+        "passed": true
+      },
+      {
+        "id": "source-provenance",
+        "passed": true
+      },
+      {
+        "id": "conflict-and-uncertainty",
+        "passed": true
+      },
+      {
+        "id": "skill-procedure-and-scope",
+        "passed": true
+      }
+    ],
+    "metrics": {
+      "protectedFiles": 3,
+      "preparationBytes": 2203,
+      "reportBytes": 486,
+      "reportParsed": true
+    }
+  },
+  "metrics": {
+    "sessions": {
+      "total": 1,
+      "roots": 1,
+      "children": 0
+    },
+    "assistantTurns": {
+      "total": 17,
+      "finished": 16,
+      "unfinished": 0,
+      "error": 1,
+      "modelIdentities": [
+        {
+          "providerID": "openai",
+          "modelID": "gpt-6-luna",
+          "turns": 17
+        }
+      ]
+    },
+    "usage": {
+      "components": {
+        "input": {
+          "reportedTotal": 44852,
+          "reportedTurns": 17,
+          "unknownTurns": 0
+        },
+        "output": {
+          "reportedTotal": 3234,
+          "reportedTurns": 17,
+          "unknownTurns": 0
+        },
+        "reasoning": {
+          "reportedTotal": 207,
+          "reportedTurns": 17,
+          "unknownTurns": 0
+        },
+        "cacheRead": {
+          "reportedTotal": 162688,
+          "reportedTurns": 17,
+          "unknownTurns": 0
+        },
+        "cacheWrite": {
+          "reportedTotal": 0,
+          "reportedTurns": 17,
+          "unknownTurns": 0
+        }
+      },
+      "totalReportedTokens": 210981,
+      "turns": {
+        "complete": 17,
+        "partial": 0,
+        "unknown": 0
+      },
+      "billing": "not_estimated"
+    },
+    "cost": {
+      "reportedTotal": 0,
+      "reportedTurns": 17,
+      "unknownTurns": 0,
+      "billing": "not_estimated"
+    },
+    "tools": {
+      "total": 23,
+      "completed": 23,
+      "error": 0,
+      "pending": 0,
+      "byName": {
+        "todowrite": {
+          "total": 5,
+          "completed": 5,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 41,
+          "durationCalls": 5,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 5,
+              "durationMsReported": 41,
+              "durationCalls": 5,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "alg_context_status": {
+          "total": 2,
+          "completed": 2,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 775,
+          "durationCalls": 2,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 2,
+              "durationMsReported": 775,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "glob": {
+          "total": 3,
+          "completed": 3,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 654,
+          "durationCalls": 3,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 3,
+              "durationMsReported": 654,
+              "durationCalls": 3,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "skill": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 415,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 415,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "read": {
+          "total": 8,
+          "completed": 8,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 690,
+          "durationCalls": 8,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 8,
+              "durationMsReported": 690,
+              "durationCalls": 8,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "apply_patch": {
+          "total": 2,
+          "completed": 2,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 30,
+          "durationCalls": 2,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 2,
+              "durationMsReported": 30,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "bash": {
+          "total": 2,
+          "completed": 2,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 2780,
+          "durationCalls": 2,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 2,
+              "durationMsReported": 2780,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        }
+      }
+    },
+    "repeatedExactToolInputs": {
+      "glob": {
+        "distinctRepeatedInputs": 1,
+        "repeatedCalls": 1
+      },
+      "read": {
+        "distinctRepeatedInputs": 3,
+        "repeatedCalls": 3
+      }
+    },
+    "skillLoads": {
+      "wafer-analysis": {
+        "attempted": 1,
+        "successful": 1,
+        "error": 0,
+        "pending": 0
+      }
+    },
+    "algTools": {
+      "alg_plan": {
+        "total": 0,
+        "completed": 0,
+        "error": 0,
+        "pending": 0
+      },
+      "alg_run": {
+        "total": 0,
+        "completed": 0,
+        "error": 0,
+        "pending": 0
+      }
+    },
+    "observedErrors": {
+      "deniedTool": 0,
+      "stepExhaustion": 0
+    }
+  },
+  "wall_ms": 112220,
+  "total_with_startup_ms": 126147,
+  "phases": [
+    {
+      "phase": "initial",
+      "ms": 47856,
+      "completed": true
+    },
+    {
+      "phase": "compaction",
+      "ms": 12544,
+      "completed": true
+    }
+  ],
+  "rootSession": "ses_e31dc47c9ffeAnhyiXJi7TfqHn",
+  "recovery": {
+    "requested": true,
+    "restarted": true,
+    "compactionRecovered": true,
+    "phase1": {
+      "files": [
+        {
+          "path": ".opencode/session-memory/artifacts/44cb86edf364efb5fd8a5cfbb14d8fb88d9bd6f012e761b506519d4c23bf51a8.txt",
+          "bytes": 11501,
+          "sha256": "44cb86edf364efb5fd8a5cfbb14d8fb88d9bd6f012e761b506519d4c23bf51a8"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107.txt",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/85b3076548d97f02e114200fc2ce35df2afca48dbb65b8f774ed0b3c969da0e2.txt",
+          "bytes": 313,
+          "sha256": "85b3076548d97f02e114200fc2ce35df2afca48dbb65b8f774ed0b3c969da0e2"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/31bd6220c6e3d31c46e48c75f62bce6d29a6affa1a59d25e395cce0fc83bb100.json",
+          "bytes": 1744,
+          "sha256": "31bd6220c6e3d31c46e48c75f62bce6d29a6affa1a59d25e395cce0fc83bb100"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/781562c94e7ba56741d17b72ad942e56e3283fbda87e6c40cfd5404c0229d649.json",
+          "bytes": 2089,
+          "sha256": "781562c94e7ba56741d17b72ad942e56e3283fbda87e6c40cfd5404c0229d649"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/b2af97494b311b6a7c6d39fd88138d1af508f0a98964ea9f6fd6f57e745b44d3.json",
+          "bytes": 1995,
+          "sha256": "b2af97494b311b6a7c6d39fd88138d1af508f0a98964ea9f6fd6f57e745b44d3"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/fe2fc3e8280c54a7242881eb399999b74a8d0a2ea853a638620db8259d63f1bf.json",
+          "bytes": 17766,
+          "sha256": "f28c1c06c4303b18a4aa1b7216f6f94e383f658f6d741b4bd847cf374426301e"
+        },
+        {
+          "path": ".opencode/session-memory/heads/fe2fc3e8280c54a7242881eb399999b74a8d0a2ea853a638620db8259d63f1bf.json",
+          "bytes": 218,
+          "sha256": "faf7112bb4823362b1515d48a3d49a427344435c7c22d6db65f81868d437c75a"
+        },
+        {
+          "path": ".opencode/session-memory/objects/3a431609e9ede94d2d301c86ba72ecf38f85d85cf28072627535aba5b54705ae.json",
+          "bytes": 563,
+          "sha256": "3a431609e9ede94d2d301c86ba72ecf38f85d85cf28072627535aba5b54705ae"
+        },
+        {
+          "path": ".opencode/session-memory/objects/56bc8a006d90dbd4ecdcae765e7f288be00eb7ec880ee6e1fe3959d2521c36dd.json",
+          "bytes": 1089,
+          "sha256": "56bc8a006d90dbd4ecdcae765e7f288be00eb7ec880ee6e1fe3959d2521c36dd"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/fe2fc3e8280c54a7242881eb399999b74a8d0a2ea853a638620db8259d63f1bf.json",
+          "bytes": 596,
+          "sha256": "21a43fad3c2789f126bf2bd16caba6734a0d2ab02e104de237e0456525dd9280"
+        },
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": "data/manual-review.json",
+          "bytes": 359,
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        },
+        {
+          "path": "data/system-export.json",
+          "bytes": 558,
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        },
+        {
+          "path": "preparation.md",
+          "bytes": 2203,
+          "sha256": "81b90fe5718f1ba958989eb50638e3d623119ca34eaf9b804c207c8c3e885c78"
+        }
+      ],
+      "at_ms": 47907,
+      "preparation_content": "# Wafer evidence report — phase 1 preparation\n\n## Reporting date and window\n\n- Reporting date (UTC): 2025-04-01\n- Planned window: inclusive `2025-04-01T00:00:00Z`, exclusive `2025-04-02T00:00:00Z` (`timezone: UTC`).\n\n## Supplied sources\n\n- `SYS-APR-01` — `data/system-export.json` (synthetic system export; primary source).\n- `MR-APR-01` — `data/manual-review.json` (synthetic manual review; supplemental source).\n\n## Calculation plan\n\nUse the system export as the authority for the reported calculation, with manual review retained as supplemental evidence rather than merged into or substituted for primary observations. Count distinct `wafer_id` values, so repeated inspection events for W12 count once in the denominator. Count primary-source wafers with `defect: true` for the numerator, then calculate `rate = numerator / denominator`. Preserve the UTC inclusive-start/exclusive-end reporting window.\n\n## Known conflict\n\n- Wafer `W13`: system export reports `defect: false`; manual review reports `reviewer_defect: true` (note: “visual mark; confirm against primary record”). This disagreement is unresolved. Planned report entry will expose both observations as `system_defect: false`, `manual_defect: true`, with status `unresolved`; the primary system observation remains controlling for the calculation.\n\n## Planned `report.json` fields\n\n- `numerator` (number): primary-source defective wafer count.\n- `denominator` (number): distinct primary-source wafer count.\n- `rate` (number): numerator divided by denominator.\n- `window`: `{ \"start\": \"2025-04-01T00:00:00Z\", \"endExclusive\": \"2025-04-02T00:00:00Z\", \"timezone\": \"UTC\" }`.\n- `sources` (array): `data/system-export.json`, `data/manual-review.json`.\n- `conflicts` (array): entries shaped `{ \"wafer_id\": \"W13\", \"system_defect\": false, \"manual_defect\": true, \"status\": \"unresolved\" }`.\n- `limitations` (array): include the exact sentence `Synthetic analysis only; not process validation.` and avoid claims of manufacturing readiness or causal impact.\n\n## STOP — phase boundary\n\nThis is preparation only. Do not create `report.json` in this phase. Stop here; the report is to be produced only after the planned restart/second phase.\n",
+      "report_absent": true,
+      "independent_score": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 2203
+        }
+      }
+    }
+  },
+  "alg_states": [],
+  "budget_observed_overshoot": 0,
+  "cleanup": true,
+  "metering_complete": true,
+  "auth_copy_removed": true,
+  "processes": [
+    1588272,
+    1588368
+  ],
+  "source_unchanged": true,
+  "final_files": [
+    {
+      "path": ".opencode/session-memory/artifacts/44cb86edf364efb5fd8a5cfbb14d8fb88d9bd6f012e761b506519d4c23bf51a8.txt",
+      "bytes": 11501,
+      "sha256": "44cb86edf364efb5fd8a5cfbb14d8fb88d9bd6f012e761b506519d4c23bf51a8"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107.txt",
+      "bytes": 1270,
+      "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/85b3076548d97f02e114200fc2ce35df2afca48dbb65b8f774ed0b3c969da0e2.txt",
+      "bytes": 313,
+      "sha256": "85b3076548d97f02e114200fc2ce35df2afca48dbb65b8f774ed0b3c969da0e2"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/31bd6220c6e3d31c46e48c75f62bce6d29a6affa1a59d25e395cce0fc83bb100.json",
+      "bytes": 1744,
+      "sha256": "31bd6220c6e3d31c46e48c75f62bce6d29a6affa1a59d25e395cce0fc83bb100"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/781562c94e7ba56741d17b72ad942e56e3283fbda87e6c40cfd5404c0229d649.json",
+      "bytes": 2089,
+      "sha256": "781562c94e7ba56741d17b72ad942e56e3283fbda87e6c40cfd5404c0229d649"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/b2af97494b311b6a7c6d39fd88138d1af508f0a98964ea9f6fd6f57e745b44d3.json",
+      "bytes": 1995,
+      "sha256": "b2af97494b311b6a7c6d39fd88138d1af508f0a98964ea9f6fd6f57e745b44d3"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/fe2fc3e8280c54a7242881eb399999b74a8d0a2ea853a638620db8259d63f1bf.json",
+      "bytes": 21366,
+      "sha256": "6fca3101c7a99c63b8fbbe38a0131d0a4e128cdb9c50a6e93c1de5a1e974546c"
+    },
+    {
+      "path": ".opencode/session-memory/heads/fe2fc3e8280c54a7242881eb399999b74a8d0a2ea853a638620db8259d63f1bf.json",
+      "bytes": 218,
+      "sha256": "faf7112bb4823362b1515d48a3d49a427344435c7c22d6db65f81868d437c75a"
+    },
+    {
+      "path": ".opencode/session-memory/objects/3a431609e9ede94d2d301c86ba72ecf38f85d85cf28072627535aba5b54705ae.json",
+      "bytes": 563,
+      "sha256": "3a431609e9ede94d2d301c86ba72ecf38f85d85cf28072627535aba5b54705ae"
+    },
+    {
+      "path": ".opencode/session-memory/objects/56bc8a006d90dbd4ecdcae765e7f288be00eb7ec880ee6e1fe3959d2521c36dd.json",
+      "bytes": 1089,
+      "sha256": "56bc8a006d90dbd4ecdcae765e7f288be00eb7ec880ee6e1fe3959d2521c36dd"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/fe2fc3e8280c54a7242881eb399999b74a8d0a2ea853a638620db8259d63f1bf.json",
+      "bytes": 821,
+      "sha256": "d26bb859f8a1e005cdac3b48771763a59b2305c89848a3a18c5b6c02a386551a"
+    },
+    {
+      "path": ".opencode/skills/wafer-analysis/SKILL.md",
+      "bytes": 1270,
+      "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+    },
+    {
+      "path": "data/manual-review.json",
+      "bytes": 359,
+      "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+    },
+    {
+      "path": "data/system-export.json",
+      "bytes": 558,
+      "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+    },
+    {
+      "path": "preparation.md",
+      "bytes": 2203,
+      "sha256": "81b90fe5718f1ba958989eb50638e3d623119ca34eaf9b804c207c8c3e885c78"
+    },
+    {
+      "path": "report.json",
+      "bytes": 486,
+      "sha256": "f24f123ba8bc9c364b5ab64d1e81d0bb4b3ffd752e4af2bafd2bb559bde87e8b"
+    }
+  ],
+  "measurement_limits": [
+    "actual provider invoice",
+    "hidden model calls not represented by session messages",
+    "operator minutes",
+    "production MCP cost/reuse",
+    "multi-hour reliability",
+    "hardware-normalized latency"
+  ]
+}

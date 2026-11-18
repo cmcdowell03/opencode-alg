@@ -1,0 +1,123 @@
+{
+  "commit": "89abcaa181df4c763871f906fb76669129b88051",
+  "platform": "Linux (WSL, ext4)",
+  "host_version": "1.19.5",
+  "host_sha256": "7df4e4136301f16589b0f30bf91a61380fca5f8ef22dd36570f5ebe1d4ec802c",
+  "model": "comparative-local/deterministic",
+  "kind": "deterministic_headless_opencode_smoke",
+  "started_at": "2026-11-18T09:08:16.801Z",
+  "ended_at": "2026-11-18T09:09:15.211Z",
+  "qualification_controls_passed": 26,
+  "qualification_receipt_sha256": "f57d50df64961254f4b3da3933133e8c6ce20a98a4309c5904ec02d7acdf93a4",
+  "headless_receipt_sha256": "054ba4bca35288aad27964733dfc8dbd8daa29a4988df1a9b196abed7991aa41",
+  "cells": [
+    {
+      "incident": "case-ce66a1998e3c",
+      "arm": "native-build",
+      "duration_ms": 8051,
+      "all_criteria_passed": true,
+      "graded_fields": 12,
+      "conclusion_and_next_measurement": [
+        "chamber_effect_persists",
+        "balanced_chamber_crossover"
+      ],
+      "source_read_before_answer": true,
+      "cited_returned_manifest": true,
+      "duplicate_submissions": 0,
+      "skill_delivery": null,
+      "cleanup_passed": true
+    },
+    {
+      "incident": "case-ce66a1998e3c",
+      "arm": "scoped-evidence-skill",
+      "duration_ms": 9004,
+      "all_criteria_passed": true,
+      "graded_fields": 12,
+      "conclusion_and_next_measurement": [
+        "chamber_effect_persists",
+        "balanced_chamber_crossover"
+      ],
+      "source_read_before_answer": true,
+      "cited_returned_manifest": true,
+      "duplicate_submissions": 0,
+      "skill_delivery": {
+        "hook_receipt_present": true,
+        "provider_system_skill_text_observed": true
+      },
+      "cleanup_passed": true
+    },
+    {
+      "incident": "case-ce66a1998e3c",
+      "arm": "full-alg",
+      "duration_ms": 9527,
+      "all_criteria_passed": true,
+      "graded_fields": 12,
+      "conclusion_and_next_measurement": [
+        "chamber_effect_persists",
+        "balanced_chamber_crossover"
+      ],
+      "source_read_before_answer": true,
+      "cited_returned_manifest": true,
+      "duplicate_submissions": 0,
+      "skill_delivery": {
+        "hook_receipt_present": true,
+        "provider_system_skill_text_observed": true
+      },
+      "cleanup_passed": true
+    },
+    {
+      "incident": "case-66c5767ea623",
+      "arm": "native-build",
+      "duration_ms": 8450,
+      "all_criteria_passed": true,
+      "graded_fields": 12,
+      "conclusion_and_next_measurement": [
+        "inspection_revision_mix_explains_association",
+        "inspection_revision_validation"
+      ],
+      "source_read_before_answer": true,
+      "cited_returned_manifest": true,
+      "duplicate_submissions": 0,
+      "skill_delivery": null,
+      "cleanup_passed": true
+    },
+    {
+      "incident": "case-66c5767ea623",
+      "arm": "scoped-evidence-skill",
+      "duration_ms": 8634,
+      "all_criteria_passed": true,
+      "graded_fields": 12,
+      "conclusion_and_next_measurement": [
+        "inspection_revision_mix_explains_association",
+        "inspection_revision_validation"
+      ],
+      "source_read_before_answer": true,
+      "cited_returned_manifest": true,
+      "duplicate_submissions": 0,
+      "skill_delivery": {
+        "hook_receipt_present": true,
+        "provider_system_skill_text_observed": true
+      },
+      "cleanup_passed": true
+    },
+    {
+      "incident": "case-66c5767ea623",
+      "arm": "full-alg",
+      "duration_ms": 8312,
+      "all_criteria_passed": true,
+      "graded_fields": 12,
+      "conclusion_and_next_measurement": [
+        "inspection_revision_mix_explains_association",
+        "inspection_revision_validation"
+      ],
+      "source_read_before_answer": true,
+      "cited_returned_manifest": true,
+      "duplicate_submissions": 0,
+      "skill_delivery": {
+        "hook_receipt_present": true,
+        "provider_system_skill_text_observed": true
+      },
+      "cleanup_passed": true
+    }
+  ]
+}

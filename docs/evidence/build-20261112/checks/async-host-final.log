@@ -1,0 +1,14 @@
+warning: in the working copy of '.opencode/skills/wafer-analysis/SKILL.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'data/manual-review.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'data/system-export.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"wafer-report-staged","arm":"alg_targeted","status":"preparation_milestone_not_reached","passed":false,"wall_ms":5853}
+warning: in the working copy of '.opencode/skills/wafer-analysis/SKILL.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'data/manual-review.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'data/system-export.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"wafer-report-staged","arm":"alg_default","status":"preparation_milestone_not_reached","passed":false,"wall_ms":7211}
+warning: in the working copy of '.opencode/skills/wafer-analysis/SKILL.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'data/manual-review.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'data/system-export.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"wafer-report-staged","arm":"build","status":"preparation_milestone_not_reached","passed":false,"wall_ms":5861}
+{"terminal":true,"model":"transport-fixture/synthetic","trials":3,"fatal":null,"global_configuration_unchanged":true,"local_model_stopped":true}
+{"transport_smoke_passed":true,"trials":3,"synthetic_provider_calls":3,"quality_inference":false}

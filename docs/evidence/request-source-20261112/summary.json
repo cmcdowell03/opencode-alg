@@ -1,0 +1,194 @@
+{
+  "code_commit": "871868c8cd41a6eb01fedfb961abff1296440786",
+  "runtime_version": "0.5.8",
+  "scope": "Synthetic provider and service, real V1 hosts; no hosted-model superiority or long-session retention claim.",
+  "runtime_files": 132,
+  "normalized_sources_match": true,
+  "linux_live_receipt_limitation": "The first full-check live receipt was unavailable in WSL /tmp after the process ended. Its verified result/hash remain in the full log. A custom-destination attempt was rejected before host verification; the final registration-only repeat retained its raw receipt before process exit.",
+  "platforms": {
+    "windows": {
+      "headless_passed": true,
+      "source": {
+        "package_version": "0.5.8",
+        "root": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\opencode-alg-v1",
+        "loaded_root": "D:\\Docker\\model-temp\\alg-v1-headless-48NvOL\\runtime-source",
+        "sha256": "05631960c70a75bd7f771f547e72edc35dd44dfd0358c11fcb305a4feb4a6df7",
+        "node": "24.3.0",
+        "bun": "1.3.14"
+      },
+      "host": {
+        "executable": "C:\\Users\\codym\\AppData\\Roaming\\npm\\node_modules\\opencode-ai\\bin\\opencode.exe",
+        "version": "1.19.5",
+        "platform": "win32",
+        "arch": "x64",
+        "libc": "not-applicable",
+        "starts": 3,
+        "restarts": 2,
+        "pids": [
+          1554304,
+          1617184,
+          1219996
+        ],
+        "clean_exits": [
+          true,
+          true,
+          true
+        ]
+      },
+      "task_contract": {
+        "run_id": "ca282cf7b856f4bc3a21b816ac8054b0a814666939c452b9e6ca5f7e692b86f6",
+        "input": {
+          "version": 1,
+          "kind": "read_only",
+          "discovery": "required",
+          "phase": "complete",
+          "deliverables": [
+            {
+              "destination": "response",
+              "producer_node": "confirm"
+            }
+          ],
+          "verification": {
+            "checker_node": "check",
+            "execution": "none"
+          },
+          "preserve_paths": []
+        },
+        "original_goal": "Run bounded synthetic data investigation acceptance",
+        "original_criteria": [
+          "Use only deterministic local fixture data"
+        ],
+        "requirements_sha256": "98781e7178aa9576bd709eeab74d7096b9d5e4709b5c0616b5632073c934d30f",
+        "contract_sha256": "93f2b111cfcb6da5866a65455040427f364a5e36426486a8e2a36eb59b774e12",
+        "persisted_before_compaction": true,
+        "persisted_after_compaction": true,
+        "persisted_after_restart": true,
+        "persisted_after_final_restart": true,
+        "digests_stable": true,
+        "user_request_captured": true,
+        "user_request_sha256": "4ae38716ff0f43f983be0cd4248bd46591d4c1e84f53442f87c5b4f18ba65330"
+      },
+      "cleanup": {
+        "host_processes_stopped": true,
+        "provider_stopped": true,
+        "mcp_service_stopped": true,
+        "temporary_environment_removed": true,
+        "evidence_persisted_before_environment_removal": true
+      },
+      "isolation": {
+        "temporary_root": "D:\\Docker\\model-temp\\alg-v1-headless-48NvOL",
+        "project": "D:\\Docker\\model-temp\\alg-v1-headless-48NvOL\\project",
+        "config_home": "D:\\Docker\\model-temp\\alg-v1-headless-48NvOL\\xdg-config",
+        "config_path": "D:\\Docker\\model-temp\\alg-v1-headless-48NvOL\\opencode.json",
+        "sidecar_path": "D:\\Docker\\model-temp\\alg-v1-headless-48NvOL\\alg-options.json",
+        "provider_endpoint": "http://127.0.0.1:28706/v1",
+        "server_bind_host": "127.0.0.1",
+        "credentials_inherited": false,
+        "real_user_config_unchanged": true,
+        "config_before_sha256": "ab8c2f02bcd973dc0876ebd021b306f485547e7f4ee466a42aa17b7c7062f7db",
+        "config_after_sha256": "ab8c2f02bcd973dc0876ebd021b306f485547e7f4ee466a42aa17b7c7062f7db"
+      },
+      "full_suite_counts": {
+        "pass": 1378,
+        "fail": 0,
+        "skip": 6
+      },
+      "full_suite_assertions": [
+        "15831"
+      ],
+      "full_suite_failed_names": []
+    },
+    "linux": {
+      "headless_passed": true,
+      "source": {
+        "package_version": "0.5.8",
+        "root": "/home/algtest/alg-request-source-871868c",
+        "loaded_root": "/tmp/alg-v1-headless-gftHsY/runtime-source",
+        "sha256": "600dfc85426ac36c11bd062867349ac54ff3fc4fa35090035e7dde8694399aa5",
+        "node": "24.3.0",
+        "bun": "1.3.14"
+      },
+      "host": {
+        "executable": "/home/algtest/tools/opencode/node_modules/opencode-ai/bin/opencode.exe",
+        "version": "1.18.35",
+        "platform": "linux",
+        "arch": "x64",
+        "libc": "glibc-2.39",
+        "starts": 3,
+        "restarts": 2,
+        "pids": [
+          6717,
+          6758,
+          6798
+        ],
+        "clean_exits": [
+          true,
+          true,
+          true
+        ]
+      },
+      "task_contract": {
+        "run_id": "83199b269fb62e66ee69e1d3f95d4fb6a2f7bc50f1954a23c563377603345811",
+        "input": {
+          "version": 1,
+          "kind": "read_only",
+          "discovery": "required",
+          "phase": "complete",
+          "deliverables": [
+            {
+              "destination": "response",
+              "producer_node": "confirm"
+            }
+          ],
+          "verification": {
+            "checker_node": "check",
+            "execution": "none"
+          },
+          "preserve_paths": []
+        },
+        "original_goal": "Run bounded synthetic data investigation acceptance",
+        "original_criteria": [
+          "Use only deterministic local fixture data"
+        ],
+        "requirements_sha256": "98781e7178aa9576bd709eeab74d7096b9d5e4709b5c0616b5632073c934d30f",
+        "contract_sha256": "4a8deb0fae339e84ea1c59d63bfccbcb872235a43ab55f5832abffcb5e7856a4",
+        "persisted_before_compaction": true,
+        "persisted_after_compaction": true,
+        "persisted_after_restart": true,
+        "persisted_after_final_restart": true,
+        "digests_stable": true,
+        "user_request_captured": true,
+        "user_request_sha256": "4ae38716ff0f43f983be0cd4248bd46591d4c1e84f53442f87c5b4f18ba65330"
+      },
+      "cleanup": {
+        "host_processes_stopped": true,
+        "provider_stopped": true,
+        "mcp_service_stopped": true,
+        "temporary_environment_removed": true,
+        "evidence_persisted_before_environment_removal": true
+      },
+      "isolation": {
+        "temporary_root": "/tmp/alg-v1-headless-gftHsY",
+        "project": "/tmp/alg-v1-headless-gftHsY/project",
+        "config_home": "/tmp/alg-v1-headless-gftHsY/xdg-config",
+        "config_path": "/tmp/alg-v1-headless-gftHsY/opencode.json",
+        "sidecar_path": "/tmp/alg-v1-headless-gftHsY/alg-options.json",
+        "provider_endpoint": "http://127.0.0.1:42591/v1",
+        "server_bind_host": "127.0.0.1",
+        "credentials_inherited": false,
+        "real_user_config_unchanged": true,
+        "config_before_sha256": "08afb58456ae0e744d9ad0dbed698f9d52fd61325d6c7c518a82481180cdad2b",
+        "config_after_sha256": "08afb58456ae0e744d9ad0dbed698f9d52fd61325d6c7c518a82481180cdad2b"
+      },
+      "full_suite_counts": {
+        "pass": 1368,
+        "fail": 0,
+        "skip": 16
+      },
+      "full_suite_assertions": [
+        "15487"
+      ],
+      "full_suite_failed_names": []
+    }
+  }
+}

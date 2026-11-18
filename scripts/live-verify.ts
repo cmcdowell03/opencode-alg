@@ -1,3 +1,5 @@
+import { seedVerificationHostDependencies } from "./verification-host-dependencies.ts"
+import { resolveOpenCodeExecutable } from "./host-executable.ts"
 import { spawn, type ChildProcess } from "node:child_process"
 import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto"
 import {
@@ -627,25 +629,6 @@ function spawnCaptured(
   }
 }
 
-function resolveOpenCodeExecutable(requested: string): string {
-  if (isAbsolute(requested)) {
-    if (!existsSync(requested)) throw new Error(`OpenCode executable does not exist: ${requested}`)
-    return requested
-  }
-  const extensions = process.platform === "win32" ? [".exe", ".cmd", ".bat", ""] : [""]
-  for (const directory of (process.env.PATH ?? "").split(delimiter).filter(Boolean)) {
-    for (const extension of extensions) {
-      const candidate = join(directory, `${requested}${extension}`)
-      if (!existsSync(candidate)) continue
-      if (process.platform === "win32" && /\.(?:cmd|bat)$/i.test(candidate)) {
-        const packaged = join(dirname(candidate), "node_modules", "opencode-ai", "bin", "opencode.exe")
-        if (existsSync(packaged)) return packaged
-      }
-      return candidate
-    }
-  }
-  throw new Error(`OpenCode executable was not found on PATH: ${requested}`)
-}
 
 function boundedError(error: unknown): string {
   return (error instanceof Error ? error.message : String(error)).replace(/[\r\n]+/g, " ").slice(0, 1_000)
@@ -855,6 +838,7 @@ export function uniqueLiveEvidencePath(directory: string, sourceSha256: string, 
 export interface EvidenceFileIdentity {
   dev: string
   ino: string
+  birthtimeNs?: string
 }
 
 function evidenceFileIdentity(path: string): EvidenceFileIdentity {
@@ -862,11 +846,12 @@ function evidenceFileIdentity(path: string): EvidenceFileIdentity {
   if (!stat.isFile() || stat.isSymbolicLink() || normalizedPath(realpathSync.native(path)) !== normalizedPath(path)) {
     throw new Error(`evidence path is redirected or not a direct regular file: ${path}`)
   }
-  return { dev: stat.dev.toString(), ino: stat.ino.toString() }
+  return { dev: stat.dev.toString(), ino: stat.ino.toString(), birthtimeNs: stat.birthtimeNs.toString() }
 }
 
 function sameEvidenceIdentity(left: EvidenceFileIdentity, right: EvidenceFileIdentity): boolean {
-  return left.dev === right.dev && left.ino === right.ino
+  return left.dev === right.dev && left.ino === right.ino &&
+    (right.birthtimeNs === undefined || left.birthtimeNs === right.birthtimeNs)
 }
 
 function evidencePathMissing(path: string): boolean {
@@ -1351,7 +1336,7 @@ export function findServerStartupLine(output: string, skillEvolutionEnabled: boo
   const quotedJsonString = '"(?:[^"\\\\\u0000-\u001f]|\\\\(?:["\\\\/bfnrt]|u[0-9a-fA-F]{4}))+"'
   const structured = new RegExp(
     `^timestamp=\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z level=INFO ` +
-    `run=[A-Za-z0-9._:-]+ message=(${quotedJsonString}) directory=(${quotedJsonString}) ` +
+    `run=[A-Za-z0-9._:-]+ message=(${quotedJsonString}) directory=(${quotedJsonString}|[^\\s"\\u0000-\\u001f]+) ` +
     `skill_evolution_enabled=false(?: configuration_source=defaults configuration_sidecar_present=false ` +
     `deployment_identity_protocol=alg-runtime-identity-v1 deployment_build=(opencode-alg@[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?) ` +
     `source_manifest_at_module_load=([a-f0-9]{64}))?$`,
@@ -1361,7 +1346,7 @@ export function findServerStartupLine(output: string, skillEvolutionEnabled: boo
     const match = structured.exec(line)
     if (!match) return false
     try {
-      const message = JSON.parse(match[1]!), directory = JSON.parse(match[2]!)
+      const message = JSON.parse(match[1]!), directory = match[2]!.startsWith('"') ? JSON.parse(match[2]!) : match[2]!
       const build = match[3], digest = match[4]
       const expectedMessage = build && digest ? `${expected} ${runtimeIdentityStartupMessage({
         protocol: ALG_RUNTIME_IDENTITY_PROTOCOL, build, source_manifest_at_module_load: digest,
@@ -1520,6 +1505,7 @@ export async function runLiveVerification(outputPath: string): Promise<{ path: s
   let failure: unknown
   let publication: { path: string; sha256: string; bytes: number; identity: EvidenceFileIdentity } | undefined
   try {
+    seedVerificationHostDependencies(configDirectory, pluginConfiguration.source.root)
     try {
       executable = resolveOpenCodeExecutable(requestedExecutable)
     } catch (error) {

@@ -1,0 +1,61 @@
+{
+  "files": [
+    {
+      "path": "result.json",
+      "bytes": 261797,
+      "sha256": "2ddbad8eb5c170e4e0bc2ddd30aed199260940c4167cb1ec1ef347393ebbdaa0"
+    },
+    {
+      "path": "plan.json",
+      "bytes": 21178,
+      "sha256": "57a10d99248cb60f8289e21ce72474c9cafeded64e98837fb0c0c00c75e240fb"
+    },
+    {
+      "path": "hard-qualification.json",
+      "bytes": 60058,
+      "sha256": "a9fe2910f2a7a2f4154c34e7b5b7cb79b2166a281bf22fce16526780b0d85346"
+    },
+    {
+      "path": "analysis.json",
+      "bytes": 15261,
+      "sha256": "2dd07aa7973b28ab4ef3d744da40fbc4e51dc5ca682254559c1e46f75aa885c1"
+    },
+    {
+      "path": "collector.py",
+      "bytes": 5500,
+      "sha256": "74864aad5bfd263fa8332521d8212174832b45a9e0788c1a2eddc6a3e4f695c5"
+    }
+  ],
+  "retained_locally_not_uploaded": [
+    {
+      "local_relative_path": "hard-fixtures.json",
+      "bytes": 2421815,
+      "sha256": "485330fb48f21163ddad88948519d94d9a2107120b95605debca34f6df033e49"
+    },
+    {
+      "local_relative_path": "01-alg/messages.json",
+      "bytes": 763837,
+      "sha256": "12f22d4913b1b1cce024feb7d34d67ad705391b306aa36553ef2995b800cc4f1"
+    },
+    {
+      "local_relative_path": "03-alg/messages.json",
+      "bytes": 192539,
+      "sha256": "ba19304f03437c2a6b6591747cdb5db112e1024d62ff59489d161171b34117f6"
+    },
+    {
+      "local_relative_path": "05-alg/messages.json",
+      "bytes": 632660,
+      "sha256": "6a14c4d33ad667c80d4616b9133db3d33a45b00772d123117edc60dd60fc3fdc"
+    },
+    {
+      "local_relative_path": "05-bld/messages.json",
+      "bytes": 6015,
+      "sha256": "c0a945bf75e051858fe2217f31bcc6b3f6a2197c9a08ef5556e6bee4cd0a47da"
+    },
+    {
+      "local_relative_path": "06-bld/messages.json",
+      "bytes": 7608,
+      "sha256": "4fff386ba047a864a1794882398fc6d382646e664d042a2053b63d06fbe28224"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\manager.test.ts:
+(pass) v0.2 side-by-side release manager > bounded compatibility history: 64 versions are validated before activation [22101.75ms]
+(pass) v0.2 side-by-side release manager > bounded compatibility history: 65 versions are validated before activation [6128.66ms]
+(pass) v0.2 side-by-side release manager > deliberately accepts an old v0.1 generation and receipt with no capability fields [16167.88ms]
+
+ 3 pass
+ 86 filtered out
+ 0 fail
+ 12 expect() calls
+Ran 3 tests across 1 file. [44.75s]

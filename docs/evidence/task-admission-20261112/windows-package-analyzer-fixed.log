@@ -1,0 +1,10 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\package-completion.test.ts:
+(pass) publishable npm lock and checkout lock have identical dependency authority [188.60ms]
+(pass) actual extracted package has the full reviewed inventory and dependency-ready installer entrypoint [11732.94ms]
+
+ 2 pass
+ 0 fail
+ 227 expect() calls
+Ran 2 tests across 1 file. [12.06s]

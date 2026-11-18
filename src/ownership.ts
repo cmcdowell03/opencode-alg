@@ -85,6 +85,7 @@ function transferTarget(currentSessionId: string, newSessionId: string): { targe
   return {
     target,
     apply(fresh) {
+      if (fresh.investigation) throw new OwnershipError("investigation ownership transfer is not supported in Phase 1; continue with the owning session")
       fresh.owner_transfers.push({
         from_session_id: currentSessionId,
         to_session_id: target,

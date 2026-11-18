@@ -1,0 +1,108 @@
+{
+  "schema": "selected-csc-helper-path-repro-v1",
+  "token": "d709bde3-4a59-47b5-a0b0-0ab806561d7f",
+  "selectedBackend": "C:\\WINDOWS\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe",
+  "compilerSha256": "eca02e6b15cde93009a59a3d129d5a77fb5008f2e1cf62cf573b6737c747ecc3",
+  "compilerVersion": "14.8.10001.0",
+  "environmentNamesPresent": [
+    "SystemRoot",
+    "WINDIR",
+    "TEMP",
+    "TMP",
+    "ComSpec"
+  ],
+  "programFilesPresent": false,
+  "helperSourceBytes": 5786,
+  "helperSourceSha256": "cd46e0463f7e411f5fb75cae1ce437a01ce6fdb407a8e9da22847700599c6c94",
+  "compileCount": 2,
+  "cases": [
+    {
+      "case": "short",
+      "selectedBackend": "legacy-framework-csc",
+      "selectorCandidates": [
+        "C:\\WINDOWS\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe",
+        "C:\\WINDOWS\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe"
+      ],
+      "compiler": "C:\\WINDOWS\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe",
+      "compilerSha256": "eca02e6b15cde93009a59a3d129d5a77fb5008f2e1cf62cf573b6737c747ecc3",
+      "compilerVersion": "14.8.10001.0",
+      "compilerArgs": [
+        "/nologo",
+        "/target:exe",
+        "/out:C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\opencode-alg-job-helper-v13-1548992-d709bde3-4a59-47b5-a0b0-0ab806561d7f\\helper-d709bde3-4a59-47b5-a0b0-0ab806561d7f.exe",
+        "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\opencode-alg-job-helper-v13-1548992-d709bde3-4a59-47b5-a0b0-0ab806561d7f\\source-d709bde3-4a59-47b5-a0b0-0ab806561d7f.cs"
+      ],
+      "environmentNamesPresent": [
+        "SystemRoot",
+        "WINDIR",
+        "TEMP",
+        "TMP",
+        "ComSpec"
+      ],
+      "programFilesPresent": false,
+      "tempRoot": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112",
+      "privateTempRootPathLength": 129,
+      "helperDirectory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\opencode-alg-job-helper-v13-1548992-d709bde3-4a59-47b5-a0b0-0ab806561d7f",
+      "helperDirectoryPathLength": 202,
+      "sourcePath": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\opencode-alg-job-helper-v13-1548992-d709bde3-4a59-47b5-a0b0-0ab806561d7f\\source-d709bde3-4a59-47b5-a0b0-0ab806561d7f.cs",
+      "sourcePathCharacters": 249,
+      "outputPath": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\opencode-alg-job-helper-v13-1548992-d709bde3-4a59-47b5-a0b0-0ab806561d7f\\helper-d709bde3-4a59-47b5-a0b0-0ab806561d7f.exe",
+      "outputPathCharacters": 250,
+      "helperSourceBytes": 5786,
+      "helperSourceSha256": "cd46e0463f7e411f5fb75cae1ce437a01ce6fdb407a8e9da22847700599c6c94",
+      "sourceBytesUnchanged": true,
+      "exitCode": 0,
+      "signal": null,
+      "spawnError": null,
+      "stdout": "",
+      "stderr": "",
+      "outputExists": true,
+      "helperExecuted": false,
+      "receiptPath": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\opencode-alg-job-helper-v13-1548992-d709bde3-4a59-47b5-a0b0-0ab806561d7f\\compile-receipt.json"
+    },
+    {
+      "case": "long",
+      "selectedBackend": "legacy-framework-csc",
+      "selectorCandidates": [
+        "C:\\WINDOWS\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe",
+        "C:\\WINDOWS\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe"
+      ],
+      "compiler": "C:\\WINDOWS\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe",
+      "compilerSha256": "eca02e6b15cde93009a59a3d129d5a77fb5008f2e1cf62cf573b6737c747ecc3",
+      "compilerVersion": "14.8.10001.0",
+      "compilerArgs": [
+        "/nologo",
+        "/target:exe",
+        "/out:C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\d709bde3-4a59-47b5-a0b0-0ab806561d7f\\tttt\\opencode-alg-job-helper-v13-1548992-d709bde3-4a59-47b5-a0b0-0ab806561d7f\\helper-d709bde3-4a59-47b5-a0b0-0ab806561d7f.exe",
+        "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\d709bde3-4a59-47b5-a0b0-0ab806561d7f\\tttt\\opencode-alg-job-helper-v13-1548992-d709bde3-4a59-47b5-a0b0-0ab806561d7f\\source-d709bde3-4a59-47b5-a0b0-0ab806561d7f.cs"
+      ],
+      "environmentNamesPresent": [
+        "SystemRoot",
+        "WINDIR",
+        "TEMP",
+        "TMP",
+        "ComSpec"
+      ],
+      "programFilesPresent": false,
+      "tempRoot": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\d709bde3-4a59-47b5-a0b0-0ab806561d7f\\tttt",
+      "privateTempRootPathLength": 171,
+      "helperDirectory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\d709bde3-4a59-47b5-a0b0-0ab806561d7f\\tttt\\opencode-alg-job-helper-v13-1548992-d709bde3-4a59-47b5-a0b0-0ab806561d7f",
+      "helperDirectoryPathLength": 244,
+      "sourcePath": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\d709bde3-4a59-47b5-a0b0-0ab806561d7f\\tttt\\opencode-alg-job-helper-v13-1548992-d709bde3-4a59-47b5-a0b0-0ab806561d7f\\source-d709bde3-4a59-47b5-a0b0-0ab806561d7f.cs",
+      "sourcePathCharacters": 291,
+      "outputPath": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\d709bde3-4a59-47b5-a0b0-0ab806561d7f\\tttt\\opencode-alg-job-helper-v13-1548992-d709bde3-4a59-47b5-a0b0-0ab806561d7f\\helper-d709bde3-4a59-47b5-a0b0-0ab806561d7f.exe",
+      "outputPathCharacters": 292,
+      "helperSourceBytes": 5786,
+      "helperSourceSha256": "cd46e0463f7e411f5fb75cae1ce437a01ce6fdb407a8e9da22847700599c6c94",
+      "sourceBytesUnchanged": true,
+      "exitCode": 1,
+      "signal": null,
+      "spawnError": null,
+      "stdout": "fatal error CS2021: File name 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\d709bde3-4a59-47b5-a0b0-0ab806561d7f\\tttt\\opencode-alg-job-helper-v13-1548992-d709bde3-4a59-47b5-a0b0-0ab806561d7f\\helper-d70' is too long or invalid\r\n",
+      "stderr": "",
+      "outputExists": false,
+      "helperExecuted": false,
+      "receiptPath": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\d709bde3-4a59-47b5-a0b0-0ab806561d7f\\tttt\\opencode-alg-job-helper-v13-1548992-d709bde3-4a59-47b5-a0b0-0ab806561d7f\\compile-receipt.json"
+    }
+  ]
+}

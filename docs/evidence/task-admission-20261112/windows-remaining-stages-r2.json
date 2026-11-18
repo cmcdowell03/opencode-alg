@@ -1,0 +1,22 @@
+[
+  {
+    "log": "windows-stage-check-live-r2.log",
+    "stage": "check:live",
+    "exit_code": 0
+  },
+  {
+    "log": "windows-stage-check-excel-manifest-r2.log",
+    "stage": "check:excel-manifest",
+    "exit_code": 0
+  },
+  {
+    "log": "windows-stage-check-duckdb-manifest-r2.log",
+    "stage": "check:duckdb-manifest",
+    "exit_code": 0
+  },
+  {
+    "log": "windows-stage-check-optional-manifests-r2.log",
+    "stage": "check:optional-manifests",
+    "exit_code": 0
+  }
+]

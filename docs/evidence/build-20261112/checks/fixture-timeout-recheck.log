@@ -1,0 +1,10 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\build-benchmark-fixtures.test.ts:
+(pass) Build end-to-end benchmark fixtures and scorer > held-out API and UI tests fail the original bug and pass a known-good repair [2769.33ms]
+
+ 1 pass
+ 3 filtered out
+ 0 fail
+ 6 expect() calls
+Ran 1 test across 1 file. [2.86s]

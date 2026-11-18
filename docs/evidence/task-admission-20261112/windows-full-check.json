@@ -1,0 +1,6 @@
+{
+  "scope": "full local package check; final benchmark-only edits receive separate focused checks",
+  "exit_code": 2,
+  "platform": "win32",
+  "runtime_commit": "79da198"
+}

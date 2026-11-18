@@ -1,0 +1,3 @@
+$ bun run typecheck && bun run test && bun run smoke && bun run check:live && bun run check:excel-manifest && bun run check:duckdb-manifest && bun run check:optional-manifests
+$ bun ./node_modules/typescript/bin/tsc -p tsconfig.json --noEmit
+scripts/build-benchmark-metrics.ts(66,1): error TS1131: Property or signature expected.

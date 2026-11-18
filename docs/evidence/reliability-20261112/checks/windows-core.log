@@ -1,0 +1,295 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\checker-evidence.test.ts:
+(pass) selected checker evidence > compiled policy retains legacy reconciliation without changing the persisted investigation graph [79.22ms]
+(pass) selected checker evidence > executor delivers selected shell evidence alongside the claim and excludes unrelated wiring [844.99ms]
+(pass) selected checker evidence > byte/count limits and missing references remain explicit without partial JSON [47.12ms]
+(pass) selected checker evidence > aggregate bound omits complete values even when each fits individually [47.08ms]
+
+tests\execution-evidence.test.ts:
+(pass) host-origin child execution evidence > captures only host bash tool records and requires exact exit metadata [2.08ms]
+(pass) host-origin child execution evidence > reports retrieval timeout and omitted command rows explicitly [21.75ms]
+(pass) host-origin child execution evidence > sanitizes and bounds command output while marking truncation [1.87ms]
+(pass) host-origin child execution evidence > checker evidence attaches only receipts from claimed or selected evidence inputs [0.73ms]
+(pass) host-origin child execution evidence > shell-gate helper retains exact host result, setup and containment flags [0.13ms]
+
+tests\executor.test.ts:
+(pass) executor semantics > global attempts are enforced and zero is rejected by graph validation [609.70ms]
+(pass) executor semantics > terminal failed dependencies deterministically skip descendants [410.38ms]
+(pass) executor semantics > explicit checker metadata routes generic feedback without resetting history [1555.71ms]
+(pass) executor semantics > schema-valid checker pass with a failed shell gate retries only the checker [1103.86ms]
+(pass) executor semantics > exactly 100 checker failures plus a shell failure persist within the cap and retry only the checker [1397.82ms]
+(pass) executor semantics > maximum valid graph and failure history reaches a bounded final save and reload [21245.99ms]
+(pass) executor semantics > maximum executor error is prefixed within the persisted field cap [439.26ms]
+
+tests\gate-recovery.test.ts:
+(pass) gate setup recovery > runtime setup failure reserves no model or shell attempt and releases preparation [115.92ms]
+(pass) gate setup recovery > native shell gate receipts reach the checker on this platform [3190.33ms]
+(pass) gate setup recovery > setup failure stops retries; persisted explicit resume only reruns gate before checker [1288.33ms]
+(pass) gate setup recovery > changed file refuses reuse before another attempt is reserved [519.33ms]
+(pass) gate setup recovery > changed gate refuses reuse before another attempt is reserved [463.59ms]
+(pass) gate setup recovery > changed output refuses reuse before another attempt is reserved [473.55ms]
+874 |     node.last_failures_omitted === undefined && node.last_failure_texts_truncated === undefined
+875 |   const matchesProjection = isDeepStrictEqual(node.last_failures, expectedFailures) &&
+876 |     (node.last_failures_omitted ?? 0) === expectedOmitted &&
+877 |     (node.last_failure_texts_truncated ?? 0) === expectedTruncated
+878 |   if (!matchesComplete && !matchesProjection) {
+879 |     throw new StoreError(`node failure projection mismatch: ${reference.artifact_path}`)
+                ^
+StoreError: node failure projection mismatch: .opencode/runs/keep-verified-work-20261112143756-868f0bdd7300/history/work-failures-8609a608a130b24227fe459335427420fe2ac8ec88ca0f83a0784ffc5f32f19a.json
+      at hydrateNodeFailures (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\store.ts:879:11)
+      at hydrateVisibleRunData (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\store.ts:908:5)
+      at hydrateRunFully (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\store.ts:1065:21)
+      at hydrateRunForExecution (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\store.ts:1049:21)
+      at executeRun (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\src\executor.ts:746:22)
+      at async <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\gate-recovery.test.ts:136:13)
+(fail) gate setup recovery > interrupted running recovery retains its original output source across persisted resume [677.27ms]
+(pass) gate setup recovery > interrupted gate call persists recovery intent before launch and never retries the implementer [1573.41ms]
+(pass) gate setup recovery > declared-file drift after admission blocks the invocation and preserves gate-only intent [1705.12ms]
+(pass) gate setup recovery > changed preservation paths refuse recovery without replacing the original basis [816.97ms]
+(pass) gate setup recovery > real test failure still retries implementation [1200.56ms]
+
+tests\graph-revision.test.ts:
+(pass) bounded V1 graph revisions > reload and revision retain completed work and spend while adding a bounded probe [1974.29ms]
+(pass) bounded V1 graph revisions > changes pending nodes and adds bounded work without changing caps or run identity [89.16ms]
+(pass) bounded V1 graph revisions > rejects stale hashes, raised caps, capacity growth beyond root budget, and feedback loops [84.35ms]
+(pass) bounded V1 graph revisions > preserves attempted definitions, state, history, and output exactly [135.86ms]
+(pass) bounded V1 graph revisions > rejects running, unknown, terminal, and managed-investigation runs [85.37ms]
+(pass) bounded V1 graph revisions > does not remove or weaken existing checker definitions and dependencies [72.41ms]
+(pass) bounded V1 graph revisions > uses immutable content-addressed run artifacts for graph-version retrieval [181.94ms]
+(pass) bounded V1 graph revisions > revises through alg_plan with ownership, CAS, persisted receipts, status digest, and historical artifact retrieval [746.55ms]
+
+tests\models-sessions-plugin.test.ts:
+(pass) models, SDK propagation, and registration > JSON extraction accepts one object in surrounding prose or fences and rejects ambiguity [0.58ms]
+(pass) models, SDK propagation, and registration > role schema selects one valid response among competing objects without weakening validation [0.69ms]
+(pass) models, SDK propagation, and registration > strict project model settings persist and snapshot independently [39.63ms]
+(pass) models, SDK propagation, and registration > model-only settings stay valid while variants are trimmed, bounded, and strict [0.63ms]
+(pass) models, SDK propagation, and registration > alg_models supports full set, variant-only update, clear_variant, clear, CAS, and rejects incompatible args [202.07ms]
+(pass) models, SDK propagation, and registration > session prompt splits exact structured model and top-level variant [4.46ms]
+(pass) models, SDK propagation, and registration > session prompt omits both model and variant when unset and only variant when model has none [2.19ms]
+(pass) models, SDK propagation, and registration > executor propagates each snapshotted role variant through retries [1815.23ms]
+(pass) models, SDK propagation, and registration > configured role variants require an explicit valid role model and project selections replace them [0.96ms]
+(pass) models, SDK propagation, and registration > SDK field errors are returned instead of being mistaken for data [1.44ms]
+(pass) models, SDK propagation, and registration > dedicated server default is PluginModule and registers every tool [23.25ms]
+(pass) models, SDK propagation, and registration > server consumes disabled, triggered, and every-turn plugin-tuple option payloads [111.49ms]
+(pass) models, SDK propagation, and registration > project model settings serialize writers and fail closed on stale/malformed locks [86.00ms]
+(pass) models, SDK propagation, and registration > model settings lock releases in finally when validation fails [10.71ms]
+(pass) models, SDK propagation, and registration > failed model quarantine rename honestly reports manual recovery [38.92ms]
+(pass) models, SDK propagation, and registration > live alg_run persists child session ids and returns matching session links [703.43ms]
+(pass) models, SDK propagation, and registration > alg_resume exposes preserved and newly-created child session ids [1136.76ms]
+
+tests\persistence-full-hydration.test.ts:
+(pass) transactional immutable persistence > progress current-rename failure preserves current and prior backup byte-for-byte [914.78ms]
+(pass) transactional immutable persistence > post-commit backup-update failure keeps the new current and prior backup exact [916.98ms]
+(pass) transactional immutable persistence > a pre-progress failure preserves authoritative and backup manifests plus every old sidecar byte [924.20ms]
+(pass) transactional immutable persistence > sidecar and fixed-mirror failures never advance progress or invalidate old references [904.81ms]
+(pass) transactional immutable persistence > successive manifests retain distinct immutable content and each hydrates its own bytes [874.13ms]
+(pass) transactional immutable persistence > an occupied immutable hash path with mismatched bytes fails closed [631.13ms]
+(pass) transactional immutable persistence > GC preserves current and backup reachability and never removes unknown files [890.78ms]
+(pass) transactional immutable persistence > a deterministic post-commit GC failure reports success and preserves committed recovery plus all candidates [780.58ms]
+(pass) transactional immutable persistence > immutable node and attempt outputs must already equal their parsed canonical form [3290.15ms]
+(pass) transactional immutable persistence > canonical immutable outputs hydrate unchanged and publication canonicalizes accepted defaults [634.47ms]
+(pass) transactional immutable persistence > successful save replaces stale references with the canonical committed execution reload in place [673.52ms]
+(pass) transactional immutable persistence > successful save removes configurable hidden string and symbol extensions while retaining identities [576.47ms]
+(pass) transactional immutable persistence > non-configurable run, node, and attempt extensions fail preflight without caller or authoritative mutation [1739.93ms]
+(pass) transactional immutable persistence > archived caller attempts are preflighted and configurable extras are stripped from detached identities [771.09ms]
+(pass) transactional immutable persistence > a non-configurable archived-attempt extra fails before caller or authoritative mutation [570.16ms]
+(pass) transactional immutable persistence > non-configurable canonical data properties allow invariant-safe updates and exact fixed values [576.86ms]
+(pass) transactional immutable persistence > incompatible canonical descriptors fail precommit without invoking accessors or changing state [993.64ms]
+(pass) transactional immutable persistence > custom prototypes and deterministic proxy trap rejection stay precommit and mutation-free [886.97ms]
+(pass) transactional immutable persistence > node:util types.isProxy rejects transparent and stateful proxies before any write [822.04ms]
+(pass) transactional immutable persistence > descriptor post-validation catches stateful Proxy mutation without getter or durable write [886.34ms]
+(pass) transactional immutable persistence > descriptor snapshot persistence accepts an ordinary graph and preserves canonical identities [513.01ms]
+(pass) transactional immutable persistence > cross-path node and attempt aliases fail precommit while ordinary identities persist [1531.26ms]
+(pass) transactional immutable persistence > post-save execution state keeps model snapshots immutable and node fields mutable [117.22ms]
+(pass) transactional immutable persistence > legacy fixed references load and migrate to immutable paths while fixed backup content remains recoverable [723.09ms]
+(pass) transactional immutable persistence > a transfer-only save recursively migrates nested legacy history while the old manifest still hydrates [856.86ms]
+(pass) transactional immutable persistence > a transfer rebinds and migrates a projected root-authorization archive without breaking legacy recovery [280.35ms]
+(pass) transactional immutable persistence > concurrent cross-process publication yields one fenced manifest and valid immutable content [2727.47ms]
+(pass) complete full hydration > archived projected records are strictly parsed before valid details can hydrate over them [1127.18ms]
+(pass) complete full hydration > status, run, and resume full hydrate archived order plus every attempt field while compact stays projected [3305.19ms]
+(pass) complete full hydration > routing summaries count archived prefixes exactly, expose legacy unknowns, and reject forged metadata [1980.16ms]
+(pass) complete full hydration > full status list hydrates every owned run and reports a precise corrupt-run failure [1626.08ms]
+(pass) complete full hydration > owned listing reports malformed owned state without disclosing malformed other-owner state [261.62ms]
+(pass) complete full hydration > missing, corrupt, wrong-hash, escaping, and wrong-kind history/output references fail safely and clearly [3772.71ms]
+(pass) complete full hydration > a valid same-node failure sidecar cannot be substituted for the projected failure list [845.33ms]
+(pass) complete full hydration > attempt detail rejects the exact projection-only failures_commitment field before hydration [403.14ms]
+(pass) complete full hydration > failure sidecars preserve canonical strings and reject padded failure text instead of trimming [402.35ms]
+(pass) complete full hydration > root authorization sidecars accept canonical values and reject padded operation/session/path/ID fields [1209.53ms]
+(pass) complete full hydration > same-prefix/count attempt and node failure suffix substitutions fail their independent commitments [464.43ms]
+
+tests\plan-execution-guidance.test.ts:
+(pass) plan execution intent > compact live plan directs requested artifacts to bounded execution without executing during planning [192.09ms]
+(pass) plan execution intent > compact dry plan keeps live execution out of its next action [139.21ms]
+(pass) plan execution intent > full live plan directs requested artifacts to bounded execution without executing during planning [150.32ms]
+(pass) plan execution intent > full dry plan keeps live execution out of its next action [137.51ms]
+(pass) plan execution intent > explicit plan-only goals remain unexecuted and receive a stop-at-planning exception [179.72ms]
+(pass) opt-in coding-compact workflow > ships one matching, registered, schema-valid graph without changing the default [6.70ms]
+(pass) opt-in coding-compact workflow > preserves original criteria, bounds attempts and keeps the independent checker when a shell gate is supplied [160.38ms]
+(pass) opt-in coding-compact workflow > fresh checker feedback stays within the original four-attempt cap (repaired) [2894.26ms]
+(pass) opt-in coding-compact workflow > fresh checker feedback stays within the original four-attempt cap (rejected) [2773.66ms]
+(pass) optional plan preservation inputs > compact validates project-relative files and requests snapshots without adding criteria [154.39ms]
+(pass) optional plan preservation inputs > full validates project-relative files and requests snapshots without adding criteria [130.40ms]
+(pass) optional plan preservation inputs > omission is opt-in and custom graph augmentation retains dependency inputs on only the first implementer [304.09ms]
+(pass) optional plan preservation inputs > enforces count, path length, normalization, existence and regular files before creating a run [153.80ms]
+(pass) optional plan preservation inputs > rejects a symlink or junction escape even when the target is a regular file [22.18ms]
+(pass) optional plan preservation inputs > rejects graphs without implementers and preserves the revision argument boundary [117.43ms]
+
+tests\preservation-evidence.test.ts:
+(pass) preservation observations bind exact bytes and do not hide a changed file [26.03ms]
+(pass) original preservation basis survives implementation retries, persistence and checker handoff [2075.41ms]
+
+tests\schema-retry-diagnostics.test.ts:
+(pass) schema-owned retry diagnostics > explorer exposes trusted path query [0.75ms]
+(pass) schema-owned retry diagnostics > explorer exposes trusted path map.0.role [0.28ms]
+(pass) schema-owned retry diagnostics > explorer exposes trusted path key_hits.0.note [0.98ms]
+(pass) schema-owned retry diagnostics > researcher exposes trusted path evidence.0.path [1.00ms]
+(pass) schema-owned retry diagnostics > researcher exposes trusted path options.0.pros.0 [1.01ms]
+(pass) schema-owned retry diagnostics > implementer exposes trusted path artifact_path [0.32ms]
+(pass) schema-owned retry diagnostics > implementer exposes trusted path blockers.0 [0.40ms]
+(pass) schema-owned retry diagnostics > implementer exposes trusted path commands_run.0.outcome [0.90ms]
+(pass) schema-owned retry diagnostics > checker exposes trusted path passed [0.25ms]
+(pass) schema-owned retry diagnostics > checker exposes trusted path notes [0.15ms]
+(pass) schema-owned retry diagnostics > shell exposes trusted path exit_code [0.26ms]
+(pass) schema-owned retry diagnostics > shell exposes trusted path stdout_tail [0.43ms]
+(pass) schema-owned retry diagnostics > shell exposes trusted path timed_out [0.30ms]
+(pass) schema-owned retry diagnostics > enum and size diagnostics remain useful without echoing supplied values [1.12ms]
+(pass) schema-owned retry diagnostics > unknown keys, values and cross-role field names are never diagnostic paths [1.18ms]
+(pass) schema-owned retry diagnostics > many nested issues stay within the existing persisted diagnostic limits [34.16ms]
+(pass) schema-owned retry diagnostics > semantic verdict and completion constraints still fail closed [2.32ms]
+(pass) schema-owned retry diagnostics > custom rule blockers_required_when_incomplete has fixed actionable guidance [0.39ms]
+(pass) schema-owned retry diagnostics > custom rule blockers_forbidden_when_done has fixed actionable guidance [0.39ms]
+(pass) schema-owned retry diagnostics > custom rule run_artifact_path has fixed actionable guidance [0.34ms]
+(pass) schema-owned retry diagnostics > custom rule project_relative_path has fixed actionable guidance [0.62ms]
+(pass) schema-owned retry diagnostics > custom rule text_trimmed has fixed actionable guidance [0.26ms]
+(pass) schema-owned retry diagnostics > custom rule failures_empty_when_passed has fixed actionable guidance [0.27ms]
+(pass) schema-owned retry diagnostics > custom rule failures_required_when_rejected has fixed actionable guidance [0.29ms]
+(pass) schema-owned retry diagnostics > custom rule score_matches_verdict has fixed actionable guidance [0.22ms]
+(pass) schema-owned retry diagnostics > custom rule shell_ok_matches_execution has fixed actionable guidance [0.34ms]
+(pass) schema-owned retry diagnostics > explorer aggregate limit names local UTF-8 byte policy [2.32ms]
+(pass) schema-owned retry diagnostics > researcher aggregate limit names local UTF-8 byte policy [2.21ms]
+(pass) schema-owned retry diagnostics > implementer aggregate limit names local UTF-8 byte policy [0.52ms]
+(pass) schema-owned retry diagnostics > checker aggregate limit names local UTF-8 byte policy [0.58ms]
+(pass) schema-owned retry diagnostics > shell aggregate limit names local UTF-8 byte policy [0.85ms]
+(pass) schema-owned retry diagnostics > child cannot inject a custom rule or override the byte limit through output keys [0.76ms]
+(pass) schema-owned retry diagnostics > schema_invalid selects guidance from outcome, not feedback text [0.46ms]
+(pass) schema-owned retry diagnostics > sdk_error selects guidance from outcome, not feedback text [0.12ms]
+(pass) schema-owned retry diagnostics > gate_failure selects guidance from outcome, not feedback text [0.11ms]
+(pass) schema-owned retry diagnostics > substantive_rejection selects guidance from outcome, not feedback text [0.12ms]
+(pass) schema-owned retry diagnostics > incomplete selects guidance from outcome, not feedback text [0.05ms]
+(pass) schema-owned retry diagnostics > %s selects guidance from outcome, not feedback text [0.04ms]
+(pass) schema-owned retry diagnostics > initial calls have no prior-failure heading [0.32ms]
+(pass) schema-owned retry diagnostics > safe schema feedback survives save/load/resume without replaying a successful sibling [1810.55ms]
+
+tests\schemas.test.ts:
+(pass) strict contracts > persisted attempt session IDs reject surrounding whitespace instead of normalizing it [0.89ms]
+(pass) strict contracts > checker pass/failure/score invariants reject contradictions [0.99ms]
+(pass) strict contracts > checker outcomes require matching passed semantics and proved graph shell gates [2.59ms]
+(pass) strict contracts > implementer requires done=true and strict fields [0.49ms]
+(pass) strict contracts > implementer path metadata is normalized, project-relative, and traversal-safe [2.92ms]
+(pass) strict contracts > the prompt schema hint omits $schema and an echoed $schema marker does not fail validation [3.16ms]
+(pass) strict contracts > unknown agents are rejected instead of receiving a permissive record [0.32ms]
+(pass) strict contracts > graph rejects unknown agents, zero attempts, extra fields, and unordered refs [3.10ms]
+(pass) strict contracts > legacy omitted global cap receives local capacity while explicit bounded caps are preserved [0.99ms]
+(pass) strict contracts > traversal and prototype-shaped ids are rejected [0.37ms]
+(pass) strict contracts > run state validates exact graph/state identity and null-prototype maps [99.23ms]
+(pass) strict contracts > run state rejects forged outputs, attempts, statuses, and dependency completion [88.41ms]
+(pass) strict contracts > forged rejected checker output cannot support done attempt/node/run [1548.98ms]
+(pass) strict contracts > ownership transfer history is a strict creator-rooted monotonic chain [59.20ms]
+(pass) strict contracts > persisted checker attempt scores reject fractions and scores without output [67.02ms]
+(pass) strict contracts > loaded implementer artifacts must belong to the current run id [1467.71ms]
+
+tests\shell-preflight.test.ts:
+(pass) read-only shell command preflight > rejects command_required:   [0.43ms]
+(pass) read-only shell command preflight > rejects command_not_text: echo   [0.04ms]
+(pass) read-only shell command preflight > rejects command_too_long: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+(pass) read-only shell command preflight > rejects prose_or_markdown: ```cmd
+echo ok
+```
+(pass) read-only shell command preflight > rejects prose_or_markdown: Allowed tools: bash | edit | {read}
+(pass) read-only shell command preflight > rejects prose_or_markdown: Run the tests and then summarize th
+(pass) read-only shell command preflight > rejects missing_pipeline_command: | echo ok [0.01ms]
+(pass) read-only shell command preflight > rejects missing_pipeline_command: echo ok | [0.04ms]
+(pass) read-only shell command preflight > rejects missing_pipeline_command: echo ok && [0.03ms]
+(pass) read-only shell command preflight > rejects missing_pipeline_command: echo ok | | echo bad [0.02ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: python -m pytest tests/unit [0.13ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo "a | {b} & c" [0.02ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: node -e "console.log(1 > 0)" [0.01ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok | findstr ok [0.03ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok && echo done [0.03ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: "C:\Program Files\Node\node.exe" -v [0.01ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok > result.txt 2>&1 [0.04ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: if exist tests (echo ok) [0.01ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: cmd /c "echo ok | echo done" [0.01ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: cd /d "C:\Repo With Spaces" && python -m pytest tests/unit [0.04ms]
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ^| escaped
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok
+echo done
+(pass) read-only shell command preflight > preserves Windows command syntax: echo ok &
+(pass) read-only shell command preflight > preserves Windows command syntax: echo "unterminated
+(pass) read-only shell command preflight > preserves Windows command syntax: missing-tool || echo fallback [0.02ms]
+(pass) read-only shell command preflight > missing tools use the actual shell and PATH, not a POSIX blacklist [0.39ms]
+(pass) read-only shell command preflight > bounded and conservative for scripts, dynamic commands and directory changes [0.82ms]
+(pass) read-only shell command preflight > executable lookup reads files only, honors PATHEXT, and never invokes a command [3.27ms]
+(pass) plan rejects malformed gates before persistence, and reports explicit nested cwd [426.63ms]
+(pass) custom graphs are checked; directory escape is rejected; future test files are not required [386.58ms]
+(pass) legacy missing command blocks before any child or counter and does not echo arguments [439.57ms]
+(pass) corrected gate resumes with completed sibling intact and no budget reset [1544.76ms]
+(pass) unreachable exhausted gates cannot block independent work on resume [1645.35ms]
+(pass) command and cwd overrides affect only the persisted target implementer [577.02ms]
+(pass) checker-reopened work is rechecked before another attempt and durably blocked until repaired [1778.61ms]
+(pass) real failing tests still retry; stdout-only failures retain safe shell and cwd diagnostics [715.89ms]
+(pass) public run and resume repair shell_cwd relative to pinned directory, not current UI directory [1575.22ms]
+(pass) empty-output and timeout failures report their limits without guessing a parser defect [899.44ms]
+(pass) actual local gate runs in an explicit repository directory with spaces [3410.17ms]
+
+tests\store-ownership.test.ts:
+(pass) safe durable store and ownership > run ids are collision-resistant and safe [7.81ms]
+(pass) safe durable store and ownership > atomic persistence creates a usable backup [155.30ms]
+(pass) safe durable store and ownership > owner run projections update atomically on create, save, and transfer without becoming authoritative [314.90ms]
+(pass) safe durable store and ownership > parallel run creators merge the bounded owner projection without lost entries [384.03ms]
+(pass) safe durable store and ownership > an unverifiable projection lock cannot fail authoritative run creation [86.43ms]
+(pass) safe durable store and ownership > post-commit create hydration failure returns the loadable committed run without cleanup [84.28ms]
+(pass) safe durable store and ownership > parallel ownership transfers merge removals from the former owner projection [539.54ms]
+(pass) safe durable store and ownership > exclusive lock rejects overlap and releases for a later executor [131.81ms]
+(pass) safe durable store and ownership > heartbeat renews a short lease and prevents stale takeover [4303.73ms]
+(pass) safe durable store and ownership > expired-lock takeover cannot rename a lease renewed after observation [94.45ms]
+(pass) safe durable store and ownership > fenced persistence rejects replacement or expiry in the final current-rename hook without changing recovery [636.38ms]
+(pass) safe durable store and ownership > fenced persistence commits when the final current-rename boundary still holds the lock [329.20ms]
+(pass) safe durable store and ownership > fenced persistence reports success when expiry or replacement occurs only after commit [393.02ms]
+(pass) safe durable store and ownership > non-commit fenced callbacks retain their failure-producing postcheck [100.47ms]
+(pass) safe durable store and ownership > owned discovery streams only the scan bound plus one, reports truncation truthfully, closes, and leaks no other-owner content [58.58ms]
+(pass) safe durable store and ownership > owned mutation keeps lease verification and commit inside the takeover guard [162.02ms]
+(pass) safe durable store and ownership > malformed and identity-mismatched locks fail closed without takeover [92.02ms]
+(pass) safe durable store and ownership > loaded state cannot select another project root and is quarantined [84.33ms]
+(pass) safe durable store and ownership > failed run quarantine rename reports that corrupt progress remains in place [84.84ms]
+(pass) safe durable store and ownership > implicit and explicit access are exact-owner only; transfer is audited [235.26ms]
+(pass) safe durable store and ownership > owner-filtered listRuns preserves another owner's corrupt state and derived metadata [170.84ms]
+(pass) safe durable store and ownership > only a confirmed owner can quarantine envelope-valid corrupt progress [78.41ms]
+(pass) safe durable store and ownership > owned load CAS-reconciles a legacy running attempt from its valid session sidecar [235.93ms]
+(pass) safe durable store and ownership > CAS rejects stale commits, including stale execution after transfer [415.91ms]
+(pass) safe durable store and ownership > transfer uses the execution lock and rechecks ownership inside it [278.23ms]
+(pass) safe durable store and ownership > derived write failure preserves progress and load reconciles every mirror [1891.10ms]
+(pass) safe durable store and ownership > stale loader re-reads authoritative revision under the mirror lock [167.91ms]
+
+tests\verification.test.ts:
+(pass) opt-in verification > preserves supported without converting uncertainty into contradiction [1.53ms]
+(pass) opt-in verification > preserves disconfirmed without converting uncertainty into contradiction [0.24ms]
+(pass) opt-in verification > preserves unsupported without converting uncertainty into contradiction [0.12ms]
+(pass) opt-in verification > preserves inconclusive without converting uncertainty into contradiction [0.09ms]
+(pass) opt-in verification > refuses absent, duplicated, invented or omitted citations and incomplete criterion coverage [0.84ms]
+(pass) opt-in verification > diagnostics never echo submitted identifiers or unknown keys [0.25ms]
+(pass) opt-in verification > an unlaunched reservation may lack a basis, while a launched running attempt may not [0.70ms]
+(pass) opt-in verification > legacy remains legacy and bounded mandate is explicit [1.99ms]
+(pass) opt-in verification > executor persists basis before launch, informs retry, and recovers bound output [1226.71ms]
+(pass) opt-in verification > pins fallback criteria before parallel researcher completion and keeps the checker prompt stable [848.52ms]
+(pass) opt-in verification > revised graphs reject direct shell and live-mode overrides before work [45.58ms]
+(pass) opt-in verification > dry mode cannot claim evidence-qualified success [468.54ms]
+
+1 tests failed:
+(fail) gate setup recovery > interrupted running recovery retains its original output source across persisted resume [677.27ms]
+
+ 240 pass
+ 1 fail
+ 3343 expect() calls
+Ran 241 tests across 14 files. [132.09s]

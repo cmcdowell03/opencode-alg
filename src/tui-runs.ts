@@ -18,6 +18,7 @@ import {
   canonicalJson,
   failureListCommitment,
   isFullShaImmutableReference,
+  restoreArchivedAttemptEvidence,
   sha256Json,
 } from "./persistence.ts"
 import {
@@ -25,8 +26,10 @@ import {
   parseCanonicalAgentOutput,
   parseGraph,
   parsePersistedAttemptDetail,
+  parseCompactArchivedAttempt,
   parsePersistedNodeAttempt,
   parseRunState,
+  PersistedFailureListSchema,
   schemaForAgent,
 } from "./schemas.ts"
 import type { AttemptOutcomeCounts, GraphDef, NodeAttempt, RunDataReference, RunState } from "./types.ts"
@@ -39,6 +42,9 @@ import {
 } from "./owner-index.ts"
 import { canonicalDirectory, hostProjectDirectory, isSafeProjectRelativePath } from "./paths.ts"
 import { buildRunProgress, type AlgRunProgress } from "./run-progress.ts"
+import { assertTaskState, TaskContractSchema, type TaskContract } from "./task-contract.ts"
+import { TaskBaselineSchema, assertTaskBaseline, type TaskBaseline } from "./task-baseline.ts"
+import { assertTaskEvidence, MAX_TASK_EVIDENCE_BYTES } from "./task-evidence.ts"
 
 const MAX_RECENT_RUNS = 20
 const MAX_READ_CONCURRENCY = 8
@@ -77,6 +83,7 @@ interface TuiAttempt {
   persisted_attempt?: unknown
   authoritative_projection?: true
   legacy_reference_integrity?: true
+  compact_archive?: true
 }
 
 interface TuiNode {
@@ -89,6 +96,7 @@ interface TuiNode {
   attempts_visible: number
   attempt_history_ref?: TuiAttemptHistoryReference
   requires_shell: boolean
+  verification_required: boolean
 }
 
 interface TuiAttemptHistoryReference {
@@ -112,6 +120,9 @@ interface TuiRun {
   owner_session_id: string
   status: string
   mode?: "live" | "dry"
+  criteria?: string[]
+  task_contract?: TaskContract
+  task_baseline?: TaskBaseline
   updated_at: string
   nodes: Record<string, TuiNode>
   graph: GraphDef
@@ -126,7 +137,7 @@ interface ValidatedOutput {
   byte_size: number
   sha256?: string
   legacy_fixed_path: boolean
-  kind: "output" | "detail"
+  kind: "output" | "detail" | "task evidence"
 }
 
 type OutputValidationCache = Map<string, Promise<ValidatedOutput>>
@@ -290,6 +301,7 @@ function validOutcomeCounts(value: unknown, attemptCount: number): value is Atte
   const keys = [
     "passed", "schema_invalid", "sdk_error", "substantive_rejection", "incomplete", "gate_failure",
     "legacy_unknown",
+    ...(Object.hasOwn(value, "evidence_unavailable") ? ["evidence_unavailable"] : []),
   ] as const
   if (Object.keys(value).length !== keys.length || Object.keys(value).some((key) => !keys.includes(key as typeof keys[number]))) {
     return false
@@ -335,6 +347,26 @@ function parseOwnedRun(value: unknown, owner: string, directoryRunId: string): T
     model_entries_omitted: 0,
   }
   const graph = parseStrictGraph(value.graph, directoryRunId, truncation)
+  const parsedCriteria = value.criteria === undefined ? undefined : PersistedFailureListSchema.safeParse(value.criteria)
+  if (graph.nodes.some((definition) => definition.verification) && !parsedCriteria?.success) {
+    throw new Error(`Run ${directoryRunId} progress has invalid verification criteria`)
+  }
+  const criteria = parsedCriteria?.success ? parsedCriteria.data : undefined
+  let taskContract: TaskContract | undefined
+  let taskBaseline: TaskBaseline | undefined
+  if (value.task_contract !== undefined) {
+    try {
+      taskContract = TaskContractSchema.parse(value.task_contract)
+      if (typeof value.goal !== "string" || !criteria || value.criteria_locked !== true) throw new Error("invalid requirements")
+      assertTaskState({ task_contract: taskContract, goal: value.goal, criteria, criteria_locked: true, graph })
+      if (value.task_baseline !== undefined) {
+        taskBaseline = TaskBaselineSchema.parse(value.task_baseline)
+        assertTaskBaseline(taskBaseline, taskContract)
+      }
+    } catch {
+      throw new Error(`Run ${directoryRunId} progress has invalid task admission metadata`)
+    }
+  }
   const graphById = new Map(graph.nodes.map((definition) => [definition.id, definition]))
   const stateIds = Object.keys(value.nodes)
   if (stateIds.length !== graphById.size || stateIds.some((id) => !graphById.has(id)) ||
@@ -379,6 +411,9 @@ function parseOwnedRun(value: unknown, owner: string, directoryRunId: string): T
           mode: value.mode === "live" || value.mode === "dry" ? value.mode : undefined,
           requires_shell: definition.agent === "shell" || definition.loop?.gate === "shell" ||
             definition.loop?.gate === "all",
+          verification_required: !!definition.verification,
+          verification_criteria: criteria,
+          task_evidence_required: value.mode !== "dry" && taskContract?.input.verification.checker_node === nodeId,
         })
       } catch (error) {
         throw new Error(
@@ -413,6 +448,7 @@ function parseOwnedRun(value: unknown, owner: string, directoryRunId: string): T
       attempts_visible: node.attempts.length,
       requires_shell: definition.agent === "shell" || definition.loop?.gate === "shell" ||
         definition.loop?.gate === "all",
+      verification_required: !!definition.verification,
       ...(attemptHistoryReference ? { attempt_history_ref: attemptHistoryReference } : {}),
     }
   }
@@ -431,6 +467,9 @@ function parseOwnedRun(value: unknown, owner: string, directoryRunId: string): T
     owner_session_id: owner,
     status: previewField(value.status as string, MAX_TUI_ID_PREVIEW_BYTES, truncation),
     ...(value.mode === "live" || value.mode === "dry" ? { mode: value.mode } : {}),
+    ...(criteria ? { criteria } : {}),
+    ...(taskContract ? { task_contract: taskContract } : {}),
+    ...(taskBaseline ? { task_baseline: taskBaseline } : {}),
     updated_at: previewField(value.updated_at as string, MAX_TUI_ID_PREVIEW_BYTES, truncation),
     nodes,
     nodes_total: nodeCount,
@@ -670,9 +709,15 @@ function nestedAttemptReferenceKind(
   runId: string,
   nodeId: string,
   attempt: number,
-  kind: "output" | "detail",
+  kind: "output" | "detail" | "task evidence",
   allowLegacyFixed: boolean,
 ): { legacy_fixed_path: boolean; expected_path: string } {
+  if (kind === "task evidence") {
+    const expected_path = `.opencode/runs/${runId}/artifacts/task-evidence-${nodeId}-a${attempt}-${reference.sha256}.json`
+    if (reference.artifact_path !== expected_path || !isFullShaImmutableReference(reference))
+      throw new Error("Invalid checker task evidence reference path")
+    return { expected_path, legacy_fixed_path: false }
+  }
   const directory = kind === "output" ? "artifacts" : "history"
   const suffix = kind === "output" ? `-output-${reference.sha256}` : `-detail-${reference.sha256}`
   const base = `.opencode/runs/${runId}/${directory}/${nodeId}-attempt-${attempt}`
@@ -703,18 +748,12 @@ function parseArchivedAttemptForNode(
   node: TuiNode,
   expected: number,
   allowLegacyFixedNestedReferences: boolean,
+  compact = false,
 ): TuiAttempt {
   const label = `${run.run_id}/${node.id}/${expected}`
   let parsed
   try {
-    parsed = parsePersistedNodeAttempt(value, {
-      agent: node.agent,
-      run_id: run.run_id,
-      node_id: node.id,
-      expected_attempt: expected,
-      mode: run.mode,
-      requires_shell: node.requires_shell,
-    })
+    parsed = (compact ? parseCompactArchivedAttempt : parsePersistedNodeAttempt)(value, attemptValidationContext(run, node, expected))
   } catch (error) {
     throw new Error(`Archived attempt ${label} violates the authoritative attempt schema: ${formatSdkError(error)}`)
   }
@@ -750,6 +789,7 @@ function parseArchivedAttemptForNode(
     ...session,
     persisted_attempt: parsed,
     authoritative_projection: true,
+    ...(compact ? { compact_archive: true as const } : {}),
     ...(outputKind?.legacy_fixed_path || detailKind?.legacy_fixed_path
       ? { legacy_reference_integrity: true as const }
       : {}),
@@ -807,7 +847,8 @@ async function readArchivedAttempts(api: TuiPluginApi, run: TuiRun, node: TuiNod
   const keys = isRecord(value) ? Object.keys(value) : []
   const legacyV1 = legacy && isRecord(value) && value.schema_version === 1 &&
     keys.length === 4 && keys.every((key) => ["schema_version", "run_id", "node_id", "attempts"].includes(key))
-  const currentV2 = isRecord(value) && value.schema_version === 2 && value.kind === "attempt_history" &&
+  const compact = isRecord(value) && value.schema_version === 3
+  const currentV2 = isRecord(value) && (value.schema_version === 2 || compact) && value.kind === "attempt_history" &&
     value.owner_session_id === run.owner_session_id && keys.length === 6 &&
     keys.every((key) => [
       "schema_version", "kind", "owner_session_id", "run_id", "node_id", "attempts",
@@ -818,7 +859,7 @@ async function readArchivedAttempts(api: TuiPluginApi, run: TuiRun, node: TuiNod
     throw new Error(`Archived attempts for ${run.run_id}/${node.id} have an owner/run/node/kind/schema mismatch`)
   }
   const attempts = value.attempts.map((attempt, index) =>
-    parseArchivedAttemptForNode(attempt, run, node, index + 1, legacyV1))
+    parseArchivedAttemptForNode(attempt, run, node, index + 1, legacyV1, compact))
   const sessions = attempts.filter((attempt) => attempt.session_id !== undefined).length
   const rawAttempts = value.attempts as Array<Record<string, unknown>>
   const outputCount = rawAttempts.filter((attempt) => attempt.output_ref !== undefined).length
@@ -879,13 +920,16 @@ function attemptValidationContext(run: TuiRun, node: TuiNode, attempt: number) {
     expected_attempt: attempt,
     mode: run.mode,
     requires_shell: node.requires_shell,
+    verification_required: node.verification_required,
+    verification_criteria: run.criteria,
+    task_evidence_required: run.mode !== "dry" && run.task_contract?.input.verification.checker_node === node.id,
   }
 }
 
 function parseAttemptForNavigation(run: TuiRun, node: TuiNode, attempt: TuiAttempt): NodeAttempt {
   const raw = attempt.persisted_attempt
   try {
-    return parsePersistedNodeAttempt(raw, attemptValidationContext(run, node, attempt.attempt))
+    return (attempt.compact_archive ? parseCompactArchivedAttempt : parsePersistedNodeAttempt)(raw, attemptValidationContext(run, node, attempt.attempt))
   } catch (error) {
     throw new Error(
       `Attempt ${run.run_id}/${node.id}/${attempt.attempt} violates the authoritative attempt schema: ${formatSdkError(error)}`,
@@ -900,7 +944,7 @@ async function readValidatedNestedReference(
   attempt: NodeAttempt,
   reference: RunDataReference,
   cache: OutputValidationCache,
-  kind: "output" | "detail",
+  kind: "output" | "detail" | "task evidence",
   maximumLogicalBytes: number,
   allowLegacyFixed: boolean,
 ): Promise<ValidatedOutput> {
@@ -1013,6 +1057,13 @@ async function readValidatedAttemptOutput(
 }
 
 const ATTEMPT_DETAIL_IDENTITY_FIELDS = [
+  "task_evidence_ref",
+  "execution_evidence",
+  "gate_evidence",
+  "preservation_evidence",
+  "shell_setup_failed",
+  "gate_recovery",
+  "reused_output_from",
   "attempt",
   "status",
   "session_id",
@@ -1023,6 +1074,7 @@ const ATTEMPT_DETAIL_IDENTITY_FIELDS = [
   "schema_ok",
   "feedback_applied",
   "outcome",
+  "verification_basis",
 ] as const satisfies readonly (keyof NodeAttempt)[]
 
 async function readValidatedAttemptDetail(
@@ -1033,6 +1085,7 @@ async function readValidatedAttemptDetail(
   reference: RunDataReference,
   cache: OutputValidationCache,
   allowLegacyFixed: boolean,
+  compact = false,
 ): Promise<NodeAttempt> {
   const validated = await readValidatedNestedReference(
     api,
@@ -1056,6 +1109,7 @@ async function readValidatedAttemptDetail(
       `Attempt detail ${run.run_id}/${node.id}/${projected.attempt} violates the strict authoritative schema: ${formatSdkError(error)}`,
     )
   }
+  if (compact) projected = restoreArchivedAttemptEvidence(projected, detail)
   for (const key of ATTEMPT_DETAIL_IDENTITY_FIELDS) {
     if (!isDeepStrictEqual(projected[key], detail[key])) {
       throw new Error(`Attempt detail ${String(key)} identity mismatch: ${reference.artifact_path}`)
@@ -1112,7 +1166,7 @@ function navigateValidatedAttempt(
     toast(api, "error", "ALG attempt unavailable", formatSdkError(error))
     return
   }
-  if (!projected.output_ref && !projected.detail_ref) {
+  if (!projected.output_ref && !projected.detail_ref && !projected.task_evidence_ref) {
     api.ui.dialog.clear()
     api.route.navigate("session", { sessionID: sessionId })
     return
@@ -1130,8 +1184,16 @@ function navigateValidatedAttempt(
             projected.detail_ref,
             cache,
             allowLegacyFixed,
+            attempt.compact_archive,
           )
         : projected
+      if (complete.task_evidence_ref) {
+        if (!run.task_contract || run.task_contract.input.verification.checker_node !== node.id)
+          throw new Error("Task evidence belongs to an unadmitted checker")
+        const evidence = await readValidatedNestedReference(api, run, node, complete, complete.task_evidence_ref, cache,
+          "task evidence", MAX_TASK_EVIDENCE_BYTES, false)
+        assertTaskEvidence(evidence.value, run.task_contract, run.run_id, run.task_baseline)
+      }
       const output = projected.output_ref
         ? await readValidatedAttemptOutput(
             api,
@@ -1150,7 +1212,7 @@ function navigateValidatedAttempt(
       }
       try {
         parsePersistedNodeAttempt(
-          { ...projected, output },
+          { ...(attempt.compact_archive ? complete : projected), output },
           attemptValidationContext(run, node, attempt.attempt),
         )
       } catch (error) {

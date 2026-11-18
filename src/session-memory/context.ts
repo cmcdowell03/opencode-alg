@@ -90,6 +90,8 @@ export function buildContext(store: MemoryStore, index: SkillIndex, checkpoint: 
     try {
       const environment = verifyEnvironment(store, checkpoint)
       const orientation = { task_epoch: checkpoint.task_epoch, generation: checkpoint.generation, goal: checkpoint.goal,
+        ...(checkpoint.task_allowance_ref ? { task_allowance: { task_id: checkpoint.task_allowance_ref.task_id,
+          next: "alg_context_status.task_allowance_status for current remaining dispatches; replanning does not reset this allowance" } } : {}),
         observed_opening: checkpoint.observed_opening ?? null,
         constraints: checkpoint.constraints, environment: environment ? { id: environment.id, ...environment.payload } : null,
         completed: checkpoint.completed, next_step: checkpoint.next_step, gaps: checkpoint.gaps,

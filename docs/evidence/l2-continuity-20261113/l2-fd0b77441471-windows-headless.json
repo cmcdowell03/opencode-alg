@@ -1,0 +1,483 @@
+{
+  "schema": "opencode-v1-long-session-headless/v1",
+  "generatedAt": "2026-11-13T09:04:49.756Z",
+  "hostExecutable": "C:\\Users\\codym\\AppData\\Roaming\\npm\\node_modules\\opencode-ai\\bin\\opencode.exe",
+  "arms": [
+    "build",
+    "alg"
+  ],
+  "passed": false,
+  "results": [
+    {
+      "arm": "build",
+      "passed": true,
+      "qualificationScope": "mechanical host lifecycle only; no task accuracy, semantic retention, or ownership-transfer claim",
+      "ownershipTransferCoverage": false,
+      "handoffMechanics": "created a distinct OpenCode session; did not invoke alg_transfer or move an owned production run",
+      "evidence": {
+        "schema": "alg-live-obligations-v1",
+        "taskId": "headless-build-93ed467c-0406-4a46-b409-0fc214bf0c31",
+        "cell": {
+          "handoff": true,
+          "compact": true
+        },
+        "checkpoints": [
+          {
+            "phase": "q0",
+            "sessionId": "ses_e2bd93144ffeAgsL0RtcwLwcnZ",
+            "startedAt": 1794560675606,
+            "completedAt": 1794560678560,
+            "fromSequence": 0,
+            "nonce": "3a343bad3c69ddce906ac9f90aaa92b7",
+            "status": "completed",
+            "grade": {
+              "passed": true,
+              "evidenceDigest": "51a885506511f74a29f9eb6e72c6ddc38aa5c58855b171c6d958d1aa14a9818b",
+              "checks": [
+                {
+                  "id": "synthetic-phase-artifact-written-by-host-tool",
+                  "category": "phase",
+                  "expectedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "observedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "exposed": true,
+                  "known": true,
+                  "passed": true
+                }
+              ]
+            },
+            "error": null,
+            "gradedSequence": 1,
+            "gradedNativeMarkers": []
+          },
+          {
+            "phase": "qh",
+            "sessionId": "ses_e2bd92543ffe7L1acQx5739nh0",
+            "startedAt": 1794560678641,
+            "completedAt": 1794560679110,
+            "fromSequence": 1,
+            "nonce": "36d2496f5c217d052820d88049d7a165",
+            "status": "completed",
+            "grade": {
+              "passed": true,
+              "evidenceDigest": "9fd2c4ad1def917260b1057a440f6c398ec04bd05b6a734db79bc5a1f8366c5c",
+              "checks": [
+                {
+                  "id": "synthetic-phase-artifact-written-by-host-tool",
+                  "category": "phase",
+                  "expectedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "observedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "exposed": true,
+                  "known": true,
+                  "passed": true
+                }
+              ]
+            },
+            "error": null,
+            "gradedSequence": 2,
+            "gradedNativeMarkers": []
+          },
+          {
+            "phase": "qc",
+            "sessionId": "ses_e2bd92543ffe7L1acQx5739nh0",
+            "startedAt": 1794560679478,
+            "completedAt": 1794560679861,
+            "fromSequence": 2,
+            "nonce": "f8b2e3e7477d4f8d43c8267ee3b2a6e9",
+            "status": "completed",
+            "grade": {
+              "passed": true,
+              "evidenceDigest": "d7487e9071ec321668c0ff030f767ac2235810d1fde8839c3d32669ff7992e66",
+              "checks": [
+                {
+                  "id": "synthetic-phase-artifact-written-by-host-tool",
+                  "category": "phase",
+                  "expectedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "observedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "exposed": true,
+                  "known": true,
+                  "passed": true
+                }
+              ]
+            },
+            "error": null,
+            "gradedSequence": 3,
+            "gradedNativeMarkers": []
+          },
+          {
+            "phase": "qr",
+            "sessionId": "ses_e2bd92543ffe7L1acQx5739nh0",
+            "startedAt": 1794560682929,
+            "completedAt": 1794560685436,
+            "fromSequence": 3,
+            "nonce": "6d4c25b05b2777262f034963ade05615",
+            "status": "completed",
+            "grade": {
+              "passed": true,
+              "evidenceDigest": "78707041b3ab667dcb6cf2463a83b46105c4a8332cd207db6c6ae0df47763f35",
+              "checks": [
+                {
+                  "id": "synthetic-phase-artifact-written-by-host-tool",
+                  "category": "phase",
+                  "expectedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "observedDigest": "b56999d8754df2e58eadbacd7d27d3f841cc61e4918d982f89a0d98cdfe47900",
+                  "exposed": true,
+                  "known": true,
+                  "passed": true
+                }
+              ]
+            },
+            "error": null,
+            "gradedSequence": 4,
+            "gradedNativeMarkers": []
+          }
+        ],
+        "retention": {
+          "schema": "build-benchmark-retention-boundaries/v1",
+          "boundaries": [
+            {
+              "boundaryId": "headless-build-93ed467c-0406-4a46-b409-0fc214bf0c31:qh",
+              "taskId": "headless-build-93ed467c-0406-4a46-b409-0fc214bf0c31",
+              "sessionId": "ses_e2bd93144ffeAgsL0RtcwLwcnZ",
+              "requestId": "f3f8e7ba111783052870d01b17c72cbf",
+              "transition": "reassignment",
+              "compactionMode": null,
+              "frozenAt": 1794560678579,
+              "transitionAt": 1794560678579,
+              "requestAt": null,
+              "summaryAt": null,
+              "summarySucceeded": false,
+              "summaryEvidence": null,
+              "frozenSetDigest": "7d3f99c9a73d860045e7511b0148c99235bbd37e7e0da4cbbd0c0bfe8ab504c4",
+              "obligations": [],
+              "before": {
+                "observedAt": 1794560678560,
+                "complete": false,
+                "facts": []
+              },
+              "after": {
+                "observedAt": 1794560679114,
+                "complete": false,
+                "facts": []
+              },
+              "boundaryCensusComplete": true,
+              "useWindow": {
+                "startAt": 1794560678579,
+                "endAt": 1794560679114,
+                "complete": true
+              },
+              "pruneEvidence": {
+                "observable": false,
+                "receipt": null
+              },
+              "preBehavior": {
+                "startAt": 1794560678560,
+                "endAt": 1794560678579,
+                "complete": true,
+                "evidenceId": "headless-build-93ed467c-0406-4a46-b409-0fc214bf0c31:q0:grade",
+                "digest": "51a885506511f74a29f9eb6e72c6ddc38aa5c58855b171c6d958d1aa14a9818b",
+                "events": []
+              },
+              "lineage": {
+                "eventId": "headless-build-93ed467c-0406-4a46-b409-0fc214bf0c31:qh:handoff",
+                "sourceSessionId": "ses_e2bd93144ffeAgsL0RtcwLwcnZ",
+                "recipientSessionId": "ses_e2bd92543ffe7L1acQx5739nh0",
+                "at": 1794560678579,
+                "evidenceId": "headless-build-93ed467c-0406-4a46-b409-0fc214bf0c31:qh:transfer",
+                "digest": "894659845b0410d663f2721cff250977db3e000cc14dd2472f93f5310aeb487a"
+              }
+            },
+            {
+              "boundaryId": "headless-build-93ed467c-0406-4a46-b409-0fc214bf0c31:qc",
+              "taskId": "headless-build-93ed467c-0406-4a46-b409-0fc214bf0c31",
+              "sessionId": "ses_e2bd92543ffe7L1acQx5739nh0",
+              "requestId": "176e9e7adb1c56dc9aab4d1f647481d7",
+              "transition": "compaction",
+              "compactionMode": "requested",
+              "frozenAt": 1794560679141,
+              "transitionAt": 1794560679141,
+              "requestAt": 1794560679141,
+              "summaryAt": 1794560679208,
+              "summarySucceeded": true,
+              "summaryEvidence": {
+                "eventId": "msg_1d426dd07001VICgjE8G1smf2D",
+                "requestId": "176e9e7adb1c56dc9aab4d1f647481d7",
+                "taskId": "headless-build-93ed467c-0406-4a46-b409-0fc214bf0c31",
+                "sessionId": "ses_e2bd92543ffe7L1acQx5739nh0",
+                "observedAt": 1794560679208,
+                "digest": "e1f599be2c1cbd25c373d64b9b5e886427da5679bcf4acc5e0acd3b3c8de7fd1",
+                "frozenSetDigest": "e8e14e16c71d40710d7dd92367dd240cad7bbdec1decbd08830bdb1dbb632471"
+              },
+              "frozenSetDigest": "e8e14e16c71d40710d7dd92367dd240cad7bbdec1decbd08830bdb1dbb632471",
+              "obligations": [],
+              "before": {
+                "observedAt": 1794560679110,
+                "complete": false,
+                "facts": []
+              },
+              "after": {
+                "observedAt": 1794560679865,
+                "complete": false,
+                "facts": []
+              },
+              "boundaryCensusComplete": true,
+              "useWindow": {
+                "startAt": 1794560679208,
+                "endAt": 1794560679865,
+                "complete": true
+              },
+              "pruneEvidence": {
+                "observable": false,
+                "receipt": null
+              },
+              "preBehavior": {
+                "startAt": 1794560679110,
+                "endAt": 1794560679141,
+                "complete": true,
+                "evidenceId": "headless-build-93ed467c-0406-4a46-b409-0fc214bf0c31:qh:grade",
+                "digest": "9fd2c4ad1def917260b1057a440f6c398ec04bd05b6a734db79bc5a1f8366c5c",
+                "events": []
+              }
+            },
+            {
+              "boundaryId": "headless-build-93ed467c-0406-4a46-b409-0fc214bf0c31:qr",
+              "taskId": "headless-build-93ed467c-0406-4a46-b409-0fc214bf0c31",
+              "sessionId": "ses_e2bd92543ffe7L1acQx5739nh0",
+              "requestId": "1302bbf49dbbfb14ef68996a62434674",
+              "transition": "restart",
+              "compactionMode": null,
+              "frozenAt": 1794560679890,
+              "transitionAt": 1794560679890,
+              "requestAt": null,
+              "summaryAt": null,
+              "summarySucceeded": false,
+              "summaryEvidence": null,
+              "frozenSetDigest": "50cecfb8f30cccc81f0db8618dff6e6ff88037f96374b364671692d8c209cf32",
+              "obligations": [],
+              "before": {
+                "observedAt": 1794560679861,
+                "complete": false,
+                "facts": []
+              },
+              "after": {
+                "observedAt": 1794560685440,
+                "complete": false,
+                "facts": []
+              },
+              "boundaryCensusComplete": true,
+              "useWindow": {
+                "startAt": 1794560679890,
+                "endAt": 1794560685440,
+                "complete": true
+              },
+              "pruneEvidence": {
+                "observable": false,
+                "receipt": null
+              },
+              "preBehavior": {
+                "startAt": 1794560679861,
+                "endAt": 1794560679890,
+                "complete": true,
+                "evidenceId": "headless-build-93ed467c-0406-4a46-b409-0fc214bf0c31:qc:grade",
+                "digest": "d7487e9071ec321668c0ff030f767ac2235810d1fde8839c3d32669ff7992e66",
+                "events": []
+              }
+            }
+          ],
+          "observations": []
+        },
+        "transitions": [
+          {
+            "phase": "qh",
+            "status": "completed",
+            "receipt": {
+              "sourceSessionId": "ses_e2bd93144ffeAgsL0RtcwLwcnZ",
+              "recipientSessionId": "ses_e2bd92543ffe7L1acQx5739nh0",
+              "kind": "new_session_only",
+              "ownershipTransferCoverage": false,
+              "at": 1794560678637
+            }
+          },
+          {
+            "phase": "qc",
+            "status": "completed"
+          },
+          {
+            "phase": "qr",
+            "status": "completed",
+            "receipt": {
+              "sessionId": "ses_e2bd92543ffe7L1acQx5739nh0",
+              "hostRestarted": true,
+              "at": 1794560682925
+            }
+          }
+        ],
+        "passed": true,
+        "complete": true
+      },
+      "proofs": [
+        {
+          "sequence": 1,
+          "phase": "q0",
+          "nonce": "3a343bad3c69ddce906ac9f90aaa92b7",
+          "sessionId": "ses_e2bd93144ffeAgsL0RtcwLwcnZ",
+          "messageId": "msg_1d426d34a0019LLMTeY3U07sWd",
+          "partId": "prt_1d426d853001k5eW26TRei51l4",
+          "tool": "write",
+          "input": {
+            "filePath": "checkpoint-q0.json",
+            "content": "{\n  \"schema\": \"long-session-headless/v1\",\n  \"fact\": \"ALG_L2_SYNTHETIC_CHECKPOINT_FACT_V1\",\n  \"phase\": \"q0\",\n  \"nonce\": \"3a343bad3c69ddce906ac9f90aaa92b7\"\n}\n"
+          },
+          "artifactSha256": "44156e5a689cde016f81088e66251f70f26ccb8eb63e2b0e421f88b880834416"
+        },
+        {
+          "sequence": 2,
+          "phase": "qh",
+          "nonce": "36d2496f5c217d052820d88049d7a165",
+          "sessionId": "ses_e2bd92543ffe7L1acQx5739nh0",
+          "messageId": "msg_1d426db0f001KHPPl5AIhyBQ31",
+          "partId": "prt_1d426db30001GFvoj5KoWbPV07",
+          "tool": "write",
+          "input": {
+            "filePath": "checkpoint-qh.json",
+            "content": "{\n  \"schema\": \"long-session-headless/v1\",\n  \"fact\": \"ALG_L2_SYNTHETIC_CHECKPOINT_FACT_V1\",\n  \"phase\": \"qh\",\n  \"nonce\": \"36d2496f5c217d052820d88049d7a165\"\n}\n"
+          },
+          "artifactSha256": "d38971c17b95c49497d98be056002151aba865770484416c712c383c7e77d8a9"
+        },
+        {
+          "sequence": 3,
+          "phase": "qc",
+          "nonce": "f8b2e3e7477d4f8d43c8267ee3b2a6e9",
+          "sessionId": "ses_e2bd92543ffe7L1acQx5739nh0",
+          "messageId": "msg_1d426de4d001QgOsJBDa9Ao1Ln",
+          "partId": "prt_1d426de720015QD1SVE5Toi8S4",
+          "tool": "write",
+          "input": {
+            "filePath": "checkpoint-qc.json",
+            "content": "{\n  \"schema\": \"long-session-headless/v1\",\n  \"fact\": \"ALG_L2_SYNTHETIC_CHECKPOINT_FACT_V1\",\n  \"phase\": \"qc\",\n  \"nonce\": \"f8b2e3e7477d4f8d43c8267ee3b2a6e9\"\n}\n"
+          },
+          "artifactSha256": "cc982fbc8c1b173dfc6d2e39e650f73b70810bdc152c654f78e8ed73173aea90"
+        },
+        {
+          "sequence": 4,
+          "phase": "qr",
+          "nonce": "6d4c25b05b2777262f034963ade05615",
+          "sessionId": "ses_e2bd92543ffe7L1acQx5739nh0",
+          "messageId": "msg_1d426ef96001NHqigmRogYSVGE",
+          "partId": "prt_1d426f30c0010jWDhzBds4AGTo",
+          "tool": "write",
+          "input": {
+            "filePath": "checkpoint-qr.json",
+            "content": "{\n  \"schema\": \"long-session-headless/v1\",\n  \"fact\": \"ALG_L2_SYNTHETIC_CHECKPOINT_FACT_V1\",\n  \"phase\": \"qr\",\n  \"nonce\": \"6d4c25b05b2777262f034963ade05615\"\n}\n"
+          },
+          "artifactSha256": "1dc8ea2f5709b558f0e6f412fc0366c3399caa0f6c6fd9f3f5696478db5c22ee"
+        }
+      ],
+      "census": {
+        "complete": true,
+        "sessionIds": [
+          "ses_e2bd92543ffe7L1acQx5739nh0",
+          "ses_e2bd93144ffeAgsL0RtcwLwcnZ"
+        ],
+        "messages": [
+          {
+            "sessionId": "ses_e2bd93144ffeAgsL0RtcwLwcnZ",
+            "ids": [
+              "msg_1d426cf38001UItHqH52ENR6Jk",
+              "msg_1d426d34a0019LLMTeY3U07sWd",
+              "msg_1d426d898001Z9SlRmaH2w4hf6"
+            ]
+          },
+          {
+            "sessionId": "ses_e2bd92543ffe7L1acQx5739nh0",
+            "ids": [
+              "msg_1d426dafd001CxHAPOexnGp77O",
+              "msg_1d426db0f001KHPPl5AIhyBQ31",
+              "msg_1d426db54001Z3S7Fn6tglk9Bg",
+              "msg_1d426dcf9001JSbCpZHGT3KFap",
+              "msg_1d426dd07001VICgjE8G1smf2D",
+              "msg_1d426de40001pGvpLNLddeA7FY",
+              "msg_1d426de4d001QgOsJBDa9Ao1Ln",
+              "msg_1d426de8c001z3JcAjLG87w0rD",
+              "msg_1d426ebcc001N5YEmOXMHm8TlS",
+              "msg_1d426ef96001NHqigmRogYSVGE",
+              "msg_1d426f47e001gQc7nXr5WMsIo5"
+            ]
+          }
+        ],
+        "failure": null
+      },
+      "provider": {
+        "requests": [
+          {
+            "kind": "tool_call",
+            "phase": "q0",
+            "tool": "write"
+          },
+          {
+            "kind": "completion",
+            "phase": "q0",
+            "tool": null
+          },
+          {
+            "kind": "tool_call",
+            "phase": "qh",
+            "tool": "write"
+          },
+          {
+            "kind": "completion",
+            "phase": "qh",
+            "tool": null
+          },
+          {
+            "kind": "summary",
+            "phase": null,
+            "tool": null
+          },
+          {
+            "kind": "tool_call",
+            "phase": "qc",
+            "tool": "write"
+          },
+          {
+            "kind": "completion",
+            "phase": "qc",
+            "tool": null
+          },
+          {
+            "kind": "tool_call",
+            "phase": "qr",
+            "tool": "write"
+          },
+          {
+            "kind": "completion",
+            "phase": "qr",
+            "tool": null
+          }
+        ],
+        "nonLoopbackOnly": true
+      },
+      "host": {
+        "restarts": 1,
+        "sameSessionAfterRestart": "ses_e2bd92543ffe7L1acQx5739nh0"
+      },
+      "summary": {
+        "id": "msg_1d426dd07001VICgjE8G1smf2D",
+        "completedAt": 1794560679208,
+        "digest": "e1f599be2c1cbd25c373d64b9b5e886427da5679bcf4acc5e0acd3b3c8de7fd1"
+      },
+      "hostVersion": "1.19.5",
+      "credentialsInherited": false,
+      "tempWorkspaceRetained": false,
+      "cleanup": {
+        "complete": true,
+        "errors": [],
+        "tempWorkspaceRetained": false
+      },
+      "globalConfigurationUnchanged": true
+    }
+  ],
+  "failure": {
+    "message": "Error: OpenCode version probe failed: status=null; SystemError: spawnSync C:\\Users\\codym\\AppData\\Roaming\\npm\\node_modules\\opencode-ai\\bin\\opencode.exe ETIMEDOUT",
+    "evidencePath": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\l2-fd0b77441471-windows-headless.json.alg.json"
+  }
+}

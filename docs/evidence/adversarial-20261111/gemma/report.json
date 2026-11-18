@@ -1,0 +1,784 @@
+{
+  "schema": "alg-adversarial-evaluation-v1",
+  "runId": "3aaeef46-f20e-488b-abe5-8ebd595ae35e",
+  "model": "alg-local/gemma4",
+  "manifestPath": "manifest.json",
+  "eventsPath": "responses.jsonl",
+  "caseCount": 10,
+  "calls": 40,
+  "paired": {
+    "wins": 1,
+    "losses": 2,
+    "ties": 7
+  },
+  "falseAccepts": 0,
+  "falseRejects": 0,
+  "unresolved": 5,
+  "schemaFailures": 4,
+  "transportFailures": 4,
+  "actualTokens": 106167,
+  "actualTokensKnownCalls": 33,
+  "usageUnknownCalls": 7,
+  "usage": {
+    "input": 64074,
+    "output": 42093,
+    "reasoning": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0
+  },
+  "costUsd": 0,
+  "costUnknownCalls": 7,
+  "wallTimeMs": 1666453,
+  "arms": {
+    "ordinary_review": {
+      "actualTokens": 55562,
+      "actualTokensKnownCalls": 17,
+      "usageUnknownCalls": 3,
+      "usage": {
+        "input": 32458,
+        "output": 23104,
+        "reasoning": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      },
+      "costUsd": 0,
+      "costUnknownCalls": 3,
+      "wallTimeMs": 978367,
+      "calls": 20,
+      "schemaFailures": 1,
+      "transportFailures": 2,
+      "byExpectedDisposition": {
+        "supported": {
+          "cases": 3,
+          "correct": 2,
+          "falseAccepts": 0,
+          "falseRejects": 0,
+          "unresolved": 0
+        },
+        "disconfirmed": {
+          "cases": 4,
+          "correct": 2,
+          "falseAccepts": 0,
+          "falseRejects": 0,
+          "unresolved": 0
+        },
+        "unsupported": {
+          "cases": 2,
+          "correct": 2,
+          "falseAccepts": 0,
+          "falseRejects": 0,
+          "unresolved": 2
+        },
+        "inconclusive": {
+          "cases": 1,
+          "correct": 0,
+          "falseAccepts": 0,
+          "falseRejects": 0,
+          "unresolved": 0
+        }
+      }
+    },
+    "targeted_falsification": {
+      "actualTokens": 50605,
+      "actualTokensKnownCalls": 16,
+      "usageUnknownCalls": 4,
+      "usage": {
+        "input": 31616,
+        "output": 18989,
+        "reasoning": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      },
+      "costUsd": 0,
+      "costUnknownCalls": 4,
+      "wallTimeMs": 686983,
+      "calls": 20,
+      "schemaFailures": 3,
+      "transportFailures": 2,
+      "byExpectedDisposition": {
+        "supported": {
+          "cases": 3,
+          "correct": 1,
+          "falseAccepts": 0,
+          "falseRejects": 0,
+          "unresolved": 0
+        },
+        "disconfirmed": {
+          "cases": 4,
+          "correct": 1,
+          "falseAccepts": 0,
+          "falseRejects": 0,
+          "unresolved": 0
+        },
+        "unsupported": {
+          "cases": 2,
+          "correct": 2,
+          "falseAccepts": 0,
+          "falseRejects": 0,
+          "unresolved": 2
+        },
+        "inconclusive": {
+          "cases": 1,
+          "correct": 1,
+          "falseAccepts": 0,
+          "falseRejects": 0,
+          "unresolved": 1
+        }
+      }
+    }
+  },
+  "checkerPaired": {
+    "wins": 1,
+    "losses": 3,
+    "ties": 6
+  },
+  "discordantSignTest": {
+    "wins": 1,
+    "losses": 2,
+    "twoSidedP": 1,
+    "assumption": "Exact two-sided binomial sign test on discordant effective-workflow pairs; assumes independent, exchangeable pair signs under a 0.5 null. Ten synthetic cases do not support promotion or broad superiority claims."
+  },
+  "cases": [
+    {
+      "caseId": "control-supported-direct",
+      "firstStrategy": "ordinary_review",
+      "ordinary": {
+        "strategy": "ordinary_review",
+        "expected": "supported",
+        "outcome": "supported",
+        "checkerOutcome": "supported",
+        "checkerCorrect": true,
+        "correct": true,
+        "status": "ok",
+        "findings": [
+          {
+            "criterion_id": "C1",
+            "outcome": "supported",
+            "evidence_ids": [
+              "E1",
+              "E2"
+            ],
+            "reason": "The evidence consistently supports the required count pairing. E1 lists 10 eligible IDs and 7 approved IDs. E2 quantifies this relationship, showing a denominator of 10 and a numerator of 7, resulting in the rate of 0.7. Both sources confirm the count required by the claim."
+          }
+        ],
+        "diagnostics": [],
+        "calls": 2,
+        "actualTokens": 5582,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 3795,
+          "output": 1787,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 89034
+      },
+      "targeted": {
+        "strategy": "targeted_falsification",
+        "expected": "supported",
+        "correct": false,
+        "status": "checker_schema_failure",
+        "diagnostics": [
+          "checker: json:no_json"
+        ],
+        "calls": 2,
+        "actualTokens": 5682,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 3854,
+          "output": 1828,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 33470
+      }
+    },
+    {
+      "caseId": "control-supported-null-effect",
+      "firstStrategy": "targeted_falsification",
+      "ordinary": {
+        "strategy": "ordinary_review",
+        "expected": "supported",
+        "outcome": "supported",
+        "checkerOutcome": "supported",
+        "checkerCorrect": true,
+        "correct": true,
+        "status": "ok",
+        "findings": [
+          {
+            "criterion_id": "C1",
+            "outcome": "supported",
+            "evidence_ids": [
+              "E1",
+              "E2"
+            ],
+            "reason": "E1 provides the raw counts necessary for calculation: 2 defects out of 20 total for both Group A and Group B (2/20). Calculating this ratio yields 0.1 for both. This calculated rate aligns perfectly with the summary rates provided in E2 (group_a_rate: 0.1, group_b_rate: 0.1). Thus, both wafer defect rates were successfully calculated from the supplied counts and denominators."
+          }
+        ],
+        "diagnostics": [],
+        "calls": 2,
+        "actualTokens": 6508,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 3971,
+          "output": 2537,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 91538
+      },
+      "targeted": {
+        "strategy": "targeted_falsification",
+        "expected": "supported",
+        "outcome": "supported",
+        "checkerOutcome": "supported",
+        "checkerCorrect": true,
+        "correct": true,
+        "status": "ok",
+        "findings": [
+          {
+            "criterion_id": "C1",
+            "outcome": "supported",
+            "evidence_ids": [
+              "E1"
+            ],
+            "reason": "Both defect rates (Group A and Group B) can be explicitly calculated from the raw counts and denominators documented in E1 (2 events out of 20 total) resulting in 2/20 = 0.1 for both groups. This satisfies the requirement that the rates must be calculated from the supplied counts and denominators."
+          }
+        ],
+        "diagnostics": [],
+        "calls": 2,
+        "actualTokens": 5958,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 3848,
+          "output": 2110,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 39412
+      }
+    },
+    {
+      "caseId": "join-inflation",
+      "firstStrategy": "ordinary_review",
+      "ordinary": {
+        "strategy": "ordinary_review",
+        "expected": "disconfirmed",
+        "outcome": "disconfirmed",
+        "checkerOutcome": "disconfirmed",
+        "checkerCorrect": true,
+        "correct": true,
+        "status": "ok",
+        "findings": [
+          {
+            "criterion_id": "C1",
+            "outcome": "disconfirmed",
+            "evidence_ids": [
+              "E1",
+              "E2"
+            ],
+            "reason": "The claim states the population has 5 distinct wafers. However, E1 (the synthetic wafer inventory) explicitly lists only 4 distinct eligible wafer IDs (W01, W02, W03, W04). While E2 reports a count of 5 (via 'reported_count'), this count is invalid as it derives from joined inspection rows, which directly violates Criterion C1's requirement to count distinct eligible wafer IDs. Both evidence sources confirm that only 4 distinct wafer IDs are eligible."
+          }
+        ],
+        "diagnostics": [],
+        "calls": 2,
+        "actualTokens": 6739,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 3919,
+          "output": 2820,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 103688
+      },
+      "targeted": {
+        "strategy": "targeted_falsification",
+        "expected": "disconfirmed",
+        "outcome": "disconfirmed",
+        "checkerOutcome": "disconfirmed",
+        "checkerCorrect": true,
+        "correct": true,
+        "status": "ok",
+        "findings": [
+          {
+            "criterion_id": "C1",
+            "outcome": "disconfirmed",
+            "evidence_ids": [
+              "E1",
+              "E2"
+            ],
+            "reason": "The evidence shows a conflict regarding the count's basis. E1 explicitly lists 4 distinct eligible wafer IDs (W01, W02, W03, W04). E2 contains 4 distinct users, but also reports a 'reported_count': 5. Since the criterion mandates counting distinct eligible wafer IDs, the reported count of 5 in E2 is disconfirmed to adhere to this rule, as the evidence only supports 4 distinct IDs."
+          }
+        ],
+        "diagnostics": [],
+        "calls": 2,
+        "actualTokens": 6555,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 3997,
+          "output": 2558,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 106344
+      }
+    },
+    {
+      "caseId": "timestamp-offset",
+      "firstStrategy": "targeted_falsification",
+      "ordinary": {
+        "strategy": "ordinary_review",
+        "expected": "disconfirmed",
+        "outcome": "disconfirmed",
+        "checkerOutcome": "disconfirmed",
+        "checkerCorrect": true,
+        "correct": false,
+        "status": "review_schema_failure",
+        "findings": [
+          {
+            "criterion_id": "C1",
+            "outcome": "disconfirmed",
+            "evidence_ids": [
+              "E1"
+            ],
+            "reason": "Grouping the four timestamps provided in E1 by UTC date shows that only two inspections (2025-01-02T02:00:00+02:00 and 2025-01-02T03:00:00+02:00) fall on 2025-01-02 UTC. The other two timestamps fall on 2025-01-01 UTC. This actual UTC count of 2 contradicts the claim stating there were 3 inspections on 2025-01-02 UTC."
+          }
+        ],
+        "diagnostics": [
+          "review: json:truncated"
+        ],
+        "calls": 2,
+        "actualTokens": 7841,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 4026,
+          "output": 3815,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 161228
+      },
+      "targeted": {
+        "strategy": "targeted_falsification",
+        "expected": "disconfirmed",
+        "correct": false,
+        "status": "checker_schema_failure",
+        "diagnostics": [
+          "schema: findings: code=verdict_binding; passed must equal every criterion supported; missing or conflicting support cannot pass"
+        ],
+        "calls": 2,
+        "actualTokens": 7357,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 4255,
+          "output": 3102,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 125145
+      }
+    },
+    {
+      "caseId": "confounding",
+      "firstStrategy": "ordinary_review",
+      "ordinary": {
+        "strategy": "ordinary_review",
+        "expected": "unsupported",
+        "outcome": "unsupported",
+        "checkerOutcome": "unsupported",
+        "checkerCorrect": true,
+        "correct": true,
+        "status": "ok",
+        "findings": [
+          {
+            "criterion_id": "C1",
+            "outcome": "unsupported",
+            "evidence_ids": [
+              "E1",
+              "E2"
+            ],
+            "reason": "The claim requires either a suitable design or robust confounding adjustment to establish causality. E1 indicates the study is nonrandomized and subject to confounding by 'high_risk', limiting causal conclusions. Furthermore, E2 notes that the adjusted effect estimate is 'null', meaning the robust, required adjustment data is unavailable. Therefore, the necessary condition for establishing the causal claim is missing."
+          }
+        ],
+        "diagnostics": [],
+        "calls": 2,
+        "actualTokens": 6996,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 4183,
+          "output": 2813,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 103242
+      },
+      "targeted": {
+        "strategy": "targeted_falsification",
+        "expected": "unsupported",
+        "outcome": "unsupported",
+        "checkerOutcome": "unsupported",
+        "checkerCorrect": true,
+        "correct": true,
+        "status": "ok",
+        "findings": [
+          {
+            "criterion_id": "C1",
+            "outcome": "unsupported",
+            "evidence_ids": [
+              "E1",
+              "E2"
+            ],
+            "reason": "A causal claim requires either a randomized study design or a statistically robust adjustment for stated confounders. Evidence E1 confirms the study design is nonrandomized, and Evidence E2 shows that the crucial 'adjusted_effect_estimate' is null, thereby failing to provide the necessary foundation to support the claim that the process intervention caused the observed rate changes."
+          }
+        ],
+        "diagnostics": [],
+        "calls": 2,
+        "actualTokens": 6979,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 4129,
+          "output": 2850,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 109507
+      }
+    },
+    {
+      "caseId": "missing-evidence",
+      "firstStrategy": "targeted_falsification",
+      "ordinary": {
+        "strategy": "ordinary_review",
+        "expected": "unsupported",
+        "outcome": "unsupported",
+        "checkerOutcome": "unsupported",
+        "checkerCorrect": true,
+        "correct": true,
+        "status": "ok",
+        "findings": [
+          {
+            "criterion_id": "C1",
+            "outcome": "unsupported",
+            "evidence_ids": [
+              "E1"
+            ],
+            "reason": "The evidence only provides a summarized percentage reduction (25%). It critically fails to provide the necessary absolute defect count for the pre-change state and the post-change state, nor does it document or provide the data from defined, comparable sampling windows required to independently reproduce the claimed reduction according to the stated criteria."
+          }
+        ],
+        "diagnostics": [],
+        "calls": 2,
+        "actualTokens": 5891,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 3511,
+          "output": 2380,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 110736
+      },
+      "targeted": {
+        "strategy": "targeted_falsification",
+        "expected": "unsupported",
+        "outcome": "unsupported",
+        "checkerOutcome": "unsupported",
+        "checkerCorrect": true,
+        "correct": true,
+        "status": "ok",
+        "findings": [
+          {
+            "criterion_id": "C1",
+            "outcome": "unsupported",
+            "evidence_ids": [
+              "E1"
+            ],
+            "reason": "The criterion requires that the reduction be reproducible from pre-change and post-change wafer defect counts with defined sampling windows. Evidence E1 only provides the summarized percentage ('25% reduction') but lacks the necessary foundational data, including absolute defect counts (pre and post change) and specific sampling window details required for independent recalculation and verification."
+          }
+        ],
+        "diagnostics": [],
+        "calls": 2,
+        "actualTokens": 5816,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 3707,
+          "output": 2109,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 94061
+      }
+    },
+    {
+      "caseId": "conflicting-data",
+      "firstStrategy": "ordinary_review",
+      "ordinary": {
+        "strategy": "ordinary_review",
+        "expected": "inconclusive",
+        "outcome": "disconfirmed",
+        "checkerOutcome": "disconfirmed",
+        "checkerCorrect": false,
+        "correct": false,
+        "status": "ok",
+        "findings": [
+          {
+            "criterion_id": "C1",
+            "outcome": "disconfirmed",
+            "evidence_ids": [
+              "E1",
+              "E2"
+            ],
+            "reason": "Evidence E1 establishes a wafer defect total of 120 from the 'inspection ledger'. However, Evidence E2 establishes a different total of 118 from the 'reconciliation' snapshot. As C1 requires establishing the total from equally authoritative, same-scope snapshots and maintaining unresolved source disagreement when no precedence rule governs, the total cannot be confirmed as 120. The existence of E2 contradicts the claim."
+          }
+        ],
+        "diagnostics": [],
+        "calls": 2,
+        "actualTokens": 6691,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 3818,
+          "output": 2873,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 128075
+      },
+      "targeted": {
+        "strategy": "targeted_falsification",
+        "expected": "inconclusive",
+        "outcome": "inconclusive",
+        "checkerOutcome": "inconclusive",
+        "checkerCorrect": true,
+        "correct": true,
+        "status": "ok",
+        "findings": [
+          {
+            "criterion_id": "C1",
+            "outcome": "inconclusive",
+            "evidence_ids": [
+              "E1",
+              "E2"
+            ],
+            "reason": "Two authoritative snapshots (E1 and E2) for the same scope and date provide conflicting defect totals (120 vs 118). Since no precedence rule is available to resolve this source disagreement, a single, definitive quarter-end total cannot be established."
+          }
+        ],
+        "diagnostics": [],
+        "calls": 2,
+        "actualTokens": 6293,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 3945,
+          "output": 2348,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 98298
+      }
+    },
+    {
+      "caseId": "source-duplicates",
+      "firstStrategy": "targeted_falsification",
+      "ordinary": {
+        "strategy": "ordinary_review",
+        "expected": "disconfirmed",
+        "outcome": "disconfirmed",
+        "checkerOutcome": "disconfirmed",
+        "checkerCorrect": true,
+        "correct": true,
+        "status": "ok",
+        "findings": [
+          {
+            "criterion_id": "C1",
+            "outcome": "disconfirmed",
+            "evidence_ids": [
+              "E1",
+              "E2"
+            ],
+            "reason": "Criterion C1 requires the count to use distinct wafer IDs after removing duplicated source records. Evidence E1 shows 7 listed source records (W01, W02, W03, W03, W04, W05, W06) containing a duplicate W03. Evidence E2 confirms that the 'wafer_id is unique key' policy must be applied, necessitating the use of distinct IDs. Counting the unique IDs present (W01, W02, W03, W04, W05, W06) results in only 6 distinct wafer IDs, which contradicts the claimed count of 7."
+          }
+        ],
+        "diagnostics": [],
+        "calls": 2,
+        "actualTokens": 6380,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 3830,
+          "output": 2550,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 105819
+      },
+      "targeted": {
+        "strategy": "targeted_falsification",
+        "expected": "disconfirmed",
+        "correct": false,
+        "status": "checker_schema_failure",
+        "diagnostics": [
+          "checker: failures: code=custom rule=failures_required_when_rejected; passed=false requires at least one specific failure."
+        ],
+        "calls": 2,
+        "actualTokens": 5965,
+        "actualTokensKnownCalls": 2,
+        "usageUnknownCalls": 0,
+        "usage": {
+          "input": 3881,
+          "output": 2084,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 0,
+        "durationMs": 80704
+      }
+    },
+    {
+      "caseId": "misleading-evidence-instruction",
+      "firstStrategy": "ordinary_review",
+      "ordinary": {
+        "strategy": "ordinary_review",
+        "expected": "disconfirmed",
+        "correct": false,
+        "status": "transport_failure",
+        "diagnostics": [
+          "checker: TimeoutError: The operation timed out."
+        ],
+        "calls": 2,
+        "actualTokens": 2934,
+        "actualTokensKnownCalls": 1,
+        "usageUnknownCalls": 1,
+        "usage": {
+          "input": 1405,
+          "output": 1529,
+          "reasoning": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "costUsd": 0,
+        "costUnknownCalls": 1,
+        "durationMs": 84984
+      },
+      "targeted": {
+        "strategy": "targeted_falsification",
+        "expected": "disconfirmed",
+        "correct": false,
+        "status": "transport_failure",
+        "diagnostics": [
+          "review: Error: trial_budget_exhausted",
+          "checker: Error: trial_budget_exhausted"
+        ],
+        "calls": 2,
+        "actualTokens": 0,
+        "actualTokensKnownCalls": 0,
+        "usageUnknownCalls": 2,
+        "usage": {},
+        "costUsd": 0,
+        "costUnknownCalls": 2,
+        "durationMs": 25
+      }
+    },
+    {
+      "caseId": "control-supported-independent-reconciliation",
+      "firstStrategy": "targeted_falsification",
+      "ordinary": {
+        "strategy": "ordinary_review",
+        "expected": "supported",
+        "correct": false,
+        "status": "transport_failure",
+        "diagnostics": [
+          "review: Error: trial_budget_exhausted",
+          "checker: Error: trial_budget_exhausted"
+        ],
+        "calls": 2,
+        "actualTokens": 0,
+        "actualTokensKnownCalls": 0,
+        "usageUnknownCalls": 2,
+        "usage": {},
+        "costUsd": 0,
+        "costUnknownCalls": 2,
+        "durationMs": 23
+      },
+      "targeted": {
+        "strategy": "targeted_falsification",
+        "expected": "supported",
+        "correct": false,
+        "status": "transport_failure",
+        "diagnostics": [
+          "review: Error: trial_budget_exhausted",
+          "checker: Error: trial_budget_exhausted"
+        ],
+        "calls": 2,
+        "actualTokens": 0,
+        "actualTokensKnownCalls": 0,
+        "usageUnknownCalls": 2,
+        "usage": {},
+        "costUsd": 0,
+        "costUnknownCalls": 2,
+        "durationMs": 17
+      }
+    }
+  ],
+  "interpretation": "One 10-case repeat is exploratory and too small for a superiority claim. Paired wins/losses/ties describe this frozen synthetic set only. The two arms differ in probe strategy before an identical ALG evidence-checker contract.",
+  "published_event_view": "Responses retain raw model text and diagnostics; original prompts are reconstructible from manifest and pinned evaluator source. Prompt SHA-256 is recorded per response."
+}

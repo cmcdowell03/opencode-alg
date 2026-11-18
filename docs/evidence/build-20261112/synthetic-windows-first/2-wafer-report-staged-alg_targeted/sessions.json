@@ -1,0 +1,36 @@
+[
+  {
+    "id": "ses_e31ecba77ffer7jDD1DstD7VDo",
+    "slug": "quiet-sailor",
+    "projectID": "9f7abd1e77f592d23b4596df69341ff9c9b6ed14",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-smoke-windows-20261112\\2-wafer-report-staged-alg_targeted\\project",
+    "path": "",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 16,
+      "output": 4,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "title": "Frozen benchmark wafer-report-staged alg_targeted",
+    "agent": "orchestrator",
+    "model": {
+      "id": "synthetic",
+      "providerID": "transport-fixture",
+      "variant": "default"
+    },
+    "version": "1.18.35",
+    "time": {
+      "created": 1794458731912,
+      "updated": 1794458743429
+    }
+  }
+]

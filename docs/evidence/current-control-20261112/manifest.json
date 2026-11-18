@@ -1,0 +1,70 @@
+{
+  "source": "..\\implementation-evidence\\current-control-terra-20261112",
+  "files": [
+    {
+      "path": "1-wafer-count-commonjs-alg_default/alg-progress.json",
+      "bytes": 24947,
+      "sha256": "d45c2268ef972970f71a2dd70f4fcdf24cf4d43b752d96208bad7fe4f7039360"
+    },
+    {
+      "path": "1-wafer-count-commonjs-alg_default/result.json",
+      "bytes": 43759,
+      "sha256": "e0fbb75f41581d853e4e846ceb34616096bca25bb1c289adbd84af2a27c1f809"
+    },
+    {
+      "path": "1-wafer-count-commonjs-build/result.json",
+      "bytes": 13429,
+      "sha256": "9ab5c106f4e58e687ab5a0d3a019fe73e21e9a844818c7ce14c448ae9b7b8268"
+    },
+    {
+      "path": "2-wafer-report-staged-alg_default/alg-progress.json",
+      "bytes": 11611,
+      "sha256": "ab650d72fbc4f0e63c64e4ef3c8fd1e05c66d0a401e5fd010870a59acedde887"
+    },
+    {
+      "path": "2-wafer-report-staged-alg_default/project/preparation.md",
+      "bytes": 1910,
+      "sha256": "653a5a575bcb9aa1bd51a2f5af94c826bc0849d9ebeb3f40fc9eb86f3f5dc09c"
+    },
+    {
+      "path": "2-wafer-report-staged-alg_default/result.json",
+      "bytes": 69893,
+      "sha256": "4ad64a29751046fcd347e39b3cfcedd2eedd882babdca2d6a2ffd150f2924709"
+    },
+    {
+      "path": "2-wafer-report-staged-build/project/preparation.md",
+      "bytes": 1818,
+      "sha256": "988f03e4c2841079fd245a6f3fe6859dfb1b57ad889e3333e3292494642e2cb3"
+    },
+    {
+      "path": "2-wafer-report-staged-build/result.json",
+      "bytes": 17854,
+      "sha256": "d022069df6f96413daa6085d468fbec216d6fc2c5448d3a6ad514b152fab9def"
+    },
+    {
+      "path": "command-projection-offline-audit.json",
+      "bytes": 4389,
+      "sha256": "82a2beedde0a0d4cbfe71b038feb2c1b5cb3a8a04f18e5c33e80ee43f533a409"
+    },
+    {
+      "path": "config-metadata-audit.json",
+      "bytes": 1663,
+      "sha256": "2358b3ff6d1c093f6951b44538b38c9563844c1f1cd791fe1d0d84bc4d8b743b"
+    },
+    {
+      "path": "plan.json",
+      "bytes": 8331,
+      "sha256": "95baa92c5f621d16c87a6d21f47fbed65e856472a1ea553b648711b42fc9910f"
+    },
+    {
+      "path": "preparation-offline-audit.json",
+      "bytes": 2229,
+      "sha256": "546007c9725017fba8d42ca6627a0c801f27cd5ccc7e6ffeb0847b3aed821caa"
+    },
+    {
+      "path": "result.json",
+      "bytes": 162239,
+      "sha256": "6f552282a8d4ad09fc88521fc0985d8b16c3bae26820341cec3f033ea9259f89"
+    }
+  ]
+}

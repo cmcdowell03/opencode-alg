@@ -1,0 +1,2 @@
+$ bun run scripts/verify-optional-manifests.ts
+{"datascience":{"manifest_sha256":"f32a81dd9bc0c79e3f2c5b4171ff69f5d6f077ddfb5b21544a731464c3bb7cc3","files":6},"connectors":{"manifest_sha256":"6daa9b373748d88c807abc83b00a9f21889b2d04a495174bc093d5fa0bdaac1a","files":3}}

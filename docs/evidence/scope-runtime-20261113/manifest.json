@@ -1,0 +1,167 @@
+[
+  {
+    "file": "collect-scope-runtime-evidence.py",
+    "bytes": 4798,
+    "sha256": "2bd9275e479e6578fb501f347f11217f54eeb96c3c829b86ffd0b93866a9648e"
+  },
+  {
+    "file": "hard-scope-c17-qualification.json",
+    "bytes": 60058,
+    "sha256": "7c5141e1ec13e72ba4815793763a01852fe6e05a9116c08d1a604456d6153efc"
+  },
+  {
+    "file": "hard-scope-c17-qualification.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "file": "hard-scope-preflight--plan.json",
+    "bytes": 21177,
+    "sha256": "5430819185eb355bfc5054d0099354c0ff5be36fd2e11c7f44f5904964069484"
+  },
+  {
+    "file": "hard-scope-preflight--result.json",
+    "bytes": 96680,
+    "sha256": "41f2533c714381a9b9c50b5ab7ac6b7dd0efc5db2bdca3150bf8e507c4151e1b"
+  },
+  {
+    "file": "qualify-scope-runtime-linux.sh",
+    "bytes": 2401,
+    "sha256": "78bbf01f34323f5312c6d9957966aae8e95803bfb368e0d70348351e6f240692"
+  },
+  {
+    "file": "scope-runtime-4a9d5b1a4b9d-linux-full.log",
+    "bytes": 279313,
+    "sha256": "325e532ca78915e3016876a6f951d3201945721d1697fd48e724b1f75c011c86"
+  },
+  {
+    "file": "scope-runtime-4a9d5b1a4b9d-linux-gate.json",
+    "bytes": 194,
+    "sha256": "2275f1a325a9959d4543a3cc7107c83d7e9f8cac60dabc6235845a2597c8b0c7"
+  },
+  {
+    "file": "scope-runtime-4a9d5b1a4b9d-linux-headless.json",
+    "bytes": 13464,
+    "sha256": "2309be63dfbde7348b89dde42a84fece62df944c80eb4aa605a68bb101b5077f"
+  },
+  {
+    "file": "scope-runtime-4a9d5b1a4b9d-linux-headless.json.before-cleanup.json",
+    "bytes": 13466,
+    "sha256": "8d58876aa5e9dc2c4f299d31ca806bf493297347bd5c62f8d403fd2656a35853"
+  },
+  {
+    "file": "scope-runtime-4a9d5b1a4b9d-linux-headless.log",
+    "bytes": 799,
+    "sha256": "12169ce8efe282b1fa4cdea4c2db861bc51ef5564c9b1d7b3c64b553fc016881"
+  },
+  {
+    "file": "scope-runtime-4a9d5b1a4b9d-linux-identity.json",
+    "bytes": 33870,
+    "sha256": "99b2b7771312379ec26c486fafbbdd4c2d380408a22bde3cd776ef8a6373e7a6"
+  },
+  {
+    "file": "scope-runtime-4a9d5b1a4b9d-windows-headless.json",
+    "bytes": 13681,
+    "sha256": "4512b9f77e611114cdf6087e3d24d3bb368bf70876c80b2c61ce2630079533e8"
+  },
+  {
+    "file": "scope-runtime-4a9d5b1a4b9d-windows-headless.json.before-cleanup.json",
+    "bytes": 13683,
+    "sha256": "aafad2bd579468a944c1132942803dcffe438f33d63e1ac8ba528fa811cec83a"
+  },
+  {
+    "file": "scope-runtime-4a9d5b1a4b9d-windows-headless.log",
+    "bytes": 807,
+    "sha256": "04b13da35620ad4ba2d9b1f4d7d0f83d1671c1d35abcd1b08787efb3f5fb114d"
+  },
+  {
+    "file": "scope-runtime-4a9d5b1a4b9d-windows-host-gate.json",
+    "bytes": 120,
+    "sha256": "db70e1bd5a542bec1cd4d279efb3b2d91f0f0f5684656a328fdbd7bdc9357b71"
+  },
+  {
+    "file": "scope-runtime-4a9d5b1a4b9d-windows-probe-unit.log",
+    "bytes": 954,
+    "sha256": "2212297977b3238fa08f5b7c3e687869f5136fcfeff0af8d667e28ce7d60634b"
+  },
+  {
+    "file": "scope-runtime-73370ef-windows-manager.log",
+    "bytes": 552,
+    "sha256": "2c622b8440d999ff8941cb5196f3302134781a02be8ef33848ee6e663858f7a2"
+  },
+  {
+    "file": "scope-runtime-73370ef-windows-package-gate.json",
+    "bytes": 115,
+    "sha256": "ee5bc8f65a7c8458547ba0e2f96ef1ce63fbe1bf3a1fd31ed6805db482bbb777"
+  },
+  {
+    "file": "scope-runtime-73370ef-windows-package.log",
+    "bytes": 358,
+    "sha256": "1ef1cd6bf41fa33be4af139b8741d9f27e983512d3e36db31f5ecf218a8792f4"
+  },
+  {
+    "file": "scope-runtime-73370efe5bd8-linux-full.log",
+    "bytes": 207986,
+    "sha256": "abe7c70d84d4a23cd8aebc97448bb39d5e57871050e76c48753194c5f72ca005"
+  },
+  {
+    "file": "scope-runtime-73370efe5bd8-linux-gate.json",
+    "bytes": 193,
+    "sha256": "836eda5a365e041c2c8d370e1bfc17319a508a52e77d228147db68ffb91c4851"
+  },
+  {
+    "file": "scope-runtime-73370efe5bd8-linux-headless.json",
+    "bytes": 13467,
+    "sha256": "ae9d192c14f182dce7d4724719c3ef91d6e49517842259f1fefdcca3662dbc47"
+  },
+  {
+    "file": "scope-runtime-73370efe5bd8-linux-headless.json.before-cleanup.json",
+    "bytes": 13469,
+    "sha256": "2f2097737993e5715d6647b9ee94e0bbe640a8d6013a1f00bef7ab80a883fe17"
+  },
+  {
+    "file": "scope-runtime-73370efe5bd8-linux-headless.log",
+    "bytes": 799,
+    "sha256": "6ec6a6a843f40ccd62a1a6251940fe9ed60f3d046d071af82facca7f31fc8aeb"
+  },
+  {
+    "file": "scope-runtime-73370efe5bd8-linux-identity.json",
+    "bytes": 33870,
+    "sha256": "7d793998f9c669f5b15e41f6e0e05e41352e92e84fbfdb5d2507929464378fd3"
+  },
+  {
+    "file": "scope-runtime-73370efe5bd8-linux-live.json",
+    "bytes": 42156,
+    "sha256": "0b7a4fa862e6cd3e4eb6dea0e05e4c21bfe8c66c3c428bc457d76377a77a5273"
+  },
+  {
+    "file": "scope-runtime-73370efe5bd8-windows-identity.json",
+    "bytes": 34758,
+    "sha256": "0ae530ca77a0c817ba0b4d1cac4abe6256e0b78e89e762d544b6cc611918b49d"
+  },
+  {
+    "file": "scope-runtime-ccf61aa-windows-focused.log",
+    "bytes": 20061,
+    "sha256": "28d353caf694d5ade15e2edce8e181e1334d71a5dfe29f85a45b0fde77fe307c"
+  },
+  {
+    "file": "scope-runtime-ccf61aa-windows-gate.json",
+    "bytes": 116,
+    "sha256": "8418e9777d5e57f697cab43791e2f8855b7adb359cc98bffe274bc16ee7d8c79"
+  },
+  {
+    "file": "scope-runtime-ccf61aa-windows-typecheck.log",
+    "bytes": 67,
+    "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+  },
+  {
+    "file": "scope-runtime-windows-lock-repair.log",
+    "bytes": 310,
+    "sha256": "f3a5d3a381d1f47f37a88d03051eb32865827c11e09f0150fb957dc2b4c5fbff"
+  },
+  {
+    "file": "summary.json",
+    "bytes": 1236,
+    "sha256": "cc2cf0beed549677a44de6c06a612b07d9066cdcbe360fb19cf19ed9327fa458"
+  }
+]

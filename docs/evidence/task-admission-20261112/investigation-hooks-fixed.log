@@ -1,0 +1,14 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\investigation-hooks.test.ts:
+(pass) investigation host boundaries > fixed template planning fails closed when disabled and rejects graph or gate overrides [180.53ms]
+(pass) investigation host boundaries > actual plan seals the normalized graph and managed run blocks criterion and gate mutation [652.54ms]
+(pass) investigation host boundaries > an orphan investigation graph cannot execute and resume guard runs before reopening attempts [311.04ms]
+(pass) investigation host boundaries > batch guard fails before any child or attempt reservation [213.18ms]
+(pass) investigation host boundaries > normal and compaction hooks retain the durable pointer within the context ceiling [748.93ms]
+(pass) a simple host tool call records an advisory workspace operation without model-supplied operation [48.43ms]
+
+ 6 pass
+ 0 fail
+ 33 expect() calls
+Ran 6 tests across 1 file. [2.64s]

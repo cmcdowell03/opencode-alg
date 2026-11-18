@@ -1,0 +1,30 @@
+{
+  "reporting_date": "2025-04-01",
+  "window": {
+    "start": "2025-04-01T00:00:00Z",
+    "endExclusive": "2025-04-02T00:00:00Z",
+    "timezone": "UTC"
+  },
+  "numerator": 1,
+  "denominator": 4,
+  "rate": 0.25,
+  "calculation": "1 distinct defective wafer / 4 distinct wafers = 0.25",
+  "method": "The system export is primary; manual review is supplemental. Repeated inspection events for a wafer count once.",
+  "sources": [
+    "data/system-export.json",
+    "data/manual-review.json"
+  ],
+  "conflicts": [
+    {
+      "wafer_id": "W13",
+      "system_defect": false,
+      "manual_defect": true,
+      "status": "unresolved"
+    }
+  ],
+  "limitations": [
+    "Synthetic analysis only; not process validation.",
+    "Both sources identify the reporting date but lack individual event timestamps, so event-level assignment to the reporting window cannot be independently verified.",
+    "The unresolved W13 disagreement introduces uncertainty; the reported calculation retains the primary system observation."
+  ]
+}

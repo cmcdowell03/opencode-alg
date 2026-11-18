@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { mkdirSync, existsSync } from "node:fs"
+import { mkdirSync, existsSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { createRun, loadRun, persistRun, hydrateRunFully } from "../src/store.ts"
 import { executeRun, prepareRunForResume } from "../src/executor.ts"
@@ -7,7 +7,9 @@ import { resolveInputValue, validateGraph } from "../src/graph.ts"
 import { PersistedFailureListSchema } from "../src/schemas.ts"
 import { safeDiagnosticText } from "../src/diagnostics.ts"
 import { createAlgTools } from "../src/tools.ts"
-import { executeContext, tempProject, removeProject, singleImplementGraph } from "./helpers.ts"
+import { TaskAllowanceRuntime } from "../src/task-allowance.ts"
+import { MemoryStore } from "../src/session-memory/store.ts"
+import { executeContext, tempProject, removeProject, singleImplementGraph, testTaskContract } from "./helpers.ts"
 
 const output = { summary: ["complete"], files_touched: [], commands_run: [], risks: [], done: true }
 function newRun(project: string, graph = singleImplementGraph({ maxAttempts: 2 })) {
@@ -39,22 +41,37 @@ test("plan and status expose the persisted child and relative-gate base", async 
     const context = { ...executeContext(project).toolContext, sessionID: "session-owner", messageID: "message",
       agent: "orchestrator", directory, worktree: project, metadata: () => {} } as never
     const decode = (result: unknown) => JSON.parse((result as { output: string }).output)
-    const plan = decode(await tools.alg_plan.execute({ goal: "cwd", graph_json: JSON.stringify({
-      name: "shell-cwd", max_global_attempts: 1, max_concurrency: 1,
-      nodes: [{ id: "gate", agent: "shell", depends_on: [], shell_gate: { cmd: "synthetic", cwd: "." } }],
-    }) }, context))
+    const plan = decode(await tools.alg_plan.execute({ goal: "cwd", criteria: ["Keep the pinned relative shell cwd"],
+      task_contract: testTaskContract({ kind: "project_change", discovery: "not_required", phase: "complete",
+        deliverables: [{ destination: "project_file", producer_node: "work", path: "result.txt" }],
+        verification: { checker_node: "check", execution: "shell_gate", execution_node: "gate" }, preserve_paths: [] }),
+      graph_json: JSON.stringify({
+        name: "shell-cwd", max_global_attempts: 3, max_concurrency: 1,
+        nodes: [
+          { id: "work", agent: "implementer", depends_on: [] },
+          { id: "gate", agent: "shell", depends_on: ["work"], shell_gate: { cmd: "synthetic", cwd: "." } },
+          { id: "check", agent: "checker", depends_on: ["work", "gate"], isolated_check: true },
+        ],
+      }) }, context))
     expect(plan.execution_directory).toBe(directory)
     expect(plan.shell_gate_base).toBe(directory)
     const status = decode(await tools.alg_status.execute({ run_id: plan.run_id }, context))
     expect(status.execution_directory).toBe(directory)
     expect(status.shell_gate_base).toBe(directory)
     const run = disk(project, plan.run_id)
-    await executeRun(run, { ...executeContext(project), shellRunner: async (opts) => {
+    const allowance = new TaskAllowanceRuntime(new MemoryStore(project))
+    await executeRun(run, { ...executeContext(project), taskAllowance: allowance, sessionRunner: async ({ agent }) => {
+      if (agent === "implementer") writeFileSync(join(project, "result.txt"), "synthetic declared deliverable")
+      return { session_id: agent, text: "", parsed: agent === "checker"
+        ? { passed: true, failures: [], score: 10 }
+        : { summary: ["done"], files_touched: ["result.txt"], commands_run: [], risks: [], done: true } }
+    }, shellRunner: async (opts) => {
       expect(opts.context.directory).toBe(directory)
       expect(opts.cwd).toBe(".")
       return { cwd: directory, exit_code: 0, ok: true, stdout_tail: "", stderr_tail: "" }
     } })
     expect(disk(project, plan.run_id).status).toBe("done")
+    expect(allowance.status(run.task_allowance!).reserved).toBe(2) // The shell gate is not a child dispatch.
   } finally { removeProject(project) }
 }, 120_000)
 

@@ -1,0 +1,2209 @@
+{
+  "schema": "alg-hard-development-qualification-v1",
+  "generated_at": "2026-11-13T02:45:35.693Z",
+  "identities": {
+    "hard_fixtures_sha256": "76574d554dd0ecb655f143014e43d346fbe8268f68b7d6a102e7c19804eb83dd",
+    "fixtures_source_sha256": "9f718eedd5cd04e52d3a99d405c2f7f6333b665edfc7c3dac877bcd034928815",
+    "grader_sha256": "9f718eedd5cd04e52d3a99d405c2f7f6333b665edfc7c3dac877bcd034928815",
+    "service_sha256": "a194fd54428f3015582f145d31111a18b6f6a0fbe586136397d2b8b341cf05c9",
+    "qualification_sha256": "febd62955cd7a1121ae6ef18a3952c2e349acede9890cd25ca15451f690f9005",
+    "host_sha256": "33b8681d1e45667fee0ec4d1167bb1a0756d3298c0b34d58484667e3861153e5",
+    "cohort_sha256": "06d9c547f3f93ecfff48c9bff84d64ff6d20ae448220bfdd48b4b482585cbd94",
+    "runner_sha256": "b9f88ed0bd28ca43acc4b292640b8b57dd4c0e218c976e27961322736e1419f7"
+  },
+  "development": {
+    "isolation": "same-user-development-only-not-os-isolated",
+    "results": [
+      {
+        "fixtureId": "accepted-query-lost-ack-v1-0",
+        "family": "accepted-query-lost-ack",
+        "case": "positive",
+        "status": "passed",
+        "passed": true,
+        "expected": "accept",
+        "grade": {
+          "passed": true,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:sources/request.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "service:one-accepted-job",
+              "passed": true
+            },
+            {
+              "id": "service:recovered-by-lookup",
+              "passed": true
+            },
+            {
+              "id": "service:query-scope",
+              "passed": true
+            },
+            {
+              "id": "service:source-current",
+              "passed": true
+            },
+            {
+              "id": "service:read-complete",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:numerator",
+              "passed": true
+            },
+            {
+              "id": "report:denominator",
+              "passed": true
+            },
+            {
+              "id": "report:rate",
+              "passed": true
+            },
+            {
+              "id": "report:affectedLots",
+              "passed": true
+            },
+            {
+              "id": "report:jobId",
+              "passed": true
+            },
+            {
+              "id": "report:sourceRevision",
+              "passed": true
+            },
+            {
+              "id": "report:resultDigest",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 16,
+            "failedChecks": 0,
+            "protectedFileCount": 2,
+            "changedFileCount": 1,
+            "contestantFileCount": 3
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "accepted-query-lost-ack-v1-0",
+        "family": "accepted-query-lost-ack",
+        "case": "negative",
+        "status": "passed",
+        "passed": true,
+        "expected": "reject",
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:sources/request.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "service:one-accepted-job",
+              "passed": true
+            },
+            {
+              "id": "service:recovered-by-lookup",
+              "passed": true
+            },
+            {
+              "id": "service:query-scope",
+              "passed": true
+            },
+            {
+              "id": "service:source-current",
+              "passed": true
+            },
+            {
+              "id": "service:read-complete",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:numerator",
+              "passed": true
+            },
+            {
+              "id": "report:denominator",
+              "passed": false
+            },
+            {
+              "id": "report:rate",
+              "passed": true
+            },
+            {
+              "id": "report:affectedLots",
+              "passed": true
+            },
+            {
+              "id": "report:jobId",
+              "passed": true
+            },
+            {
+              "id": "report:sourceRevision",
+              "passed": true
+            },
+            {
+              "id": "report:resultDigest",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 16,
+            "failedChecks": 1,
+            "protectedFileCount": 2,
+            "changedFileCount": 1,
+            "contestantFileCount": 3
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "accepted-query-lost-ack-v1-0",
+        "family": "accepted-query-lost-ack",
+        "case": "tamper",
+        "status": "passed",
+        "passed": true,
+        "expected": "reject",
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": false
+            },
+            {
+              "id": "protected:sources/request.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": false
+            },
+            {
+              "id": "service:one-accepted-job",
+              "passed": true
+            },
+            {
+              "id": "service:recovered-by-lookup",
+              "passed": true
+            },
+            {
+              "id": "service:query-scope",
+              "passed": true
+            },
+            {
+              "id": "service:source-current",
+              "passed": true
+            },
+            {
+              "id": "service:read-complete",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:numerator",
+              "passed": true
+            },
+            {
+              "id": "report:denominator",
+              "passed": true
+            },
+            {
+              "id": "report:rate",
+              "passed": true
+            },
+            {
+              "id": "report:affectedLots",
+              "passed": true
+            },
+            {
+              "id": "report:jobId",
+              "passed": true
+            },
+            {
+              "id": "report:sourceRevision",
+              "passed": true
+            },
+            {
+              "id": "report:resultDigest",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 16,
+            "failedChecks": 2,
+            "protectedFileCount": 2,
+            "changedFileCount": 2,
+            "contestantFileCount": 3
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "multi-repo-compat-v1",
+        "family": "multi-repo-compatibility",
+        "case": "positive",
+        "status": "passed",
+        "passed": true,
+        "expected": "accept",
+        "grade": {
+          "passed": true,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:repos/ingestion/src/export.json",
+              "passed": true
+            },
+            {
+              "id": "protected:repos/ingestion/CONTRACT.md",
+              "passed": true
+            },
+            {
+              "id": "protected:repos/client/fixtures/expected.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "validation:schema",
+              "passed": true
+            },
+            {
+              "id": "validation:api",
+              "passed": true
+            },
+            {
+              "id": "validation:client",
+              "passed": true
+            },
+            {
+              "id": "validation:eventCount",
+              "passed": true
+            },
+            {
+              "id": "code:bounded-sources",
+              "passed": true
+            },
+            {
+              "id": "code:executed-all-cases",
+              "passed": true
+            },
+            {
+              "id": "code:api-contract",
+              "passed": true
+            },
+            {
+              "id": "code:client-contract",
+              "passed": true
+            },
+            {
+              "id": "code:sibling-contract",
+              "passed": true
+            },
+            {
+              "id": "code:client-uses-api",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 15,
+            "failedChecks": 0,
+            "protectedFileCount": 4,
+            "changedFileCount": 3,
+            "contestantFileCount": 7
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "multi-repo-compat-v1",
+        "family": "multi-repo-compatibility",
+        "case": "negative",
+        "status": "passed",
+        "passed": true,
+        "expected": "reject",
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:repos/ingestion/src/export.json",
+              "passed": true
+            },
+            {
+              "id": "protected:repos/ingestion/CONTRACT.md",
+              "passed": true
+            },
+            {
+              "id": "protected:repos/client/fixtures/expected.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "validation:schema",
+              "passed": true
+            },
+            {
+              "id": "validation:api",
+              "passed": true
+            },
+            {
+              "id": "validation:client",
+              "passed": true
+            },
+            {
+              "id": "validation:eventCount",
+              "passed": false
+            },
+            {
+              "id": "code:bounded-sources",
+              "passed": true
+            },
+            {
+              "id": "code:executed-all-cases",
+              "passed": true
+            },
+            {
+              "id": "code:api-contract",
+              "passed": true
+            },
+            {
+              "id": "code:client-contract",
+              "passed": true
+            },
+            {
+              "id": "code:sibling-contract",
+              "passed": true
+            },
+            {
+              "id": "code:client-uses-api",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 15,
+            "failedChecks": 1,
+            "protectedFileCount": 4,
+            "changedFileCount": 3,
+            "contestantFileCount": 7
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "multi-repo-compat-v1",
+        "family": "multi-repo-compatibility",
+        "case": "tamper",
+        "status": "passed",
+        "passed": true,
+        "expected": "reject",
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": false
+            },
+            {
+              "id": "protected:repos/ingestion/src/export.json",
+              "passed": true
+            },
+            {
+              "id": "protected:repos/ingestion/CONTRACT.md",
+              "passed": true
+            },
+            {
+              "id": "protected:repos/client/fixtures/expected.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": false
+            },
+            {
+              "id": "validation:schema",
+              "passed": true
+            },
+            {
+              "id": "validation:api",
+              "passed": true
+            },
+            {
+              "id": "validation:client",
+              "passed": true
+            },
+            {
+              "id": "validation:eventCount",
+              "passed": true
+            },
+            {
+              "id": "code:bounded-sources",
+              "passed": true
+            },
+            {
+              "id": "code:executed-all-cases",
+              "passed": false,
+              "detail": "Requires a successful runner result for every compatibility case"
+            },
+            {
+              "id": "code:client-uses-api",
+              "passed": false
+            }
+          ],
+          "metrics": {
+            "checkCount": 12,
+            "failedChecks": 4,
+            "protectedFileCount": 4,
+            "changedFileCount": 4,
+            "contestantFileCount": 7
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "factory-evidence-cc6a0524ea56-v1",
+        "family": "factory-evidence",
+        "case": "positive",
+        "status": "passed",
+        "passed": true,
+        "expected": "accept",
+        "grade": {
+          "passed": true,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/incident.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/registry.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/1252990e0f.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/33fed62ee2.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/ae4cc41eb9.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/c082384c29.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/6f70e021b6.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/fbd691e2b7.json",
+              "passed": true
+            },
+            {
+              "id": "protected:catalog/catalog.jsonl",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:window",
+              "passed": true
+            },
+            {
+              "id": "report:cleanings",
+              "passed": true
+            },
+            {
+              "id": "report:sources",
+              "passed": true
+            },
+            {
+              "id": "report:joinKey",
+              "passed": true
+            },
+            {
+              "id": "report:strata",
+              "passed": true
+            },
+            {
+              "id": "report:comparison",
+              "passed": true
+            },
+            {
+              "id": "report:conclusion",
+              "passed": true
+            },
+            {
+              "id": "report:nextMeasurement",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 21,
+            "failedChecks": 0,
+            "protectedFileCount": 11,
+            "changedFileCount": 1,
+            "contestantFileCount": 12
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "factory-evidence-cc6a0524ea56-v1",
+        "family": "factory-evidence",
+        "case": "negative",
+        "status": "passed",
+        "passed": true,
+        "expected": "reject",
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/incident.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/registry.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/1252990e0f.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/33fed62ee2.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/ae4cc41eb9.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/c082384c29.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/6f70e021b6.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/fbd691e2b7.json",
+              "passed": true
+            },
+            {
+              "id": "protected:catalog/catalog.jsonl",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:window",
+              "passed": true
+            },
+            {
+              "id": "report:cleanings",
+              "passed": true
+            },
+            {
+              "id": "report:sources",
+              "passed": true
+            },
+            {
+              "id": "report:joinKey",
+              "passed": true
+            },
+            {
+              "id": "report:strata",
+              "passed": true
+            },
+            {
+              "id": "report:comparison",
+              "passed": true
+            },
+            {
+              "id": "report:conclusion",
+              "passed": false
+            },
+            {
+              "id": "report:nextMeasurement",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 21,
+            "failedChecks": 1,
+            "protectedFileCount": 11,
+            "changedFileCount": 1,
+            "contestantFileCount": 12
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "factory-evidence-cc6a0524ea56-v1",
+        "family": "factory-evidence",
+        "case": "tamper",
+        "status": "passed",
+        "passed": true,
+        "expected": "reject",
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": false
+            },
+            {
+              "id": "protected:evidence/incident.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/registry.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/1252990e0f.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/33fed62ee2.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/ae4cc41eb9.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/c082384c29.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/6f70e021b6.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/fbd691e2b7.json",
+              "passed": true
+            },
+            {
+              "id": "protected:catalog/catalog.jsonl",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": false
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:window",
+              "passed": true
+            },
+            {
+              "id": "report:cleanings",
+              "passed": true
+            },
+            {
+              "id": "report:sources",
+              "passed": true
+            },
+            {
+              "id": "report:joinKey",
+              "passed": true
+            },
+            {
+              "id": "report:strata",
+              "passed": true
+            },
+            {
+              "id": "report:comparison",
+              "passed": true
+            },
+            {
+              "id": "report:conclusion",
+              "passed": true
+            },
+            {
+              "id": "report:nextMeasurement",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 21,
+            "failedChecks": 2,
+            "protectedFileCount": 11,
+            "changedFileCount": 2,
+            "contestantFileCount": 12
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "factory-evidence-4ec5badaf7f2-v1",
+        "family": "factory-evidence",
+        "case": "positive",
+        "status": "passed",
+        "passed": true,
+        "expected": "accept",
+        "grade": {
+          "passed": true,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/incident.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/registry.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/1252990e0f.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/33fed62ee2.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/ae4cc41eb9.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/c082384c29.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/6f70e021b6.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/fbd691e2b7.json",
+              "passed": true
+            },
+            {
+              "id": "protected:catalog/catalog.jsonl",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:window",
+              "passed": true
+            },
+            {
+              "id": "report:cleanings",
+              "passed": true
+            },
+            {
+              "id": "report:sources",
+              "passed": true
+            },
+            {
+              "id": "report:joinKey",
+              "passed": true
+            },
+            {
+              "id": "report:strata",
+              "passed": true
+            },
+            {
+              "id": "report:comparison",
+              "passed": true
+            },
+            {
+              "id": "report:conclusion",
+              "passed": true
+            },
+            {
+              "id": "report:nextMeasurement",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 21,
+            "failedChecks": 0,
+            "protectedFileCount": 11,
+            "changedFileCount": 1,
+            "contestantFileCount": 12
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "factory-evidence-4ec5badaf7f2-v1",
+        "family": "factory-evidence",
+        "case": "negative",
+        "status": "passed",
+        "passed": true,
+        "expected": "reject",
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/incident.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/registry.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/1252990e0f.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/33fed62ee2.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/ae4cc41eb9.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/c082384c29.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/6f70e021b6.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/fbd691e2b7.json",
+              "passed": true
+            },
+            {
+              "id": "protected:catalog/catalog.jsonl",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:window",
+              "passed": true
+            },
+            {
+              "id": "report:cleanings",
+              "passed": true
+            },
+            {
+              "id": "report:sources",
+              "passed": true
+            },
+            {
+              "id": "report:joinKey",
+              "passed": true
+            },
+            {
+              "id": "report:strata",
+              "passed": true
+            },
+            {
+              "id": "report:comparison",
+              "passed": true
+            },
+            {
+              "id": "report:conclusion",
+              "passed": false
+            },
+            {
+              "id": "report:nextMeasurement",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 21,
+            "failedChecks": 1,
+            "protectedFileCount": 11,
+            "changedFileCount": 1,
+            "contestantFileCount": 12
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "factory-evidence-4ec5badaf7f2-v1",
+        "family": "factory-evidence",
+        "case": "tamper",
+        "status": "passed",
+        "passed": true,
+        "expected": "reject",
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": false
+            },
+            {
+              "id": "protected:evidence/incident.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/registry.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/1252990e0f.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/33fed62ee2.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/ae4cc41eb9.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/c082384c29.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/6f70e021b6.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/fbd691e2b7.json",
+              "passed": true
+            },
+            {
+              "id": "protected:catalog/catalog.jsonl",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": false
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:window",
+              "passed": true
+            },
+            {
+              "id": "report:cleanings",
+              "passed": true
+            },
+            {
+              "id": "report:sources",
+              "passed": true
+            },
+            {
+              "id": "report:joinKey",
+              "passed": true
+            },
+            {
+              "id": "report:strata",
+              "passed": true
+            },
+            {
+              "id": "report:comparison",
+              "passed": true
+            },
+            {
+              "id": "report:conclusion",
+              "passed": true
+            },
+            {
+              "id": "report:nextMeasurement",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 21,
+            "failedChecks": 2,
+            "protectedFileCount": 11,
+            "changedFileCount": 2,
+            "contestantFileCount": 12
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "factory-evidence-357ebc622173-v1",
+        "family": "factory-evidence",
+        "case": "positive",
+        "status": "passed",
+        "passed": true,
+        "expected": "accept",
+        "grade": {
+          "passed": true,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/incident.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/registry.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/1252990e0f.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/33fed62ee2.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/ae4cc41eb9.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/c082384c29.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/6f70e021b6.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/fbd691e2b7.json",
+              "passed": true
+            },
+            {
+              "id": "protected:catalog/catalog.jsonl",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:window",
+              "passed": true
+            },
+            {
+              "id": "report:cleanings",
+              "passed": true
+            },
+            {
+              "id": "report:sources",
+              "passed": true
+            },
+            {
+              "id": "report:joinKey",
+              "passed": true
+            },
+            {
+              "id": "report:strata",
+              "passed": true
+            },
+            {
+              "id": "report:comparison",
+              "passed": true
+            },
+            {
+              "id": "report:conclusion",
+              "passed": true
+            },
+            {
+              "id": "report:nextMeasurement",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 21,
+            "failedChecks": 0,
+            "protectedFileCount": 11,
+            "changedFileCount": 1,
+            "contestantFileCount": 12
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "factory-evidence-357ebc622173-v1",
+        "family": "factory-evidence",
+        "case": "negative",
+        "status": "passed",
+        "passed": true,
+        "expected": "reject",
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/incident.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/registry.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/1252990e0f.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/33fed62ee2.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/ae4cc41eb9.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/c082384c29.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/6f70e021b6.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/fbd691e2b7.json",
+              "passed": true
+            },
+            {
+              "id": "protected:catalog/catalog.jsonl",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:window",
+              "passed": true
+            },
+            {
+              "id": "report:cleanings",
+              "passed": true
+            },
+            {
+              "id": "report:sources",
+              "passed": true
+            },
+            {
+              "id": "report:joinKey",
+              "passed": true
+            },
+            {
+              "id": "report:strata",
+              "passed": true
+            },
+            {
+              "id": "report:comparison",
+              "passed": true
+            },
+            {
+              "id": "report:conclusion",
+              "passed": false
+            },
+            {
+              "id": "report:nextMeasurement",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 21,
+            "failedChecks": 1,
+            "protectedFileCount": 11,
+            "changedFileCount": 1,
+            "contestantFileCount": 12
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "factory-evidence-357ebc622173-v1",
+        "family": "factory-evidence",
+        "case": "tamper",
+        "status": "passed",
+        "passed": true,
+        "expected": "reject",
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": false
+            },
+            {
+              "id": "protected:evidence/incident.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/registry.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/1252990e0f.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/33fed62ee2.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/ae4cc41eb9.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/c082384c29.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/6f70e021b6.json",
+              "passed": true
+            },
+            {
+              "id": "protected:evidence/archive/fbd691e2b7.json",
+              "passed": true
+            },
+            {
+              "id": "protected:catalog/catalog.jsonl",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": false
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:window",
+              "passed": true
+            },
+            {
+              "id": "report:cleanings",
+              "passed": true
+            },
+            {
+              "id": "report:sources",
+              "passed": true
+            },
+            {
+              "id": "report:joinKey",
+              "passed": true
+            },
+            {
+              "id": "report:strata",
+              "passed": true
+            },
+            {
+              "id": "report:comparison",
+              "passed": true
+            },
+            {
+              "id": "report:conclusion",
+              "passed": true
+            },
+            {
+              "id": "report:nextMeasurement",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 21,
+            "failedChecks": 2,
+            "protectedFileCount": 11,
+            "changedFileCount": 2,
+            "contestantFileCount": 12
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "partial-investigation-restart-v1",
+        "family": "partial-investigation-restart",
+        "case": "positive",
+        "status": "passed",
+        "passed": true,
+        "expected": "accept",
+        "grade": {
+          "passed": true,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:sources/checkpoint.json",
+              "passed": true
+            },
+            {
+              "id": "protected:sources/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "service:preserved-work",
+              "passed": true
+            },
+            {
+              "id": "service:retained:particle-window",
+              "passed": true
+            },
+            {
+              "id": "service:retained:maintenance-alignment",
+              "passed": true
+            },
+            {
+              "id": "service:rejected-stale-result",
+              "passed": true
+            },
+            {
+              "id": "service:checked-current-unavailability",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:retained",
+              "passed": true
+            },
+            {
+              "id": "report:particle",
+              "passed": true
+            },
+            {
+              "id": "report:overlapLots",
+              "passed": true
+            },
+            {
+              "id": "report:unresolved",
+              "passed": true
+            },
+            {
+              "id": "report:causalIdentified",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 15,
+            "failedChecks": 0,
+            "protectedFileCount": 3,
+            "changedFileCount": 1,
+            "contestantFileCount": 4
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "partial-investigation-restart-v1",
+        "family": "partial-investigation-restart",
+        "case": "negative",
+        "status": "passed",
+        "passed": true,
+        "expected": "reject",
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:sources/checkpoint.json",
+              "passed": true
+            },
+            {
+              "id": "protected:sources/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "service:preserved-work",
+              "passed": true
+            },
+            {
+              "id": "service:retained:particle-window",
+              "passed": true
+            },
+            {
+              "id": "service:retained:maintenance-alignment",
+              "passed": true
+            },
+            {
+              "id": "service:rejected-stale-result",
+              "passed": true
+            },
+            {
+              "id": "service:checked-current-unavailability",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:retained",
+              "passed": true
+            },
+            {
+              "id": "report:particle",
+              "passed": false
+            },
+            {
+              "id": "report:overlapLots",
+              "passed": true
+            },
+            {
+              "id": "report:unresolved",
+              "passed": true
+            },
+            {
+              "id": "report:causalIdentified",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 15,
+            "failedChecks": 1,
+            "protectedFileCount": 3,
+            "changedFileCount": 1,
+            "contestantFileCount": 4
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "partial-investigation-restart-v1",
+        "family": "partial-investigation-restart",
+        "case": "tamper",
+        "status": "passed",
+        "passed": true,
+        "expected": "reject",
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": false
+            },
+            {
+              "id": "protected:sources/checkpoint.json",
+              "passed": true
+            },
+            {
+              "id": "protected:sources/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": false
+            },
+            {
+              "id": "service:preserved-work",
+              "passed": true
+            },
+            {
+              "id": "service:retained:particle-window",
+              "passed": true
+            },
+            {
+              "id": "service:retained:maintenance-alignment",
+              "passed": true
+            },
+            {
+              "id": "service:rejected-stale-result",
+              "passed": true
+            },
+            {
+              "id": "service:checked-current-unavailability",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:retained",
+              "passed": true
+            },
+            {
+              "id": "report:particle",
+              "passed": true
+            },
+            {
+              "id": "report:overlapLots",
+              "passed": true
+            },
+            {
+              "id": "report:unresolved",
+              "passed": true
+            },
+            {
+              "id": "report:causalIdentified",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 15,
+            "failedChecks": 2,
+            "protectedFileCount": 3,
+            "changedFileCount": 2,
+            "contestantFileCount": 4
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      }
+    ],
+    "passed": true,
+    "caseCount": 18,
+    "acceptedPositive": 6,
+    "rejectedNegativeOrTamper": 12,
+    "blockedCases": 0,
+    "failedCases": 0
+  },
+  "public_http": {
+    "isolation": "same-user-development-only-not-os-isolated",
+    "results": [
+      {
+        "fixtureId": "accepted-query-lost-ack-v1-0",
+        "family": "accepted-query-lost-ack",
+        "case": "positive",
+        "expected": "accept",
+        "status": "passed",
+        "passed": true,
+        "grade": {
+          "passed": true,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:sources/request.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "service:one-accepted-job",
+              "passed": true
+            },
+            {
+              "id": "service:recovered-by-lookup",
+              "passed": true
+            },
+            {
+              "id": "service:query-scope",
+              "passed": true
+            },
+            {
+              "id": "service:source-current",
+              "passed": true
+            },
+            {
+              "id": "service:read-complete",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:numerator",
+              "passed": true
+            },
+            {
+              "id": "report:denominator",
+              "passed": true
+            },
+            {
+              "id": "report:rate",
+              "passed": true
+            },
+            {
+              "id": "report:affectedLots",
+              "passed": true
+            },
+            {
+              "id": "report:jobId",
+              "passed": true
+            },
+            {
+              "id": "report:sourceRevision",
+              "passed": true
+            },
+            {
+              "id": "report:resultDigest",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 16,
+            "failedChecks": 0,
+            "protectedFileCount": 2,
+            "changedFileCount": 1,
+            "contestantFileCount": 3
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "accepted-query-lost-ack-v1-0",
+        "family": "accepted-query-lost-ack",
+        "case": "negative",
+        "expected": "reject",
+        "status": "passed",
+        "passed": true,
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:sources/request.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "service:one-accepted-job",
+              "passed": true
+            },
+            {
+              "id": "service:recovered-by-lookup",
+              "passed": true
+            },
+            {
+              "id": "service:query-scope",
+              "passed": true
+            },
+            {
+              "id": "service:source-current",
+              "passed": true
+            },
+            {
+              "id": "service:read-complete",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:numerator",
+              "passed": true
+            },
+            {
+              "id": "report:denominator",
+              "passed": false
+            },
+            {
+              "id": "report:rate",
+              "passed": true
+            },
+            {
+              "id": "report:affectedLots",
+              "passed": true
+            },
+            {
+              "id": "report:jobId",
+              "passed": true
+            },
+            {
+              "id": "report:sourceRevision",
+              "passed": true
+            },
+            {
+              "id": "report:resultDigest",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 16,
+            "failedChecks": 1,
+            "protectedFileCount": 2,
+            "changedFileCount": 1,
+            "contestantFileCount": 3
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "accepted-query-lost-ack-v1-0",
+        "family": "accepted-query-lost-ack",
+        "case": "tamper",
+        "expected": "reject",
+        "status": "passed",
+        "passed": true,
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": false
+            },
+            {
+              "id": "protected:sources/request.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": false
+            },
+            {
+              "id": "service:one-accepted-job",
+              "passed": true
+            },
+            {
+              "id": "service:recovered-by-lookup",
+              "passed": true
+            },
+            {
+              "id": "service:query-scope",
+              "passed": true
+            },
+            {
+              "id": "service:source-current",
+              "passed": true
+            },
+            {
+              "id": "service:read-complete",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:numerator",
+              "passed": true
+            },
+            {
+              "id": "report:denominator",
+              "passed": true
+            },
+            {
+              "id": "report:rate",
+              "passed": true
+            },
+            {
+              "id": "report:affectedLots",
+              "passed": true
+            },
+            {
+              "id": "report:jobId",
+              "passed": true
+            },
+            {
+              "id": "report:sourceRevision",
+              "passed": true
+            },
+            {
+              "id": "report:resultDigest",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 16,
+            "failedChecks": 2,
+            "protectedFileCount": 2,
+            "changedFileCount": 2,
+            "contestantFileCount": 3
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "partial-investigation-restart-v1",
+        "family": "partial-investigation-restart",
+        "case": "positive",
+        "expected": "accept",
+        "status": "passed",
+        "passed": true,
+        "grade": {
+          "passed": true,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:sources/checkpoint.json",
+              "passed": true
+            },
+            {
+              "id": "protected:sources/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "service:preserved-work",
+              "passed": true
+            },
+            {
+              "id": "service:retained:particle-window",
+              "passed": true
+            },
+            {
+              "id": "service:retained:maintenance-alignment",
+              "passed": true
+            },
+            {
+              "id": "service:rejected-stale-result",
+              "passed": true
+            },
+            {
+              "id": "service:checked-current-unavailability",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:retained",
+              "passed": true
+            },
+            {
+              "id": "report:particle",
+              "passed": true
+            },
+            {
+              "id": "report:overlapLots",
+              "passed": true
+            },
+            {
+              "id": "report:unresolved",
+              "passed": true
+            },
+            {
+              "id": "report:causalIdentified",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 15,
+            "failedChecks": 0,
+            "protectedFileCount": 3,
+            "changedFileCount": 1,
+            "contestantFileCount": 4
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "partial-investigation-restart-v1",
+        "family": "partial-investigation-restart",
+        "case": "negative",
+        "expected": "reject",
+        "status": "passed",
+        "passed": true,
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": true
+            },
+            {
+              "id": "protected:sources/checkpoint.json",
+              "passed": true
+            },
+            {
+              "id": "protected:sources/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": true
+            },
+            {
+              "id": "service:preserved-work",
+              "passed": true
+            },
+            {
+              "id": "service:retained:particle-window",
+              "passed": true
+            },
+            {
+              "id": "service:retained:maintenance-alignment",
+              "passed": true
+            },
+            {
+              "id": "service:rejected-stale-result",
+              "passed": true
+            },
+            {
+              "id": "service:checked-current-unavailability",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:retained",
+              "passed": true
+            },
+            {
+              "id": "report:particle",
+              "passed": false
+            },
+            {
+              "id": "report:overlapLots",
+              "passed": true
+            },
+            {
+              "id": "report:unresolved",
+              "passed": true
+            },
+            {
+              "id": "report:causalIdentified",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 15,
+            "failedChecks": 1,
+            "protectedFileCount": 3,
+            "changedFileCount": 1,
+            "contestantFileCount": 4
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      },
+      {
+        "fixtureId": "partial-investigation-restart-v1",
+        "family": "partial-investigation-restart",
+        "case": "tamper",
+        "expected": "reject",
+        "status": "passed",
+        "passed": true,
+        "grade": {
+          "passed": false,
+          "checks": [
+            {
+              "id": "protected:README.md",
+              "passed": false
+            },
+            {
+              "id": "protected:sources/checkpoint.json",
+              "passed": true
+            },
+            {
+              "id": "protected:sources/report-contract.json",
+              "passed": true
+            },
+            {
+              "id": "scope:allowed-write-paths",
+              "passed": false
+            },
+            {
+              "id": "service:preserved-work",
+              "passed": true
+            },
+            {
+              "id": "service:retained:particle-window",
+              "passed": true
+            },
+            {
+              "id": "service:retained:maintenance-alignment",
+              "passed": true
+            },
+            {
+              "id": "service:rejected-stale-result",
+              "passed": true
+            },
+            {
+              "id": "service:checked-current-unavailability",
+              "passed": true
+            },
+            {
+              "id": "report:schema",
+              "passed": true
+            },
+            {
+              "id": "report:retained",
+              "passed": true
+            },
+            {
+              "id": "report:particle",
+              "passed": true
+            },
+            {
+              "id": "report:overlapLots",
+              "passed": true
+            },
+            {
+              "id": "report:unresolved",
+              "passed": true
+            },
+            {
+              "id": "report:causalIdentified",
+              "passed": true
+            }
+          ],
+          "metrics": {
+            "checkCount": 15,
+            "failedChecks": 2,
+            "protectedFileCount": 3,
+            "changedFileCount": 2,
+            "contestantFileCount": 4
+          }
+        },
+        "isolation": "same-user-development-only-not-os-isolated"
+      }
+    ],
+    "passed": true,
+    "caseCount": 6,
+    "acceptedPositive": 2,
+    "rejectedNegativeOrTamper": 4,
+    "blockedCases": 0,
+    "failedCases": 0
+  }
+}

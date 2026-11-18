@@ -1,0 +1,152 @@
+{
+  "note": "Original receipts include bounded private host history. Their hashes preserve identity; public summaries exclude auth, raw histories and private workspace paths.",
+  "artifacts": [
+    {
+      "sha256": "c51f861e08ce05014ecc466da823f9ce46d835e5aa85227b01abe9f49a465d05",
+      "bytes": 1506,
+      "visibility": "private; sanitized summary committed",
+      "name": "luna-live-diagnostic.json.plan.json"
+    },
+    {
+      "sha256": "fe1eb25e5108bbecaa0d2ffe1f3e4957be8c4995a1ee4239f68ac1b3b0e43f31",
+      "bytes": 1587,
+      "visibility": "private; sanitized summary committed",
+      "name": "luna-live-diagnostic.json"
+    },
+    {
+      "sha256": "ac1cca538bc8176414d71ebaa9119c53b07248b52268b532e0e4cb7ecac71f03",
+      "bytes": 21407,
+      "visibility": "private; sanitized summary committed",
+      "name": "luna-live-diagnostic.json.correct.json"
+    },
+    {
+      "sha256": "f6c1d4de83a7323723aa1398d9486efb5980d5ced9d1a66b2b59b907bdeb13d3",
+      "bytes": 2033,
+      "visibility": "private; sanitized summary committed",
+      "name": "luna-live-diagnostic.json.defective.json"
+    },
+    {
+      "sha256": "f1633b28d792a3ca49a7939811376465080bb921b6f6b763e20eccd426450e99",
+      "bytes": 1524,
+      "visibility": "private; sanitized summary committed",
+      "name": "luna-live-diagnostic-followup.json.plan.json"
+    },
+    {
+      "sha256": "fd3eb077c2acada52c66d4454304d472c5ebde3abc3b0637d4e4f235dd100e7e",
+      "bytes": 1646,
+      "visibility": "private; sanitized summary committed",
+      "name": "luna-live-diagnostic-followup.json"
+    },
+    {
+      "sha256": "e95cb2866eb3a015cff61cedccbb72911ee417f09c3da6e84d81dcb65a6777f6",
+      "bytes": 223116,
+      "visibility": "private; sanitized summary committed",
+      "name": "luna-live-diagnostic-followup.json.correct.json"
+    },
+    {
+      "sha256": "dbfcb2143256093cb87d0dec250850c2dbf290c8986b7e3685066540e758067d",
+      "bytes": 12228,
+      "visibility": "private; sanitized summary committed",
+      "name": "luna-live-diagnostic-followup.json.defective.json"
+    },
+    {
+      "sha256": "3db395781d640231287e73a62fc1024b274de106145ce98a4b09c222d4608adf",
+      "bytes": 1832,
+      "visibility": "private; sanitized summary committed",
+      "name": "luna-live-diagnostic-v3.json.plan.json"
+    },
+    {
+      "sha256": "85a32c528e31b6de8690002f0d9704d7890db13b356c86ea2d57cb91214b91ba",
+      "bytes": 1866,
+      "visibility": "private; sanitized summary committed",
+      "name": "luna-live-diagnostic-v3.json"
+    },
+    {
+      "sha256": "3ca6210c1dd197657669e14f6252e5f72a01a67cb97f9c236b8c6de52bd58854",
+      "bytes": 254761,
+      "visibility": "private; sanitized summary committed",
+      "name": "luna-live-diagnostic-v3.json.correct.json"
+    },
+    {
+      "sha256": "3826df57a6b6969edb578ef1bd55994905ff099589fcb94e9051ad05dbfa39c1",
+      "bytes": 253748,
+      "visibility": "private; sanitized summary committed",
+      "name": "luna-live-diagnostic-v3.json.defective.json"
+    },
+    {
+      "sha256": "8b755288546c58ece94e8a9c9d3540197fbb64ca3d096cb14b248ade93017ae6",
+      "bytes": 6609,
+      "visibility": "private; sanitized summary committed",
+      "name": "qualify-v3-host-history.ts"
+    },
+    {
+      "sha256": "bb276654b1f34513f03ff9541e808fc8908596eeef5aa456753fea4b0742db6b",
+      "bytes": 71576,
+      "visibility": "private; sanitized summary committed",
+      "name": "qualify-v3-host-history.json"
+    },
+    {
+      "sha256": "3480e216d2231154d47a36a4a231392ffa694f75206689fdfe4f15be28af616a",
+      "bytes": 854,
+      "visibility": "private; sanitized summary committed",
+      "name": "qualify-v3-host-history.log"
+    },
+    {
+      "sha256": "922711193c2f92f4962f3f1debf107e27ed3f3122286c8cc4f36eb5e9fb8ba7c",
+      "bytes": 7799,
+      "visibility": "private; sanitized summary committed",
+      "name": "clarification-focused.log"
+    },
+    {
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f",
+      "bytes": 67,
+      "visibility": "private; sanitized summary committed",
+      "name": "clarification-typecheck.log"
+    },
+    {
+      "sha256": "4961a924668c534060c8199fe47f1120abc5690bc49601361fda613f5a0334e8",
+      "bytes": 1079,
+      "visibility": "private; sanitized summary committed",
+      "name": "diagnostic-v3-focused.log"
+    },
+    {
+      "sha256": "d0f78bfb1fde5240c69cf70c78f88cc2580ccde71f58d7d0c798246cf066cafd",
+      "bytes": 356,
+      "visibility": "private; sanitized summary committed",
+      "name": "diagnostic-v3-package.log"
+    },
+    {
+      "sha256": "7b7f57f82e9f1451cd29689ff22cadc066dc54a3c4626b389feb7de234ccff31",
+      "bytes": 98,
+      "visibility": "private; sanitized summary committed",
+      "name": "diagnostic-v3-typecheck.log"
+    },
+    {
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f",
+      "bytes": 67,
+      "visibility": "private; sanitized summary committed",
+      "name": "diagnostic-v3-typecheck-native.log"
+    },
+    {
+      "sha256": "7230bcf5564bdd3857e7a76db4f1f7a78a31c34b7d1030d7deb3d32b7bbc7eeb",
+      "bytes": 178787,
+      "visibility": "private; sanitized summary committed",
+      "name": "l2-grader-final-candidate.json"
+    },
+    {
+      "sha256": "e0f7684010663e42a121128d52849f364ebe96fb1afbc3c8e3fb4870253ab2e6",
+      "bytes": 27,
+      "visibility": "private; sanitized summary committed",
+      "name": "l2-grader-final-candidate.log"
+    },
+    {
+      "sha256": "a03568b4094df5a2326294180ab1ba4bf5f7dca8a261a1c03b5ac0633107646f",
+      "bytes": 1096,
+      "visibility": "private; sanitized summary committed",
+      "name": "l2-luna-cohort-config.json"
+    }
+  ],
+  "schema_version": 1,
+  "runtime_commit": "1777e44354cf6f817de7882a11472b2adc9b766a",
+  "candidate_commit": "c23269c4aad0a8aff29f8a397604ad093e3fe7c0"
+}

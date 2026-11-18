@@ -22,7 +22,7 @@ import { parseRunState } from "../src/schemas.ts"
 import { createRun, loadRun, MAX_STATE_BYTES, persistRun, runDir } from "../src/store.ts"
 import { getTemplate } from "../src/templates.ts"
 import { runNodeSession } from "../src/sessions.ts"
-import { executeContext, inertClient, removeProject, tempProject } from "./helpers.ts"
+import { executeContext, inertClient, removeProject, tempProject, testTaskContract } from "./helpers.ts"
 
 function context(project: string) {
   return {
@@ -40,6 +40,9 @@ function context(project: string) {
 function output(result: unknown): any {
   return JSON.parse((result as { output: string }).output)
 }
+const projectTask = (producer_node: string, checker_node: string) => testTaskContract({ kind: "project_change", discovery: "not_required", phase: "complete",
+  deliverables: [{ destination: "project_file", producer_node, path: "result.txt" }],
+  verification: { checker_node, execution: "none" }, preserve_paths: [] })
 
 describe("reliability and observability hardening", () => {
   test("portable root detection rejects each mutating call unless that call opts in", () => {
@@ -78,6 +81,8 @@ describe("reliability and observability hardening", () => {
 
       const optedInPlan = output(await tools.alg_plan.execute({
         goal: "root opt in reaches validation",
+        criteria: ["Reach graph validation"],
+        task_contract: projectTask("work", "check"),
         allow_filesystem_root: true,
         graph_json: "{}",
       }, rootContext))
@@ -114,7 +119,8 @@ describe("reliability and observability hardening", () => {
       const toolContext = context(project)
       const graph = JSON.stringify({
         name: "root-tool-audit",
-        nodes: [{ id: "work", agent: "implementer", depends_on: [] }],
+        nodes: [{ id: "work", agent: "implementer", depends_on: [] },
+          { id: "check", agent: "checker", depends_on: ["work"], isolated_check: true }],
       })
 
       expect(existsSync(join(project, ".opencode"))).toBe(false)
@@ -128,6 +134,8 @@ describe("reliability and observability hardening", () => {
 
       const planned = output(await tools.alg_plan.execute({
         goal: "authorized root audit",
+        criteria: ["Record per-call root authorization"],
+        task_contract: projectTask("work", "check"),
         graph_json: graph,
         mode: "dry",
         allow_filesystem_root: true,
@@ -136,6 +144,7 @@ describe("reliability and observability hardening", () => {
       const afterPlan = loadRun(project, runId)!
       expect(afterPlan.filesystem_root_authorizations).toHaveLength(1)
       const planRevision = afterPlan.revision
+      writeFileSync(join(project, "result.txt"), "synthetic declared deliverable")
 
       expect(output(await tools.alg_run.execute({ run_id: runId }, toolContext)).error)
         .toContain("filesystem root")
@@ -1212,10 +1221,12 @@ describe("reliability and observability hardening", () => {
         mode: "dry",
         graph_json: JSON.stringify({
           name: "compact",
-          max_global_attempts: 1,
+          max_global_attempts: 2,
           max_concurrency: 1,
-          nodes: [{ id: "work", agent: "implementer", depends_on: [] }],
+          nodes: [{ id: "work", agent: "implementer", depends_on: [] },
+            { id: "check", agent: "checker", depends_on: ["work"], isolated_check: true }],
         }),
+        task_contract: projectTask("work", "check"),
       }, context(project))
       const compactPlan = output(compactPlanResult)
       expect(compactPlan.goal).toBeUndefined()
@@ -1230,15 +1241,21 @@ describe("reliability and observability hardening", () => {
         detail: "full",
         graph_json: JSON.stringify({
           name: "compact-full",
-          max_global_attempts: 1,
+          max_global_attempts: 2,
           max_concurrency: 1,
-          nodes: [{ id: "work", agent: "implementer", depends_on: [] }],
+          nodes: [{ id: "work", agent: "implementer", depends_on: [] },
+            { id: "check", agent: "checker", depends_on: ["work"], isolated_check: true }],
         }),
+        task_contract: projectTask("work", "check"),
       }, context(project))
       expect(output(fullPlanResult).goal).toBe(goal)
       expect(Buffer.byteLength((fullPlanResult as any).output)).toBeGreaterThan(Buffer.byteLength((compactPlanResult as any).output))
 
-      const runId = compactPlan.run_id
+      const legacyRun = createRun({ goal, criteria: ["Hydrate complete typed detail"],
+        graph: { name: "legacy-compact-status", max_global_attempts: 1, max_concurrency: 1,
+          nodes: [{ id: "work", agent: "implementer", depends_on: [] }] },
+        projectDirectory: project, ownerSessionId: "owner", mode: "dry" })
+      const runId = legacyRun.run_id
       await tools.alg_run.execute({ run_id: runId, dry: true }, context(project))
       const completed = loadRun(project, runId)!
       const largeOutput = {
@@ -1297,15 +1314,12 @@ describe("reliability and observability hardening", () => {
         name: "full-attempts",
         max_global_attempts: 2,
         max_concurrency: 1,
-        nodes: [{
-          id: "work",
-          agent: "implementer",
-          depends_on: [],
-          loop: { max_attempts: 2, gate: "schema" },
-        }],
+        nodes: [{ id: "work", agent: "implementer", depends_on: [], loop: { max_attempts: 2, gate: "schema" } }],
       })
 
-      const plannedRun = output(await tools.alg_plan.execute({ goal: "full run", graph_json: graph, mode: "dry" }, context(project)))
+      const fullGraph = JSON.parse(graph)
+      const plannedRun = createRun({ goal: "full run", criteria: ["Complete the full run"], graph: fullGraph,
+        projectDirectory: project, ownerSessionId: "owner", mode: "dry" })
       const fullRun = output(await tools.alg_run.execute({
         run_id: plannedRun.run_id,
         dry: true,
@@ -1322,7 +1336,8 @@ describe("reliability and observability hardening", () => {
       expect(fullRun.nodes.work.attempts[0].started_at).toBeString()
       expect(fullRun.nodes.work.attempts[0].finished_at).toBeString()
 
-      const plannedResume = output(await tools.alg_plan.execute({ goal: "full resume", graph_json: graph, mode: "dry" }, context(project)))
+      const plannedResume = createRun({ goal: "full resume", criteria: ["Resume the interrupted run"], graph: fullGraph,
+        projectDirectory: project, ownerSessionId: "owner", mode: "dry" })
       const interrupted = loadRun(project, plannedResume.run_id)!
       const startedAt = "2026-08-09T10:00:00.000Z"
       const finishedAt = "2026-08-09T10:01:00.000Z"
@@ -1551,15 +1566,18 @@ describe("reliability and observability hardening", () => {
       } as never)
       const nodeIds = Array.from({ length: 64 }, (_, index) =>
         `node-${index.toString().padStart(2, "0")}-${"i".repeat(54)}`)
-      const nodes = nodeIds.map((id, index) => ({
-        id,
-        agent: "implementer",
-        depends_on: index === 0 ? [] : [nodeIds[index - 1]],
-        loop: { max_attempts: 2, gate: "schema" },
+      const nodes = nodeIds.map((id, index) => index === nodeIds.length - 1 ? ({
+        id, agent: "checker" as const, depends_on: [nodeIds[index - 1]!], isolated_check: true,
+        loop: { max_attempts: 2, gate: "schema" as const },
+      }) : ({
+        id, agent: "implementer" as const, depends_on: index === 0 ? [] : [nodeIds[index - 1]!],
+        loop: { max_attempts: 2, gate: "schema" as const },
       }))
       const plannedResult = await tools.alg_plan.execute({
         goal: `aggregate-${"g".repeat(10_000)}`,
+        criteria: ["Keep aggregate output bounded"],
         mode: "dry",
+        task_contract: projectTask(nodeIds[0]!, nodeIds.at(-1)!),
         graph_json: JSON.stringify({
           name: "maximum-compact-graph",
           max_global_attempts: 128,

@@ -1,0 +1,39 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\build-benchmark-retention-boundaries.test.ts:
+(pass) per-compaction retention boundaries > preserves first-boundary failure when the next boundary recovers [10.26ms]
+(pass) per-compaction retention boundaries > distinguishes durable presence, context omission, retrieval, and behavior [0.57ms]
+(pass) per-compaction retention boundaries > missing or incomplete evidence is unknown rather than a zero or pass [0.30ms]
+(pass) per-compaction retention boundaries > requires actual governed action exposure to assess prohibited or revoked use [1.03ms]
+(pass) per-compaction retention boundaries > uses exact snapshots; a complete empty snapshot differs from an absent snapshot [0.47ms]
+(pass) per-compaction retention boundaries > reports stale retrieval even if later behavior is correct [0.35ms]
+(pass) per-compaction retention boundaries > separates reassignment from compaction and scopes unrelated task/session evidence [0.40ms]
+(pass) per-compaction retention boundaries > flags invalid time order and prevents observations crossing the next task boundary [0.48ms]
+(pass) per-compaction retention boundaries > empty input is unavailable, and schema rejects model-authored provenance and unknown fields [0.94ms]
+(pass) per-compaction retention boundaries > flags summary evidence that does not bind the externally frozen obligation set [0.27ms]
+(pass) per-compaction retention boundaries > matching caller hash fields cannot substitute for canonical frozen values [0.27ms]
+(pass) per-compaction retention boundaries > failed summary, partial census, ambiguous identity, and model-only behavior cannot clear retention [0.98ms]
+(pass) per-compaction retention boundaries > interleaved tasks cannot hide the next task boundary or union snapshots [0.59ms]
+(pass) per-compaction retention boundaries > global duplicate evidence invalidates every affected report [0.50ms]
+(pass) per-compaction retention boundaries > revoked use needs a complete exposed window to clear, while observed misuse remains a failure [1.11ms]
+
+tests\build-benchmark-retention-cli.test.ts:
+(pass) offline retention preserves unknown measurement and never overwrites evidence [32.79ms]
+(pass) invalid or self-overwriting input produces no measurement receipt [10.74ms]
+(pass) invalid boundary evidence fails before creating a report [15.12ms]
+
+tests\build-benchmark-retention.test.ts:
+(pass) build benchmark retention measurement > aggregates compaction exposure across a stable task and session lineage [2.18ms]
+(pass) build benchmark retention measurement > distinguishes changed criteria, stale skills, pending loss, and retrieval after context omission [2.55ms]
+(pass) build benchmark retention measurement > does not infer avoidability from equivalent keys and treats incomplete census as unknown exposure [0.90ms]
+(pass) build benchmark retention measurement > a complete zero-exposure census is zero and incomplete telemetry never fills missing denominators [0.15ms]
+(pass) build benchmark retention measurement > an incomplete census publishes observed counts without rates or assumed failures [1.49ms]
+(pass) compaction intervals retain one task timeline after reassignment [1.10ms]
+(pass) root and child turns follow session ancestry, and accepted compaction counts despite failed recovery [0.66ms]
+(pass) unlinked success is unverified, not an observed failed summary [0.20ms]
+(pass) only repeated accepted work can be a classified duplicate and only cross-boundary repeats count after compaction [0.37ms]
+
+ 27 pass
+ 0 fail
+ 88 expect() calls
+Ran 27 tests across 3 files. [196.00ms]

@@ -1,0 +1,4 @@
+{"at":"2026-11-12T21:26:20.637Z","event":"start","label":"compaction-1"}
+{"at":"2026-11-12T21:26:34.894Z","event":"complete","label":"compaction-1"}
+{"at":"2026-11-12T21:26:34.896Z","event":"start","label":"phase-1"}
+{"at":"2026-11-12T21:27:49.927Z","event":"stopped","reason":"observed_usage_component_threshold"}

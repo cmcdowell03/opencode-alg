@@ -1,0 +1,3 @@
+{"at":"2026-11-12T04:28:06.565Z","phase":"initial","event":"start"}
+{"at":"2026-11-12T04:32:57.291Z","phase":"initial","event":"stopped","reason":"TimeoutError: The operation timed out."}
+{"at":"2026-11-12T04:32:57.293Z","event":"trial_error","reason":"TimeoutError: The operation timed out."}

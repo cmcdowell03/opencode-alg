@@ -45,6 +45,23 @@ test("actual extracted package has the full reviewed inventory and dependency-re
     expect(offlineReport.dependencies.missing).toEqual([])
     expect(offlineReport.runtime_imports).toEqual({ server: true, tui: true })
     expect(offlineReport.configuration.status).toBe("absent")
+    expect(archive.files.some((f: { path: string }) => f.path.startsWith("docs/evidence/") ||
+      f.path === "scripts/build-benchmark.ts" || f.path.startsWith("scripts/hard-benchmark-"))).toBe(false)
+    for (const path of ["docs/v1-hard-development-findings.md", "docs/v1-hard-development-repair-followup.md"]) {
+      expect(existsSync(join(ROOT, path))).toBe(true)
+      expect(archive.files.some((file: { path: string }) => file.path === path)).toBe(false)
+      expect(expectedPackedPaths()).not.toContain(path)
+    }
+    const retentionInput = join(directory, "retention-input.json")
+    const retentionOutput = join(directory, "retention-output.json")
+    writeFileSync(retentionInput, JSON.stringify({ schema: "alg-retention-input-v1", events: [], expectedFacts: [] }))
+    const retention = spawnSync(process.execPath, ["--no-install", "run", "scripts/build-benchmark-retention-cli.ts", retentionInput, retentionOutput], {
+      cwd: packageRoot, encoding: "utf8", windowsHide: true, timeout: 30_000,
+    })
+    expect({ status: retention.status, stderr: retention.stderr }).toMatchObject({ status: 0 })
+    const retentionReport = JSON.parse(readFileSync(retentionOutput, "utf8"))
+    expect(retentionReport.boundaryRetention.status).toBe("unavailable_no_boundary_probes")
+    expect(retentionReport.tasks).toEqual([])
     const config = join(directory, "private-config")
     mkdirSync(config)
     const invocation = spawnSync(process.execPath, [join(packageRoot, "scripts", "installer-core.ts"), "--config-dir", config, "--skip-agents"], {

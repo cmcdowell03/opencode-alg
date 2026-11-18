@@ -1,0 +1,79 @@
+[
+  {
+    "at_ms": 23668,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 24787,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 26126,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 28404,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 30131,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 31259,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 32396,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 33535,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 34648,
+    "assistant_turns": 1,
+    "tokens": 20,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 34768,
+    "assistant_turns": 1,
+    "tokens": 20,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 34867,
+    "assistant_turns": 1,
+    "tokens": 20,
+    "reported_cost": 0,
+    "sessions": 1
+  }
+]

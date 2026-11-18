@@ -1,0 +1,598 @@
+{
+  "schema": "alg-l2-preflight-history-v1",
+  "preflights": [
+    {
+      "folder": "l2-luna-20261113-preflight",
+      "source_commit": "b974cb22d0793048b6fc1bf49ff05b88f4ea17f5",
+      "issued": 0,
+      "unissued": 16,
+      "completed": 0,
+      "stopped": 0,
+      "complete": true,
+      "fatal": null,
+      "model": "openai/gpt-6-luna",
+      "suite_cleanup_errors": [],
+      "global_configuration_unchanged": true,
+      "source_unchanged": true,
+      "arms": [
+        {
+          "pairId": "pair-0001-e1f164a44b5c",
+          "caseId": "long-v1-partial-restart-h0c0-20261213",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0001-e1f164a44b5c",
+          "caseId": "long-v1-partial-restart-h0c0-20261213",
+          "arm": "alg_default",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0002-a9b5250725e6",
+          "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0002-a9b5250725e6",
+          "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+          "arm": "alg_default",
+          "status": "preflight_failed",
+          "stopReason": "hard_independent_score_unavailable",
+          "cleanup": false,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0003-a95ec66e46ab",
+          "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0003-a95ec66e46ab",
+          "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+          "arm": "alg_default",
+          "status": "preflight_failed",
+          "stopReason": "The operation timed out.",
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0004-b28f7a3f0e66",
+          "caseId": "long-v1-partial-restart-h1c0-20261213",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0004-b28f7a3f0e66",
+          "caseId": "long-v1-partial-restart-h1c0-20261213",
+          "arm": "alg_default",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0005-76c84113b1e6",
+          "caseId": "long-v1-partial-restart-h1c1-20261213",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0005-76c84113b1e6",
+          "caseId": "long-v1-partial-restart-h1c1-20261213",
+          "arm": "alg_default",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0006-de3b997ddaa1",
+          "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0006-de3b997ddaa1",
+          "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+          "arm": "alg_default",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0007-9bde832bef9a",
+          "caseId": "long-v1-partial-restart-h0c1-20261213",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0007-9bde832bef9a",
+          "caseId": "long-v1-partial-restart-h0c1-20261213",
+          "arm": "alg_default",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0008-f321bfaee228",
+          "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0008-f321bfaee228",
+          "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+          "arm": "alg_default",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        }
+      ]
+    },
+    {
+      "folder": "l2-luna-20261113-repair-preflight",
+      "source_commit": "addb744d420375337cbf9d05e09408b26e23e395",
+      "issued": 0,
+      "unissued": 16,
+      "completed": 0,
+      "stopped": 0,
+      "complete": true,
+      "fatal": null,
+      "model": "openai/gpt-6-luna",
+      "suite_cleanup_errors": [],
+      "global_configuration_unchanged": true,
+      "source_unchanged": true,
+      "arms": [
+        {
+          "pairId": "pair-0001-e1f164a44b5c",
+          "caseId": "long-v1-partial-restart-h0c0-20261213",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1620932,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0001-e1f164a44b5c",
+          "caseId": "long-v1-partial-restart-h0c0-20261213",
+          "arm": "alg_default",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1621316,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0002-a9b5250725e6",
+          "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1616488,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0002-a9b5250725e6",
+          "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+          "arm": "alg_default",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1553592,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0003-a95ec66e46ab",
+          "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1539980,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0003-a95ec66e46ab",
+          "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+          "arm": "alg_default",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 31952,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0004-b28f7a3f0e66",
+          "caseId": "long-v1-partial-restart-h1c0-20261213",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1120348,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0004-b28f7a3f0e66",
+          "caseId": "long-v1-partial-restart-h1c0-20261213",
+          "arm": "alg_default",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1617884,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0005-76c84113b1e6",
+          "caseId": "long-v1-partial-restart-h1c1-20261213",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1621064,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0005-76c84113b1e6",
+          "caseId": "long-v1-partial-restart-h1c1-20261213",
+          "arm": "alg_default",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1622164,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0006-de3b997ddaa1",
+          "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1592100,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0006-de3b997ddaa1",
+          "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+          "arm": "alg_default",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1608892,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0007-9bde832bef9a",
+          "caseId": "long-v1-partial-restart-h0c1-20261213",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1582020,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0007-9bde832bef9a",
+          "caseId": "long-v1-partial-restart-h0c1-20261213",
+          "arm": "alg_default",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1614108,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0008-f321bfaee228",
+          "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+          "arm": "build",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1582604,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        },
+        {
+          "pairId": "pair-0008-f321bfaee228",
+          "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+          "arm": "alg_default",
+          "status": "preflight_passed",
+          "stopReason": null,
+          "cleanup": true,
+          "host_cleanup": [
+            {
+              "root_pid": 1615748,
+              "cleanup_scope": "root-process",
+              "exit_observed": true,
+              "exit_code": null,
+              "exit_signal": "SIGTERM",
+              "termination_attempted": true,
+              "termination_result": "succeeded",
+              "tree_termination_attempted": false,
+              "tree_termination_result": "not-required",
+              "best_effort_kill_attempted": false,
+              "passed": true
+            }
+          ],
+          "auth_copy_removed": true,
+          "source_unchanged": true
+        }
+      ]
+    }
+  ],
+  "interpretation": "Zero-generation registration/preflight only. Earlier failures remain failures; original cleanup receipts are not retroactively promoted."
+}

@@ -1,0 +1,196 @@
+{
+  "schema": "alg-local-evidence-manifest-v1",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 21,
+      "sha256": "ffe82f3c5b968ed009c2577fa38f32c83be167799ee565d40a18e3440c57b342"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 8,
+      "sha256": "15c4437080db4ec4be5ef2b2dde82e82749b1bb6379ee7f82d0fa7c87feba804"
+    },
+    {
+      "path": "continuation-setup-failure/markers.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "continuation-setup-failure/plan.json",
+      "bytes": 18090,
+      "sha256": "a34b60678fda12ac7381056eebc80eedc6deb2c1a102cc75fa992261afe0de25"
+    },
+    {
+      "path": "continuation-setup-failure/progress.jsonl",
+      "bytes": 113,
+      "sha256": "52a2b654b613ec19e5f776b0c5fb969030e80b51867a58aa98c9741cb3e7d48e"
+    },
+    {
+      "path": "continuation-setup-failure/result.json",
+      "bytes": 15059,
+      "sha256": "68da48967dd4a3140c56730db5e2a021f51c9e349363770b1a3480608e28d0f5"
+    },
+    {
+      "path": "continuation/boundary-1-frozen.json",
+      "bytes": 4242,
+      "sha256": "d76c4cfdbf8ddd68caf663e397df1524f376adff607ce4bce1f378a3ae5cc5c8"
+    },
+    {
+      "path": "continuation/host-1.json",
+      "bytes": 545,
+      "sha256": "0d7120b04f00678a424e027c3c8f4e5c7e301a7820d5549957647f52e2297341"
+    },
+    {
+      "path": "continuation/markers.json",
+      "bytes": 262,
+      "sha256": "880e0fedf86fb7a36925c0c1b818373ab6bc25b9c159a10c7a80a449ce36b517"
+    },
+    {
+      "path": "continuation/parent-rescore.json",
+      "bytes": 4998,
+      "sha256": "5b6236837b839ad77d7425f7b21a7efb8831c37a666253e349512a288c2f4794"
+    },
+    {
+      "path": "continuation/partial-phase-1-audit.json",
+      "bytes": 6964,
+      "sha256": "e70a7cee812f2ca2a636cba24870bd954a95c7674ef9176f221f2c3665fddf4f"
+    },
+    {
+      "path": "continuation/plan.json",
+      "bytes": 18090,
+      "sha256": "f19faa9a96e1e69a379d185ecccb01b792664cf196e7205b8b22df146166c55d"
+    },
+    {
+      "path": "continuation/preflight.json",
+      "bytes": 1149,
+      "sha256": "3660158a757ed63cad639992494d8dba0287f74734db467f304812478196429b"
+    },
+    {
+      "path": "continuation/progress.jsonl",
+      "bytes": 315,
+      "sha256": "0c3248cc255d978f1505145e4f72cc128de7af876c152eb745a56935bf404d98"
+    },
+    {
+      "path": "continuation/result.json",
+      "bytes": 21933,
+      "sha256": "5b337f9c133a5fee5529ccf074e03491978e5b79ee09c193a83ba3a4cb32303d"
+    },
+    {
+      "path": "initial/host-1.json",
+      "bytes": 545,
+      "sha256": "8381800976e145c1623024e95b99e4d60800f1d22d1ab98f798fa8b6d2f25612"
+    },
+    {
+      "path": "initial/markers.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "initial/phase-0.json",
+      "bytes": 2566,
+      "sha256": "74a463d7bf4282fea5f72ed00741bae92ab958557f598061d751eaa018c0bd60"
+    },
+    {
+      "path": "initial/plan.json",
+      "bytes": 17498,
+      "sha256": "b897b83c4d6843305a7aeb914eba8735d98241faac048aca249b6c8ec8749a8a"
+    },
+    {
+      "path": "initial/preflight.json",
+      "bytes": 1149,
+      "sha256": "3660158a757ed63cad639992494d8dba0287f74734db467f304812478196429b"
+    },
+    {
+      "path": "initial/progress.jsonl",
+      "bytes": 619,
+      "sha256": "47ddce8f4c470144826b895dcee879a7d4ad8ab43c424684ea11bdfe163ec5dd"
+    },
+    {
+      "path": "initial/result.json",
+      "bytes": 18449,
+      "sha256": "65665ea1fc997d2ae164f2140b60e0ff4f385188325a175b0d9830a89e9ad4a8"
+    },
+    {
+      "path": "live-retention-continuation-typecheck.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "live-retention-final-tests.log",
+      "bytes": 2747,
+      "sha256": "81bd9f9e5d61742c532238dac666893e4171e491e14c4c49a19ed787d1712ea6"
+    },
+    {
+      "path": "live-retention-final-typecheck.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "live-retention-linux-preflight-2.log",
+      "bytes": 214,
+      "sha256": "50b51ba73e3dfbe98e68fb487eac3a3a39ef0eb220956b5689a521ea6b806085"
+    },
+    {
+      "path": "live-retention-linux-preflight-receipt.json",
+      "bytes": 1150,
+      "sha256": "7a47f2ce67c517be7c436f25f574a63a4aa947af36f830e583bcc33ea3cb02ab"
+    },
+    {
+      "path": "live-retention-linux-preflight-result.json",
+      "bytes": 4225,
+      "sha256": "68c5e0077e0764a8b08c7a8865802e5eb1ac8ce060d0bd4c5dcdca80a2dd791b"
+    },
+    {
+      "path": "live-retention-linux-preflight.log",
+      "bytes": 2532,
+      "sha256": "d375f13cccb8da4ec0c550dfbfd852eaecb1d542b545391c86ae8a4d02189df7"
+    },
+    {
+      "path": "live-retention-linux-tests.log",
+      "bytes": 2511,
+      "sha256": "67b2bd7b4c70cbc035089e81ef3c4cd94e9ecdb582d5f0d975dfd429fe5ce5d8"
+    },
+    {
+      "path": "live-retention-repair-linux-tests.log",
+      "bytes": 2747,
+      "sha256": "6eaa1b95533c3f96256bfb213d2c8bd6b2013ddae065b7f86869553681fa9d3b"
+    },
+    {
+      "path": "live-retention-repair-typecheck.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "live-retention-repair-windows-tests.log",
+      "bytes": 2747,
+      "sha256": "a81e9434573cf10a1bb0e79fd18578c7a370ab9da18130af69b8958035aaa286"
+    },
+    {
+      "path": "live-retention-typecheck.log",
+      "bytes": 67,
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f"
+    },
+    {
+      "path": "live-retention-windows-tests.log",
+      "bytes": 2511,
+      "sha256": "c3a14a9f1b10ccac9a4ae6dd6191f215882ce71128765c546fcc6130c5102c93"
+    },
+    {
+      "path": "offline-audit-script.txt",
+      "bytes": 2010,
+      "sha256": "127e21aa3e3ceba8656639eff7afcedf147bdace17311dcae3667ce7daf1f942"
+    },
+    {
+      "path": "README.md",
+      "bytes": 6832,
+      "sha256": "210ece166e14ee726e9630c7313437401014ebb44ae2e30669f122e035a345ed"
+    },
+    {
+      "path": "windows-preflight-setup-failure.json",
+      "bytes": 3898,
+      "sha256": "ef6b12ab7e0eed1d88f249b5f588246d6194287474a65d8b5ced4db918640bb0"
+    }
+  ],
+  "notes": "Selected raw receipts; original failure outcomes preserved. No credentials or databases included."
+}

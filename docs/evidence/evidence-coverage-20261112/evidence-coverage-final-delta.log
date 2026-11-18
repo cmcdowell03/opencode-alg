@@ -1,0 +1,35 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\change-scope-evidence.test.ts:
+(pass) explicit excluded roots cannot be certified as an empty unchanged scope [4.40ms]
+(pass) empty directory trees are bounded independently of file count [657.43ms]
+(pass) a declared nested root cannot bypass an internal symlink ancestor [2.04ms]
+(pass) scope schema bounds and rejects unsafe, duplicate, overlapping, or out-of-root paths [2.31ms]
+(pass) content comparison reports allowed modifications, additions, and deletions [23.33ms]
+(pass) protected changes and changed-file count overages violate the scope [4.78ms]
+(pass) fixed exclusions are explicit and changes beneath them are invisible [16.97ms]
+(pass) a symlink at an excluded directory name is skipped without traversal [2.27ms]
+(pass) missing roots, symlink entries, and baseline tampering fail closed [8.83ms]
+(pass) file count, per-file bytes, and total bytes are bounded [225.89ms]
+
+tests\task-contract.test.ts:
+(pass) declared task admission > host user request survives persistence, compaction and both child handoffs without trusting a shortened summary [935.55ms]
+(pass) declared task admission > project deliverables reject research-only graphs and do not create durable work [0.76ms]
+(pass) declared task admission > routing uses declared work and uncertainty, not model/task-name keywords [0.21ms]
+(pass) declared task admission > missing checker, disconnected producer, execution and protected paths fail closed [0.18ms]
+(pass) declared task admission > typed paths cannot conflict or traverse; diagnostics do not echo unknown keys [0.59ms]
+(pass) declared task admission > evidence plans cover criteria in order and bind observations to declared inputs [0.55ms]
+(pass) declared task admission > capabilities recognize only uniform host decisions [0.57ms]
+(pass) declared task admission > original criteria and contract survive persistence and bounded context projection [79.72ms]
+(pass) declared task admission > removing an accepted contract cannot silently turn a new run into legacy [72.79ms]
+(pass) declared task admission > legacy persisted runs remain readable without invented admission [56.04ms]
+(pass) declared task admission > older directly bound contracts may retain an absent evidence plan [63.33ms]
+(pass) host-enforced task completion > passing model verdict cannot certify a missing declared file [444.65ms]
+(pass) host-enforced task completion > correct files pass; preparation contract is visible to workers and remains pinned [911.63ms]
+(pass) host-enforced task completion > claimed commands do not satisfy the native command requirement [566.41ms]
+(pass) host-enforced task completion > accepted verification gate cannot be replaced at run time [110.36ms]
+
+ 25 pass
+ 0 fail
+ 111 expect() calls
+Ran 25 tests across 2 files. [4.35s]

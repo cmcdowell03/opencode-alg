@@ -1,0 +1,65 @@
+{
+  "scope": "Private original receipts retained; paths and raw histories omitted",
+  "receipts": [
+    {
+      "private_receipt_name": "v4-live.json.plan.json",
+      "sha256": "02b37ff78669813651fdccec8cd9f12ca5b14192ee778239fa61feac0a563285",
+      "bytes": 1973
+    },
+    {
+      "private_receipt_name": "v4-live.json",
+      "sha256": "7b53877a853099ccb295622db1d062ce0790939eda18cc070c621987b28643b2",
+      "bytes": 2028
+    },
+    {
+      "private_receipt_name": "v4-live.json.correct.json",
+      "sha256": "907b68390e1161009cd153d8275057643974a355b583077c682a5fd5714210f8",
+      "bytes": 418427
+    },
+    {
+      "private_receipt_name": "v4-live.json.defective.json",
+      "sha256": "6cb25ff82df2af1e61ef4b3f5f050e7ee2dbe655985cfc44ed88fbabd37e0201",
+      "bytes": 321924
+    },
+    {
+      "private_receipt_name": "v4-live-exit.json",
+      "sha256": "0ef127e7a8972dd60298c05b61c9f405a22965438a2a5a871fecd1aae388a141",
+      "bytes": 308
+    },
+    {
+      "private_receipt_name": "core-native-integrated-receipt.json",
+      "sha256": "26ff61cfbe3dc5f1cac6a73665d82ff92b404e99a1231ff1acb76f6c2baadc20",
+      "bytes": 198
+    },
+    {
+      "private_receipt_name": "core-native-integrated-tests.log",
+      "sha256": "fb8e01c9b6dbd49e0163370342414f6a0c74520c012dcb31fa61db3bbb6293f7",
+      "bytes": 24440
+    },
+    {
+      "private_receipt_name": "core-native-typecheck.log",
+      "sha256": "fb3028b6cb5c482fce82ec0324af3dad0fc5fd39b19a57a1d3aee44046d8303f",
+      "bytes": 67
+    },
+    {
+      "private_receipt_name": "l2-grader-qualified-frozen.json",
+      "sha256": "6e22b78cd820ac60494a69b55780b8db9b708d513c66998c95f6688b387a1b98",
+      "bytes": 178787
+    },
+    {
+      "private_receipt_name": "l2-grader-frozen-exit.json",
+      "sha256": "4310769aef9f96206c71baa39d10dd9e86fd63830e1093eb3d6eb212ebf0a545",
+      "bytes": 290
+    },
+    {
+      "private_receipt_name": "l2-luna-preflight/result.json",
+      "sha256": "b8ad2d65dc77c9e8127be6e3cdfe72050a5bc19a37939af7e20b18c043c4467d",
+      "bytes": 173612
+    },
+    {
+      "private_receipt_name": "l2-luna-preflight-exit.json",
+      "sha256": "5ef3aa833e13b3ef80db1dae209a9b3493759f63d00394bf2d2a9e3a9f2d4ac2",
+      "bytes": 165
+    }
+  ]
+}

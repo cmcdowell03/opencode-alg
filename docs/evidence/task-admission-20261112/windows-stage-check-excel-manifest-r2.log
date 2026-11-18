@@ -1,0 +1,2 @@
+$ bun run scripts/verify-excel-manifest.ts
+{"ok":true,"manifest_sha256":"1b70967967edc95cbc9343ff5b7c31240f6e38d9ddff09c308e34f499d18a62a","files":{"pyproject":"5d656c3e1ecefb77f7b90c1cf9da79b0c891f806a6187c27c53bdc73c8a7e1c6","lock":"47ece2b5a5ce4593259f238deab630aba8cfada1795553154f7f37947e099acf","policy":"14446e01d403f5d67378ed72361dbd41fdabb964d552eb738a1974610133cd2d","wrapper":"b830e439792dfca36fbd2f9f3f2047bb17ddc40707c9befa9d25ac29a3cce470","validator":"4f480a4b76558b9aaa354fb0e792f2c349cefed9d598f3d1e6ded53f133c69c4"}}

@@ -1,0 +1,1240 @@
+{
+  "schema": "alg-build-pilot-v1",
+  "complete": true,
+  "fatal": null,
+  "model": "xai/grok-4.7",
+  "limits": {
+    "trialMs": 480000,
+    "assistantTurns": 40,
+    "reportedTokens": 200000,
+    "outputTokens": 4096,
+    "reportedCostPerSuite": 5,
+    "suiteMs": 3300000
+  },
+  "results": [
+    {
+      "caseId": "wafer-count-commonjs",
+      "arm": "build",
+      "status": "model_error:UnknownError",
+      "passed": false,
+      "independent_score": {
+        "passed": false,
+        "checks": [
+          {
+            "id": "protected:package.json",
+            "passed": true
+          },
+          {
+            "id": "protected:test/wafer-count.test.cjs",
+            "passed": true
+          },
+          {
+            "id": "protected:data/inspection-records.json",
+            "passed": true
+          },
+          {
+            "id": "visible-node-tests",
+            "passed": false,
+            "detail": "Command failed: C:\\Program Files\\nodejs\\node.exe --test test/wafer-count.test.cjs"
+          },
+          {
+            "id": "api-module-loads",
+            "passed": true
+          },
+          {
+            "id": "ui-module-loads",
+            "passed": true
+          },
+          {
+            "id": "distinct-ids-and-offset-window",
+            "passed": false,
+            "detail": "expected 2 distinct wafers, received 4"
+          },
+          {
+            "id": "user-visible-count",
+            "passed": false,
+            "detail": "unexpected visible text: Inspections: 4"
+          }
+        ],
+        "metrics": {
+          "heldOutTestLocation": "outside-project-temporary-directory",
+          "heldOutCheckCount": 4,
+          "heldOutPassed": 2,
+          "visibleTestCommand": "npm test",
+          "visibleTestCount": 2,
+          "protectedFiles": 3,
+          "userVisibleChecks": 1
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 1,
+          "roots": 1,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 1,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 1,
+          "modelIdentities": [
+            {
+              "providerID": "xai",
+              "modelID": "grok-4.7",
+              "turns": 1
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 1,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 8604,
+      "total_with_startup_ms": 18093,
+      "phases": [],
+      "rootSession": "ses_e31de94dfffe5lRxFcAeIJUmjB",
+      "recovery": {
+        "requested": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": null
+      },
+      "alg_states": [],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        1585800
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": "data/inspection-records.json",
+          "bytes": 702,
+          "sha256": "ae8c396da3661e221e9716663c2cc79ce2715bff9d3d99de401093960709d14d"
+        },
+        {
+          "path": "package.json",
+          "bytes": 116,
+          "sha256": "a78a9ceb37d11a4b0e970b5cfd854e44f49f1563898501eeac5a3e51228acfd0"
+        },
+        {
+          "path": "src/wafer-count.cjs",
+          "bytes": 361,
+          "sha256": "7315f66c62048781619c9b04de7875370bcbe398ecd913ac1e5270449c656067"
+        },
+        {
+          "path": "src/wafer-view.cjs",
+          "bytes": 126,
+          "sha256": "2ac52abb30d3ffa1770e7d720dabf520654d5a09de84a595b6e1fc4f209cbab3"
+        },
+        {
+          "path": "test/wafer-count.test.cjs",
+          "bytes": 768,
+          "sha256": "a7719415e595d1bfd8656b74d05b7171a81ec4fc7c8369b6755a15ce96426eeb"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    },
+    {
+      "caseId": "wafer-count-commonjs",
+      "arm": "alg_default",
+      "status": "model_error:UnknownError",
+      "passed": false,
+      "independent_score": {
+        "passed": false,
+        "checks": [
+          {
+            "id": "protected:package.json",
+            "passed": true
+          },
+          {
+            "id": "protected:test/wafer-count.test.cjs",
+            "passed": true
+          },
+          {
+            "id": "protected:data/inspection-records.json",
+            "passed": true
+          },
+          {
+            "id": "visible-node-tests",
+            "passed": false,
+            "detail": "Command failed: C:\\Program Files\\nodejs\\node.exe --test test/wafer-count.test.cjs"
+          },
+          {
+            "id": "api-module-loads",
+            "passed": true
+          },
+          {
+            "id": "ui-module-loads",
+            "passed": true
+          },
+          {
+            "id": "distinct-ids-and-offset-window",
+            "passed": false,
+            "detail": "expected 2 distinct wafers, received 4"
+          },
+          {
+            "id": "user-visible-count",
+            "passed": false,
+            "detail": "unexpected visible text: Inspections: 4"
+          }
+        ],
+        "metrics": {
+          "heldOutTestLocation": "outside-project-temporary-directory",
+          "heldOutCheckCount": 4,
+          "heldOutPassed": 2,
+          "visibleTestCommand": "npm test",
+          "visibleTestCount": 2,
+          "protectedFiles": 3,
+          "userVisibleChecks": 1
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 1,
+          "roots": 1,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 1,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 1,
+          "modelIdentities": [
+            {
+              "providerID": "xai",
+              "modelID": "grok-4.7",
+              "turns": 1
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 1,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 8087,
+      "total_with_startup_ms": 22061,
+      "phases": [],
+      "rootSession": "ses_e31de37f9ffeudWuhGgShWk9fQ",
+      "recovery": {
+        "requested": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": null
+      },
+      "alg_states": [],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        1584920
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": ".opencode/session-memory/checkpoints/bd16117c92adfb16bcd257a0287070a5333b1353f1536ed34c61ed25122f6f6a.json",
+          "bytes": 1122,
+          "sha256": "bd16117c92adfb16bcd257a0287070a5333b1353f1536ed34c61ed25122f6f6a"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/644bdd79740e1994bceff93692939aabb2ead85ea90bff4635c9589530684693.json",
+          "bytes": 1906,
+          "sha256": "03cfc5bc6320dd8b4252f70c32ef00a2605c86df8dc65f05ae6476c74fcc9c0d"
+        },
+        {
+          "path": ".opencode/session-memory/heads/644bdd79740e1994bceff93692939aabb2ead85ea90bff4635c9589530684693.json",
+          "bytes": 218,
+          "sha256": "336877652819e4d75fd4569ef248b064c01e7dfd2fcd1480675295c707efd1fc"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/644bdd79740e1994bceff93692939aabb2ead85ea90bff4635c9589530684693.json",
+          "bytes": 373,
+          "sha256": "439110c3ed1ef4d03841596377d229e9ab633cc325e2cdcfca68e18f1a99e92c"
+        },
+        {
+          "path": "data/inspection-records.json",
+          "bytes": 702,
+          "sha256": "ae8c396da3661e221e9716663c2cc79ce2715bff9d3d99de401093960709d14d"
+        },
+        {
+          "path": "package.json",
+          "bytes": 116,
+          "sha256": "a78a9ceb37d11a4b0e970b5cfd854e44f49f1563898501eeac5a3e51228acfd0"
+        },
+        {
+          "path": "src/wafer-count.cjs",
+          "bytes": 361,
+          "sha256": "7315f66c62048781619c9b04de7875370bcbe398ecd913ac1e5270449c656067"
+        },
+        {
+          "path": "src/wafer-view.cjs",
+          "bytes": 126,
+          "sha256": "2ac52abb30d3ffa1770e7d720dabf520654d5a09de84a595b6e1fc4f209cbab3"
+        },
+        {
+          "path": "test/wafer-count.test.cjs",
+          "bytes": 768,
+          "sha256": "a7719415e595d1bfd8656b74d05b7171a81ec4fc7c8369b6755a15ce96426eeb"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    },
+    {
+      "caseId": "wafer-count-commonjs",
+      "arm": "alg_targeted",
+      "status": "model_error:UnknownError",
+      "passed": false,
+      "independent_score": {
+        "passed": false,
+        "checks": [
+          {
+            "id": "protected:package.json",
+            "passed": true
+          },
+          {
+            "id": "protected:test/wafer-count.test.cjs",
+            "passed": true
+          },
+          {
+            "id": "protected:data/inspection-records.json",
+            "passed": true
+          },
+          {
+            "id": "visible-node-tests",
+            "passed": false,
+            "detail": "Command failed: C:\\Program Files\\nodejs\\node.exe --test test/wafer-count.test.cjs"
+          },
+          {
+            "id": "api-module-loads",
+            "passed": true
+          },
+          {
+            "id": "ui-module-loads",
+            "passed": true
+          },
+          {
+            "id": "distinct-ids-and-offset-window",
+            "passed": false,
+            "detail": "expected 2 distinct wafers, received 4"
+          },
+          {
+            "id": "user-visible-count",
+            "passed": false,
+            "detail": "unexpected visible text: Inspections: 4"
+          }
+        ],
+        "metrics": {
+          "heldOutTestLocation": "outside-project-temporary-directory",
+          "heldOutCheckCount": 4,
+          "heldOutPassed": 2,
+          "visibleTestCommand": "npm test",
+          "visibleTestCount": 2,
+          "protectedFiles": 3,
+          "userVisibleChecks": 1
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 1,
+          "roots": 1,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 1,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 1,
+          "modelIdentities": [
+            {
+              "providerID": "xai",
+              "modelID": "grok-4.7",
+              "turns": 1
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 1,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 8440,
+      "total_with_startup_ms": 21936,
+      "phases": [],
+      "rootSession": "ses_e31dddee1ffet86tUXyWUUyia1",
+      "recovery": {
+        "requested": false,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": null
+      },
+      "alg_states": [],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        1481908
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": ".opencode/session-memory/checkpoints/7b9c78b39fda20102e5cfda49bdbb98c2c313bca2ce52b596181a94dea2c6878.json",
+          "bytes": 1122,
+          "sha256": "7b9c78b39fda20102e5cfda49bdbb98c2c313bca2ce52b596181a94dea2c6878"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/d562acb83c096948977c44fc7f448639e1bd3a47796ea70a17dbcc6953b824de.json",
+          "bytes": 1906,
+          "sha256": "9178fa307241e10f15e3fb63d2221672da21a5ae9485119d0453870b4b36d3a5"
+        },
+        {
+          "path": ".opencode/session-memory/heads/d562acb83c096948977c44fc7f448639e1bd3a47796ea70a17dbcc6953b824de.json",
+          "bytes": 218,
+          "sha256": "4630adb6d8212b79814d949c8669fca4e69cbe8b457a276e302bf6362979b61c"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/d562acb83c096948977c44fc7f448639e1bd3a47796ea70a17dbcc6953b824de.json",
+          "bytes": 373,
+          "sha256": "78ec993296925c0fb2b2ec7136225c3a1c4cbd6e6910b91c0324598e23ff7afe"
+        },
+        {
+          "path": "data/inspection-records.json",
+          "bytes": 702,
+          "sha256": "ae8c396da3661e221e9716663c2cc79ce2715bff9d3d99de401093960709d14d"
+        },
+        {
+          "path": "package.json",
+          "bytes": 116,
+          "sha256": "a78a9ceb37d11a4b0e970b5cfd854e44f49f1563898501eeac5a3e51228acfd0"
+        },
+        {
+          "path": "src/wafer-count.cjs",
+          "bytes": 361,
+          "sha256": "7315f66c62048781619c9b04de7875370bcbe398ecd913ac1e5270449c656067"
+        },
+        {
+          "path": "src/wafer-view.cjs",
+          "bytes": 126,
+          "sha256": "2ac52abb30d3ffa1770e7d720dabf520654d5a09de84a595b6e1fc4f209cbab3"
+        },
+        {
+          "path": "test/wafer-count.test.cjs",
+          "bytes": 768,
+          "sha256": "a7719415e595d1bfd8656b74d05b7171a81ec4fc7c8369b6755a15ce96426eeb"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    },
+    {
+      "caseId": "wafer-report-staged",
+      "arm": "alg_targeted",
+      "status": "model_error:UnknownError",
+      "passed": false,
+      "independent_score": {
+        "passed": false,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-grok-20261112\\2-wafer-report-staged-alg_targeted\\project\\preparation.md'"
+          },
+          {
+            "id": "report-json",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-grok-20261112\\2-wafer-report-staged-alg_targeted\\project\\report.json'"
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 0,
+          "reportBytes": 0,
+          "reportParsed": false
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 1,
+          "roots": 1,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 1,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 1,
+          "modelIdentities": [
+            {
+              "providerID": "xai",
+              "modelID": "grok-4.7",
+              "turns": 1
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 1,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 6917,
+      "total_with_startup_ms": 19840,
+      "phases": [],
+      "rootSession": "ses_e31dd8675ffeaU2dFHpTr9rgcz",
+      "recovery": {
+        "requested": true,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": null
+      },
+      "alg_states": [],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        1583004
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": ".opencode/session-memory/artifacts/7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107.txt",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/0f45e86c6fb6b211c8aa5a155fdb66bc2bc0c79d8be5bc52db6ec6c360e622d3.json",
+          "bytes": 1744,
+          "sha256": "0f45e86c6fb6b211c8aa5a155fdb66bc2bc0c79d8be5bc52db6ec6c360e622d3"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/ced753bbebac12a1df27901d61ec7d01d3aaf1a5a0443cdf41509aeda7f9e3dd.json",
+          "bytes": 1995,
+          "sha256": "ced753bbebac12a1df27901d61ec7d01d3aaf1a5a0443cdf41509aeda7f9e3dd"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/79cea58d68bd61be4e2a5437657be5ec31743ccb43a6514cf0b6842081920493.json",
+          "bytes": 2352,
+          "sha256": "6d9f7a7709cab2c238708b050d367c41bed6495c57146e7af1c374813494a19e"
+        },
+        {
+          "path": ".opencode/session-memory/heads/79cea58d68bd61be4e2a5437657be5ec31743ccb43a6514cf0b6842081920493.json",
+          "bytes": 218,
+          "sha256": "dfc22b0af3541b8ad49408d27c9c224577590faf98d3e844d0b3e3cea0e65933"
+        },
+        {
+          "path": ".opencode/session-memory/objects/7bf31f20b9c2b852b5570f08ed2e759e24641ba3352c631dfdc8e2f67bbc8b07.json",
+          "bytes": 563,
+          "sha256": "7bf31f20b9c2b852b5570f08ed2e759e24641ba3352c631dfdc8e2f67bbc8b07"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/79cea58d68bd61be4e2a5437657be5ec31743ccb43a6514cf0b6842081920493.json",
+          "bytes": 596,
+          "sha256": "144781020cb9a53334fe3bb2480b3c9a19725be296baf655b02da3ccec75744b"
+        },
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": "data/manual-review.json",
+          "bytes": 359,
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        },
+        {
+          "path": "data/system-export.json",
+          "bytes": 558,
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    },
+    {
+      "caseId": "wafer-report-staged",
+      "arm": "alg_default",
+      "status": "model_error:UnknownError",
+      "passed": false,
+      "independent_score": {
+        "passed": false,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-grok-20261112\\2-wafer-report-staged-alg_default\\project\\preparation.md'"
+          },
+          {
+            "id": "report-json",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-grok-20261112\\2-wafer-report-staged-alg_default\\project\\report.json'"
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 0,
+          "reportBytes": 0,
+          "reportParsed": false
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 1,
+          "roots": 1,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 1,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 1,
+          "modelIdentities": [
+            {
+              "providerID": "xai",
+              "modelID": "grok-4.7",
+              "turns": 1
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 1,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 6585,
+      "total_with_startup_ms": 21244,
+      "phases": [],
+      "rootSession": "ses_e31dd2d25ffeANoPvolgWA589H",
+      "recovery": {
+        "requested": true,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": null
+      },
+      "alg_states": [],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        1446728
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": ".opencode/session-memory/artifacts/7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107.txt",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/3a614d601816a36db24aac8424dae1e2a1f9af17c252e840f793218191f27655.json",
+          "bytes": 1744,
+          "sha256": "3a614d601816a36db24aac8424dae1e2a1f9af17c252e840f793218191f27655"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/ca29f461b67a9fac85d705e94b20992ef5064edc70e1128629fb7e04e4c0f218.json",
+          "bytes": 1995,
+          "sha256": "ca29f461b67a9fac85d705e94b20992ef5064edc70e1128629fb7e04e4c0f218"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/e6b6d3240f0d5414447d4888aa46b27516502ec9b61cf299bc05ab22c2ae0e1b.json",
+          "bytes": 2352,
+          "sha256": "6dceb556f3d29dd7df528a8ff708c27661d028eb10d21be8fa0bcdf71636d92f"
+        },
+        {
+          "path": ".opencode/session-memory/heads/e6b6d3240f0d5414447d4888aa46b27516502ec9b61cf299bc05ab22c2ae0e1b.json",
+          "bytes": 218,
+          "sha256": "c390cfe7b6f22325923d4815cd2e132999ec39cc7afa4d5b2830944e5690685c"
+        },
+        {
+          "path": ".opencode/session-memory/objects/96110efcf729d7158b8362cf3234638f9b1df8acf17c2dfa3c73b9c377a8f8b4.json",
+          "bytes": 563,
+          "sha256": "96110efcf729d7158b8362cf3234638f9b1df8acf17c2dfa3c73b9c377a8f8b4"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/e6b6d3240f0d5414447d4888aa46b27516502ec9b61cf299bc05ab22c2ae0e1b.json",
+          "bytes": 596,
+          "sha256": "b0e0fd122257d4379103128d1a7428483e3c70281dc728ff68df251b02c4e062"
+        },
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": "data/manual-review.json",
+          "bytes": 359,
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        },
+        {
+          "path": "data/system-export.json",
+          "bytes": 558,
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    },
+    {
+      "caseId": "wafer-report-staged",
+      "arm": "build",
+      "status": "model_error:UnknownError",
+      "passed": false,
+      "independent_score": {
+        "passed": false,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-grok-20261112\\2-wafer-report-staged-build\\project\\preparation.md'"
+          },
+          {
+            "id": "report-json",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-grok-20261112\\2-wafer-report-staged-build\\project\\report.json'"
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 0,
+          "reportBytes": 0,
+          "reportParsed": false
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 1,
+          "roots": 1,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 1,
+          "finished": 0,
+          "unfinished": 0,
+          "error": 1,
+          "modelIdentities": [
+            {
+              "providerID": "xai",
+              "modelID": "grok-4.7",
+              "turns": 1
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 0,
+          "turns": {
+            "complete": 1,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 6125,
+      "total_with_startup_ms": 15761,
+      "phases": [],
+      "rootSession": "ses_e31dce903ffeGBrZdkS4DG7F2W",
+      "recovery": {
+        "requested": true,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": null
+      },
+      "alg_states": [],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        1589428
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": "data/manual-review.json",
+          "bytes": 359,
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        },
+        {
+          "path": "data/system-export.json",
+          "bytes": 558,
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    }
+  ],
+  "known_reported_cost": 0,
+  "global_configuration_unchanged": true,
+  "local_model_stopped": true,
+  "source_unchanged": true
+}

@@ -35,8 +35,8 @@ function whereExecutable(name: string): string | undefined {
 function gitSh(): string | undefined {
   const result = spawnSync("git", ["--exec-path"], { encoding: "utf8", shell: false, windowsHide: true })
   if (result.status !== 0) return
-  const candidate = resolve(result.stdout.trim(), "..", "..", "..", "bin", process.platform === "win32" ? "sh.exe" : "sh")
-  return existsSync(candidate) ? candidate : process.platform !== "win32" ? "sh" : undefined
+  const candidate = resolve(result.stdout.trim(), "..", "..", "..", "bin", process.platform === "win32" ? "bash.exe" : "bash")
+  return existsSync(candidate) ? candidate : process.platform !== "win32" ? "bash" : undefined
 }
 
 const PWSH_AVAILABLE = (() => {

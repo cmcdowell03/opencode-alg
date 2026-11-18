@@ -12,6 +12,8 @@ import { verifyResolutionEvidence } from "./experience-adapter.ts"
 import { mentionsSkill, isCompletedUserTurn, completedTurn } from "../turn-boundary.ts"
 import { redactEvidenceText } from "../skill-evolution-evidence.ts"
 import { truncateUtf8 } from "../limits.ts"
+import { InvestigationStore } from "../investigation/index.ts"
+import { TaskAllowanceRuntime } from "../task-allowance.ts"
 
 export class SessionMemoryRuntime {
   readonly deliveryUnavailable = new Set<string>()
@@ -24,7 +26,18 @@ export class SessionMemoryRuntime {
     this.index = new SkillIndex(this.store.project, roots, extra, this.options.approvalPolicy)
   }
   get enabled() { return this.options.mode !== "off" }
-  current(owner: string): Checkpoint { return this.store.checkpoint(owner) ?? this.store.empty(owner) }
+  current(owner: string): Checkpoint {
+    const checkpoint = this.store.checkpoint(owner) ?? this.store.empty(owner)
+    const pending = checkpoint.investigation_detach_pending
+    if (!pending) return checkpoint
+    if (pending.owner_id !== owner || pending.project_id !== this.store.projectId)
+      throw new Error("investigation task detachment scope mismatch")
+    InvestigationStore.open({ project_directory: this.store.project, project_id: pending.project_id,
+      owner_id: pending.owner_id, run_id: pending.run_id }).detachSync(owner)
+    return this.store.update(owner, checkpoint.revision, (state) => ({
+      ...state, investigation_detach_pending: undefined,
+    }))
+  }
   private requireEnabled() { if (!this.enabled) throw new Error("session memory is disabled") }
   update(owner: string, change: (value: Checkpoint) => Checkpoint) {
     this.requireEnabled()
@@ -32,8 +45,11 @@ export class SessionMemoryRuntime {
     return this.store.update(owner, current.revision, change)
   }
   beginTask(owner: string, goal: string, constraints: string[] = [], resultAfter = Date.now()) {
-    return this.update(owner, (value) => ({ ...value, task_epoch: value.task_epoch + 1, generation: value.generation + 1,
-      goal, constraints, skills: [], pins: [], used_retries: [], completed: [], next_step: "", gaps: [], source_cursor: null, result_after: resultAfter }))
+    this.update(owner, (value) => ({ ...value, task_epoch: value.task_epoch + 1, generation: value.generation + 1,
+      goal, constraints, skills: [], pins: [], used_retries: [], completed: [], next_step: "", gaps: [], source_cursor: null, result_after: resultAfter,
+      workspace_operation: undefined, investigation: undefined, investigation_node: undefined, investigation_plan: undefined,
+      investigation_detach_pending: value.investigation?.owner_id === owner ? value.investigation : undefined }))
+    return this.current(owner)
   }
   /** Bookmark the first user sentence. Does not start a task or change pins. */
   noteOpening(owner: string, text: string) {
@@ -199,12 +215,16 @@ export class SessionMemoryRuntime {
     this.update(owner, (value) => ({ ...value, deleted: true, skills: [], pins: [], environment: null, goal: "", constraints: [], completed: [], next_step: "" }))
   }
   status(owner: string) {
-    if (!this.enabled) return { mode: "off", initialized: false }
     const checkpoint = this.store.checkpoint(owner)
+    const task_allowance_status = checkpoint?.task_allowance_ref ? (() => {
+      try { return new TaskAllowanceRuntime(this.store).status(checkpoint.task_allowance_ref!) }
+      catch { return { task_id: checkpoint.task_allowance_ref!.task_id, state: "unavailable" } }
+    })() : undefined
+    if (!this.enabled) return { mode: "off", initialized: false, ...(task_allowance_status ? { task_allowance_status } : {}) }
     let delivery: ReturnType<MemoryStore["delivery"]> = null
     let deliveryError = this.deliveryUnavailable.has(owner)
     try { delivery = this.store.delivery(owner) } catch { deliveryError = true }
-    return { mode: this.options.mode, initialized: checkpoint !== null, checkpoint, receipt: this.store.contextReceipt(owner), origin: localOrigin(),
+    return { mode: this.options.mode, initialized: checkpoint !== null, checkpoint, task_allowance_status, receipt: this.store.contextReceipt(owner), origin: localOrigin(),
       delivery_error: deliveryError ? "unavailable" : null,
       delivery: delivery ? { id: delivery.id, request_id: delivery.value.request_id, hook: delivery.value.hook,
         state: delivery.value.state, request_correlation: delivery.value.request_correlation,

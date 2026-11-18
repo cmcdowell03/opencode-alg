@@ -1,0 +1,31 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\execution-evidence.test.ts:
+(pass) host-origin child execution evidence > captures only host bash tool records and requires exact exit metadata [6.13ms]
+(pass) host-origin child execution evidence > reports retrieval timeout and omitted command rows explicitly [12.66ms]
+(pass) host-origin child execution evidence > sanitizes and bounds command output while marking truncation [0.88ms]
+(pass) host-origin child execution evidence > checker evidence attaches only receipts from claimed or selected evidence inputs [2.61ms]
+(pass) host-origin child execution evidence > shell-gate helper retains exact host result, setup and containment flags [0.21ms]
+(pass) host-origin child execution evidence > receipt schema rejects oversized aggregates and foreign-session parts are counted [0.92ms]
+
+tests\gate-recovery.test.ts:
+(pass) gate setup recovery > runtime setup failure reserves no model or shell attempt and releases preparation [120.44ms]
+(pass) gate setup recovery > native shell gate receipts reach the checker on this platform [3575.92ms]
+(pass) gate setup recovery > setup failure stops retries; persisted explicit resume only reruns gate before checker [1358.57ms]
+(pass) gate setup recovery > changed file refuses reuse before another attempt is reserved [571.91ms]
+(pass) gate setup recovery > changed gate refuses reuse before another attempt is reserved [579.68ms]
+(pass) gate setup recovery > changed output refuses reuse before another attempt is reserved [544.26ms]
+(pass) gate setup recovery > interrupted running recovery retains its original output source across persisted resume [1667.59ms]
+(pass) gate setup recovery > interrupted gate call persists recovery intent before launch and never retries the implementer [1681.60ms]
+(pass) gate setup recovery > declared-file drift after admission blocks the invocation and preserves gate-only intent [1678.96ms]
+(pass) gate setup recovery > changed preservation paths refuse recovery without replacing the original basis [880.48ms]
+(pass) gate setup recovery > real test failure still retries implementation [1171.78ms]
+
+tests\preservation-evidence.test.ts:
+(pass) preservation observations bind exact bytes and do not hide a changed file [23.19ms]
+(pass) original preservation basis survives implementation retries, persistence and checker handoff [1052.98ms]
+
+ 19 pass
+ 0 fail
+ 112 expect() calls
+Ran 19 tests across 3 files. [15.14s]

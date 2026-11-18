@@ -1,0 +1,27 @@
+{
+  "numerator": 1,
+  "denominator": 4,
+  "rate": 0.25,
+  "window": {
+    "start": "2025-04-01T00:00:00Z",
+    "endExclusive": "2025-04-02T00:00:00Z",
+    "timezone": "UTC"
+  },
+  "sources": [
+    "data/system-export.json",
+    "data/manual-review.json"
+  ],
+  "conflicts": [
+    {
+      "wafer_id": "W13",
+      "system_defect": false,
+      "manual_defect": true,
+      "status": "unresolved"
+    }
+  ],
+  "limitations": [
+    "Synthetic analysis only; not process validation.",
+    "Sources identify the reporting date, but individual rows have no event timestamps.",
+    "W13's defect status is uncertain because the system and manual review disagree; the reported calculation retains the primary system result."
+  ]
+}

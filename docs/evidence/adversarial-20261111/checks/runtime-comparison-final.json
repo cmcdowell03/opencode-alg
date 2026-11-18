@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "windows_raw": "d0614611c04d7f054dbbb0a8ac686fe3578bbca9bc8527946cff556734f37b5a",
+  "linux_raw": "f6e704d630ec3125e5aec8fc65f64b753b60d023ab3bd3a2e95c44226d80ba4c",
+  "windows_lf_normalized": "f6e704d630ec3125e5aec8fc65f64b753b60d023ab3bd3a2e95c44226d80ba4c",
+  "inputs": 125,
+  "crlf_files": 71
+}

@@ -1,0 +1,51 @@
+[
+  {
+    "at_ms": 13400,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 14675,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 15763,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 16879,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 17919,
+    "assistant_turns": 1,
+    "tokens": 20,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 17940,
+    "assistant_turns": 1,
+    "tokens": 20,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 17986,
+    "assistant_turns": 1,
+    "tokens": 20,
+    "reported_cost": 0,
+    "sessions": 1
+  }
+]

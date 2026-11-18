@@ -1,0 +1,36 @@
+[
+  {
+    "id": "ses_e3203a6f8ffe3itCpzuW2gooVV",
+    "slug": "curious-cabin",
+    "projectID": "c1663d9fb83dd6d09ec040f95291080b54d13bba",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\1-wafer-count-commonjs-alg_default\\project",
+    "path": "",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 11414,
+      "output": 2144,
+      "reasoning": 0,
+      "cache": {
+        "read": 30787,
+        "write": 0
+      }
+    },
+    "title": "Frozen benchmark wafer-count-commonjs alg_default",
+    "agent": "orchestrator",
+    "model": {
+      "id": "gemma4",
+      "providerID": "alg-local",
+      "variant": "default"
+    },
+    "version": "1.18.35",
+    "time": {
+      "created": 1794457229575,
+      "updated": 1794457280587
+    }
+  }
+]

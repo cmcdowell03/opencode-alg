@@ -1,0 +1,2 @@
+# Preserve captured receipt bytes, including original CRLF and diagnostic spacing.
+* -text -whitespace

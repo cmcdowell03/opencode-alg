@@ -1,0 +1,800 @@
+[
+  {
+    "at_ms": 3422,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 4438,
+    "assistant_turns": 1,
+    "tokens": 0,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 5460,
+    "assistant_turns": 2,
+    "tokens": 8648,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 6472,
+    "assistant_turns": 2,
+    "tokens": 8648,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 7493,
+    "assistant_turns": 2,
+    "tokens": 8648,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 8503,
+    "assistant_turns": 2,
+    "tokens": 8648,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 9519,
+    "assistant_turns": 3,
+    "tokens": 18566,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 10527,
+    "assistant_turns": 3,
+    "tokens": 18566,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 11541,
+    "assistant_turns": 3,
+    "tokens": 18566,
+    "reported_cost": 0,
+    "sessions": 1
+  },
+  {
+    "at_ms": 12553,
+    "assistant_turns": 4,
+    "tokens": 18566,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 13564,
+    "assistant_turns": 4,
+    "tokens": 18566,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 14580,
+    "assistant_turns": 4,
+    "tokens": 18566,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 15608,
+    "assistant_turns": 5,
+    "tokens": 21494,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 16619,
+    "assistant_turns": 5,
+    "tokens": 21494,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 17631,
+    "assistant_turns": 5,
+    "tokens": 21494,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 18640,
+    "assistant_turns": 5,
+    "tokens": 21494,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 19657,
+    "assistant_turns": 5,
+    "tokens": 21494,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 20668,
+    "assistant_turns": 5,
+    "tokens": 21494,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 21680,
+    "assistant_turns": 5,
+    "tokens": 21494,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 22689,
+    "assistant_turns": 6,
+    "tokens": 29372,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 23700,
+    "assistant_turns": 6,
+    "tokens": 29372,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 24710,
+    "assistant_turns": 6,
+    "tokens": 29372,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 25721,
+    "assistant_turns": 6,
+    "tokens": 29372,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 26731,
+    "assistant_turns": 6,
+    "tokens": 29372,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 27743,
+    "assistant_turns": 6,
+    "tokens": 29372,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 28758,
+    "assistant_turns": 6,
+    "tokens": 29372,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 29775,
+    "assistant_turns": 6,
+    "tokens": 29372,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 30789,
+    "assistant_turns": 6,
+    "tokens": 29372,
+    "reported_cost": 0,
+    "sessions": 2
+  },
+  {
+    "at_ms": 31801,
+    "assistant_turns": 7,
+    "tokens": 38834,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 32821,
+    "assistant_turns": 7,
+    "tokens": 38834,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 33837,
+    "assistant_turns": 7,
+    "tokens": 38834,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 34853,
+    "assistant_turns": 7,
+    "tokens": 38834,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 35868,
+    "assistant_turns": 7,
+    "tokens": 38834,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 36882,
+    "assistant_turns": 7,
+    "tokens": 38834,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 37945,
+    "assistant_turns": 7,
+    "tokens": 38834,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 38961,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 39977,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 40990,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 42006,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 43019,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 44037,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 45050,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 46064,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 47080,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 48095,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 49108,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 50142,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 51164,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 52179,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 53194,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 54210,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 55225,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 56238,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 57262,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 58276,
+    "assistant_turns": 8,
+    "tokens": 43489,
+    "reported_cost": 0,
+    "sessions": 3
+  },
+  {
+    "at_ms": 59375,
+    "assistant_turns": 9,
+    "tokens": 53479,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 60396,
+    "assistant_turns": 9,
+    "tokens": 53479,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 61411,
+    "assistant_turns": 9,
+    "tokens": 53479,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 62425,
+    "assistant_turns": 10,
+    "tokens": 58714,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 63457,
+    "assistant_turns": 10,
+    "tokens": 58714,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 64473,
+    "assistant_turns": 10,
+    "tokens": 58714,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 65498,
+    "assistant_turns": 10,
+    "tokens": 58714,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 66518,
+    "assistant_turns": 10,
+    "tokens": 58714,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 67546,
+    "assistant_turns": 11,
+    "tokens": 68779,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 68564,
+    "assistant_turns": 11,
+    "tokens": 68779,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 69581,
+    "assistant_turns": 11,
+    "tokens": 68779,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 70600,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 71627,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 72653,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 73677,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 74696,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 75717,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 76737,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 77754,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 78772,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 79796,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 80815,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 81833,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 82850,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 83864,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 84879,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 85892,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 86909,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 87924,
+    "assistant_turns": 12,
+    "tokens": 79661,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 88938,
+    "assistant_turns": 13,
+    "tokens": 91864,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 89950,
+    "assistant_turns": 13,
+    "tokens": 91864,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 90966,
+    "assistant_turns": 13,
+    "tokens": 91864,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 91980,
+    "assistant_turns": 14,
+    "tokens": 104207,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 92995,
+    "assistant_turns": 14,
+    "tokens": 104207,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 94019,
+    "assistant_turns": 14,
+    "tokens": 104207,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 95036,
+    "assistant_turns": 14,
+    "tokens": 104207,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 96056,
+    "assistant_turns": 14,
+    "tokens": 104207,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 97072,
+    "assistant_turns": 14,
+    "tokens": 104207,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 98094,
+    "assistant_turns": 14,
+    "tokens": 104207,
+    "reported_cost": 0,
+    "sessions": 4
+  },
+  {
+    "at_ms": 99117,
+    "assistant_turns": 15,
+    "tokens": 117173,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 100139,
+    "assistant_turns": 15,
+    "tokens": 117173,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 101160,
+    "assistant_turns": 15,
+    "tokens": 117173,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 102188,
+    "assistant_turns": 15,
+    "tokens": 117173,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 103210,
+    "assistant_turns": 15,
+    "tokens": 117173,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 104229,
+    "assistant_turns": 16,
+    "tokens": 122248,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 105247,
+    "assistant_turns": 16,
+    "tokens": 122248,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 106264,
+    "assistant_turns": 16,
+    "tokens": 122248,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 107300,
+    "assistant_turns": 17,
+    "tokens": 140059,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 108317,
+    "assistant_turns": 17,
+    "tokens": 140059,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 109337,
+    "assistant_turns": 17,
+    "tokens": 140059,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 110364,
+    "assistant_turns": 17,
+    "tokens": 140059,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 111381,
+    "assistant_turns": 17,
+    "tokens": 140059,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 112398,
+    "assistant_turns": 18,
+    "tokens": 155449,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 113416,
+    "assistant_turns": 18,
+    "tokens": 155449,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 114434,
+    "assistant_turns": 18,
+    "tokens": 155449,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 115455,
+    "assistant_turns": 18,
+    "tokens": 155449,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 116481,
+    "assistant_turns": 18,
+    "tokens": 171725,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 116501,
+    "assistant_turns": 18,
+    "tokens": 171725,
+    "reported_cost": 0,
+    "sessions": 5
+  },
+  {
+    "at_ms": 116528,
+    "assistant_turns": 18,
+    "tokens": 171725,
+    "reported_cost": 0,
+    "sessions": 5
+  }
+]

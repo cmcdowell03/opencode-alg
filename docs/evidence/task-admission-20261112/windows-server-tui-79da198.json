@@ -1,0 +1,899 @@
+{
+  "schema_version": 2,
+  "kind": "opencode-alg-live-verification",
+  "generated_at": "2026-11-12T20:13:33.711Z",
+  "no_model_calls": true,
+  "plugin_source": {
+    "package_version": "0.5.7",
+    "canonical_root": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\opencode-alg-v1",
+    "package_spec": "file:///C:/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1",
+    "sha256": "192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d",
+    "runtime_manifest": {
+      "digest": "192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d",
+      "entries": [
+        {
+          "path": ".opencode/skills/duckdb-lake/SKILL.md",
+          "bytes": 2231
+        },
+        {
+          "path": "agents/checker.md",
+          "bytes": 4405
+        },
+        {
+          "path": "agents/explorer.md",
+          "bytes": 881
+        },
+        {
+          "path": "agents/implementer.md",
+          "bytes": 2392
+        },
+        {
+          "path": "agents/orchestrator.md",
+          "bytes": 13301
+        },
+        {
+          "path": "agents/researcher.md",
+          "bytes": 2615
+        },
+        {
+          "path": "capabilities/connectors/__init__.py",
+          "bytes": 427
+        },
+        {
+          "path": "capabilities/connectors/adapter.py",
+          "bytes": 7891
+        },
+        {
+          "path": "capabilities/connectors/contract.py",
+          "bytes": 15596
+        },
+        {
+          "path": "capabilities/connectors/manifest.json",
+          "bytes": 447
+        },
+        {
+          "path": "capabilities/datascience/__init__.py",
+          "bytes": 61
+        },
+        {
+          "path": "capabilities/datascience/catalog.py",
+          "bytes": 10437
+        },
+        {
+          "path": "capabilities/datascience/manifest.json",
+          "bytes": 831
+        },
+        {
+          "path": "capabilities/datascience/operations.py",
+          "bytes": 12530
+        },
+        {
+          "path": "capabilities/datascience/pyproject.toml",
+          "bytes": 175
+        },
+        {
+          "path": "capabilities/datascience/runner.py",
+          "bytes": 10660
+        },
+        {
+          "path": "capabilities/datascience/uv.lock",
+          "bytes": 15765
+        },
+        {
+          "path": "capabilities/duckdb/__init__.py",
+          "bytes": 277
+        },
+        {
+          "path": "capabilities/duckdb/contract.example.json",
+          "bytes": 686
+        },
+        {
+          "path": "capabilities/duckdb/contract.py",
+          "bytes": 13210
+        },
+        {
+          "path": "capabilities/duckdb/contract.schema.json",
+          "bytes": 3954
+        },
+        {
+          "path": "capabilities/duckdb/fastapi_adapter.py",
+          "bytes": 1824
+        },
+        {
+          "path": "capabilities/duckdb/manifest.json",
+          "bytes": 1489
+        },
+        {
+          "path": "capabilities/duckdb/opencode.disabled.json",
+          "bytes": 116
+        },
+        {
+          "path": "capabilities/duckdb/policy.py",
+          "bytes": 12265
+        },
+        {
+          "path": "capabilities/duckdb/pyproject.toml",
+          "bytes": 189
+        },
+        {
+          "path": "capabilities/duckdb/query_plane.py",
+          "bytes": 13481
+        },
+        {
+          "path": "capabilities/duckdb/uv.lock",
+          "bytes": 7237
+        },
+        {
+          "path": "capabilities/duckdb/worker.py",
+          "bytes": 13089
+        },
+        {
+          "path": "capabilities/duckdb/wrapper.py",
+          "bytes": 9768
+        },
+        {
+          "path": "capabilities/excel/manifest.json",
+          "bytes": 2093
+        },
+        {
+          "path": "capabilities/excel/policy.py",
+          "bytes": 7424
+        },
+        {
+          "path": "capabilities/excel/pyproject.toml",
+          "bytes": 172
+        },
+        {
+          "path": "capabilities/excel/uv.lock",
+          "bytes": 355755
+        },
+        {
+          "path": "capabilities/excel/workbook.py",
+          "bytes": 15790
+        },
+        {
+          "path": "capabilities/excel/wrapper.py",
+          "bytes": 3998
+        },
+        {
+          "path": "package.json",
+          "bytes": 4019
+        },
+        {
+          "path": "src/capability-assets.ts",
+          "bytes": 603
+        },
+        {
+          "path": "src/checker-evidence.ts",
+          "bytes": 8989
+        },
+        {
+          "path": "src/compaction.ts",
+          "bytes": 10952
+        },
+        {
+          "path": "src/config-editor.ts",
+          "bytes": 33641
+        },
+        {
+          "path": "src/context-budget.ts",
+          "bytes": 13469
+        },
+        {
+          "path": "src/diagnostics.ts",
+          "bytes": 16585
+        },
+        {
+          "path": "src/environment-memory/engine.ts",
+          "bytes": 42776
+        },
+        {
+          "path": "src/environment-memory/index.ts",
+          "bytes": 303
+        },
+        {
+          "path": "src/environment-memory/object-store.ts",
+          "bytes": 22221
+        },
+        {
+          "path": "src/environment-memory/replication.ts",
+          "bytes": 22237
+        },
+        {
+          "path": "src/environment-memory/runtime.ts",
+          "bytes": 6951
+        },
+        {
+          "path": "src/environment-memory/schemas.ts",
+          "bytes": 11294
+        },
+        {
+          "path": "src/execution-evidence.ts",
+          "bytes": 14284
+        },
+        {
+          "path": "src/executor.ts",
+          "bytes": 57243
+        },
+        {
+          "path": "src/experience.ts",
+          "bytes": 16508
+        },
+        {
+          "path": "src/filesystem-mutex.ts",
+          "bytes": 19877
+        },
+        {
+          "path": "src/gate-recovery.ts",
+          "bytes": 2376
+        },
+        {
+          "path": "src/global-model-config.ts",
+          "bytes": 9504
+        },
+        {
+          "path": "src/graph-policy.ts",
+          "bytes": 1448
+        },
+        {
+          "path": "src/graph-revision.ts",
+          "bytes": 6938
+        },
+        {
+          "path": "src/graph.ts",
+          "bytes": 4259
+        },
+        {
+          "path": "src/index.ts",
+          "bytes": 27861
+        },
+        {
+          "path": "src/investigation-protocol.ts",
+          "bytes": 16340
+        },
+        {
+          "path": "src/investigation-review.ts",
+          "bytes": 3146
+        },
+        {
+          "path": "src/investigation-transport.ts",
+          "bytes": 10514
+        },
+        {
+          "path": "src/investigation-wait.ts",
+          "bytes": 2829
+        },
+        {
+          "path": "src/investigation/index.ts",
+          "bytes": 52303
+        },
+        {
+          "path": "src/limits.ts",
+          "bytes": 2462
+        },
+        {
+          "path": "src/models.ts",
+          "bytes": 11017
+        },
+        {
+          "path": "src/operational-options.ts",
+          "bytes": 3806
+        },
+        {
+          "path": "src/operational-runtime.ts",
+          "bytes": 24879
+        },
+        {
+          "path": "src/operational-tools.ts",
+          "bytes": 7065
+        },
+        {
+          "path": "src/owned-context.ts",
+          "bytes": 1819
+        },
+        {
+          "path": "src/owner-index.ts",
+          "bytes": 3282
+        },
+        {
+          "path": "src/ownership.ts",
+          "bytes": 4332
+        },
+        {
+          "path": "src/paths.ts",
+          "bytes": 15004
+        },
+        {
+          "path": "src/persistence.ts",
+          "bytes": 18543
+        },
+        {
+          "path": "src/plugin-configuration.ts",
+          "bytes": 8418
+        },
+        {
+          "path": "src/preservation-evidence.ts",
+          "bytes": 3686
+        },
+        {
+          "path": "src/run-cards.ts",
+          "bytes": 13290
+        },
+        {
+          "path": "src/run-progress.ts",
+          "bytes": 8700
+        },
+        {
+          "path": "src/runtime-identity.ts",
+          "bytes": 2662
+        },
+        {
+          "path": "src/schemas.ts",
+          "bytes": 71280
+        },
+        {
+          "path": "src/server.ts",
+          "bytes": 209
+        },
+        {
+          "path": "src/session-memory/attempts.ts",
+          "bytes": 4173
+        },
+        {
+          "path": "src/session-memory/context.ts",
+          "bytes": 10353
+        },
+        {
+          "path": "src/session-memory/delivery-schema.ts",
+          "bytes": 2276
+        },
+        {
+          "path": "src/session-memory/delivery.ts",
+          "bytes": 5791
+        },
+        {
+          "path": "src/session-memory/environment.ts",
+          "bytes": 1640
+        },
+        {
+          "path": "src/session-memory/experience-adapter.ts",
+          "bytes": 2122
+        },
+        {
+          "path": "src/session-memory/preflight.ts",
+          "bytes": 5828
+        },
+        {
+          "path": "src/session-memory/retrieval.ts",
+          "bytes": 2142
+        },
+        {
+          "path": "src/session-memory/runtime.ts",
+          "bytes": 23026
+        },
+        {
+          "path": "src/session-memory/schemas.ts",
+          "bytes": 9240
+        },
+        {
+          "path": "src/session-memory/skill-index.ts",
+          "bytes": 13336
+        },
+        {
+          "path": "src/session-memory/store.ts",
+          "bytes": 18895
+        },
+        {
+          "path": "src/session-memory/tools.ts",
+          "bytes": 7796
+        },
+        {
+          "path": "src/sessions.ts",
+          "bytes": 25523
+        },
+        {
+          "path": "src/shell-preflight.ts",
+          "bytes": 10094
+        },
+        {
+          "path": "src/shell.ts",
+          "bytes": 79167
+        },
+        {
+          "path": "src/skill-catalog.ts",
+          "bytes": 21935
+        },
+        {
+          "path": "src/skill-evaluation.ts",
+          "bytes": 5894
+        },
+        {
+          "path": "src/skill-evolution-evidence.ts",
+          "bytes": 17877
+        },
+        {
+          "path": "src/skill-evolution-historical.ts",
+          "bytes": 134402
+        },
+        {
+          "path": "src/skill-evolution-redaction.ts",
+          "bytes": 2171
+        },
+        {
+          "path": "src/skill-evolution-runtime.ts",
+          "bytes": 57885
+        },
+        {
+          "path": "src/skill-evolution-schemas.ts",
+          "bytes": 31764
+        },
+        {
+          "path": "src/skill-evolution-store.ts",
+          "bytes": 147758
+        },
+        {
+          "path": "src/skill-evolution-tools.ts",
+          "bytes": 13913
+        },
+        {
+          "path": "src/skill-metadata.ts",
+          "bytes": 2167
+        },
+        {
+          "path": "src/source-identity.ts",
+          "bytes": 13232
+        },
+        {
+          "path": "src/store.ts",
+          "bytes": 137821
+        },
+        {
+          "path": "src/task-contract.ts",
+          "bytes": 10513
+        },
+        {
+          "path": "src/task-evidence.ts",
+          "bytes": 7656
+        },
+        {
+          "path": "src/templates.ts",
+          "bytes": 14095
+        },
+        {
+          "path": "src/tools.ts",
+          "bytes": 71826
+        },
+        {
+          "path": "src/troubleshooter.ts",
+          "bytes": 6226
+        },
+        {
+          "path": "src/tui-live-render.ts",
+          "bytes": 4696
+        },
+        {
+          "path": "src/tui-live.ts",
+          "bytes": 13057
+        },
+        {
+          "path": "src/tui-models.ts",
+          "bytes": 8796
+        },
+        {
+          "path": "src/tui-registration.ts",
+          "bytes": 172
+        },
+        {
+          "path": "src/tui-runs.ts",
+          "bytes": 60674
+        },
+        {
+          "path": "src/tui.ts",
+          "bytes": 218
+        },
+        {
+          "path": "src/turn-boundary.ts",
+          "bytes": 2061
+        },
+        {
+          "path": "src/types.ts",
+          "bytes": 10927
+        },
+        {
+          "path": "src/verification.ts",
+          "bytes": 4657
+        },
+        {
+          "path": "src/workspace-facts.ts",
+          "bytes": 8753
+        },
+        {
+          "path": "src/workspace-runtime.ts",
+          "bytes": 11779
+        },
+        {
+          "path": "src/workspace/index.ts",
+          "bytes": 15569
+        },
+        {
+          "path": "src/workspace/schema.ts",
+          "bytes": 2734
+        },
+        {
+          "path": "templates/coding-compact.json",
+          "bytes": 900
+        },
+        {
+          "path": "templates/coding-diamond.json",
+          "bytes": 1592
+        },
+        {
+          "path": "templates/research-diamond.json",
+          "bytes": 1454
+        },
+        {
+          "path": "templates/spreadsheet-diamond.json",
+          "bytes": 1777
+        }
+      ],
+      "file_count": 131,
+      "total_bytes": 2271739,
+      "bounds": {
+        "max_files": 256,
+        "max_file_bytes": 1048576,
+        "max_total_bytes": 8388608
+      }
+    },
+    "entry_points": {
+      "server": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\opencode-alg-v1\\src\\server.ts",
+      "tui": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\opencode-alg-v1\\src\\tui.ts"
+    },
+    "registrations": {
+      "server": [
+        "file:///C:/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1"
+      ],
+      "tui": [
+        "file:///C:/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/opencode-alg-v1"
+      ]
+    }
+  },
+  "isolation": {
+    "project_config_disabled": true,
+    "default_plugins_disabled": true,
+    "external_skills_disabled": true,
+    "isolated_xdg_config": true,
+    "explicit_server_config": "D:\\Docker\\model-temp\\alg-live-verify-9T130n\\opencode.json",
+    "isolated_tui_config": "D:\\Docker\\model-temp\\alg-live-verify-9T130n\\xdg-config\\opencode\\tui.json",
+    "parent_global_plugin_state_used": false,
+    "user_global_config_modified": false,
+    "global_config_snapshots": {
+      "algorithm": "ephemeral-key-hmac-sha256-plus-file-metadata",
+      "allowlisted_relative_paths": [
+        ".",
+        "opencode.json",
+        "opencode.jsonc",
+        "tui.json"
+      ],
+      "before": {
+        "entries": [
+          {
+            "scope": "home",
+            "relative_path": ".",
+            "state": "directory",
+            "size": "0",
+            "mtime_ns": "1791656779217862000",
+            "ctime_ns": "1791656779217862000",
+            "mode": 16822,
+            "content_hmac_sha256": null
+          },
+          {
+            "scope": "home",
+            "relative_path": "opencode.json",
+            "state": "absent",
+            "size": null,
+            "mtime_ns": null,
+            "ctime_ns": null,
+            "mode": null,
+            "content_hmac_sha256": null
+          },
+          {
+            "scope": "home",
+            "relative_path": "opencode.jsonc",
+            "state": "file",
+            "size": "4297",
+            "mtime_ns": "1791656779216222300",
+            "ctime_ns": "1791656779217862000",
+            "mode": 33206,
+            "content_hmac_sha256": "37007093464345fa399e55ec420e7d09cced862e2b45f5c2dea25e6b56d406f5"
+          },
+          {
+            "scope": "home",
+            "relative_path": "tui.json",
+            "state": "file",
+            "size": "336",
+            "mtime_ns": "1791656758720739700",
+            "ctime_ns": "1791656758720739700",
+            "mode": 33206,
+            "content_hmac_sha256": "c793c813af3393183cf4dc0ffa6f060d9f182d5b68646e3498c40c3be30b4aac"
+          },
+          {
+            "scope": "appdata",
+            "relative_path": ".",
+            "state": "absent",
+            "size": null,
+            "mtime_ns": null,
+            "ctime_ns": null,
+            "mode": null,
+            "content_hmac_sha256": null
+          },
+          {
+            "scope": "appdata",
+            "relative_path": "opencode.json",
+            "state": "absent",
+            "size": null,
+            "mtime_ns": null,
+            "ctime_ns": null,
+            "mode": null,
+            "content_hmac_sha256": null
+          },
+          {
+            "scope": "appdata",
+            "relative_path": "opencode.jsonc",
+            "state": "absent",
+            "size": null,
+            "mtime_ns": null,
+            "ctime_ns": null,
+            "mode": null,
+            "content_hmac_sha256": null
+          },
+          {
+            "scope": "appdata",
+            "relative_path": "tui.json",
+            "state": "absent",
+            "size": null,
+            "mtime_ns": null,
+            "ctime_ns": null,
+            "mode": null,
+            "content_hmac_sha256": null
+          }
+        ],
+        "sha256": "8155f495515f8124a83ec20fe2ef591e0ac9714b2f31526e195640cddfae249a"
+      },
+      "after": {
+        "entries": [
+          {
+            "scope": "home",
+            "relative_path": ".",
+            "state": "directory",
+            "size": "0",
+            "mtime_ns": "1791656779217862000",
+            "ctime_ns": "1791656779217862000",
+            "mode": 16822,
+            "content_hmac_sha256": null
+          },
+          {
+            "scope": "home",
+            "relative_path": "opencode.json",
+            "state": "absent",
+            "size": null,
+            "mtime_ns": null,
+            "ctime_ns": null,
+            "mode": null,
+            "content_hmac_sha256": null
+          },
+          {
+            "scope": "home",
+            "relative_path": "opencode.jsonc",
+            "state": "file",
+            "size": "4297",
+            "mtime_ns": "1791656779216222300",
+            "ctime_ns": "1791656779217862000",
+            "mode": 33206,
+            "content_hmac_sha256": "37007093464345fa399e55ec420e7d09cced862e2b45f5c2dea25e6b56d406f5"
+          },
+          {
+            "scope": "home",
+            "relative_path": "tui.json",
+            "state": "file",
+            "size": "336",
+            "mtime_ns": "1791656758720739700",
+            "ctime_ns": "1791656758720739700",
+            "mode": 33206,
+            "content_hmac_sha256": "c793c813af3393183cf4dc0ffa6f060d9f182d5b68646e3498c40c3be30b4aac"
+          },
+          {
+            "scope": "appdata",
+            "relative_path": ".",
+            "state": "absent",
+            "size": null,
+            "mtime_ns": null,
+            "ctime_ns": null,
+            "mode": null,
+            "content_hmac_sha256": null
+          },
+          {
+            "scope": "appdata",
+            "relative_path": "opencode.json",
+            "state": "absent",
+            "size": null,
+            "mtime_ns": null,
+            "ctime_ns": null,
+            "mode": null,
+            "content_hmac_sha256": null
+          },
+          {
+            "scope": "appdata",
+            "relative_path": "opencode.jsonc",
+            "state": "absent",
+            "size": null,
+            "mtime_ns": null,
+            "ctime_ns": null,
+            "mode": null,
+            "content_hmac_sha256": null
+          },
+          {
+            "scope": "appdata",
+            "relative_path": "tui.json",
+            "state": "absent",
+            "size": null,
+            "mtime_ns": null,
+            "ctime_ns": null,
+            "mode": null,
+            "content_hmac_sha256": null
+          }
+        ],
+        "sha256": "8155f495515f8124a83ec20fe2ef591e0ac9714b2f31526e195640cddfae249a"
+      },
+      "unchanged": true
+    }
+  },
+  "declared_engine_requirement": ">=1.18.0 <2.0.0",
+  "required_alg_tool_ids": [
+    "alg_templates",
+    "alg_models",
+    "alg_criteria",
+    "alg_plan",
+    "alg_run",
+    "alg_status",
+    "alg_resume",
+    "alg_artifact",
+    "alg_transfer",
+    "alg_skill_evolution_status",
+    "alg_skill_evolution_audit",
+    "alg_skill_evolution_historical",
+    "alg_skill_evolution_review",
+    "alg_skill_evolution_promote",
+    "alg_skill_evolution_rollback",
+    "alg_skill",
+    "alg_memory_search",
+    "alg_memory_read",
+    "alg_context_status",
+    "alg_memory_propose",
+    "alg_investigation"
+  ],
+  "output_path": "D:\\Docker\\model-temp\\opencode-alg-verification-evidence\\live-verification-192c0bef5100915d-2da32dd3-5b9e-4c12-adf0-b27e8b5668ec.json",
+  "temporary_environment_removed": true,
+  "passed": true,
+  "reason": "OpenCode 1.19.5 satisfies >=1.18.0 <2.0.0; ALG tools and exact TUI registration verified; server and TUI root cleanup confirmed; temporary environment removal and real-user global-config preservation confirmed",
+  "version": {
+    "executable_path": "C:\\Users\\codym\\AppData\\Roaming\\npm\\node_modules\\opencode-ai\\bin\\opencode.exe",
+    "declared_engine_requirement": ">=1.18.0 <2.0.0",
+    "command": [
+      "C:\\Users\\codym\\AppData\\Roaming\\npm\\node_modules\\opencode-ai\\bin\\opencode.exe",
+      "--version"
+    ],
+    "root_pid": 1603972,
+    "stdout": "1.19.5\n",
+    "stderr": "",
+    "exit_observed": true,
+    "exit_code": 0,
+    "exit_signal": null,
+    "timeout_ms": 30000,
+    "timed_out": false,
+    "cleanup": {
+      "root_pid": 1603972,
+      "cleanup_scope": "root-process",
+      "exit_observed": true,
+      "exit_code": 0,
+      "exit_signal": null,
+      "termination_attempted": false,
+      "termination_result": "already-exited",
+      "tree_termination_attempted": false,
+      "tree_termination_result": "not-required",
+      "best_effort_kill_attempted": false,
+      "passed": true
+    },
+    "passed": true,
+    "parsed": {
+      "text": "1.19.5",
+      "major": 1,
+      "minor": 19,
+      "patch": 5
+    },
+    "reason": "OpenCode 1.19.5 satisfies >=1.18.0 <2.0.0"
+  },
+  "server": {
+    "command": [
+      "C:\\Users\\codym\\AppData\\Roaming\\npm\\node_modules\\opencode-ai\\bin\\opencode.exe",
+      "serve",
+      "--hostname",
+      "127.0.0.1",
+      "--port",
+      "22766",
+      "--print-logs",
+      "--log-level",
+      "INFO"
+    ],
+    "root_pid": 1618140,
+    "endpoint": "http://127.0.0.1:22766/experimental/tool/ids",
+    "readiness_attempts": 6,
+    "raw_http_status": 200,
+    "raw_http_body": "[\"invalid\",\"question\",\"bash\",\"read\",\"glob\",\"grep\",\"edit\",\"write\",\"task\",\"webfetch\",\"todowrite\",\"websearch\",\"skill\",\"apply_patch\",\"alg_templates\",\"alg_models\",\"alg_criteria\",\"alg_plan\",\"alg_run\",\"alg_status\",\"alg_resume\",\"alg_artifact\",\"alg_transfer\",\"alg_skill_evolution_status\",\"alg_skill_evolution_audit\",\"alg_skill_evolution_historical\",\"alg_skill_evolution_review\",\"alg_skill_evolution_promote\",\"alg_skill_evolution_rollback\",\"alg_skill\",\"alg_memory_search\",\"alg_memory_read\",\"alg_context_status\",\"alg_memory_propose\",\"alg_investigation\"]",
+    "parsed_alg_ids": [
+      "alg_templates",
+      "alg_models",
+      "alg_criteria",
+      "alg_plan",
+      "alg_run",
+      "alg_status",
+      "alg_resume",
+      "alg_artifact",
+      "alg_transfer",
+      "alg_skill_evolution_status",
+      "alg_skill_evolution_audit",
+      "alg_skill_evolution_historical",
+      "alg_skill_evolution_review",
+      "alg_skill_evolution_promote",
+      "alg_skill_evolution_rollback",
+      "alg_skill",
+      "alg_memory_search",
+      "alg_memory_read",
+      "alg_context_status",
+      "alg_memory_propose",
+      "alg_investigation"
+    ],
+    "source_identity_log": "timestamp=2026-11-12T20:13:39.318Z level=INFO run=c9c49fda message=\"OPENCODE_ALG_SOURCE_ID entry=server digest=192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d files=131 bytes=2271739 root=QzpcVXNlcnNcY29keW1cLmNvZGV4XHZpc3VhbGl6YXRpb25zXDIwMjZcMDlcMDRcMDFhMDZkZGYtOTg5Ni03ODgzLThiNmUtN2M0NWM4MDRhZmJmXG9wZW5jb2RlLWFsZy12MQ\"",
+    "stdout_tail": "Warning: OPENCODE_SERVER_PASSWORD is not set; server is unsecured.\nopencode server listening on http://127.0.0.1:22766\n",
+    "stderr_tail": "timestamp=2026-11-12T20:13:35.544Z level=INFO run=c9c49fda message=loading path=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\xdg-config\\\\opencode\\\\config.json\"\ntimestamp=2026-11-12T20:13:35.561Z level=INFO run=c9c49fda message=loading path=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\xdg-config\\\\opencode\\\\opencode.json\"\ntimestamp=2026-11-12T20:13:35.565Z level=INFO run=c9c49fda message=loading path=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\xdg-config\\\\opencode\\\\opencode.jsonc\"\ntimestamp=2026-11-12T20:13:35.775Z level=INFO run=c9c49fda message=\"creating instance\" directory=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\project\"\ntimestamp=2026-11-12T20:13:35.776Z level=INFO run=c9c49fda message=fromDirectory directory=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\project\"\ntimestamp=2026-11-12T20:13:35.788Z level=INFO run=c9c49fda message=bootstrapping directory=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\project\"\ntimestamp=2026-11-12T20:13:35.793Z level=INFO run=c9c49fda message=loading path=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\xdg-config\\\\opencode\\\\config.json\"\ntimestamp=2026-11-12T20:13:35.794Z level=INFO run=c9c49fda message=loading path=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\xdg-config\\\\opencode\\\\opencode.json\"\ntimestamp=2026-11-12T20:13:35.794Z level=INFO run=c9c49fda message=loading path=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\xdg-config\\\\opencode\\\\opencode.jsonc\"\ntimestamp=2026-11-12T20:13:35.795Z level=INFO run=c9c49fda message=loading path=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\opencode.json\"\ntimestamp=2026-11-12T20:13:39.318Z level=INFO run=c9c49fda message=\"OPENCODE_ALG_SOURCE_ID entry=server digest=192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d files=131 bytes=2271739 root=QzpcVXNlcnNcY29keW1cLmNvZGV4XHZpc3VhbGl6YXRpb25zXDIwMjZcMDlcMDRcMDFhMDZkZGYtOTg5Ni03ODgzLThiNmUtN2M0NWM4MDRhZmJmXG9wZW5jb2RlLWFsZy12MQ\"\ntimestamp=2026-11-12T20:13:39.334Z level=INFO run=c9c49fda message=\"alg plugin loaded skill_evolution=disabled tools=21 ids=alg_templates,alg_models,alg_criteria,alg_plan,alg_run,alg_status,alg_resume,alg_artifact,alg_transfer,alg_skill_evolution_status,alg_skill_evolution_audit,alg_skill_evolution_historical,alg_skill_evolution_review,alg_skill_evolution_promote,alg_skill_evolution_rollback,alg_skill,alg_memory_search,alg_memory_read,alg_context_status,alg_memory_propose,alg_investigation ALG deployment identity protocol=alg-runtime-identity-v1 build=opencode-alg@0.5.7 source_manifest_at_module_load=192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d scope=local-package-tree-only;not-proof-of-upstream-host-load configuration_source=defaults\" directory=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\project\" skill_evolution_enabled=false configuration_source=defaults configuration_sidecar_present=false deployment_identity_protocol=alg-runtime-identity-v1 deployment_build=opencode-alg@0.5.7 source_manifest_at_module_load=192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d\ntimestamp=2026-11-12T20:13:39.337Z level=INFO run=c9c49fda message=\"all LSPs are disabled\"\ntimestamp=2026-11-12T20:13:39.338Z level=INFO run=c9c49fda message=\"all formatters are disabled\"\ntimestamp=2026-11-12T20:13:39.338Z level=INFO run=c9c49fda message=init\ntimestamp=2026-11-12T20:13:39.356Z level=INFO run=c9c49fda message=\"shell tool using shell\" shell=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\"\n",
+    "cleanup": {
+      "root_pid": 1618140,
+      "cleanup_scope": "root-process",
+      "exit_observed": true,
+      "exit_code": null,
+      "exit_signal": "SIGTERM",
+      "termination_attempted": true,
+      "termination_result": "succeeded",
+      "tree_termination_attempted": false,
+      "tree_termination_result": "not-required",
+      "best_effort_kill_attempted": false,
+      "passed": true
+    }
+  },
+  "tui": {
+    "command": [
+      "C:\\Users\\codym\\AppData\\Roaming\\npm\\node_modules\\opencode-ai\\bin\\opencode.exe",
+      "D:\\Docker\\model-temp\\alg-live-verify-9T130n\\project",
+      "--print-logs",
+      "--log-level",
+      "INFO"
+    ],
+    "root_pid": 1618048,
+    "registration_log": "timestamp=2026-11-12T20:13:46.368Z level=INFO run=351c130a message=\"OPENCODE_ALG_TUI_REGISTRATION_OK commands=/alg-models,/alg-runs\"",
+    "source_identity_log": "timestamp=2026-11-12T20:13:46.011Z level=INFO run=351c130a message=\"OPENCODE_ALG_SOURCE_ID entry=tui digest=192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d files=131 bytes=2271739 root=QzpcVXNlcnNcY29keW1cLmNvZGV4XHZpc3VhbGl6YXRpb25zXDIwMjZcMDlcMDRcMDFhMDZkZGYtOTg5Ni03ODgzLThiNmUtN2M0NWM4MDRhZmJmXG9wZW5jb2RlLWFsZy12MQ\"",
+    "stdout_tail": "\u001b[?2031h\u001b]10;?\u0007\u001b]11;?\u0007\u001b[>0q\u001b[?25l\u001b[s\u001b[6n\u001bP+q4d73\u001b\\\u001b[?1016$p\u001b[?2027$p\u001b[?2031$p\u001b[?1004$p\u001b[?2004$p\u001b[?2026$p\u001b[?u\u001b]99;i=opentui-notifications:p=?;\u001b\\\u001b]1337;Capabilities\u001b\\\u001b[H\u001b]66;w=1; \u001b\\\u001b[6n\u001b[H\u001b]66;s=2; \u001b\\\u001b[6n\u001b[u\u001b[s\u001b[?1049h\u001b[>4;1m\u001b[?2027h\u001b[?2004h\u001b[?1000h\u001b[?1002h\u001b[?1003h\u001b[?1006h\u001b[14t\u001b[?2026h\u001b[?25l\u001b[1;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[2;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[3;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[4;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[5;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[6;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[7;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[8;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[9;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[10;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[11;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[12;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[13;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[14;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[15;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[16;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[17;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[18;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[19;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[20;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[21;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[22;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[23;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[24;1H\u001b[38;2;255;255;255m\u001b[48;2;10;10;10m                                                                                \u001b[0m\u001b[?2026l\u001b]0;OpenCode\u0007\u001b[?2026h\u001b[?25l\u001b[23;31H\u001b[38;2;255;255;255m\u001b[48;2;20;20;20m \u001b[0m\u001b[23;32H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20m⠋\u001b[0m\u001b[23;33H\u001b[38;2;255;255;255m\u001b[48;2;20;20;20m \u001b[0m\u001b[23;34H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20mLoading plugins…\u001b[0m\u001b[23;50H\u001b[38;2;255;255;255m\u001b[48;2;20;20;20m \u001b[0m\u001b[0m\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[23;32H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20m⠙\u001b[0m\u001b[0m\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[23;32H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20m⠹\u001b[0m\u001b[0m\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[23;32H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20m⠸\u001b[0m\u001b[0m\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[23;32H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20m⠼\u001b[0m\u001b[0m\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[23;32H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20m⠴\u001b[0m\u001b[0m\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[23;32H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20m⠦\u001b[0m\u001b[0m\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[23;32H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20m⠧\u001b[0m\u001b[0m\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[23;32H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20m⠇\u001b[0m\u001b[0m\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[23;32H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20m⠏\u001b[0m\u001b[0m\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[23;32H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20m⠋\u001b[0m\u001b[0m\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[23;32H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20m⠙\u001b[0m\u001b[0m\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[23;32H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20m⠹\u001b[0m\u001b[0m\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[23;32H\u001b[38;2;128;128;128m\u001b[48;2;20;20;20m⠸\u001b[0m\u001b[0m\u001b[?2026l",
+    "stderr_tail": "timestamp=2026-11-12T20:13:40.438Z level=INFO run=754edc08 message=\"loading tui config\" path=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\xdg-config\\\\opencode\\\\tui.json\"\ntimestamp=2026-11-12T20:13:40.441Z level=INFO run=754edc08 message=\"applying tui config\" path=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\xdg-config\\\\opencode\\\\tui.json\" order=1\ntimestamp=2026-11-12T20:13:41.638Z level=INFO run=351c130a message=\"creating instance\" directory=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\project\"\ntimestamp=2026-11-12T20:13:41.648Z level=INFO run=351c130a message=fromDirectory directory=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\project\"\ntimestamp=2026-11-12T20:13:41.663Z level=INFO run=351c130a message=bootstrapping directory=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\project\"\ntimestamp=2026-11-12T20:13:41.670Z level=INFO run=351c130a message=loading path=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\xdg-config\\\\opencode\\\\config.json\"\ntimestamp=2026-11-12T20:13:41.671Z level=INFO run=351c130a message=loading path=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\xdg-config\\\\opencode\\\\opencode.json\"\ntimestamp=2026-11-12T20:13:41.705Z level=INFO run=351c130a message=loading path=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\xdg-config\\\\opencode\\\\opencode.jsonc\"\ntimestamp=2026-11-12T20:13:41.803Z level=INFO run=351c130a message=loading path=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\opencode.json\"\ntimestamp=2026-11-12T20:13:42.237Z level=INFO run=351c130a message=\"OPENCODE_ALG_SOURCE_ID entry=server digest=192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d files=131 bytes=2271739 root=QzpcVXNlcnNcY29keW1cLmNvZGV4XHZpc3VhbGl6YXRpb25zXDIwMjZcMDlcMDRcMDFhMDZkZGYtOTg5Ni03ODgzLThiNmUtN2M0NWM4MDRhZmJmXG9wZW5jb2RlLWFsZy12MQ\"\ntimestamp=2026-11-12T20:13:42.246Z level=INFO run=351c130a message=\"alg plugin loaded skill_evolution=disabled tools=21 ids=alg_templates,alg_models,alg_criteria,alg_plan,alg_run,alg_status,alg_resume,alg_artifact,alg_transfer,alg_skill_evolution_status,alg_skill_evolution_audit,alg_skill_evolution_historical,alg_skill_evolution_review,alg_skill_evolution_promote,alg_skill_evolution_rollback,alg_skill,alg_memory_search,alg_memory_read,alg_context_status,alg_memory_propose,alg_investigation ALG deployment identity protocol=alg-runtime-identity-v1 build=opencode-alg@0.5.7 source_manifest_at_module_load=192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d scope=local-package-tree-only;not-proof-of-upstream-host-load configuration_source=defaults\" directory=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\project\" skill_evolution_enabled=false configuration_source=defaults configuration_sidecar_present=false deployment_identity_protocol=alg-runtime-identity-v1 deployment_build=opencode-alg@0.5.7 source_manifest_at_module_load=192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d\ntimestamp=2026-11-12T20:13:42.248Z level=INFO run=351c130a message=\"all LSPs are disabled\"\ntimestamp=2026-11-12T20:13:42.249Z level=INFO run=351c130a message=\"all formatters are disabled\"\ntimestamp=2026-11-12T20:13:42.249Z level=INFO run=351c130a message=init\ntimestamp=2026-11-12T20:13:44.319Z level=INFO run=351c130a message=init count=1\ntimestamp=2026-11-12T20:13:44.705Z level=INFO run=351c130a message=\"watcher backend\" directory=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\project\" platform=win32 backend=windows\ntimestamp=2026-11-12T20:13:44.716Z level=INFO run=351c130a message=\"project copy refresh started\" projectID=global\ntimestamp=2026-11-12T20:13:44.719Z level=INFO run=351c130a message=\"project copy refresh done\" projectID=global updated=[] removed=[]\ntimestamp=2026-11-12T20:13:45.006Z level=INFO run=351c130a message=\"booting location services\" directory=\"D:\\\\Docker\\\\model-temp\\\\alg-live-verify-9T130n\\\\project\" workspaceID=undefined\ntimestamp=2026-11-12T20:13:46.011Z level=INFO run=351c130a message=\"OPENCODE_ALG_SOURCE_ID entry=tui digest=192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d files=131 bytes=2271739 root=QzpcVXNlcnNcY29keW1cLmNvZGV4XHZpc3VhbGl6YXRpb25zXDIwMjZcMDlcMDRcMDFhMDZkZGYtOTg5Ni03ODgzLThiNmUtN2M0NWM4MDRhZmJmXG9wZW5jb2RlLWFsZy12MQ\"\ntimestamp=2026-11-12T20:13:46.368Z level=INFO run=351c130a message=\"OPENCODE_ALG_TUI_REGISTRATION_OK commands=/alg-models,/alg-runs\"\n",
+    "cleanup": {
+      "root_pid": 1618048,
+      "cleanup_scope": "root-process",
+      "exit_observed": true,
+      "exit_code": null,
+      "exit_signal": "SIGTERM",
+      "termination_attempted": true,
+      "termination_result": "succeeded",
+      "tree_termination_attempted": false,
+      "tree_termination_result": "not-required",
+      "best_effort_kill_attempted": false,
+      "passed": true
+    }
+  }
+}

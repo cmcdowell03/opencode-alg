@@ -1,0 +1,698 @@
+{
+  "pairId": "pair-0002-b8757b8d2177",
+  "caseId": "wafer-report-staged",
+  "arm": "build",
+  "status": "completed",
+  "stopReason": null,
+  "passed": true,
+  "scored_task_success": true,
+  "independent_score": {
+    "passed": true,
+    "checks": [
+      {
+        "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+        "passed": true
+      },
+      {
+        "id": "protected:data/system-export.json",
+        "passed": true
+      },
+      {
+        "id": "protected:data/manual-review.json",
+        "passed": true
+      },
+      {
+        "id": "preparation-artifact",
+        "passed": true
+      },
+      {
+        "id": "arithmetic-distinct-wafers",
+        "passed": true
+      },
+      {
+        "id": "source-provenance",
+        "passed": true
+      },
+      {
+        "id": "conflict-and-uncertainty",
+        "passed": true
+      },
+      {
+        "id": "skill-procedure-and-scope",
+        "passed": true
+      }
+    ],
+    "metrics": {
+      "protectedFiles": 3,
+      "preparationBytes": 1970,
+      "reportBytes": 747,
+      "reportParsed": true
+    }
+  },
+  "metrics": {
+    "attribution": {
+      "rows": [
+        {
+          "sessionID": "ses_e2e1a4aedffequZCUyAQp7fAzu",
+          "requestID": "msg_1d1e5b532001hOOrA7qpTfTbyR",
+          "role": "build",
+          "phase": "initial",
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "assistantTurns": 5,
+          "usageComplete": 5,
+          "usagePartial": 0,
+          "usageUnknown": 0,
+          "reportedComponents": {
+            "input": 7291,
+            "output": 960,
+            "reasoning": 10,
+            "cacheRead": 24192,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "sessionID": "ses_e2e1a4aedffequZCUyAQp7fAzu",
+          "requestID": "msg_1d1e61db2001l8xNdlbW2EuuYf",
+          "role": "compaction",
+          "phase": "compaction",
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "assistantTurns": 1,
+          "usageComplete": 1,
+          "usagePartial": 0,
+          "usageUnknown": 0,
+          "reportedComponents": {
+            "input": 2793,
+            "output": 563,
+            "reasoning": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "sessionID": "ses_e2e1a4aedffequZCUyAQp7fAzu",
+          "requestID": "msg_1d1e654b30018OMjlUrrWMaPXw",
+          "role": "build",
+          "phase": "followup",
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "assistantTurns": 5,
+          "usageComplete": 5,
+          "usagePartial": 0,
+          "usageUnknown": 0,
+          "reportedComponents": {
+            "input": 4689,
+            "output": 1151,
+            "reasoning": 9,
+            "cacheRead": 33152,
+            "cacheWrite": 0
+          }
+        }
+      ],
+      "overflowMessages": 0
+    },
+    "sessions": {
+      "total": 1,
+      "roots": 1,
+      "children": 0
+    },
+    "assistantTurns": {
+      "total": 11,
+      "finished": 11,
+      "unfinished": 0,
+      "error": 0,
+      "modelIdentities": [
+        {
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "turns": 11
+        }
+      ]
+    },
+    "usage": {
+      "components": {
+        "input": {
+          "reportedTotal": 14773,
+          "reportedTurns": 11,
+          "unknownTurns": 0
+        },
+        "output": {
+          "reportedTotal": 2674,
+          "reportedTurns": 11,
+          "unknownTurns": 0
+        },
+        "reasoning": {
+          "reportedTotal": 19,
+          "reportedTurns": 11,
+          "unknownTurns": 0
+        },
+        "cacheRead": {
+          "reportedTotal": 57344,
+          "reportedTurns": 11,
+          "unknownTurns": 0
+        },
+        "cacheWrite": {
+          "reportedTotal": 0,
+          "reportedTurns": 11,
+          "unknownTurns": 0
+        }
+      },
+      "totalReportedTokens": 74810,
+      "turns": {
+        "complete": 11,
+        "partial": 0,
+        "unknown": 0
+      },
+      "billing": "not_estimated",
+      "coverage": "observed_session_fields_only"
+    },
+    "cost": {
+      "reportedTotal": 0,
+      "reportedTurns": 11,
+      "unknownTurns": 0,
+      "billing": "not_estimated"
+    },
+    "tools": {
+      "total": 15,
+      "completed": 15,
+      "error": 0,
+      "pending": 0,
+      "byName": {
+        "skill": {
+          "total": 2,
+          "completed": 2,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 156,
+          "durationCalls": 2,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 2,
+              "durationMsReported": 156,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "glob": {
+          "total": 3,
+          "completed": 3,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 241,
+          "durationCalls": 3,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 3,
+              "durationMsReported": 241,
+              "durationCalls": 3,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "read": {
+          "total": 5,
+          "completed": 5,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 168,
+          "durationCalls": 5,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 5,
+              "durationMsReported": 168,
+              "durationCalls": 5,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "bash": {
+          "total": 3,
+          "completed": 3,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 1707,
+          "durationCalls": 3,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 3,
+              "durationMsReported": 1707,
+              "durationCalls": 3,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "apply_patch": {
+          "total": 2,
+          "completed": 2,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 8,
+          "durationCalls": 2,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 2,
+              "durationMsReported": 8,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        }
+      }
+    },
+    "repeatedExactToolInputs": {
+      "skill": {
+        "distinctRepeatedInputs": 1,
+        "repeatedCalls": 1
+      },
+      "glob": {
+        "distinctRepeatedInputs": 1,
+        "repeatedCalls": 1
+      },
+      "read": {
+        "distinctRepeatedInputs": 2,
+        "repeatedCalls": 2
+      },
+      "bash": {
+        "distinctRepeatedInputs": 1,
+        "repeatedCalls": 1
+      }
+    },
+    "skillLoads": {
+      "wafer-analysis": {
+        "attempted": 2,
+        "successful": 2,
+        "error": 0,
+        "pending": 0
+      }
+    },
+    "algTools": {
+      "alg_plan": {
+        "total": 0,
+        "completed": 0,
+        "error": 0,
+        "pending": 0
+      },
+      "alg_run": {
+        "total": 0,
+        "completed": 0,
+        "error": 0,
+        "pending": 0
+      }
+    },
+    "observedErrors": {
+      "deniedTool": 0,
+      "stepExhaustion": 0
+    }
+  },
+  "wall_ms": 73140,
+  "total_with_startup_ms": 77164,
+  "phases": [
+    {
+      "phase": "initial",
+      "ms": 26753,
+      "completed": true
+    },
+    {
+      "phase": "compaction",
+      "ms": 12259,
+      "completed": true
+    },
+    {
+      "phase": "followup",
+      "ms": 31733,
+      "completed": true
+    }
+  ],
+  "rootSession": "ses_e2e1a4aedffequZCUyAQp7fAzu",
+  "recovery": {
+    "requested": true,
+    "recoveryRequired": true,
+    "restarted": true,
+    "compactionRecovered": true,
+    "compaction": {
+      "request": {
+        "id": "c5c5cfd7319eb62e3ed75c6420843f77",
+        "requestedAt": "2026-11-12T22:34:41.451Z",
+        "rootSessionId": "ses_e2e1a4aedffequZCUyAQp7fAzu"
+      },
+      "requestAcceptance": "accepted",
+      "marker": {
+        "id": "msg_1d1e61db2001l8xNdlbW2EuuYf",
+        "sessionId": "ses_e2e1a4aedffequZCUyAQp7fAzu",
+        "matchesRequest": true,
+        "outcome": "new_and_persisted",
+        "creationTime": "created_after_request"
+      },
+      "summary": {
+        "id": "msg_1d1e61dba001ayayL021cumZ1M",
+        "parentID": "msg_1d1e61db2001l8xNdlbW2EuuYf",
+        "outcome": "terminal_linked"
+      },
+      "continuation": {
+        "status": "completed",
+        "userMessageID": "msg_1d1e654b30018OMjlUrrWMaPXw",
+        "assistantID": "msg_1d1e6be400015q2HB1K3gCUFk3",
+        "scorePassed": true,
+        "linked": true
+      },
+      "qualified": true
+    },
+    "phase1": {
+      "files": [
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": "data/manual-review.json",
+          "bytes": 359,
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        },
+        {
+          "path": "data/system-export.json",
+          "bytes": 558,
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        },
+        {
+          "path": "preparation.md",
+          "bytes": 1970,
+          "sha256": "a609fc3c93644bab63aef00c32c570b07bff05d0164de29f10b9f3274d660e25"
+        }
+      ],
+      "at_ms": 26769,
+      "preparation_content": "# Wafer evidence report preparation\n\n## Reporting date and window\n\n- Reporting date: 2025-04-01 UTC, as stated by both sources.\n- Window: inclusive start `2025-04-01T00:00:00Z`; exclusive end `2025-04-02T00:00:00Z`; timezone `UTC`.\n- The source files specify a reporting date but provide no individual event timestamps, so the window relies on the source-level date.\n\n## Sources\n\n- Primary: `data/system-export.json`, source ID `SYS-APR-01` (synthetic system export).\n- Supplemental: `data/manual-review.json`, source ID `MR-APR-01` (synthetic manual review sheet).\n\n## Calculation plan\n\nUse the system export as primary. Count distinct system `wafer_id` values for the denominator and distinct wafers with a system defect for the numerator; repeated inspection events do not add wafers. The system has four distinct wafers (W11, W12, W13, W14); W12 is defective in both of its system events and counts once. Thus the planned numerator is 1, denominator is 4, and rate is 1 / 4 = 0.25. Manual review supplements the evidence and does not overwrite the system result.\n\n## Conflict\n\n- W13: system `defect` is `false`; manual `reviewer_defect` is `true`. Status: `unresolved`. The system observation remains primary for the calculation; the disagreement creates uncertainty about W13's defect status.\n\n## Planned report fields\n\n- `numerator`: 1; `denominator`: 4; `rate`: 0.25.\n- `window`: `{\"start\":\"2025-04-01T00:00:00Z\",\"endExclusive\":\"2025-04-02T00:00:00Z\",\"timezone\":\"UTC\"}`.\n- `sources`: `data/system-export.json` and `data/manual-review.json`.\n- `conflicts`: an entry with `wafer_id` `W13`, `system_defect` `false`, `manual_defect` `true`, and `status` `unresolved`.\n- `limitations`: include the exact sentence \"Synthetic analysis only; not process validation.\" Also note the source-level date without individual event timestamps and the unresolved W13 disagreement.\n\n## STOP\n\nPreparation only. Stop here; create `report.json` in the subsequent phase after restart.\n",
+      "report_absent": true,
+      "independent_score": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": true
+          },
+          {
+            "id": "phase-one-report-absent",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 1970
+        }
+      }
+    }
+  },
+  "retention": {
+    "taskId": "pair-0002-b8757b8d2177:wafer-report-staged:build",
+    "sessions": [
+      "ses_e2e1a4aedffequZCUyAQp7fAzu"
+    ],
+    "lineage": [
+      {
+        "kind": "restarted",
+        "fromSessionId": "ses_e2e1a4aedffequZCUyAQp7fAzu",
+        "toSessionId": "ses_e2e1a4aedffequZCUyAQp7fAzu",
+        "at": 1794522927684
+      }
+    ],
+    "time": {
+      "elapsedWallSeconds": 73.014,
+      "taskActiveWallSeconds": null,
+      "taskActiveObservedWallSeconds": 0,
+      "taskActiveCoverage": "unproven",
+      "serviceWaitSeconds": null,
+      "serviceWaitObservedSeconds": 0,
+      "serviceWaitCoverage": "unproven"
+    },
+    "turns": {
+      "assistantTurns": 11,
+      "byRole": {
+        "root": 10,
+        "child": 0,
+        "summary": 1,
+        "compaction": 0,
+        "unknown": 0
+      },
+      "knownInputTokens": 14773,
+      "inputTokenCoverage": 1,
+      "turnsWithKnownInput": 11,
+      "turnsWithUnknownInput": 0
+    },
+    "compactions": {
+      "native": {
+        "attempts": 0,
+        "successful": 0,
+        "failed": 0,
+        "pending": 0,
+        "unverified": 0
+      },
+      "requested": {
+        "attempts": 1,
+        "successful": 1,
+        "failed": 0,
+        "pending": 0,
+        "unverified": 0
+      },
+      "unknown": {
+        "attempts": 0,
+        "successful": 0,
+        "failed": 0,
+        "pending": 0,
+        "unverified": 0
+      },
+      "censusComplete": true,
+      "countsInterpretation": "complete_host_census"
+    },
+    "compactionRates": {
+      "attempts": {
+        "per100AssistantTurns": 9.090909090909092,
+        "perActiveHour": null,
+        "perObservedElapsedHour": 49.305612622236836,
+        "perMillionKnownInputTokens": 67.69105801123672
+      },
+      "successful": {
+        "per100AssistantTurns": 9.090909090909092,
+        "perActiveHour": null,
+        "perObservedElapsedHour": 49.305612622236836,
+        "perMillionKnownInputTokens": 67.69105801123672
+      },
+      "failed": {
+        "per100AssistantTurns": 0,
+        "perActiveHour": null,
+        "perObservedElapsedHour": 0,
+        "perMillionKnownInputTokens": 0
+      }
+    },
+    "compactionTiming": {
+      "coverage": "complete_host_census",
+      "timeToFirstObservedSeconds": 38.19,
+      "turnsToFirstObserved": 6,
+      "observedIntervalSeconds": [],
+      "events": [
+        {
+          "requestId": "c5c5cfd7319eb62e3ed75c6420843f77",
+          "sessionId": "ses_e2e1a4aedffequZCUyAQp7fAzu",
+          "mode": "requested",
+          "requestedAt": 1794522881451,
+          "terminalAt": 1794522892860,
+          "status": "succeeded",
+          "requestToSummarySeconds": 11.409
+        }
+      ]
+    },
+    "facts": {
+      "expectedCount": 0,
+      "evidenceCoverage": "unavailable_no_obligation_probes_wired",
+      "observations": [],
+      "lossClaim": "untested",
+      "granularity": "task_aggregate_no_per_compaction_boundary_attribution",
+      "rule": "Absence from context alone is not information loss; untested facts support no loss claim."
+    },
+    "serviceWork": {
+      "evidenceCoverage": "unavailable_or_zero_exposure_not_distinguished",
+      "acceptedComputations": 0,
+      "repeatedAcceptedComputations": 0,
+      "explicitlyAvoidableDuplicateComputations": 0,
+      "explicitlyLegitimateEquivalentComputations": 0,
+      "duplicatesAfterSuccessfulCompaction": 0,
+      "duplicateWorkUnitsKnown": 0,
+      "duplicateWorkUnitsUnknownCount": 0,
+      "duplicateEvents": [],
+      "interpretation": "Repeated accepted equivalents and explicitly assessed avoidable duplicates are separate; absent an external duplicate assessment this metric makes no avoidability claim. Temporal association only; it does not attribute duplicate work to compaction."
+    }
+  },
+  "alg_states": [],
+  "budget_observed_overshoot": 0,
+  "retention_boundaries": {
+    "status": "unavailable_no_boundary_probes"
+  },
+  "cleanup": true,
+  "metering_complete": null,
+  "observed_metering_stable": true,
+  "final_census": {
+    "elapsedMs": 282,
+    "rounds": 2,
+    "stableQuiescentRounds": 2,
+    "quiescent": true,
+    "activeSessions": 0,
+    "pendingWork": false,
+    "inFlightRequests": null,
+    "assistantTurns": 11,
+    "usage": {
+      "completeTurns": 11,
+      "partialTurns": 0,
+      "unknownTurns": 0,
+      "reportedComponents": 55
+    },
+    "outcome": "quiescent"
+  },
+  "coverage": {
+    "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+    "provider_usage": "session_reported_fields_only",
+    "quiescent_snapshot": true
+  },
+  "databaseCensus": {
+    "qualified": true,
+    "databaseSessions": 1,
+    "databaseMessages": 14,
+    "observedSessions": 1,
+    "observedMessages": 14,
+    "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+  },
+  "reported_component_overshoot": 0,
+  "eligibility": {
+    "artifactOutcome": "passed",
+    "workflowEligible": true,
+    "operationalEligible": false,
+    "comparisonEligible": false,
+    "reasons": [
+      "service_isolation_unqualified"
+    ]
+  },
+  "auth_copy_removed": true,
+  "processes": [
+    1618472,
+    385328
+  ],
+  "source_unchanged": true,
+  "arm_config_sha256": "39bea593107ac9cc6071518d8ecc6c2d5abde0d02e592e955b99298329924e29",
+  "final_files": [
+    {
+      "path": ".opencode/skills/wafer-analysis/SKILL.md",
+      "bytes": 1270,
+      "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+    },
+    {
+      "path": "data/manual-review.json",
+      "bytes": 359,
+      "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+    },
+    {
+      "path": "data/system-export.json",
+      "bytes": 558,
+      "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+    },
+    {
+      "path": "preparation.md",
+      "bytes": 1970,
+      "sha256": "a609fc3c93644bab63aef00c32c570b07bff05d0164de29f10b9f3274d660e25"
+    },
+    {
+      "path": "report.json",
+      "bytes": 747,
+      "sha256": "8c9302dfbe3e966c2fec5a8a45c4ce374b40ed91fdc763e68059811c8aabdcb6"
+    }
+  ],
+  "usage_monitors": {
+    "reportedTokens": 200000,
+    "reportedCostPerSuite": 5,
+    "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+  },
+  "measurement_limits": [
+    "actual provider invoice",
+    "hidden model calls not represented by session messages",
+    "operator minutes",
+    "production MCP cost/reuse",
+    "multi-hour reliability",
+    "hardware-normalized latency"
+  ]
+}

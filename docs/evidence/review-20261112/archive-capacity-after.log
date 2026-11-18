@@ -1,0 +1,12 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\persistence-evidence-capacity.test.ts:
+{"fixture":"implementer","seeded_attempts":99,"completed_attempts":100,"archive_attempts":96,"archive_bytes":90562,"archive_limit":524288,"inline_attempts":4,"native_receipt_bytes":12288,"gate_receipt_bytes":5935,"preservation_bytes":13799,"basis_bytes":0}
+(pass) bounded receipt-bearing attempt archives > implementer receipts survive persist, reload and attempt 100 [16730.79ms]
+{"fixture":"checker","seeded_attempts":99,"completed_attempts":100,"archive_attempts":96,"archive_bytes":91042,"archive_limit":524288,"inline_attempts":4,"native_receipt_bytes":0,"gate_receipt_bytes":0,"preservation_bytes":0,"basis_bytes":17293}
+(pass) bounded receipt-bearing attempt archives > checker receipts survive persist, reload and attempt 100 [16079.48ms]
+
+ 2 pass
+ 0 fail
+ 2646 expect() calls
+Ran 2 tests across 1 file. [32.92s]

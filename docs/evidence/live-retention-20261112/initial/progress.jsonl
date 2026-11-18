@@ -1,0 +1,4 @@
+{"at":"2026-11-12T21:18:51.135Z","event":"start","label":"phase-0"}
+{"at":"2026-11-12T21:21:29.792Z","event":"complete","label":"phase-0"}
+{"at":"2026-11-12T21:21:30.095Z","event":"phase_score","phase":0,"passed":false,"outcome":"completed","checks":[{"id":"criteria","passed":true},{"id":"phase","passed":true},{"id":"skill","passed":true},{"id":"source-summary","passed":true},{"id":"evidence-refs","passed":true},{"id":"pending-query","passed":false},{"id":"artifact-budget","passed":true},{"id":"next-action","passed":true}]}
+{"at":"2026-11-12T21:21:30.096Z","event":"stopped","reason":"preparation_not_qualified"}

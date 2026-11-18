@@ -1,0 +1,46 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\hard-benchmark-fixtures.test.ts:
+(pass) hard benchmark grading against raw evidence and executed work > public fixtures contain raw evidence and contracts with distinct private grader records [17.98ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives accepted-query results from paged rows after lost ack (seed %s) [137.96ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives accepted-query results from paged rows after lost ack (seed %s) [120.56ms]
+(pass) hard benchmark grading against raw evidence and executed work > irrelevant projection and literal out-of-scope writes cannot earn credit [105.18ms]
+(pass) hard benchmark grading against raw evidence and executed work > executes visible and hidden repo cases and rejects report-only submissions [424.05ms]
+(pass) hard benchmark grading against raw evidence and executed work > hidden cases reject sibling regressions, reimplemented clients and scope violations [344.14ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives true-effect from matched evidence despite identical crude totals [29.60ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives confounded from matched evidence despite identical crude totals [25.27ms]
+(pass) hard benchmark grading against raw evidence and executed work > derives insufficient from matched evidence despite identical crude totals [21.28ms]
+(pass) hard benchmark grading against raw evidence and executed work > rejects plausible keywords, stale citations, wrong UTC edges, wrong strata and vague follow-up [33.06ms]
+(pass) hard benchmark grading against raw evidence and executed work > restart preserves only current complete jobs and requires observed unavailability [140.12ms]
+
+tests\hard-benchmark-qualification.test.ts:
+ 8 | describe("arm-neutral hard benchmark development qualification", () => {
+ 9 |   test("reference solutions pass and negative/tamper submissions fail for every frozen fixture", async () => {
+10 |     const result = await qualifyHardBenchmarkDevelopment(createHardBenchmarkFixtures())
+11 |     expect(result.isolation).toBe("same-user-development-only-not-os-isolated")
+12 |     expect(result.caseCount).toBe(18)
+13 |     expect(result.acceptedPositive).toBe(5)
+                                         ^
+error: expect(received).toBe(expected)
+
+Expected: 5
+Received: 6
+
+      at <anonymous> (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\tests\hard-benchmark-qualification.test.ts:13:37)
+(fail) arm-neutral hard benchmark development qualification > reference solutions pass and negative/tamper submissions fail for every frozen fixture [1031.24ms]
+(pass) arm-neutral hard benchmark development qualification > arm receives a contestant-only snapshot and no grader-evidence methods [63.91ms]
+(pass) arm-neutral hard benchmark development qualification > individual negative and tamper controls fail closed [861.93ms]
+
+tests\hard-benchmark-service.test.ts:
+(pass) durable benchmark query service > commits acceptance and lost-ack receipt before returning the fault, across a process restart [211.65ms]
+(pass) durable benchmark query service > normalizes query identity, rejects collisions and never trusts caller-declared cost [30.85ms]
+(pass) durable benchmark query service > across independent handles, same-key replay shares the one accepted job [29.36ms]
+(pass) durable benchmark query service > a rejected database commit leaves neither a ghost acceptance nor consumed faults [75.64ms]
+(pass) durable benchmark query service > pins manifests, rejects stale current reads and keeps explicit snapshots available [67.88ms]
+(pass) durable benchmark query service > enforces count and byte limits, job-bound cursors, and complete distinct read coverage [107.23ms]
+(pass) durable benchmark query service > oversized results and unavailable sources cannot create accepted jobs [114.14ms]
+
+ 20 pass
+ 1 fail
+ 132 expect() calls
+Ran 21 tests across 3 files. [4.08s]

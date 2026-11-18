@@ -1,0 +1,192 @@
+{
+  "source_commit": "f14bb1489773800c78dce62684d688aa94c32321",
+  "status": "SUPPLEMENTARY_CLI_PASSED_BOTH_PLATFORMS",
+  "release_status": "DRAFT_NO_MERGE",
+  "scope": "Separate local deterministic-provider host lifecycle; no task accuracy, semantic retention, ownership-transfer, V5 or cohort claim.",
+  "linux": {
+    "cli_passed": true,
+    "exit_code": 0,
+    "elapsed_seconds": 24.952759756999995,
+    "invocations": 1,
+    "source_unchanged": true,
+    "paid_model_calls": 0,
+    "arms": [
+      {
+        "arm": "build",
+        "passed": true,
+        "host_version": "1.18.35",
+        "checkpoint_phases": [
+          "q0",
+          "qh",
+          "qc",
+          "qr"
+        ],
+        "write_proofs": 4,
+        "restarts": 1,
+        "checks": {
+          "four_checkpoints_completed": true,
+          "four_host_write_proofs": true,
+          "distinct_session_handoff": true,
+          "summary_observed": true,
+          "one_restart_same_recipient_session": true,
+          "census_complete": true,
+          "cleanup_complete": true,
+          "global_configuration_unchanged": true,
+          "no_inherited_credentials": true
+        },
+        "ownership_transfer_coverage": false,
+        "handoff_scope": "Distinct session only; no owned production run transfer."
+      },
+      {
+        "arm": "alg",
+        "passed": true,
+        "host_version": "1.18.35",
+        "checkpoint_phases": [
+          "q0",
+          "qh",
+          "qc",
+          "qr"
+        ],
+        "write_proofs": 4,
+        "restarts": 1,
+        "checks": {
+          "four_checkpoints_completed": true,
+          "four_host_write_proofs": true,
+          "distinct_session_handoff": true,
+          "summary_observed": true,
+          "one_restart_same_recipient_session": true,
+          "census_complete": true,
+          "cleanup_complete": true,
+          "global_configuration_unchanged": true,
+          "no_inherited_credentials": true
+        },
+        "ownership_transfer_coverage": false,
+        "handoff_scope": "Distinct session only; no owned production run transfer."
+      }
+    ],
+    "unit_test_executed": false,
+    "full_suite_17_skips_unchanged": true,
+    "historical_unit_description_assertions_match": false,
+    "historical_unit_description_mismatches": [
+      {
+        "arm": "build",
+        "assertion": "handoff_description_unit_literal",
+        "expected_substring": "new OpenCode session",
+        "actual": "created a distinct OpenCode session; did not invoke alg_transfer or move an owned production run"
+      },
+      {
+        "arm": "alg",
+        "assertion": "handoff_description_unit_literal",
+        "expected_substring": "new OpenCode session",
+        "actual": "created a distinct OpenCode session; did not invoke alg_transfer or move an owned production run"
+      }
+    ],
+    "note": "The retained CLI result does not execute or retroactively pass the skipped unit wrapper. Its wording assertion is a separate test-only follow-up."
+  },
+  "windows": {
+    "cli_passed": true,
+    "exit_code": 0,
+    "finished_at": "2026-11-13T21:35:40.9805622Z",
+    "elapsed_seconds": null,
+    "evidence_file_sha256": "955fcad87b88c6e11ddaaa655dcb6305204ec9c4f0f3eb178b6e6070a929dc46",
+    "cli_reported_evidence_sha256": "a77ab8bcfcc23408ebc31acae9b555e219b287dd52ac107211ee43e95d2c31b5",
+    "cli_reported_digest_encoding": "SHA-256 of JSON.stringify(Node Buffer); distinct from the raw file SHA-256 in the manifest.",
+    "elapsed_scope": "No invocation elapsed duration recorded in the retained Windows exit receipt.",
+    "retained_cli_runs": 1,
+    "source_commit": "f14bb1489773800c78dce62684d688aa94c32321",
+    "source_binding": "Recorded by the parent exit receipt; no separate post-CLI source snapshot.",
+    "source_unchanged": null,
+    "paid_model_calls": 0,
+    "arms": [
+      {
+        "arm": "build",
+        "passed": true,
+        "host_version": "1.19.5",
+        "checkpoint_phases": [
+          "q0",
+          "qh",
+          "qc",
+          "qr"
+        ],
+        "write_proofs": 4,
+        "restarts": 1,
+        "checks": {
+          "four_checkpoints_completed": true,
+          "four_host_write_proofs": true,
+          "distinct_session_handoff": true,
+          "summary_observed": true,
+          "one_restart_same_recipient_session": true,
+          "census_complete": true,
+          "cleanup_complete": true,
+          "global_configuration_unchanged": true,
+          "no_inherited_credentials": true
+        },
+        "ownership_transfer_coverage": false,
+        "handoff_scope": "Distinct session only; no owned production run transfer."
+      },
+      {
+        "arm": "alg",
+        "passed": true,
+        "host_version": "1.19.5",
+        "checkpoint_phases": [
+          "q0",
+          "qh",
+          "qc",
+          "qr"
+        ],
+        "write_proofs": 4,
+        "restarts": 1,
+        "checks": {
+          "four_checkpoints_completed": true,
+          "four_host_write_proofs": true,
+          "distinct_session_handoff": true,
+          "summary_observed": true,
+          "one_restart_same_recipient_session": true,
+          "census_complete": true,
+          "cleanup_complete": true,
+          "global_configuration_unchanged": true,
+          "no_inherited_credentials": true
+        },
+        "ownership_transfer_coverage": false,
+        "handoff_scope": "Distinct session only; no owned production run transfer."
+      }
+    ],
+    "unit_test_executed": false,
+    "historical_unit_description_assertions_match": false,
+    "historical_unit_description_mismatches": [
+      {
+        "arm": "build",
+        "assertion": "handoff_description_unit_literal",
+        "expected_substring": "new OpenCode session",
+        "actual": "created a distinct OpenCode session; did not invoke alg_transfer or move an owned production run"
+      },
+      {
+        "arm": "alg",
+        "assertion": "handoff_description_unit_literal",
+        "expected_substring": "new OpenCode session",
+        "actual": "created a distinct OpenCode session; did not invoke alg_transfer or move an owned production run"
+      }
+    ],
+    "note": "Separate CLI coverage, not an execution or retroactive pass of the skipped unit wrapper."
+  },
+  "copied_receipts_verified": 12,
+  "wrapper_test_follow_up": {
+    "scope": "Post-candidate test-only repair; separate from the f14 package, original CLI receipts and full-suite count.",
+    "changed_file": "tests/long-session-headless.test.ts",
+    "source_sha256": "53104c007f5df04a3622e5b7a232b1aedaded7f522866ad5cde3b9de563d5f9c",
+    "changes": [
+      "Replace descriptive wording match with distinct q0/qh session IDs, completed transition binding and census membership.",
+      "Set success flag only after all assertions to preserve failure evidence."
+    ],
+    "saved_receipt_controls": {
+      "passed": 4,
+      "failed": 0,
+      "assertions": 19
+    },
+    "retention_flag_validation": "static review; saved-receipt controls execute the changed session-binding assertion block only",
+    "final_typecheck_exit_code": 0,
+    "opt_in_unit_executed": false,
+    "full_suite_skips_unchanged": 17,
+    "new_host_runs": 0
+  }
+}

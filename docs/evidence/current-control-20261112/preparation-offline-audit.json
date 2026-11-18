@@ -1,0 +1,76 @@
+{
+  "kind": "offline-apparatus-correction",
+  "original_receipts_unchanged": true,
+  "scorer_sha256": "43a421ef88de94022fc16f3c0548f7674b1a04d39f5299a1686ea91a8f544c45",
+  "interpretation": "Rechecks prepared artifacts only; does not complete phase two or replace terminal trial outcomes.",
+  "results": [
+    {
+      "arm": "build",
+      "original_result_sha256": "d022069df6f96413daa6085d468fbec216d6fc2c5448d3a6ad514b152fab9def",
+      "preparation_sha256": "988f03e4c2841079fd245a6f3fe6859dfb1b57ad889e3333e3292494642e2cb3",
+      "offline_preparation_score": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": true
+          },
+          {
+            "id": "phase-one-report-absent",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 1818
+        }
+      }
+    },
+    {
+      "arm": "alg_default",
+      "original_result_sha256": "4ad64a29751046fcd347e39b3cfcedd2eedd882babdca2d6a2ffd150f2924709",
+      "preparation_sha256": "653a5a575bcb9aa1bd51a2f5af94c826bc0849d9ebeb3f40fc9eb86f3f5dc09c",
+      "offline_preparation_score": {
+        "passed": true,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": true
+          },
+          {
+            "id": "phase-one-report-absent",
+            "passed": true
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 1910
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "checked_at": "2026-11-12T00:50:50.8531004Z",
+  "scope": "Independent root-process census after harness cleanup; not a proof about unrelated or reparented descendants",
+  "roots": [
+    {
+      "model": "gemma",
+      "role": "ollama",
+      "pid": 1516628,
+      "exists": false,
+      "current_name": null
+    },
+    {
+      "model": "gemma",
+      "role": "opencode",
+      "pid": 1542524,
+      "exists": false,
+      "current_name": null
+    },
+    {
+      "model": "luna",
+      "role": "opencode",
+      "pid": 1534760,
+      "exists": false,
+      "current_name": null
+    }
+  ],
+  "auth_copies_absent": true
+}

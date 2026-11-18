@@ -1,0 +1,492 @@
+{
+  "schema": "alg-live-retention-diagnostic-v1",
+  "createdAt": "2026-11-12T21:25:21.992Z",
+  "limits": {
+    "wallMs": 2700000,
+    "assistantTurns": 120,
+    "reportedUsageComponents": 600000,
+    "outputTokens": 4096,
+    "requestedCompactions": 6,
+    "restartAfterCompactions": [
+      3,
+      5
+    ]
+  },
+  "model": "openai/gpt-6-luna",
+  "sourceCommit": "94472feb9d2cd39d4e47d8bdf2e0b68b51d9eef7",
+  "runtimeDigest": "192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d",
+  "hostExecutable": "C:\\Users\\codym\\AppData\\Roaming\\npm\\node_modules\\opencode-ai\\bin\\opencode.exe",
+  "hostExecutableSha256": "6f15c8f241f3df22375f174753193a71c488f6c0a6bbbae3f9fa34d112673b7b",
+  "harnesses": {
+    "live-retention.ts": "74ab5c1c0753e975f2c0ffc71a38a88b13e66c7025544d769417619c30c0b89f",
+    "live-retention-fixture.ts": "6bc1dc7fb6edbeb9e254b361b79f28927f81907d1f116c013990d33c3f104dff",
+    "build-benchmark.ts": "05e55df31137df03a26e77b18970ba9e3a49e4433aec5c4086d75e51b7e48b8d",
+    "build-benchmark-protocol.ts": "30e6bbf77ae5a141276a0bd6afbbd9f4c62b1b1f4b01bae3234e6b33b7a60b22",
+    "build-benchmark-transport.ts": "559b8647feeb15c4e499bc5e06282d129610e4837e42497f49588ce1229f0b7a",
+    "build-benchmark-metrics.ts": "7f73b2b96057551fd8b777b20bd1fab715570107c7b15f5537a39ae7350e9e48"
+  },
+  "phases": [
+    {
+      "id": "phase-0",
+      "prompt": "Phase 0 (preparation): inspect the complete mission and inputs. Create the Node analysis utility, meaningful node:test tests, a concise initial report, and artifacts/phase-0.json. Run the tests. Do not defer setup to a later phase.",
+      "outputPath": "artifacts/phase-0.json"
+    },
+    {
+      "id": "phase-1",
+      "prompt": "Phase 1: continue from the durable mission by phase id. Re-run the utility/tests, review the UTC boundary and duplicate handling, update the report, and write artifacts/phase-1.json with the prior output reference.",
+      "outputPath": "artifacts/phase-1.json"
+    },
+    {
+      "id": "phase-2",
+      "prompt": "Phase 2: continue from durable mission by phase id. Audit distinct-wafer denominators against raw and equipment-joined multiplicities; preserve prior phase outputs and write artifacts/phase-2.json.",
+      "outputPath": "artifacts/phase-2.json"
+    },
+    {
+      "id": "phase-3",
+      "prompt": "Phase 3: continue from durable mission by phase id. Apply .opencode/skills/wafer-retention/SKILL.md v2, provided in this phase as a procedure update. Record its version; reconcile the cached observation without changing rules/criteria. Write artifacts/phase-3.json.",
+      "outputPath": "artifacts/phase-3.json"
+    },
+    {
+      "id": "phase-4",
+      "prompt": "Phase 4: continue from durable mission by phase id. Trace evidence refs and the pending cached query/result IDs, distinguish cached evidence from a live query, and write artifacts/phase-4.json.",
+      "outputPath": "artifacts/phase-4.json"
+    },
+    {
+      "id": "phase-5",
+      "prompt": "Phase 5: continue from durable mission by phase id. Check the confounding limitation and keep conclusions descriptive; rerun code/tests and write artifacts/phase-5.json.",
+      "outputPath": "artifacts/phase-5.json"
+    },
+    {
+      "id": "phase-6",
+      "prompt": "Phase 6: continue from durable mission by phase id. Reproduce the summary from preserved raw files, verify tests and the previous-phase chain, and write artifacts/phase-6.json with nextAction final-review.",
+      "outputPath": "artifacts/phase-6.json"
+    }
+  ],
+  "obligations": [
+    [
+      {
+        "id": "criteria",
+        "category": "criteria",
+        "passed": false,
+        "expectedDigest": "ad9eeceae2f89e67dad951ffd742a9b47d9730a50ac4019e58e7e086d5ed46b6",
+        "observedDigest": null
+      },
+      {
+        "id": "phase",
+        "category": "phase",
+        "passed": false,
+        "expectedDigest": "0b4d0b1231adedbfc757f0301ecfc7fca5e8efa1fefaf245c3d37d7e275fb197",
+        "observedDigest": null
+      },
+      {
+        "id": "skill",
+        "category": "skill",
+        "passed": false,
+        "expectedDigest": "161078e42e8fef3ba4b9c984035baa2e431a50b31a18ac95614cc6820394af13",
+        "observedDigest": null
+      },
+      {
+        "id": "source-summary",
+        "category": "source",
+        "passed": false,
+        "expectedDigest": "19ff2efb4cc430f6ed85e1cb26d430b17fb8dee82aa74afc27cc26cfa4cee2b2",
+        "observedDigest": null
+      },
+      {
+        "id": "evidence-refs",
+        "category": "evidence",
+        "passed": false,
+        "expectedDigest": "61d32a0a3ac0fc174d9f784a1c0e20a97aa93fce880dc1cdcd0cf3fb3640a553",
+        "observedDigest": null
+      },
+      {
+        "id": "pending-query",
+        "category": "pending_intent",
+        "passed": false,
+        "expectedDigest": "30168e38202d3b819447fd15575c31619e50ea1e99414b1e8e0b842653ad0d83",
+        "observedDigest": null
+      },
+      {
+        "id": "artifact-budget",
+        "category": "budget",
+        "passed": false,
+        "expectedDigest": "e951b74387cca0d616e6f235b8085ff31ce67d40c49609c86be6ac33adcc5a92",
+        "observedDigest": null
+      },
+      {
+        "id": "next-action",
+        "category": "next_action",
+        "passed": false,
+        "expectedDigest": "b640c8800038d8a4d8a50efd7e97f35478fa72631ce2cc457a43983c91b2e6bf",
+        "observedDigest": null
+      }
+    ],
+    [
+      {
+        "id": "criteria",
+        "category": "criteria",
+        "passed": false,
+        "expectedDigest": "ad9eeceae2f89e67dad951ffd742a9b47d9730a50ac4019e58e7e086d5ed46b6",
+        "observedDigest": null
+      },
+      {
+        "id": "phase",
+        "category": "phase",
+        "passed": false,
+        "expectedDigest": "912d9d2d3b8b7b7caf14879c8e98f0e861355b04a81e5c42db39a289dcf142c7",
+        "observedDigest": null
+      },
+      {
+        "id": "skill",
+        "category": "skill",
+        "passed": false,
+        "expectedDigest": "161078e42e8fef3ba4b9c984035baa2e431a50b31a18ac95614cc6820394af13",
+        "observedDigest": null
+      },
+      {
+        "id": "source-summary",
+        "category": "source",
+        "passed": false,
+        "expectedDigest": "19ff2efb4cc430f6ed85e1cb26d430b17fb8dee82aa74afc27cc26cfa4cee2b2",
+        "observedDigest": null
+      },
+      {
+        "id": "evidence-refs",
+        "category": "evidence",
+        "passed": false,
+        "expectedDigest": "61d32a0a3ac0fc174d9f784a1c0e20a97aa93fce880dc1cdcd0cf3fb3640a553",
+        "observedDigest": null
+      },
+      {
+        "id": "pending-query",
+        "category": "pending_intent",
+        "passed": false,
+        "expectedDigest": "30168e38202d3b819447fd15575c31619e50ea1e99414b1e8e0b842653ad0d83",
+        "observedDigest": null
+      },
+      {
+        "id": "artifact-budget",
+        "category": "budget",
+        "passed": false,
+        "expectedDigest": "e951b74387cca0d616e6f235b8085ff31ce67d40c49609c86be6ac33adcc5a92",
+        "observedDigest": null
+      },
+      {
+        "id": "next-action",
+        "category": "next_action",
+        "passed": false,
+        "expectedDigest": "c8b20e5be8596d8d25f83d4f06cd8bb1b2d326302171d6f91b2b5c2887c53057",
+        "observedDigest": null
+      }
+    ],
+    [
+      {
+        "id": "criteria",
+        "category": "criteria",
+        "passed": false,
+        "expectedDigest": "ad9eeceae2f89e67dad951ffd742a9b47d9730a50ac4019e58e7e086d5ed46b6",
+        "observedDigest": null
+      },
+      {
+        "id": "phase",
+        "category": "phase",
+        "passed": false,
+        "expectedDigest": "d897c52655112a36e093aa6e354d9e06971d6579004c17068f7a449c77632ff5",
+        "observedDigest": null
+      },
+      {
+        "id": "skill",
+        "category": "skill",
+        "passed": false,
+        "expectedDigest": "161078e42e8fef3ba4b9c984035baa2e431a50b31a18ac95614cc6820394af13",
+        "observedDigest": null
+      },
+      {
+        "id": "source-summary",
+        "category": "source",
+        "passed": false,
+        "expectedDigest": "19ff2efb4cc430f6ed85e1cb26d430b17fb8dee82aa74afc27cc26cfa4cee2b2",
+        "observedDigest": null
+      },
+      {
+        "id": "evidence-refs",
+        "category": "evidence",
+        "passed": false,
+        "expectedDigest": "61d32a0a3ac0fc174d9f784a1c0e20a97aa93fce880dc1cdcd0cf3fb3640a553",
+        "observedDigest": null
+      },
+      {
+        "id": "pending-query",
+        "category": "pending_intent",
+        "passed": false,
+        "expectedDigest": "30168e38202d3b819447fd15575c31619e50ea1e99414b1e8e0b842653ad0d83",
+        "observedDigest": null
+      },
+      {
+        "id": "artifact-budget",
+        "category": "budget",
+        "passed": false,
+        "expectedDigest": "e951b74387cca0d616e6f235b8085ff31ce67d40c49609c86be6ac33adcc5a92",
+        "observedDigest": null
+      },
+      {
+        "id": "next-action",
+        "category": "next_action",
+        "passed": false,
+        "expectedDigest": "c8b25cc8f9fc89b6bb674fa486c16e24af7f2c90b33f6434bb6557efa7196afa",
+        "observedDigest": null
+      }
+    ],
+    [
+      {
+        "id": "criteria",
+        "category": "criteria",
+        "passed": false,
+        "expectedDigest": "ad9eeceae2f89e67dad951ffd742a9b47d9730a50ac4019e58e7e086d5ed46b6",
+        "observedDigest": null
+      },
+      {
+        "id": "phase",
+        "category": "phase",
+        "passed": false,
+        "expectedDigest": "bd4039e9dcfaf85b7dfc7b5ccb0a1f50e46cdcad45be680e5ad5a742eab2ab95",
+        "observedDigest": null
+      },
+      {
+        "id": "skill",
+        "category": "skill",
+        "passed": false,
+        "expectedDigest": "576506f61f53440f1edd95d28631a17e26f50d613eef2943a030220b66c5f5b3",
+        "observedDigest": null
+      },
+      {
+        "id": "source-summary",
+        "category": "source",
+        "passed": false,
+        "expectedDigest": "19ff2efb4cc430f6ed85e1cb26d430b17fb8dee82aa74afc27cc26cfa4cee2b2",
+        "observedDigest": null
+      },
+      {
+        "id": "evidence-refs",
+        "category": "evidence",
+        "passed": false,
+        "expectedDigest": "61d32a0a3ac0fc174d9f784a1c0e20a97aa93fce880dc1cdcd0cf3fb3640a553",
+        "observedDigest": null
+      },
+      {
+        "id": "pending-query",
+        "category": "pending_intent",
+        "passed": false,
+        "expectedDigest": "30168e38202d3b819447fd15575c31619e50ea1e99414b1e8e0b842653ad0d83",
+        "observedDigest": null
+      },
+      {
+        "id": "artifact-budget",
+        "category": "budget",
+        "passed": false,
+        "expectedDigest": "e951b74387cca0d616e6f235b8085ff31ce67d40c49609c86be6ac33adcc5a92",
+        "observedDigest": null
+      },
+      {
+        "id": "next-action",
+        "category": "next_action",
+        "passed": false,
+        "expectedDigest": "18d08163771f0ae211eff19b1dfdd8f03ba78be24685ecd9e71a7c22be40f2cc",
+        "observedDigest": null
+      }
+    ],
+    [
+      {
+        "id": "criteria",
+        "category": "criteria",
+        "passed": false,
+        "expectedDigest": "ad9eeceae2f89e67dad951ffd742a9b47d9730a50ac4019e58e7e086d5ed46b6",
+        "observedDigest": null
+      },
+      {
+        "id": "phase",
+        "category": "phase",
+        "passed": false,
+        "expectedDigest": "25be94a29192e4c5c04fb70475096cb940805aac12066eb75679196aece50c56",
+        "observedDigest": null
+      },
+      {
+        "id": "skill",
+        "category": "skill",
+        "passed": false,
+        "expectedDigest": "576506f61f53440f1edd95d28631a17e26f50d613eef2943a030220b66c5f5b3",
+        "observedDigest": null
+      },
+      {
+        "id": "source-summary",
+        "category": "source",
+        "passed": false,
+        "expectedDigest": "19ff2efb4cc430f6ed85e1cb26d430b17fb8dee82aa74afc27cc26cfa4cee2b2",
+        "observedDigest": null
+      },
+      {
+        "id": "evidence-refs",
+        "category": "evidence",
+        "passed": false,
+        "expectedDigest": "61d32a0a3ac0fc174d9f784a1c0e20a97aa93fce880dc1cdcd0cf3fb3640a553",
+        "observedDigest": null
+      },
+      {
+        "id": "pending-query",
+        "category": "pending_intent",
+        "passed": false,
+        "expectedDigest": "30168e38202d3b819447fd15575c31619e50ea1e99414b1e8e0b842653ad0d83",
+        "observedDigest": null
+      },
+      {
+        "id": "artifact-budget",
+        "category": "budget",
+        "passed": false,
+        "expectedDigest": "e951b74387cca0d616e6f235b8085ff31ce67d40c49609c86be6ac33adcc5a92",
+        "observedDigest": null
+      },
+      {
+        "id": "next-action",
+        "category": "next_action",
+        "passed": false,
+        "expectedDigest": "b3c60f0a3c18fd05cc4fa56fdc9e47dfca8b9b99ac4e6d1ca108fc1bcd50222d",
+        "observedDigest": null
+      }
+    ],
+    [
+      {
+        "id": "criteria",
+        "category": "criteria",
+        "passed": false,
+        "expectedDigest": "ad9eeceae2f89e67dad951ffd742a9b47d9730a50ac4019e58e7e086d5ed46b6",
+        "observedDigest": null
+      },
+      {
+        "id": "phase",
+        "category": "phase",
+        "passed": false,
+        "expectedDigest": "eca20fa9b7e8f679787a7379126adbfb7e612605fb969edddf711aaecaaa924c",
+        "observedDigest": null
+      },
+      {
+        "id": "skill",
+        "category": "skill",
+        "passed": false,
+        "expectedDigest": "576506f61f53440f1edd95d28631a17e26f50d613eef2943a030220b66c5f5b3",
+        "observedDigest": null
+      },
+      {
+        "id": "source-summary",
+        "category": "source",
+        "passed": false,
+        "expectedDigest": "19ff2efb4cc430f6ed85e1cb26d430b17fb8dee82aa74afc27cc26cfa4cee2b2",
+        "observedDigest": null
+      },
+      {
+        "id": "evidence-refs",
+        "category": "evidence",
+        "passed": false,
+        "expectedDigest": "61d32a0a3ac0fc174d9f784a1c0e20a97aa93fce880dc1cdcd0cf3fb3640a553",
+        "observedDigest": null
+      },
+      {
+        "id": "pending-query",
+        "category": "pending_intent",
+        "passed": false,
+        "expectedDigest": "30168e38202d3b819447fd15575c31619e50ea1e99414b1e8e0b842653ad0d83",
+        "observedDigest": null
+      },
+      {
+        "id": "artifact-budget",
+        "category": "budget",
+        "passed": false,
+        "expectedDigest": "e951b74387cca0d616e6f235b8085ff31ce67d40c49609c86be6ac33adcc5a92",
+        "observedDigest": null
+      },
+      {
+        "id": "next-action",
+        "category": "next_action",
+        "passed": false,
+        "expectedDigest": "13f2969ae71e46a60d776ccae6a01af61326025b3f701cfda34c1bb89ef7e872",
+        "observedDigest": null
+      }
+    ],
+    [
+      {
+        "id": "criteria",
+        "category": "criteria",
+        "passed": false,
+        "expectedDigest": "ad9eeceae2f89e67dad951ffd742a9b47d9730a50ac4019e58e7e086d5ed46b6",
+        "observedDigest": null
+      },
+      {
+        "id": "phase",
+        "category": "phase",
+        "passed": false,
+        "expectedDigest": "6f0b2dc0117ba73c468a99607eec1b70350bfa6bfd03265508f91d31c52219fa",
+        "observedDigest": null
+      },
+      {
+        "id": "skill",
+        "category": "skill",
+        "passed": false,
+        "expectedDigest": "576506f61f53440f1edd95d28631a17e26f50d613eef2943a030220b66c5f5b3",
+        "observedDigest": null
+      },
+      {
+        "id": "source-summary",
+        "category": "source",
+        "passed": false,
+        "expectedDigest": "19ff2efb4cc430f6ed85e1cb26d430b17fb8dee82aa74afc27cc26cfa4cee2b2",
+        "observedDigest": null
+      },
+      {
+        "id": "evidence-refs",
+        "category": "evidence",
+        "passed": false,
+        "expectedDigest": "61d32a0a3ac0fc174d9f784a1c0e20a97aa93fce880dc1cdcd0cf3fb3640a553",
+        "observedDigest": null
+      },
+      {
+        "id": "pending-query",
+        "category": "pending_intent",
+        "passed": false,
+        "expectedDigest": "30168e38202d3b819447fd15575c31619e50ea1e99414b1e8e0b842653ad0d83",
+        "observedDigest": null
+      },
+      {
+        "id": "artifact-budget",
+        "category": "budget",
+        "passed": false,
+        "expectedDigest": "e951b74387cca0d616e6f235b8085ff31ce67d40c49609c86be6ac33adcc5a92",
+        "observedDigest": null
+      },
+      {
+        "id": "next-action",
+        "category": "next_action",
+        "passed": false,
+        "expectedDigest": "9907e060bb90f4af324566ee9ef5757d87dc064bcbeb1f5787e269f23d0fed18",
+        "observedDigest": null
+      }
+    ]
+  ],
+  "fixture": {
+    "MISSION.md": "e64ef66450dbc0ee07a4ba02ec6231e18a4a49606fe959baa6be690776c46a0d",
+    ".opencode/skills/wafer-retention/SKILL.md": "c9f07f8803ed4a7a2c4c658826c3783ca759655166ac2c83d6bf7a190e50e5f1",
+    "data/wafers.json": "ca4404f393a7cdcc624b5bc215c9528a63ad7fd5036503133c789562b9df42c3",
+    "data/readings.json": "e8c0420650768237287e369034d15574c86ffca3c7086b5d4f2b8b560ec0d3ea",
+    "data/equipment.json": "4cc95bc4ca5bee30a5622315a73ff380517c16635aa31dd1a39ccae65e924204",
+    "data/cached-observation.json": "61c7a00ba3af7d79ca75b64ff3b589770921f5cbef23e955644321a5ddf4d0ec"
+  },
+  "interpretation": "One development diagnostic. No Build comparison, no causal or model-generalization claim. Durable task documents remain available. Requested and native compactions counted separately. Observed stop thresholds can overshoot while calls are in flight. Usage component sums are not provider invoice tokens. No timed padding, implicit retry or cap reset.",
+  "preflightOnly": false,
+  "isolation": "Permission-based workspace isolation, not an adversarial sandbox. External scorer/plan are not copied to contestant.",
+  "continuation": {
+    "parent": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\live-retention-luna-20261112",
+    "parentResultSha256": "65665ea1fc997d2ae164f2140b60e0ff4f385188325a175b0d9830a89e9ad4a8",
+    "originalStartedAt": 1794518331126,
+    "originalUsage": 388724,
+    "originalAssistantTurns": 26,
+    "reason": "Explicit development apparatus repair: original scorer required undeclared duplicate IDs in prose. Preserve original receipt and prepared state; no phase-0 rerun, no time/turn/usage reset."
+  }
+}

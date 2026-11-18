@@ -17,6 +17,19 @@ function put(path: string, value: unknown): void {
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }) })
 
 describe("air-gapped plugin configuration", () => {
+  test("workspace and investigation policy sections obey whole-section SDK precedence", () => {
+    const root = fixture()
+    put(join(root, "alg-plugin-config.json"), { workspace: { mode: "assist", trustedRegistryHash: "a".repeat(64), mandatoryOperations: ["data.investigate.read"] }, investigation: { enabled: true, costLimit: 23 } })
+    const result = resolvePluginConfiguration({ workspace: { mode: "observe" } }, { root, env: {} })
+    expect(result.source).toBe("sdk+sidecar")
+    expect(result.options.workspace).toEqual({ mode: "observe", mandatoryOperations: [] })
+    expect(result.options.investigation?.enabled).toBe(true)
+    expect(result.options.investigation?.costLimit).toBe(23)
+    const disabled = resolvePluginConfiguration({ investigation: { enabled: false } }, { root, env: {} })
+    expect(disabled.options.investigation?.enabled).toBe(false)
+    expect(disabled.options.investigation?.adapter).toBeUndefined()
+  })
+
   test("uses package sidecar and replaces a whole section supplied by the SDK", () => {
     const root = fixture()
     put(join(root, "alg-plugin-config.json"), { sessionMemory: { mode: "observe", maxContextTokens: 4096 }, skillEvolution: { enabled: true } })

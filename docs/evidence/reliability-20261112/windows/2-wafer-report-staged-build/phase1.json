@@ -1,0 +1,52 @@
+{
+  "files": [
+    {
+      "path": ".opencode/skills/wafer-analysis/SKILL.md",
+      "bytes": 1270,
+      "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+    },
+    {
+      "path": "data/manual-review.json",
+      "bytes": 359,
+      "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+    },
+    {
+      "path": "data/system-export.json",
+      "bytes": 558,
+      "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+    },
+    {
+      "path": "preparation.md",
+      "bytes": 1883,
+      "sha256": "f7a07594f2a6bf7ab719ff017641f4803145d05d62e315f4f7da88327d3fa179"
+    }
+  ],
+  "at_ms": 28725,
+  "preparation_content": "# Wafer evidence report preparation\n\n## Reporting date and window\n\n- Reporting date: 2025-04-01 UTC, as stated in both source files.\n- Inclusive start: `2025-04-01T00:00:00Z`.\n- Exclusive end: `2025-04-02T00:00:00Z`.\n- Timezone: `UTC`. The sources provide a reporting date rather than individual event timestamps; the date is used to associate their records with the window.\n\n## Sources\n\n- `data/system-export.json` — source ID `SYS-APR-01`; primary source for the calculation.\n- `data/manual-review.json` — source ID `MR-APR-01`; supplemental manual review.\n\n## Calculation plan\n\nUse distinct wafer IDs from the system export for the denominator: W11, W12, W13, and W14, for a total of 4. Count distinct system-reported defective wafers for the numerator: W12 is defective, and its two inspection events count only once, yielding 1. Calculate the rate as 1 / 4 = 0.25. Retain the system result when manual review disagrees.\n\n## Conflict\n\n- W13: system `defect: false`; manual review `reviewer_defect: true`. Status: `unresolved`. The manual observation introduces uncertainty but does not change the primary-source calculation. W12 agrees across the sources.\n\n## Planned report fields\n\n- `numerator`: 1\n- `denominator`: 4\n- `rate`: 0.25\n- `window`: `{\"start\":\"2025-04-01T00:00:00Z\",\"endExclusive\":\"2025-04-02T00:00:00Z\",\"timezone\":\"UTC\"}`\n- `sources`: `[\"data/system-export.json\", \"data/manual-review.json\"]`\n- `conflicts`: `[{\"wafer_id\":\"W13\",\"system_defect\":false,\"manual_defect\":true,\"status\":\"unresolved\"}]`\n- `limitations`: include the exact sentence `Synthetic analysis only; not process validation.` and the scope limits that records are synthetic, event timestamps are unavailable, manual review is supplemental, and W13's disagreement remains unresolved.\n\n## STOP\n\nPreparation phase complete. Stop here; create `report.json` only in the subsequent phase after restart.\n",
+  "report_absent": true,
+  "independent_score": {
+    "passed": true,
+    "checks": [
+      {
+        "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+        "passed": true
+      },
+      {
+        "id": "protected:data/system-export.json",
+        "passed": true
+      },
+      {
+        "id": "protected:data/manual-review.json",
+        "passed": true
+      },
+      {
+        "id": "preparation-artifact",
+        "passed": true
+      }
+    ],
+    "metrics": {
+      "protectedFiles": 3,
+      "preparationBytes": 1883
+    }
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "derivation": "Post-run accounting only; raw report and outcomes unchanged. No inference rerun.",
+  "falseRejectsDefinition": "disconfirmed on expected supported (original narrow counter)",
+  "missedSupportDefinition": "any valid non-supported checker outcome on expected supported; missing/invalid output is separate",
+  "ordinary": {
+    "missedSupport": 0,
+    "correct": 10
+  },
+  "targeted": {
+    "missedSupport": 0,
+    "correct": 9
+  },
+  "completed_pairs": {
+    "case_ids": [
+      "control-supported-direct",
+      "control-supported-null-effect",
+      "join-inflation",
+      "timestamp-offset",
+      "confounding",
+      "missing-evidence",
+      "conflicting-data",
+      "source-duplicates",
+      "misleading-evidence-instruction",
+      "control-supported-independent-reconciliation"
+    ],
+    "cases": 10,
+    "ordinary_correct": 10,
+    "targeted_correct": 9,
+    "targeted_wins": 0,
+    "targeted_losses": 1
+  },
+  "joint_valid_pairs": {
+    "case_ids": [
+      "control-supported-direct",
+      "control-supported-null-effect",
+      "join-inflation",
+      "timestamp-offset",
+      "confounding",
+      "missing-evidence",
+      "conflicting-data",
+      "source-duplicates",
+      "misleading-evidence-instruction",
+      "control-supported-independent-reconciliation"
+    ],
+    "cases": 10,
+    "ordinary_correct": 10,
+    "targeted_correct": 9,
+    "targeted_wins": 0,
+    "targeted_losses": 1
+  },
+  "subset_caution": "Descriptive post-hoc availability views only. Excluding incomplete or invalid outputs introduces selection; these are not superiority estimates.",
+  "dispatch": {
+    "planned_slots": 40,
+    "host_requests": 40,
+    "completed": 40,
+    "unissued_budget_or_stop_slots": 0,
+    "failures": []
+  },
+  "sensitivity": {
+    "post_hoc": true,
+    "excluded": [
+      "misleading-evidence-instruction"
+    ],
+    "reason": "Method-focused criterion permits judging the memo instead of original claim; not a replacement score or equivalence claim.",
+    "ordinary_correct": 9,
+    "targeted_correct": 9,
+    "cases": 9
+  }
+}

@@ -1,0 +1,1101 @@
+{
+  "pairId": "pair-0001-6958c4e4c69e",
+  "caseId": "wafer-count-commonjs",
+  "arm": "alg_default",
+  "status": "stopped",
+  "stopReason": "reported_component_limit",
+  "passed": true,
+  "scored_task_success": false,
+  "independent_score": {
+    "passed": true,
+    "checks": [
+      {
+        "id": "protected:package.json",
+        "passed": true
+      },
+      {
+        "id": "protected:test/wafer-count.test.cjs",
+        "passed": true
+      },
+      {
+        "id": "protected:data/inspection-records.json",
+        "passed": true
+      },
+      {
+        "id": "source-file-edit-limit",
+        "passed": true
+      },
+      {
+        "id": "visible-node-tests",
+        "passed": true
+      },
+      {
+        "id": "api-module-loads",
+        "passed": true
+      },
+      {
+        "id": "ui-module-loads",
+        "passed": true
+      },
+      {
+        "id": "distinct-ids-and-offset-window",
+        "passed": true
+      },
+      {
+        "id": "user-visible-count",
+        "passed": true
+      }
+    ],
+    "metrics": {
+      "heldOutTestLocation": "outside-project-temporary-directory",
+      "heldOutCheckCount": 4,
+      "heldOutPassed": 4,
+      "visibleTestCommand": "npm test",
+      "visibleTestCount": 2,
+      "protectedFiles": 3,
+      "userVisibleChecks": 1,
+      "changedSourceFiles": [
+        "src/wafer-count.cjs",
+        "src/wafer-view.cjs"
+      ],
+      "sourceFileEditLimit": 2
+    }
+  },
+  "metrics": {
+    "attribution": {
+      "rows": [
+        {
+          "sessionID": "ses_e2e1e45f0ffe4MrUmSG2Ai0SaE",
+          "requestID": "msg_1d1e1ba280012Uk81r8ZcBIhFN",
+          "role": "orchestrator",
+          "phase": "initial",
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "assistantTurns": 8,
+          "usageComplete": 8,
+          "usagePartial": 0,
+          "usageUnknown": 0,
+          "reportedComponents": {
+            "input": 26887,
+            "output": 902,
+            "reasoning": 64,
+            "cacheRead": 62080,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "sessionID": "ses_e2e1dd211ffeQOyP6K8XIci7op",
+          "requestID": "msg_1d1e22e82001wpshAzkz4FTprO",
+          "role": "implementer",
+          "phase": "initial",
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "assistantTurns": 5,
+          "usageComplete": 5,
+          "usagePartial": 0,
+          "usageUnknown": 0,
+          "reportedComponents": {
+            "input": 11746,
+            "output": 1282,
+            "reasoning": 39,
+            "cacheRead": 36608,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "sessionID": "ses_e2e1d4ceeffe2IIoB1B3s3FMOB",
+          "requestID": "msg_1d1e2b3d00011b3Slr69mtJb6I",
+          "role": "checker",
+          "phase": "initial",
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "assistantTurns": 2,
+          "usageComplete": 2,
+          "usagePartial": 0,
+          "usageUnknown": 0,
+          "reportedComponents": {
+            "input": 7939,
+            "output": 403,
+            "reasoning": 92,
+            "cacheRead": 7168,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "sessionID": "ses_e2e1d1d90ffe0jrAI72H6vsM2u",
+          "requestID": "msg_1d1e2e32e001TyiNJOH27OKxQx",
+          "role": "implementer",
+          "phase": "initial",
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "assistantTurns": 4,
+          "usageComplete": 4,
+          "usagePartial": 0,
+          "usageUnknown": 0,
+          "reportedComponents": {
+            "input": 20021,
+            "output": 1120,
+            "reasoning": 257,
+            "cacheRead": 41344,
+            "cacheWrite": 0
+          }
+        }
+      ],
+      "overflowMessages": 0
+    },
+    "sessions": {
+      "total": 4,
+      "roots": 1,
+      "children": 3
+    },
+    "assistantTurns": {
+      "total": 19,
+      "finished": 18,
+      "unfinished": 0,
+      "error": 1,
+      "modelIdentities": [
+        {
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "turns": 19
+        }
+      ]
+    },
+    "usage": {
+      "components": {
+        "input": {
+          "reportedTotal": 66593,
+          "reportedTurns": 19,
+          "unknownTurns": 0
+        },
+        "output": {
+          "reportedTotal": 3707,
+          "reportedTurns": 19,
+          "unknownTurns": 0
+        },
+        "reasoning": {
+          "reportedTotal": 452,
+          "reportedTurns": 19,
+          "unknownTurns": 0
+        },
+        "cacheRead": {
+          "reportedTotal": 147200,
+          "reportedTurns": 19,
+          "unknownTurns": 0
+        },
+        "cacheWrite": {
+          "reportedTotal": 0,
+          "reportedTurns": 19,
+          "unknownTurns": 0
+        }
+      },
+      "totalReportedTokens": 217952,
+      "turns": {
+        "complete": 19,
+        "partial": 0,
+        "unknown": 0
+      },
+      "billing": "not_estimated",
+      "coverage": "observed_session_fields_only"
+    },
+    "cost": {
+      "reportedTotal": 0,
+      "reportedTurns": 19,
+      "unknownTurns": 0,
+      "billing": "not_estimated"
+    },
+    "tools": {
+      "total": 30,
+      "completed": 28,
+      "error": 2,
+      "pending": 0,
+      "byName": {
+        "alg_context_status": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 58,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 58,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "alg_plan": {
+          "total": 3,
+          "completed": 3,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 169,
+          "durationCalls": 3,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 3,
+              "durationMsReported": 169,
+              "durationCalls": 3,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "glob": {
+          "total": 3,
+          "completed": 3,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 258,
+          "durationCalls": 3,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 3,
+              "durationMsReported": 258,
+              "durationCalls": 3,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "alg_run": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 80981,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 80981,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "task": {
+          "total": 3,
+          "completed": 1,
+          "error": 2,
+          "pending": 0,
+          "durationMsReported": 77574,
+          "durationCalls": 3,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 33929,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 2,
+              "durationMsReported": 43645,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "bash": {
+          "total": 7,
+          "completed": 7,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 4923,
+          "durationCalls": 7,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 7,
+              "durationMsReported": 4923,
+              "durationCalls": 7,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "read": {
+          "total": 10,
+          "completed": 10,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 406,
+          "durationCalls": 10,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 10,
+              "durationMsReported": 406,
+              "durationCalls": 10,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "apply_patch": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 8,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 8,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "alg_artifact": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 3,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 3,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        }
+      }
+    },
+    "repeatedExactToolInputs": {
+      "glob": {
+        "distinctRepeatedInputs": 1,
+        "repeatedCalls": 2
+      },
+      "read": {
+        "distinctRepeatedInputs": 3,
+        "repeatedCalls": 5
+      }
+    },
+    "skillLoads": {},
+    "algTools": {
+      "alg_plan": {
+        "total": 3,
+        "completed": 3,
+        "error": 0,
+        "pending": 0
+      },
+      "alg_run": {
+        "total": 1,
+        "completed": 1,
+        "error": 0,
+        "pending": 0
+      }
+    },
+    "observedErrors": {
+      "deniedTool": 0,
+      "stepExhaustion": 0
+    }
+  },
+  "wall_ms": 113062,
+  "total_with_startup_ms": 118983,
+  "phases": [],
+  "rootSession": "ses_e2e1e45f0ffe4MrUmSG2Ai0SaE",
+  "recovery": {
+    "requested": false,
+    "recoveryRequired": false,
+    "restarted": false,
+    "compactionRecovered": false,
+    "compaction": null,
+    "phase1": null
+  },
+  "retention": {
+    "taskId": "pair-0001-6958c4e4c69e:wafer-count-commonjs:alg_default",
+    "sessions": [
+      "ses_e2e1d1d90ffe0jrAI72H6vsM2u",
+      "ses_e2e1d4ceeffe2IIoB1B3s3FMOB",
+      "ses_e2e1dd211ffeQOyP6K8XIci7op",
+      "ses_e2e1e45f0ffe4MrUmSG2Ai0SaE"
+    ],
+    "lineage": [
+      {
+        "kind": "child",
+        "fromSessionId": "ses_e2e1e45f0ffe4MrUmSG2Ai0SaE",
+        "toSessionId": "ses_e2e1dd211ffeQOyP6K8XIci7op",
+        "at": 1794522706832
+      },
+      {
+        "kind": "child",
+        "fromSessionId": "ses_e2e1e45f0ffe4MrUmSG2Ai0SaE",
+        "toSessionId": "ses_e2e1d4ceeffe2IIoB1B3s3FMOB",
+        "at": 1794522706832
+      },
+      {
+        "kind": "child",
+        "fromSessionId": "ses_e2e1e45f0ffe4MrUmSG2Ai0SaE",
+        "toSessionId": "ses_e2e1d1d90ffe0jrAI72H6vsM2u",
+        "at": 1794522706832
+      }
+    ],
+    "time": {
+      "elapsedWallSeconds": 113.059,
+      "taskActiveWallSeconds": null,
+      "taskActiveObservedWallSeconds": 0,
+      "taskActiveCoverage": "unproven",
+      "serviceWaitSeconds": null,
+      "serviceWaitObservedSeconds": 0,
+      "serviceWaitCoverage": "unproven"
+    },
+    "turns": {
+      "assistantTurns": 19,
+      "byRole": {
+        "root": 8,
+        "child": 11,
+        "summary": 0,
+        "compaction": 0,
+        "unknown": 0
+      },
+      "knownInputTokens": 66593,
+      "inputTokenCoverage": 1,
+      "turnsWithKnownInput": 19,
+      "turnsWithUnknownInput": 0
+    },
+    "compactions": {
+      "native": {
+        "attempts": 0,
+        "successful": 0,
+        "failed": 0,
+        "pending": 0,
+        "unverified": 0
+      },
+      "requested": {
+        "attempts": 0,
+        "successful": 0,
+        "failed": 0,
+        "pending": 0,
+        "unverified": 0
+      },
+      "unknown": {
+        "attempts": 0,
+        "successful": 0,
+        "failed": 0,
+        "pending": 0,
+        "unverified": 0
+      },
+      "censusComplete": true,
+      "countsInterpretation": "complete_host_census"
+    },
+    "compactionRates": {
+      "attempts": {
+        "per100AssistantTurns": 0,
+        "perActiveHour": null,
+        "perObservedElapsedHour": 0,
+        "perMillionKnownInputTokens": 0
+      },
+      "successful": {
+        "per100AssistantTurns": 0,
+        "perActiveHour": null,
+        "perObservedElapsedHour": 0,
+        "perMillionKnownInputTokens": 0
+      },
+      "failed": {
+        "per100AssistantTurns": 0,
+        "perActiveHour": null,
+        "perObservedElapsedHour": 0,
+        "perMillionKnownInputTokens": 0
+      }
+    },
+    "compactionTiming": {
+      "coverage": "complete_host_census",
+      "timeToFirstObservedSeconds": null,
+      "turnsToFirstObserved": null,
+      "observedIntervalSeconds": [],
+      "events": []
+    },
+    "facts": {
+      "expectedCount": 0,
+      "evidenceCoverage": "unavailable_no_obligation_probes_wired",
+      "observations": [],
+      "lossClaim": "untested",
+      "granularity": "task_aggregate_no_per_compaction_boundary_attribution",
+      "rule": "Absence from context alone is not information loss; untested facts support no loss claim."
+    },
+    "serviceWork": {
+      "evidenceCoverage": "unavailable_or_zero_exposure_not_distinguished",
+      "acceptedComputations": 0,
+      "repeatedAcceptedComputations": 0,
+      "explicitlyAvoidableDuplicateComputations": 0,
+      "explicitlyLegitimateEquivalentComputations": 0,
+      "duplicatesAfterSuccessfulCompaction": 0,
+      "duplicateWorkUnitsKnown": 0,
+      "duplicateWorkUnitsUnknownCount": 0,
+      "duplicateEvents": [],
+      "interpretation": "Repeated accepted equivalents and explicitly assessed avoidable duplicates are separate; absent an external duplicate assessment this metric makes no avoidability claim. Temporal association only; it does not attribute duplicate work to compaction."
+    }
+  },
+  "alg_states": [
+    {
+      "run_id": "fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd",
+      "status": "failed",
+      "global_attempts": 3,
+      "nodes": [
+        {
+          "id": "check",
+          "status": "skipped",
+          "attempts": [
+            {
+              "outcome": "substantive_rejection",
+              "failures": [
+                "Preservation of the supplied evidence and skills, and the limit of two edited source files, are not verified: the …[truncated]"
+              ],
+              "session_id": "ses_e2e1d4ceeffe2IIoB1B3s3FMOB"
+            }
+          ]
+        },
+        {
+          "id": "implement",
+          "status": "failed",
+          "attempts": [
+            {
+              "outcome": "passed",
+              "failures": [],
+              "session_id": "ses_e2e1dd211ffeQOyP6K8XIci7op"
+            },
+            {
+              "outcome": "incomplete",
+              "failures": [
+                "implementer incomplete: A host-provided before-work preservation baseline or receipt covering supplied evidence an…[truncated]"
+              ],
+              "session_id": "ses_e2e1d1d90ffe0jrAI72H6vsM2u"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "budget_observed_overshoot": 0,
+  "retention_boundaries": {
+    "status": "unavailable_no_boundary_probes"
+  },
+  "cleanup": true,
+  "metering_complete": null,
+  "observed_metering_stable": true,
+  "final_census": {
+    "elapsedMs": 302,
+    "rounds": 2,
+    "stableQuiescentRounds": 2,
+    "quiescent": true,
+    "activeSessions": 0,
+    "pendingWork": false,
+    "inFlightRequests": null,
+    "assistantTurns": 19,
+    "usage": {
+      "completeTurns": 19,
+      "partialTurns": 0,
+      "unknownTurns": 0,
+      "reportedComponents": 95
+    },
+    "outcome": "quiescent"
+  },
+  "coverage": {
+    "historical_message_pagination": "IDs_reconciled_with_stopped_host_database",
+    "provider_usage": "session_reported_fields_only",
+    "quiescent_snapshot": true
+  },
+  "databaseCensus": {
+    "qualified": true,
+    "databaseSessions": 4,
+    "databaseMessages": 23,
+    "observedSessions": 4,
+    "observedMessages": 23,
+    "basis": "Stopped-host persisted ID census; session-reported usage only, not provider invoice completeness."
+  },
+  "reported_component_overshoot": 17952,
+  "eligibility": {
+    "artifactOutcome": "passed",
+    "workflowEligible": false,
+    "operationalEligible": false,
+    "comparisonEligible": false,
+    "reasons": [
+      "workflow_incomplete",
+      "service_isolation_unqualified"
+    ]
+  },
+  "auth_copy_removed": true,
+  "processes": [
+    1604636
+  ],
+  "source_unchanged": true,
+  "arm_config_sha256": "57f271836265e8723448b25c83745fe8398849b3a3dd9441c6982c9aecc7c8ab",
+  "final_files": [
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/artifacts/check-attempt-1-output-45d2e1c305d1c5669bb364e7dcc67db93a4ddee6ef2e4b04b0c23624e4955032.json",
+      "bytes": 440,
+      "sha256": "45d2e1c305d1c5669bb364e7dcc67db93a4ddee6ef2e4b04b0c23624e4955032"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/artifacts/check-attempt-1.json",
+      "bytes": 440,
+      "sha256": "45d2e1c305d1c5669bb364e7dcc67db93a4ddee6ef2e4b04b0c23624e4955032"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/artifacts/check-output-45d2e1c305d1c5669bb364e7dcc67db93a4ddee6ef2e4b04b0c23624e4955032.json",
+      "bytes": 440,
+      "sha256": "45d2e1c305d1c5669bb364e7dcc67db93a4ddee6ef2e4b04b0c23624e4955032"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/artifacts/check.json",
+      "bytes": 440,
+      "sha256": "45d2e1c305d1c5669bb364e7dcc67db93a4ddee6ef2e4b04b0c23624e4955032"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/artifacts/graph-81fc19aba3ad19becf5e9453e8f7c72cab1a71b15aee59ace9e1c4013a1b2ca4.json",
+      "bytes": 865,
+      "sha256": "81fc19aba3ad19becf5e9453e8f7c72cab1a71b15aee59ace9e1c4013a1b2ca4"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/artifacts/implement-attempt-1-output-6f58290ab28fc1a52323831cc41c2d1a022de78ea117edd194ef9373a3af032b.json",
+      "bytes": 1194,
+      "sha256": "6f58290ab28fc1a52323831cc41c2d1a022de78ea117edd194ef9373a3af032b"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/artifacts/implement-attempt-1.json",
+      "bytes": 1194,
+      "sha256": "6f58290ab28fc1a52323831cc41c2d1a022de78ea117edd194ef9373a3af032b"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/artifacts/implement-attempt-2-output-2904d566f88266aebd4e3b38f3360433b154fbd024ee44862a51e110f4f46404.json",
+      "bytes": 1520,
+      "sha256": "2904d566f88266aebd4e3b38f3360433b154fbd024ee44862a51e110f4f46404"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/artifacts/implement-attempt-2.json",
+      "bytes": 1520,
+      "sha256": "2904d566f88266aebd4e3b38f3360433b154fbd024ee44862a51e110f4f46404"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/artifacts/implement-output-2904d566f88266aebd4e3b38f3360433b154fbd024ee44862a51e110f4f46404.json",
+      "bytes": 1520,
+      "sha256": "2904d566f88266aebd4e3b38f3360433b154fbd024ee44862a51e110f4f46404"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/artifacts/implement-output-6f58290ab28fc1a52323831cc41c2d1a022de78ea117edd194ef9373a3af032b.json",
+      "bytes": 1194,
+      "sha256": "6f58290ab28fc1a52323831cc41c2d1a022de78ea117edd194ef9373a3af032b"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/artifacts/implement.json",
+      "bytes": 1520,
+      "sha256": "2904d566f88266aebd4e3b38f3360433b154fbd024ee44862a51e110f4f46404"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/artifacts/task-evidence-check-a1-ec72cec7bf1e6123216008499bb0c2133e9be08173359c90e0b69bc467e51abc.json",
+      "bytes": 1143,
+      "sha256": "ec72cec7bf1e6123216008499bb0c2133e9be08173359c90e0b69bc467e51abc"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/checks/check-attempt-1.json",
+      "bytes": 466,
+      "sha256": "7404f8b28e4e2f47977b0159dc1a5b6e3b6d2f17e6e6f37e1f0e9b4c2e1f23fa"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/criteria.md",
+      "bytes": 702,
+      "sha256": "4bcb6ec0a234fc0ef1995e0b2d1fe96ce79192ecd111dbcdff7812f9b18e9977"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/graph.json",
+      "bytes": 1181,
+      "sha256": "d8db1a33b7a9bd00ec05238b3a9255151e3d2b05bd12de10bf31f661598fdbbb"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/check-attempt-1-detail-10f87b5d39c39ce77eefc807c640a35691a3235f36f1e5f21dfb8c58486307ae.json",
+      "bytes": 1285,
+      "sha256": "10f87b5d39c39ce77eefc807c640a35691a3235f36f1e5f21dfb8c58486307ae"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/check-attempt-1-detail-1a074497aa1347a371d4292e648d8d83392a81136af88419e67d71e6a418238a.json",
+      "bytes": 398,
+      "sha256": "1a074497aa1347a371d4292e648d8d83392a81136af88419e67d71e6a418238a"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/check-attempt-1-detail-456b00cbc87537e9f441991d26b4e7c2c510eb9503c98aa885cd385aaab4d02e.json",
+      "bytes": 444,
+      "sha256": "456b00cbc87537e9f441991d26b4e7c2c510eb9503c98aa885cd385aaab4d02e"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/check-attempt-1-detail-7d03d00eaeb09d605abb862480b7ee84145631a47cef7afdaa2ac94107dfc621.json",
+      "bytes": 1261,
+      "sha256": "7d03d00eaeb09d605abb862480b7ee84145631a47cef7afdaa2ac94107dfc621"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/check-attempt-1.json",
+      "bytes": 1285,
+      "sha256": "10f87b5d39c39ce77eefc807c640a35691a3235f36f1e5f21dfb8c58486307ae"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/check-failures-4e549084d411d7ba3ee69f7c4bfb7e20dfcc7ae50a0339a7463c4f5b75b0781b.json",
+      "bytes": 42,
+      "sha256": "4e549084d411d7ba3ee69f7c4bfb7e20dfcc7ae50a0339a7463c4f5b75b0781b"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/check-failures-927b7397244929b1dd30149db1657495741f212406c7e7259ec5088294445006.json",
+      "bytes": 268,
+      "sha256": "927b7397244929b1dd30149db1657495741f212406c7e7259ec5088294445006"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/check-failures.json",
+      "bytes": 42,
+      "sha256": "4e549084d411d7ba3ee69f7c4bfb7e20dfcc7ae50a0339a7463c4f5b75b0781b"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/implement-attempt-1-detail-536f2164635d737948e549b68e6d9cff1e925ddf29f58f0653ef525ec6771172.json",
+      "bytes": 461,
+      "sha256": "536f2164635d737948e549b68e6d9cff1e925ddf29f58f0653ef525ec6771172"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/implement-attempt-1-detail-8f89b068d643d391d10efb7ee12f3120ebf88d70601abf3121d1c0d436c49b10.json",
+      "bytes": 8691,
+      "sha256": "8f89b068d643d391d10efb7ee12f3120ebf88d70601abf3121d1c0d436c49b10"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/implement-attempt-1-detail-ee0e06231bbbfb880d51d11c611fedf96db10083402c59f094d19d972dd02b9d.json",
+      "bytes": 415,
+      "sha256": "ee0e06231bbbfb880d51d11c611fedf96db10083402c59f094d19d972dd02b9d"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/implement-attempt-1.json",
+      "bytes": 8691,
+      "sha256": "8f89b068d643d391d10efb7ee12f3120ebf88d70601abf3121d1c0d436c49b10"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/implement-attempt-2-detail-00e1bd43611a0ab6a77ca1b52ba25187a36e883d16ab0968207b8bbddb6d8aa1.json",
+      "bytes": 629,
+      "sha256": "00e1bd43611a0ab6a77ca1b52ba25187a36e883d16ab0968207b8bbddb6d8aa1"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/implement-attempt-2-detail-041ecf26659beb81fbccdb62b88731fe619ff5f00689ea7c96d4dc89332cfd41.json",
+      "bytes": 8743,
+      "sha256": "041ecf26659beb81fbccdb62b88731fe619ff5f00689ea7c96d4dc89332cfd41"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/implement-attempt-2-detail-d7c3a7f04fd13d8a3c3947e86e8395f9ab312b4f3313981c487a57b9e0a3c29a.json",
+      "bytes": 583,
+      "sha256": "d7c3a7f04fd13d8a3c3947e86e8395f9ab312b4f3313981c487a57b9e0a3c29a"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/implement-attempt-2.json",
+      "bytes": 8743,
+      "sha256": "041ecf26659beb81fbccdb62b88731fe619ff5f00689ea7c96d4dc89332cfd41"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/implement-failures-927b7397244929b1dd30149db1657495741f212406c7e7259ec5088294445006.json",
+      "bytes": 268,
+      "sha256": "927b7397244929b1dd30149db1657495741f212406c7e7259ec5088294445006"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/implement-failures-ec044b818328852fe8878eb034c1fe40a2388aec9e46109766292fa9e2e2dc6a.json",
+      "bytes": 278,
+      "sha256": "ec044b818328852fe8878eb034c1fe40a2388aec9e46109766292fa9e2e2dc6a"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/history/implement-failures.json",
+      "bytes": 278,
+      "sha256": "ec044b818328852fe8878eb034c1fe40a2388aec9e46109766292fa9e2e2dc6a"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/progress.json",
+      "bytes": 24470,
+      "sha256": "2ec0acb2a19795a41da2a482f18efe2e87c5b1d5d69014926dcf0ecda6457765"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/progress.json.bak",
+      "bytes": 24133,
+      "sha256": "f0bfc2de99d681fea0e0b197104fe5a48983ba0740169fb9282063c7b61f0ab4"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/sessions/check-a1.json",
+      "bytes": 510,
+      "sha256": "35143866756113fe842085d020b70c5444a55f4faf6f98865f6b59375373de1f"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/sessions/implement-a1.json",
+      "bytes": 514,
+      "sha256": "aae0f4de9788e41a01e5cc8ac30919ab861628d15589f0e1a4916c263a041708"
+    },
+    {
+      "path": ".opencode/runs/fix-distinct-wafer-counting-and--20261112223017-d90c50c1eabd/sessions/implement-a2.json",
+      "bytes": 514,
+      "sha256": "4a8784db4b4f75f238a7f767ed65ec07655fe0e2b787127d5baf48856751637c"
+    },
+    {
+      "path": ".opencode/runs/_owners/601da4c4eb55db9e4fef0462f05f7c690700e2239a656a7186e8567ba8f4cf4f.json",
+      "bytes": 282,
+      "sha256": "0b831905338c4f73f391d1eb99312126a3be0470c9f1ca0183a62680645c7763"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/0e7eec3d2a4b16c571de4865e1db60bf36bd878fb23dc5041a7a55b39c9748c8.txt",
+      "bytes": 1634,
+      "sha256": "0e7eec3d2a4b16c571de4865e1db60bf36bd878fb23dc5041a7a55b39c9748c8"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/7f98a2e5ea6a42275f875e2dcc7110ba533068a53dd661bd38a233690f1a3305.txt",
+      "bytes": 9600,
+      "sha256": "7f98a2e5ea6a42275f875e2dcc7110ba533068a53dd661bd38a233690f1a3305"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/c0282a0d9d0b114791304ab49485237fcd30e39af7b463f08bf1f29e39383c4b.txt",
+      "bytes": 1340,
+      "sha256": "c0282a0d9d0b114791304ab49485237fcd30e39af7b463f08bf1f29e39383c4b"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/e2f70a0dc6ec3fec5d8311323313d62f388f20f4826a2435852a1cb177938c05.txt",
+      "bytes": 7522,
+      "sha256": "e2f70a0dc6ec3fec5d8311323313d62f388f20f4826a2435852a1cb177938c05"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/307264cd38980e37dbd26c959c59d09c0871080ff13d769b3198f2fc150c2941.json",
+      "bytes": 565,
+      "sha256": "307264cd38980e37dbd26c959c59d09c0871080ff13d769b3198f2fc150c2941"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/4438b6c09a926842f691b45c0de07302240e99010d39cc23f8179b10862cc4e7.json",
+      "bytes": 720,
+      "sha256": "4438b6c09a926842f691b45c0de07302240e99010d39cc23f8179b10862cc4e7"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/57d0a0494e55945a2b057790df39de522da0ee1da7f897ede6b227d3e96992b4.json",
+      "bytes": 1122,
+      "sha256": "57d0a0494e55945a2b057790df39de522da0ee1da7f897ede6b227d3e96992b4"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/af6b234dbf6bde8295d499dad969762ef23486f9bfb6898e2bd467e49dad75a4.json",
+      "bytes": 564,
+      "sha256": "af6b234dbf6bde8295d499dad969762ef23486f9bfb6898e2bd467e49dad75a4"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/c37c06c7707e9ce45e2b9417ca4bbad931e80b9a81ce79ac3b3bf10a35733bf9.json",
+      "bytes": 564,
+      "sha256": "c37c06c7707e9ce45e2b9417ca4bbad931e80b9a81ce79ac3b3bf10a35733bf9"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/fd568cb76b7206af5e66bad7641fcb5e09904c3b64d7657f0f6dc93bf437d147.json",
+      "bytes": 720,
+      "sha256": "fd568cb76b7206af5e66bad7641fcb5e09904c3b64d7657f0f6dc93bf437d147"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/1d350c8176448a3cafbe30d52a668ffbaabb4c45ef27c798d9838527de6404e4.json",
+      "bytes": 3658,
+      "sha256": "983cd97dde0e5e768f47aef49b49435e4862c10b3a7cb48765682f6ec955072d"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/2ddaa82ee9e6da2bd14958e91c201481de481ae688b6f4e5e07b38b4a596c2f2.json",
+      "bytes": 14198,
+      "sha256": "03d94e7e23df9fd74e124ed9234912b53f7003a5a5e866841c08e0805679a9f3"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/6a09aba578f65adb4df2c1a6c6994c501a7700a2797cd111896eb67a009f7b7f.json",
+      "bytes": 7166,
+      "sha256": "51f9b7c89af5b06711c8d5963511d90d749e1f17f41aceae655d08d5f1e45d34"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/a83e26d21c4e68465d18aca9459c9badbb27204631268fcf7af5f2f1ab5c3f4f.json",
+      "bytes": 8920,
+      "sha256": "9c84c85ce0fbc5c91f3e725586fdfe485f4a32e8f888c6349859535f16fce467"
+    },
+    {
+      "path": ".opencode/session-memory/heads/1d350c8176448a3cafbe30d52a668ffbaabb4c45ef27c798d9838527de6404e4.json",
+      "bytes": 218,
+      "sha256": "f26a7283ca0ed321fc6c34d4cec75fe87a92ea0464b97cb938dc8bfc03c863b4"
+    },
+    {
+      "path": ".opencode/session-memory/heads/2ddaa82ee9e6da2bd14958e91c201481de481ae688b6f4e5e07b38b4a596c2f2.json",
+      "bytes": 218,
+      "sha256": "90aef694668284409a39159e2dc455a6a90df81e60de202c19f1152e69c0fd76"
+    },
+    {
+      "path": ".opencode/session-memory/heads/6a09aba578f65adb4df2c1a6c6994c501a7700a2797cd111896eb67a009f7b7f.json",
+      "bytes": 218,
+      "sha256": "83f11b82885fb81225e03487a54a7425e559dca7c4a8a79145e6c5b4d325cd80"
+    },
+    {
+      "path": ".opencode/session-memory/heads/a83e26d21c4e68465d18aca9459c9badbb27204631268fcf7af5f2f1ab5c3f4f.json",
+      "bytes": 218,
+      "sha256": "0775f944305cb36e01d47d6f077d0f551b9e2a0d490ab6e3800ee61d0f2bc9bf"
+    },
+    {
+      "path": ".opencode/session-memory/objects/4b19c0f269e3925bcca9cac28c66718b0b67d7b802a5e05023266be26cb5a4fd.json",
+      "bytes": 2470,
+      "sha256": "4b19c0f269e3925bcca9cac28c66718b0b67d7b802a5e05023266be26cb5a4fd"
+    },
+    {
+      "path": ".opencode/session-memory/objects/79bc72b787581f0e69945a8dfdfa1d14ea755502488460f2d3635cdaf111565a.json",
+      "bytes": 2191,
+      "sha256": "79bc72b787581f0e69945a8dfdfa1d14ea755502488460f2d3635cdaf111565a"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/1d350c8176448a3cafbe30d52a668ffbaabb4c45ef27c798d9838527de6404e4.json",
+      "bytes": 372,
+      "sha256": "55eecf9148400cb05c5864d3f9d6f62dcbb95a9133f1366a0bda3d5079422836"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/2ddaa82ee9e6da2bd14958e91c201481de481ae688b6f4e5e07b38b4a596c2f2.json",
+      "bytes": 373,
+      "sha256": "7157699a5ab35510bed1943dd25a06323985064789690d9d4811d8354e7150b2"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/6a09aba578f65adb4df2c1a6c6994c501a7700a2797cd111896eb67a009f7b7f.json",
+      "bytes": 372,
+      "sha256": "c8c6fb387c1e2bae9045cabce361eadfaf807b336afe8c3de21c8ed73ec2da60"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/a83e26d21c4e68465d18aca9459c9badbb27204631268fcf7af5f2f1ab5c3f4f.json",
+      "bytes": 372,
+      "sha256": "5c6ededed018f1085316dd0b784d85a3ad2995a633f8e04521bb4394ff6752cf"
+    },
+    {
+      "path": "data/inspection-records.json",
+      "bytes": 702,
+      "sha256": "ae8c396da3661e221e9716663c2cc79ce2715bff9d3d99de401093960709d14d"
+    },
+    {
+      "path": "package.json",
+      "bytes": 116,
+      "sha256": "a78a9ceb37d11a4b0e970b5cfd854e44f49f1563898501eeac5a3e51228acfd0"
+    },
+    {
+      "path": "src/wafer-count.cjs",
+      "bytes": 394,
+      "sha256": "6b17ead9fb07c8fd3b9a90b90b8dd89c4a2516439d9629ece08974ee3e94eb42"
+    },
+    {
+      "path": "src/wafer-view.cjs",
+      "bytes": 140,
+      "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+    },
+    {
+      "path": "test/wafer-count.test.cjs",
+      "bytes": 768,
+      "sha256": "a7719415e595d1bfd8656b74d05b7171a81ec4fc7c8369b6755a15ce96426eeb"
+    }
+  ],
+  "usage_monitors": {
+    "reportedTokens": 200000,
+    "reportedCostPerSuite": 5,
+    "enforcement": "component_cutoff_is_polled_with_overshoot_cost_is_telemetry_only_not_invoice_ceiling"
+  },
+  "measurement_limits": [
+    "actual provider invoice",
+    "hidden model calls not represented by session messages",
+    "operator minutes",
+    "production MCP cost/reuse",
+    "multi-hour reliability",
+    "hardware-normalized latency"
+  ]
+}

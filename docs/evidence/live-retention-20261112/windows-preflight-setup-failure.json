@@ -1,0 +1,170 @@
+{
+  "schema": "alg-live-retention-diagnostic-v1",
+  "status": "preflight_failed",
+  "stopReason": "host_http_400:/provider",
+  "startedAt": 0,
+  "endedAt": 1794517775787,
+  "activeWallMs": null,
+  "model": "openai/gpt-6-luna",
+  "rootSession": "",
+  "phases": [],
+  "compactions": {
+    "totalMarkers": 0,
+    "requestedLinked": 0,
+    "nativeLinked": 0,
+    "unlinked": 0,
+    "unknownOrigin": 0
+  },
+  "receipts": [],
+  "restarts": [],
+  "metrics": {
+    "attribution": {
+      "rows": [],
+      "overflowMessages": 0
+    },
+    "sessions": {
+      "total": 0,
+      "roots": 0,
+      "children": 0
+    },
+    "assistantTurns": {
+      "total": 0,
+      "finished": 0,
+      "unfinished": 0,
+      "error": 0,
+      "modelIdentities": []
+    },
+    "usage": {
+      "components": {
+        "input": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0
+        },
+        "output": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0
+        },
+        "reasoning": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0
+        },
+        "cacheRead": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0
+        },
+        "cacheWrite": {
+          "reportedTotal": 0,
+          "reportedTurns": 0,
+          "unknownTurns": 0
+        }
+      },
+      "totalReportedTokens": 0,
+      "turns": {
+        "complete": 0,
+        "partial": 0,
+        "unknown": 0
+      },
+      "billing": "not_estimated",
+      "coverage": "observed_session_fields_only"
+    },
+    "cost": {
+      "reportedTotal": 0,
+      "reportedTurns": 0,
+      "unknownTurns": 0,
+      "billing": "not_estimated"
+    },
+    "tools": {
+      "total": 0,
+      "completed": 0,
+      "error": 0,
+      "pending": 0,
+      "byName": {}
+    },
+    "repeatedExactToolInputs": {},
+    "skillLoads": {},
+    "algTools": {
+      "alg_plan": {
+        "total": 0,
+        "completed": 0,
+        "error": 0,
+        "pending": 0
+      },
+      "alg_run": {
+        "total": 0,
+        "completed": 0,
+        "error": 0,
+        "pending": 0
+      }
+    },
+    "observedErrors": {
+      "deniedTool": 0,
+      "stepExhaustion": 0
+    }
+  },
+  "rates": null,
+  "retention": {
+    "atRisk": 0,
+    "observedLosses": 0,
+    "causalAttribution": "not_established",
+    "latentContextRecall": "not_measured",
+    "expensiveSearchRepetition": "not_measured_no_live_MCP"
+  },
+  "dbCensus": {
+    "qualified": false,
+    "databaseSessions": 0,
+    "databaseMessages": 0,
+    "missingSessions": [],
+    "missingMessages": [],
+    "basis": "Read-only persisted database ID census after host stop; session-reported usage, not provider invoice completeness."
+  },
+  "finalCensus": {
+    "elapsedMs": 7004,
+    "rounds": 10,
+    "stableQuiescentRounds": 0,
+    "quiescent": false,
+    "activeSessions": null,
+    "pendingWork": null,
+    "inFlightRequests": null,
+    "assistantTurns": null,
+    "usage": {
+      "completeTurns": null,
+      "partialTurns": null,
+      "unknownTurns": null,
+      "reportedComponents": null
+    },
+    "outcome": "census_error",
+    "error": "final_census_grace_expired"
+  },
+  "cleanup": true,
+  "authCopyRemoved": true,
+  "globalConfigurationUnchanged": true,
+  "sourceUnchanged": true,
+  "planSha256": "6cc5eb001a98706cfa7e9bdad8c3402d06b7eee788b7d91b2562601e9f21612c",
+  "limits": {
+    "wallMs": 2700000,
+    "assistantTurns": 120,
+    "reportedUsageComponents": 600000,
+    "outputTokens": 4096,
+    "requestedCompactions": 6,
+    "restartAfterCompactions": [
+      2,
+      4
+    ]
+  },
+  "overshoot": {
+    "assistantTurns": 0,
+    "reportedUsageComponents": 0
+  },
+  "unmeasured": [
+    "provider invoice",
+    "hidden context contents",
+    "causal compaction loss",
+    "Build comparison",
+    "multi-hour natural saturation",
+    "MCP search cost"
+  ]
+}

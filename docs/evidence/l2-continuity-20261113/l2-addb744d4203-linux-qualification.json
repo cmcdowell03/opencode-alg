@@ -1,0 +1,6909 @@
+{
+  "schema": "alg-long-session-qualification-v1",
+  "generatedAt": "2026-11-13T06:58:33.838Z",
+  "identity": {
+    "cases": "003fca96c796a2893c71a94b3d200a58946665770c81c989156e9eaa6023ba68",
+    "sources": {
+      "build-benchmark.ts": "b515c058e7a303675df47ad90e520ec14a297e57f41bd572f2fbedbbc7de1dfc",
+      "build-benchmark-protocol.ts": "48a1e7cd2d18bb185188d0569c13cd682d2d0ec93f260eab95797cfd1c14a46b",
+      "build-benchmark-metrics.ts": "0f87276a95a366f552c5bb12bd1ae2f3aa952e51d3bef430aebd5bb61ad95250",
+      "build-benchmark-transport.ts": "fef9bf23a204434e4fde4413697ff4db6a491687e3c14c3b63592137dafaf0c8",
+      "build-benchmark-retention.ts": "f227e2a130b3055c8aeab439242e66d625e71fa9f624db1a760f26b83b44d4c3",
+      "build-benchmark-retention-boundaries.ts": "ccebbf7864513b053721fa0a6aca84dcd0bf79c52e35e8f850895036ce884e00",
+      "build-benchmark-long-session.ts": "447b9283ba557c24c3824614dfb9dc678a06202bca0988cfabd3cf49a522f4ea",
+      "build-benchmark-long-fixtures.ts": "e19a3c9cfc24167ab2336118c1c7439a132caf3047eec0e405c69a59c5db1471",
+      "build-benchmark-long-reference.ts": "bc2e35e41ff7456d6f66039744cf7ea61797be1bff58522e2d46a34aa99add7f",
+      "build-benchmark-long-qualification.ts": "dd081c405d6a5fe1e1c6381099353cbcff003d654f70c7ce1e4225b3be57242a",
+      "build-benchmark-long-report.ts": "d0459ec7c4765c159ed3b2867067f8e842c6dc96a8dbf470ad49a3481c553aeb",
+      "hard-benchmark-host.ts": "cd6db0d95632a3b5259cdc92f078e1ba5537468a42a78257e8a1bd87dd584651",
+      "hard-benchmark-service.ts": "9db33af06880da6e98306c94dbb98bf668fe48ce7d048961615954cea550db2c",
+      "hard-benchmark-fixtures.ts": "580d410294404efcbf68e038cca8bec494b3ee2373330f502cdd0c62715e1164",
+      "hard-benchmark-qualification.ts": "78d13d56c6aece3d9986a9075459cfac2e4d8e3ac5be7cdaec32b3e1ec98fd65",
+      "hard-benchmark-cohort.ts": "22ba6ea3206d63e90be39e9942598aba375c92156bcf4b430822c92798c38e13"
+    }
+  },
+  "rows": [
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+      "phase": "q0",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "7a7ad0be1cd9aada76a5b78e0513c04605e481a2393d3b962afb55b961307541",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+      "phase": "qh",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "2f5388b9bd5f6cea8bc3ae43fd6af021d77b3ec6bebf7ef92c9dad4ae4bf0f8b",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+      "phase": "qc",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "de191c9975f9c1e70fb9c72aa14fd1d4ac048b0de59991ae9d593b7c42146a34",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+      "phase": "qr",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "2146ab6f0f84eb17b5c09dfb611849e12876070b47436cf1978cb53f36a1b196",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+      "phase": "qr",
+      "control": "wrong-report",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "09bff5d08bd8d2738e6b6ceae66ac8941da0ca837149a9778297bed2b19965da",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+      "phase": "qr",
+      "control": "stale-nonce",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "5babbd940ce425806082b8c4b9b66eeb89d9ca04d8c8bb356e7af9c0f0840c0d",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+      "phase": "qr",
+      "control": "missing-fresh-actions",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "47750d619d669267d8c30364077740ebf419435c83d180c2539a5baac359d477",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+      "phase": "qr",
+      "control": "incomplete-audit",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "3915b2ad5d45242a20c65f6a906ecbd810b825f87fc86e906996ca163a72a16a",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+      "phase": "qr",
+      "control": "extra-output",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "deac6fe2637bfa8d9de1a1dbf204b593ffbdf21a1d3057ab9d2e998adcb56eb6",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c0-20261113",
+      "phase": "qr",
+      "control": "revoked-procedure",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "56867747056f4f565081539dcd842ddef07abebfcc8c050dc9ab78f035111707",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+      "phase": "q0",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "4ad9d6cc9f157412ad9288fa7992bbbd56f31c8ebfa51c57c26c5de12d0a10bc",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+      "phase": "qh",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "a93435102c20eb5b7540f2d1bd866fe6b3a75a690efe3b05ac7bdb0b788f9abe",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+      "phase": "qc",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "9a3e1a0d682f15e7e539e6432e72fe5bdd7da261907508ae97fcfadd2d0cd49b",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+      "phase": "qr",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "ff13c83431cf1a407ec789d06dc1991dd1e2fb1e61d9e0b848647b341a8ffd2e",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+      "phase": "qr",
+      "control": "wrong-report",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "6ce1b8e8d4819ce6cd2a4f4dd0a38aa0ef9c29796d79ae9b189bc10281b5648a",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+      "phase": "qr",
+      "control": "stale-nonce",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "543d4aa4f8bcb53388916bb394a4ae1123b8904f88b157f99a58dc66128be401",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+      "phase": "qr",
+      "control": "missing-fresh-actions",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "4e2da3e34a09c9dec4a23447b0c9edcda7359555b999d7143001ac6ba5cd2a2f",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+      "phase": "qr",
+      "control": "incomplete-audit",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "61363afd883186f621373f208874f414bf7c1db11c35e6595229eae07d48eda3",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+      "phase": "qr",
+      "control": "extra-output",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "325e1b190b84b933805fa75cea1f10ae822557361191fa0b43b1dc6b1feff7af",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h0c1-20261113",
+      "phase": "qr",
+      "control": "revoked-procedure",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "f154367c3f77fe1572cbb1c662920b5e95777586917ca1ce166dea301ccfb545",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+      "phase": "q0",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "ed7d8853dcea5004c519335c7c3eb19efdce0ea0b29303e269f8781b1e512494",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+      "phase": "qh",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "c3e94f9cbf41e75d08b19ec941999b032616adf6af28ba6fc2c0345a15a45764",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+      "phase": "qc",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "1b6b2215a17bf20c97f7d9e27df9ffdae67125f100621dd203e53b1b0f02b36a",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+      "phase": "qr",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "7e7abcdc6ca6292a7120cc1ed453a288737d9243b1e4226cdaeec5ae6853725b",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+      "phase": "qr",
+      "control": "wrong-report",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "f184c9cfade3370afdca817ba96efea0beb78cca9829302998b26d32a40d1e51",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+      "phase": "qr",
+      "control": "stale-nonce",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "f6ce785b050bb3921b96791866e1d83597cc866faef289c1aae080a16ee04e3a",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+      "phase": "qr",
+      "control": "missing-fresh-actions",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "24664b126bb0d0de060211b650a67180b6dd8e1bb691295ce56ed983cdbd5f41",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+      "phase": "qr",
+      "control": "incomplete-audit",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "65eecf76a0d2683db56f9833de537b63fc3edfa606a17012a111cb1d0af1a8ab",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+      "phase": "qr",
+      "control": "extra-output",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "44b7889179cd7eb3d176c86f68f872c452081393bd19cb535de7668c020d7e69",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c0-20261113",
+      "phase": "qr",
+      "control": "revoked-procedure",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "e73e4f3c11c73aa8b92db260562e545ba2c48fb5eb3225c565fbbd7a4e17c7a7",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+      "phase": "q0",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "3ec3a344e8358b96739d2e8bb249cfcd955137c303719380ab8c20746ddff153",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+      "phase": "qh",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "0a5b406c95a2f28e4dc61298e330508980040c6c09a86b13521efaa4e717b8a4",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+      "phase": "qc",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "84312078e656a36a6439e738d1cc2249fa33461f26b42f428997af52e98a85b2",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+      "phase": "qr",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "24b2efd5161bc51122e3c3c43bb47efb5112a2d4f8c86614ba65d547bd6906b4",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+      "phase": "qr",
+      "control": "wrong-report",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "51c882484fc3230d40622beed65000fda54197daf99490b4453c172b8b7e1ebc",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+      "phase": "qr",
+      "control": "stale-nonce",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "fd16b1853643b9080c3d48001cf8d9e584da8307d7e650cde68d0688d9a1c815",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+      "phase": "qr",
+      "control": "missing-fresh-actions",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "d016e723794804d19746b65b41bcc0d0cee13a546b5ac583c82373d797bc9d86",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+      "phase": "qr",
+      "control": "incomplete-audit",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "8a029010ceebe7b008de18edcc557f6e75fc5a5d42a624dde82035cba63ef92f",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+      "phase": "qr",
+      "control": "extra-output",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "71988dd95f293c5ef293153fea80f897bb237ccbf2a8ad3d37eda18d16ec0bfa",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-accepted-lost-ack-h1c1-20261113",
+      "phase": "qr",
+      "control": "revoked-procedure",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "79a78b7e6fddf6ef8c4336a4414335d78faffe70dd6d40936d1bceb878b9c90f",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c0-20261213",
+      "phase": "q0",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "c8117ff0a991f6eb75fd44233a0041e9b310398350624737c15880338a8fc8b9",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c0-20261213",
+      "phase": "qh",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "b1845084fe89840875a3d89a2fadbf48acff6dd0ac37d6060755cce6cd164792",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c0-20261213",
+      "phase": "qc",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "dd365e7e9127cd75cae8c60b3a7b77aa7a9a763b159b74d410415227a382aeba",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c0-20261213",
+      "phase": "qr",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "de84c41b7b4cfa52ccace623654f8d9d661a59edccd6fd59960736cff15d5ea8",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c0-20261213",
+      "phase": "qr",
+      "control": "wrong-report",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "30b1bb617a77cccd37cde3d276cf168d49eca1478249f2af0ba4641a26225852",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c0-20261213",
+      "phase": "qr",
+      "control": "stale-nonce",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "8a84d2ff1ebf933ea56376dd2a695062d72bee01418cd635392d1ade8b4dde49",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c0-20261213",
+      "phase": "qr",
+      "control": "missing-fresh-actions",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "db84a1aa9d281efb9dbde64d006568a0b947091f2d4dfd2ea7f0844b37949fa2",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c0-20261213",
+      "phase": "qr",
+      "control": "incomplete-audit",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "a54e5c96931feae0fd82798446244c30ba85e7978e136df2ed8d2d58de1bed3c",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c0-20261213",
+      "phase": "qr",
+      "control": "extra-output",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "8eb374df41aeca94d2a2fd27cb709e61fe03825ddb754a46663c91a5d4072749",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c0-20261213",
+      "phase": "qr",
+      "control": "revoked-procedure",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "7019abc901e356b6d33dcf36308b116fd8859e57c1f0551de8fe057934debc0e",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c1-20261213",
+      "phase": "q0",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "b2f6a5ecb64a0ce6739314658d25cdc0ecc9c561848c7e05f78e05958a631d85",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c1-20261213",
+      "phase": "qh",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "137761cca4c0d7de9d985a82b4a75e556eea1273c81cac015556bc7cbb6ed29d",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c1-20261213",
+      "phase": "qc",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "b992a0f5e8958b4ab5bfefa03a40b364a1c2935319b0aa65205146782f4801f9",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c1-20261213",
+      "phase": "qr",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "1fbdfcf8431db5709f71f061cd1012da24043ddc7d57fd19bf8db6c31b779a57",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c1-20261213",
+      "phase": "qr",
+      "control": "wrong-report",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "1e34fd4b83a33b882e23a2b9e8dd727a787de0fe190bb65ee5a877f9f37f9065",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c1-20261213",
+      "phase": "qr",
+      "control": "stale-nonce",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "bda2e0066aa0f8c12af8243eb5983c2d110863fb5f65a7804a9d8d49f7550978",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c1-20261213",
+      "phase": "qr",
+      "control": "missing-fresh-actions",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "3347cc390f03a89a84e4161af3c88081ab6e7f20525593197b935e07acaa22b7",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c1-20261213",
+      "phase": "qr",
+      "control": "incomplete-audit",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "dbd5cd639fa2d28c92aad02f2f899551fa15f09f8fc16f55f12fa46c207de662",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c1-20261213",
+      "phase": "qr",
+      "control": "extra-output",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "d1cef9aa0e62c348fd93df96d5a697933d1add3a8fb6bae0b9eebd31524eaca5",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h0c1-20261213",
+      "phase": "qr",
+      "control": "revoked-procedure",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "051672e8f077599183cfa184831968d93b14c445c0d989b50e5dbf49096332d7",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c0-20261213",
+      "phase": "q0",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "68041400877cc15ba431afc3fb72a298ab363d9c405744b33eee278e7168748b",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c0-20261213",
+      "phase": "qh",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "6e1c91e7bbfc5fa47f156040088c1069c2fb150508958fca435a94fd2ef4e8a4",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c0-20261213",
+      "phase": "qc",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "23e80b24c60e9f2d2d374fae90b9c2c391beb732123acf84263330ecaca08435",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c0-20261213",
+      "phase": "qr",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "15276de30f2ecc6358a8f9949138983077379f8bfdb5de04c749435d2cdec03d",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c0-20261213",
+      "phase": "qr",
+      "control": "wrong-report",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "49926b2c95df8867f13ca07ec8c7c1f600efb058e1f4ba3744de09ed662a6f44",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c0-20261213",
+      "phase": "qr",
+      "control": "stale-nonce",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "50f1e8fb021d50144568be58c0be378fa04bd710d78c136bb8f771667eeeb210",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c0-20261213",
+      "phase": "qr",
+      "control": "missing-fresh-actions",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "9d756d0c4d4c8e4badb288ebccb91dc413d366b3c8f9a7228516e79a2b55acf5",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c0-20261213",
+      "phase": "qr",
+      "control": "incomplete-audit",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "afdb5d5ce31b534be53acfee04af75e02fb12a6b333fc43e056a816c8a1f5c67",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c0-20261213",
+      "phase": "qr",
+      "control": "extra-output",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "abccfdd44ab1f250ea8cadcb5a96f7e94acea2c70045499743398be02c2c6d7d",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c0-20261213",
+      "phase": "qr",
+      "control": "revoked-procedure",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "a8d17496419be412093e31b7b125121daae615fc5d6992f4a12e2f3a72cf045c",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c1-20261213",
+      "phase": "q0",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "4a354b21bbae5fdd962370351d8a57a3081b1a266c189107cc5a744c81f00e3c",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c1-20261213",
+      "phase": "qh",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "fd5c9e1c78d6e4c14a72520520daa7c9b76d85ee1a739db361eddff16b222776",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c1-20261213",
+      "phase": "qc",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "04e0473800f4ed35398a650c78fb92eb32e0869ddc74e2925c43be72dddc27f7",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c1-20261213",
+      "phase": "qr",
+      "control": "positive",
+      "expected": true,
+      "passed": true,
+      "evidenceDigest": "b997d31cacf8275ffa71170074796869a891b7c45567ad927cbf05f785b646b1",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c1-20261213",
+      "phase": "qr",
+      "control": "wrong-report",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "354b551b871abba7024f51f3897609d3ba9462333a2ae86c23fc57f2b1a497cb",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c1-20261213",
+      "phase": "qr",
+      "control": "stale-nonce",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "9e6435670dc4f964f035b6d3d73a39ab088437ba668de3230d0ec33f21447de9",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c1-20261213",
+      "phase": "qr",
+      "control": "missing-fresh-actions",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "ecf241e079f1dd5345babd42e68003bc293b1e6eb7631482c769f624d8494399",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c1-20261213",
+      "phase": "qr",
+      "control": "incomplete-audit",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "2549c61bca1d2e83672a6e5ac3143ce83f293b31f97a9825b3b460497bd25550",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": true
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": false
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": false
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": false
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": false
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": false
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c1-20261213",
+      "phase": "qr",
+      "control": "extra-output",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "da9288cc47efe6153f7230e534f3b4cd7bf8d57f23e72582f152928cfd5266f7",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": true
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": true
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": true
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": true
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": true
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": true
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": true
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "caseId": "long-v1-partial-restart-h1c1-20261213",
+      "phase": "qr",
+      "control": "revoked-procedure",
+      "expected": false,
+      "passed": false,
+      "evidenceDigest": "b57bc56e0f4b24757f6634f2acb6885a202db720aa11fd33662d13ffcb595ace",
+      "checks": [
+        {
+          "id": "checkpoint:exact-current-phase-nonce",
+          "passed": false
+        },
+        {
+          "id": "outputs:disclosed-paths-and-bounds",
+          "passed": false
+        },
+        {
+          "id": "task:base-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "task:factory-independent-scorer",
+          "passed": false
+        },
+        {
+          "id": "procedure:declared-version",
+          "passed": false
+        },
+        {
+          "id": "behavior:current-factory-source-selection",
+          "passed": false
+        },
+        {
+          "id": "finding:observational-uncertainty-preserved",
+          "passed": false
+        },
+        {
+          "id": "finding:current-factory-sources",
+          "passed": false
+        },
+        {
+          "id": "finding:report-schema-and-content",
+          "passed": false
+        },
+        {
+          "id": "accounting:cumulative-accepted-work",
+          "passed": true
+        },
+        {
+          "id": "trace:complete-current-window",
+          "passed": true
+        },
+        {
+          "id": "source:fresh-revision-and-availability-checks",
+          "passed": true
+        },
+        {
+          "id": "pending:lookup-each-accepted-intent",
+          "passed": true
+        },
+        {
+          "id": "pending:fresh-current-result-read",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-intent-established",
+          "passed": true
+        },
+        {
+          "id": "pending:initial-submit-valid",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-submission-attempt",
+          "passed": true
+        },
+        {
+          "id": "negative:no-duplicate-accepted-computation",
+          "passed": true
+        },
+        {
+          "id": "next:validated-reports-and-checkpoint",
+          "passed": false
+        }
+      ]
+    }
+  ],
+  "passed": true,
+  "interpretation": "Synthetic public HTTP and independent artifact-oracle qualification only. Does not measure model behavior, context loss, long duration, or ALG superiority."
+}

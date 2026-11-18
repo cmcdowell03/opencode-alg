@@ -1,0 +1,18 @@
+{
+  "case": "long",
+  "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\compile-long-027caaa1-edc5-4601-88c7-22ccf002672c\\pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+  "sourcePath": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\compile-long-027caaa1-edc5-4601-88c7-22ccf002672c\\pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\\source-027caaa1-edc5-4601-88c7-22ccf002672c.cs",
+  "outputPath": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-pilot-20261112\\compile-long-027caaa1-edc5-4601-88c7-22ccf002672c\\pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\\helper-027caaa1-edc5-4601-88c7-22ccf002672c.exe",
+  "sourcePathCharacters": 291,
+  "outputPathCharacters": 292,
+  "byteIdenticalSourceSha256": "cd46e0463f7e411f5fb75cae1ce437a01ce6fdb407a8e9da22847700599c6c94",
+  "sourceMatchesExtractedBytes": true,
+  "compiler": "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+  "command": "Add-Type -Path $env:ALG_JOB_HELPER_SOURCE_PATH -OutputAssembly $env:ALG_JOB_HELPER_OUTPUT -OutputType ConsoleApplication",
+  "exitCode": 1,
+  "signal": null,
+  "spawnError": null,
+  "stdout": "",
+  "stderr": "Add-Type : (0) : File name 'C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implem\r\nentation-evidence\\build-pilot-20261112\\compile-long-027caaa1-edc5-4601-88c7-22ccf002672c\\pppppppppppppppppppppppppppppp\r\npppppppppppppppppppppppppppppppppp\\helper-027' is too long or invalid\r\nAt line:1 char:1\r\n+ Add-Type -Path $env:ALG_JOB_HELPER_SOURCE_PATH -OutputAssembly $env:A ...\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : InvalidData: (Microsoft.Power...peCompilerError:AddTypeCompilerError) [Add-Type], Except \r\n   ion\r\n    + FullyQualifiedErrorId : SOURCE_CODE_ERROR,Microsoft.PowerShell.Commands.AddTypeCommand\r\n \r\nAdd-Type : Cannot add type. Compilation errors occurred.\r\nAt line:1 char:1\r\n+ Add-Type -Path $env:ALG_JOB_HELPER_SOURCE_PATH -OutputAssembly $env:A ...\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : InvalidData: (:) [Add-Type], InvalidOperationException\r\n    + FullyQualifiedErrorId : COMPILER_ERRORS,Microsoft.PowerShell.Commands.AddTypeCommand\r\n \r\n",
+  "outputExists": false
+}

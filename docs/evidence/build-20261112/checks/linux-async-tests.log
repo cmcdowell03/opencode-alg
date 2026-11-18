@@ -1,0 +1,14 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/build-benchmark-transport.test.ts:
+(pass) OpenCode async prompt transport > does not accept a summary as the answer or a length stop as successful completion [5.16ms]
+(pass) OpenCode async prompt transport > distinguishes a post-dispatch poll error and never resubmits [1.26ms]
+(pass) OpenCode async prompt transport > does not treat prompt_async acknowledgement as completion and reaches deadline with no new root [91.09ms]
+(pass) OpenCode async prompt transport > ignores old messages and tool-calls intermediary, then accepts reasoning-only completed assistant [5.36ms]
+(pass) OpenCode async prompt transport > returns matching model errors as terminal failures [0.71ms]
+(pass) OpenCode async prompt transport > stops after cancellation is observed during a poll [0.82ms]
+
+ 6 pass
+ 0 fail
+ 19 expect() calls
+Ran 6 tests across 1 file. [218.00ms]

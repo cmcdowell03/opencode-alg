@@ -8,6 +8,8 @@
 
 This document is for users and maintainers who need both the reason ALG exists and the mechanics that make it work. Operational commands live in [the operations checklist](docs/operations.md); release proof and source-identity details live in [the release verification procedure](docs/release-verification.md).
 
+The pending **0.5.6 candidate** builds on the 0.5.5 shell-setup recovery, host execution/preservation evidence and compact-task planning guidance. It repairs archived receipt lookup, cancellation classification and oversized attempt histories, with local Windows/Linux regressions recorded in [implementation status](docs/v1-implementation-status.md). Compact version-3 histories require the new reader. The separate [0.5.5 Terra cohort](docs/v1-benchmark-failure-analysis.md#post-repair-validation--windows-and-linux) still exposes cumulative-usage and task/template-selection failures; the [next V1 plan](docs/v1-reliability-and-build-comparison-plan.md) addresses admission and comparison methodology. Historical evidence retains its original runtime identity. No general efficiency, model-quality, new offline-package or air-gapped service qualification is established; no V2 runtime is added.
+
 ## Contents
 
 - [Why a control plane](#why-a-control-plane)
@@ -462,6 +464,8 @@ Ownership transfers must form one chain from `parent_session_id` to the current 
 
 `NodeAttempt` carries its contiguous number, `running`/`done`/`failed` status, timestamps, optional child `session_id`, typed output/reference, full-detail reference, failures and commitment, checker score, schema/shell verdicts, bounded error, feedback marker, and an optional one-of-six classified outcome. Compatible records without a classification are reported as legacy-unknown rather than guessed. Node statuses are `pending`, `ready`, `running`, `done`, `failed`, or `skipped`; run statuses are `planning`, `running`, `blocked`, `done`, or `failed`.
 
+In 0.5.5, optional `execution_evidence`, `gate_evidence` and `preservation_evidence` carry bounded host observations. `shell_setup_failed`, `gate_recovery` and `reused_output_from` retain setup-recovery provenance. These fields persist with the attempt through projection/hydration; they do not add a seventh outcome or convert a worker claim into host evidence. New state requires a compatible 0.5.5 reader; legacy attempts remain readable without invented receipts.
+
 Important invariants include:
 
 1. Node-state keys exactly equal graph IDs; each state ID/agent matches its definition.
@@ -515,11 +519,15 @@ flowchart LR
 
 1. Canonicalize the project/worktree and require explicit root opt-in when applicable.
 2. Choose `coding-diamond` by default, another built-in template, or JSON supplied in `graph_json`.
-3. Parse and semantically validate the graph. An optional tool-level shell gate is applied to the first implementer node and changes its gate to `all`.
+3. Parse and semantically validate the graph. An optional tool-level shell gate is applied to the first implementer node and changes its gate to `all`. Optional `preserve_paths` validates 1–8 distinct existing contained project-relative regular files, each path at most 512 characters, then adds `JSON.stringify(paths)` to that implementer's inputs without removing its other dependency inputs. Planning captures no file digest and adds no criterion.
 4. Resolve and freeze model/variant provenance.
 5. Create a unique run directory, initialize every node as pending, record criteria/root audit and project identity, and commit revision 1 in `planning`/`plan`.
 
 No planner child is created in this path.
+
+The role and plan response direct requested live implementation/artifact work to an explicit bounded `alg_run` before the final answer. Explicit plan-only and dry-run intent remain authoritative; a reused `done` run reports its existing outcome and stops. This is model-followed guidance, not a combined plan/execute action or automatic retry loop. Original user criteria remain authoritative; research proposals become new hard requirements only if explicitly adopted by the user.
+
+`coding-compact` is an opt-in template for small code changes with known scope and no unresolved exploration/research need. It has only `implement` and a fresh-child `check`, with feedback to `implement`, two attempts per node, four global attempts and concurrency one. It uses the existing gates and permissions. `coding-diamond` remains the default, and compact selection does not waive required evidence or authorize broader work.
 
 ### Execute
 
@@ -539,6 +547,8 @@ Because a ready node is selected only once per wave, a fast failing node cannot 
 
 `alg_resume` preserves every counter and history record. Before preparation it may apply the same first-implementer `withShellGate` override; the first execution save persists that revalidated graph change without replacing the model snapshot or other topology. `prepareRunForResume` converts an unfinished running attempt into failed interruption evidence, then reopens running/failed nodes only when local capacity remains; skipped nodes are reconsidered. Execution then follows the same lease, reservation, wave, and global-cap rules. Limits never reset.
 
+A saved implementer setup failure has a narrower recovery path in 0.5.5: only explicit resume may retry the gate without another model call, and the saved output, gate/cwd and declared-file basis must match. A changed gate override cannot silently reuse that output. Recovery reserves a normal local/global attempt and records its source attempt; exhausted capacity remains exhausted. See the setup and evidence boundaries below.
+
 ## Inputs, prompts, sessions, and models
 
 > **Conceptual theory.** A node should receive validated dependency products and explicit criteria, not an implicit transcript dependency. Model selection should be provenance-bearing and immutable for the life of a run.
@@ -552,6 +562,10 @@ Because a ready node is selected only once per wave, a fast failing node cannot 
 Every worker input object begins with goal and criteria. If a node declares `inputs`, each field resolves from `$goal`, `$criteria`, an earlier dependency object, a safe dotted path, or a JSON literal. Without explicit inputs, direct dependency outputs are added by node ID.
 
 Worker prompts include the goal, hard criteria, node description, JSON-wired inputs, and the node’s prior validated failures. Checker prompts are deliberately narrower: bounded original criteria plus bounded claimed output. ALG does not explicitly forward the implementer/researcher transcript or chain of thought to the checker.
+
+Checker nodes may explicitly wire `evidence` or `evidence_*` inputs alongside `claimed`, for example `"evidence_test": "tests"` for a preceding shell node. Only these named ports enter the separate evidence envelope; unrelated wiring is not forwarded when `claimed` is supplied. Existing graphs without `claimed` retain their legacy dependency-output fallback, excluding the separately projected evidence ports. Evidence is sorted by port name and bounded to eight entries and 16 KiB total JSON; each value is limited to 4 KiB. Oversized values are omitted whole, never cut into misleading partial JSON. Source run/reference/attempt, JSON byte count and SHA-256 identify included or omitted data; missing paths are `unavailable`, and excess entries are counted. Literal inputs are labelled graph literals, not remote observations. This projection is untrusted data, not permission or proof. Whole-node output selection is deliberate graph-author authority; prefer narrow fields to avoid irrelevant explanations. Shell-gate receipts attached to model attempts are not automatically forwarded; use a dedicated shell node when its output is needed as evidence.
+
+The compiled `data-investigation` graph policy also selects its existing `check.reconciliation` input as evidence under the same bounds. This compatibility mapping does not edit the stored graph or its digest, so existing fixed-template investigations remain resumable. It does not forward `review_policy` or establish a general policy-instruction input for checkers. Model-authored graphs cannot register new compiled policy mappings.
 
 The mandatory strict JSON schema is appended to the prompt. Worker/checker prompts are each bounded at 384 KiB; returned text is bounded at 512 KiB before JSON extraction.
 
@@ -611,7 +625,7 @@ A `shell` agent executes its gate directly and validates the resulting `ShellOut
 | `passed` | Schema/role semantics and required live shell gate passed. | Node becomes done. |
 | `schema_invalid` | Missing/unparseable/wrong strict output, including contradictory checker fields or unsafe implementer paths. | Retry the same originating node if capacity remains. |
 | `sdk_error` | The normal model-attempt path received a returned `error` from `sessionRunner` (for example, a child creation/prompt error) and stored bounded diagnostic evidence. | Retry the same node if capacity remains. |
-| `gate_failure` | Schema-valid work failed/was denied at a required live shell gate (or another schema-valid nonpass not classified below). | Retry the same node if capacity remains. |
+| `gate_failure` | Schema-valid work failed/was denied at a required live shell gate (or another schema-valid nonpass not classified below). Setup failures retain this aggregate outcome and carry diagnostic `setup_failed`. | Ordinary gate failures retry the same node if capacity remains; recorded implementer setup failures stop automatic retries and require explicit bounded recovery. |
 | `incomplete` | Schema-valid implementer returned `done:false` with blockers. | Retry implementer if capacity remains. |
 | `substantive_rejection` | Schema-valid checker returned `passed:false` with concrete failures. | Consider `feedback_to`, not an automatic checker self-retry. |
 
@@ -620,6 +634,18 @@ A checker’s malformed/contradictory result is `schema_invalid` and consumes/re
 An unexpected rejected promise observed by the batch's `Promise.allSettled` is outside this six-outcome routing path. Its separate handler records a bounded executor diagnostic, marks the reserved attempt failed with `schema_ok:false`, and marks the node failed, but currently assigns no `sdk_error` outcome and performs no same-node pending reset. The retry routes in the table therefore describe ordinary returned/classified attempts, not every possible executor rejection.
 
 Feedback routing requires unused checker-local capacity, target-local capacity, and graph-global capacity. If any is exhausted, the rejection is marked handled without reopening work. When eligible, checker failures become the target’s `last_failures`; the target and descendants with capacity become pending. The scheduler still allocates the repair on a later wave in graph order.
+
+### 0.5.5 setup recovery and host evidence
+
+Reachable live gates receive shell-runtime preparation before model-attempt reservation. Windows helper construction uses shorter private paths, retains compiler identity plus bounded stdout/stderr, and distinguishes setup failure before command launch from an unverified termination of a launched process. Startup preparation failure blocks without spending a model attempt. A setup failure recorded after an implementer produced schema-valid work retains `outcome: gate_failure` plus `shell_setup_failed: true`; diagnostic category `setup_failed` does not claim the requested gate ran.
+
+`src/gate-recovery.ts` binds canonical saved output, effective gate and resolved cwd, plus only the implementer's declared `files_touched`. The recovery basis is bounded to at most 500 declared paths and 32 MiB of file contents; missing declared files can be recorded as absent. It is not a digest of the whole workspace or every possible command dependency. Explicit resume rechecks this basis before reserving a normal attempt, reuses the validated output only when it matches, and reruns the gate under existing permissions and containment. A changed/missing basis is refused; ordinary test failures still require their normal repair path. No automatic replanning, permission expansion or budget reset follows a setup failure.
+
+`src/execution-evidence.ts` records bounded native child `bash` tool metadata and ALG shell-gate results with run/node/attempt identity. Native tool completion alone does not imply exit zero: exact host exit metadata is used when available, and otherwise the exit status is unavailable. Receipts retain bounded/redacted output, omission/truncation and retrieval status, rather than copying worker reasoning or inferring success from output text. Available receipts from related claimed/evidence nodes enter the existing bounded checker-evidence channel; missing or omitted evidence remains an explicit limit.
+
+`src/preservation-evidence.ts` hashes only the explicitly requested `preserve_paths`: at most eight contained regular files, at most 1 MiB per file. Live pre-work capture happens before reserving model work, and invalid, missing, oversized or escaping files block admission. The attempt stores before/after digests and `pending`, `unchanged`, `changed` or `unavailable` status. Later attempts reuse the original before basis and reject a changed path set, so a retry cannot redefine an already modified file as its original state. No file content is stored. Planning and dry runs do not capture a live basis; preservation snapshots do not verify test execution or scan unlisted files.
+
+Native execution, gate and preservation receipts establish bounded observations. They do not establish test adequacy, source truth, semantic correctness or independence from shared project instructions. Original user criteria remain the acceptance authority; research proposals and optional evidence collection do not silently add hard requirements. Candidate validation and post-repair model measurements remain pending.
 
 ## Persistence and commit protocol
 

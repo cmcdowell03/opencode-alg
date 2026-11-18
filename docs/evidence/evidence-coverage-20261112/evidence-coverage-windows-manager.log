@@ -1,0 +1,10 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\manager.test.ts:
+(pass) v0.2 side-by-side release manager > deliberately accepts an old v0.1 generation and receipt with no capability fields [17829.89ms]
+
+ 1 pass
+ 86 filtered out
+ 0 fail
+ 4 expect() calls
+Ran 1 test across 1 file. [18.06s]

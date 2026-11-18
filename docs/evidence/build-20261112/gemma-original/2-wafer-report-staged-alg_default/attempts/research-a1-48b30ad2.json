@@ -1,0 +1,1 @@
+{"attempt":1,"failures":["schema: constraints.4: code=custom rule=text_trimmed; Remove surrounding whitespace from this string."],"finished_at":"2026-11-12T04:31:00.759Z","outcome":"schema_invalid","schema_ok":false,"session_id":"ses_e31fb53f5ffeW6vq8V1kIcU4ZE","started_at":"2026-11-12T04:29:34.650Z","status":"failed"}

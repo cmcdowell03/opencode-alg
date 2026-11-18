@@ -1,0 +1,24 @@
+warning: in the working copy of '.opencode/skills/wafer-analysis/SKILL.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'data/manual-review.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'data/system-export.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"wafer-report-staged","arm":"alg_targeted","status":"preparation_milestone_not_reached","passed":false,"wall_ms":12737}
+warning: in the working copy of '.opencode/skills/wafer-analysis/SKILL.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'data/manual-review.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'data/system-export.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"wafer-report-staged","arm":"alg_default","status":"EUNKNOWN: unknown error, uv_spawn","passed":false,"wall_ms":null}
+warning: in the working copy of '.opencode/skills/wafer-analysis/SKILL.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'data/manual-review.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'data/system-export.json', LF will be replaced by CRLF the next time Git touches it
+{"case":"wafer-report-staged","arm":"build","status":"EUNKNOWN: unknown error, uv_spawn","passed":false,"wall_ms":null}
+{"terminal":true,"model":"transport-fixture/synthetic","trials":3,"fatal":null,"global_configuration_unchanged":true,"local_model_stopped":true}
+16 | try{
+17 |   const {runBuildBenchmark}=await import(pathToFileURL(join(repo,"scripts/build-benchmark.ts")).href)
+18 |   await runBuildBenchmark({outputRoot:root,hostExecutable:exe,providerID:"transport-fixture",modelID:"synthetic",caseIds:["wafer-report-staged"],
+19 |     provider:{"transport-fixture":{npm:"@ai-sdk/openai-compatible",name:"Synthetic transport fixture",options:{baseURL:`http://127.0.0.1:${service.port}/v1`},models:{synthetic:{name:"Synthetic",tool_call:true,limit:{context:32768,output:4096}}}}}})
+20 |   const result=JSON.parse(readFileSync(join(root,"result.json"),"utf8"))
+21 |   if(!result.complete||result.fatal||!result.global_configuration_unchanged||result.results.some((r:any)=>r.status!=="preparation_milestone_not_reached"||!r.phases.some((p:any)=>p.phase==="initial"&&p.completed)||!r.cleanup||!r.metering_complete))throw Error("async host transport qualification failed")
+                                                                                                                                                                                                                                                                  ^
+error: async host transport qualification failed
+      at C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\implementation-evidence\build-pilot-20261112\async-host-smoke.ts:21:254
+
+Bun v1.3.14 (Windows x64)

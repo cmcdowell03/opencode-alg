@@ -1,0 +1,143 @@
+{
+  "version": "0.5.10",
+  "candidate_commit": "5a2e8a604e0294d57f72ba21f85e0e77ddd395a7",
+  "runtime_implementation_commit": "2fa970dc3a70d77f7e05b21420b155f158b1bc86",
+  "harness_path_repair_commit": "d50ce31c67fbe785f6fbd477ccab73456cbf6bd0",
+  "scope": "Local deterministic qualification and no-generation preflight, not model-quality evidence",
+  "tests_overlapping_do_not_sum": {
+    "task-allowance-windows-reviewed.log": {
+      "pass": 100,
+      "skip": 1,
+      "fail": 0,
+      "assertions": 840
+    },
+    "task-allowance-windows-lock-repair.log": {
+      "pass": 36,
+      "skip": 0,
+      "fail": 0,
+      "assertions": 158
+    },
+    "task-allowance-package-windows.log": {
+      "pass": 114,
+      "skip": 1,
+      "fail": 0,
+      "assertions": 1094
+    },
+    "task-allowance-runtime-fixture-repair.log": {
+      "pass": 12,
+      "skip": 0,
+      "fail": 0,
+      "assertions": 74
+    },
+    "hard-development-reviewed-tests.log": {
+      "pass": 42,
+      "skip": 0,
+      "fail": 0,
+      "assertions": 417
+    },
+    "hard-development-longpath-corrected-tests.log": {
+      "pass": 13,
+      "skip": 0,
+      "fail": 0,
+      "assertions": 170
+    },
+    "task-allowance-5a2e8a604e02-linux-full.log": {
+      "pass": 1437,
+      "skip": 16,
+      "fail": 0,
+      "assertions": 16041
+    }
+  },
+  "linux_gate": {
+    "source_commit": "5a2e8a604e0294d57f72ba21f85e0e77ddd395a7",
+    "exit_codes": {
+      "full_check": 0,
+      "live_receipt_copy": 0,
+      "headless": 0,
+      "identity": 0
+    },
+    "passed": true
+  },
+  "runtime_identity": {
+    "windows": "9d0d53579e5f610e0c53901b84b370eae8751e0c6490e7fc92a44dffd5d8fcb1",
+    "linux": "12cddbbac1347946f0bd6ef3c34c0d275aa318ddb4a1bf9ded2cdb48e974d6be",
+    "files": 136,
+    "lf_normalized_equal": true,
+    "raw_differing_files": 67
+  },
+  "headless": {
+    "windows": {
+      "host": "1.19.5",
+      "restarts": 2,
+      "allowance": {
+        "passed": true,
+        "run_id": "alg-dispatch-recovery-probe-79a1-20261113023946-ee8c6b646a18",
+        "task_id": "9756afa45a2d05a3b44985b11445c20f23d6a63cdf649619c265ecc5c82f6d7d",
+        "reserved_before_compaction": 1,
+        "reserved_after_restarts": 1,
+        "reserved_after_checker": 2,
+        "additional_dispatches_after_exhaustion": 0,
+        "checker_parent_verified": true,
+        "scope": "Real SDK child dispatch with a synthetic provider across one root compaction and two host restarts; no model-quality claim."
+      },
+      "cleanup": {
+        "host_processes_stopped": true,
+        "provider_stopped": true,
+        "mcp_service_stopped": true,
+        "temporary_environment_removed": true,
+        "evidence_persisted_before_environment_removal": true
+      }
+    },
+    "linux": {
+      "host": "1.18.35",
+      "restarts": 2,
+      "allowance": {
+        "passed": true,
+        "run_id": "alg-dispatch-recovery-probe-79a1-20261113030319-ce53d4d925d9",
+        "task_id": "413c569c443c1e97745d97767ad08eb91af95db508f6dff8e4e2275f1d43458d",
+        "reserved_before_compaction": 1,
+        "reserved_after_restarts": 1,
+        "reserved_after_checker": 2,
+        "additional_dispatches_after_exhaustion": 0,
+        "checker_parent_verified": true,
+        "scope": "Real SDK child dispatch with a synthetic provider across one root compaction and two host restarts; no model-quality claim."
+      },
+      "cleanup": {
+        "host_processes_stopped": true,
+        "provider_stopped": true,
+        "mcp_service_stopped": true,
+        "temporary_environment_removed": true,
+        "evidence_persisted_before_environment_removal": true
+      }
+    }
+  },
+  "qualification": {
+    "development": {
+      "isolation": "same-user-development-only-not-os-isolated",
+      "passed": true,
+      "caseCount": 18,
+      "acceptedPositive": 6,
+      "rejectedNegativeOrTamper": 12,
+      "blockedCases": 0,
+      "failedCases": 0
+    },
+    "public_http": {
+      "isolation": "same-user-development-only-not-os-isolated",
+      "passed": true,
+      "caseCount": 6,
+      "acceptedPositive": 2,
+      "rejectedNegativeOrTamper": 4,
+      "blockedCases": 0,
+      "failedCases": 0
+    }
+  },
+  "preflight_arms": 12,
+  "limitations": [
+    "Full Windows suite was not repeated; changed-boundary and package suites are scoped and overlap.",
+    "Synthetic provider and local service; one requested compaction and two restarts are not a long-session loss-rate estimate.",
+    "Shared allowance counts ALG child reservations, not complete provider calls, root turns, compaction calls or invoice tokens.",
+    "Same-user hard-case execution is not OS-isolated or independent confirmation.",
+    "Earlier failed fixtures, stale qualification, long-path preflight and Linux gate remain failures.",
+    "No new offline transfer bundle or real datalake-mcp environment was accepted by these checks."
+  ]
+}

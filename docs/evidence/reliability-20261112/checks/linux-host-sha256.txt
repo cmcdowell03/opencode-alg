@@ -1,0 +1,1 @@
+7df4e4136301f16589b0f30bf91a61380fca5f8ef22dd36570f5ebe1d4ec802c  /home/algtest/tools/opencode-1.19.5/node_modules/opencode-ai/bin/opencode.exe

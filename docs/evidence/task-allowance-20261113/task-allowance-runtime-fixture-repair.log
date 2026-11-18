@@ -1,0 +1,20 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\runtime-completion.test.ts:
+(pass) creation validates execution directory before writes and pins it in the initial commit [123.17ms]
+(pass) plan and status expose the persisted child and relative-gate base [2003.46ms]
+(pass) feedback cancellation preserves successful history and exhausted consumers prevent reopening [3067.54ms]
+(pass) checker retries receive schema failure context and explicit score contract [845.10ms]
+(pass) session sidecar persistence failure is not classified or retried as worker work [375.46ms]
+(pass) diagnostics canonicalize whitespace, redaction, Unicode and truncation [0.69ms]
+(pass) JSON literals and safe references agree with graph validation [80.36ms]
+(pass) shell failure survives save/load/resume with canonical stderr diagnostics [1177.18ms]
+(pass) rejected workers retry; observer exceptions cannot rewrite DONE [886.35ms]
+(pass) failed branch with unfinished independent work is durably blocked [1340.01ms]
+(pass) cancellation between batches reserves no later work and remains resumable [966.15ms]
+(pass) execution cwd remains pinned across subdirectory resumes; legacy uses project root [2002.85ms]
+
+ 12 pass
+ 0 fail
+ 74 expect() calls
+Ran 12 tests across 1 file. [13.05s]

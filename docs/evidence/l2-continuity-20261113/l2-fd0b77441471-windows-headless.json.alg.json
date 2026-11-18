@@ -1,0 +1,23 @@
+{
+  "arm": "alg",
+  "passed": false,
+  "failure": "Error: OpenCode version probe failed: status=null; SystemError: spawnSync C:\\Users\\codym\\AppData\\Roaming\\npm\\node_modules\\opencode-ai\\bin\\opencode.exe ETIMEDOUT",
+  "qualificationScope": "mechanical host lifecycle only; no task accuracy, semantic retention, or ownership-transfer claim",
+  "ownershipTransferCoverage": false,
+  "evidence": null,
+  "proofs": [],
+  "census": {
+    "complete": false,
+    "sessionIds": [],
+    "failure": null
+  },
+  "provider": {
+    "requests": []
+  },
+  "cleanup": {
+    "complete": true,
+    "errors": [],
+    "tempWorkspaceRetained": false
+  },
+  "globalConfigurationUnchanged": true
+}

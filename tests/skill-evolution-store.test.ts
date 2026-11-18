@@ -144,7 +144,7 @@ describe("skill-evolution durable store", () => {
         if (code === "EPERM" || code === "EACCES" || code === "ENOTSUP" || code === "EINVAL") return
         throw error
       }
-      expect(() => loadEvidenceReference(project, reference)).toThrow(/symlink|redirect|direct regular file/)
+      expect(() => loadEvidenceReference(project, reference)).toThrow(/symlink|redirect|direct regular file|escapes its trusted root/)
     } finally {
       removeProject(project)
       removeProject(external)
@@ -206,7 +206,7 @@ describe("skill-evolution durable store", () => {
         if (code === "EPERM" || code === "EACCES" || code === "ENOTSUP" || code === "EINVAL") return
         throw error
       }
-      expect(() => loadCandidateRevision(project, record)).toThrow(/symlink|redirect|direct regular file/)
+      expect(() => loadCandidateRevision(project, record)).toThrow(/symlink|redirect|direct regular file|escapes its trusted root/)
     } finally {
       removeProject(project)
       removeProject(external)

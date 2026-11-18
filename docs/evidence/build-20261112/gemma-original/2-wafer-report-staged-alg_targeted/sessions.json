@@ -1,0 +1,524 @@
+[
+  {
+    "id": "ses_e3200bf73ffenPdeQsXcJcYR9o",
+    "slug": "happy-tiger",
+    "projectID": "78daf0d7cdf135f4b2169bfac0844631b3cdb7a7",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-alg_targeted\\project",
+    "path": "",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 10335,
+      "output": 995,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "title": "Frozen benchmark wafer-report-staged alg_targeted",
+    "agent": "orchestrator",
+    "model": {
+      "id": "gemma4",
+      "providerID": "alg-local",
+      "variant": "default"
+    },
+    "version": "1.18.35",
+    "time": {
+      "created": 1794457419917,
+      "updated": 1794457449074
+    }
+  },
+  {
+    "id": "ses_e32001c28ffeJ5CSuGsGqWF5mL",
+    "slug": "crisp-star",
+    "projectID": "78daf0d7cdf135f4b2169bfac0844631b3cdb7a7",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-alg_targeted\\project",
+    "path": "",
+    "parentID": "ses_e3200bf73ffenPdeQsXcJcYR9o",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 8197,
+      "output": 1753,
+      "reasoning": 0,
+      "cache": {
+        "read": 4010,
+        "write": 0
+      }
+    },
+    "title": "alg:prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/explore/a1 (@explorer subagent)",
+    "agent": "explorer",
+    "model": {
+      "id": "gemma4",
+      "providerID": "alg-local",
+      "variant": "default"
+    },
+    "version": "1.18.35",
+    "time": {
+      "created": 1794457461720,
+      "updated": 1794457503819
+    },
+    "permission": [
+      {
+        "permission": "alg_templates",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_models",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_criteria",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_plan",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_run",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_resume",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_artifact",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_transfer",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_audit",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_historical",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_review",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_promote",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_rollback",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_investigation",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ]
+  },
+  {
+    "id": "ses_e31ff7749ffeLg281BqLS6dern",
+    "slug": "crisp-tiger",
+    "projectID": "78daf0d7cdf135f4b2169bfac0844631b3cdb7a7",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-alg_targeted\\project",
+    "path": "",
+    "parentID": "ses_e3200bf73ffenPdeQsXcJcYR9o",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 7951,
+      "output": 2899,
+      "reasoning": 0,
+      "cache": {
+        "read": 6249,
+        "write": 0
+      }
+    },
+    "title": "alg:prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/research/a1 (@researcher subagent)",
+    "agent": "researcher",
+    "model": {
+      "id": "gemma4",
+      "providerID": "alg-local",
+      "variant": "default"
+    },
+    "version": "1.18.35",
+    "time": {
+      "created": 1794457503926,
+      "updated": 1794457601107
+    },
+    "permission": [
+      {
+        "permission": "alg_templates",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_models",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_criteria",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_plan",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_run",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_resume",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_artifact",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_transfer",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_audit",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_historical",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_review",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_promote",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_rollback",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_investigation",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ]
+  },
+  {
+    "id": "ses_e31fdfb6fffesftdrhvNzs5Bb8",
+    "slug": "curious-otter",
+    "projectID": "78daf0d7cdf135f4b2169bfac0844631b3cdb7a7",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-alg_targeted\\project",
+    "path": "",
+    "parentID": "ses_e3200bf73ffenPdeQsXcJcYR9o",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 7012,
+      "output": 1138,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "title": "alg:prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/implement/a1 (@implementer subagent)",
+    "agent": "implementer",
+    "model": {
+      "id": "gemma4",
+      "providerID": "alg-local",
+      "variant": "default"
+    },
+    "version": "1.18.35",
+    "time": {
+      "created": 1794457601168,
+      "updated": 1794457639140
+    },
+    "permission": [
+      {
+        "permission": "alg_templates",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_models",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_criteria",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_plan",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_run",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_resume",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_artifact",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_transfer",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_audit",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_historical",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_review",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_promote",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_rollback",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_investigation",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ]
+  },
+  {
+    "id": "ses_e31fd66b9ffeiDcfyk0Y9LVC5O",
+    "slug": "stellar-mountain",
+    "projectID": "78daf0d7cdf135f4b2169bfac0844631b3cdb7a7",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-live-gemma-20261112\\2-wafer-report-staged-alg_targeted\\project",
+    "path": "",
+    "parentID": "ses_e3200bf73ffenPdeQsXcJcYR9o",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "title": "alg:prepare-the-necessary-documentat-20261112042408-fcacdf632a7d/implement/a2 (@implementer subagent)",
+    "agent": "implementer",
+    "model": {
+      "id": "gemma4",
+      "providerID": "alg-local",
+      "variant": "default"
+    },
+    "version": "1.18.35",
+    "time": {
+      "created": 1794457639238,
+      "updated": 1794457640408
+    },
+    "permission": [
+      {
+        "permission": "alg_templates",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_models",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_criteria",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_plan",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_run",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_resume",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_artifact",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_transfer",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_status",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_audit",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_historical",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_review",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_promote",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill_evolution_rollback",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_skill",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "alg_investigation",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ]
+  }
+]

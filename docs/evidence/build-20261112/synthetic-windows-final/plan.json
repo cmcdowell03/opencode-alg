@@ -1,0 +1,64 @@
+{
+  "schema": "alg-build-pilot-v1",
+  "started_at": "2026-11-12T04:49:01.392Z",
+  "source_commit": "ce4623fdce35b7040864fd910baefc8f1a7b5ec6",
+  "source_sha256": "d0614611c04d7f054dbbb0a8ac686fe3578bbca9bc8527946cff556734f37b5a",
+  "harness_sha256": "3484ea6c86715a07b6d55d351d4107fa104480d6b7ffe47b6f1ef1d14cf19590",
+  "fixtures_sha256": "a9ad381556a84266b118342e3e036aeb355513cdd513e39adce6f3a9e057a59c",
+  "metrics_sha256": "36e2a5f5c0fc4568f0c017d2328d4935302d4542ad738948ec0ba818227be719",
+  "transport_sha256": "559b8647feeb15c4e499bc5e06282d129610e4837e42497f49588ce1229f0b7a",
+  "prompt_transport": "prompt_async",
+  "model": "transport-fixture/synthetic",
+  "limits": {
+    "trialMs": 480000,
+    "assistantTurns": 40,
+    "reportedTokens": 200000,
+    "outputTokens": 4096,
+    "reportedCostPerSuite": 5,
+    "suiteMs": 3300000
+  },
+  "preflight_only": false,
+  "cases": [
+    {
+      "id": "wafer-report-staged",
+      "criteria": [
+        "The initial stage must persist preparation.md with the selected reporting date, source identities, calculation plan, conflict, and an explicit stop before report generation.",
+        "After restart, report.json must calculate from distinct system-export wafer IDs: one defective wafer out of four, or 25%.",
+        "The report must identify both protected source files and preserve conflicting evidence as explicit uncertainty; manual evidence does not overwrite the primary system result.",
+        "Follow .opencode/skills/wafer-analysis/SKILL.md, including UTC window, distinct-wafer denominator, source precedence, conflict disclosure, and no unsupported process-validation claim."
+      ],
+      "initialPrompt": "Complete a two-phase synthetic wafer evidence report using the applicable wafer-analysis project skill and supplied source files. Final deliverable: report.json with fields numerator (number), denominator (number), rate (number), window ({start, endExclusive, timezone}), sources (array of source file paths), conflicts (array of {wafer_id, system_defect, manual_defect, status}), and limitations (array of scope limits). The conflict entry must expose both source observations and mark the disagreement unresolved; follow the skill's source-priority rule. Use a UTC reporting window, count distinct wafer IDs, and calculate defects divided by distinct wafers. Include the exact standard limitations sentence required by the skill. This first phase is preparation only: write preparation.md with the reporting date, source IDs/paths, calculation plan, conflicts, planned report fields, and an explicit STOP. Do not create report.json in this phase; the run will be compacted and restarted.",
+      "followupPrompt": "Continue the originally requested report using persisted preparation and applicable project procedure; do not repeat preparation.",
+      "fixture_files": [
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": "data/system-export.json",
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        },
+        {
+          "path": "data/manual-review.json",
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        }
+      ],
+      "order": [
+        "alg_targeted",
+        "alg_default",
+        "build"
+      ]
+    }
+  ],
+  "interpretation": "Single-repeat feasibility pilot. Equal external budgets; ALG internal gates are diagnostics, never the independent oracle. Session-visible usage is not proof of complete provider billing. No superiority claim.",
+  "targeted_mandate": "Additional targeted falsification mandate: assess the original user deliverable, not whether a review memo sounds correct. Seek a concrete counterexample involving distinct entity counts, joins, UTC interval boundaries, denominators or conflicting sources when relevant. Read the actual artifact and supplied source. Preserve uncertainty when sources disagree. A useful criticism must cite the violated original criterion. Do not invent defects or new requirements.",
+  "common_instruction": "Work only in this fixture workspace. Do not access credentials, change global configuration, install packages, or use network services. The available Node runtime and fixture files are sufficient. Preserve supplied evidence, skills and visible tests. Finish the requested artifact and explain the result honestly.",
+  "unmeasured": [
+    "actual provider invoice",
+    "hidden model calls not represented by session messages",
+    "operator minutes",
+    "production MCP cost/reuse",
+    "multi-hour reliability",
+    "hardware-normalized latency"
+  ]
+}

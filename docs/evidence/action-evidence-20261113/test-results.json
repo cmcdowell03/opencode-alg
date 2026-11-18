@@ -1,0 +1,40 @@
+{
+  "source_commit": "23fffd886122266101889d6599cb3432af67a848",
+  "linux_full": {
+    "pass": 1550,
+    "skip": 17,
+    "fail": 0,
+    "assertions": 17100,
+    "tests": 1567,
+    "files": 129,
+    "duration": "538.61s"
+  },
+  "windows_immutable_affected": {
+    "pass": 71,
+    "skip": 1,
+    "fail": 0,
+    "assertions": 661,
+    "tests": 72,
+    "files": 7,
+    "duration": "85.95s"
+  },
+  "windows_development_full": {
+    "pass": 1557,
+    "skip": 7,
+    "fail": 2,
+    "assertions": 17202,
+    "tests": 1566,
+    "files": 129,
+    "duration": "2949.78s"
+  },
+  "windows_development_identity": "Mutable development checkout; not final-commit full acceptance",
+  "typecheck": {
+    "windows": 0,
+    "linux": 0
+  },
+  "later_harness_only_commit": "d3776b0b918413c74f2014f49169ac02f86fc7cb",
+  "no_github_runners": true,
+  "no_paid_models": true,
+  "historical_failed_gates_preserved": true,
+  "test_groups_overlap": true
+}

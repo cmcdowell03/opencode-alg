@@ -1,0 +1,259 @@
+{
+  "checker_probe": {
+    "passed": true,
+    "run_id": "alg-selected-evidence-probe-5a92-20261112231037-ea4d63877003",
+    "attempts": 3,
+    "distinct_children": 3,
+    "host_verified_parents": 3,
+    "verification_basis_recovered": true,
+    "nodes": [
+      {
+        "id": "work",
+        "status": "done",
+        "outcome": "passed",
+        "failures": []
+      },
+      {
+        "id": "probe",
+        "status": "done",
+        "outcome": "passed",
+        "failures": []
+      },
+      {
+        "id": "check",
+        "status": "done",
+        "outcome": "passed",
+        "failures": []
+      }
+    ]
+  },
+  "task_admission_probe": {
+    "passed": true,
+    "run_id": "synthetic-task-admission-only-20261112231039-19d665d30ec3",
+    "host_permissions_checked": true,
+    "criteria_immutable": true,
+    "incompatible_graph_rejected": true,
+    "child_calls": 0,
+    "scope": "Actual host permission lookup and durable planning only; no file creation, command execution or model-quality claim."
+  },
+  "schema_version": 1,
+  "kind": "opencode-alg-v1-headless-acceptance",
+  "generated_at": "2026-11-12T23:10:41.160Z",
+  "passed": true,
+  "failure": null,
+  "evidence_path": "/mnt/c/Users/codym/.codex/visualizations/2026/09/04/01a06ddf-9896-7883-8b6e-7c45c804afbf/implementation-evidence/request-source-linux-headless.json",
+  "task_contract": {
+    "run_id": "83199b269fb62e66ee69e1d3f95d4fb6a2f7bc50f1954a23c563377603345811",
+    "input": {
+      "version": 1,
+      "kind": "read_only",
+      "discovery": "required",
+      "phase": "complete",
+      "deliverables": [
+        {
+          "destination": "response",
+          "producer_node": "confirm"
+        }
+      ],
+      "verification": {
+        "checker_node": "check",
+        "execution": "none"
+      },
+      "preserve_paths": []
+    },
+    "original_goal": "Run bounded synthetic data investigation acceptance",
+    "original_criteria": [
+      "Use only deterministic local fixture data"
+    ],
+    "requirements_sha256": "98781e7178aa9576bd709eeab74d7096b9d5e4709b5c0616b5632073c934d30f",
+    "contract_sha256": "4a8deb0fae339e84ea1c59d63bfccbcb872235a43ab55f5832abffcb5e7856a4",
+    "persisted_before_compaction": true,
+    "persisted_after_compaction": true,
+    "persisted_after_restart": true,
+    "persisted_after_final_restart": true,
+    "digests_stable": true,
+    "user_request_captured": true,
+    "user_request_sha256": "4ae38716ff0f43f983be0cd4248bd46591d4c1e84f53442f87c5b4f18ba65330"
+  },
+  "source": {
+    "package_version": "0.5.8",
+    "root": "/home/algtest/alg-request-source-871868c",
+    "loaded_root": "/tmp/alg-v1-headless-gftHsY/runtime-source",
+    "sha256": "600dfc85426ac36c11bd062867349ac54ff3fc4fa35090035e7dde8694399aa5",
+    "node": "24.3.0",
+    "bun": "1.3.14"
+  },
+  "host": {
+    "executable": "/home/algtest/tools/opencode/node_modules/opencode-ai/bin/opencode.exe",
+    "version": "1.18.35",
+    "platform": "linux",
+    "arch": "x64",
+    "libc": "glibc-2.39",
+    "starts": 3,
+    "restarts": 2,
+    "pids": [
+      6717,
+      6758,
+      6798
+    ],
+    "clean_exits": [
+      true,
+      true,
+      true
+    ]
+  },
+  "isolation": {
+    "temporary_root": "/tmp/alg-v1-headless-gftHsY",
+    "project": "/tmp/alg-v1-headless-gftHsY/project",
+    "config_home": "/tmp/alg-v1-headless-gftHsY/xdg-config",
+    "config_path": "/tmp/alg-v1-headless-gftHsY/opencode.json",
+    "sidecar_path": "/tmp/alg-v1-headless-gftHsY/alg-options.json",
+    "provider_endpoint": "http://127.0.0.1:42591/v1",
+    "server_bind_host": "127.0.0.1",
+    "credentials_inherited": false,
+    "real_user_config_unchanged": true,
+    "config_before_sha256": "08afb58456ae0e744d9ad0dbed698f9d52fd61325d6c7c518a82481180cdad2b",
+    "config_after_sha256": "08afb58456ae0e744d9ad0dbed698f9d52fd61325d6c7c518a82481180cdad2b"
+  },
+  "session": {
+    "id": "ses_e2df952dfffeb06QEdFAMgY5NK",
+    "persisted_same_id": true,
+    "initial_tool_calls": [
+      "alg_context_status",
+      "alg_plan",
+      "alg_investigation"
+    ],
+    "followup_tool_calls": [
+      "alg_investigation",
+      "alg_investigation"
+    ],
+    "tool_registry_ids": [
+      "alg_templates",
+      "alg_models",
+      "alg_criteria",
+      "alg_plan",
+      "alg_run",
+      "alg_status",
+      "alg_resume",
+      "alg_artifact",
+      "alg_transfer",
+      "alg_skill_evolution_status",
+      "alg_skill_evolution_audit",
+      "alg_skill_evolution_historical",
+      "alg_skill_evolution_review",
+      "alg_skill_evolution_promote",
+      "alg_skill_evolution_rollback",
+      "alg_skill",
+      "alg_memory_search",
+      "alg_memory_read",
+      "alg_context_status",
+      "alg_memory_propose",
+      "alg_investigation"
+    ],
+    "registry_exact": true,
+    "plugin_startup_proofs": [
+      true,
+      true,
+      true
+    ],
+    "initial_memory_checkpoint": {
+      "revision": 5,
+      "generation": 0,
+      "result_pins": [
+        "8dfcddc914b96a68c4bfd1b50626d8ec2797017254e99330091ed892ef8f2358"
+      ],
+      "result_persisted": true
+    },
+    "compacted_memory_checkpoint": {
+      "revision": 5,
+      "generation": 0,
+      "same_result_pin": true
+    },
+    "recovered_compaction_message": true,
+    "recovered_reference_and_result": true,
+    "final_memory_checkpoint": {
+      "revision": 5,
+      "generation": 0,
+      "result_persisted": true
+    }
+  },
+  "synthetic_provider": {
+    "endpoint": "http://127.0.0.1:42591/v1",
+    "received_requests": 16,
+    "non_loopback_requests": 0,
+    "phases": [
+      "initial",
+      "initial",
+      "initial",
+      "initial",
+      "initial",
+      "initial",
+      "compaction",
+      "followup",
+      "followup",
+      "followup",
+      "followup",
+      "followup",
+      "followup",
+      "background",
+      "background",
+      "background"
+    ],
+    "context_status_seen": true,
+    "plan_tool_seen": true,
+    "investigation_query_tool_seen": true,
+    "query_result_observed_by_model": true,
+    "compaction_saw_initial_result": true,
+    "followup_saw_persisted_reference": true,
+    "no_non_loopback_requests": true
+  },
+  "investigation": {
+    "enabled": true,
+    "mcp_server_name": "alg-headless-synthetic",
+    "mcp_server_version": "1.32.2-fixture.1",
+    "profile_schema_hashes": {
+      "submit": "8f96cf996df3ceb5927c28688bead79b03e999da7ea93945a4adb981c422d610",
+      "lookup": "853817dd743deb499325778f6aaf1e1ca21828411cd40b8f82e0785426aff47c",
+      "validate": "802cda9d18a48a0c460f2546e5672a9e56312aad00acf6c172bcd0ecd712fb36",
+      "read": "5d4843c64cba757b727351493dc17717b4ad0dafabbaeed08436d75820143ff1",
+      "cancel": "a1f3edfb447fba0789fa3d0cfc8948cb46aacca3ea4c96c4c4f8e16876f9c4cf"
+    },
+    "submit_calls": 1,
+    "accepted_remote_jobs": 1,
+    "validation_calls": 6,
+    "read_calls": 1,
+    "lookup_calls": 2,
+    "read_result_tool_calls": 3,
+    "query_tool_calls": 3,
+    "same_work_key": true,
+    "same_result_reference": true,
+    "result_revalidated_after_restarts": true,
+    "actual_tool_results": [
+      {
+        "status": "reusable",
+        "work_key": "34168a5f25e039e4e8121150267ff4b20a21c935fff8d94bf0a4f5f37e64bc82",
+        "manifest_ref": "synthetic://alg-headless/manifest/readings-v1",
+        "digest": "57d1f764111f08be633cbcb9282598b5cc7320f8360bfc1229aa30dfda5bbac2"
+      },
+      {
+        "status": "reusable",
+        "work_key": "34168a5f25e039e4e8121150267ff4b20a21c935fff8d94bf0a4f5f37e64bc82",
+        "manifest_ref": "synthetic://alg-headless/manifest/readings-v1",
+        "digest": "57d1f764111f08be633cbcb9282598b5cc7320f8360bfc1229aa30dfda5bbac2"
+      },
+      {
+        "status": "reusable",
+        "work_key": "34168a5f25e039e4e8121150267ff4b20a21c935fff8d94bf0a4f5f37e64bc82",
+        "manifest_ref": "synthetic://alg-headless/manifest/readings-v1",
+        "digest": "57d1f764111f08be633cbcb9282598b5cc7320f8360bfc1229aa30dfda5bbac2"
+      }
+    ]
+  },
+  "cleanup": {
+    "host_processes_stopped": true,
+    "provider_stopped": true,
+    "mcp_service_stopped": true,
+    "temporary_environment_removed": true,
+    "evidence_persisted_before_environment_removal": true
+  }
+}

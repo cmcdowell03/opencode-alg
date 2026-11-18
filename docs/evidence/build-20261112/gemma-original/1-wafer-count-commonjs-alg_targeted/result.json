@@ -1,0 +1,358 @@
+{
+  "caseId": "wafer-count-commonjs",
+  "arm": "alg_targeted",
+  "status": "completed",
+  "passed": true,
+  "independent_score": {
+    "passed": true,
+    "checks": [
+      {
+        "id": "protected:package.json",
+        "passed": true
+      },
+      {
+        "id": "protected:test/wafer-count.test.cjs",
+        "passed": true
+      },
+      {
+        "id": "protected:data/inspection-records.json",
+        "passed": true
+      },
+      {
+        "id": "visible-node-tests",
+        "passed": true
+      },
+      {
+        "id": "api-module-loads",
+        "passed": true
+      },
+      {
+        "id": "ui-module-loads",
+        "passed": true
+      },
+      {
+        "id": "distinct-ids-and-offset-window",
+        "passed": true
+      },
+      {
+        "id": "user-visible-count",
+        "passed": true
+      }
+    ],
+    "metrics": {
+      "heldOutTestLocation": "outside-project-temporary-directory",
+      "heldOutCheckCount": 4,
+      "heldOutPassed": 4,
+      "visibleTestCommand": "npm test",
+      "visibleTestCount": 2,
+      "protectedFiles": 3,
+      "userVisibleChecks": 1
+    }
+  },
+  "metrics": {
+    "sessions": {
+      "total": 1,
+      "roots": 1,
+      "children": 0
+    },
+    "assistantTurns": {
+      "total": 7,
+      "finished": 7,
+      "unfinished": 0,
+      "error": 0,
+      "modelIdentities": [
+        {
+          "providerID": "alg-local",
+          "modelID": "gemma4",
+          "turns": 7
+        }
+      ]
+    },
+    "usage": {
+      "components": {
+        "input": {
+          "reportedTotal": 12160,
+          "reportedTurns": 7,
+          "unknownTurns": 0
+        },
+        "output": {
+          "reportedTotal": 4689,
+          "reportedTurns": 7,
+          "unknownTurns": 0
+        },
+        "reasoning": {
+          "reportedTotal": 0,
+          "reportedTurns": 7,
+          "unknownTurns": 0
+        },
+        "cacheRead": {
+          "reportedTotal": 66144,
+          "reportedTurns": 7,
+          "unknownTurns": 0
+        },
+        "cacheWrite": {
+          "reportedTotal": 0,
+          "reportedTurns": 7,
+          "unknownTurns": 0
+        }
+      },
+      "totalReportedTokens": 82993,
+      "turns": {
+        "complete": 7,
+        "partial": 0,
+        "unknown": 0
+      },
+      "billing": "not_estimated"
+    },
+    "cost": {
+      "reportedTotal": 0,
+      "reportedTurns": 7,
+      "unknownTurns": 0,
+      "billing": "not_estimated"
+    },
+    "tools": {
+      "total": 7,
+      "completed": 7,
+      "error": 0,
+      "pending": 0,
+      "byName": {
+        "glob": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 178,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 178,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "read": {
+          "total": 3,
+          "completed": 3,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 364,
+          "durationCalls": 3,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 3,
+              "durationMsReported": 364,
+              "durationCalls": 3,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "edit": {
+          "total": 2,
+          "completed": 2,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 78,
+          "durationCalls": 2,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 2,
+              "durationMsReported": 78,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "bash": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 1767,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 1767,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        }
+      }
+    },
+    "repeatedExactToolInputs": {},
+    "skillLoads": {},
+    "algTools": {
+      "alg_plan": {
+        "total": 0,
+        "completed": 0,
+        "error": 0,
+        "pending": 0
+      },
+      "alg_run": {
+        "total": 0,
+        "completed": 0,
+        "error": 0,
+        "pending": 0
+      }
+    },
+    "observedErrors": {
+      "deniedTool": 0,
+      "stepExhaustion": 0
+    }
+  },
+  "wall_ms": 104112,
+  "total_with_startup_ms": 119410,
+  "phases": [
+    {
+      "phase": "initial",
+      "ms": 101623,
+      "completed": true
+    }
+  ],
+  "rootSession": "ses_e32028b76ffeGTpaj3eZ1PFeLH",
+  "recovery": {
+    "requested": false,
+    "restarted": false,
+    "compactionRecovered": false,
+    "phase1": null
+  },
+  "alg_states": [],
+  "budget_observed_overshoot": 0,
+  "cleanup": true,
+  "metering_complete": true,
+  "auth_copy_removed": true,
+  "processes": [
+    1579496
+  ],
+  "source_unchanged": true,
+  "final_files": [
+    {
+      "path": ".opencode/session-memory/artifacts/2bd28ee8f888c1303c59999468b58160567dd40c7bab09afb4ab2f89e703e7b2.txt",
+      "bytes": 947,
+      "sha256": "2bd28ee8f888c1303c59999468b58160567dd40c7bab09afb4ab2f89e703e7b2"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/77eaa1c036fa92d86961d60cde3bdac702174fd79c7f3a70e83bc527aeedf8a2.txt",
+      "bytes": 4929,
+      "sha256": "77eaa1c036fa92d86961d60cde3bdac702174fd79c7f3a70e83bc527aeedf8a2"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/1e146d48ccc7e5d05f7146d62bd79712668255430f739900efeab11203560a2c.json",
+      "bytes": 1278,
+      "sha256": "1e146d48ccc7e5d05f7146d62bd79712668255430f739900efeab11203560a2c"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/a84ac80691ea723e1df50d48f2a3c5c62bcf402fa1466bec514e85f87018517e.json",
+      "bytes": 1122,
+      "sha256": "a84ac80691ea723e1df50d48f2a3c5c62bcf402fa1466bec514e85f87018517e"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/8a6048cdaf7223362f2e12df7d8f1287609e4a03e2c7ab44385442624e641e3d.json",
+      "bytes": 12428,
+      "sha256": "15cdffa0ee8b029544df2bd80257baa970c8eab297fb0f134a56fe4b7d9e5a77"
+    },
+    {
+      "path": ".opencode/session-memory/heads/8a6048cdaf7223362f2e12df7d8f1287609e4a03e2c7ab44385442624e641e3d.json",
+      "bytes": 218,
+      "sha256": "bfee2b9f64d98870a1ce8a141470b54dbfd209edffce32c029f5ff17d808e975"
+    },
+    {
+      "path": ".opencode/session-memory/objects/85901bd2475b2db67803b9b34322a9349256616adf8d079b1613e130a0f1b977.json",
+      "bytes": 1736,
+      "sha256": "85901bd2475b2db67803b9b34322a9349256616adf8d079b1613e130a0f1b977"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/8a6048cdaf7223362f2e12df7d8f1287609e4a03e2c7ab44385442624e641e3d.json",
+      "bytes": 372,
+      "sha256": "55f009051aa8f9067e67e2ddd91cdcee496b5fdabcfc0ba9a2e2f0d88674253b"
+    },
+    {
+      "path": "data/inspection-records.json",
+      "bytes": 702,
+      "sha256": "ae8c396da3661e221e9716663c2cc79ce2715bff9d3d99de401093960709d14d"
+    },
+    {
+      "path": "package.json",
+      "bytes": 116,
+      "sha256": "a78a9ceb37d11a4b0e970b5cfd854e44f49f1563898501eeac5a3e51228acfd0"
+    },
+    {
+      "path": "src/wafer-count.cjs",
+      "bytes": 610,
+      "sha256": "82863ca08beb26b75a996741f1b47bce5788e4aaf1f572bc68ed244993a7fcee"
+    },
+    {
+      "path": "src/wafer-view.cjs",
+      "bytes": 140,
+      "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+    },
+    {
+      "path": "test/wafer-count.test.cjs",
+      "bytes": 768,
+      "sha256": "a7719415e595d1bfd8656b74d05b7171a81ec4fc7c8369b6755a15ce96426eeb"
+    }
+  ],
+  "measurement_limits": [
+    "actual provider invoice",
+    "hidden model calls not represented by session messages",
+    "operator minutes",
+    "production MCP cost/reuse",
+    "multi-hour reliability",
+    "hardware-normalized latency"
+  ]
+}

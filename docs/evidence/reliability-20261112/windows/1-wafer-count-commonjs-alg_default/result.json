@@ -1,0 +1,900 @@
+{
+  "caseId": "wafer-count-commonjs",
+  "arm": "alg_default",
+  "status": "reported_token_limit",
+  "passed": false,
+  "independent_score": {
+    "passed": true,
+    "checks": [
+      {
+        "id": "protected:package.json",
+        "passed": true
+      },
+      {
+        "id": "protected:test/wafer-count.test.cjs",
+        "passed": true
+      },
+      {
+        "id": "protected:data/inspection-records.json",
+        "passed": true
+      },
+      {
+        "id": "visible-node-tests",
+        "passed": true
+      },
+      {
+        "id": "api-module-loads",
+        "passed": true
+      },
+      {
+        "id": "ui-module-loads",
+        "passed": true
+      },
+      {
+        "id": "distinct-ids-and-offset-window",
+        "passed": true
+      },
+      {
+        "id": "user-visible-count",
+        "passed": true
+      }
+    ],
+    "metrics": {
+      "heldOutTestLocation": "outside-project-temporary-directory",
+      "heldOutCheckCount": 4,
+      "heldOutPassed": 4,
+      "visibleTestCommand": "npm test",
+      "visibleTestCount": 2,
+      "protectedFiles": 3,
+      "userVisibleChecks": 1
+    }
+  },
+  "metrics": {
+    "sessions": {
+      "total": 5,
+      "roots": 1,
+      "children": 4
+    },
+    "assistantTurns": {
+      "total": 20,
+      "finished": 18,
+      "unfinished": 0,
+      "error": 2,
+      "modelIdentities": [
+        {
+          "providerID": "openai",
+          "modelID": "gpt-6.1-terra",
+          "turns": 20
+        }
+      ]
+    },
+    "usage": {
+      "components": {
+        "input": {
+          "reportedTotal": 72541,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "output": {
+          "reportedTotal": 4299,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "reasoning": {
+          "reportedTotal": 151,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "cacheRead": {
+          "reportedTotal": 134528,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        },
+        "cacheWrite": {
+          "reportedTotal": 0,
+          "reportedTurns": 20,
+          "unknownTurns": 0
+        }
+      },
+      "totalReportedTokens": 211519,
+      "turns": {
+        "complete": 20,
+        "partial": 0,
+        "unknown": 0
+      },
+      "billing": "not_estimated"
+    },
+    "cost": {
+      "reportedTotal": 0,
+      "reportedTurns": 20,
+      "unknownTurns": 0,
+      "billing": "not_estimated"
+    },
+    "tools": {
+      "total": 33,
+      "completed": 31,
+      "error": 2,
+      "pending": 0,
+      "byName": {
+        "alg_context_status": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 158,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 158,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "alg_plan": {
+          "total": 1,
+          "completed": 1,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 3,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 1,
+              "durationMsReported": 3,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "alg_run": {
+          "total": 1,
+          "completed": 0,
+          "error": 1,
+          "pending": 0,
+          "durationMsReported": 112769,
+          "durationCalls": 1,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 1,
+              "durationMsReported": 112769,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "task": {
+          "total": 4,
+          "completed": 3,
+          "error": 1,
+          "pending": 0,
+          "durationMsReported": 111925,
+          "durationCalls": 4,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 3,
+              "durationMsReported": 102911,
+              "durationCalls": 3,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 1,
+              "durationMsReported": 9014,
+              "durationCalls": 1,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "glob": {
+          "total": 4,
+          "completed": 4,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 276,
+          "durationCalls": 4,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 4,
+              "durationMsReported": 276,
+              "durationCalls": 4,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "grep": {
+          "total": 2,
+          "completed": 2,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 175,
+          "durationCalls": 2,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 2,
+              "durationMsReported": 175,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "read": {
+          "total": 14,
+          "completed": 14,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 569,
+          "durationCalls": 14,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 14,
+              "durationMsReported": 569,
+              "durationCalls": 14,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "bash": {
+          "total": 4,
+          "completed": 4,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 2408,
+          "durationCalls": 4,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 4,
+              "durationMsReported": 2408,
+              "durationCalls": 4,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        },
+        "apply_patch": {
+          "total": 2,
+          "completed": 2,
+          "error": 0,
+          "pending": 0,
+          "durationMsReported": 13,
+          "durationCalls": 2,
+          "unknownDurationCalls": 0,
+          "byStatus": {
+            "completed": {
+              "calls": 2,
+              "durationMsReported": 13,
+              "durationCalls": 2,
+              "unknownDurationCalls": 0
+            },
+            "error": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            },
+            "pending": {
+              "calls": 0,
+              "durationMsReported": 0,
+              "durationCalls": 0,
+              "unknownDurationCalls": 0
+            }
+          }
+        }
+      }
+    },
+    "repeatedExactToolInputs": {
+      "glob": {
+        "distinctRepeatedInputs": 1,
+        "repeatedCalls": 3
+      },
+      "read": {
+        "distinctRepeatedInputs": 4,
+        "repeatedCalls": 9
+      }
+    },
+    "skillLoads": {},
+    "algTools": {
+      "alg_plan": {
+        "total": 1,
+        "completed": 1,
+        "error": 0,
+        "pending": 0
+      },
+      "alg_run": {
+        "total": 1,
+        "completed": 0,
+        "error": 1,
+        "pending": 0
+      }
+    },
+    "observedErrors": {
+      "deniedTool": 0,
+      "stepExhaustion": 0
+    }
+  },
+  "wall_ms": 126333,
+  "total_with_startup_ms": 134683,
+  "phases": [],
+  "rootSession": "ses_e2fc35452ffeJnRrgrdZyj3Ute",
+  "recovery": {
+    "requested": false,
+    "restarted": false,
+    "compactionRecovered": false,
+    "phase1": null
+  },
+  "alg_states": [
+    {
+      "run_id": "fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e",
+      "status": "blocked",
+      "global_attempts": 4,
+      "nodes": [
+        {
+          "id": "check",
+          "status": "pending",
+          "attempts": [
+            {
+              "outcome": "sdk_error",
+              "failures": [
+                "{\"name\":\"AbortError\",\"message\":\"The operation was aborted.\",\"code\":20}"
+              ],
+              "session_id": "ses_e2fc18eb6ffeMcTnHaOmKXM6d3"
+            }
+          ]
+        },
+        {
+          "id": "explore",
+          "status": "done",
+          "attempts": [
+            {
+              "outcome": "passed",
+              "failures": [],
+              "session_id": "ses_e2fc32251ffeKxurS5Whf2jLTK"
+            }
+          ]
+        },
+        {
+          "id": "implement",
+          "status": "done",
+          "attempts": [
+            {
+              "outcome": "passed",
+              "failures": [],
+              "session_id": "ses_e2fc255d8ffeocwXXvIIhTWdLg"
+            }
+          ]
+        },
+        {
+          "id": "research",
+          "status": "done",
+          "attempts": [
+            {
+              "outcome": "passed",
+              "failures": [],
+              "session_id": "ses_e2fc2d6bbffehuWxl5LP4wm9qN"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "budget_observed_overshoot": 0,
+  "cleanup": true,
+  "metering_complete": true,
+  "auth_copy_removed": true,
+  "processes": [
+    1619976
+  ],
+  "source_unchanged": true,
+  "final_files": [
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/artifacts/explore-attempt-1-output-9e3e5b24e67645a1d2bed4fc64a72184888fe2ce0c82c623c8190dd3f7391db2.json",
+      "bytes": 1267,
+      "sha256": "9e3e5b24e67645a1d2bed4fc64a72184888fe2ce0c82c623c8190dd3f7391db2"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/artifacts/explore-attempt-1.json",
+      "bytes": 1267,
+      "sha256": "9e3e5b24e67645a1d2bed4fc64a72184888fe2ce0c82c623c8190dd3f7391db2"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/artifacts/explore-output-9e3e5b24e67645a1d2bed4fc64a72184888fe2ce0c82c623c8190dd3f7391db2.json",
+      "bytes": 1267,
+      "sha256": "9e3e5b24e67645a1d2bed4fc64a72184888fe2ce0c82c623c8190dd3f7391db2"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/artifacts/explore.json",
+      "bytes": 1267,
+      "sha256": "9e3e5b24e67645a1d2bed4fc64a72184888fe2ce0c82c623c8190dd3f7391db2"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/artifacts/graph-0834a43ca231c2e94b7f399aa6be6d94c4bd812bbb055323efba41cb6590062a.json",
+      "bytes": 1134,
+      "sha256": "0834a43ca231c2e94b7f399aa6be6d94c4bd812bbb055323efba41cb6590062a"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/artifacts/implement-attempt-1-output-36026987fec3b2233d755d889d7727887c033fd1bf98e389a1efc2be7209f0e0.json",
+      "bytes": 764,
+      "sha256": "36026987fec3b2233d755d889d7727887c033fd1bf98e389a1efc2be7209f0e0"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/artifacts/implement-attempt-1.json",
+      "bytes": 764,
+      "sha256": "36026987fec3b2233d755d889d7727887c033fd1bf98e389a1efc2be7209f0e0"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/artifacts/implement-output-36026987fec3b2233d755d889d7727887c033fd1bf98e389a1efc2be7209f0e0.json",
+      "bytes": 764,
+      "sha256": "36026987fec3b2233d755d889d7727887c033fd1bf98e389a1efc2be7209f0e0"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/artifacts/implement.json",
+      "bytes": 764,
+      "sha256": "36026987fec3b2233d755d889d7727887c033fd1bf98e389a1efc2be7209f0e0"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/artifacts/research-attempt-1-output-2016cf88dc598e15e00097649602e1505993b0954b585f9dba806b8041507ceb.json",
+      "bytes": 3978,
+      "sha256": "2016cf88dc598e15e00097649602e1505993b0954b585f9dba806b8041507ceb"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/artifacts/research-attempt-1.json",
+      "bytes": 3978,
+      "sha256": "2016cf88dc598e15e00097649602e1505993b0954b585f9dba806b8041507ceb"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/artifacts/research-output-2016cf88dc598e15e00097649602e1505993b0954b585f9dba806b8041507ceb.json",
+      "bytes": 3978,
+      "sha256": "2016cf88dc598e15e00097649602e1505993b0954b585f9dba806b8041507ceb"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/artifacts/research.json",
+      "bytes": 3978,
+      "sha256": "2016cf88dc598e15e00097649602e1505993b0954b585f9dba806b8041507ceb"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/checks/check-attempt-1.json",
+      "bytes": 758,
+      "sha256": "a0f1a57188854847b3a644f54f8ba2ae5da43bdedc9bff42f384851c99321407"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/criteria.md",
+      "bytes": 811,
+      "sha256": "14a2be4b681fa17af3fc232ee1777f3113f8ec57f4892c56b7718450d4c6edb4"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/graph.json",
+      "bytes": 1681,
+      "sha256": "b7a1c3f33a285ab2e3040633cc66871b008be3d32b4b3c59902dda36e72cf429"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/check-attempt-1-detail-5831212138d8709be46840c97cd49dcaf6edd393e7f3e40d211522f8a4706aa6.json",
+      "bytes": 385,
+      "sha256": "5831212138d8709be46840c97cd49dcaf6edd393e7f3e40d211522f8a4706aa6"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/check-attempt-1-detail-6aa987ab9a45fbebc070498f95d94143f306a40800c4e3754d64475a0481e56e.json",
+      "bytes": 132,
+      "sha256": "6aa987ab9a45fbebc070498f95d94143f306a40800c4e3754d64475a0481e56e"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/check-attempt-1-detail-8745e241f049eb8aede1d9e008c1f27e4028496ff95a8599f8579d55d0413d79.json",
+      "bytes": 86,
+      "sha256": "8745e241f049eb8aede1d9e008c1f27e4028496ff95a8599f8579d55d0413d79"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/check-attempt-1.json",
+      "bytes": 385,
+      "sha256": "5831212138d8709be46840c97cd49dcaf6edd393e7f3e40d211522f8a4706aa6"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/check-failures-00eaaf935750b597bd311dd768a51b88d6d6b4f704b3f74c3dc32dc759ab9b1d.json",
+      "bytes": 84,
+      "sha256": "00eaaf935750b597bd311dd768a51b88d6d6b4f704b3f74c3dc32dc759ab9b1d"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/check-failures.json",
+      "bytes": 84,
+      "sha256": "00eaaf935750b597bd311dd768a51b88d6d6b4f704b3f74c3dc32dc759ab9b1d"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/explore-attempt-1-detail-397a702485f92e366788ab519653044fd2f35a8f3dba66758a5c6337d071f7f8.json",
+      "bytes": 1483,
+      "sha256": "397a702485f92e366788ab519653044fd2f35a8f3dba66758a5c6337d071f7f8"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/explore-attempt-1-detail-b0ec56ee88a053be28073cbbe30c6d9d972737e4a5b045ce8d60d21043a69bc7.json",
+      "bytes": 132,
+      "sha256": "b0ec56ee88a053be28073cbbe30c6d9d972737e4a5b045ce8d60d21043a69bc7"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/explore-attempt-1-detail-d7b9f3b9ad09b10c0062f213c1f74a697a1b7961e580438557cb1f379e1f3225.json",
+      "bytes": 86,
+      "sha256": "d7b9f3b9ad09b10c0062f213c1f74a697a1b7961e580438557cb1f379e1f3225"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/explore-attempt-1.json",
+      "bytes": 1483,
+      "sha256": "397a702485f92e366788ab519653044fd2f35a8f3dba66758a5c6337d071f7f8"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/implement-attempt-1-detail-1fd134c38142b18923ddeadf2ec8c925abb8180fd64ac555b50d2f38c831ce79.json",
+      "bytes": 86,
+      "sha256": "1fd134c38142b18923ddeadf2ec8c925abb8180fd64ac555b50d2f38c831ce79"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/implement-attempt-1-detail-8debd87a8f0a82dd441d7b29f7991d917bea9ab543761a40781c61cf5aa227ef.json",
+      "bytes": 5426,
+      "sha256": "8debd87a8f0a82dd441d7b29f7991d917bea9ab543761a40781c61cf5aa227ef"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/implement-attempt-1-detail-a590708af541caa466df67c626947e993abf08d4a0af5071dbdf7bcc9dd42311.json",
+      "bytes": 132,
+      "sha256": "a590708af541caa466df67c626947e993abf08d4a0af5071dbdf7bcc9dd42311"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/implement-attempt-1.json",
+      "bytes": 5426,
+      "sha256": "8debd87a8f0a82dd441d7b29f7991d917bea9ab543761a40781c61cf5aa227ef"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/research-attempt-1-detail-16edd48ed4f4b32af19ebaae9591cdb6b912f392e8beed534d8b59d219630e7a.json",
+      "bytes": 132,
+      "sha256": "16edd48ed4f4b32af19ebaae9591cdb6b912f392e8beed534d8b59d219630e7a"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/research-attempt-1-detail-44edbbebb4842a4e6f179f724fd12d3827b41a10c8acc913243da408d0cf05ac.json",
+      "bytes": 4194,
+      "sha256": "44edbbebb4842a4e6f179f724fd12d3827b41a10c8acc913243da408d0cf05ac"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/research-attempt-1-detail-6931d7e17fc3e4cd4af60ebf3837360fff747f193024618420289f5abc879d46.json",
+      "bytes": 86,
+      "sha256": "6931d7e17fc3e4cd4af60ebf3837360fff747f193024618420289f5abc879d46"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/history/research-attempt-1.json",
+      "bytes": 4194,
+      "sha256": "44edbbebb4842a4e6f179f724fd12d3827b41a10c8acc913243da408d0cf05ac"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/progress.json",
+      "bytes": 14806,
+      "sha256": "1932a36ec49ea1bd48ea42a178f951e599565c2d55ae01d804b255d2bf6f127a"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/progress.json.bak",
+      "bytes": 14294,
+      "sha256": "949f2ff817303742b90e7045fa6488494456f3cd53c6102f5ad95bd08445e4d4"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/sessions/check-a1.json",
+      "bytes": 510,
+      "sha256": "355d0da6fdbd75a715a155a3ccafee46b94ca21a29e10488d83a0064b68310db"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/sessions/explore-a1.json",
+      "bytes": 512,
+      "sha256": "a1440fb50f2102276c130a7e2f6b397411436fb057ae5320136b2d9cc65397c4"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/sessions/implement-a1.json",
+      "bytes": 514,
+      "sha256": "35f49d33a6754aa421b4f34029c470d8648d802ab270fe73fa335248663f42c3"
+    },
+    {
+      "path": ".opencode/runs/fix-the-wafer-count-bug-in-the-s-20261112145008-5551ac2a099e/sessions/research-a1.json",
+      "bytes": 513,
+      "sha256": "280e5cf0844c870b72fcf1b657114b93a0569c09d65c24caaa4470df9b8dee69"
+    },
+    {
+      "path": ".opencode/runs/_owners/714e756dec4749d88a0bf11178a3c096c6216145b933f25b96e017fade8abe90.json",
+      "bytes": 282,
+      "sha256": "b9ea261552064314d8626b26c6100d98dbc4a7d6abfb9d5b4508b76899c765b1"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/2160bc94bf452e35eeaa2dd2034b0f08475c2e878493102d049eb62bfa46a6b2.txt",
+      "bytes": 10867,
+      "sha256": "2160bc94bf452e35eeaa2dd2034b0f08475c2e878493102d049eb62bfa46a6b2"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/2459105cc9b0baaa46146a787146ee1c58d36b44b8962c84743ab5ba3a7ced2c.txt",
+      "bytes": 6519,
+      "sha256": "2459105cc9b0baaa46146a787146ee1c58d36b44b8962c84743ab5ba3a7ced2c"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/37c12f836091ba09c8f457ae64d250cb3aa867d5a70aee82e882fad590e5b20e.txt",
+      "bytes": 902,
+      "sha256": "37c12f836091ba09c8f457ae64d250cb3aa867d5a70aee82e882fad590e5b20e"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/3a60987f3b5c308743b82edbb9f5ada1f979ff09e72be91c083ac4d6258f6199.txt",
+      "bytes": 5218,
+      "sha256": "3a60987f3b5c308743b82edbb9f5ada1f979ff09e72be91c083ac4d6258f6199"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/81714ec5440793e49831e0843cbc218af8cb693eaeeb272d45b3a3b3bb4906a0.txt",
+      "bytes": 1498,
+      "sha256": "81714ec5440793e49831e0843cbc218af8cb693eaeeb272d45b3a3b3bb4906a0"
+    },
+    {
+      "path": ".opencode/session-memory/artifacts/ae2e15699e75b5ffda4d4b9bcef5544da6d04a7ef7e98146e8e2da324a67138d.txt",
+      "bytes": 4369,
+      "sha256": "ae2e15699e75b5ffda4d4b9bcef5544da6d04a7ef7e98146e8e2da324a67138d"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/07030fb30da0cf80b5c93707fb7f9493a71567ad9f11d413dda8e7486c0756a1.json",
+      "bytes": 1122,
+      "sha256": "07030fb30da0cf80b5c93707fb7f9493a71567ad9f11d413dda8e7486c0756a1"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/08150e3add01183667775c00a04a470942db35666ef61b9fbb19095586731453.json",
+      "bytes": 564,
+      "sha256": "08150e3add01183667775c00a04a470942db35666ef61b9fbb19095586731453"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/0bd8e1e87b6831c01b5b072abd03bcf55b277fc70a99f5fca7f822c6a0cf4c74.json",
+      "bytes": 753,
+      "sha256": "0bd8e1e87b6831c01b5b072abd03bcf55b277fc70a99f5fca7f822c6a0cf4c74"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/1a463ec9affe2ca5477a3b9633345086cc185d331e77dde4444c883fcd1a38fb.json",
+      "bytes": 659,
+      "sha256": "1a463ec9affe2ca5477a3b9633345086cc185d331e77dde4444c883fcd1a38fb"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/45cd2fd16db6857d40436ac310e8dc64f6f7266db85ee44333c92f13c696ddc8.json",
+      "bytes": 564,
+      "sha256": "45cd2fd16db6857d40436ac310e8dc64f6f7266db85ee44333c92f13c696ddc8"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/6f0d317c79b9df464922eddae643a13ce7d26454c30bb8aa880dd065500f022c.json",
+      "bytes": 565,
+      "sha256": "6f0d317c79b9df464922eddae643a13ce7d26454c30bb8aa880dd065500f022c"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/8cf965e1bb32ba7d23a439f690975b20970501b8a42934b5aa1a0dcc69562a52.json",
+      "bytes": 720,
+      "sha256": "8cf965e1bb32ba7d23a439f690975b20970501b8a42934b5aa1a0dcc69562a52"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/a1f1654838be3509a55ada9015761b725f282e7ec5670454b575aaa5f52d5fab.json",
+      "bytes": 659,
+      "sha256": "a1f1654838be3509a55ada9015761b725f282e7ec5670454b575aaa5f52d5fab"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/b9848e34e38e42dc74469388f10f106c6f1ed8b3435129a941789ebf3228315e.json",
+      "bytes": 720,
+      "sha256": "b9848e34e38e42dc74469388f10f106c6f1ed8b3435129a941789ebf3228315e"
+    },
+    {
+      "path": ".opencode/session-memory/checkpoints/f07bb394c61287278dc220218cb5bc022bc10e13797edf644ebe378f29dd7531.json",
+      "bytes": 564,
+      "sha256": "f07bb394c61287278dc220218cb5bc022bc10e13797edf644ebe378f29dd7531"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/2b328d9f82f269832e87f367037d8f3c51a602692f1be4eff162af3df57303b3.json",
+      "bytes": 5418,
+      "sha256": "ca0efaed37501a2a15c6ecc060544ab88591c15de45d31717e1f08dd938126c7"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/37087dff719e6f4af98e7512315ebd268a6d753e5992eb3cb74e9184535490ad.json",
+      "bytes": 5412,
+      "sha256": "3193adfe998e6fd4d33ae3e7f093e7962f2c609a51676c52d8a54ff98fec0e81"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/53f66bf479d506446edc7b09f5e16da32f0535cc993267e7734c4266617b2e34.json",
+      "bytes": 14182,
+      "sha256": "758ccbb012259685609abc5979a6eafe66d12c7902a8cf39c894076d5dece6bb"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/74f3b34559158362decc140b59129f82a386fd5afa1ed8cd9c58f676142fcee4.json",
+      "bytes": 5412,
+      "sha256": "9ffa0bf30ce78367b3278d41de368e79dfd59b508e348034842cb0f11d665680"
+    },
+    {
+      "path": ".opencode/session-memory/delivery-journals/eb41cda374ca73fdc304400f482b8857fe943a4af7b7068a5ec24f322bad1e04.json",
+      "bytes": 5412,
+      "sha256": "69fbdad76a909f070cd62cc30514819020472c0577675984fdadfb8bae455b5a"
+    },
+    {
+      "path": ".opencode/session-memory/heads/2b328d9f82f269832e87f367037d8f3c51a602692f1be4eff162af3df57303b3.json",
+      "bytes": 218,
+      "sha256": "e069c6d56437c760744c281d9493544a7a5eba1412b4e571228398af9396da1f"
+    },
+    {
+      "path": ".opencode/session-memory/heads/37087dff719e6f4af98e7512315ebd268a6d753e5992eb3cb74e9184535490ad.json",
+      "bytes": 218,
+      "sha256": "2d642b1e7fe3768dc31ae5f4b2b5630675c3cf9d23dfaebb708bbdff011d8e47"
+    },
+    {
+      "path": ".opencode/session-memory/heads/53f66bf479d506446edc7b09f5e16da32f0535cc993267e7734c4266617b2e34.json",
+      "bytes": 218,
+      "sha256": "4ed92f132e28897afe505ab95ad5e01f60cb48f8248c94d3fcae4a1607bd04a2"
+    },
+    {
+      "path": ".opencode/session-memory/heads/74f3b34559158362decc140b59129f82a386fd5afa1ed8cd9c58f676142fcee4.json",
+      "bytes": 218,
+      "sha256": "afb030019bda49bbb43eff0501785ffc12fb59b694f50ad7eba87a0cfed2885e"
+    },
+    {
+      "path": ".opencode/session-memory/heads/eb41cda374ca73fdc304400f482b8857fe943a4af7b7068a5ec24f322bad1e04.json",
+      "bytes": 218,
+      "sha256": "ee2addba5b69911c8c98c6b5419c3ef0780999984e46452b19575d0c00d18d72"
+    },
+    {
+      "path": ".opencode/session-memory/objects/05d31e9af10e5c74351316e3c6f70336c3c8ea31b8917c9ab2dce14e06551e41.json",
+      "bytes": 1749,
+      "sha256": "05d31e9af10e5c74351316e3c6f70336c3c8ea31b8917c9ab2dce14e06551e41"
+    },
+    {
+      "path": ".opencode/session-memory/objects/2727600f991e937c292f7ce223256ed2ffbd55ff39423f6e2fdfc587ec455f9e.json",
+      "bytes": 2387,
+      "sha256": "2727600f991e937c292f7ce223256ed2ffbd55ff39423f6e2fdfc587ec455f9e"
+    },
+    {
+      "path": ".opencode/session-memory/objects/584a2bc7309f452eab9111a3d8ad31339770b64f9a54ec7fc9bd8a4d2af298fa.json",
+      "bytes": 2876,
+      "sha256": "584a2bc7309f452eab9111a3d8ad31339770b64f9a54ec7fc9bd8a4d2af298fa"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/2b328d9f82f269832e87f367037d8f3c51a602692f1be4eff162af3df57303b3.json",
+      "bytes": 373,
+      "sha256": "b32e86828de2daaa232d152ebd664c93aa57c5973ab14f61b21546c5620f50db"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/37087dff719e6f4af98e7512315ebd268a6d753e5992eb3cb74e9184535490ad.json",
+      "bytes": 372,
+      "sha256": "d8632b86e8ba3ca52184639dccc710a40ff1cbf38ae359a343f344ae6a63156d"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/53f66bf479d506446edc7b09f5e16da32f0535cc993267e7734c4266617b2e34.json",
+      "bytes": 372,
+      "sha256": "d0b1208902349a7ac681df4065cda7c2d0e532c9edb5fb680d5dd58fc3d3426c"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/74f3b34559158362decc140b59129f82a386fd5afa1ed8cd9c58f676142fcee4.json",
+      "bytes": 372,
+      "sha256": "714a860334264a09764ec12461771cb88e6e8d238f0cec25bf2e15e0861238bc"
+    },
+    {
+      "path": ".opencode/session-memory/receipts/eb41cda374ca73fdc304400f482b8857fe943a4af7b7068a5ec24f322bad1e04.json",
+      "bytes": 372,
+      "sha256": "4da0761b64e11c5ce39c59f0b1207f987a12994e7082e88660d9fc0aa59c5369"
+    },
+    {
+      "path": "data/inspection-records.json",
+      "bytes": 702,
+      "sha256": "ae8c396da3661e221e9716663c2cc79ce2715bff9d3d99de401093960709d14d"
+    },
+    {
+      "path": "package.json",
+      "bytes": 116,
+      "sha256": "a78a9ceb37d11a4b0e970b5cfd854e44f49f1563898501eeac5a3e51228acfd0"
+    },
+    {
+      "path": "src/wafer-count.cjs",
+      "bytes": 431,
+      "sha256": "d77b2717cbbbdde795c4279800fc139bdb86918445f04dd985fa8b8594f3a7c6"
+    },
+    {
+      "path": "src/wafer-view.cjs",
+      "bytes": 140,
+      "sha256": "718ef652e85b972f133c22b9c6946efe2be81ee4ea80a98de65f71f6adefd058"
+    },
+    {
+      "path": "test/wafer-count-boundaries.test.cjs",
+      "bytes": 1463,
+      "sha256": "7c490591f4350b16dbdb63ebd254c26b90719fc21a3627e398f691819857c6e8"
+    },
+    {
+      "path": "test/wafer-count.test.cjs",
+      "bytes": 768,
+      "sha256": "a7719415e595d1bfd8656b74d05b7171a81ec4fc7c8369b6755a15ce96426eeb"
+    }
+  ],
+  "measurement_limits": [
+    "actual provider invoice",
+    "hidden model calls not represented by session messages",
+    "operator minutes",
+    "production MCP cost/reuse",
+    "multi-hour reliability",
+    "hardware-normalized latency"
+  ]
+}

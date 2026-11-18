@@ -1,0 +1,13 @@
+118 |   generated_at: z.iso.datetime({ offset: true }), identities: HardIdentitySchema,
+119 |   development: QualificationResultSchema, public_http: QualificationResultSchema }).strict()
+120 | 
+121 | export function validateHardQualification(raw: unknown, identities: z.infer<typeof HardIdentitySchema>, fixtures: readonly CreatedHardFixture[]) {
+122 |   const evidence = HardQualificationSchema.parse(raw)
+123 |   if (sha256Json(evidence.identities) !== sha256Json(identities)) throw new Error("hard qualification runtime identities changed")
+                                                                                  ^
+error: hard qualification runtime identities changed
+      at validateHardQualification (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\scripts\hard-benchmark-cohort.ts:123:77)
+      at readHardQualification (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\scripts\hard-benchmark-cohort.ts:145:22)
+      at runBuildBenchmark (C:\Users\codym\.codex\visualizations\2026\09\04\01a06ddf-9896-7883-8b6e-7c45c804afbf\opencode-alg-v1\scripts\build-benchmark.ts:66:32)
+
+Bun v1.3.14 (Windows x64)

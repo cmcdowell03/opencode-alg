@@ -1,0 +1,162 @@
+import { createHash } from "node:crypto"
+import { isDeepStrictEqual } from "node:util"
+import { resolveInputValue } from "./graph.ts"
+import { parseInputExpression } from "./schemas.ts"
+import { serializedBytes } from "./limits.ts"
+import { appendHostExecutionEvidence, ExecutionEvidenceSchema } from "./execution-evidence.ts"
+import { PreservationEvidenceSchema, type PreservationEvidence } from "./preservation-evidence.ts"
+import { hydrateRunFully, loadRun } from "./store.ts"
+import type { NodeDef, RunDataReference, RunState } from "./types.ts"
+import type { TaskEvidence } from "./task-evidence.ts"
+
+export const MAX_CHECKER_EVIDENCE_BYTES = 16 * 1024
+export const MAX_CHECKER_EVIDENCE_ENTRIES = 8
+const MAX_VALUE_BYTES = 4 * 1024
+
+export interface CheckerEvidence {
+  entries: Array<{
+    port: string
+    source: { run_id: string; kind: "node_output" | "graph_literal" | "run_input" | "host_execution" | "host_preservation" | "host_task"; reference?: string; attempt?: number }
+    status: "included" | "omitted" | "unavailable"
+    json_bytes?: number
+    json_sha256?: string
+    value?: unknown
+  }>
+  omitted_entries: number
+}
+
+export function isCheckerEvidencePort(port: string): boolean {
+  return port === "evidence" || port.startsWith("evidence_")
+}
+
+/** Select only explicitly wired evidence. Hashes identify JSON bytes, not truth. */
+export function checkerRelatedNodes(definition: NodeDef, run: RunState, legacyPorts: readonly string[] = []): Set<string> {
+  const relatedNodes = new Set<string>()
+  if (definition.id === run.task_contract?.input.verification.checker_node) {
+    for (const item of run.task_contract.input.deliverables) relatedNodes.add(item.producer_node)
+    if (run.task_contract.input.verification.execution_node) relatedNodes.add(run.task_contract.input.verification.execution_node)
+  }
+  for (const [port, expression] of Object.entries(definition.inputs ?? {})) {
+    if (port !== "claimed" && !isCheckerEvidencePort(port) && !legacyPorts.includes(port)) continue
+    const parsed = parseInputExpression(expression)
+    if (parsed.kind === "reference") relatedNodes.add(parsed.node)
+  }
+  return relatedNodes
+}
+
+export function buildCheckerEvidence(definition: NodeDef, run: RunState, legacyPorts: readonly string[] = [],
+  task?: { value: TaskEvidence; reference: RunDataReference }): CheckerEvidence | undefined {
+  const ports = Object.entries(definition.inputs ?? {}).filter(([port]) => isCheckerEvidencePort(port) || legacyPorts.includes(port))
+    .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
+  const relatedNodes = checkerRelatedNodes(definition, run, legacyPorts)
+  const receiptPairs: Array<{ execution?: ReturnType<typeof ExecutionEvidenceSchema.parse>; gate?: ReturnType<typeof ExecutionEvidenceSchema.parse>; preservation?: PreservationEvidence; nodeId: string }> = []
+  let archivedRun: RunState | undefined
+  for (const nodeId of [...relatedNodes].sort()) {
+    const state = run.nodes[nodeId]
+    const latest = (state?.attempts ?? []).find((attempt) => attempt.attempt === state?.current_attempt)
+    const attempt = latest as typeof latest & { execution_evidence?: unknown; gate_evidence?: unknown; preservation_evidence?: unknown } | undefined
+    const execution = ExecutionEvidenceSchema.safeParse(attempt?.execution_evidence)
+    const gate = ExecutionEvidenceSchema.safeParse(attempt?.gate_evidence)
+    const preservation = PreservationEvidenceSchema.safeParse(attempt?.preservation_evidence)
+    const currentAttempt = state?.current_attempt ?? -1
+    let origin = latest?.reused_output_from === undefined ? latest
+      : state?.attempts.find(candidate => candidate.attempt === latest.reused_output_from)
+    if (!origin && latest?.reused_output_from !== undefined &&
+      latest.reused_output_from <= (state?.attempt_history_ref?.attempt_count ?? 0)) {
+      if (!archivedRun) {
+        const committed = loadRun(run.project_directory, run.run_id)
+        if (!committed || committed.revision !== run.revision) throw new Error("Checker evidence history changed")
+        archivedRun = hydrateRunFully(committed)
+      }
+      origin = archivedRun.nodes[nodeId]?.attempts.find(candidate => candidate.attempt === latest.reused_output_from)
+    }
+    const validOrigin = latest?.reused_output_from === undefined || (!!origin?.shell_setup_failed &&
+      origin.attempt < currentAttempt && isDeepStrictEqual(origin.gate_recovery, latest.gate_recovery) &&
+      isDeepStrictEqual(origin.execution_evidence, latest.execution_evidence))
+    const sessionId = origin?.session_id
+    const executionMatches = execution.success && execution.data.run_id === run.run_id && execution.data.node_id === nodeId &&
+      validOrigin && execution.data.attempt === origin?.attempt && execution.data.child_session_id === sessionId
+    const gateMatches = gate.success && gate.data.run_id === run.run_id && gate.data.node_id === nodeId &&
+      gate.data.attempt === currentAttempt && gate.data.child_session_id === undefined
+    if (executionMatches || gateMatches || preservation.success) receiptPairs.push({
+      ...(executionMatches ? { execution: execution.data } : {}),
+      ...(gateMatches ? { gate: gate.data } : {}),
+      ...(preservation.success ? { preservation: preservation.data } : {}), nodeId,
+    })
+  }
+  if (!ports.length && !receiptPairs.length && !task) return undefined
+  const receiptEntryCount = receiptPairs.reduce((count, pair) => count + Number(!!pair.execution) + Number(!!pair.gate) + Number(!!pair.preservation), 0)
+  const ordinaryPortLimit = Math.max(0, MAX_CHECKER_EVIDENCE_ENTRIES - receiptEntryCount - Number(!!task))
+  const selectedPorts = ports.slice(0, ordinaryPortLimit)
+  const result: CheckerEvidence = { entries: [], omitted_entries: ports.length }
+  if (task) {
+    const { artifact_path, byte_size, sha256 } = task.reference
+    const entry: CheckerEvidence["entries"][number] = { port: "host_task", source: { run_id: run.run_id, kind: "host_task",
+      reference: artifact_path, attempt: run.nodes[definition.id]?.current_attempt },
+      status: "included", json_bytes: byte_size, json_sha256: sha256, value: task.value }
+    if (serializedBytes({ ...result, entries: [entry] }) > MAX_CHECKER_EVIDENCE_BYTES) {
+      delete entry.value
+      entry.status = "omitted"
+    }
+    result.entries.push(entry)
+  }
+  for (const [port, expression] of selectedPorts) {
+    const parsed = parseInputExpression(expression)
+    const source: CheckerEvidence["entries"][number]["source"] = {
+      run_id: run.run_id,
+      kind: parsed.kind === "reference" ? "node_output" : parsed.kind === "literal" ? "graph_literal" : "run_input",
+      ...(parsed.kind !== "literal" ? { reference: expression } : {}),
+      ...(parsed.kind === "reference" ? { attempt: run.nodes[parsed.node]?.current_attempt } : {}),
+    }
+    const value = resolveInputValue(expression, run)
+    const json = JSON.stringify(value)
+    const entry: CheckerEvidence["entries"][number] = { port, source, status: "unavailable" }
+    if (json !== undefined) {
+      entry.json_bytes = Buffer.byteLength(json)
+      entry.json_sha256 = createHash("sha256").update(json).digest("hex")
+      entry.status = entry.json_bytes <= MAX_VALUE_BYTES ? "included" : "omitted"
+      if (entry.status === "included") entry.value = value
+    }
+    const fits = () => serializedBytes({ entries: [...result.entries, entry], omitted_entries: result.omitted_entries - 1 }) <= MAX_CHECKER_EVIDENCE_BYTES
+    if (!fits() && entry.status === "included") {
+      delete entry.value
+      entry.status = "omitted"
+    }
+    if (fits()) {
+      result.entries.push(entry)
+      result.omitted_entries--
+    }
+  }
+  let combined: CheckerEvidence | undefined = result
+  for (const pair of receiptPairs) {
+    if (pair.execution) combined = appendHostExecutionEvidence(combined, pair.execution)
+    if (pair.gate) combined = appendHostExecutionEvidence(combined, pair.gate, "host_gate")
+    if (pair.preservation) combined = appendHostPreservationEvidence(combined, pair.preservation, run.run_id, pair.nodeId,
+      run.nodes[pair.nodeId]?.current_attempt ?? 0)
+  }
+  return combined
+}
+
+function appendHostPreservationEvidence(
+  evidence: CheckerEvidence | undefined,
+  receipt: PreservationEvidence,
+  runId: string,
+  nodeId: string,
+  attempt: number,
+): CheckerEvidence | undefined {
+  if (!evidence) return evidence
+  const json = JSON.stringify(receipt)
+  const bytes = Buffer.byteLength(json)
+  const included = bytes <= MAX_VALUE_BYTES
+  const entry: CheckerEvidence["entries"][number] = {
+    port: `host_preservation_${nodeId}`.slice(0, 64),
+    source: { run_id: runId, kind: "host_preservation", reference: nodeId, attempt },
+    status: included ? "included" : "omitted", json_bytes: bytes,
+    json_sha256: createHash("sha256").update(json).digest("hex"),
+    ...(included ? { value: receipt } : {}),
+  }
+  if (evidence.entries.length >= MAX_CHECKER_EVIDENCE_ENTRIES) return { ...evidence, omitted_entries: evidence.omitted_entries + 1 }
+  const candidate = { ...evidence, entries: [...evidence.entries, entry] }
+  if (serializedBytes(candidate) > MAX_CHECKER_EVIDENCE_BYTES) return { ...evidence, omitted_entries: evidence.omitted_entries + 1 }
+  return candidate
+}

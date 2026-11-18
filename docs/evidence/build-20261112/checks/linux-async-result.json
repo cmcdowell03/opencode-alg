@@ -1,0 +1,895 @@
+{
+  "schema": "alg-build-pilot-v1",
+  "complete": true,
+  "fatal": null,
+  "model": "transport-fixture/synthetic",
+  "limits": {
+    "trialMs": 480000,
+    "assistantTurns": 40,
+    "reportedTokens": 200000,
+    "outputTokens": 4096,
+    "reportedCostPerSuite": 5,
+    "suiteMs": 3300000
+  },
+  "results": [
+    {
+      "caseId": "wafer-report-staged",
+      "arm": "alg_targeted",
+      "status": "preparation_milestone_not_reached",
+      "passed": false,
+      "independent_score": {
+        "passed": false,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open '/home/algtest/alg-v1-evidence/build-async-smoke-linux-20261112/2-wafer-report-staged-alg_targeted/project/preparation.md'"
+          },
+          {
+            "id": "report-json",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open '/home/algtest/alg-v1-evidence/build-async-smoke-linux-20261112/2-wafer-report-staged-alg_targeted/project/report.json'"
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 0,
+          "reportBytes": 0,
+          "reportParsed": false
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 1,
+          "roots": 1,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 1,
+          "finished": 1,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": [
+            {
+              "providerID": "transport-fixture",
+              "modelID": "synthetic",
+              "turns": 1
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 16,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 4,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 20,
+          "turns": {
+            "complete": 1,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 4818,
+      "total_with_startup_ms": 15947,
+      "phases": [
+        {
+          "phase": "initial",
+          "ms": 3682,
+          "completed": true
+        }
+      ],
+      "rootSession": "ses_e31e63aebffeqsHudt74pb0Dt4",
+      "recovery": {
+        "requested": true,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": {
+          "files": [
+            {
+              "path": "data/manual-review.json",
+              "bytes": 359,
+              "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+            },
+            {
+              "path": "data/system-export.json",
+              "bytes": 558,
+              "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+            },
+            {
+              "path": ".opencode/skills/wafer-analysis/SKILL.md",
+              "bytes": 1270,
+              "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+            },
+            {
+              "path": ".opencode/session-memory/artifacts/46e146d906f58ca47269ab0233b6589879fe2ea1738b49452fa1606fb970db7a.txt",
+              "bytes": 27,
+              "sha256": "46e146d906f58ca47269ab0233b6589879fe2ea1738b49452fa1606fb970db7a"
+            },
+            {
+              "path": ".opencode/session-memory/artifacts/7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107.txt",
+              "bytes": 1270,
+              "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+            },
+            {
+              "path": ".opencode/session-memory/heads/bb414d0ae53094b767c145233a2ca7ee04ee110e5c234520a3d9450af9b86ca7.json",
+              "bytes": 218,
+              "sha256": "852b0094b250713ad907f42354cf85198e470d07289f3e3554465070f15e0df6"
+            },
+            {
+              "path": ".opencode/session-memory/checkpoints/b43d96ddb3fc368315392728f82d0a943719790727467aff680f67bfeeedb64c.json",
+              "bytes": 1995,
+              "sha256": "b43d96ddb3fc368315392728f82d0a943719790727467aff680f67bfeeedb64c"
+            },
+            {
+              "path": ".opencode/session-memory/checkpoints/a6d2435d761903bce83b033d587d7cbef93235eea8816b43f210a4a39d188f98.json",
+              "bytes": 1744,
+              "sha256": "a6d2435d761903bce83b033d587d7cbef93235eea8816b43f210a4a39d188f98"
+            },
+            {
+              "path": ".opencode/session-memory/checkpoints/9a66339c5658ed38b5feb4a00dd2aab722bf1124e2e871c4ed1145be4a78af24.json",
+              "bytes": 2089,
+              "sha256": "9a66339c5658ed38b5feb4a00dd2aab722bf1124e2e871c4ed1145be4a78af24"
+            },
+            {
+              "path": ".opencode/session-memory/delivery-journals/bb414d0ae53094b767c145233a2ca7ee04ee110e5c234520a3d9450af9b86ca7.json",
+              "bytes": 2350,
+              "sha256": "1df751c7dafa2f53f4f7423427783efb0ce40c863c9564503d0ea0c505d22d7f"
+            },
+            {
+              "path": ".opencode/session-memory/receipts/bb414d0ae53094b767c145233a2ca7ee04ee110e5c234520a3d9450af9b86ca7.json",
+              "bytes": 595,
+              "sha256": "75a338d056a4ac4d9c0d6cf230b5f991cc0bbca42d006e003e69cb1bd407b7f2"
+            },
+            {
+              "path": ".opencode/session-memory/objects/42293a61d911f9a91825f90360a02bcef066f99054c5216b45c9a00f32b67579.json",
+              "bytes": 563,
+              "sha256": "42293a61d911f9a91825f90360a02bcef066f99054c5216b45c9a00f32b67579"
+            },
+            {
+              "path": ".opencode/session-memory/objects/4ba0261408eac56104d0cb42629203f6c6ea31c2fd209641333ee09b873751a5.json",
+              "bytes": 739,
+              "sha256": "4ba0261408eac56104d0cb42629203f6c6ea31c2fd209641333ee09b873751a5"
+            }
+          ],
+          "at_ms": 3748,
+          "preparation_content": null,
+          "report_absent": true,
+          "independent_score": {
+            "passed": false,
+            "checks": [
+              {
+                "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+                "passed": true
+              },
+              {
+                "id": "protected:data/system-export.json",
+                "passed": true
+              },
+              {
+                "id": "protected:data/manual-review.json",
+                "passed": true
+              },
+              {
+                "id": "preparation-artifact",
+                "passed": false,
+                "detail": "ENOENT: no such file or directory, open '/home/algtest/alg-v1-evidence/build-async-smoke-linux-20261112/2-wafer-report-staged-alg_targeted/project/preparation.md'"
+              }
+            ],
+            "metrics": {
+              "protectedFiles": 3,
+              "preparationBytes": 0
+            }
+          }
+        }
+      },
+      "alg_states": [],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        567
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": "data/manual-review.json",
+          "bytes": 359,
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        },
+        {
+          "path": "data/system-export.json",
+          "bytes": 558,
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        },
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/46e146d906f58ca47269ab0233b6589879fe2ea1738b49452fa1606fb970db7a.txt",
+          "bytes": 27,
+          "sha256": "46e146d906f58ca47269ab0233b6589879fe2ea1738b49452fa1606fb970db7a"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107.txt",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": ".opencode/session-memory/heads/bb414d0ae53094b767c145233a2ca7ee04ee110e5c234520a3d9450af9b86ca7.json",
+          "bytes": 218,
+          "sha256": "852b0094b250713ad907f42354cf85198e470d07289f3e3554465070f15e0df6"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/b43d96ddb3fc368315392728f82d0a943719790727467aff680f67bfeeedb64c.json",
+          "bytes": 1995,
+          "sha256": "b43d96ddb3fc368315392728f82d0a943719790727467aff680f67bfeeedb64c"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/a6d2435d761903bce83b033d587d7cbef93235eea8816b43f210a4a39d188f98.json",
+          "bytes": 1744,
+          "sha256": "a6d2435d761903bce83b033d587d7cbef93235eea8816b43f210a4a39d188f98"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/9a66339c5658ed38b5feb4a00dd2aab722bf1124e2e871c4ed1145be4a78af24.json",
+          "bytes": 2089,
+          "sha256": "9a66339c5658ed38b5feb4a00dd2aab722bf1124e2e871c4ed1145be4a78af24"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/bb414d0ae53094b767c145233a2ca7ee04ee110e5c234520a3d9450af9b86ca7.json",
+          "bytes": 2350,
+          "sha256": "1df751c7dafa2f53f4f7423427783efb0ce40c863c9564503d0ea0c505d22d7f"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/bb414d0ae53094b767c145233a2ca7ee04ee110e5c234520a3d9450af9b86ca7.json",
+          "bytes": 595,
+          "sha256": "75a338d056a4ac4d9c0d6cf230b5f991cc0bbca42d006e003e69cb1bd407b7f2"
+        },
+        {
+          "path": ".opencode/session-memory/objects/42293a61d911f9a91825f90360a02bcef066f99054c5216b45c9a00f32b67579.json",
+          "bytes": 563,
+          "sha256": "42293a61d911f9a91825f90360a02bcef066f99054c5216b45c9a00f32b67579"
+        },
+        {
+          "path": ".opencode/session-memory/objects/4ba0261408eac56104d0cb42629203f6c6ea31c2fd209641333ee09b873751a5.json",
+          "bytes": 739,
+          "sha256": "4ba0261408eac56104d0cb42629203f6c6ea31c2fd209641333ee09b873751a5"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    },
+    {
+      "caseId": "wafer-report-staged",
+      "arm": "alg_default",
+      "status": "preparation_milestone_not_reached",
+      "passed": false,
+      "independent_score": {
+        "passed": false,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open '/home/algtest/alg-v1-evidence/build-async-smoke-linux-20261112/2-wafer-report-staged-alg_default/project/preparation.md'"
+          },
+          {
+            "id": "report-json",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open '/home/algtest/alg-v1-evidence/build-async-smoke-linux-20261112/2-wafer-report-staged-alg_default/project/report.json'"
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 0,
+          "reportBytes": 0,
+          "reportParsed": false
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 1,
+          "roots": 1,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 1,
+          "finished": 1,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": [
+            {
+              "providerID": "transport-fixture",
+              "modelID": "synthetic",
+              "turns": 1
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 16,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 4,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 20,
+          "turns": {
+            "complete": 1,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 5818,
+      "total_with_startup_ms": 14383,
+      "phases": [
+        {
+          "phase": "initial",
+          "ms": 4733,
+          "completed": true
+        }
+      ],
+      "rootSession": "ses_e31e6068cffePldtkSfO7e2K0F",
+      "recovery": {
+        "requested": true,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": {
+          "files": [
+            {
+              "path": "data/manual-review.json",
+              "bytes": 359,
+              "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+            },
+            {
+              "path": "data/system-export.json",
+              "bytes": 558,
+              "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+            },
+            {
+              "path": ".opencode/skills/wafer-analysis/SKILL.md",
+              "bytes": 1270,
+              "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+            },
+            {
+              "path": ".opencode/session-memory/artifacts/46e146d906f58ca47269ab0233b6589879fe2ea1738b49452fa1606fb970db7a.txt",
+              "bytes": 27,
+              "sha256": "46e146d906f58ca47269ab0233b6589879fe2ea1738b49452fa1606fb970db7a"
+            },
+            {
+              "path": ".opencode/session-memory/artifacts/7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107.txt",
+              "bytes": 1270,
+              "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+            },
+            {
+              "path": ".opencode/session-memory/heads/9e03345aa1fbd1bf80343bea8fc53743c664e0ff122a67920c7f8327e5af1ad0.json",
+              "bytes": 218,
+              "sha256": "0918b4c743c4a6b8d995a6966b54c15490dc6bdd0754149523d6df20a78e3f81"
+            },
+            {
+              "path": ".opencode/session-memory/checkpoints/2979cb81afc6d4247278db627e1253b9cb9f9199b6fa0e163e8248046d94dbfb.json",
+              "bytes": 1995,
+              "sha256": "2979cb81afc6d4247278db627e1253b9cb9f9199b6fa0e163e8248046d94dbfb"
+            },
+            {
+              "path": ".opencode/session-memory/checkpoints/687f2cf4113e1b32cde0b81bc021320adf9b640282b70b3c8dd7e2e5cb9c9182.json",
+              "bytes": 1744,
+              "sha256": "687f2cf4113e1b32cde0b81bc021320adf9b640282b70b3c8dd7e2e5cb9c9182"
+            },
+            {
+              "path": ".opencode/session-memory/checkpoints/a1efcdb8b47af30fa9f72a05e3399c15aab31ff0483565b37e74953a977199cb.json",
+              "bytes": 2089,
+              "sha256": "a1efcdb8b47af30fa9f72a05e3399c15aab31ff0483565b37e74953a977199cb"
+            },
+            {
+              "path": ".opencode/session-memory/delivery-journals/9e03345aa1fbd1bf80343bea8fc53743c664e0ff122a67920c7f8327e5af1ad0.json",
+              "bytes": 2350,
+              "sha256": "849b273f78e58e15a16e5f5668c0ec472f0bbe3cd95f282260fb9225558128ac"
+            },
+            {
+              "path": ".opencode/session-memory/receipts/9e03345aa1fbd1bf80343bea8fc53743c664e0ff122a67920c7f8327e5af1ad0.json",
+              "bytes": 595,
+              "sha256": "ed7404504464ad77d7c486742c22a37cf5fab2565d09414b955d3fcbfa7e5188"
+            },
+            {
+              "path": ".opencode/session-memory/objects/d4f0f32a62e066071b8adc6f5df9622869d18169ae34fe12605f49706018fa63.json",
+              "bytes": 563,
+              "sha256": "d4f0f32a62e066071b8adc6f5df9622869d18169ae34fe12605f49706018fa63"
+            },
+            {
+              "path": ".opencode/session-memory/objects/6d3ef85f546aef63225c83414bce4a0e055c029231953af7edf8ae84c2788ee2.json",
+              "bytes": 739,
+              "sha256": "6d3ef85f546aef63225c83414bce4a0e055c029231953af7edf8ae84c2788ee2"
+            }
+          ],
+          "at_ms": 4772,
+          "preparation_content": null,
+          "report_absent": true,
+          "independent_score": {
+            "passed": false,
+            "checks": [
+              {
+                "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+                "passed": true
+              },
+              {
+                "id": "protected:data/system-export.json",
+                "passed": true
+              },
+              {
+                "id": "protected:data/manual-review.json",
+                "passed": true
+              },
+              {
+                "id": "preparation-artifact",
+                "passed": false,
+                "detail": "ENOENT: no such file or directory, open '/home/algtest/alg-v1-evidence/build-async-smoke-linux-20261112/2-wafer-report-staged-alg_default/project/preparation.md'"
+              }
+            ],
+            "metrics": {
+              "protectedFiles": 3,
+              "preparationBytes": 0
+            }
+          }
+        }
+      },
+      "alg_states": [],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        642
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": "data/manual-review.json",
+          "bytes": 359,
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        },
+        {
+          "path": "data/system-export.json",
+          "bytes": 558,
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        },
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/46e146d906f58ca47269ab0233b6589879fe2ea1738b49452fa1606fb970db7a.txt",
+          "bytes": 27,
+          "sha256": "46e146d906f58ca47269ab0233b6589879fe2ea1738b49452fa1606fb970db7a"
+        },
+        {
+          "path": ".opencode/session-memory/artifacts/7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107.txt",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        },
+        {
+          "path": ".opencode/session-memory/heads/9e03345aa1fbd1bf80343bea8fc53743c664e0ff122a67920c7f8327e5af1ad0.json",
+          "bytes": 218,
+          "sha256": "0918b4c743c4a6b8d995a6966b54c15490dc6bdd0754149523d6df20a78e3f81"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/2979cb81afc6d4247278db627e1253b9cb9f9199b6fa0e163e8248046d94dbfb.json",
+          "bytes": 1995,
+          "sha256": "2979cb81afc6d4247278db627e1253b9cb9f9199b6fa0e163e8248046d94dbfb"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/687f2cf4113e1b32cde0b81bc021320adf9b640282b70b3c8dd7e2e5cb9c9182.json",
+          "bytes": 1744,
+          "sha256": "687f2cf4113e1b32cde0b81bc021320adf9b640282b70b3c8dd7e2e5cb9c9182"
+        },
+        {
+          "path": ".opencode/session-memory/checkpoints/a1efcdb8b47af30fa9f72a05e3399c15aab31ff0483565b37e74953a977199cb.json",
+          "bytes": 2089,
+          "sha256": "a1efcdb8b47af30fa9f72a05e3399c15aab31ff0483565b37e74953a977199cb"
+        },
+        {
+          "path": ".opencode/session-memory/delivery-journals/9e03345aa1fbd1bf80343bea8fc53743c664e0ff122a67920c7f8327e5af1ad0.json",
+          "bytes": 2350,
+          "sha256": "849b273f78e58e15a16e5f5668c0ec472f0bbe3cd95f282260fb9225558128ac"
+        },
+        {
+          "path": ".opencode/session-memory/receipts/9e03345aa1fbd1bf80343bea8fc53743c664e0ff122a67920c7f8327e5af1ad0.json",
+          "bytes": 595,
+          "sha256": "ed7404504464ad77d7c486742c22a37cf5fab2565d09414b955d3fcbfa7e5188"
+        },
+        {
+          "path": ".opencode/session-memory/objects/d4f0f32a62e066071b8adc6f5df9622869d18169ae34fe12605f49706018fa63.json",
+          "bytes": 563,
+          "sha256": "d4f0f32a62e066071b8adc6f5df9622869d18169ae34fe12605f49706018fa63"
+        },
+        {
+          "path": ".opencode/session-memory/objects/6d3ef85f546aef63225c83414bce4a0e055c029231953af7edf8ae84c2788ee2.json",
+          "bytes": 739,
+          "sha256": "6d3ef85f546aef63225c83414bce4a0e055c029231953af7edf8ae84c2788ee2"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    },
+    {
+      "caseId": "wafer-report-staged",
+      "arm": "build",
+      "status": "preparation_milestone_not_reached",
+      "passed": false,
+      "independent_score": {
+        "passed": false,
+        "checks": [
+          {
+            "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+            "passed": true
+          },
+          {
+            "id": "protected:data/system-export.json",
+            "passed": true
+          },
+          {
+            "id": "protected:data/manual-review.json",
+            "passed": true
+          },
+          {
+            "id": "preparation-artifact",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open '/home/algtest/alg-v1-evidence/build-async-smoke-linux-20261112/2-wafer-report-staged-build/project/preparation.md'"
+          },
+          {
+            "id": "report-json",
+            "passed": false,
+            "detail": "ENOENT: no such file or directory, open '/home/algtest/alg-v1-evidence/build-async-smoke-linux-20261112/2-wafer-report-staged-build/project/report.json'"
+          }
+        ],
+        "metrics": {
+          "protectedFiles": 3,
+          "preparationBytes": 0,
+          "reportBytes": 0,
+          "reportParsed": false
+        }
+      },
+      "metrics": {
+        "sessions": {
+          "total": 1,
+          "roots": 1,
+          "children": 0
+        },
+        "assistantTurns": {
+          "total": 1,
+          "finished": 1,
+          "unfinished": 0,
+          "error": 0,
+          "modelIdentities": [
+            {
+              "providerID": "transport-fixture",
+              "modelID": "synthetic",
+              "turns": 1
+            }
+          ]
+        },
+        "usage": {
+          "components": {
+            "input": {
+              "reportedTotal": 16,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "output": {
+              "reportedTotal": 4,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "reasoning": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheRead": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            },
+            "cacheWrite": {
+              "reportedTotal": 0,
+              "reportedTurns": 1,
+              "unknownTurns": 0
+            }
+          },
+          "totalReportedTokens": 20,
+          "turns": {
+            "complete": 1,
+            "partial": 0,
+            "unknown": 0
+          },
+          "billing": "not_estimated"
+        },
+        "cost": {
+          "reportedTotal": 0,
+          "reportedTurns": 1,
+          "unknownTurns": 0,
+          "billing": "not_estimated"
+        },
+        "tools": {
+          "total": 0,
+          "completed": 0,
+          "error": 0,
+          "pending": 0,
+          "byName": {}
+        },
+        "repeatedExactToolInputs": {},
+        "skillLoads": {},
+        "algTools": {
+          "alg_plan": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          },
+          "alg_run": {
+            "total": 0,
+            "completed": 0,
+            "error": 0,
+            "pending": 0
+          }
+        },
+        "observedErrors": {
+          "deniedTool": 0,
+          "stepExhaustion": 0
+        }
+      },
+      "wall_ms": 6834,
+      "total_with_startup_ms": 16831,
+      "phases": [
+        {
+          "phase": "initial",
+          "ms": 5721,
+          "completed": true
+        }
+      ],
+      "rootSession": "ses_e31e5c82dffeXTa7FLvXbiEo10",
+      "recovery": {
+        "requested": true,
+        "restarted": false,
+        "compactionRecovered": false,
+        "phase1": {
+          "files": [
+            {
+              "path": "data/manual-review.json",
+              "bytes": 359,
+              "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+            },
+            {
+              "path": "data/system-export.json",
+              "bytes": 558,
+              "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+            },
+            {
+              "path": ".opencode/skills/wafer-analysis/SKILL.md",
+              "bytes": 1270,
+              "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+            }
+          ],
+          "at_ms": 5774,
+          "preparation_content": null,
+          "report_absent": true,
+          "independent_score": {
+            "passed": false,
+            "checks": [
+              {
+                "id": "protected:.opencode/skills/wafer-analysis/SKILL.md",
+                "passed": true
+              },
+              {
+                "id": "protected:data/system-export.json",
+                "passed": true
+              },
+              {
+                "id": "protected:data/manual-review.json",
+                "passed": true
+              },
+              {
+                "id": "preparation-artifact",
+                "passed": false,
+                "detail": "ENOENT: no such file or directory, open '/home/algtest/alg-v1-evidence/build-async-smoke-linux-20261112/2-wafer-report-staged-build/project/preparation.md'"
+              }
+            ],
+            "metrics": {
+              "protectedFiles": 3,
+              "preparationBytes": 0
+            }
+          }
+        }
+      },
+      "alg_states": [],
+      "budget_observed_overshoot": 0,
+      "cleanup": true,
+      "metering_complete": true,
+      "auth_copy_removed": true,
+      "processes": [
+        715
+      ],
+      "source_unchanged": true,
+      "final_files": [
+        {
+          "path": "data/manual-review.json",
+          "bytes": 359,
+          "sha256": "1f1cb7448a82f3f1e5091fd6108a734cb68456cc3c54dd034e4062333cb342b4"
+        },
+        {
+          "path": "data/system-export.json",
+          "bytes": 558,
+          "sha256": "8cce5a6fe44c8a320930476b7bae10f6b089b199e2b8367931610bfc124510d9"
+        },
+        {
+          "path": ".opencode/skills/wafer-analysis/SKILL.md",
+          "bytes": 1270,
+          "sha256": "7aa6b9f5f95a8cb657b20844b3e013471f9363d3d61557286b78cc9648c45107"
+        }
+      ],
+      "measurement_limits": [
+        "actual provider invoice",
+        "hidden model calls not represented by session messages",
+        "operator minutes",
+        "production MCP cost/reuse",
+        "multi-hour reliability",
+        "hardware-normalized latency"
+      ]
+    }
+  ],
+  "known_reported_cost": 0,
+  "global_configuration_unchanged": true,
+  "local_model_stopped": true,
+  "source_unchanged": true
+}

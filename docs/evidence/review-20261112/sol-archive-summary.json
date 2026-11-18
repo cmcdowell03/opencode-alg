@@ -1,0 +1,101 @@
+{
+  "scope": "Sol mechanical fixes; local synthetic validation only; no model calls, commits or pushes",
+  "fixes": [
+    "collector abort/timeout classification",
+    "archived gate-recovery source and checker receipt lookup",
+    "bounded archive overflow via exact detail sidecars"
+  ],
+  "archive_format": {
+    "emitted_version": 3,
+    "trigger": "version-2 document exceeds existing 524288-byte cap",
+    "unchanged_versions_read": [
+      1,
+      2
+    ],
+    "unchanged_small_writes_version": 2,
+    "externalized_fields": [
+      "execution_evidence",
+      "gate_evidence",
+      "preservation_evidence",
+      "verification_basis"
+    ],
+    "all_existing_byte_caps_unchanged": true,
+    "readers": [
+      "store",
+      "TUI"
+    ],
+    "compatibility": "Older readers reject new V3 archives; these overflowed V2 and were previously unwritable. Existing V1/V2 archives remain supported."
+  },
+  "gate_recovery": {
+    "serialized_bytes": 259,
+    "maximum_archived_copies": 96,
+    "copies_bytes": 24864,
+    "representation": "version plus three fixed SHA-256 digests; no declared-file list"
+  },
+  "checks": {
+    "capacity": "2 pass, 2646 assertions; persisted 99, reloaded and appended/persisted/reloaded attempt 100",
+    "archive_bytes": [
+      90562,
+      91042
+    ],
+    "archive_limit": 524288,
+    "tui": "5 pass, including valid V3 navigation, forged session identity and missing verified basis",
+    "legacy": "5 pass, 61 assertions; V1/V2 compatibility and exact history metadata",
+    "typecheck": "exit 0",
+    "diff_check": "exit 0"
+  },
+  "receipts": [
+    "archive-capacity-before.log",
+    "archive-capacity-v3-first-check.log",
+    "archive-capacity-after.log",
+    "archive-legacy-compatibility.log",
+    "archive-typecheck.log"
+  ],
+  "intermediate_failure": "The first V3 check failed one negative-test message assertion because malformed injected data was rejected before the explicit compact-row guard. Corrected fixture uses a schema-valid forbidden inline field; original log retained.",
+  "changed_files": [
+    {
+      "path": "src/checker-evidence.ts",
+      "sha256": "13acc0d64023215b584aa986c93ae0e96c6aa497f3f8968abf1f1140e73a1a24"
+    },
+    {
+      "path": "src/execution-evidence.ts",
+      "sha256": "8234e83f0a5e9e6eacee5b61f51dc11f1996fcffaeba6db2100e18fcfa4d71da"
+    },
+    {
+      "path": "src/executor.ts",
+      "sha256": "eda282807212f8b26321891a88d9086e7feeb1c529c91123d42fcc8ffc1fabf7"
+    },
+    {
+      "path": "src/persistence.ts",
+      "sha256": "f840c18fcd3f715114c5101d9b3c53f9d77c39b388aa34c9f52079a05c46a796"
+    },
+    {
+      "path": "src/schemas.ts",
+      "sha256": "3ec403436313aff753cb0212f25112ade79cb02f7ed1678ac7f7584fcb415062"
+    },
+    {
+      "path": "src/store.ts",
+      "sha256": "93a2d3bd0ee681562c59ac791b71c75e6c6b3738de63420c3ec27e8d6a8612a3"
+    },
+    {
+      "path": "src/tui-runs.ts",
+      "sha256": "4bd84073af80d3670dc4e7c4ff9c9639b3ae8eb091ffc233d182f4d05391d9de"
+    },
+    {
+      "path": "tests/execution-evidence.test.ts",
+      "sha256": "99ebfce0a32b4bb7e15f64e8665c202943d7da388ce63322616d13615da541ae"
+    },
+    {
+      "path": "tests/gate-recovery.test.ts",
+      "sha256": "adfc9059c235f7cf9086ffb14e033fb47d234275c635c9d371f170d0d72ce53d"
+    },
+    {
+      "path": "tests/persistence-evidence-capacity.test.ts",
+      "sha256": "a112d560a8e388bac629563fd35e58c10c1f9596a5d22e38c2f15023858a21fc"
+    },
+    {
+      "path": "tests/verification-tui.test.ts",
+      "sha256": "307dffc2e9be9e3ecaca14d2b5a82b5677bfc75427cbf07bcd25f5e5380d6cd4"
+    }
+  ]
+}

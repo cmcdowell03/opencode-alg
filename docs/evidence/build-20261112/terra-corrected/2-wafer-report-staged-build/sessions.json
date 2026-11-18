@@ -1,0 +1,36 @@
+[
+  {
+    "id": "ses_e31acc824ffeGhjzuYX8Xwndu0",
+    "slug": "calm-orchid",
+    "projectID": "73d0f2848b60f1c7969b1951b885064332306b49",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-terra-20261112\\2-wafer-report-staged-build\\project",
+    "path": "",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 13975,
+      "output": 2186,
+      "reasoning": 20,
+      "cache": {
+        "read": 48640,
+        "write": 0
+      }
+    },
+    "title": "Frozen benchmark wafer-report-staged build",
+    "agent": "build",
+    "model": {
+      "id": "gpt-6.1-terra",
+      "providerID": "openai",
+      "variant": "default"
+    },
+    "version": "1.19.5",
+    "time": {
+      "created": 1794462922715,
+      "updated": 1794462996914
+    }
+  }
+]

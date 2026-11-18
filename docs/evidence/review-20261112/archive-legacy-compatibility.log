@@ -1,0 +1,14 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\persistence-full-hydration.test.ts:
+(pass) transactional immutable persistence > legacy fixed references load and migrate to immutable paths while fixed backup content remains recoverable [742.66ms]
+(pass) transactional immutable persistence > a transfer-only save recursively migrates nested legacy history while the old manifest still hydrates [731.53ms]
+(pass) complete full hydration > archived projected records are strictly parsed before valid details can hydrate over them [960.65ms]
+(pass) complete full hydration > status, run, and resume full hydrate archived order plus every attempt field while compact stays projected [3124.15ms]
+(pass) complete full hydration > routing summaries count archived prefixes exactly, expose legacy unknowns, and reject forged metadata [1899.13ms]
+
+ 5 pass
+ 33 filtered out
+ 0 fail
+ 61 expect() calls
+Ran 5 tests across 1 file. [7.72s]

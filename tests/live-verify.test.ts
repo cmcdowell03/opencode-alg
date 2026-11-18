@@ -395,6 +395,10 @@ describe("live verifier reviewed-checkout binding", () => {
     const actual = structuredServerStartup().replace(JSON.stringify(algServerStartupMessage(false)), JSON.stringify(message)) +
       ` configuration_source=defaults configuration_sidecar_present=false deployment_identity_protocol=${identity.protocol} deployment_build=${identity.build} source_manifest_at_module_load=${digest}`
     expect(findServerStartupLine(actual, false, digest)).toBe(actual)
+    const linux = actual.replace(/directory="(?:[^"\\]|\\.)*"/, "directory=/tmp/alg-live/project")
+    expect(findServerStartupLine(linux, false, digest)).toBe(linux)
+    expect(findServerStartupLine(linux + " unexpected=true", false, digest)).toBeUndefined()
+    expect(findServerStartupLine(linux.replace("directory=/tmp/alg-live/project", "directory=/tmp/alg live/project"), false, digest)).toBeUndefined()
     expect(findServerStartupLine(actual, false, "0".repeat(64))).toBeUndefined()
     for (const invalid of [actual.replace("configuration_sidecar_present=false", "configuration_sidecar_present=true"),
       actual.replace("deployment_build=", "deployment_build=wrong-"), actual.replace("skill_evolution_enabled=false", "skill_evolution_enabled=true"),

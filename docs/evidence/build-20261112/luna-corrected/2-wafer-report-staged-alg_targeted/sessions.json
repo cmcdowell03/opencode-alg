@@ -1,0 +1,36 @@
+[
+  {
+    "id": "ses_e31dc47c9ffeAnhyiXJi7TfqHn",
+    "slug": "clever-canyon",
+    "projectID": "15637c03ec33edf0412653e30315ba536b189b82",
+    "directory": "C:\\Users\\codym\\.codex\\visualizations\\2026\\09\\04\\01a06ddf-9896-7883-8b6e-7c45c804afbf\\implementation-evidence\\build-async-luna-20261112\\2-wafer-report-staged-alg_targeted\\project",
+    "path": "",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 44852,
+      "output": 3234,
+      "reasoning": 207,
+      "cache": {
+        "read": 162688,
+        "write": 0
+      }
+    },
+    "title": "Frozen benchmark wafer-report-staged alg_targeted",
+    "agent": "orchestrator",
+    "model": {
+      "id": "gpt-6-luna",
+      "providerID": "openai",
+      "variant": "default"
+    },
+    "version": "1.19.5",
+    "time": {
+      "created": 1794459809846,
+      "updated": 1794459921045
+    }
+  }
+]

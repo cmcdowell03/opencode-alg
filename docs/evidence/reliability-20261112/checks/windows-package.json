@@ -1,0 +1,20 @@
+{
+  "kind": "local-test-invocation",
+  "platform": "win32",
+  "shell": "PowerShell",
+  "exit_code": 0,
+  "passed": 123,
+  "skipped": 1,
+  "failed": 0,
+  "assertions": 925,
+  "seconds": 1419.67,
+  "log_sha256": "18eb2b7a2da8b762ed4f5e6109816b3d07419ea343da37d6fd9ca51c8217efec",
+  "files": [
+    "tests/release-gate.test.ts",
+    "tests/manager.test.ts",
+    "tests/investigation-template.test.ts",
+    "tests/excel-template.test.ts",
+    "tests/headless-harness.test.ts"
+  ],
+  "identity_note": "Invocation began before the final lockfile/lineage correction and completed after it. This is a completed affected-suite receipt, not a single full-suite run at the final commit."
+}

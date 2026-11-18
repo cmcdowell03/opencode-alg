@@ -1,0 +1,33 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/release-gate.test.ts:
+(pass) every release command has a deadline and failed commands retain diagnostics [88.63ms]
+(pass) release command launch errors and deadlines return failure diagnostics [518.62ms]
+(pass) release output overflow is bounded without killing a successful command [86.46ms]
+(pass) bounded release-gate evidence > v0.5 package, locks, durable compatibility, release evidence, and v0.2 manager identities are deliberate [22.88ms]
+(pass) bounded release-gate evidence > source identity and npm allowlist automatically include every skill-evolution runtime module [129.07ms]
+(pass) bounded release-gate evidence > strict schema rejects unknown or contradictory fields [7.95ms]
+(pass) bounded release-gate evidence > release-input identity binds same-length manager script, documentation, and test changes [9.15ms]
+(pass) bounded release-gate evidence > redacts credentials and bounds UTF-8 output tails [1.97ms]
+(pass) bounded release-gate evidence > writes only strict bounded external evidence and artifact scanning detects caches [11.14ms]
+(pass) bounded release-gate evidence > release evidence UUID collision never overwrites the existing final artifact [7.98ms]
+(pass) bounded release-gate evidence > release evidence same-byte replacement before-final-check is preserved and rejected [5.02ms]
+(pass) bounded release-gate evidence > release evidence same-byte replacement after-final-check is preserved and rejected [4.16ms]
+(pass) bounded release-gate evidence > release evidence preserves a replaced temporary and rejects cleanup [4.20ms]
+(pass) bounded release-gate evidence > strict release verification rejects a same-byte final identity replacement [4.53ms]
+(pass) bounded release-gate evidence > semantically verifies retained evidence against the current source, package, live proof, path, and hash [676.36ms]
+(pass) bounded release-gate evidence > semantic verification rejects coherent-looking contradictory or stale evidence [1530.14ms]
+(pass) bounded release-gate evidence > strict live semantics reject minimal, empty, wrong-tool, manifest, and registration evidence [362.14ms]
+(pass) bounded release-gate evidence > resolves npm by fixed canonical siblings with spaces and never parses a malicious cmd shim [3.38ms]
+(pass) bounded release-gate evidence > rejects unresolvable or non-file npm shims and supports a resolved POSIX executable [2.26ms]
+(pass) bounded release-gate evidence > accepts only the canonical Node POSIX bin/npm to lib/npm CLI layout [0.89ms]
+(pass) bounded release-gate evidence > resolves a real POSIX npm symlink inside the Node installation [3.17ms]
+(pass) bounded release-gate evidence > rejects an actual npm CLI directory junction/symlink escape [6.27ms]
+(pass) bounded release-gate evidence > deterministic realpath seam rejects independent node executable escape [1.03ms]
+(pass) bounded release-gate evidence > deterministic realpath seam rejects independent CLI escape [0.27ms]
+(pass) bounded release-gate evidence > complete package allowlist rejects extras, missing paths, duplicates, unsafe paths, and bad modes [26.30ms]
+
+ 25 pass
+ 0 fail
+ 160 expect() calls
+Ran 25 tests across 1 file. [3.97s]

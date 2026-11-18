@@ -1,0 +1,39 @@
+$ bun run scripts/smoke.ts
+templates: [
+  {
+    name: "coding-diamond",
+    description: "Explore → research → implement (with test loop) → fresh-child checker",
+    nodes: 4,
+  }, {
+    name: "coding-compact",
+    description: "Opt-in small, well-scoped code task: implement → fresh-child checker",
+    nodes: 2,
+  }, {
+    name: "research-diamond",
+    description: "Parallel explore lanes → synthesis research → fresh-child checker",
+    nodes: 4,
+  }, {
+    name: "spreadsheet-diamond",
+    description: "Plan a staged-copy spreadsheet change → implement through alg_excel → deterministic validation → fresh-child checker",
+    nodes: 3,
+  }, {
+    name: "data-investigation",
+    description: "Fixed bounded data investigation: discover → process/equipment/metrology → reconcile → confirm → independent check (Phase 1b; see alg-v1-phase-one-investigation-plan.md and alg-v1-large-data-investigation-design.md)",
+    nodes: 7,
+  }
+]
+coding-diamond: valid, 4 nodes
+  wave 1: explore
+  node explore attempt 1/2
+  node explore DONE
+  wave 2: research
+  node research attempt 1/2
+  node research DONE
+  wave 3: implement
+  node implement attempt 1/5
+  node implement DONE
+  wave 4: check
+  node check attempt 1/5
+  node check DONE
+smoke temporary project: removed
+SMOKE OK

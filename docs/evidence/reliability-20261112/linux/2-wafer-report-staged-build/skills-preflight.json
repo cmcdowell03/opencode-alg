@@ -1,0 +1,12 @@
+[
+  {
+    "name": "customize-opencode",
+    "location": "<built-in>",
+    "content_sha256": "eda4eae3679562180d26a31817cb5b2c8c801599b85f80b2796beae5620bad66"
+  },
+  {
+    "name": "wafer-analysis",
+    "location": "/home/algtest/alg-v1-evidence/reliability-terra-linux-20261112/2-wafer-report-staged-build/project/.opencode/skills/wafer-analysis/SKILL.md",
+    "content_sha256": "12970f2dd1b7006ffdc335a62aa790970b556dd3a4c0d92fce4d76d8b5484cd8"
+  }
+]

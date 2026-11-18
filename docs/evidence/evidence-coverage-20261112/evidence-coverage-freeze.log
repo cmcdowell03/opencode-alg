@@ -1,0 +1,37 @@
+bun test v1.3.14 (0d9b296a)
+
+tests\change-scope-evidence.test.ts:
+(pass) explicit excluded roots cannot be certified as an empty unchanged scope [3.63ms]
+(pass) empty directory trees are bounded independently of file count [628.20ms]
+(pass) a declared nested root cannot bypass an internal symlink ancestor [1.83ms]
+(pass) scope schema bounds and rejects unsafe, duplicate, overlapping, or out-of-root paths [2.33ms]
+(pass) content comparison reports allowed modifications, additions, and deletions [37.83ms]
+(pass) protected changes and changed-file count overages violate the scope [4.93ms]
+(pass) fixed exclusions are explicit and changes beneath them are invisible [18.88ms]
+(pass) a symlink at an excluded directory name is skipped without traversal [2.61ms]
+(pass) missing roots, symlink entries, and baseline tampering fail closed [15.48ms]
+(pass) file count, per-file bytes, and total bytes are bounded [218.15ms]
+
+tests\task-baseline.test.ts:
+(pass) coverage must cover each criterion and bind actual collection declarations [63.66ms]
+(pass) baseline is durable before discovery, survives compaction/restart, and cannot be replaced [1478.75ms]
+(pass) an unavailable before-work file stops before the first child and attempt [122.52ms]
+(pass) discovery cannot change a protected file before its baseline is collected [849.35ms]
+(pass) out-of-scope change blocks checker and resume does not repeat the correct producer [1057.03ms]
+(pass) post-check content drift invalidates proof even when changed path count stays identical [1237.23ms]
+
+tests\verification-tui.test.ts:
+(pass) verified TUI archives > compact v3 archive validates its exact detail before navigation: valid [36.71ms]
+(pass) verified TUI archives > compact v3 archive validates its exact detail before navigation: session_mismatch [33.12ms]
+(pass) verified TUI archives > compact v3 archive validates its exact detail before navigation: missing_basis [33.00ms]
+(pass) verified TUI archives > rejects an archived failed call whose pre-call basis is missing [13.85ms]
+(pass) verified TUI archives > rejects a detail whose verification basis differs from its archive projection [31.56ms]
+(pass) visible task evidence is checked before navigation even without detail/output references: valid [15.34ms]
+(pass) visible task evidence is checked before navigation even without detail/output references: missing [13.18ms]
+(pass) visible task evidence is checked before navigation even without detail/output references: tampered [16.06ms]
+(pass) visible task evidence is checked before navigation even without detail/output references: wrong-contract [15.53ms]
+
+ 25 pass
+ 0 fail
+ 97 expect() calls
+Ran 25 tests across 3 files. [6.13s]

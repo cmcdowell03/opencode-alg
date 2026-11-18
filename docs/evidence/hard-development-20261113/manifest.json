@@ -1,0 +1,27 @@
+[
+  {
+    "file": "raw-plan.json",
+    "bytes": 20966,
+    "sha256": "b611967e32a689986f20ab2687a2df36cd6f5b4e3614b531922c2639270b39ef"
+  },
+  {
+    "file": "raw-cohort-result.json",
+    "bytes": 273959,
+    "sha256": "f17d972cec160fd14ceaaffc8bb473eba01ca85d53d2f8accd076d3a9633a85e"
+  },
+  {
+    "file": "raw-qualification.json",
+    "bytes": 60058,
+    "sha256": "b7e8c0c2c18189f44c64590ef510be9c1556366ee8347b0ae409ed263126cc98"
+  },
+  {
+    "file": "posthoc-audit.json",
+    "bytes": 90449,
+    "sha256": "d4e0d6a078471fcf7bd304b0165aa3a14f5848cfd17c89cadeeee38fc8a3b610"
+  },
+  {
+    "file": "audit-hard-development.ts",
+    "bytes": 5174,
+    "sha256": "37d4f02e023cdd77b75963ab3235550e198772fbcb34c6dec09866959e39e144"
+  }
+]

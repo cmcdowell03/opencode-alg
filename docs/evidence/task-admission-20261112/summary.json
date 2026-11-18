@@ -1,0 +1,181 @@
+{
+  "schema": "alg-v1-task-admission-qualification-v1",
+  "package_version": "0.5.7",
+  "implementation_commit": "79da198f2149e49385e38d2656f1dc53b4f2706f",
+  "status": "local_qualification_recorded",
+  "windows": {
+    "restarts": 2,
+    "host_permission_probe": true,
+    "cleanup": {
+      "host_processes_stopped": true,
+      "provider_stopped": true,
+      "mcp_service_stopped": true,
+      "temporary_environment_removed": true,
+      "evidence_persisted_before_environment_removal": true
+    },
+    "runtime_sha256": "192c0bef5100915d51c9db466327bbce9d89cd181351a62caa88bd6be3079d5d",
+    "task_contract": true,
+    "host": "1.19.5",
+    "headless_passed": true,
+    "server_tui": {
+      "host": "1.19.5",
+      "evidence_sha256": "4c3850b6b0187d3ccedaab6ec4a6b31a129019b8945df4f9bdbb17b3fa666686",
+      "cleanup_verified": true,
+      "passed": true
+    }
+  },
+  "linux": {
+    "task_contract": true,
+    "host_permission_probe": true,
+    "cleanup": {
+      "host_processes_stopped": true,
+      "provider_stopped": true,
+      "mcp_service_stopped": true,
+      "temporary_environment_removed": true,
+      "evidence_persisted_before_environment_removal": true
+    },
+    "runtime_sha256": "6fed75d422cec99418b8f034165aa323eec869c5133f4586a7498803aef19970",
+    "headless_passed": true,
+    "regression": {
+      "assertions": 3801,
+      "files": 15,
+      "seconds": 53.84,
+      "passed": 180,
+      "failed": 0
+    },
+    "restarts": 2,
+    "host": "1.18.35",
+    "measurement_regression": {
+      "assertions": 255,
+      "files": 8,
+      "seconds": 5.26,
+      "passed": 51,
+      "failed": 0
+    },
+    "server_tui": {
+      "host": "1.18.35",
+      "evidence_sha256": "15741e27e18f720fdea5fd16eb658b1fb8328e82c7fb723b59e9aab71214a81d",
+      "cleanup_verified": true,
+      "passed": true
+    },
+    "full_gate": {
+      "scope": "typecheck, complete Bun suite, smoke, isolated server/TUI, Excel/DuckDB/optional manifests",
+      "commit": "7c60070ef0b30c5adba987a7fc6b88b315919226",
+      "exit_code": 0,
+      "passed": 1316,
+      "test_seconds": 656.52,
+      "log": "linux-full-check-packaged.log",
+      "files": 106,
+      "assertions": 15263,
+      "failed": 0,
+      "source_clean_after": true,
+      "skipped": 16
+    }
+  },
+  "limitations": [
+    "Deterministic local provider; not a model-quality or superiority result.",
+    "Windows and Linux used different supported OpenCode V1 versions; not a controlled OS comparison.",
+    "Source digests are byte-specific and differ across the Git checkouts.",
+    "Hard fixture MCP wiring, oracle isolation, shared allowance, and long-task obligation probes remain unqualified.",
+    "One overwritten intermediate migration raw log is disclosed separately; its observed counts are not treated as a pass."
+  ],
+  "hosted_trials": 0,
+  "github_runners": 0,
+  "merged": false,
+  "measurement_commit": "f6a321857a778f82b0a64c0feb604e7a6572605a",
+  "runtime_portability": {
+    "byte_exact_files": 64,
+    "all_equal_after_crlf_normalization": true,
+    "evidence": "runtime-cross-platform-identity.json",
+    "files": 131
+  },
+  "retention_review": {
+    "typecheck_passed": true,
+    "assertions": 91,
+    "failed": 0,
+    "log": "retention-sol-final-3.log",
+    "tests": 27,
+    "scope": "boundary, task aggregate, and offline CLI; synthetic only"
+  },
+  "package_commit": "7c60070ef0b30c5adba987a7fc6b88b315919226",
+  "package_regressions": {
+    "extracted_analyzer": {
+      "failed": 0,
+      "assertions": 227,
+      "passed": 2
+    },
+    "windows_release_scope": {
+      "skipped": 1,
+      "assertions": 382,
+      "failed": 0,
+      "passed": 26
+    },
+    "scope": "dependency-ready tarball, no network dependency install or relocated offline-bundle acceptance"
+  },
+  "failed_full_invocations": [
+    {
+      "failed": 1,
+      "fix": "7c60070",
+      "commit": "f6a321857a778f82b0a64c0feb604e7a6572605a",
+      "seconds": 643.16,
+      "log": "linux-full-check-candidate.log",
+      "skipped": 16,
+      "files": 106,
+      "passed": 1315,
+      "cause": "reviewed package inventory mismatch",
+      "platform": "linux",
+      "assertions": 15041
+    },
+    {
+      "passed": 1302,
+      "files": 104,
+      "failed": 4,
+      "skipped": 6,
+      "runtime_commit": "79da198f2149e49385e38d2656f1dc53b4f2706f",
+      "head_at_exit": "7c60070ef0b30c5adba987a7fc6b88b315919226",
+      "provenance": "windows-full-check-provenance.json",
+      "assertions": 15306,
+      "platform": "windows",
+      "causes": [
+        "two old alg_plan task-contract fixtures",
+        "package version expectation",
+        "reviewed package inventory mismatch"
+      ],
+      "commit_at_start": "a1ce98c9c3f1fabd8c792a3e366aed288bb07fe7",
+      "seconds": 2730.82,
+      "log": "windows-full-check-final.log",
+      "atomic_source_freeze": false,
+      "fixed_rechecks": [
+        "investigation-hooks-fixed.log",
+        "manager-compatibility-fixed.log",
+        "windows-package-inventory-fixed.log",
+        "windows-package-analyzer-fixed.log"
+      ]
+    }
+  ],
+  "release_control_commit": "b024450f15b8b79b5193e457054a88e3f930fad6",
+  "release_control_windows": {
+    "passed": 25,
+    "assertions": 164,
+    "scope": "default release input binds non-deployed graders and plans",
+    "failed": 0,
+    "skipped": 1
+  },
+  "release_control_linux": {
+    "passed": 26,
+    "failed": 0,
+    "typecheck_passed": true,
+    "assertions": 165,
+    "commit": "b024450f15b8b79b5193e457054a88e3f930fad6",
+    "log": "linux-release-input-controls.log"
+  },
+  "live_comparison_qualified": false,
+  "long_task_behavioral_loss_measured": false,
+  "remaining_work": [
+    "shared task-wide allowance and reserved verification",
+    "contestant/service/oracle isolation and qualified MCP interface",
+    "live independent per-boundary obligation probes and complete history collection",
+    "feasible same-interface reference solutions, then frozen bounded paired pilot",
+    "candidate-specific offline-bundle qualification before release"
+  ]
+}

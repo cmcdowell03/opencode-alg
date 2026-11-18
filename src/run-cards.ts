@@ -114,6 +114,7 @@ const ATTEMPT_ENDINGS: Record<string, string> = {
   sdk_error: "failed: the worker's model call did not complete",
   schema_invalid: "failed: the worker's reply was not in the required form",
   substantive_rejection: "was rejected by the checker",
+  evidence_unavailable: "needs evidence recovery; completed work was not replayed",
   incomplete: "ended without finishing the work",
   gate_failure: "failed its shell check",
 }
