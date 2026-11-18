@@ -12,6 +12,7 @@
     "opencode": "2.3.2"
   },
   "devDependencies": {
+    "@opencode/client": "2.3.2",
     "@opencode/plugin": "2.3.2"
   }
 }
