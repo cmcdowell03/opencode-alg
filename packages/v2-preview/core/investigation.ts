@@ -18,6 +18,7 @@ import {
 } from "../../../src/investigation/index.ts"
 import { canonicalJson } from "../../../src/persistence.ts"
 import { runContainedPath } from "../../../src/store.ts"
+import type { PreQueryGate, PreQueryReceipt } from "./pre-query.ts"
 import { procedurePinSchema, type ProcedurePin } from "./procedure-pin.ts"
 
 /** Adapter input, resolved from the host for each call. Never parse it from tool arguments. */
@@ -32,6 +33,7 @@ export interface V2InvestigationOptions {
   readonly port: InvestigationMcpPort
   /** The operator-approved synthetic recipe and bound query, supplied by host configuration. */
   readonly approvedJob: InvestigationWorkInput
+  readonly preQuery?: PreQueryGate
 }
 
 type ResultSelection = Pick<CheckerResultGrantInput, "work_key" | "manifest_digest">
@@ -104,7 +106,7 @@ function decisionProcedurePin(ledger: InvestigationLedger): ProcedurePin | undef
   return pin.data
 }
 
-function view(ledger: InvestigationLedger) {
+function view(ledger: InvestigationLedger, preQuery?: PreQueryReceipt) {
   const current = ledger.work[0]
   const work = current ? {
     work_key: current.work_key,
@@ -117,8 +119,9 @@ function view(ledger: InvestigationLedger) {
   if (!decision.next_action) decision.next_action = lifecycle
   const base = { revision: ledger.revision, decision_revision: decisionRevision(ledger), work, guidance: lifecycle }
   const procedurePin = decisionProcedurePin(ledger)
+  const gate = preQuery ? { preQuery } : {}
   const full = JSON.stringify({ ...base, decision })
-  if (Buffer.byteLength(full) <= MAX_PROJECTION_BYTES) return { ...base, procedurePin, decision, projection: full }
+  if (Buffer.byteLength(full) <= MAX_PROJECTION_BYTES) return { ...base, ...gate, procedurePin, decision, projection: full }
 
   // An oversized checkpoint should never push the work status or counterevidence notice out of context.
   const compact = {
@@ -130,12 +133,12 @@ function view(ledger: InvestigationLedger) {
   }
   const projection = JSON.stringify({ ...base, decision: compact })
   if (Buffer.byteLength(projection) > MAX_PROJECTION_BYTES) throw new Error("stored decision exceeds bounded projection")
-  return { ...base, procedurePin, decision: compact, projection }
+  return { ...base, ...gate, procedurePin, decision: compact, projection }
 }
 
 export type V2InvestigationView = ReturnType<typeof view>
 
-export function createV2InvestigationBridge({ port, approvedJob }: V2InvestigationOptions) {
+export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2InvestigationOptions) {
   const job = structuredClone(InvestigationWorkInputSchema.parse(approvedJob))
   if (job.purpose !== "analysis" || job.generation !== 0) throw new Error("expected one approved synthetic analysis job")
   const approval = identity("v2-approved-", canonicalJson(job))
@@ -172,7 +175,9 @@ export function createV2InvestigationBridge({ port, approvedJob }: V2Investigati
     // Keep lookup from racing the initial submit, including across plugin instances.
     const lock = await acquireFilesystemMutexAsync(
       runContainedPath(binding.project_directory, binding.run_id, "investigation", "v2-operation.lock"),
-      { owner: binding.run_id, leaseMs: 1_000, heartbeatMs: 250, waitMs: 250 },
+      // After a crash the valid lease can outlive the old process. Give a
+      // recovery lookup time to acquire it without weakening exclusion.
+      { owner: binding.run_id, leaseMs: 1_000, heartbeatMs: 250, waitMs: 2_000 },
     )
     try {
       return await operate(store, store.snapshot)
@@ -193,6 +198,42 @@ export function createV2InvestigationBridge({ port, approvedJob }: V2Investigati
     const binding = scope(ctx)
     if (!existsSync(runContainedPath(binding.project_directory, binding.run_id, "investigation", "head.json"))) return undefined
     return InvestigationStore.open(binding).snapshot
+  }
+
+  function checkPolicy(ledger: Readonly<InvestigationLedger>, permitBinding = false) {
+    const boundPolicy = ledger.checkpoint.scope.v2_pre_query_policy
+    if (boundPolicy === undefined && permitBinding) return
+    if (boundPolicy !== preQuery?.policySha256) {
+      throw new Error("RESEARCH_PRE_QUERY_POLICY_CHANGED")
+    }
+  }
+
+  function evaluated(store: InvestigationStore, ledger: InvestigationLedger) {
+    return preQuery?.evaluate(store.scope, job, decisionProcedurePin(ledger))
+  }
+
+  function existingView(ledger: InvestigationLedger, receipt: PreQueryReceipt | undefined) {
+    if (!receipt) return view(ledger)
+    // Reuse only the manifest reference of a settled, exact admission from this ledger.
+    // Result pages still use the canonical store's fresh access and validity checks.
+    const work = ledger.work[0]!
+    const profile = ledger.remote_profile
+    const { server_id, server_revision, tool_id, tool_schema_revision, principal_id, project_id } = port.capabilities
+    if (ledger.work.length !== 1 || ledger.identity_version !== 2 ||
+        !work.authorized_nodes?.includes(PRODUCER) || !work.authorized_nodes.includes(approval) ||
+        work.admitted_reservation !== job.reserved_cost ||
+        !profile || canonicalJson(profile) !== canonicalJson({
+          server_id, server_revision, tool_id, tool_schema_revision, principal_id, project_id,
+        })) throw new Error("RESEARCH_PRE_QUERY_WORK_UNVERIFIED")
+    if (work.status !== "result_recorded" && work.status !== "reusable") return view(ledger, receipt)
+    if (!work.result || work.reserved_cost !== 0 || ledger.budget_breach ||
+        (work.result.expires_at && Date.parse(work.result.expires_at) <= Date.now())) {
+      throw new Error("RESEARCH_PRE_QUERY_REUSE_UNVERIFIED")
+    }
+    return view(ledger, {
+      ...receipt,
+      reuse: { kind: "settled_manifest", work_key: work.work_key, manifest_digest: work.result.digest },
+    })
   }
 
   return {
@@ -224,35 +265,48 @@ export function createV2InvestigationBridge({ port, approvedJob }: V2Investigati
       return ownerOperation(ctx, async (store, ledger) => {
         assertWritable(ledger)
         const existing = ledger.work[0]
-        if (existing && existing.status !== "reserved") return view(ledger)
-        if (existing?.authorized_nodes?.includes(PRODUCER)) {
-          if (!existing.authorized_nodes.includes(approval)) throw new Error("approved investigation job changed")
-          return view(ledger)
+        checkPolicy(ledger, !existing || existing.status === "reserved")
+        const receipt = await evaluated(store, ledger)
+        if (existing && existing.status !== "reserved") return existingView(ledger, receipt)
+        if (existing?.authorized_nodes?.includes(PRODUCER) && !existing.authorized_nodes.includes(approval)) {
+          throw new Error("approved investigation job changed")
         }
         // Retry an interrupted admission only if both its identity and its reservation still match.
         if (existing && (existing.admitted_reservation !== job.reserved_cost ||
             canonicalJson(existing.parameters) !== canonicalJson(job.parameters))) {
           throw new Error("approved investigation job changed")
         }
+        if (receipt && preQuery && ledger.checkpoint.scope.v2_pre_query_policy === undefined) {
+          // Bind before reserving, so interruption cannot turn gated work into ungated work.
+          await store.updateCheckpoint({ scope: {
+            ...ledger.checkpoint.scope, v2_pre_query_policy: preQuery.policySha256,
+          } })
+        }
+        if (existing?.authorized_nodes?.includes(PRODUCER)) return existingView(store.snapshot, receipt)
         const work = await store.admit(job, port.capabilities)
-        await store.authorizeNodes(work.work_key, [PRODUCER, approval])
-        return view(store.snapshot)
+        await store.authorizeNodes(work.work_key, [PRODUCER, approval], () => {
+          if (receipt) preQuery?.assertCurrent(receipt, decisionProcedurePin(store.snapshot))
+        })
+        return view(store.snapshot, receipt)
       })
     },
 
     dispatch(ctx: V2InvestigationSession): Promise<V2InvestigationView> {
       return ownerOperation(ctx, async (store, ledger) => {
         assertWritable(ledger)
+        checkPolicy(ledger)
         const work = ledger.work[0]
         if (!work) throw new Error("approved investigation job has not been admitted")
-        if (work.status === "reserved") {
-          await store.dispatch(work.work_key, port, (fresh) => {
-            if (!fresh.authorized_nodes?.includes(PRODUCER) || !fresh.authorized_nodes.includes(approval)) {
-              throw new Error("approved investigation admission is incomplete or changed")
-            }
-          })
-        }
-        return view(store.snapshot)
+        const receipt = await evaluated(store, ledger)
+        if (work.status !== "reserved") return existingView(ledger, receipt)
+        await store.dispatch(work.work_key, port, (fresh, current) => {
+          checkPolicy(current)
+          if (!fresh.authorized_nodes?.includes(PRODUCER) || !fresh.authorized_nodes.includes(approval)) {
+            throw new Error("approved investigation admission is incomplete or changed")
+          }
+          if (receipt) preQuery?.assertCurrent(receipt, decisionProcedurePin(current))
+        })
+        return view(store.snapshot, receipt)
       })
     },
 
@@ -260,6 +314,12 @@ export function createV2InvestigationBridge({ port, approvedJob }: V2Investigati
       return ownerOperation(ctx, async (store, ledger) => {
         const work = ledger.work[0]
         if (!work) throw new Error("approved investigation job has not been admitted")
+        if (work.status === "result_recorded" || work.status === "reusable") {
+          checkPolicy(ledger)
+          const receipt = await evaluated(store, ledger)
+          if (receipt) return existingView(ledger, receipt)
+        }
+        // Lookup is read-only reconciliation of an already-issued submission ID.
         await store.reconcile(work.work_key, port)
         return view(store.snapshot)
       })

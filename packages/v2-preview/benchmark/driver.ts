@@ -12,6 +12,7 @@ import { applyPrompt, checkpointPrompt, classify, correctionDescription, pressur
 import { startTransport } from "./transport.ts"
 import { nativeModel, nativeProviderConfig, stageNativeCredential } from "./native-provider.ts"
 import { createWorkbench, startWorkbench } from "./workbench.ts"
+import { collectSessionEvidence } from "./session-evidence.ts"
 
 export type BenchmarkOptions = {
   binary: string; bundle: string; seed: number; scratch: string; native?: { model: string; authPath?: string }; context?: number; variant?: CaseVariant
@@ -27,6 +28,7 @@ const optional = <T>(read: () => Promise<T | undefined>, ms: number) =>
 export async function runArm(arm: ArmName, options: BenchmarkOptions) {
   let started: number | undefined
   let elapsedMs: number | null = null
+  let hostEvidence: Awaited<ReturnType<typeof collectSessionEvidence>> | null = null
   const scratch = join(options.scratch, arm)
   const variant = options.variant ?? "positive"
   const researchObservation = observationFor(variant)
@@ -212,22 +214,17 @@ export async function runArm(arm: ArmName, options: BenchmarkOptions) {
       hasCorrection: "summary" in row && row.summary.includes(researchObservation.correctionEvidenceRef),
       sha256: "summary" in row ? summaryHash(row.summary) : null,
     }] : [])
-    phase = "usage"
-    const usage = await host.client.experimental.session.stats(undefined, requestOptions())
-    const count = usage.tokens.input + usage.tokens.output + usage.tokens.reasoning + usage.tokens.cache.read + usage.tokens.cache.write
-    if (native) tokens = native.usage()
-    else if (Number.isSafeInteger(count) && count > 0) tokens = count
-
     verdictReady = true
   } catch (error) {
     failure = phase + (error instanceof Error && /^(Expected isolated|OpenCode |Unexpected checker|Installed preview|Host (turn|response)|Preview present)/.test(error.message) ? ": " + error.message : "")
   } finally {
     transport.releaseSummary()
     if (elapsedMs === null && started !== undefined) elapsedMs = performance.now() - started
-    if (native) {
-      tokens = native.usage()
-      failure ??= native.failure() ?? undefined
-    }
+    const currentHost = hosts.at(-1)
+    if (sessionId && currentHost && !currentHost.process.exited())
+      hostEvidence = await collectSessionEvidence(currentHost.client, sessionId, checkerId)
+    tokens = hostEvidence?.completeRecordedTokens ?? native?.usage() ?? null
+    if (native) failure ??= native.failure() ?? undefined
     for (const host of hosts.reverse()) {
       try { if (!host.process.exited()) await host.process.kill() } catch { failure ??= "host_cleanup" }
     }
@@ -245,13 +242,15 @@ export async function runArm(arm: ArmName, options: BenchmarkOptions) {
     wrongRootReturns: wrongRoot, tokens, elapsedMs, workbench: workbench.snapshot(),
   }
   return {
-    observation, failure: failure ?? null, model, hostPid: hostPid ?? null, sessionId: sessionId ?? null, checkerId: checkerId ?? null,
+    observation, hostEvidence, tokenSource: hostEvidence?.completeRecordedTokens != null ? "host_messages" :
+      tokens !== null ? "provider_events" : null,
+    failure: failure ?? null, model, hostPid: hostPid ?? null, sessionId: sessionId ?? null, checkerId: checkerId ?? null,
     plugin, mcp, nativeCatalog, skill: skill ? { sha256: skill.sha256, sourceSha256: skill.sourceSha256,
       successfulNativeSkillCalls: activated, rootProviderRequestsWithSkill: delivered.map(request => request.id) } : null,
     correctionMessageId, initialAnswerId: initial?.id ?? null, checkerAnswerId: independent?.id ?? null,
     finalAnswerId: final?.id ?? null, nativeObserverFailure: native?.failure() ?? null,
     observedNativeUsage: native ? { requestsWithUsage: native.requests.filter(row => row.usage != null).length,
-      tokensFromReportedRequests: native.requests.reduce((sum, row) => sum + (row.usage?.total ?? 0), 0), complete: tokens !== null } : null,
+      tokensFromReportedRequests: native.requests.reduce((sum, row) => sum + (row.usage?.total ?? 0), 0), complete: native.usage() !== null } : null,
     compaction: { ...result, holdBoundary: native ? "native-host-http-hook-before-dispatch" : "loopback-response",
       rows: compactionRows }, requests: transport.requests,
     decision: { checkpointToolOutcomes, initial: checkpoint, corrected: correctedDecision, readback, decisionSavedAtMs,
