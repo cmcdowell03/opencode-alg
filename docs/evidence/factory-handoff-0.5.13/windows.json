@@ -1,0 +1,123 @@
+{
+  "commit": "89abcaa181df4c763871f906fb76669129b88051",
+  "platform": "Windows",
+  "host_version": "1.19.5",
+  "host_sha256": "6f15c8f241f3df22375f174753193a71c488f6c0a6bbbae3f9fa34d112673b7b",
+  "model": "comparative-local/deterministic",
+  "kind": "deterministic_headless_opencode_smoke",
+  "started_at": "2026-11-18T08:34:44.857Z",
+  "ended_at": "2026-11-18T08:37:46.899Z",
+  "qualification_controls_passed": 26,
+  "qualification_receipt_sha256": "c999b32cc4f5530d0a327a116b20b70ce4dd3239652ee7400fead151c56bfddc",
+  "headless_receipt_sha256": "e7aca4ed7454c41a84d7974eb5fc3448b2ee9762ad63e805569203a199d70b4b",
+  "cells": [
+    {
+      "incident": "case-ce66a1998e3c",
+      "arm": "native-build",
+      "duration_ms": 18788,
+      "all_criteria_passed": true,
+      "graded_fields": 12,
+      "conclusion_and_next_measurement": [
+        "chamber_effect_persists",
+        "balanced_chamber_crossover"
+      ],
+      "source_read_before_answer": true,
+      "cited_returned_manifest": true,
+      "duplicate_submissions": 0,
+      "skill_delivery": null,
+      "cleanup_passed": true
+    },
+    {
+      "incident": "case-ce66a1998e3c",
+      "arm": "scoped-evidence-skill",
+      "duration_ms": 30061,
+      "all_criteria_passed": true,
+      "graded_fields": 12,
+      "conclusion_and_next_measurement": [
+        "chamber_effect_persists",
+        "balanced_chamber_crossover"
+      ],
+      "source_read_before_answer": true,
+      "cited_returned_manifest": true,
+      "duplicate_submissions": 0,
+      "skill_delivery": {
+        "hook_receipt_present": true,
+        "provider_system_skill_text_observed": true
+      },
+      "cleanup_passed": true
+    },
+    {
+      "incident": "case-ce66a1998e3c",
+      "arm": "full-alg",
+      "duration_ms": 35160,
+      "all_criteria_passed": true,
+      "graded_fields": 12,
+      "conclusion_and_next_measurement": [
+        "chamber_effect_persists",
+        "balanced_chamber_crossover"
+      ],
+      "source_read_before_answer": true,
+      "cited_returned_manifest": true,
+      "duplicate_submissions": 0,
+      "skill_delivery": {
+        "hook_receipt_present": true,
+        "provider_system_skill_text_observed": true
+      },
+      "cleanup_passed": true
+    },
+    {
+      "incident": "case-66c5767ea623",
+      "arm": "native-build",
+      "duration_ms": 20829,
+      "all_criteria_passed": true,
+      "graded_fields": 12,
+      "conclusion_and_next_measurement": [
+        "inspection_revision_mix_explains_association",
+        "inspection_revision_validation"
+      ],
+      "source_read_before_answer": true,
+      "cited_returned_manifest": true,
+      "duplicate_submissions": 0,
+      "skill_delivery": null,
+      "cleanup_passed": true
+    },
+    {
+      "incident": "case-66c5767ea623",
+      "arm": "scoped-evidence-skill",
+      "duration_ms": 31732,
+      "all_criteria_passed": true,
+      "graded_fields": 12,
+      "conclusion_and_next_measurement": [
+        "inspection_revision_mix_explains_association",
+        "inspection_revision_validation"
+      ],
+      "source_read_before_answer": true,
+      "cited_returned_manifest": true,
+      "duplicate_submissions": 0,
+      "skill_delivery": {
+        "hook_receipt_present": true,
+        "provider_system_skill_text_observed": true
+      },
+      "cleanup_passed": true
+    },
+    {
+      "incident": "case-66c5767ea623",
+      "arm": "full-alg",
+      "duration_ms": 35474,
+      "all_criteria_passed": true,
+      "graded_fields": 12,
+      "conclusion_and_next_measurement": [
+        "inspection_revision_mix_explains_association",
+        "inspection_revision_validation"
+      ],
+      "source_read_before_answer": true,
+      "cited_returned_manifest": true,
+      "duplicate_submissions": 0,
+      "skill_delivery": {
+        "hook_receipt_present": true,
+        "provider_system_skill_text_observed": true
+      },
+      "cleanup_passed": true
+    }
+  ]
+}

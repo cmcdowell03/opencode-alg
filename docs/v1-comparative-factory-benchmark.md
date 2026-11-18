@@ -37,3 +37,15 @@ bun scripts/comparative-benchmark-opencode.ts --config <path-to-config.json>
 ```
 
 Qualification exercises positive controls and deliberately wrong answers, missing reads, stale revisions, reordered job operations and duplicate submissions. Headless smoke uses isolated OpenCode sessions and a scripted loopback provider. Its result measures whether the host, tools, handoff, and scorer work together. A comparative capability claim requires a separately qualified real-model trial on held-out incidents. The broader V1 claim criteria are in the [capability augmentation plan](v1-capability-augmentation-plan.md).
+
+## Measured Windows result
+
+OpenCode 1.19.5 on Windows passed all six cells on the two development incidents. All 26 scorer controls passed. Every recipient read the correct source before writing, cited the returned manifest and completed without a duplicate submission. For both memory-enabled configurations the harness observed the bound skill in the continuation's system request.
+
+| Configuration | Incidents solved | Recorded arm duration |
+| --- | ---: | --- |
+| Native Build | 2/2 | 18.8 s and 20.8 s |
+| Build with ALG memory | 2/2 | 30.1 s and 31.7 s |
+| ALG graph | 2/2 | 35.2 s and 35.5 s |
+
+The identical results qualify the comparison mechanics. The scripted provider follows the procedure in every arm, so these timings describe this smoke run and the scores cannot establish a reasoning advantage. [Windows receipt summary](evidence/factory-handoff-0.5.13/windows.json)
