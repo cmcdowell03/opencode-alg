@@ -19,8 +19,8 @@ name: fab-defect-research
 description: Investigate a synthetic fab incident with the read-only research workbench
 ---
 
-Use research_workbench with {"op":"map"} for the available sources. Use
-{"op":"lookup","pages":[{"source":"SOURCE","limit":24}]} for source rows.
+Call map_sources with {} to discover sources and field names. Call lookup_pages
+with {"pages":[{"source":"SOURCE","limit":24}]} for source rows.
 Batch up to four pages per call. Continue each source using that page's nextCursor,
 carrying forward the source and limit. Keep the source evidenceRef for citations.
 

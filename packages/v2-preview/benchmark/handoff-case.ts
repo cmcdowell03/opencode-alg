@@ -18,7 +18,7 @@ export const initialInput = `Prepare the smallest supportable inspection cohort 
 For each decision report one JSON object with cohortSize, defects, verifiedClockCorrections (null until independently audited), inspectionRef, auditRef (null until audited), nextAction, and prerequisite. Use the procedure's action and prerequisite identifiers. The prerequisite is the item the recommended action depends on. If procedure authority is absent, report nextAction as null and prerequisite as "current-approved-procedure", while retaining verified factual fields. Keep this output contract when I ask you to continue.
 
 If the installed host exposes investigation bookkeeping, create the checkpoint and record the recommendation initially and after receiving independent facts. During initial setup, admit and dispatch its read-only calibration query once and reconcile the settled result once to check reuse. This calibration is separate from the cohort search. On updating the checkpoint after correction, use the settled calibration manifest to refute the hypothesis that the bounded calibration result is missing (ID "calibration-result-missing"). State the factual result without importing a recommendation from the calibration. On continuation, verify that the procedure is current. If unavailable, check that the old calibration cannot be readmitted. Do not execute the recommended next action.`
-export const checkerInput = `Independently retrieve the clock-audit source from the shared evidence workbench. Return one JSON object with auditRef and auditRows containing the exact source rows. This is a read-only facts handoff.`
+export const checkerInput = `Independently retrieve the clock-audit source from the shared evidence workbench. Call lookup_pages with {"pages":[{"source":"clock-audit"}]}. Return one JSON object with auditRef and auditRows containing the exact source rows. This is a read-only facts handoff.`
 export const skillContent = `---
 name: ${skillName}
 description: Select a bounded synthetic inspection cohort and account for an independent clock audit.
@@ -26,7 +26,8 @@ description: Select a bounded synthetic inspection cohort and account for an ind
 
 Search inspection prefixes of 4, 8, and 12 rows in that order. The cohort is
 the smallest candidate with at least four defects. Use a separate bounded
-research_workbench lookup with one inspection page at each candidate limit.
+lookup_pages call with {"pages":[{"source":"inspection","limit":N}]} at each
+candidate limit N. Use map_sources with {} if you need to inspect the source fields.
 Stop when a candidate qualifies. Confirm the chosen prefix by repeating the exact
 successful lookup once and reuse its result. Do not reopen this search on update.
 Use the returned source reference as inspectionRef.

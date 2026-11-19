@@ -6,8 +6,8 @@ import { createWorkbench } from "../benchmark/workbench.ts"
 function observation() {
   const evidence = generateFabEvidence()
   const workbench = createWorkbench({ maxAcceptedQueries: 4 })
-  for (const limit of [4, 8, 8]) workbench.call({ op: "lookup", pages: [{ source: "inspection", limit }] })
-  workbench.checkerCall({ op: "lookup", pages: [{ source: "clock-audit", limit: 24 }] })
+  for (const limit of [4, 8, 8]) workbench.call("lookup_pages", { pages: [{ source: "inspection", limit }] })
+  workbench.checkerCall("lookup_pages", { pages: [{ source: "clock-audit", limit: 24 }] })
   const provisional = { cohortSize: 8, defects: 7, inspectionRef: evidenceRef("inspection"),
     auditRef: null, verifiedClockCorrections: null, nextAction: "attribute-as-recorded", prerequisite: "independent-clock-audit" }
   const corrected = { ...provisional, auditRef: evidenceRef("clock-audit"), verifiedClockCorrections: 3,
@@ -43,7 +43,7 @@ test("revocation requires withholding procedure while retaining corrected facts"
 test("an extra costly admission cannot count as cached or within the required cohort search", () => {
   const { workbench, provisional, corrected } = observation()
   const beforeContinue = workbench.snapshot()
-  workbench.call({ op: "lookup", pages: [{ source: "inspection", limit: 12 }] })
+  workbench.call("lookup_pages", { pages: [{ source: "inspection", limit: 12 }] })
   const score = scoreHandoff({ initial: JSON.stringify(provisional), final: JSON.stringify(corrected),
     variant: "active", ledger: workbench.snapshot(), beforeContinue })
   expect(score.observed).toMatchObject({ admissions: 4, cachedResults: 1 })
@@ -53,7 +53,7 @@ test("an extra costly admission cannot count as cached or within the required co
 test("distinct paid query IDs that return the same rows count as duplicate admissions", () => {
   const { workbench, provisional, corrected } = observation()
   const beforeContinue = workbench.snapshot()
-  workbench.checkerCall({ op: "lookup", pages: [{ source: "clock-audit", limit: 12 }] })
+  workbench.checkerCall("lookup_pages", { pages: [{ source: "clock-audit", limit: 12 }] })
   const score = scoreHandoff({ initial: JSON.stringify(provisional), final: JSON.stringify(corrected),
     variant: "active", ledger: workbench.snapshot(), beforeContinue })
   expect(score.observed).toMatchObject({ admissions: 4, duplicateAdmissions: 1, cachedResults: 1 })

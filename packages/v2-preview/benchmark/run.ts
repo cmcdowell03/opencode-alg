@@ -4,7 +4,7 @@ import { tmpdir } from "node:os"
 import { hostVersion } from "../acceptance/host.ts"
 import { runtimeIdentity, sha256 } from "../acceptance/runtime.ts"
 import { runArm, type BenchmarkOptions } from "./driver.ts"
-import { armNames, contextWindow } from "./host.ts"
+import { armNames, contextWindow, hasScopedEvidenceTools } from "./host.ts"
 import { researchCase } from "./case.ts"
 import { scorePair } from "./score.ts"
 import { nativeLimits, nativeModel } from "./native-provider.ts"
@@ -34,10 +34,7 @@ export async function runBenchmark(options: Omit<BenchmarkOptions, "scratch"> & 
       evidence: order.every(arm => {
         const requests = arms[arm].requests.filter(row => row.kind === "ordinary")
         const root = requests.filter(row => row.role === "root"), checker = requests.filter(row => row.role === "checker")
-        return root.some(row => row.tools.includes("evidence_research_workbench")) &&
-          checker.some(row => row.tools.includes("audit_research_workbench")) &&
-          root.every(row => !row.tools.includes("audit_research_workbench")) &&
-          checker.every(row => !row.tools.includes("evidence_research_workbench")) &&
+        return hasScopedEvidenceTools(root, checker) &&
           arms[arm].decision.governedFactoryRequests === 0
       }),
     }

@@ -41,28 +41,37 @@ const fields = {
   monitor: ["block", "chamber", "factor", "wafer", "arm", "recipe", "controls", "ringCount", "measuredOffsetMv", "randomized", "blinded"],
 } as const
 
-export const workbenchTool = {
-  name: "research_workbench",
-  description: "Map and fetch bounded pages of read-only synthetic fab evidence. Use the returned nextCursor to continue a source.",
+export const evidenceToolNames = ["map_sources", "lookup_pages"] as const
+type EvidenceToolName = typeof evidenceToolNames[number]
+const [mapSources, lookupPages] = evidenceToolNames
+
+const workbenchTools = [{
+  name: mapSources,
+  description: "List available synthetic fab evidence sources, field names, row counts, citation refs and page bounds. Call with an empty object.",
+  // Keep the empty properties and required lists explicit for the host's function schema.
+  inputSchema: { type: "object" as const, properties: {}, required: [], additionalProperties: false },
+}, {
+  name: lookupPages,
+  description: "Fetch bounded pages of read-only synthetic fab evidence. Use map_sources to discover available sources. Use a page's nextCursor to continue that source.",
   inputSchema: {
     type: "object" as const,
-    required: ["op"],
+    required: ["pages"],
     additionalProperties: false,
     properties: {
-      op: { type: "string", enum: ["map", "lookup"] },
       pages: { type: "array", minItems: 1, maxItems: maxPages,
         items: {
           type: "object", required: ["source"], additionalProperties: false,
           properties: {
-            source: { type: "string" },
-            limit: { type: "integer", minimum: 1, maximum: maxPageRows },
-            cursor: { type: ["string", "null"] },
+            source: { type: "string", description: "Source ID from map_sources." },
+            limit: { type: ["integer", "null"], minimum: 1, maximum: maxPageRows,
+              description: "Maximum rows for this page. Omit or use null for the default." },
+            cursor: { type: ["string", "null"], description: "Prior page's nextCursor. Omit or use null for the first page." },
           },
         },
       },
     },
   },
-}
+}]
 
 function record(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : undefined
@@ -80,7 +89,7 @@ export function createWorkbench({ maxAcceptedQueries = 16, variant = "positive" 
   const cursors = new Map<string, { scope: Scope; source: Source; offset: number }>()
   let deniedQueries = 0
 
-  function call(input: unknown, scope: Scope): Result {
+  function call(name: EvidenceToolName, input: unknown, scope: Scope): Result {
     const append = (outcome: WorkbenchReceipt["outcome"], result?: Lookup) => {
       receipts.push({
         scope, outcome, queryId: result?.queryId ?? null,
@@ -96,14 +105,14 @@ export function createWorkbench({ maxAcceptedQueries = 16, variant = "positive" 
       return { status: "unavailable", reason }
     }
     const args = record(input)
-    if (args?.op === "map" && onlyKeys(args, ["op"])) {
+    if (name === mapSources && args && Object.keys(args).length === 0) {
       append("mapped")
       return { status: "ok", op: "map", caseId: caseId(variant), maxPageRows, maxPages,
         sources: sourceNames.filter(source => canRead(source, scope))
           .map(source => ({ source, evidenceRef: evidenceRef(source, variant), totalRows: evidence[source].length, fields: [...fields[source]] })),
       }
     }
-    if (args?.op !== "lookup" || !onlyKeys(args, ["op", "pages"]) || !Array.isArray(args.pages) ||
+    if (name !== lookupPages || !args || !onlyKeys(args, ["pages"]) || !Array.isArray(args.pages) ||
         args.pages.length < 1 || args.pages.length > maxPages) return deny("invalid_request")
 
     const requests: PageRequest[] = []
@@ -113,7 +122,8 @@ export function createWorkbench({ maxAcceptedQueries = 16, variant = "positive" 
         return deny("invalid_request")
       const source = sourceNames.find(name => name === page.source)
       if (!source || !canRead(source, scope)) return deny("source_unavailable")
-      const limit = page.limit === undefined ? maxPageRows : page.limit
+      // Provider payloads can materialize omitted optional fields as null.
+      const limit = page.limit ?? maxPageRows
       if (typeof limit !== "number" || !Number.isSafeInteger(limit) || limit < 1 || limit > maxPageRows)
         return deny("invalid_request")
       let offset = 0
@@ -149,8 +159,8 @@ export function createWorkbench({ maxAcceptedQueries = 16, variant = "positive" 
   }
 
   return {
-    call: (input: unknown) => call(input, "root"),
-    checkerCall: (input: unknown) => call(input, "checker"),
+    call: (name: EvidenceToolName, input: unknown) => call(name, input, "root"),
+    checkerCall: (name: EvidenceToolName, input: unknown) => call(name, input, "checker"),
     snapshot: (): WorkbenchSnapshot => ({
       caseId: caseId(variant), maxAcceptedQueries, calls: receipts.length, acceptedQueries: accepted.size,
       deniedQueries, receipts: structuredClone(receipts),
@@ -168,11 +178,12 @@ export function startWorkbench(workbench: ReturnType<typeof createWorkbench>) {
       if (request.method !== "POST") return new Response(null, { status: 405, headers: { Allow: "POST" } })
       const server = new Server({ name: "fixture-research", version: "1.0" }, { capabilities: { tools: {} } })
       const transport = new WebStandardStreamableHTTPServerTransport({ enableJsonResponse: true })
-      server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: [workbenchTool] }))
+      server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: workbenchTools }))
       server.setRequestHandler(CallToolRequestSchema, async ({ params }) => {
-        if (params.name !== workbenchTool.name) throw new Error("Unknown research tool")
+        const name = evidenceToolNames.find(tool => tool === params.name)
+        if (!name) throw new Error("Unknown research tool")
         const call = path === endpoints.checker ? workbench.checkerCall : workbench.call
-        return { content: [{ type: "text", text: JSON.stringify(call(params.arguments)) }] }
+        return { content: [{ type: "text", text: JSON.stringify(call(name, params.arguments ?? {})) }] }
       })
       try {
         await server.connect(transport)

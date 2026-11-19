@@ -7,6 +7,7 @@ import { owner, requestOptions, startHost, transcript } from "../acceptance/host
 import { isolate, sha256, waitFor } from "../acceptance/runtime.ts"
 import { approvedJob, startFactory } from "../acceptance/service.ts"
 import { createV2InvestigationBridge } from "../core/investigation.ts"
+import { evidenceToolNames } from "./workbench.ts"
 import { InvestigationHttpPort } from "../../../src/investigation-transport.ts"
 
 export const pluginId = "opencode-alg-v2-preview"
@@ -19,6 +20,17 @@ export const outputLimit = 4096
 const approval = ".opencode/research-procedure.json"
 const deny = { action: "*", resource: "*", effect: "deny" } as const
 const allow = (action: string, resource = "*") => ({ action, resource, effect: "allow" as const })
+
+export function hasScopedEvidenceTools(
+  root: readonly { tools: readonly string[] }[], checker: readonly { tools: readonly string[] }[],
+) {
+  const names = (server: string) => evidenceToolNames.map(tool => server + "_" + tool)
+  const matches = (rows: typeof root, own: string[], other: string[]) =>
+    rows.length > 0 && rows.every(row =>
+      own.every(tool => row.tools.includes(tool)) && other.every(tool => !row.tools.includes(tool)))
+  const evidence = names("evidence"), audit = names("audit")
+  return matches(root, evidence, audit) && matches(checker, audit, evidence)
+}
 
 export async function prepareHost(root: string, options: {
   model: { providerID: string; id: string }; providerUrl?: string; providers?: Record<string, unknown>; evidenceUrl: string; checkerUrl: string
@@ -37,7 +49,11 @@ export async function prepareHost(root: string, options: {
   const password = randomBytes(24).toString("hex")
   const remote = (url: string) => ({ type: "remote", url, oauth: false, codemode: false, protocol: "legacy" })
   const rules = (server: string, installed = false) => [
-    deny, allow("mcp.use", server), allow("tool.use", `${server}*`), allow(`${server}*`),
+    deny, allow("mcp.use", server),
+    ...evidenceToolNames.flatMap(tool => {
+      const name = server + "_" + tool
+      return [allow("tool.use", name), allow(name)]
+    }),
     allow("skill.use"), allow("tool.use", "skill"), allow("skill"), ...(installed ? [allow("alg_investigation"), allow("tool.use", "alg_investigation")] : []),
   ]
   const config = {

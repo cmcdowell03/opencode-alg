@@ -6,11 +6,10 @@ import { afterPrompt, hostSettings, hostVersion, model, requestOptions, startHos
 import { startProvider } from "./provider.ts"
 import { fileDigest } from "./runtime.ts"
 import { generateFabEvidence } from "../benchmark/case.ts"
-import { createWorkbench, startWorkbench } from "../benchmark/workbench.ts"
+import { createWorkbench, evidenceToolNames, startWorkbench } from "../benchmark/workbench.ts"
 
 const serverName = "lake"
-const readTool = "research_workbench"
-const hostTool = serverName + "_" + readTool
+const hostTools = evidenceToolNames.map(name => serverName + "_" + name)
 const agent = "lake-analyst"
 const positivePrompt = "CODE_MODE_LAKE_FIXTURE: Return only a bounded inspection and dispatch summary."
 const negativePrompt = "CODE_MODE_LAKE_DENIAL: Test the denied fixture operations."
@@ -22,7 +21,7 @@ const forbidden = ["scan_unbounded", "write_table"] as const
 
 const rolePolicy = [
   deny("*"), allow("execute"), allow("tool.use", "execute"), allow("mcp.use", serverName),
-  allow(hostTool), allow("tool.use", hostTool),
+  ...hostTools.flatMap(name => [allow(name), allow("tool.use", name)]),
   ...forbidden.flatMap(tool => [deny(serverName + "_" + tool), deny("tool.use", serverName + "_" + tool)]),
 ]
 
@@ -65,13 +64,13 @@ const unpack = `const unpack = value => {
   const text = typeof value === "string" ? value : parts?.find(part => part.type === "text")?.text;
   return JSON.parse(text);
 };`
-const lookup = { op: "lookup", pages: [{ source: "inspection", limit: pageLimit }, { source: "dispatch", limit: pageLimit }] }
+const lookup = { pages: [{ source: "inspection", limit: pageLimit }, { source: "dispatch", limit: pageLimit }] }
 const aggregateCode = `
-const catalog = unpack(await tools.lake.research_workbench({ op: "map" }));
+const catalog = unpack(await tools.lake.map_sources({}));
 if (catalog.status !== "ok" || !["inspection", "dispatch"].every(source => catalog.sources.some(entry => entry.source === source))) {
   throw Error("Required fixture sources unavailable");
 }
-const result = unpack(await tools.lake.research_workbench(${JSON.stringify(lookup)}));
+const result = unpack(await tools.lake.lookup_pages(${JSON.stringify(lookup)}));
 if (result.status !== "ok" || result.pages.length !== 2) throw Error("Read failed");
 const inspections = result.pages.find(page => page.source === "inspection");
 const dispatch = result.pages.find(page => page.source === "dispatch");
@@ -159,7 +158,7 @@ async function run(binary: string, scratch: string) {
       assert(JSON.stringify(next.toolMessages).includes(JSON.stringify(text).slice(1, -1)), "Next provider request did not include the exact result")
       assert.doesNotMatch(JSON.stringify(next.toolMessages), rowFields)
       for (const { tools } of requests) {
-        for (const name of [...forbidden, hostTool, "bash", "write"]) assert(!tools.includes(name) &&
+        for (const name of [...forbidden, ...evidenceToolNames, "bash", "write"]) assert(!tools.includes(name) &&
           !tools.includes(serverName + "_" + name), "Denied or raw tool exposed")
       }
       if (prompt === positivePrompt) {

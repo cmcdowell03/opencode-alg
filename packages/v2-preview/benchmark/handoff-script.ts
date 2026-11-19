@@ -2,7 +2,7 @@ import { algTool } from "../acceptance/host.ts"
 import type { ClockAudit, Inspection } from "./case.ts"
 import { candidates, classifyHandoff, correctionHeader, defectFloor, handoffUserPhase, matchingCorrections,
   jsonObject, object, refutationId, refutationStatement, skillName, skillContent } from "./handoff-case.ts"
-import { textOf, type TurnInput } from "./transport.ts"
+import { textOf, type Completion, type TurnInput } from "./transport.ts"
 
 function documents(input: unknown, depth = 0): Record<string, unknown>[] {
   if (depth > 8) return []
@@ -16,7 +16,7 @@ function documents(input: unknown, depth = 0): Record<string, unknown>[] {
 }
 
 /** A deterministic client of the installed host. Only the provider is scripted. */
-export function scriptedHandoff({ messages, tools, summary }: TurnInput) {
+export function scriptedHandoff({ messages, tools, summary }: TurnInput): Completion {
   const { phase } = classifyHandoff(messages)
   const user = messages.map(handoffUserPhase).lastIndexOf(phase)
   const recent = messages.slice(user + 1)
@@ -36,11 +36,12 @@ export function scriptedHandoff({ messages, tools, summary }: TurnInput) {
     .find(row => (row.rows as Inspection[]).filter(value => value.defect).length >= defectFloor)
   const cohort = selected?.rows as Inspection[] | undefined
   const attempts = (name: string) => recent.some(message => (message.tool_calls ?? []).some(call => call.function?.name === name))
-  const workbench = tools.find(name => name.endsWith("_research_workbench"))
+  const lookupTool = phase === "checker" ? "audit_lookup_pages" : "evidence_lookup_pages"
+  const canLookup = tools.includes(lookupTool)
   const allowAlg = tools.includes(algTool)
   const useAlg = (args: Record<string, unknown>) => ({ tool: algTool, args })
   const lookup = (source: string, limit: number) => ({
-    tool: workbench!, args: { op: "lookup", pages: [{ source, limit }] },
+    tool: lookupTool, args: { pages: [{ source, limit }] },
   })
   const useSkill = () => ({ tool: "skill", args: { id: skillName } })
 
@@ -73,17 +74,17 @@ export function scriptedHandoff({ messages, tools, summary }: TurnInput) {
   if (phase === "checker") {
     const audit = now.find(row => row.source === "clock-audit" && Array.isArray(row.rows))
     if (audit) return { text: JSON.stringify({ auditRef: audit.evidenceRef, auditRows: audit.rows }) }
-    return workbench ? lookup("clock-audit", 24) : { text: "Evidence unavailable." }
+    return canLookup ? lookup("clock-audit", 24) : { text: "Evidence unavailable." }
   }
 
   if (phase === "initial") {
     if (tools.includes("skill") && !attempts("skill")) return useSkill()
-    if (workbench && !selected) {
+    if (canLookup && !selected) {
       const queried = now.filter(row => row.source === "inspection" && Array.isArray(row.rows)).length
       const limit = candidates[queried]
       if (limit) return lookup("inspection", limit)
     }
-    if (workbench && cohort && now.filter(row => row.source === "inspection" && Array.isArray(row.rows) &&
+    if (canLookup && cohort && now.filter(row => row.source === "inspection" && Array.isArray(row.rows) &&
       row.rows.length === cohort.length).length === 1) return lookup("inspection", cohort.length)
     if (allowAlg) {
       const created = now.find(row => row.ok === true && row.decision_revision === 0)

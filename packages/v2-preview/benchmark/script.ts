@@ -1,5 +1,5 @@
 import { deriveAnswer, researchCase, type FabEvidence, type Source } from "./case.ts"
-import { summarySignature, textOf, type Message, type TurnInput } from "./transport.ts"
+import { summarySignature, textOf, type Completion, type Message, type TurnInput } from "./transport.ts"
 
 export const checkpointPrompt = "Record the next investigation step based on the strongest evidence currently available."
 export const pressurePrompt = "Keep the investigation in its present state. Acknowledge receipt of this background material without changing the analysis."
@@ -72,7 +72,7 @@ function summarize(messages: Message[]) {
 }
 
 /** Single deterministic client policy. It operates only on the current request and its observed tool outputs. */
-export function scriptedTurn({ messages, tools, summary }: TurnInput) {
+export function scriptedTurn({ messages, tools, summary }: TurnInput): Completion {
   if (summary) return summarize(messages)
   const { phase } = classify(messages)
   if (!phase) return { text: "Research investigation" }
@@ -92,8 +92,10 @@ export function scriptedTurn({ messages, tools, summary }: TurnInput) {
         "Verify the current inspection-time attribution independently before acting." } }
   }
   if (phase === "pressure" || phase === "apply") return { text: "Background material received.", pressure: phase === "apply" ? 20_000 : messages.some(message => message.role === "user" && textOf(message.content).includes("Packet 80:")) && !messages.some(message => message.role === "user" && textOf(message.content) === pressurePrompt) ? 11_900 : 1100 }
-  const evidenceTool = tools.find(name => /(?:^|_)research_workbench$/.test(name))
-  if (!evidenceTool) return { text: JSON.stringify({ status: "unavailable" }), reason: "no_evidence_tool" }
+  const server = phase === "checker" ? "audit" : "evidence"
+  const mapTool = server + "_map_sources"
+  const lookupTool = server + "_lookup_pages"
+  if (!tools.includes(mapTool) || !tools.includes(lookupTool)) return { text: JSON.stringify({ status: "unavailable" }), reason: "no_evidence_tool" }
   const user = lastIndex(messages, message => message.role === "user" &&
     textOf(message.content).includes(phase === "checker" ? researchCase.checkerPrompt :
       phase === "revision" ? researchCase.revisionPrompt : researchCase.prompt))
@@ -107,10 +109,10 @@ export function scriptedTurn({ messages, tools, summary }: TurnInput) {
   if (tools.includes("skill") && !skillResult && !invokedSkill)
     return { tool: "skill", args: { id: researchCase.skillName } }
   if (invokedSkill && !skillResult) return { text: JSON.stringify({ status: "unavailable" }), reason: "skill_unobserved" }
-  if (seen.some(value => value.status === "denied" || value.status === "error"))
+  if (seen.some(value => value.status === "unavailable" || value.status === "denied" || value.status === "error"))
     return { text: JSON.stringify({ status: "unavailable" }), reason: "evidence_tool_error" }
   if (!seen.some(value => value.op === "map" && value.status === "ok"))
-    return { tool: evidenceTool, args: { op: "map" } }
+    return { tool: mapTool, args: {} }
   const sources: readonly Source[] = phase === "checker" ? ["clock-audit", "monitor"] : publicSources
   const data: FabEvidence = { inspection: [], route: [], dispatch: [], "clock-audit": [], monitor: [] }
   const refs = new Map<Source, string>()
@@ -127,7 +129,7 @@ export function scriptedTurn({ messages, tools, summary }: TurnInput) {
     if (!latest) return [{ source, limit: 24 }]
     return typeof latest.nextCursor === "string" ? [{ source, limit: 24, cursor: latest.nextCursor }] : []
   })
-  if (needs.length) return { tool: evidenceTool, args: { op: "lookup", pages: needs } }
+  if (needs.length) return { tool: lookupTool, args: { pages: needs } }
   if (phase === "checker") return { text: JSON.stringify({ auditRows: data["clock-audit"], evidenceRef: refs.get("clock-audit"), monitorRows: data.monitor, monitorEvidenceRef: refs.get("monitor") }) }
   if (phase === "revision") {
     const correction = messages.flatMap(message => {
