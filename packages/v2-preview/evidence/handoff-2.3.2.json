@@ -1,0 +1,548 @@
+{
+  "package": "0.1.0-preview.3",
+  "opencode": "2.3.2",
+  "runtime_commit": "c1c88af",
+  "archive_sha256": "c9b08d3ca48a1e590ac9107de78d65d3cdca18f3f7ba7258058d27bfda740557",
+  "bundle_sha256": "c430013339708ae2b5c8dc5ad4d10172055ef58c4898994581b037796e1b1e60",
+  "platforms": {
+    "windows": {
+      "binary_sha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+      "v2_tests_passed": 95,
+      "typecheck": "pass",
+      "restart_receipt_sha256": "d0227b6c0e0ce853f16d9c2ba2d5012b1b34e3fb27e293b470e9753267434bed",
+      "recovery_claims": {
+        "host_boot": "PASS",
+        "active_runtime": "PASS",
+        "accepted_ack_withheld_at_kill": "PASS",
+        "restart_same_session": "PASS",
+        "single_remote_admission": "PASS",
+        "forced_compaction_stale_checkpoint": "PASS",
+        "fresh_checker": "PASS",
+        "checker_bounded_cited_read": "PASS",
+        "revocation_denied_read": "PASS",
+        "cross_project_denied_read": "PASS",
+        "current_next_measurement": "PASS",
+        "end_user_measurement_handoff": "PASS",
+        "team_source_pinned_commit": "PASS",
+        "two_advisory_researchers": "PASS",
+        "background_compaction_race": "NOT_OBSERVED"
+      },
+      "checker_completion_wake": {
+        "checker_result": "pass",
+        "owner_notices": 1,
+        "extra_user_turns": 0
+      },
+      "scripted_handoffs": {
+        "active": {
+          "receipt_sha256": "f058d743f33fa4b44f0aa25c95c7564ad21633c5f09cc4f153688b44fba0d98e",
+          "mode": "scripted-transport",
+          "bundle_sha256": "c430013339708ae2b5c8dc5ad4d10172055ef58c4898994581b037796e1b1e60",
+          "order": [
+            "build",
+            "alg"
+          ],
+          "apparatus": true,
+          "standalone": true,
+          "installed_behavior": true,
+          "qualified": true,
+          "arms": {
+            "build": {
+              "phase": "complete",
+              "standalone_checks": {
+                "passed": 12,
+                "total": 12
+              },
+              "compaction_checks": {
+                "passed": 3,
+                "total": 3
+              },
+              "brief_checks": {
+                "passed": 1,
+                "total": 1
+              },
+              "gate_checks": null,
+              "compaction_summary_bytes": 2157,
+              "corrected_handoff_observed": true,
+              "query_counts": {
+                "admissions": 3,
+                "rootAdmissions": 2,
+                "checkerAdmissions": 1,
+                "cachedResults": 1,
+                "duplicateAdmissions": 0,
+                "denied": 0
+              },
+              "provider_requests_observed": 12,
+              "provider_reported_tokens": null,
+              "http_statuses": {},
+              "transport_media": {},
+              "complete_host_tokens": 13776,
+              "elapsed_seconds": 5.0
+            },
+            "alg": {
+              "phase": "complete",
+              "standalone_checks": {
+                "passed": 12,
+                "total": 12
+              },
+              "compaction_checks": {
+                "passed": 3,
+                "total": 3
+              },
+              "brief_checks": {
+                "passed": 4,
+                "total": 4
+              },
+              "gate_checks": {
+                "passed": 6,
+                "total": 6
+              },
+              "compaction_summary_bytes": 2157,
+              "corrected_handoff_observed": true,
+              "query_counts": {
+                "admissions": 3,
+                "rootAdmissions": 2,
+                "checkerAdmissions": 1,
+                "cachedResults": 1,
+                "duplicateAdmissions": 0,
+                "denied": 0
+              },
+              "provider_requests_observed": 18,
+              "provider_reported_tokens": null,
+              "http_statuses": {},
+              "transport_media": {},
+              "complete_host_tokens": 20664,
+              "elapsed_seconds": 11.25,
+              "calibration": {
+                "acceptedComputations": 1,
+                "acceptedWorkUnits": 24
+              }
+            }
+          }
+        },
+        "revoked": {
+          "receipt_sha256": "e57ed1807bb218599908d8afd6ca2a27214b6816d14c740ddcf5fd0c123474cd",
+          "mode": "scripted-transport",
+          "bundle_sha256": "c430013339708ae2b5c8dc5ad4d10172055ef58c4898994581b037796e1b1e60",
+          "order": [
+            "alg",
+            "build"
+          ],
+          "apparatus": true,
+          "standalone": true,
+          "installed_behavior": true,
+          "qualified": true,
+          "arms": {
+            "alg": {
+              "phase": "complete",
+              "standalone_checks": {
+                "passed": 12,
+                "total": 12
+              },
+              "compaction_checks": {
+                "passed": 3,
+                "total": 3
+              },
+              "brief_checks": {
+                "passed": 4,
+                "total": 4
+              },
+              "gate_checks": {
+                "passed": 6,
+                "total": 6
+              },
+              "compaction_summary_bytes": 2157,
+              "corrected_handoff_observed": true,
+              "query_counts": {
+                "admissions": 3,
+                "rootAdmissions": 2,
+                "checkerAdmissions": 1,
+                "cachedResults": 1,
+                "duplicateAdmissions": 0,
+                "denied": 0
+              },
+              "provider_requests_observed": 19,
+              "provider_reported_tokens": null,
+              "http_statuses": {},
+              "transport_media": {},
+              "complete_host_tokens": 21812,
+              "elapsed_seconds": 13.76,
+              "calibration": {
+                "acceptedComputations": 1,
+                "acceptedWorkUnits": 24
+              }
+            },
+            "build": {
+              "phase": "complete",
+              "standalone_checks": {
+                "passed": 12,
+                "total": 12
+              },
+              "compaction_checks": {
+                "passed": 3,
+                "total": 3
+              },
+              "brief_checks": {
+                "passed": 1,
+                "total": 1
+              },
+              "gate_checks": null,
+              "compaction_summary_bytes": 2157,
+              "corrected_handoff_observed": true,
+              "query_counts": {
+                "admissions": 3,
+                "rootAdmissions": 2,
+                "checkerAdmissions": 1,
+                "cachedResults": 1,
+                "duplicateAdmissions": 0,
+                "denied": 0
+              },
+              "provider_requests_observed": 12,
+              "provider_reported_tokens": null,
+              "http_statuses": {},
+              "transport_media": {},
+              "complete_host_tokens": 13776,
+              "elapsed_seconds": 3.77
+            }
+          }
+        }
+      }
+    },
+    "linux": {
+      "binary_sha256": "e6543f6e5c39c40971ba38afd1819ac852c29ac735b5a89065d3d148d47f27ad",
+      "v2_tests_passed": 95,
+      "typecheck": "pass",
+      "restart_receipt_sha256": "7a6a19303f66bbf0364b4388ea4705b1e9750de43edf35997888bd7e12a14dbe",
+      "recovery_claims": {
+        "host_boot": "PASS",
+        "active_runtime": "PASS",
+        "accepted_ack_withheld_at_kill": "PASS",
+        "restart_same_session": "PASS",
+        "single_remote_admission": "PASS",
+        "forced_compaction_stale_checkpoint": "PASS",
+        "fresh_checker": "PASS",
+        "checker_bounded_cited_read": "PASS",
+        "revocation_denied_read": "PASS",
+        "cross_project_denied_read": "PASS",
+        "current_next_measurement": "PASS",
+        "end_user_measurement_handoff": "PASS",
+        "team_source_pinned_commit": "PASS",
+        "two_advisory_researchers": "PASS",
+        "background_compaction_race": "NOT_OBSERVED"
+      },
+      "checker_completion_wake": {
+        "checker_result": "pass",
+        "owner_notices": 1,
+        "extra_user_turns": 0
+      },
+      "scripted_handoffs": {
+        "active": {
+          "receipt_sha256": "231435249290f7f24e516da061320b5648bfd6098d0e6252f6f49e9ee5af23cc",
+          "mode": "scripted-transport",
+          "bundle_sha256": "c430013339708ae2b5c8dc5ad4d10172055ef58c4898994581b037796e1b1e60",
+          "order": [
+            "build",
+            "alg"
+          ],
+          "apparatus": true,
+          "standalone": true,
+          "installed_behavior": true,
+          "qualified": true,
+          "arms": {
+            "build": {
+              "phase": "complete",
+              "standalone_checks": {
+                "passed": 12,
+                "total": 12
+              },
+              "compaction_checks": {
+                "passed": 3,
+                "total": 3
+              },
+              "brief_checks": {
+                "passed": 1,
+                "total": 1
+              },
+              "gate_checks": null,
+              "compaction_summary_bytes": 2157,
+              "corrected_handoff_observed": true,
+              "query_counts": {
+                "admissions": 3,
+                "rootAdmissions": 2,
+                "checkerAdmissions": 1,
+                "cachedResults": 1,
+                "duplicateAdmissions": 0,
+                "denied": 0
+              },
+              "provider_requests_observed": 12,
+              "provider_reported_tokens": null,
+              "http_statuses": {},
+              "transport_media": {},
+              "complete_host_tokens": 13776,
+              "elapsed_seconds": 3.16
+            },
+            "alg": {
+              "phase": "complete",
+              "standalone_checks": {
+                "passed": 12,
+                "total": 12
+              },
+              "compaction_checks": {
+                "passed": 3,
+                "total": 3
+              },
+              "brief_checks": {
+                "passed": 4,
+                "total": 4
+              },
+              "gate_checks": {
+                "passed": 6,
+                "total": 6
+              },
+              "compaction_summary_bytes": 2157,
+              "corrected_handoff_observed": true,
+              "query_counts": {
+                "admissions": 3,
+                "rootAdmissions": 2,
+                "checkerAdmissions": 1,
+                "cachedResults": 1,
+                "duplicateAdmissions": 0,
+                "denied": 0
+              },
+              "provider_requests_observed": 18,
+              "provider_reported_tokens": null,
+              "http_statuses": {},
+              "transport_media": {},
+              "complete_host_tokens": 20664,
+              "elapsed_seconds": 6.5,
+              "calibration": {
+                "acceptedComputations": 1,
+                "acceptedWorkUnits": 24
+              }
+            }
+          }
+        },
+        "revoked": {
+          "receipt_sha256": "7282399abb1aaadaf059c34d827a0740e726aabf74361477f0ee0a54328dbc7b",
+          "mode": "scripted-transport",
+          "bundle_sha256": "c430013339708ae2b5c8dc5ad4d10172055ef58c4898994581b037796e1b1e60",
+          "order": [
+            "alg",
+            "build"
+          ],
+          "apparatus": true,
+          "standalone": true,
+          "installed_behavior": true,
+          "qualified": true,
+          "arms": {
+            "alg": {
+              "phase": "complete",
+              "standalone_checks": {
+                "passed": 12,
+                "total": 12
+              },
+              "compaction_checks": {
+                "passed": 3,
+                "total": 3
+              },
+              "brief_checks": {
+                "passed": 4,
+                "total": 4
+              },
+              "gate_checks": {
+                "passed": 6,
+                "total": 6
+              },
+              "compaction_summary_bytes": 2157,
+              "corrected_handoff_observed": true,
+              "query_counts": {
+                "admissions": 3,
+                "rootAdmissions": 2,
+                "checkerAdmissions": 1,
+                "cachedResults": 1,
+                "duplicateAdmissions": 0,
+                "denied": 0
+              },
+              "provider_requests_observed": 19,
+              "provider_reported_tokens": null,
+              "http_statuses": {},
+              "transport_media": {},
+              "complete_host_tokens": 21812,
+              "elapsed_seconds": 6.14,
+              "calibration": {
+                "acceptedComputations": 1,
+                "acceptedWorkUnits": 24
+              }
+            },
+            "build": {
+              "phase": "complete",
+              "standalone_checks": {
+                "passed": 12,
+                "total": 12
+              },
+              "compaction_checks": {
+                "passed": 3,
+                "total": 3
+              },
+              "brief_checks": {
+                "passed": 1,
+                "total": 1
+              },
+              "gate_checks": null,
+              "compaction_summary_bytes": 2157,
+              "corrected_handoff_observed": true,
+              "query_counts": {
+                "admissions": 3,
+                "rootAdmissions": 2,
+                "checkerAdmissions": 1,
+                "cachedResults": 1,
+                "duplicateAdmissions": 0,
+                "denied": 0
+              },
+              "provider_requests_observed": 12,
+              "provider_reported_tokens": null,
+              "http_statuses": {},
+              "transport_media": {},
+              "complete_host_tokens": 13776,
+              "elapsed_seconds": 3.63
+            }
+          }
+        }
+      }
+    }
+  },
+  "windows_scripted_automatic_compaction": {
+    "receipt_sha256": "82fd8b06fb2a6944b10c2278253ec4d74492074e49b6bba76c4aad95ca10ed86",
+    "background_overlap": true,
+    "qualified": true
+  },
+  "live_windows_luna": {
+    "receipt_sha256": "90b704c0df6ddc2b1013734d78a577f300188f154ac55183f1d9c2d934367b84",
+    "mode": "native-openai-oauth",
+    "bundle_sha256": "7e37ea49f229f1e1b6a8ac4fa6449f1e338bd160ba5a24d81ccfe96c946bbe4c",
+    "order": [
+      "build",
+      "alg"
+    ],
+    "apparatus": true,
+    "standalone": false,
+    "installed_behavior": false,
+    "qualified": false,
+    "arms": {
+      "build": {
+        "phase": "complete",
+        "standalone_checks": {
+          "initialFacts": false,
+          "initialAction": false,
+          "initialPrerequisite": false,
+          "retainedFacts": false,
+          "action": false,
+          "prerequisite": false,
+          "boundedSearch": false,
+          "independentAuditAdmission": true,
+          "cachedSelectedCohort": false,
+          "noDuplicateAdmissions": true,
+          "boundedLedger": false,
+          "noRequeryAtContinuation": true
+        },
+        "compaction_checks": {
+          "newCompletedBeforeNeutral": true,
+          "providerSummaryResponse": true,
+          "summaryExposedBeforeAnswer": true
+        },
+        "brief_checks": {
+          "noAlgBrief": true
+        },
+        "gate_checks": null,
+        "compaction_summary_bytes": 2647,
+        "corrected_handoff_observed": true,
+        "query_counts": {
+          "admissions": 1,
+          "rootAdmissions": 0,
+          "checkerAdmissions": 1,
+          "cachedResults": 0,
+          "duplicateAdmissions": 0,
+          "denied": 12
+        },
+        "provider_requests_observed": 21,
+        "provider_reported_tokens": 53825,
+        "http_statuses": {
+          "200": 21
+        },
+        "transport_media": {
+          "missing": 21
+        },
+        "complete_host_tokens": 53825,
+        "elapsed_seconds": 94.73
+      },
+      "alg": {
+        "phase": "complete",
+        "standalone_checks": {
+          "initialFacts": false,
+          "initialAction": true,
+          "initialPrerequisite": true,
+          "retainedFacts": true,
+          "action": true,
+          "prerequisite": true,
+          "boundedSearch": true,
+          "independentAuditAdmission": true,
+          "cachedSelectedCohort": true,
+          "noDuplicateAdmissions": true,
+          "boundedLedger": false,
+          "noRequeryAtContinuation": true
+        },
+        "compaction_checks": {
+          "newCompletedBeforeNeutral": true,
+          "providerSummaryResponse": true,
+          "summaryExposedBeforeAnswer": true
+        },
+        "brief_checks": {
+          "correctedRevision": false,
+          "factsRetained": false,
+          "liveApproval": true,
+          "modelProjection": false
+        },
+        "gate_checks": {
+          "pinnedPrerequisite": true,
+          "dispatchOnce": false,
+          "settledManifestReused": false,
+          "currentProcedureGate": true,
+          "correctedCheckpoint": false,
+          "durableCorrectedState": false
+        },
+        "compaction_summary_bytes": 1845,
+        "corrected_handoff_observed": true,
+        "query_counts": {
+          "admissions": 3,
+          "rootAdmissions": 2,
+          "checkerAdmissions": 1,
+          "cachedResults": 1,
+          "duplicateAdmissions": 0,
+          "denied": 4
+        },
+        "provider_requests_observed": 23,
+        "provider_reported_tokens": 106803,
+        "http_statuses": {
+          "200": 23
+        },
+        "transport_media": {
+          "missing": 23
+        },
+        "complete_host_tokens": 106803,
+        "elapsed_seconds": 84.42,
+        "calibration": {
+          "acceptedComputations": 0,
+          "acceptedWorkUnits": 0
+        }
+      }
+    }
+  },
+  "interpretation": [
+    "The live pair used the preceding candidate. Its exact bundle is identified separately.",
+    "ALG returned 8 inspected, 7 defects, 3 clock corrections and replay-clock-join. Build reported that inspection data were unavailable and abstained.",
+    "Both missed initial facts. The checker supplied a valid correction to both. The neutral continuation followed a verified manual compaction in each arm.",
+    "ALG refused dispatch with an extraneous revision argument. No calibration job ran. The live owner's saved revision lacked the required refutation. The final build returns the operation's argument contract; a local regression replays the refused input and verifies the corrected call.",
+    "Each arm had the same evidence workbench. The prompt explicitly requested bookkeeping where supported. The synthetic factory calibration is extra work in the ALG treatment.",
+    "Scripted model responses qualify the installed mechanics. Scripted token totals are fixture data.",
+    "A single live fixture cannot establish a general performance difference. Billed cost is unknown."
+  ]
+}

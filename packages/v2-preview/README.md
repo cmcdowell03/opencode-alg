@@ -166,6 +166,64 @@ bytes returned for a citation.
 
 ## Paired Build and ALG benchmark
 
+### Investigation handoff in preview.3
+
+The owner session has one native instruction entry named `alg.v2.owner-brief`.
+It carries the current ledger and decision revisions, work status, settled
+manifest digest, and the verified approval revision when one exists. Before
+model requests ALG checks the live state. It supplies the recorded refutation
+and pending measurement as bounded user-role data. The ledger remains the
+source of record across restarts. Withdrawing the procedure approval keeps
+the cited evidence available and withdraws the procedure-dependent recommendation.
+Past turns may still contain information delivered before withdrawal.
+
+To gate an expensive query, set `preQueryPolicy.procedure` to the approved
+procedure pin and `preQueryPolicy.prerequisite` to
+`{ "kind": "committed_clock_alignment", "revision": "<git commit>", "path": "clock-alignment.json", "sha256": "<content digest>" }`.
+The committed JSON sample must cover the exact project, operation, recipe,
+cohort, as-of time, source dependencies, and preprocessing revision. ALG checks
+a positive row count and maximum skew within the attested tolerance. See the
+[complete sample](benchmark/handoff-gate.ts). This verifies a pinned sample;
+the operator owns its provenance and tolerance. A later matching request can
+reuse the settled manifest. For an uncertain submission the only automatic
+operation is lookup by its original identity.
+
+Set `continueOnEvidence: true` to allow an idle investigation owner to be
+prompted by a newly verified checker result, completed advisory batch, or
+reconciled external result. This can initiate another model turn. External
+lookups use a short, finite schedule. Long-running work remains in the ledger
+and can be reconciled on a later turn. ALG records the wake before requesting
+host admission, so a crash at that boundary can require a manual continuation.
+The default is off.
+
+Run the matched post-compaction handoff locally:
+
+```sh
+bun packages/v2-preview/benchmark/handoff.ts --host /path/to/opencode --package /path/to/bundle --out /path/to/active.json
+bun packages/v2-preview/benchmark/handoff.ts --host /path/to/opencode --package /path/to/bundle --out /path/to/revoked.json --variant revoked --order alg-first
+bun packages/v2-preview/acceptance/continuation.ts --host /path/to/opencode --package /path/to/bundle
+```
+
+Both arms receive the same correction, a real host compaction, and then only
+`Continue.`. The receipt separates host mechanics, each arm's standalone
+decision, and installed ALG behavior. Use the native-model flags below for a
+live pair. Scope usage to the owner and checker. Missing usage or price is
+unknown. A host cost estimate and an invoice are different measurements.
+
+In the first live Luna pair, ALG reported eight inspected wafers, seven
+defects, three independently verified clock corrections, and the correct next
+action to replay the clock join. Build could not establish the inspection
+cohort and abstained. ALG used 106,803 total tokens across the owner, checker
+and compaction. Build used 53,825. Both arms missed the initial facts.
+The live ALG call to dispatch included a field reserved for updating a
+decision. The calibration stayed reserved and the expected cited refutation
+was missing. The final package returns the accepted arguments for that
+action, and a regression exercises the refused call followed by a valid
+dispatch. The [validation record](evidence/handoff-2.3.2.json) identifies the
+live candidate and the final cross-platform package separately.
+
+### Background compaction and independent research
+
 Run the same installed OpenCode 2.3.2 binary and the same synthetic investigation
 for each arm, with a fresh output filename:
 

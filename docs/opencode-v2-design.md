@@ -7,6 +7,15 @@ through the real host. Extract shared interfaces as this workflow needs them.
 The [preview guide](../packages/v2-preview/README.md) records the current
 installation boundary, measured behavior and remaining gaps.
 
+**Decision handoff increment.** The 2.3.2 preview uses one native keyed owner
+brief to recover the current investigation after compaction. Free-text facts
+enter as user-role data. Fresh authority controls procedure use and admission
+of an expensive query. A committed, scope-matched clock sample is the first
+applicability check. An optional, bounded wake resumes the owner when verified
+evidence arrives. The Build comparison exercises both an active and a withdrawn
+procedure after a correction and real compaction. Host delivery, correct use
+of evidence, duplicate work, and token accounting are scored separately.
+
 **Research investigation increment.** On the same 2.3.2 host, the second preview
 extends that path through a corrected decision, an approved procedure and up to
 two advisory researchers. The owner records a refuted hypothesis with its evidence
