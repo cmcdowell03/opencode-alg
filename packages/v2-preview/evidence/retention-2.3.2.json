@@ -1,0 +1,432 @@
+{
+  "benchmark_commit": "6c5e41d",
+  "interpretation": {
+    "preview_release": "held_in_draft",
+    "comparative_claim": "insufficient_evidence",
+    "scope": "One live, ALG-first regression pair and eight scripted control pairs on each platform.",
+    "primary_endpoint": "Both agents reached the supported final decision. Both retained seven of seven eligible reported items.",
+    "windows_test_note": "One integration fixture exceeded its five-second timeout while the matrix was running. A standalone rerun of all 111 tests passed.",
+    "measurement_note": "The live grades below are frozen. Build included the correct initial report with trailing prose. ALG recorded its cited refutation before the explicit correction, and revision 3 contained the corrected action and prerequisite. The system-role procedure-body check did not pass."
+  },
+  "secondary_offline_replay": {
+    "source": "The same live receipt, evaluated after the frozen grade",
+    "verified_at_cuts": ["before_compaction", "after_continuation"],
+    "decision_revision": 3,
+    "action": "replay-clock-join",
+    "prerequisite": "verified-clock-audit",
+    "same_accepted_job_and_manifest": true,
+    "refutation_id": "calibration-result-missing",
+    "refutation_revision": 2,
+    "statement_review": "grounded",
+    "review_basis": "The attested statement says the calibration result exists and is settled. The independent factory receipt records one completed job with the same result manifest.",
+    "acknowledged_refutation_text_sha256": "b1e9e6a4585f64d7d1e3c75a8d327a8b33f544944c8dba47c5749947656bb0bd",
+    "exact_approved_procedure_read_on_continuation": true,
+    "system_role_procedure_projection": "unproven",
+    "build_initial_report": "Correct leading JSON object followed by prose"
+  },
+  "host_version": "2.3.2",
+  "bundle_sha256": "c430013339708ae2b5c8dc5ad4d10172055ef58c4898994581b037796e1b1e60",
+  "package": "0.1.0-preview.3",
+  "platforms": {
+    "win": {
+      "typecheck": "pass",
+      "v2_tests": 111,
+      "runner_sha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+      "bundle_sha256": "c430013339708ae2b5c8dc5ad4d10172055ef58c4898994581b037796e1b1e60",
+      "summary_sha256": "5603a91bb7648509f09d07eb66d8f3ce6bce31507609bf769203faeaa6aafc67",
+      "qualified_pairs": 8,
+      "planned_pairs": 8,
+      "scripted_only": true,
+      "retention_totals": {
+        "build_delivered_boundaries": 14,
+        "build_eligible": 92,
+        "build_retained": 92,
+        "build_lostWrong": 0,
+        "build_unavailable": 0,
+        "build_supportUnverified": 0,
+        "alg_delivered_boundaries": 14,
+        "alg_eligible": 92,
+        "alg_retained": 92,
+        "alg_lostWrong": 0,
+        "alg_unavailable": 0,
+        "alg_supportUnverified": 0
+      },
+      "cases": [
+        {
+          "workload": "near-miss",
+          "variant": "negative",
+          "order": "build-first",
+          "status": "qualified",
+          "receipt_sha256": "afe6a75f290834c5e39ceae8417fe91271c968e702c13b88d163437e176befc1",
+          "causality": {
+            "build": "pass",
+            "alg": "pass"
+          }
+        },
+        {
+          "workload": "near-miss",
+          "variant": "negative",
+          "order": "alg-first",
+          "status": "qualified",
+          "receipt_sha256": "1321f9e71904d802cece7228ef9e18cc2b7f7b9dcf107b9d7973a0aae51c7d82",
+          "causality": {
+            "build": "pass",
+            "alg": "pass"
+          }
+        },
+        {
+          "workload": "extended",
+          "variant": "active",
+          "order": "build-first",
+          "status": "qualified",
+          "receipt_sha256": "4ab6390f739c6e31b84a4d05cf9cd4d559af237ed2716efd55f42c0bd1556ec4"
+        },
+        {
+          "workload": "extended",
+          "variant": "active",
+          "order": "alg-first",
+          "status": "qualified",
+          "receipt_sha256": "47daaaac16351ee41aad212fc4f74025519cf6dd8cc03266bb460347fdc0511f"
+        },
+        {
+          "workload": "extended",
+          "variant": "revoked",
+          "order": "build-first",
+          "status": "qualified",
+          "receipt_sha256": "1fd79555956219b77c980c90602e9845ae3d49132d94e013e608cb069502411f"
+        },
+        {
+          "workload": "extended",
+          "variant": "revoked",
+          "order": "alg-first",
+          "status": "qualified",
+          "receipt_sha256": "c1decff3f42bf8a14e4a3d90860dc1d783189e2e6d318e90c2210d2be44d608a"
+        },
+        {
+          "workload": "single",
+          "variant": "active",
+          "order": "alg-first",
+          "status": "qualified",
+          "receipt_sha256": "c9350c1882b235a7cc3577c6705850be6abd486492115eb142cfecdaac9816fa"
+        },
+        {
+          "workload": "single",
+          "variant": "revoked",
+          "order": "build-first",
+          "status": "qualified",
+          "receipt_sha256": "b49da152840d94bfeb00eab6e5d60859eb714c13753d9b15aa3ce1f6ff1cb6db"
+        }
+      ]
+    },
+    "linux": {
+      "typecheck": "pass",
+      "v2_tests": 111,
+      "runner_sha256": "e6543f6e5c39c40971ba38afd1819ac852c29ac735b5a89065d3d148d47f27ad",
+      "bundle_sha256": "c430013339708ae2b5c8dc5ad4d10172055ef58c4898994581b037796e1b1e60",
+      "summary_sha256": "abe5cf859d60b488f0e86a9df271de5a1f13e4c52d24b7f12124660654f0f7c9",
+      "qualified_pairs": 8,
+      "planned_pairs": 8,
+      "scripted_only": true,
+      "retention_totals": {
+        "build_delivered_boundaries": 14,
+        "build_eligible": 92,
+        "build_retained": 92,
+        "build_lostWrong": 0,
+        "build_unavailable": 0,
+        "build_supportUnverified": 0,
+        "alg_delivered_boundaries": 14,
+        "alg_eligible": 92,
+        "alg_retained": 92,
+        "alg_lostWrong": 0,
+        "alg_unavailable": 0,
+        "alg_supportUnverified": 0
+      },
+      "cases": [
+        {
+          "workload": "near-miss",
+          "variant": "negative",
+          "order": "build-first",
+          "status": "qualified",
+          "receipt_sha256": "1b99689d750adb5f7daac288cc30b39c4db29623d711b94b0eb3b2022347d089",
+          "causality": {
+            "build": "pass",
+            "alg": "pass"
+          }
+        },
+        {
+          "workload": "near-miss",
+          "variant": "negative",
+          "order": "alg-first",
+          "status": "qualified",
+          "receipt_sha256": "000e737b2e8fe0c985332386ea7eb26ecb738baf4e0cb88868c53723d7587688",
+          "causality": {
+            "build": "pass",
+            "alg": "pass"
+          }
+        },
+        {
+          "workload": "extended",
+          "variant": "active",
+          "order": "build-first",
+          "status": "qualified",
+          "receipt_sha256": "c57f7b9a9f645318624f6f7f05793dfecf9685579235e58ec0dae4e41efb9fd2"
+        },
+        {
+          "workload": "extended",
+          "variant": "active",
+          "order": "alg-first",
+          "status": "qualified",
+          "receipt_sha256": "ab55abfbb7262e5401e63ba3e8ebdf0b93e8a645f85da602ba35baa4a5961c07"
+        },
+        {
+          "workload": "extended",
+          "variant": "revoked",
+          "order": "build-first",
+          "status": "qualified",
+          "receipt_sha256": "12a36e4cd76b7a89dbdc4f2ab78bf132d6c6de9e705b54f522f8c1d865bd7839"
+        },
+        {
+          "workload": "extended",
+          "variant": "revoked",
+          "order": "alg-first",
+          "status": "qualified",
+          "receipt_sha256": "14d81cf2e18e4fca2b5246359cb4a234eec2da0d70897434a30c84d91c67c27d"
+        },
+        {
+          "workload": "single",
+          "variant": "active",
+          "order": "alg-first",
+          "status": "qualified",
+          "receipt_sha256": "b75a7089091ffd22eb4f171c5579aa362d5e75e6809d49f6995e47872577c3ce"
+        },
+        {
+          "workload": "single",
+          "variant": "revoked",
+          "order": "build-first",
+          "status": "qualified",
+          "receipt_sha256": "d67631923687287625f98186ba62736118f85ce906504804debfa31878727099"
+        }
+      ]
+    }
+  },
+  "live": {
+    "mode": "native-openai-oauth",
+    "model": {
+      "providerID": "openai",
+      "id": "gpt-6-luna"
+    },
+    "order": [
+      "alg",
+      "build"
+    ],
+    "receipt_sha256": "35eb1075b98f8d5eb04596f93cd106f4e9df2163acba1b028d5eb70d4f36eadc",
+    "apparatus": true,
+    "workflow": false,
+    "qualified": false,
+    "parity": {
+      "model": true,
+      "skill": true,
+      "evidence": true,
+      "correction": true,
+      "finalInput": true,
+      "treatment": true,
+      "runtimeUnchanged": true
+    },
+    "arms": {
+      "alg": {
+        "phase": "complete",
+        "requests": 23,
+        "elapsed_seconds": 68.69,
+        "complete_host_tokens": 128563,
+        "provider_tokens": 128563,
+        "output_tokens": 1906,
+        "initial_facts": true,
+        "standalone_checks": {
+          "initialFacts": true,
+          "initialAction": true,
+          "initialPrerequisite": true,
+          "retainedFacts": true,
+          "action": true,
+          "prerequisite": true,
+          "boundedSearch": true,
+          "independentAuditAdmission": true,
+          "cachedSelectedCohort": true,
+          "noDuplicateAdmissions": true,
+          "boundedLedger": true,
+          "noRequeryAtContinuation": true
+        },
+        "observed_answers": {
+          "initial": {
+            "cohortSize": 8,
+            "defects": 7,
+            "verifiedClockCorrections": null,
+            "nextAction": "attribute-as-recorded",
+            "prerequisite": "independent-clock-audit",
+            "auditRef": null,
+            "inspectionRef": "4b0b4cfdcde64bba"
+          },
+          "final": {
+            "cohortSize": 8,
+            "defects": 7,
+            "verifiedClockCorrections": 3,
+            "nextAction": "replay-clock-join",
+            "prerequisite": "verified-clock-audit",
+            "auditRef": "10bbef2f5a7dd3bf",
+            "inspectionRef": "4b0b4cfdcde64bba"
+          }
+        },
+        "query_counts": {
+          "admissions": 3,
+          "rootAdmissions": 2,
+          "checkerAdmissions": 1,
+          "cachedResults": 1,
+          "duplicateAdmissions": 0,
+          "denied": 0
+        },
+        "correction_delivered": true,
+        "brief": {
+          "correctedRevision": false,
+          "factsRetained": true,
+          "liveApproval": true,
+          "modelProjection": false
+        },
+        "gate": {
+          "pinnedPrerequisite": true,
+          "dispatchOnce": true,
+          "settledManifestReused": true,
+          "currentProcedureGate": true,
+          "correctedCheckpoint": false,
+          "durableCorrectedState": false
+        },
+        "accepted_calibrations": 1,
+        "compactions": [
+          {
+            "verified": true,
+            "summary_tokens": 10540,
+            "retention": {
+              "observed": true,
+              "eligible": 7,
+              "retained": 7,
+              "lostWrong": 0,
+              "unavailable": 0,
+              "supportUnverified": 0,
+              "lossBounds": [
+                0,
+                0
+              ],
+              "revocationObserved": false
+            },
+            "invalidated": 0,
+            "continuation_queries": {
+              "newQueries": 0,
+              "priorCacheReads": 0,
+              "newQueryCacheReads": 0,
+              "denied": 0,
+              "maps": 0
+            },
+            "manifest_references": 0,
+            "refutation": {
+              "recorded": false,
+              "eligible": false,
+              "outcome": null
+            },
+            "projection": {
+              "summary": true,
+              "factualRefutation": true,
+              "pendingMeasurement": true,
+              "currentSkill": false
+            }
+          }
+        ]
+      },
+      "build": {
+        "phase": "complete",
+        "requests": 15,
+        "elapsed_seconds": 47.87,
+        "complete_host_tokens": 41652,
+        "provider_tokens": 41652,
+        "output_tokens": 1560,
+        "initial_facts": false,
+        "standalone_checks": {
+          "initialFacts": false,
+          "initialAction": false,
+          "initialPrerequisite": false,
+          "retainedFacts": true,
+          "action": true,
+          "prerequisite": true,
+          "boundedSearch": true,
+          "independentAuditAdmission": true,
+          "cachedSelectedCohort": true,
+          "noDuplicateAdmissions": true,
+          "boundedLedger": true,
+          "noRequeryAtContinuation": true
+        },
+        "observed_answers": {
+          "initial": null,
+          "final": {
+            "cohortSize": 8,
+            "defects": 7,
+            "verifiedClockCorrections": 3,
+            "nextAction": "replay-clock-join",
+            "prerequisite": "verified-clock-audit",
+            "auditRef": "10bbef2f5a7dd3bf",
+            "inspectionRef": "4b0b4cfdcde64bba"
+          }
+        },
+        "query_counts": {
+          "admissions": 3,
+          "rootAdmissions": 2,
+          "checkerAdmissions": 1,
+          "cachedResults": 1,
+          "duplicateAdmissions": 0,
+          "denied": 0
+        },
+        "correction_delivered": true,
+        "brief": {
+          "noAlgBrief": true
+        },
+        "gate": null,
+        "accepted_calibrations": null,
+        "compactions": [
+          {
+            "verified": true,
+            "summary_tokens": 5304,
+            "retention": {
+              "observed": true,
+              "eligible": 7,
+              "retained": 7,
+              "lostWrong": 0,
+              "unavailable": 0,
+              "supportUnverified": 0,
+              "lossBounds": [
+                0,
+                0
+              ],
+              "revocationObserved": false
+            },
+            "invalidated": 0,
+            "continuation_queries": {
+              "newQueries": 0,
+              "priorCacheReads": 0,
+              "newQueryCacheReads": 0,
+              "denied": 0,
+              "maps": 0
+            },
+            "manifest_references": null,
+            "refutation": {
+              "recorded": null,
+              "eligible": false,
+              "outcome": null
+            },
+            "projection": {
+              "summary": true,
+              "factualRefutation": false,
+              "pendingMeasurement": false,
+              "currentSkill": false
+            }
+          }
+        ]
+      }
+    }
+  }
+}

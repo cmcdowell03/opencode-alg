@@ -12,7 +12,7 @@ The Windows and WSL Linux runs both completed with `NATIVE_CODE_MODE_PASSED`. Na
 
 ## Example role policy
 
-This uses the fixture's names. Keep the blanket deny first and allow only the reviewed read tool. Where discovery and querying are separate, add an exact pair of allow rules for each approved tool.
+This uses the fixture's names. The role allows source discovery and bounded page reads through two separately named tools.
 
 ```jsonc
 {
@@ -36,14 +36,16 @@ This uses the fixture's names. Keep the blanket deny first and allow only the re
         { "action": "execute", "resource": "*", "effect": "allow" },
         { "action": "tool.use", "resource": "execute", "effect": "allow" },
         { "action": "mcp.use", "resource": "lake", "effect": "allow" },
-        { "action": "lake_research_workbench", "resource": "*", "effect": "allow" },
-        { "action": "tool.use", "resource": "lake_research_workbench", "effect": "allow" }
+        { "action": "lake_map_sources", "resource": "*", "effect": "allow" },
+        { "action": "tool.use", "resource": "lake_map_sources", "effect": "allow" },
+        { "action": "lake_lookup_pages", "resource": "*", "effect": "allow" },
+        { "action": "tool.use", "resource": "lake_lookup_pages", "effect": "allow" }
       ]
     }
   }
 }
 ```
 
-For a real service, obtain the operator-approved MCP tool IDs and input schemas from its `tools/list` catalog. Match those IDs to the exact permission names and JavaScript paths OpenCode exposes for the configured server. The fixture maps `research_workbench` to permission `lake_research_workbench` and path `tools.lake.research_workbench`. Preserve the host catalog's exact spelling and bracket notation. Keep generic SQL execution, unbounded scans, exports, and writes out of the allowlist. Use a read-only principal and enforce dataset, predicate, row, byte, cost, timeout, and network limits at the service or gateway, including for tools that multiplex operations.
+For a real service, obtain the operator-approved MCP tool IDs and input schemas from its `tools/list` catalog. Match those IDs to the exact permission names and JavaScript paths OpenCode exposes for the configured server. The fixture calls `tools.lake.map_sources({})` and `tools.lake.lookup_pages({pages})`. Preserve the host catalog's exact spelling and bracket notation. Keep generic SQL execution, unbounded scans, exports, and writes out of the allowlist. Use a read-only principal and enforce dataset, predicate, row, byte, cost, timeout, and network limits at the service or gateway, including for tools that multiplex operations.
 
 Inside `execute`, discover the source, make the bounded read, and reduce the rows to an explicit summary with coverage counts and source references. Return the summary and omit row logging. The probe qualifies this scripted program and role. Code Mode can return data a program explicitly emits, so enforce an aggregate-only service contract when row disclosure must be impossible. If native `execute` is unavailable, a governed MCP tool that computes the same bounded aggregate at the service is an alternative with its own qualification.

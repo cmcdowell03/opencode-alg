@@ -33,7 +33,7 @@ const armSchema = z.object({
 const pairSchema = z.object({
   incidentId: id, independenceGroup: id, seedFamily: id.nullable(),
   purpose: z.enum(["held-out", "pilot", "regression"]),
-  mode: z.enum(["native-openai-oauth", "scripted-transport"]),
+  mode: z.enum(["live-model", "native-openai-oauth", "scripted-transport"]),
   startedAt: timestamp, order: z.enum(orders), receiptSha256: sha256,
   oracleSha256: sha256, independentAssessmentSha256: sha256,
   alg: armSchema.nullable(), build: armSchema.nullable(),
@@ -166,7 +166,7 @@ export function evaluateSuperiority(evidence: unknown, registration?: PublishedR
     const rows = byIncident.get(expected.incidentId) ?? []
     if (rows.length > 1) reasons.push(expected.incidentId + " has repeated runs.")
     const pair = rows.length === 1 ? rows[0]! : null
-    const mismatched = pair !== null && (pair.mode !== "native-openai-oauth" || pair.purpose !== "held-out" ||
+    const mismatched = pair !== null && (pair.mode === "scripted-transport" || pair.purpose !== "held-out" ||
         Date.parse(pair.startedAt) <= Date.parse(registration.publishedAt) ||
         pair.independenceGroup !== expected.independenceGroup || pair.seedFamily !== expected.seedFamily ||
         pair.order !== expected.order || pair.oracleSha256 !== expected.oracleSha256 ||

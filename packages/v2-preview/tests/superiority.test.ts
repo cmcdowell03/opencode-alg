@@ -9,7 +9,7 @@ const startedAt = "2026-11-02T00:00:00Z"
 const fixtures = ["causal-positive", "near-miss", "authority-withdrawal", "extended"] as const
 const orders = ["alg-first", "build-first"] as const
 const controls = {
-  hostSha256: digest("host"), model: "openai/test-fixture", packageSha256: digest("package"),
+  hostSha256: digest("host"), model: "fixture/provider-model", packageSha256: digest("package"),
   budgetSha256: digest("budget"), protocolSha256: digest("protocol"),
 }
 
@@ -27,7 +27,7 @@ function study(perStratum = 1) {
       const arm = { controls: { ...controls }, evidenceSha256, unauthorizedActions: 0, duplicateAdmissions: 0,
         duplicateExpensiveAdmissions: 0 }
       return { incidentId, independenceGroup, seedFamily, order, oracleSha256, startedAt, purpose: "held-out",
-        mode: "native-openai-oauth", receiptSha256: digest("run:" + incidentId),
+        mode: "live-model", receiptSha256: digest("run:" + incidentId),
         independentAssessmentSha256: digest("assessment:" + incidentId),
         alg: { ...arm, endpoint: "correct" }, build: { ...arm, endpoint: "incorrect" } }
     }),
