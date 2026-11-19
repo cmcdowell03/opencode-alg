@@ -256,6 +256,24 @@ run `bun packages/v2-preview/benchmark/handoff-audit.ts /path/to/raw-pair.json -
 This replay makes no model calls. This tuned incident contributes no independent
 held-out estimate of an advantage.
 
+The decision grader follows the owner's acknowledged writes in the host
+transcript. At each compaction it compares the latest accepted action and
+revision with the stored checkpoint and the brief. The checker can deliver
+its verified correction through OpenCode before the explicit user turn.
+Conflict responses, final-answer prose and a later repair cannot establish
+that the correct checkpoint existed at an earlier boundary.
+
+New receipts record `compaction.boundaries[].skillDelivery` for each arm.
+Each successful continuation request lists the roles carrying the full pinned
+body and the roles carrying ALG's marked approval plus body. Request IDs link
+each observation to the root request that received the completed summary
+before the answer. `complete: true` with empty roles means the observer found
+the body in none of those requests. An incomplete capture leaves that question
+open. The Responses observer distinguishes the top-level `instructions` field,
+explicit system and developer messages, and tool outputs. A tool read or a
+quotation in a user message cannot satisfy the system-projection check.
+Older receipts without this capture have unknown delivery roles.
+
 ### Background compaction and independent research
 
 Run the same installed OpenCode 2.3.2 binary and the same synthetic investigation

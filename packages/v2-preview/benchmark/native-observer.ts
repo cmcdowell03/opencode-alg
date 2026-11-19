@@ -8,6 +8,7 @@ import type { SessionHttpRequest, SessionHttpResponse } from "@opencode/plugin/p
 import type { RequestObservation } from "./compaction.ts"
 import { nativeLimits, nativeModel } from "./native-provider.ts"
 import type { Message } from "./transport.ts"
+import { wireTextParts } from "./skill-delivery.ts"
 
 export const nativeObserverID = "paired-benchmark-native-observer"
 const endpoint = "https://chatgpt.com/backend-api/codex/responses"
@@ -27,7 +28,7 @@ type NativeObservation = RequestObservation & {
 }
 type Beginning = {
   sessionID: string; kind: "primary" | "compaction"; bytes: number
-  messages: Array<{ role?: string; content: string }>; tools: string[]
+  messages: Message[]; tools: string[]
 }
 type Terminal = { status: number; bytes: number; usage: Usage | null; summary?: string
   httpStatus?: number; media?: ReturnType<typeof responseMedia>; invalidFraming?: boolean }
@@ -61,16 +62,6 @@ function responseUsage(value: unknown): Usage | null {
   return { input: row.input_tokens, output: row.output_tokens, total: row.total_tokens }
 }
 
-function contentText(value: unknown): string {
-  if (typeof value === "string") return value
-  if (Array.isArray(value)) return value.map(contentText).filter(Boolean).join("\n")
-  const row = record(value)
-  if (!row) return ""
-  if (typeof row.text === "string") return row.text
-  if (row.type === "function_call_output" || row.type === "custom_tool_call_output") return contentText(row.output)
-  return contentText(row.content)
-}
-
 export function readNativeCompletion(event: unknown, summary: boolean) {
   const row = record(event)
   if (row?.type !== "response.completed" && row?.type !== "response.incomplete" &&
@@ -90,7 +81,7 @@ export function readNativeCompletion(event: unknown, summary: boolean) {
     ...(summary && text ? { summary: text } : {}) }
 }
 
-function nativeBody(text: string, id: string) {
+export function nativeBody(text: string, id: string) {
   const body = record(JSON.parse(text))
   if (!body || body.model !== id || body.stream !== true || !Array.isArray(body.input) ||
       (body.tools !== undefined && !Array.isArray(body.tools)))
@@ -100,11 +91,16 @@ function nativeBody(text: string, id: string) {
     if (tool?.type !== "function" || typeof tool.name !== "string") throw new Error("NATIVE_HOSTED_TOOL_BLOCKED")
     return tool.name
   })
-  const messages = body.input.map(value => {
+  const messages: Message[] = body.input.flatMap(value => {
     const row = record(value)
-    return { role: typeof row?.role === "string" ? row.role : undefined, content: contentText(value) }
+    if (!row) return []
+    const tool = row.type === "function_call_output" || row.type === "custom_tool_call_output"
+    if (!tool && row.type !== "message" && row.type !== undefined) return []
+    const parts = wireTextParts(tool ? row.output : row.content)
+    return [{ role: tool ? "tool" : typeof row.role === "string" ? row.role : undefined,
+      content: parts.length === 1 ? parts[0] : parts.map(text => ({ type: "text", text })) }]
   })
-  if (typeof body.instructions === "string") messages.unshift({ role: "system", content: body.instructions })
+  if (typeof body.instructions === "string") messages.unshift({ wireSource: "responses.instructions", content: body.instructions })
   // The pinned OAuth hook removes maxTokens for the Codex endpoint. Keep its wire format.
   const bytes = Buffer.byteLength(text)
   if (bytes > nativeLimits.requestBytes) throw new Error("NATIVE_REQUEST_BYTES_EXCEEDED")
@@ -112,7 +108,7 @@ function nativeBody(text: string, id: string) {
 }
 
 export function startNativeObserver(options: {
-  id: string; classify: (messages: Message[]) => Pick<RequestObservation, "role" | "phase">
+  id: string; classify: (messages: Message[], requestId: number) => Pick<RequestObservation, "role" | "phase">
   stale: string; correction: string; skill: () => string | undefined
 }) {
   nativeModel("openai/" + options.id)
@@ -162,12 +158,13 @@ export function startNativeObserver(options: {
             return fail("NATIVE_REQUEST_BYTES_EXCEEDED")
           requestBytes += input.bytes
           outstanding++
-          const contents = input.messages.map(message => message.content)
+          const contents = input.messages.map(message => wireTextParts(message.content).join("\n"))
           const text = contents.join("\n")
           const kind = input.kind === "compaction" ? "summary" : "ordinary"
+          const startedAtMs = performance.now()
           const row: NativeObservation = {
-            id: requests.length + 1, kind, role, phase: options.classify(input.messages).phase,
-            sessionID: input.sessionID, startedAtMs: performance.now(), dispatchAtMs: null, finishedAtMs: null,
+            id: requests.length + 1, kind, role, phase: options.classify(input.messages, requests.length + 1).phase,
+            sessionID: input.sessionID, startedAtMs, dispatchAtMs: null, finishedAtMs: null,
             requestBytes: input.bytes, responseBytes: null, httpStatus: null, media: null, usage: null, summaryResponseSha256: null,
             stale: text.includes(options.stale), correction: text.includes(options.correction),
             oldSummary: contents.some(value => hasText(value, baselineSummary)),

@@ -41,6 +41,10 @@ function handoffArm(arm: Handoff["arms"]["build"]) {
     failure: arm.failure,
     completedBoundaries: rows?.filter(row => row.type === "compaction" && row.status === "completed").length ?? null,
     witnessedBoundaries: arm.compaction.boundaries.filter(row => Object.values(row.checks).every(Boolean)).length,
+    skillDelivery: arm.compaction.boundaries.map(({ index, skillDelivery }) => ({
+      index, complete: skillDelivery.complete, firstRequestRoles: skillDelivery.complete ? skillDelivery.requests[0]!.roles : null,
+      roles: skillDelivery.roles, projectionRoles: skillDelivery.projectionRoles,
+    })),
     score: { passed: checks.filter(Boolean).length, total: checks.length },
   }
 }

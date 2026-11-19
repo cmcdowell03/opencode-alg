@@ -7,7 +7,8 @@ import { startFactory } from "../acceptance/service.ts"
 import { armNames, checkerName, contextWindow, hasScopedEvidenceTools, installAlg, observeAlgDecision, observeTurn, pluginId, prepareHost,
   registerSkill, submitTurn, type ArmName, type Host, type Turn } from "./host.ts"
 import { briefKey, checkerInput, classifyHandoff, correctionHeader, finalInput, handoffId, initialInput, scoreHandoff,
-  object, refutationId, skillContent, skillName, variants, verifiedCorrection, type HandoffVariant } from "./handoff-case.ts"
+  object, skillContent, skillName, variants, verifiedCorrection, type HandoffVariant } from "./handoff-case.ts"
+import { gradeHandoffDecisions } from "./handoff-audit.ts"
 import { scriptedHandoff } from "./handoff-script.ts"
 import { createLongHandoff, longHandoffPhase, scriptedLongHandoff } from "./long-handoff.ts"
 import { scoreRetention } from "./retention.ts"
@@ -15,8 +16,9 @@ import { handoffJob, stageGate } from "./handoff-gate.ts"
 import { nativeLimits, nativeModel, nativeProviderConfig, stageNativeCredential } from "./native-provider.ts"
 import { startNativeObserver } from "./native-observer.ts"
 import { summaryHash } from "./compaction.ts"
+import { continuationSkillDelivery, observeSkillDelivery, wireTextParts } from "./skill-delivery.ts"
 import { collectSessionEvidence } from "./session-evidence.ts"
-import { includes, maxProviderBytes, maxProviderCalls, startTransport, textOf, type Message } from "./transport.ts"
+import { includes, maxProviderBytes, maxProviderCalls, startTransport, type Message } from "./transport.ts"
 import { createWorkbench, startWorkbench, type WorkbenchSnapshot } from "./workbench.ts"
 
 type Options = {
@@ -28,7 +30,7 @@ const scratchPrefix = "alg-v2-handoff-"
 const queryBudget = 4
 const fixtureModel = { providerID: "paired-benchmark", id: "fixture" }
 
-async function runArm(arm: ArmName, options: Options, scratch: string) {
+async function runArm(arm: ArmName, options: Options, scratch: string, runtimeSha256: string) {
   const model = options.native ? nativeModel(options.native.model) : fixtureModel
   const workbench = createWorkbench({ maxAcceptedQueries: queryBudget })
   const evidence = startWorkbench(workbench)
@@ -43,24 +45,23 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
   let compactRequested = false
   let continuing = false, boundary = 0
   const modelWitness: { boundary: number; stage: "summary" | "continue"; observedAtMs: number; summarySha256: string | null; correction: boolean;
-    initial: boolean; factualRefutation: boolean; pendingMeasurement: boolean; currentSkill: boolean; skillRoles: string[] }[] = []
-  function classify(messages: Message[]) {
+    initial: boolean; factualRefutation: boolean; pendingMeasurement: boolean; currentSkill: boolean; requestId: number;
+    skillDelivery: ReturnType<typeof observeSkillDelivery>; skillRoles: string[] }[] = []
+  function classify(messages: Message[], requestId: number) {
     const desk = workload && longHandoffPhase(messages)
     const classified = desk ? { role: "root" as const, phase: desk } : classifyHandoff(messages)
     if (compactRequested || continuing) {
-      const contents = messages.map(message => textOf(message.content))
-      const facts = messages.filter(message => message.role === "user").map(message => textOf(message.content))
+      const contents = messages.map(message => wireTextParts(message.content).join("\n"))
+      const facts = messages.filter(message => message.role === "user").map(message => wireTextParts(message.content).join("\n"))
         .find(text => text.includes("ALG investigation facts (untrusted recorded data)")) ?? ""
-      const skillRoles = [...new Set(messages.filter(message => includes(textOf(message.content), skill?.witness))
-        .map(message => ["system", "developer", "user", "assistant", "tool"].includes(message.role ?? "")
-          ? message.role! : "unclassified"))]
+      const skillDelivery = observeSkillDelivery(messages, skill)
       modelWitness.push({ boundary, stage: compactRequested ? "summary" : "continue", observedAtMs: performance.now(),
         summarySha256: compacted && contents.some(text => includes(text, compacted!.summary)) ? summaryHash(compacted.summary) : null,
         correction: contents.some(text => text.includes(correctionHeader)),
         initial: contents.some(text => text.includes(initialInput)),
         factualRefutation: facts.includes("refuted_hypothesis_statement"),
         pendingMeasurement: facts.includes('pending_measurement') && facts.includes("replay-clock-join"),
-        currentSkill: skillRoles.includes("system"), skillRoles,
+        currentSkill: skillDelivery.projectionRoles.includes("system"), requestId, skillDelivery, skillRoles: skillDelivery.roles,
       })
     }
     return classified
@@ -92,8 +93,13 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
   let briefBefore: unknown = null, briefAfter: unknown = null
   let briefReadError: string | null = null
   const readBrief = async () => {
-    const entries = await host!.client.experimental.session.instructions.entry.list({ sessionID: rootId! }, requestOptions())
-    return entries.find(entry => entry.key === briefKey)?.value ?? null
+    try {
+      const entries = await host!.client.experimental.session.instructions.entry.list({ sessionID: rootId! }, requestOptions())
+      return entries.find(entry => entry.key === briefKey)?.value ?? null
+    } catch (error) {
+      briefReadError = error instanceof Error ? error.message : "Host brief read failed"
+      throw error
+    }
   }
   type Checkpoint = {
     index: number
@@ -101,6 +107,7 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
     beforeLedger: ReturnType<typeof workbench.snapshot>
     beforeBrief: unknown
     beforeAuthority: boolean | null
+    beforeDurable?: ReturnType<typeof observeAlgDecision>
     continuationLedger?: ReturnType<typeof workbench.snapshot>
     continuationAudit?: ReturnType<typeof audit>
     afterAudit?: ReturnType<typeof audit>
@@ -110,6 +117,7 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
     afterUserId?: string
     after?: Turn
     afterBrief?: unknown
+    afterDurable?: ReturnType<typeof observeAlgDecision>
     afterLedger?: ReturnType<typeof workbench.snapshot>
     observedAtMs?: number
     requestEnd?: number
@@ -226,8 +234,6 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
       correctionAudit = audit()
       correctionAuthority = await procedureAvailable()
     }
-    briefBefore = await readBrief()
-    durableBefore = durableDecision()
     async function compactAndContinue(before: Turn | undefined) {
       boundary = checkpoints.length + 1
       const cp: Checkpoint = { index: boundary, before, beforeBrief: await readBrief(),
@@ -236,6 +242,11 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
       checkpoints.push(cp)
       phase = "compact"
       const prior = new Set((await transcript(host!.client, root.id)).map(row => row.id))
+      cp.beforeDurable = durableDecision()
+      if (boundary === 1) {
+        briefBefore = cp.beforeBrief
+        durableBefore = cp.beforeDurable
+      }
       compactRequested = true
       try {
         await host!.client.session.compact({ sessionID: root.id, delivery: "queue" }, requestOptions())
@@ -269,6 +280,9 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
         cp.after = final
         cp.observedAtMs = finalObservedAtMs = performance.now()
         cp.afterBrief = await readBrief()
+        cp.afterDurable = durableDecision()
+        briefAfter = cp.afterBrief
+        durableAfter = cp.afterDurable
         return final
       } finally {
         continuing = false
@@ -293,10 +307,6 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
   } finally {
     if (host && rootId) {
       const client = host.client
-      briefAfter = await readBrief().catch(error => {
-        briefReadError = error instanceof Error ? error.message : "Host brief read failed"
-        return null
-      })
       sessionEvidence = await collectSessionEvidence(client, rootId, checkerId)
       const [rootRows, checkerRows] = await Promise.all([
         transcript(client, rootId).catch(() => null),
@@ -306,8 +316,6 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
     }
     await Promise.allSettled(hosts.filter(item => !item.process.exited()).map(item => item.process.kill()))
     if (factory && factoryScope) {
-      try { durableAfter = durableDecision() }
-      catch (error) { failure ??= error instanceof Error ? error.message : "Durable decision read failed" }
       factoryEvidence = await factory.evidence().catch(error => {
         failure ??= error instanceof Error ? error.message : "Factory evidence read failed"
         return null
@@ -336,7 +344,10 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
     const requests = observer.requests.slice(cp.requestOffset, cp.requestEnd).filter(row => row.kind === "summary")
     const digest = cp.compacted?.summary ? summaryHash(cp.compacted.summary) : null
     const neutral = raw.root?.[user]
+    const skillDelivery = continuationSkillDelivery(witness, observer.requests.slice(cp.requestOffset, cp.requestEnd),
+      digest, cp.observedAtMs, skill?.sha256)
     const checks = {
+      skillDeliveryObserved: skillDelivery.complete,
       newCompletedBeforeNeutral: pre >= 0 && pre < summary && summary < user && user < answer &&
         neutral?.type === "user" && neutral.text === finalInput && !!digest,
       providerSummaryResponse: !!digest && requests.length === 1 && requests[0]?.role === "root" &&
@@ -365,7 +376,11 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
         factualRefutation: delivered.some(row => row.factualRefutation), pendingMeasurement: delivered.some(row => row.pendingMeasurement) },
     })
     const hostStep = sessionEvidence?.sessions.root?.steps.find(row => row.id === cp.compacted?.id)
-    return { index: cp.index, id: cp.compacted?.id ?? null, summarySha256: digest, retention,
+    return { index: cp.index, id: cp.compacted?.id ?? null, summarySha256: digest, retention, skillDelivery,
+      decisionReadback: {
+        before: cp.beforeDurable === undefined ? undefined : { durable: cp.beforeDurable, brief: cp.beforeBrief },
+        after: cp.afterDurable === undefined ? undefined : { durable: cp.afterDurable, brief: cp.afterBrief },
+      },
       summaryTokens: hostStep?.tokens ?? null,
       summaryBytes: cp.compacted ? Buffer.byteLength(cp.compacted.summary) : null,
       beforeAnswerId: cp.before?.id ?? null, afterAnswerId: cp.after?.id ?? null, checks }
@@ -394,6 +409,12 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
     continuationAdmit: receiptsFor(final?.rows ?? [], "admit"),
   }
   const submitted = factory?.audit.filter(row => row.name === "submit") ?? []
+  const decisionEvidence = { ...decisions, durableBefore, durableAfter }
+  const briefEvidence = { key: briefKey, before: briefBefore, after: briefAfter, readError: briefReadError }
+  const decisionGrade = arm === "alg" ? gradeHandoffDecisions({
+    raw, checkerId, skill, skillAvailableAtContinue, ledger, gate, factoryEvidence,
+    factoryAudit: factory?.audit ?? [], compaction, decisions: decisionEvidence, brief: briefEvidence,
+  }, runtimeSha256, options.variant) : null
   const preQuery = (value: unknown) => object(object(value)?.preQuery)
   const satisfied = (value: unknown) => object(preQuery(value)?.prerequisite)?.status === "satisfied" &&
     object(preQuery(value)?.skill)?.availability === "verified" && object(preQuery(value)?.skill)?.activation === "observed"
@@ -417,30 +438,18 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
       gate.continuationAdmit[0]?.value.ok === false && gate.continuationAdmit[0].value.error === "RESEARCH_PROCEDURE_UNVERIFIED" &&
       object(preQuery(gate.continuationAdmit[0].value)?.skill)?.availability === "unverified" &&
       object(preQuery(gate.continuationAdmit[0].value)?.prerequisite)?.status === "unchecked" && submitted.length === 1),
-    correctedCheckpoint: decisions.initial.length === 1 && decisions.corrected.length === 1 &&
-      decisions.initial[0]?.value.ok === true && decisions.corrected[0]?.value.ok === true &&
-      decisions.initial[0].value.decision_revision === 1 && decisions.corrected[0].value.decision_revision === 2 &&
-      object(decisions.initial[0].value.decision)?.next_action === standalone.observed.initial?.nextAction &&
-      object(decisions.corrected[0].value.decision)?.next_action === "replay-clock-join",
-    durableCorrectedState: !!durableBefore && !!durableAfter && durableBefore.revision === 2 &&
-      durableBefore.actionSha === sha256("replay-clock-join") && durableBefore.procedureSha === skill?.sha256 &&
-      durableBefore.governedManifestObserved && JSON.stringify(durableAfter) === JSON.stringify(durableBefore),
+    correctedCheckpoint: decisionGrade?.checks.correctedCheckpoint === true,
+    durableCorrectedState: decisionGrade?.checks.durableCorrectedState === true,
+    refutationVerified: decisionGrade?.checks.refutationVerified === true,
   } : null
-  const current = object(briefAfter), previous = object(briefBefore)
-  const manifestFacts = (value: unknown) => {
-    const refutation = object(object(value)?.refuted_hypothesis)
-    return refutation?.id === refutationId && refutation.manifest_digest === manifest
-  }
   const briefChecks = arm === "alg" ? {
-    correctedRevision: previous?.decision_revision === 2 && current?.decision_revision === previous.decision_revision &&
-      current.revision === previous.revision,
-    factsRetained: manifestFacts(briefBefore) && manifestFacts(briefAfter),
-    liveApproval: object(previous?.observed_approval)?.procedure_sha256 === skill?.sha256 &&
-      (options.variant === "revoked" ? current?.observed_approval === null :
-        object(current?.observed_approval)?.procedure_sha256 === skill?.sha256),
+    correctedRevision: decisionGrade?.checks.correctedRevision === true,
+    factsRetained: decisionGrade?.checks.factsRetained === true,
+    liveApproval: decisionGrade?.checks.liveApproval === true,
     modelProjection: finalRequests.length > 0 && finalRequests.every(row => row.factualRefutation &&
       row.pendingMeasurement === checkpoints[row.boundary - 1]?.afterAuthority &&
-      row.currentSkill === checkpoints[row.boundary - 1]?.afterAuthority),
+      (checkpoints[row.boundary - 1]?.afterAuthority ? row.currentSkill :
+        !row.skillDelivery.roles.some(role => role === "system" || role === "developer" || role === "instructions"))),
   } : { noAlgBrief: briefBefore === null && briefAfter === null }
   return {
     arm, phase, failure, model, plugin, rootId, checkerId, skill: skill && { id: skill.id, sha256: skill.sha256, sourceSha256: skill.sourceSha256 },
@@ -449,7 +458,7 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
     elapsedMs: performance.now() - started, sessionEvidence, requests: observer.requests, raw, ledger, beforeContinue,
     workload: workload?.snapshot({ rows: raw.root, requests: observer.requests, anchorAnswerId: corrected?.id ?? initial?.id,
       finalUserId: finalMessageId ?? undefined }) ?? null,
-    decisions: { ...decisions, durableBefore, durableAfter }, gate, gateChecks, compaction, brief: { key: briefKey, before: briefBefore, after: briefAfter, readError: briefReadError, checks: briefChecks },
+    decisions: { ...decisionEvidence, grade: decisionGrade }, gate, gateChecks, compaction, brief: { ...briefEvidence, checks: briefChecks },
     factoryAudit: factory?.audit ?? [], factoryEvidence, standalone,
     tools: {
       evidence: hasScopedEvidenceTools(rootTools, checkerTools),
@@ -466,7 +475,7 @@ export async function runHandoff(options: Options) {
     const runtime = await runtimeIdentity(options.binary, options.bundle, await hostVersion(options.binary, join(scratch, "version")))
     const order = options.reverse ? [...armNames].reverse() : [...armNames]
     const arms = {} as Record<ArmName, Awaited<ReturnType<typeof runArm>>>
-    for (const arm of order) arms[arm] = await runArm(arm, options, join(scratch, arm))
+    for (const arm of order) arms[arm] = await runArm(arm, options, join(scratch, arm), runtime.bundleSha256)
     const { build, alg } = arms
     const parity = {
       model: build.model.providerID === alg.model.providerID && build.model.id === alg.model.id,

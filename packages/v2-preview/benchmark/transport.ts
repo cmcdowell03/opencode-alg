@@ -2,7 +2,7 @@ import { summaryHash, type RequestObservation } from "./compaction.ts"
 
 export const maxProviderCalls = 36
 export const maxProviderBytes = 192 * 1024
-export type Message = { role?: string; content?: unknown; tool_calls?: { function?: { name?: string } }[] }
+export type Message = { role?: string; content?: unknown; wireSource?: "responses.instructions"; tool_calls?: { function?: { name?: string } }[] }
 export type Completion = { text: string; pressure?: number; reason?: string } | { tool: string; args: Record<string, unknown> }
 export type TurnInput = { messages: Message[]; tools: string[]; summary: boolean }
 export const summarySignature = /<template>\s*## Objective[\s\S]{0,900}## Decisions[\s\S]{0,900}## Work State/
@@ -13,7 +13,7 @@ export const includes = (text: string, witness: string | undefined) =>
 
 export function startTransport(options: {
   id: string; seed: number; decide: (turn: TurnInput) => Completion
-  classify: (messages: Message[]) => Pick<RequestObservation, "role" | "phase">
+  classify: (messages: Message[], requestId: number) => Pick<RequestObservation, "role" | "phase">
   stale: string; correction: string; skill: () => string | undefined
 }) {
   const requests: RequestObservation[] = []
@@ -55,7 +55,8 @@ export function startTransport(options: {
         const text = content.join("\n")
         const summary = content.some(value => summarySignature.test(value))
         receipt.kind = summary ? "summary" : "ordinary"
-        Object.assign(receipt, options.classify(body.messages))
+        // Only the Responses adapter can identify a top-level instructions field.
+        Object.assign(receipt, options.classify(body.messages.map(({ role, content, tool_calls }) => ({ role, content, tool_calls })), id))
         receipt.stale = text.includes(options.stale)
         receipt.correction = text.includes(options.correction)
         receipt.oldSummary = content.some(value => includes(value, baselineSummary))
