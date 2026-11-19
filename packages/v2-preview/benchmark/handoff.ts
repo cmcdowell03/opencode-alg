@@ -43,7 +43,7 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
   let compactRequested = false
   let continuing = false, boundary = 0
   const modelWitness: { boundary: number; stage: "summary" | "continue"; observedAtMs: number; summarySha256: string | null; correction: boolean;
-    initial: boolean; factualRefutation: boolean; pendingMeasurement: boolean; currentSkill: boolean }[] = []
+    initial: boolean; factualRefutation: boolean; pendingMeasurement: boolean; currentSkill: boolean; skillRoles: string[] }[] = []
   function classify(messages: Message[]) {
     const desk = workload && longHandoffPhase(messages)
     const classified = desk ? { role: "root" as const, phase: desk } : classifyHandoff(messages)
@@ -51,13 +51,16 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
       const contents = messages.map(message => textOf(message.content))
       const facts = messages.filter(message => message.role === "user").map(message => textOf(message.content))
         .find(text => text.includes("ALG investigation facts (untrusted recorded data)")) ?? ""
+      const skillRoles = [...new Set(messages.filter(message => includes(textOf(message.content), skill?.witness))
+        .map(message => ["system", "developer", "user", "assistant", "tool"].includes(message.role ?? "")
+          ? message.role! : "unclassified"))]
       modelWitness.push({ boundary, stage: compactRequested ? "summary" : "continue", observedAtMs: performance.now(),
         summarySha256: compacted && contents.some(text => includes(text, compacted!.summary)) ? summaryHash(compacted.summary) : null,
         correction: contents.some(text => text.includes(correctionHeader)),
         initial: contents.some(text => text.includes(initialInput)),
         factualRefutation: facts.includes("refuted_hypothesis_statement"),
         pendingMeasurement: facts.includes('pending_measurement') && facts.includes("replay-clock-join"),
-        currentSkill: messages.some(message => message.role === "system" && includes(textOf(message.content), skill?.witness)),
+        currentSkill: skillRoles.includes("system"), skillRoles,
       })
     }
     return classified
@@ -353,6 +356,8 @@ async function runArm(arm: ArmName, options: Options, scratch: string) {
       snapshots: { afterInitial, afterCorrection, beforeContinue: cp.continuationLedger ?? null,
         afterContinue: cp.afterLedger ?? null },
       tools: { initial: measurementReceipts(initial), corrected: measurementReceipts(corrected), final: measurementReceipts(cp.after) },
+      writesBeforeCompaction: raw.root && summary >= 0
+        ? receiptsFor(raw.root.slice(0, summary), "set_next_measurement") : undefined,
       factory: factory ? { evidence: factoryEvidence, afterInitial: initialAudit, afterCorrection: correctionAudit,
         beforeContinue: cp.continuationAudit ?? null, afterContinue: cp.afterAudit ?? null } : undefined,
       durableBrief: { before: cp.beforeBrief, after: cp.afterBrief },

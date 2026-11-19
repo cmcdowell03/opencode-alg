@@ -44,3 +44,18 @@ confidence interval excluding zero on independent held-out incidents, and zero
 unauthorized actions or duplicate expensive submissions by ALG. Size that live
 study for a meaningful improvement before allocating calls. A single paid pair
 and deterministic transport exercises cannot meet that criterion.
+
+The offline evaluator accepts independently assessed paired receipts and a
+separately published study plan:
+
+```sh
+bun packages/v2-preview/benchmark/superiority.ts evidence.json plan.json PUBLISHED_PLAN_SHA256 PUBLICATION_UTC
+```
+
+The study owner verifies the plan's publication time, the provenance of the
+receipts and the independence of the incident groups. The evaluator checks the
+supplied identities, timing, matched controls, coverage and outcomes. It uses
+conservative simultaneous binomial bounds on paired wins and losses within
+each prespecified case-class and arm-order stratum, then combines the strata
+using their planned weights. A missing arm, an indeterminate outcome or a
+reused incident prevents a superiority claim.

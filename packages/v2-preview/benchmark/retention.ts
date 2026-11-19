@@ -38,6 +38,8 @@ export type RetentionInput = {
   compactionObserved?: boolean
   /** Completed host tool receipts scoped to each owner turn, e.g. from receiptsFor. */
   tools?: Partial<Record<Phase, readonly Receipt[]>>
+  /** A refutation can be recorded before the explicit correction turn or by a host-initiated turn. */
+  writesBeforeCompaction?: readonly Receipt[]
   factory?: {
     evidence: FactoryEvidence | null
     /** Copy at end of initial/corrected turns, before continuation, and after continuation. */
@@ -230,8 +232,8 @@ function scoreBoundary(beforeText: Text, afterText: Text, before: ReturnType<typ
 function durableRefutation(input: RetentionInput, manifest: ReturnType<typeof settledManifest>, observed: boolean) {
   const prior = input.durableBrief?.before
   const later = input.durableBrief?.after
-  const corrected = input.tools?.corrected
-  const matchingReceipts = !manifest || !corrected ? null : distinctReceipts(corrected).filter(({ input, value }) => {
+  const writes = input.writesBeforeCompaction ?? input.tools?.corrected
+  const matchingReceipts = !manifest || !writes ? null : distinctReceipts(writes).filter(({ input, value }) => {
     const claim = object(input.refutation)
     const hypotheses = object(value.decision)?.hypotheses
     return input.action === "set_next_measurement" && value.ok === true &&

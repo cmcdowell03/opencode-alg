@@ -186,6 +186,9 @@ describe("handoff obligation retention", () => {
     expect(scoreRetention({ ...run, durableBrief: { before: brief, after: null } }).durableRefutation.outcome).toBe("lost")
     const wrongReceipt = { ...record, value: { ...record.value, decision: { hypotheses: [{ ...hypothesis, evidence_refs: [] }] } } }
     expect(scoreRetention({ ...run, tools: { ...run.tools, corrected: [wrongReceipt] } }).durableRefutation.recorded).toBe(false)
+    expect(scoreRetention({ ...run, tools: { ...run.tools, corrected: [] }, writesBeforeCompaction: [record] })
+      .durableRefutation.outcome).toBe("retained")
+    expect(scoreRetention({ ...run, writesBeforeCompaction: [] }).durableRefutation.eligible).toBe(false)
 
     run.factory = {
       evidence: {
