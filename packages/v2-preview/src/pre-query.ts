@@ -52,13 +52,15 @@ function gitEnv() {
     GIT_CONFIG_NOSYSTEM: "1",
     GIT_CONFIG_GLOBAL: "/dev/null",
     GIT_TERMINAL_PROMPT: "0",
+    // Older Git may ignore the lazy-fetch switch. Forbid every transport independently.
+    GIT_ALLOW_PROTOCOL: "",
     GIT_NO_LAZY_FETCH: "1",
   }
 }
 
 async function readCommittedEvidence(directory: string, pin: z.output<typeof preQueryPolicySchema>["prerequisite"]) {
   const git = async (...args: string[]) => (await exec("git",
-    ["--no-replace-objects", "--no-lazy-fetch", "--no-optional-locks", ...args], {
+    ["--no-replace-objects", "--no-optional-locks", ...args], {
       cwd: directory, env: gitEnv(), windowsHide: true, encoding: "buffer",
       timeout: 2_000, maxBuffer: maxEvidenceBytes,
     })).stdout

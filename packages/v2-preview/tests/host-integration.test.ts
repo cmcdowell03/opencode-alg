@@ -207,6 +207,23 @@ async function ready(f: Awaited<ReturnType<typeof fixture>>, options?: unknown) 
   return host
 }
 
+test("an invalid dispatch returns its exact argument contract before any service call", async () => {
+  const f = await fixture()
+  const host = await f.attach()
+  await host.call("create")
+  await host.call("admit")
+  const before = f.serviceCalls.length
+  const blocked = await host.call("dispatch", { expected_decision_revision: 0 })
+  expect(blocked).toMatchObject({ ok: false, error: "UNSUPPORTED_OR_INVALID_ACTION",
+    contract: { action: "dispatch", required: [], optional: [] } })
+  expect(f.serviceCalls.length).toBe(before)
+  expect((await host.call(blocked.contract.action)).work.status).toBe("result_recorded")
+  expect(await host.call("set_next_measurement", { unknown_field: "untrusted" })).toMatchObject({
+    contract: { required: ["expected_decision_revision", "next_action"], optional: ["refutation"] },
+  })
+  await host.detach()
+})
+
 test("pinned hook integration reattaches one worker, reprojects the decision, and fences checker certification", async () => {
   const f = await fixture()
   const host = await ready(f)

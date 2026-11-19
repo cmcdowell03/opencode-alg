@@ -124,7 +124,7 @@ function fixture(evidenceOverrides: Record<string, unknown> = {}) {
     }
     return createV2InvestigationBridge({ port, approvedJob: options.job ?? approvedJob, preQuery })
   }
-  return { owner, policy, catalog, bridge, calls, result, state, port }
+  return { owner, policy, catalog, bridge, calls, result, state, port, git }
 }
 
 test("verifies committed scoped evidence and reuses the exact settled manifest offline", async () => {
@@ -199,6 +199,36 @@ test("rejects a hash mismatch, an uncommitted path, and a missing coordinate", a
   expect(f.calls.submit).toBe(0)
 })
 
+test("a missing promised blob fails closed even when local config allows the remote transport", async () => {
+  const f = fixture()
+  const remote = fixture()
+  remote.git("update-ref", "refs/heads/calibration", remote.policy.prerequisite.revision)
+  remote.git("config", "uploadpack.allowAnySHA1InWant", "true")
+  const oid = f.git("rev-parse", f.policy.prerequisite.revision + ":" + evidencePath)
+  expect(remote.git("cat-file", "-t", oid)).toBe("blob")
+
+  f.git("config", "core.repositoryformatversion", "1")
+  f.git("config", "extensions.partialClone", "calibration")
+  f.git("config", "remote.calibration.promisor", "true")
+  f.git("config", "remote.calibration.url", remote.owner.directory)
+  f.git("config", "protocol.file.allow", "always")
+  const objects = join(f.owner.directory, ".git", "objects")
+  const blob = join(objects, oid.slice(0, 2), oid.slice(2))
+  if (process.platform === "win32") chmodSync(blob, 0o666)
+  rmSync(blob)
+
+  const bridge = f.bridge()
+  bridge.create(f.owner)
+  await expect(bridge.admit(f.owner)).rejects.toMatchObject({
+    message: "RESEARCH_PRE_QUERY_PREREQUISITE_UNSATISFIED",
+    preQuery: { skill: { availability: "verified" }, prerequisite: { status: "unverified" }, reuse: null },
+  })
+  expect(bridge.primary(f.owner)?.work).toBeNull()
+  expect(f.calls.submit).toBe(0)
+  expect(existsSync(blob)).toBe(false)
+  expect(readdirSync(join(objects, "pack"))).toEqual([])
+}, 20_000)
+
 test("older reservations need gated admission and a revoked pin blocks dispatch and retries", async () => {
   const f = fixture()
   const legacy = f.bridge({ policy: undefined })
@@ -254,7 +284,7 @@ test("older settled work, expired results and drifted service identity do not qu
   f.port.capabilities.principal_id = "changed-principal"
   await expect(bridge.dispatch(f.owner)).rejects.toThrow("RESEARCH_PRE_QUERY_WORK_UNVERIFIED")
   expect(f.calls).toEqual({ submit: 1, lookup: 0, validate: 0, read: 0 })
-})
+}, 20_000)
 
 test("can reconcile only the original ambiguous submission after approval withdrawal", async () => {
   const f = fixture()

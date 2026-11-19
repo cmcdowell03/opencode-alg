@@ -39,13 +39,23 @@ const actions = [
   "diagnostics", "create", "admit", "dispatch", "reconcile", "status",
   "set_next_measurement", "start", "read", "result", "revoke", "procedure",
 ] as const
+const actionName = z.enum(actions)
+function actionFields(action: typeof actions[number]): { required: string[]; optional: string[] } {
+  switch (action) {
+    case "set_next_measurement": return { required: ["expected_decision_revision", "next_action"], optional: ["refutation"] }
+    case "result": return { required: ["runId", "citation", "result"], optional: [] }
+    case "read": case "revoke": return { required: ["runId"], optional: [] }
+    case "status": case "procedure": return { required: [], optional: ["runId"] }
+    default: return { required: [], optional: [] }
+  }
+}
 const toolInput = {
   type: "object",
   required: ["action"],
   properties: {
     action: { type: "string", enum: [...actions] },
     runId: { type: "string", maxLength: 64 },
-    expected_decision_revision: { type: "integer", minimum: 0 },
+    expected_decision_revision: { type: "integer", minimum: 0, description: "Required only for set_next_measurement. Omit for dispatch." },
     next_action: { type: "string", maxLength: 1024 },
     refutation: {
       type: "object", description: "Owner interpretation of a ruled-out hypothesis and the current manifest supporting it.",
@@ -63,21 +73,18 @@ const toolInput = {
   additionalProperties: false,
 } as const
 const inputSchema = z.object({
-  action: z.enum(actions),
+  action: actionName,
   runId: z.string().regex(/^v2-checker-[a-f0-9]{48}$/).optional(),
   expected_decision_revision: z.number().int().nonnegative().optional(),
   next_action: z.string().min(1).max(1024).optional(),
   refutation: refutationSchema.optional(),
   citation: citationSchema.optional(),
   result: verdictSchema.optional(),
-}).strict().refine(({ action, runId, result, citation, expected_decision_revision, next_action, refutation }) =>
-  (refutation === undefined || action === "set_next_measurement") &&
-  (expected_decision_revision !== undefined) === (action === "set_next_measurement") &&
-  (next_action !== undefined) === (action === "set_next_measurement") &&
-  (citation !== undefined) === (action === "result") &&
-  (result !== undefined) === (action === "result") &&
-  (["read", "result", "revoke"].includes(action) ? runId !== undefined : ["status", "procedure"].includes(action) || runId === undefined)
-)
+}).strict().refine(({ action, ...values }) => {
+  const { required, optional } = actionFields(action)
+  const supplied = Object.entries(values).filter(([, value]) => value !== undefined).map(([key]) => key)
+  return required.every(key => supplied.includes(key)) && supplied.every(key => required.includes(key) || optional.includes(key))
+})
 
 const capabilities = {
   reconciliation: "SAME_WORKER_READ_ONLY_NO_REISSUE",
@@ -565,7 +572,11 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
         options: { permission: TOOL, codemode: false },
         async execute(input, call) {
           const parsed = inputSchema.safeParse(input)
-          if (!parsed.success) return { content: JSON.stringify({ ok: false, runtimeSha256, error: "UNSUPPORTED_OR_INVALID_ACTION" }) }
+          if (!parsed.success) {
+            const known = z.object({ action: actionName }).safeParse(input)
+            const contract = known.success ? { action: known.data.action, ...actionFields(known.data.action) } : undefined
+            return { content: JSON.stringify({ ok: false, runtimeSha256, error: "UNSUPPORTED_OR_INVALID_ACTION", contract }) }
+          }
           try {
             const value = await execute(parsed.data, call)
             if (brief && call.agent === config.ownerAgent && ["create", "admit", "dispatch", "reconcile", "set_next_measurement"].includes(parsed.data.action)) {
