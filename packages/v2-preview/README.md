@@ -204,6 +204,26 @@ bun packages/v2-preview/benchmark/handoff.ts --host /path/to/opencode --package 
 bun packages/v2-preview/acceptance/continuation.ts --host /path/to/opencode --package /path/to/bundle
 ```
 
+For the full scripted local matrix, use a fresh output directory:
+
+```sh
+bun packages/v2-preview/benchmark/qualify-local.ts --host /path/to/opencode --package /path/to/bundle --out /path/to/qualification
+```
+
+The matrix checks both arm orders on the near miss and on three-compaction
+workloads with active and withdrawn skills. It also qualifies single-compaction
+handoffs. Each extended arm interleaves three independently scored tasks with the
+investigation. The evaluator records the decision immediately before and after
+each actual compaction and checks which summary the provider received. An item
+enters the loss denominator only if the earlier decision had the correct value
+and the corresponding source evidence. The receipt reports changed obligations
+on revocation, unresolved answers, duplicate work and cache reads separately.
+The forced schedule measures retention under repeated compaction. It does not
+estimate a natural hourly compaction rate.
+
+The [qualification criteria](benchmark/qualification.md) define the live
+preview gate and the evidence required to claim a comparative advantage.
+
 Both arms receive the same correction, a real host compaction, and then only
 `Continue.`. The receipt separates host mechanics, each arm's standalone
 decision, and installed ALG behavior. Use the native-model flags below for a
@@ -221,6 +241,20 @@ was missing. The final package returns the accepted arguments for that
 action, and a regression exercises the refused call followed by a valid
 dispatch. The [validation record](evidence/handoff-2.3.2.json) identifies the
 live candidate and the final cross-platform package separately.
+
+With separate discovery and lookup tools, the subsequent ALG-first Luna pair
+gave both agents the same correct final decision. Each made three evidence
+admissions, recorded one cache hit, and retained all seven eligible report
+fields through a verified compaction. Build used 41,652 total tokens and ALG
+used 128,563. ALG also completed one separately budgeted calibration and reused
+the settled manifest. The frozen preview gate failed. The ledger reached
+revision 3 and preserved the refutation, and the benchmark could not verify the
+procedure body in the system role. The [paired results](evidence/retention-2.3.2.json)
+record the original grades. To independently inspect the acknowledged writes,
+manifest, refutation and procedure read for the active single-compaction case,
+run `bun packages/v2-preview/benchmark/handoff-audit.ts /path/to/raw-pair.json --review packages/v2-preview/evidence/retention-2.3.2.json`.
+This replay makes no model calls. This tuned incident contributes no independent
+held-out estimate of an advantage.
 
 ### Background compaction and independent research
 
