@@ -1,0 +1,102 @@
+{
+  "grader_commit": "27c78a66d3b2c4b7e54ec5aee73e9625f78a3136",
+  "opencode": "2.3.2",
+  "package": "0.1.0-preview.3",
+  "validation": "Local installed Windows and WSL Linux hosts with scripted model transport",
+  "additional_live_model_calls": 0,
+  "archived_native_pair": {
+    "receipt_sha256": "35eb1075b98f8d5eb04596f93cd106f4e9df2163acba1b028d5eb70d4f36eadc",
+    "original_qualified": false,
+    "readback_revisions": [
+      3,
+      3
+    ],
+    "refutation_revision": 2,
+    "semantic_review": "bound_review",
+    "verified_exact_procedure_read": true,
+    "continuation_wire_role": "unrecorded",
+    "release": "draft"
+  },
+  "platforms": {
+    "windows": {
+      "qualified_pairs": 8,
+      "planned_pairs": 8,
+      "matrix_sha256": "66eb6d2cfce528303fcec8e8b90bb33efa2dfd3a8e5dbdbe81dbd48e676c8576",
+      "host_binary_sha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+      "bundle_sha256": "c430013339708ae2b5c8dc5ad4d10172055ef58c4898994581b037796e1b1e60",
+      "verified_handoff_boundaries": 14,
+      "paired_role_observations": [
+        {
+          "boundaries": 11,
+          "alg_first_request_roles": [
+            "system"
+          ],
+          "alg_all_roles": [
+            "system",
+            "tool"
+          ],
+          "alg_projection_roles": [
+            "system"
+          ],
+          "build_first_request_roles": [],
+          "build_all_roles": [
+            "tool"
+          ],
+          "approval": "active"
+        },
+        {
+          "boundaries": 3,
+          "alg_first_request_roles": [],
+          "alg_all_roles": [],
+          "alg_projection_roles": [],
+          "build_first_request_roles": [],
+          "build_all_roles": [],
+          "approval": "withdrawn"
+        }
+      ],
+      "v2_tests_passed": 132,
+      "v2_tests_failed": 0,
+      "typecheck": "passed"
+    },
+    "linux_wsl": {
+      "qualified_pairs": 8,
+      "planned_pairs": 8,
+      "matrix_sha256": "a9759ce45b879bd7755c7ccb1d47c985fa770ccf12b41fe32dc30651bdf95ed5",
+      "host_binary_sha256": "e6543f6e5c39c40971ba38afd1819ac852c29ac735b5a89065d3d148d47f27ad",
+      "bundle_sha256": "c430013339708ae2b5c8dc5ad4d10172055ef58c4898994581b037796e1b1e60",
+      "verified_handoff_boundaries": 14,
+      "paired_role_observations": [
+        {
+          "boundaries": 11,
+          "alg_first_request_roles": [
+            "system"
+          ],
+          "alg_all_roles": [
+            "system",
+            "tool"
+          ],
+          "alg_projection_roles": [
+            "system"
+          ],
+          "build_first_request_roles": [],
+          "build_all_roles": [
+            "tool"
+          ],
+          "approval": "active"
+        },
+        {
+          "boundaries": 3,
+          "alg_first_request_roles": [],
+          "alg_all_roles": [],
+          "alg_projection_roles": [],
+          "build_first_request_roles": [],
+          "build_all_roles": [],
+          "approval": "withdrawn"
+        }
+      ],
+      "v2_tests_passed": 132,
+      "v2_tests_failed": 0,
+      "typecheck": "passed"
+    }
+  }
+}
