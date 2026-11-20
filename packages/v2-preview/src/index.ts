@@ -4,7 +4,7 @@ import { isDeepStrictEqual } from "node:util"
 import { z } from "zod"
 import type { Plugin } from "@opencode/plugin"
 import type { SessionContext } from "@opencode/plugin/promise/session"
-import { createV2InvestigationBridge, refutationSchema, type V2InvestigationSession, type V2InvestigationView } from "../core/investigation.ts"
+import { createV2InvestigationBridge, refutationSchema, reportDecisionSchema, type V2InvestigationSession, type V2InvestigationView } from "../core/investigation.ts"
 import { procedureDigestSchema, type ProcedurePin } from "../core/procedure-pin.ts"
 import type { PreQueryGate } from "../core/pre-query.ts"
 import { createPreQueryGate, preQueryPolicySchema, PreQueryBlockedError } from "./pre-query.ts"
@@ -13,9 +13,12 @@ import { OwnerBrief } from "./brief.ts"
 import { DeliveryContext } from "./delivery-context.ts"
 import type { DeliveryHistory } from "./delivery.ts"
 import { EvidenceJournal, revalidateChildEvidence, type EvidenceProgress } from "./evidence-journal.ts"
+import { EvidenceReadStore, type EvidenceReadView } from "./evidence-reads.ts"
+import { registerReportCommand, renderCalculatedReport, renderInvestigationReport } from "./structured-report.ts"
 import { childAuditConfigSchema, createChildEvidenceReader } from "./child-audit.ts"
 import { parseCalculationPolicy, type CalculationPolicy } from "./calculation.ts"
 import { projectPreQueryReceipts } from "./pre-query-projection.ts"
+import { canonicalJson } from "../../../src/persistence.ts"
 import { runContainedPath, runDir } from "../../../src/store.ts"
 import { registerTeamSources } from "./team-source.ts"
 import { registerResearchWorkers, researchRolesSchema, researchEvidenceOptionsSchema } from "./research-workers.ts"
@@ -26,10 +29,17 @@ import { canonicalDirectory, HOST_VERSION, InvestigationHost, TOOL } from "./hos
 import { type Binding, citationKeys, citationSchema, sameCitation, verdictSchema, WorkerJournal, publishReceipt, readReceipt } from "./journal.ts"
 import { approvalFileSchema, pinOfProcedure, ResearchProcedure } from "./procedure.ts"
 import { compactProcedureReads } from "./procedure-history.ts"
+import { selectReviewQuestion } from "./scoped-review.ts"
+import { registerReadOnlyReview, reviewTool } from "./read-only-review.ts"
 
 const agentId = z.string().regex(/^[\w-]{1,80}$/)
 const configSchema = z.object({
   enabled: z.boolean().default(false),
+  investigationMode: z.enum(["job-backed", "read-only"]).default("job-backed"),
+  readOnlyCacheSourceBytes: z.boolean().default(false),
+  readOnlyEvidenceTools: z.array(z.string().regex(/^[\w-]{1,128}$/)).max(16)
+    .refine(tools => new Set(tools).size === tools.length && !tools.includes(TOOL) && !tools.includes(reviewTool)).default([]),
+  readOnlyReviewResidualTools: z.array(z.string().regex(/^[\w-]{1,128}$/)).max(16).default([]),
   ownerAgent: agentId.default("build"),
   checkerAgent: agentId.default("alg-investigation-checker"),
   adapter: InvestigationAdapterSchema.optional(),
@@ -46,15 +56,32 @@ const configSchema = z.object({
 
 const actions = [
   "diagnostics", "create", "admit", "dispatch", "reconcile", "status",
-  "set_next_measurement", "start", "read", "result", "revoke", "procedure",
+  "set_next_measurement", "start", "read", "result", "revoke", "procedure", "record_finding", "render_report",
 ] as const
+const readOnlyActions = ["diagnostics", "create", "status", "set_next_measurement", "procedure", "record_finding", "render_report"] as const
+const readOnlyActionNames: ReadonlySet<Action> = new Set(readOnlyActions)
+const jobBackedActions = actions.filter(name => name !== "record_finding" && name !== "render_report")
+const evidenceStatusFields = ["source_path", "source_tool", "reference_offset", "finding_id"] as const
+const evidenceRefsSchema = z.array(z.string().min(1).max(385)).max(16)
+const findingSchema = z.strictObject({
+  id: z.string().regex(/^[\w-]{1,128}$/),
+  interpretation: z.string().trim().min(1).max(1024),
+  scope: z.string().trim().min(1).max(256).optional(),
+  support: evidenceRefsSchema,
+  counterevidence: evidenceRefsSchema,
+  falsifier: z.string().trim().min(1).max(1024).optional(),
+  missingEvidence: z.string().trim().min(1).max(1024).optional(),
+})
 const actionName = z.enum(actions)
 function actionFields(action: typeof actions[number]): { required: string[]; optional: string[] } {
   switch (action) {
-    case "set_next_measurement": return { required: ["expected_decision_revision", "next_action"], optional: ["refutation"] }
+    case "set_next_measurement": return { required: ["expected_decision_revision", "next_action"], optional: ["refutation", "evidence_refs", "report_decision"] }
+    case "record_finding": return { required: ["expected_decision_revision", "finding"], optional: [] }
+    case "render_report": return { required: [], optional: ["expected_decision_revision"] }
     case "result": return { required: ["runId", "citation", "result"], optional: [] }
     case "read": case "revoke": return { required: ["runId"], optional: [] }
-    case "status": case "procedure": return { required: [], optional: ["runId"] }
+    case "status": return { required: [], optional: ["runId", ...evidenceStatusFields] }
+    case "procedure": return { required: [], optional: ["runId"] }
     default: return { required: [], optional: [] }
   }
 }
@@ -66,6 +93,14 @@ const toolInput = {
     runId: { type: "string", maxLength: 64 },
     expected_decision_revision: { type: "integer", minimum: 0, description: "Required only for set_next_measurement. Omit for dispatch." },
     next_action: { type: "string", maxLength: 1024 },
+    source_path: { type: "string", maxLength: 256, description: "Show a page of inspected references for this exact source path." },
+    source_tool: { type: "string", maxLength: 128, description: "Select the exact native tool when more than one source has the same path." },
+    finding_id: { type: "string", maxLength: 128, description: "Show one recorded finding with all of its citations." },
+    reference_offset: { type: "integer", minimum: 0, maximum: 1024, description: "Use the source's next_reference_offset to continue." },
+    evidence_refs: { type: "array", maxItems: 16,
+      items: { type: "string", maxLength: 385 }, description: "Exact inspected source references or receipt IDs returned by status." },
+    finding: z.toJSONSchema(findingSchema),
+    report_decision: z.toJSONSchema(reportDecisionSchema),
     refutation: {
       type: "object", description: "Owner interpretation of a ruled-out hypothesis and the current manifest supporting it.",
       properties: { id: { type: "string" }, statement: { type: "string" }, manifest_digest: { type: "string" } },
@@ -83,6 +118,23 @@ const toolInput = {
 } as const
 type Action = typeof actions[number]
 
+function registeredInput(readOnly: boolean) {
+  const { refutation, runId, citation, result, finding, evidence_refs, report_decision, source_path, source_tool, reference_offset, finding_id, ...common } = toolInput.properties
+  return {
+    ...toolInput,
+    required: [...toolInput.required],
+    properties: {
+      ...common,
+      ...(readOnly ? {
+        evidence_refs, finding, report_decision, source_path, source_tool, reference_offset, finding_id,
+        expected_decision_revision: { ...common.expected_decision_revision,
+          description: "Required for set_next_measurement and record_finding. Optional for render_report." },
+      } : { refutation, runId, citation, result }),
+      action: { ...common.action, enum: [...(readOnly ? readOnlyActions : jobBackedActions)] },
+    },
+  }
+}
+
 function explicitlyRequests(request: SessionContext, action: "diagnostics" | "procedure") {
   const latest = [...request.messages].reverse().find(message => message.role === "user")
   const content = latest?.content
@@ -93,10 +145,11 @@ function explicitlyRequests(request: SessionContext, action: "diagnostics" | "pr
   return /\b(?:read|show|display|fetch|retrieve|inspect|verify|review|quote|print|view|what is) (?:me )?(?:the )?(?:(?:current|approved|research) )*procedure\b|^\s*procedure\s*$/i.test(text ?? "")
 }
 
-function presentTool(request: SessionContext, available: Action[], checker = false, refutation = false) {
+function presentTool(request: SessionContext, available: Action[], checker = false, refutation = false, readOnly = false) {
   const tool = request.tools?.[TOOL]
   // Host permissions and the registered execution contract still apply to every call.
-  if (!tool || !isDeepStrictEqual(tool.input, toolInput)) return
+  const input = registeredInput(readOnly)
+  if (!tool || !isDeepStrictEqual(tool.input, input)) return
   const tools = { ...request.tools }
   if (available.length === 0) {
     delete tools[TOOL]
@@ -106,10 +159,18 @@ function presentTool(request: SessionContext, available: Action[], checker = fal
       return required
     }))
     if (refutation && fields.has("next_action")) fields.add("refutation")
-    const properties = Object.fromEntries(Object.entries(toolInput.properties).filter(([name]) => fields.has(name)))
+    if (readOnly && fields.has("next_action")) {
+      fields.add("evidence_refs")
+      fields.add("report_decision")
+    }
+    if (readOnly && available.includes("render_report")) fields.add("expected_decision_revision")
+    if (readOnly && available.includes("status")) {
+      for (const field of evidenceStatusFields) fields.add(field)
+    }
+    const properties = Object.fromEntries(Object.entries(input.properties).filter(([name]) => fields.has(name)))
     tools[TOOL] = { ...tool, input: structuredClone({
-      ...toolInput, required: checker ? ["action", "runId"] : ["action"],
-      properties: { action: { ...toolInput.properties.action, enum: available }, ...properties },
+      ...input, required: checker ? ["action", "runId"] : ["action"],
+      properties: { action: { ...input.properties.action, enum: available }, ...properties },
     }) }
   }
   request.tools = tools
@@ -136,11 +197,20 @@ const inputSchema = z.object({
   expected_decision_revision: z.number().int().nonnegative().optional(),
   next_action: z.string().min(1).max(1024).optional(),
   refutation: refutationSchema.optional(),
+  evidence_refs: evidenceRefsSchema.optional(),
+  report_decision: reportDecisionSchema.optional(),
+  source_path: z.string().min(1).max(256).optional(),
+  source_tool: z.string().regex(/^[\w-]{1,128}$/).optional(),
+  finding_id: findingSchema.shape.id.optional(),
+  reference_offset: z.number().int().nonnegative().max(1024).optional(),
+  finding: findingSchema.optional(),
   citation: citationSchema.optional(),
   result: verdictSchema.optional(),
 }).strict().refine(({ action, ...values }) => {
   const { required, optional } = actionFields(action)
   const supplied = Object.entries(values).filter(([, value]) => value !== undefined).map(([key]) => key)
+  if ((values.reference_offset !== undefined || values.source_tool !== undefined) && values.source_path === undefined) return false
+  if (values.finding_id !== undefined && values.source_path !== undefined) return false
   return required.every(key => supplied.includes(key)) && supplied.every(key => required.includes(key) || optional.includes(key))
 })
 
@@ -164,6 +234,7 @@ type Registration = { dispose: () => Promise<void> }
 
 function trustedBridge(config: z.output<typeof configSchema>, project: string, preQuery?: PreQueryGate): Bridge | undefined {
   if (!config.enabled) return undefined
+  if (config.investigationMode === "read-only") return createV2InvestigationBridge({ investigationMode: "read-only" })
   const { adapter, approvedJob } = config
   if (!adapter || !approvedJob || !adapter.readResult || adapter.cancel || adapter.tokenEnv ||
       adapter.operations.length !== 1 || adapter.operations[0] !== approvedJob.operation ||
@@ -193,6 +264,9 @@ function investigation(view: V2InvestigationView | null, omitDuplicateGuidance =
   if (!view) return null
   return { revision: view.revision, decision_revision: view.decision_revision, work: view.work, decision: view.decision,
     ...(omitDuplicateGuidance && view.guidance === view.decision.next_action ? {} : { guidance: view.guidance }),
+    ...(view.investigationMode === "read-only" ? { investigationMode: view.investigationMode,
+      decision_authority: view.decisionSources ? "receipt_bound" : view.decision_revision ? "unverified_question" : "no_decision",
+      decision_evidence: view.decisionSources } : {}),
     ...(view.preQuery ? { preQuery: view.preQuery } : {}) }
 }
 
@@ -202,6 +276,16 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
   const parsed = configSchema.safeParse(ctx.options)
   if (!parsed.success) throw new Error("V2_PREVIEW_OPTIONS_UNSUPPORTED")
   const config = parsed.data
+  const readOnly = config.investigationMode === "read-only"
+  if (readOnly && (config.ownerAgent === config.checkerAgent || config.preQueryPolicy ||
+      config.continueOnEvidence || config.researchRoles || config.researchEvidence)) {
+    throw new Error("READ_ONLY_CONFIGURATION_UNQUALIFIED")
+  }
+  if (config.readOnlyReviewResidualTools.some(tool => !config.readOnlyEvidenceTools.includes(tool)) ||
+      (!config.readOnlyCacheSourceBytes && config.readOnlyReviewResidualTools.length)) {
+    throw new Error("READ_ONLY_CONFIGURATION_UNQUALIFIED")
+  }
+  if (!readOnly && (config.readOnlyEvidenceTools.length || config.readOnlyCacheSourceBytes)) throw new Error("READ_ONLY_CONFIGURATION_UNQUALIFIED")
   const runtimeSha256 = createHash("sha256").update(await readFile(new URL(import.meta.url))).digest("hex")
   const directory = await canonicalDirectory(ctx.location.directory)
   const host = new InvestigationHost(ctx, directory, config.ownerAgent, config.checkerAgent)
@@ -225,6 +309,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
   const brief = bridge ? new OwnerBrief(host, async owner => {
     const view = bridge.primary(scope(owner))
     if (!view) return null
+    if (readOnly) await assertReadOnlyTool(owner, TOOL)
     const current = await selectedProcedure(view, false).catch(() => undefined)
     return { ...view, approval: current && config.approvedProcedureSha256
       ? { revision: config.approvedProcedureSha256, procedure_sha256: current.sha256 } : null }
@@ -232,6 +317,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
   const registrations: Registration[] = []
   let disposed = false
   let research: Awaited<ReturnType<typeof registerResearchWorkers>> | undefined
+  let reviewer: Awaited<ReturnType<typeof registerReadOnlyReview>> | undefined
   const continuation = config.continueOnEvidence && bridge ? createOwnerContinuation({
     directory, project: ctx.location.project.id, session: ctx.session, watchExternal: true,
     async owner(id) {
@@ -267,6 +353,13 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       : procedures.current(reload)
   }
 
+  async function assertReadOnlyTool(owner: Session, tool: string) {
+    if (!owner.agent) throw new Error("OWNER_REQUIRED")
+    const caller = { sessionID: owner.id, agent: owner.agent }
+    await ctx.permission.assert({ ...caller, action: "tool.use", resources: [tool] })
+    await ctx.permission.assert({ ...caller, action: tool, resources: ["*"] })
+  }
+
   async function evidenceFor(owner: Session, history: () => Promise<DeliveryHistory>, compacting = false,
     current?: Awaited<ReturnType<typeof selectedProcedure>>) {
     if (!bridge || !config.approvedProcedureSha256 || !owner.agent) return
@@ -279,21 +372,149 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
     let observed: EvidenceProgress | undefined
     async function authorize() {
       const fresh = await host.owner(caller)
-      await ctx.permission.assert({ ...caller, action: TOOL, resources: ["*"] })
-      await ctx.permission.assert({ ...caller, action: policy!.owner.tool, resources: ["*"] })
+      if (readOnly) {
+        await assertReadOnlyTool(fresh, TOOL)
+        await assertReadOnlyTool(fresh, policy!.owner.tool)
+      } else {
+        await ctx.permission.assert({ ...caller, action: TOOL, resources: ["*"] })
+        await ctx.permission.assert({ ...caller, action: policy!.owner.tool, resources: ["*"] })
+      }
       const now = await selectedProcedure(bridge!.primary(scope(fresh)), false)
       if (!now || !isDeepStrictEqual(pinOfProcedure(now), pin)) throw new Error("EVIDENCE_APPROVAL_CHANGED")
       if (observed) await revalidateChildEvidence(observed, reader)
     }
     const ledger = new EvidenceJournal(directory, journal(owner.id).runId,
       [owner.projectID, owner.id, owner.agent, runtimeSha256, config.approvedProcedureSha256, pin.id, pin.path, pin.sha256,
-        pin.sourceSha256, ...(config.childAudit ? [JSON.stringify(config.childAudit)] : [])])
+        pin.sourceSha256, ...(readOnly ? ["read-only"] : []), ...(config.childAudit ? [JSON.stringify(config.childAudit)] : [])])
     await authorize()
     observedEvidenceTool = policy.owner.tool
     const progress = await ledger.observe(policy, await history(), owner.agent, compacting, reader)
     observed = progress
     await authorize()
-    return { ledger, policy, progress, authorize }
+    return { ledger, policy, pin, progress, authorize }
+  }
+
+  function ownerEvidenceStore(owner: Session) {
+    return new EvidenceReadStore(directory, journal(owner.id).runId,
+      { projectId: owner.projectID, sessionId: owner.id, tools: config.readOnlyEvidenceTools,
+        ...(config.readOnlyCacheSourceBytes ? { cacheSourceBytes: true } : {}) })
+  }
+
+  async function observeReads(owner: Session, history = () => ctx.session.context({ sessionID: owner.id })) {
+    if (!owner.agent) throw new Error("OWNER_REQUIRED")
+    const caller = { sessionID: owner.id, agent: owner.agent }
+    async function authorize() {
+      const fresh = await host.owner(caller)
+      for (const tool of [TOOL, ...config.readOnlyEvidenceTools]) await assertReadOnlyTool(fresh, tool)
+    }
+    await authorize()
+    const store = ownerEvidenceStore(owner)
+    const evidence = config.readOnlyEvidenceTools.length ? await store.observe(await history()) : await store.view()
+    await authorize()
+    return { store, evidence, authorize }
+  }
+
+  async function calculationReport(owner: Session, view: V2InvestigationView | null) {
+    const observed = await evidenceFor(owner, () => ctx.session.context({ sessionID: owner.id }))
+    if (!observed || !observed.progress.checkpoint) return
+    const report = await observed.ledger.report(observed.policy, observed.progress, view)
+    await observed.authorize()
+    return { report, progress: observed.progress }
+  }
+
+  async function currentReadOnlyReport(owner: Session, expectedRevision?: number) {
+    if (!bridge || !readOnly) throw new Error("READ_ONLY_REQUIRED")
+    return bridge.withReadOnlyDecision(scope(owner), expectedRevision, async view => {
+      if (!view.decision_revision || !view.decisionSources ||
+          (!view.decisionSources.sources.length && !view.decisionSources.calculationProof)) {
+        throw new Error("REPORT_REQUIRES_RECEIPT_BOUND_DECISION")
+      }
+      if (view.procedurePin) await procedures.require(view.procedurePin)
+      const { store, evidence, authorize } = await observeReads(owner)
+      const bound = await store.checkReferences(view.decisionSources.sources.map(source => source.id))
+      if (!isDeepStrictEqual(bound.map(({ id, reference }) => ({ id, reference })), view.decisionSources.sources)) {
+        throw new Error("REPORT_DECISION_EVIDENCE_CHANGED")
+      }
+      const revision = view.decision_revision
+      const runId = journal(owner.id).runId
+      if (view.decisionSources.calculationProof) {
+        const observed = await calculationReport(owner, view)
+        if (observed?.report.status !== "verified" || observed.report.revision !== revision)
+          throw new Error("REPORT_DECISION_EVIDENCE_CHANGED")
+        await authorize()
+        return { runId, revision, evidenceRevision: evidence.revision, calculation: observed.report,
+          authority: "verified_calculation" as const }
+      }
+      const recordedDecision = view.decisionSources.reportDecision
+      const currentDecision = acknowledgedReport(view, evidence)
+      const report = genericReport(evidence, currentDecision)
+      await authorize()
+      if ((await store.view()).revision !== evidence.revision) throw new Error("REPORT_EVIDENCE_REVISION_CHANGED")
+      return { runId, revision, evidenceRevision: evidence.revision, report,
+        authority: currentDecision ? "owner_recorded" as const : "provisional" as const,
+        provisionalReason: currentDecision ? undefined : recordedDecision ? "recorded_findings_changed" : "closure_decision_unrecorded" }
+    })
+  }
+
+  function findingsDigest(evidence: EvidenceReadView) {
+    return createHash("sha256").update(canonicalJson(evidence.findings.map(({ support, counterevidence, ...finding }) => ({
+      ...finding, support: support.map(source => source.id), counterevidence: counterevidence.map(source => source.id),
+    })))).digest("hex")
+  }
+
+  function evidenceStatus(evidence: EvidenceReadView, selection: Pick<z.output<typeof inputSchema>, typeof evidenceStatusFields[number]>) {
+    const { revision, question } = evidence
+    if (selection.finding_id) {
+      const finding = evidence.findings.find(entry => entry.id === selection.finding_id)
+      if (!finding) throw new Error("EVIDENCE_READ_UNKNOWN_FINDING")
+      return { revision, question, findings: [finding] }
+    }
+    const { source_path: path, source_tool: tool, reference_offset: offset = 0 } = selection
+    const sources = path ? evidence.sources.filter(source => source.path === path && (!tool || source.tool === tool)) : evidence.sources
+    if (path && !sources.length) throw new Error("EVIDENCE_READ_SOURCE_UNKNOWN")
+    if (path && sources.length > 1) throw new Error("EVIDENCE_READ_SOURCE_TOOL_REQUIRED")
+    const maxReferences = 32
+    let remaining = maxReferences
+    const page = sources.map(source => {
+      const references = source.references.slice(offset, offset + remaining)
+      remaining -= references.length
+      const through = offset + references.length
+      const { references: _all, ...head } = source
+      return { ...head, ...(through < source.references.length ? {
+        total_references: source.references.length, next_reference_offset: through,
+      } : {}), references }
+    })
+    if (path) return { revision, sources: page }
+    let findingBytes = 0
+    const omitted_findings: string[] = []
+    const findings = evidence.findings.filter(finding => {
+      const next = findingBytes + Buffer.byteLength(JSON.stringify(finding))
+      if (next > 16_384) {
+        omitted_findings.push(finding.id)
+        return false
+      }
+      findingBytes = next
+      return true
+    })
+    return { revision, sources: page, findings, question, ...(omitted_findings.length ? { omitted_findings } : {}) }
+  }
+
+  function acknowledgedReport(view: V2InvestigationView, evidence: EvidenceReadView) {
+    const recorded = view.decisionSources?.reportDecision
+    if (recorded && recorded.findingsSha256 === findingsDigest(evidence)) return recorded.decision
+  }
+
+  function genericReport(evidence: EvidenceReadView, decision?: z.output<typeof reportDecisionSchema>) {
+    const claims = evidence.findings.flatMap(finding => {
+      const refs = [...finding.support, ...finding.counterevidence].map(source => source.reference)
+      return refs.length ? [{ finding: finding.interpretation, scope: finding.scope ?? "Inspected sources",
+        evidence: [...new Set(refs)] }] : []
+    })
+    const missingEvidence = [...new Set([
+      ...(decision?.missingEvidence ?? []),
+      ...evidence.findings.flatMap(finding => finding.missingEvidence ? [finding.missingEvidence] : []),
+    ])]
+    return { disposition: decision?.disposition ?? "indeterminate", claims, missingEvidence }
   }
 
   async function verifiedInvestigation(view: V2InvestigationView | null) {
@@ -400,7 +621,11 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
   ): Promise<Record<string, unknown>> {
     if (disposed || call.signal.aborted) throw new Error("OPERATION_STOPPED")
     const { action } = input
-    if (action === "read" || action === "result" || (action === "procedure" && call.agent === config.checkerAgent)) {
+    if (readOnly && (!readOnlyActionNames.has(action) || input.refutation || input.runId)) throw new Error("READ_ONLY_ACTION_UNAVAILABLE")
+    if (!readOnly && (action === "render_report" || action === "record_finding" || input.evidence_refs ||
+        input.report_decision || evidenceStatusFields.some(field => input[field] !== undefined)))
+      throw new Error("JOB_BACKED_ACTION_UNAVAILABLE")
+    if (!readOnly && (action === "read" || action === "result" || (action === "procedure" && call.agent === config.checkerAgent))) {
       if (!bridge || call.agent !== config.checkerAgent) throw new Error("CHECKER_REQUIRED")
       const child = await ctx.session.get({ sessionID: call.sessionID })
       if (!child.parentID || !await host.matchesLocation(child)) throw new Error("CHECKER_REQUIRED")
@@ -460,6 +685,8 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
     }
 
     const owner = await host.owner(call)
+    if (readOnly) await assertReadOnlyTool(owner, TOOL)
+    if (action === "diagnostics" && readOnly) return { hostVersion: HOST_VERSION, enabled: !!bridge, investigationMode: "read-only" }
     if (action === "diagnostics") return { hostVersion: HOST_VERSION, enabled: !!bridge, capabilities }
     const store = journal(owner.id)
     if (input.runId && input.runId !== store.runId) throw new Error("OWNER_RUN_REQUIRED")
@@ -469,6 +696,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
     }
     if (!bridge) throw new Error("V2_PREVIEW_DISABLED")
     switch (action) {
+      case "read": case "result": throw new Error("CHECKER_REQUIRED")
       case "create": return { ...await verifiedInvestigation(bridge.create(scope(owner))) }
       case "admit": return { ...await verifiedInvestigation(await bridge.admit(scope(owner))) }
       case "dispatch": {
@@ -483,7 +711,62 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
         await continuation?.watchOutstanding(owner.id, call.signal).catch(() => {})
         return { ...await verifiedInvestigation(result), worker: await workerStatus(store) }
       }
+      case "record_finding": {
+        return bridge.withReadOnlyDecision(scope(owner), input.expected_decision_revision, async view => {
+          if (view.procedurePin) await procedures.require(view.procedurePin)
+          const { store, evidence, authorize } = await observeReads(owner)
+          await authorize()
+          const recorded = await store.recordFinding(input.finding!, evidence.revision)
+          return { ...investigation(view), evidence_revision: recorded.revision, finding: recorded.findings.find(f => f.id === input.finding!.id) }
+        })
+      }
+      case "render_report": {
+        const current = await currentReadOnlyReport(owner, input.expected_decision_revision)
+        const base = { investigationMode: "read-only", work: null, decision_revision: current.revision,
+          evidenceRevision: current.evidenceRevision }
+        if (current.calculation) {
+          const text = renderCalculatedReport(current.calculation, current.revision)
+          return { ...base, report: JSON.parse(text), text, report_authority: current.authority, evidenceReport: current.calculation }
+        }
+        const text = renderInvestigationReport(current.report)
+        return { ...base, report: JSON.parse(text), text, report_authority: current.authority,
+          ...(current.provisionalReason ? { provisional_reason: current.provisionalReason } : {}) }
+      }
       case "set_next_measurement": {
+        if (readOnly) {
+          let proofPin: ProcedurePin | undefined
+          const view = await bridge.setNextMeasurement(scope(owner), {
+            expected_decision_revision: input.expected_decision_revision!, next_action: input.next_action!,
+          }, async () => {
+            const current = await procedures.current()
+            const pin = current && pinOfProcedure(current)
+            if (proofPin && !isDeepStrictEqual(proofPin, pin)) throw new Error("EVIDENCE_APPROVAL_CHANGED")
+            return pin
+          }, async () => {
+            const requested = input.evidence_refs ?? []
+            const reads = requested.length || input.report_decision ? await observeReads(owner) : undefined
+            const refs = await reads?.store.checkReferences(requested) ?? []
+            if (new Set(refs.map(({ id }) => id)).size !== refs.length) throw new Error("EVIDENCE_READ_DUPLICATE_REFERENCE")
+            const sources = refs.map(({ id, reference }) => ({ id, reference }))
+            await reads?.authorize()
+            if (input.report_decision) {
+              if (!reads || !refs.length || (await reads.store.view()).revision !== reads.evidence.revision)
+                throw new Error("REPORT_REQUIRES_RECEIPT_BOUND_DECISION")
+              const findings = reads.evidence.findings
+              if (input.report_decision.disposition === "resolved" && (!findings.length ||
+                  findings.some(finding => !finding.scope || finding.status !== "supported"))) {
+                throw new Error("REPORT_CLOSURE_REQUIRES_SCOPED_SUPPORT")
+              }
+              return { sources, reportDecision: { decision: input.report_decision, findingsSha256: findingsDigest(reads.evidence) } }
+            }
+            const calculation = await evidenceFor(owner, () => ctx.session.context({ sessionID: owner.id })).catch(() => undefined)
+            const proof = calculation?.ledger.calculationProof(calculation.policy, calculation.progress, input.next_action!)
+            await calculation?.authorize()
+            if (proof) proofPin = calculation?.pin
+            return { sources, ...(proof ? { calculationProof: proof } : {}) }
+          })
+          return { ...investigation(view) }
+        }
         // Link to facts that were available *before* this write. A later audit
         // cannot retrospectively certify an earlier recommendation.
         const evidence = await evidenceFor(owner, () => ctx.session.context({ sessionID: owner.id })).catch(() => undefined)
@@ -504,9 +787,9 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       }
       case "status": {
         const view = bridge.primary(scope(owner))
-        const worker = await workerStatus(store)
+        const worker = readOnly ? null : await workerStatus(store)
         if (view?.procedurePin && !await selectedProcedure(view).catch(() => undefined)) {
-          return { work: view.work, revision: view.revision, decision_revision: view.decision_revision,
+          return { ...(readOnly ? { investigationMode: "read-only" } : {}), work: view.work, revision: view.revision, decision_revision: view.decision_revision,
             decision: { hypotheses: view.decision.hypotheses, contradictions: view.decision.contradictions, next_action: null },
             procedure_authority: "unavailable", evidenceReport: { status: "incomplete", reason: "approval_unavailable" }, worker }
         }
@@ -518,6 +801,24 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
           if (view?.revision !== bridge.primary(scope(owner))?.revision) return { status: "incomplete", reason: "revision_changed" }
           return report
         })().catch(() => ({ status: "incomplete", reason: "unavailable" }))
+        if (readOnly) {
+          const reads = view && await observeReads(owner)
+          const citationsCurrent = !view?.decisionSources?.sources.length ||
+            !!await reads?.store.checkReferences(view.decisionSources.sources.map(source => source.id)).catch(() => undefined)
+          const calculationCurrent = !view?.decisionSources?.calculationProof || evidenceReport?.status === "verified"
+          const acknowledged = view && reads && citationsCurrent ? acknowledgedReport(view, reads.evidence) : undefined
+          const review = view && reviewer ? await reviewer.status(owner.id) : undefined
+          if (view?.revision !== bridge.primary(scope(owner))?.revision ||
+              (reads && (await reads.store.view()).revision !== reads.evidence.revision)) throw new Error("EVIDENCE_REVISION_CHANGED")
+          return { investigationMode: "read-only", work: null, ...investigation(view),
+            ...(citationsCurrent && calculationCurrent ? {} : { decision_authority: "evidence_unavailable" }),
+            report_authority: view?.decisionSources?.calculationProof && calculationCurrent ? "verified_calculation"
+              : acknowledged ? "owner_recorded" : "provisional",
+            ...(reads && { evidence: evidenceStatus(reads.evidence, input),
+              checkerQuestion: selectReviewQuestion(reads.evidence, acknowledged?.disposition === "resolved") }),
+            ...(evidenceReport && { evidenceReport }),
+            ...(review !== undefined ? { checkerReview: review } : {}) }
+        }
         return { ...investigation(view), worker, ...(evidenceReport && { evidenceReport }) }
       }
       case "start": return { worker: await launch(bridge, owner, store, call.signal) }
@@ -564,9 +865,9 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
     }
     if (request.agent === config.checkerAgent) {
       const presentChecker = (available: Action[]) => {
-        if (!compacting && config.checkerAgent !== config.ownerAgent) presentTool(request, available, true)
+        if (!compacting && config.checkerAgent !== config.ownerAgent) presentTool(request, available, true, false, readOnly)
       }
-      if (!bridge || (!config.approvedProcedure && (compacting || !request.tools?.[TOOL]))) return presentChecker([])
+      if (readOnly || !bridge || (!config.approvedProcedure && (compacting || !request.tools?.[TOOL]))) return presentChecker([])
       const worker = await boundWorker(request.sessionID)
       if (!worker) return presentChecker([])
       const { binding, session, store } = worker
@@ -619,10 +920,12 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       if (!compacting && config.checkerAgent !== config.ownerAgent) {
         const settled = view?.work?.status === "result_recorded" || view?.work?.status === "reusable"
         const binding = settled ? await store.read("binding") : undefined
-        const available = bridge ? ownerActions(view ?? null, !!binding, !!binding && !!await store.read("grant")) : ["diagnostics" as const]
+        const available: Action[] = !bridge ? ["diagnostics"] : readOnly
+          ? view ? ["status", "set_next_measurement", "record_finding", "render_report"] : ["create", "status"]
+          : ownerActions(view ?? null, !!binding, !!binding && !!await store.read("grant"))
         if (bridge && explicitlyRequests(request, "diagnostics")) available.push("diagnostics")
-        if (config.approvedProcedure && explicitlyRequests(request, "procedure")) available.push("procedure")
-        presentTool(request, available, false, settled && !!view?.work?.manifest_digest)
+        if (config.approvedProcedure && (readOnly || explicitlyRequests(request, "procedure"))) available.push("procedure")
+        presentTool(request, available, false, settled && !!view?.work?.manifest_digest, readOnly)
       }
       if (!view && !config.approvedProcedure) return
       if (view && brief && !hasBrief) return
@@ -630,7 +933,28 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
         try { await ctx.permission.assert({ sessionID: owner.id, agent: request.agent, action: TOOL, resources: ["*"] }) }
         catch { return }
       }
-      if (view) {
+      if (view && readOnly) {
+        const { evidence } = await observeReads(owner)
+        const question = selectReviewQuestion(evidence, acknowledgedReport(view, evidence)?.disposition === "resolved")
+        request.system.push({ type: "text", text: "ALG read-only investigation. Use status for saved source references and findings. A next measurement without a receipt is an unverified research question." +
+          (question && compacting ? " The checker question is durable. Recover it with status." : "") })
+        if (!compacting) {
+          const heads = evidence.sources.slice(0, 4).map(({ path, status, references }) => ({ path, status, references: references.length }))
+          const projection = {
+            decision_revision: view.decision_revision,
+            evidence_revision: evidence.revision,
+            sources: heads,
+            omittedSources: evidence.sources.length - heads.length,
+            omittedReferences: evidence.sources.reduce((total, source) => total + source.references.length, 0) -
+              (question?.support.length ?? 0) - (question?.counterevidence.length ?? 0),
+            checkerQuestion: question,
+          }
+          const text = "ALG read-only evidence index (untrusted recorded data)\n" +
+            JSON.stringify(projection).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e")
+          const index = request.messages.map(message => message.role).lastIndexOf("user")
+          if (index >= 0) request.messages.splice(index, 0, { role: "user", content: [{ type: "text", text }] })
+        }
+      } else if (view) {
         const binding = await store.read("binding")
         if (binding) request.system.push({ type: "text", text: "ALG checker run " + binding.runId + ". Use status to reconcile the recorded child." })
       }
@@ -668,7 +992,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
         request.system.push({ type: "text", text: "ALG research procedure unavailable. Use current verification before relying on prior procedure text." })
         if (calculationPolicy) return
       }
-      if (view?.procedurePin && hasBrief && bridge) {
+      if (!readOnly && view?.procedurePin && hasBrief && bridge) {
         await delivery.prepare(request, compacting, directory, store.runId,
           history,
           async () => {
@@ -700,10 +1024,11 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       }
     } catch {
       if (!compacting && config.checkerAgent !== config.ownerAgent) {
-        presentTool(request, ["status", "reconcile", "diagnostics",
-          ...(config.approvedProcedure ? ["procedure" as const] : [])])
+        presentTool(request, ["status", ...(!readOnly ? ["reconcile" as const] : []), "diagnostics",
+          ...(config.approvedProcedure ? ["procedure" as const] : [])], false, false, readOnly)
       }
-      request.system.push({ type: "text", text: "ALG V2 investigation status unavailable; reconcile." })
+      request.system.push({ type: "text", text: readOnly ? "ALG read-only investigation status unavailable."
+        : "ALG V2 investigation status unavailable; reconcile." })
     }
   }
 
@@ -722,8 +1047,14 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       }))
     }
     if (continuation) registrations.push(await ctx.session.hook("experimental.idle", event => continuation.onIdle(event)))
-    if (bridge && config.approvedProcedure) registrations.push(await ctx.tool.hook("execute.after", async event => {
+    if (bridge && (config.approvedProcedure || (readOnly && config.readOnlyEvidenceTools.length))) registrations.push(await ctx.tool.hook("execute.after", async event => {
       if (disposed || event.agent !== config.ownerAgent || event.status !== "completed") return
+      if (readOnly && config.readOnlyEvidenceTools.includes(event.tool)) {
+        try {
+          const owner = await host.owner(event)
+          if (bridge.primary(scope(owner))) await observeReads(owner)
+        } catch { /* Context and compaction can observe the completed call later. */ }
+      }
       if (event.tool === observedEvidenceTool) {
         // Hosts may publish the native result after this callback. The context
         // and compaction hooks also consume that same immutable call ID.
@@ -750,7 +1081,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       registrations.push(await ctx.session.hook("context", request => recovery(request, false)))
       registrations.push(await ctx.session.hook("compaction", request => recovery(request, true)))
     }
-    if (bridge) {
+    if (bridge && !readOnly) {
       registrations.push(await ctx.session.hook("retry", async event => {
         const worker = await boundWorker(event.sessionID)
         if (worker && worker.session.agent === event.agent) event.decision = { retry: false }
@@ -778,18 +1109,48 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       registrations.push(research)
     }
     if (config.researchEvidence && !config.researchRoles) throw new Error("RESEARCH_ROLES_REQUIRED")
+    if (bridge && readOnly) {
+      registrations.push(await registerReportCommand(ctx, directory, async sessionID => {
+        const owner = await host.owner({ sessionID, agent: config.ownerAgent as NonNullable<Session["agent"]> })
+        const current = await currentReadOnlyReport(owner)
+        if (current.authority === "provisional") throw new Error("REPORT_REQUIRES_ACKNOWLEDGED_DISPOSITION")
+        return { ...current, reportAuthority: current.authority }
+      }))
+      if (config.readOnlyCacheSourceBytes) {
+        reviewer = await registerReadOnlyReview(host, {
+          residualTools: config.readOnlyReviewResidualTools,
+          async current(sessionID) {
+            const owner = await host.owner({ sessionID, agent: config.ownerAgent as NonNullable<Session["agent"]> })
+            const view = bridge.primary(scope(owner))
+            if (!view) throw new Error("INVESTIGATION_REQUIRED")
+            if (view.procedurePin) await procedures.require(view.procedurePin)
+            const { store, evidence } = await observeReads(owner)
+            if (view.revision !== bridge.primary(scope(owner))?.revision) throw new Error("EVIDENCE_REVISION_CHANGED")
+            return { owner, decisionRevision: view.decision_revision, evidence, store,
+              closureRequested: acknowledgedReport(view, evidence)?.disposition === "resolved" }
+          },
+        })
+        registrations.push(reviewer)
+      }
+    }
     registrations.push(await ctx.tool.transform(editor => {
       if (editor.get(TOOL)) throw new Error("V2_PREVIEW_TOOL_COLLISION")
       editor.add({
         name: TOOL,
-        description: "Manage the investigation. Use the projected procedure and the native skill tool for required activation.",
-        input: { ...toolInput, required: [...toolInput.required] },
+        description: readOnly ? "Record findings and next measurements from inspected sources and render the acknowledged report."
+          : "Manage the investigation. Use the projected procedure and the native skill tool for required activation.",
+        input: registeredInput(readOnly),
         options: { permission: TOOL, codemode: false },
         async execute(input, call) {
+          const known = z.object({ action: actionName }).safeParse(input)
+          if (known.success && readOnly && !readOnlyActionNames.has(known.data.action)) {
+            return { content: JSON.stringify({ ok: false, runtimeSha256, error: "READ_ONLY_ACTION_UNAVAILABLE" }) }
+          }
           const parsed = inputSchema.safeParse(input)
           if (!parsed.success) {
-            const known = z.object({ action: actionName }).safeParse(input)
-            const contract = known.success ? { action: known.data.action, ...actionFields(known.data.action) } : undefined
+            const contract = known.success ? { action: known.data.action, ...actionFields(known.data.action),
+              optional: actionFields(known.data.action).optional.filter(field => readOnly ? field !== "refutation" && field !== "runId" : !["evidence_refs", "report_decision", ...evidenceStatusFields].includes(field)),
+            } : undefined
             return { content: JSON.stringify({ ok: false, runtimeSha256, error: "UNSUPPORTED_OR_INVALID_ACTION", contract }) }
           }
           try {

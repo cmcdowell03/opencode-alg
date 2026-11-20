@@ -35,12 +35,64 @@ generated `package.json`. This configuration enables diagnostics:
 
 Open a session in that location and call `alg_investigation` with
 `{"action":"diagnostics"}`. Compare its `runtimeSha256` with the build receipt.
-Enabling investigation writes additionally requires `enabled: true`, one
+The default job-backed mode additionally requires `enabled: true`, one
 configured `approvedJob`, a matching qualified loopback MCP `adapter` and a
 restricted checker agent. The [fixture configuration](acceptance/host.ts) and
 [synthetic service](acceptance/service.ts) provide a working local example.
 The connector profile limits authority to the configured operation, budget,
 project and principal.
+
+## Investigate existing records
+
+When the answers are already in logs, inspection tables or other source
+records, configure the preview with a read-only investigation. For example,
+these plugin options select a source reader already registered in OpenCode.
+
+```json
+{
+  "enabled": true,
+  "investigationMode": "read-only",
+  "ownerAgent": "build",
+  "readOnlyEvidenceTools": ["sources_discovery_read"]
+}
+```
+
+Use the registered name of the reader at your site. The host's permissions
+still govern access to it. The reader accepts a relative `path` and returns
+that path, the text `content` and an opaque `receipt`. It may include the
+SHA-256 of the exact UTF-8 content. JSON arrays of records with distinct
+`id` fields support citations of the form `path#id`. ALG binds each citation
+to an observed native tool call in the owner's project and session.
+
+Create the investigation, inspect the records, then use `record_finding` to
+link each interpretation to supporting rows, contradictory rows and the
+observation that would change the conclusion. After a restart or compaction,
+start with `status`. Its receipts describe the version already inspected.
+An observation of changed content invalidates dependent evidence. The
+read-only ledger can run without an external job service.
+
+For independent review, enable `readOnlyCacheSourceBytes` and configure
+`checkerAgent` as a native subagent allowed to use `alg_read_only_review`.
+This opts the project into storing bounded source content locally. Run
+`/alg-review` to give the child one finding, its proposed falsifier and the
+cited historical rows. The child can record support, a challenge, or missing
+evidence. If the review needs one more record, the operator can name an
+allowlisted reader and reference with `/alg-review read <tool> <path#row>`.
+The owner performs the read through its normal OpenCode permissions. Run
+`/alg-review` again to deliver the observed row. The child has no direct
+source-tool grant. Configure `readOnlyReviewResidualTools` to select which
+registered evidence readers may serve these requests.
+
+To record a closure decision, include `report_decision` with `disposition`
+and `missingEvidence` in a receipt-bound `set_next_measurement` after the
+last finding write. A later finding change makes that disposition stale.
+Use `/alg-report` to export the acknowledged decision as a JSON file. The
+native session receipt names the project-relative file and its SHA-256.
+The filename identifies the decision and evidence revisions. The command works without another
+model request. In evaluations, score the assistant's reply independently of
+the export. A matching receipt establishes which source was read. Assessing
+whether that source establishes a causal claim also requires reviewing the
+finding against the evidence.
 
 ## Run the recovery scenario
 

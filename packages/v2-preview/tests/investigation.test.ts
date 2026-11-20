@@ -283,3 +283,20 @@ test("each primary request projects the latest durable decision under the hard b
   expect(JSON.parse(bounded.projection).decision.next_action).toBe(action)
   expect(bounded.decision_revision).toBe(1)
 })
+
+
+test("legacy job-backed and read-only ledgers stay isolated across reattachment", async () => {
+  const f = fixture()
+  const job = f.bridge()
+  const local = () => createV2InvestigationBridge({ investigationMode: "read-only" })
+  const created = job.create(f.owner)
+  expect(local().primary(f.owner)).toBeNull()
+  await job.admit(f.owner)
+  expect(local().create(f.owner)).toMatchObject({ investigationMode: "read-only", decision_revision: 0, work: null })
+  await local().setNextMeasurement(f.owner, { expected_decision_revision: 0, next_action: "An open read-only question" })
+  expect(local().primary(f.owner)).toMatchObject({ investigationMode: "read-only", decision_revision: 1, work: null })
+  expect(f.bridge().primary(f.owner)).toMatchObject({ investigationMode: "job-backed",
+    decision_revision: created.decision_revision, work: { status: "reserved" } })
+  expect(f.submissions).toHaveLength(0)
+  expect(f.lookups).toHaveLength(0)
+})

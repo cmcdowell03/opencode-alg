@@ -34,12 +34,12 @@ const cut = (status: "running" | "completed"): Message => ({
 })
 
 async function journalTest(run: (make: (
-  tools?: string[], sessionId?: string, projectId?: string, runId?: string,
+  tools?: string[], sessionId?: string, projectId?: string, runId?: string, cacheSourceBytes?: boolean,
 ) => EvidenceReadStore) => Promise<void>) {
   const directory = await mkdtemp(join(tmpdir(), "alg-evidence-reads-"))
   try {
-    await run((tools = [tool], sessionId = "owner", projectId = "project", runId = "owner-journal") =>
-      new EvidenceReadStore(directory, runId, { projectId, sessionId, tools }))
+    await run((tools = [tool], sessionId = "owner", projectId = "project", runId = "owner-journal", cacheSourceBytes = false) =>
+      new EvidenceReadStore(directory, runId, { projectId, sessionId, tools, cacheSourceBytes }))
   } finally { await rm(directory, { recursive: true, force: true }) }
 }
 
@@ -163,4 +163,21 @@ test("historical rejected reads stay idempotent after a successful retry", async
   const corrupt = read("retry", "notes.md", "Rewritten", { sha256: digest("Witness") })
   expect((await store().observe([corrupt])).sources[0]?.status).toBe("conflicted")
   await expect(store().checkReferences(["notes.md"])).rejects.toThrow("EVIDENCE_READ_UNVERIFIED_REFERENCE")
+}))
+
+test("opted-in source snapshots disclose cited rows only, within the owner and byte budget", async () => journalTest(async store => {
+  const optedIn = () => store([tool], "owner", "project", "owner-journal", true)
+  await optedIn().observe([read("rows", "rows.json", JSON.stringify([
+    { id: "seal", reading: 143 }, { id: "unused", note: "private row" }, { id: "huge", body: "X".repeat(9000) },
+  ]))])
+  const input = ["rows.json#seal", "rows.json#huge", "rows.json#fabricated"]
+  const snapshot = await optedIn().snapshotReferences(input)
+  expect(snapshot).toMatchObject({ trust: "untrusted-source-data", evidence: [{ kind: "json-row", data: { id: "seal", reading: 143 } }],
+    missing: input.slice(1) })
+  expect(JSON.stringify(snapshot)).not.toContain("private row")
+  expect((await store().snapshotReferences(input)).missing).toEqual(input)
+  expect((await store([tool], "checker", "project", "owner-journal", true).snapshotReferences(input)).missing).toEqual(input)
+  expect((await store([], "owner", "project", "owner-journal", true).snapshotReferences(input)).missing).toEqual(input)
+  await optedIn().observe([read("changed", "rows.json", '[{"id":"seal","reading":22}]')])
+  expect((await optedIn().snapshotReferences(input)).missing).toEqual(input)
 }))

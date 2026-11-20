@@ -80,6 +80,7 @@ export type EvidenceReadView = {
   question: EvidenceQuestion | null
 }
 export type ReviewSourceData = { kind: "json-row" | "markdown"; data: unknown }
+export type NativeReviewSourceSnapshot = Anchor & ReviewSourceData & { reference: string }
 export type ReviewSourceSnapshot = {
   revision: number
   trust: "untrusted-source-data"
@@ -162,6 +163,32 @@ function* observations(history: DeliveryHistory, tools: ReadonlySet<string>): Ge
       yield { attempt: { ...location.data, sha256: digest, receipt }, rowIds: sourceRows(input.data.path, content), content }
     }
   }
+}
+
+/** Reconcile one operator-requested read against the ordinary owner-native history. */
+export function snapshotNativeReviewRead(history: DeliveryHistory, tool: string, reference: string, after: number):
+NativeReviewSourceSnapshot | undefined {
+  const target = reviewSourceReference(reference)
+  if (!target || history.length > 1024) return
+  const matched: DeliveryHistory[number][] = []
+  let parts = 0
+  for (const row of history) {
+    if (row.type !== "assistant") continue
+    parts += row.content.length
+    if (parts > 4096) return
+    for (const part of row.content) {
+      if (part.type !== "tool" || part.name !== tool || part.time.created <= after ||
+          part.executed === true || !("input" in part.state)) continue
+      const input = inputSchema.safeParse(part.state.input)
+      if (!input.success || input.data.path !== target.path) continue
+      if (matched.length) return
+      matched.push({ ...row, content: [part] })
+    }
+  }
+  const observed = observations(matched, new Set([tool])).next()
+  if (observed.done || !anchored(observed.value.attempt) || observed.value.content === undefined) return
+  const data = extractReviewSourceData(observed.value.content, reference)
+  if (data) return { ...observed.value.attempt, reference, ...data }
 }
 
 function sameSource(a: Location, b: Location) {
