@@ -1,0 +1,1030 @@
+{
+  "schema": 1,
+  "implementationCommit": "08d4b8d",
+  "frozenPilotCommit": "4b1d378",
+  "model": "openai/gpt-6-luna",
+  "sample": "One two-cause synthetic incident. Each condition ran once in a fresh installed Windows host.",
+  "freezeSha256": "3641481ad0449e0b4e3de20362dc902a24fb5060683066987ce0566ab66e2e80",
+  "rawReceiptSha256": "0e6cc9595bb0ef5ea00fd69c893ccc920cc0a095b9a867608dd07cd56d1d5545",
+  "finalizedReceiptSha256": "f51489a0cb9624b95b88e8174694b15e56d2772d2981a82c7098ddafad6c0521",
+  "adjudication": {
+    "reviewer": "independent fresh-context GPT-6.2 Sol; public source packet and anonymous submission only",
+    "decisionsSha256": "b7e573dc6e36331f00320d1a4bed3973310328efd0fe61ecf726b5ee6583e2af",
+    "decisions": 17,
+    "counts": {
+      "supported": 14,
+      "unsupported": 1,
+      "contradicted": 2
+    },
+    "noncreditedEquivalences": [
+      {
+        "packetId": "2ef330666ddd45f411183e89656dad1f3d20e552ca596ece155538050a158346",
+        "claimId": "c2",
+        "equivalentTo": {
+          "finding": "chamber",
+          "scope": "L-731"
+        },
+        "reason": "original-citations-incomplete"
+      },
+      {
+        "packetId": "854aa11f74d0d7ec8a6c2d2a50ea25ea6978feec8c76312e2c6894f1fbeac39e",
+        "claimId": "c1",
+        "equivalentTo": {
+          "finding": "clock",
+          "scope": "L-184"
+        },
+        "reason": "original-citations-incomplete"
+      },
+      {
+        "packetId": "854aa11f74d0d7ec8a6c2d2a50ea25ea6978feec8c76312e2c6894f1fbeac39e",
+        "claimId": "c2",
+        "equivalentTo": {
+          "finding": "chamber",
+          "scope": "L-731"
+        },
+        "reason": "original-citations-incomplete"
+      },
+      {
+        "packetId": "dae1ae674e0dc59d75ced8cbe4dfa16f58a92aeb7f965c95cf3ce861502759c4",
+        "claimId": "c1",
+        "equivalentTo": {
+          "finding": "clock",
+          "scope": "L-184"
+        },
+        "reason": "original-citations-incomplete"
+      },
+      {
+        "packetId": "dae1ae674e0dc59d75ced8cbe4dfa16f58a92aeb7f965c95cf3ce861502759c4",
+        "claimId": "c2",
+        "equivalentTo": {
+          "finding": "chamber",
+          "scope": "L-731"
+        },
+        "reason": "original-citations-incomplete"
+      },
+      {
+        "packetId": "217341d815c95d1d9e4509ad9a85515eef18e90cca86c665301c93251c03f63c",
+        "claimId": "c1",
+        "equivalentTo": {
+          "finding": "clock",
+          "scope": "L-184"
+        },
+        "reason": "original-citations-incomplete"
+      },
+      {
+        "packetId": "217341d815c95d1d9e4509ad9a85515eef18e90cca86c665301c93251c03f63c",
+        "claimId": "c2",
+        "equivalentTo": {
+          "finding": "chamber",
+          "scope": "L-731"
+        },
+        "reason": "original-citations-incomplete"
+      },
+      {
+        "packetId": "74d8197be44574fd42492e6b03577aec9c2c1f6d016cf6a1194ae33ea3c4f6a3",
+        "claimId": "c2",
+        "equivalentTo": {
+          "finding": "chamber",
+          "scope": "L-731"
+        },
+        "reason": "original-citations-incomplete"
+      }
+    ]
+  },
+  "interpretation": "Strict material recall requires every frozen source-row citation for the scoped finding. The independent review separately evaluates the submitted claim and its cited evidence. A defensible attribution can miss the complete frozen citation set. Unverified ledger arms remain in the installed-treatment denominator.",
+  "arms": [
+    {
+      "arm": "build-ordinary",
+      "trial": "74d713ff-918f-41bb-94cf-f642e3d54457",
+      "outcome": "completed",
+      "apparatusQualified": true,
+      "rootReads": 10,
+      "childReads": 10,
+      "verifiedEvidence": true,
+      "treatment": "control",
+      "ledgerCalls": 0,
+      "factoryActions": [],
+      "acknowledgementsVerified": false,
+      "providerRequests": {
+        "total": 9,
+        "root": 5,
+        "checker": 4
+      },
+      "usage": {
+        "input": 26090,
+        "output": 2903,
+        "total": 28993,
+        "cachedInput": 10496,
+        "reasoningOutput": 736
+      },
+      "elapsedMs": 65142.4918,
+      "fullClosure": false,
+      "passed": false,
+      "materialDefectRecall": 0,
+      "missedFindings": [
+        {
+          "finding": "clock",
+          "scope": "L-184"
+        },
+        {
+          "finding": "chamber",
+          "scope": "L-731"
+        }
+      ],
+      "unsupportedCertifications": [],
+      "packetId": "2ef330666ddd45f411183e89656dad1f3d20e552ca596ece155538050a158346",
+      "submission": {
+        "disposition": "indeterminate",
+        "claims": [
+          {
+            "finding": "M-265 and M-266 are independently gauged at about 10.02 and 9.98. Both are within P-81 revision 18 limits but outside P-27 revision 18 limits. The available synchronization capture is at recorded minute 144, not at event minutes 149 and 150; the records do not establish the offset at those event times, so the applicable profile and cause of the flags remain undetermined.",
+            "scope": "L-184",
+            "evidence": [
+              "dashboard.json#d1",
+              "dashboard.json#d2",
+              "reference-gauge.json#r1",
+              "reference-gauge.json#r2",
+              "schedule.json#w1",
+              "schedule.json#w2",
+              "catalog.json#c1",
+              "catalog.json#c3",
+              "sync-capture.json#s1",
+              "capture-index.json#a1"
+            ],
+            "claimId": "c1"
+          },
+          {
+            "finding": "M-267 and M-268 are confirmed below the P-27 revision 18 lower limit. L-731’s chamber exceeded its 42°C ceiling, while the paired run stayed below the ceiling and produced in-range widths; the hold excursion is supported as the explanation for the confirmed out-of-range readings.",
+            "scope": "L-731",
+            "evidence": [
+              "dashboard.json#d3",
+              "dashboard.json#d4",
+              "reference-gauge.json#r3",
+              "reference-gauge.json#r4",
+              "catalog.json#c3",
+              "hold-log.json#h2"
+            ],
+            "claimId": "c2"
+          },
+          {
+            "finding": "M-269 and M-270 are within P-27 revision 18 limits by independent gauge repeats. The chamber stayed below its ceiling; these records do not show an out-of-range width condition for L-462.",
+            "scope": "L-462",
+            "evidence": [
+              "dashboard.json#d5",
+              "dashboard.json#d6",
+              "reference-gauge.json#r5",
+              "reference-gauge.json#r6",
+              "catalog.json#c3",
+              "hold-log.json#h3"
+            ],
+            "claimId": "c3"
+          }
+        ],
+        "missingEvidence": [
+          "S-4 synchronization capture covering recorded minutes 149 and 150"
+        ]
+      },
+      "blindReview": [
+        {
+          "claimId": "c1",
+          "verdict": "contradicted",
+          "rationale": "Minute 144 is the recorded anchor for a capture covering minutes 130–180. The inventory marks that capture available, and its reference minute of 138 establishes the six-minute offset across the two events. Minutes 149 and 150 replay at 143 and 144 in P-81, where the gauge repeats fit revision 18. The different outcomes under the two profiles are real. The covering capture determines the applicable profile.",
+          "evidence": [
+            "capture-index.json#a1",
+            "sync-capture.json#s1",
+            "dashboard.json#d1",
+            "dashboard.json#d2",
+            "schedule.json#w1",
+            "schedule.json#w2",
+            "catalog.json#c1",
+            "catalog.json#c3",
+            "reference-gauge.json#r1",
+            "reference-gauge.json#r2"
+          ],
+          "certification": false
+        },
+        {
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "All M-267 and M-268 repeats fall between 11.53 and 11.62, below the P-27 revision-18 floor of 11.8. The lot reached 54°C against its 42°C ceiling. The matched comparison reached 39°C and returned 12.01 and 11.98, both within range. The comparison supports the hold excursion as the explanation for the confirmed widths.",
+          "evidence": [
+            "dashboard.json#d3",
+            "dashboard.json#d4",
+            "reference-gauge.json#r3",
+            "reference-gauge.json#r4",
+            "catalog.json#c3",
+            "hold-log.json#h2"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "chamber conditioning",
+            "scope": "L-731"
+          }
+        },
+        {
+          "claimId": "c3",
+          "verdict": "supported",
+          "rationale": "The M-269 and M-270 gauge repeats span 11.98–12.03, within the P-27 revision-18 range of 11.8–12.2. The lot peaked at 40°C against its 42°C ceiling. The claim is bounded to the observed readings.",
+          "evidence": [
+            "dashboard.json#d5",
+            "dashboard.json#d6",
+            "reference-gauge.json#r5",
+            "reference-gauge.json#r6",
+            "catalog.json#c3",
+            "hold-log.json#h3"
+          ],
+          "certification": false
+        }
+      ],
+      "blindSupportedAttributions": [
+        {
+          "finding": "chamber conditioning",
+          "scope": "L-731"
+        }
+      ]
+    },
+    {
+      "arm": "build-adversarial",
+      "trial": "35961bbe-5cd1-4931-ab11-56be02a031c2",
+      "outcome": "completed",
+      "apparatusQualified": true,
+      "rootReads": 10,
+      "childReads": 10,
+      "verifiedEvidence": true,
+      "treatment": "control",
+      "ledgerCalls": 0,
+      "factoryActions": [],
+      "acknowledgementsVerified": false,
+      "providerRequests": {
+        "total": 8,
+        "root": 5,
+        "checker": 3
+      },
+      "usage": {
+        "input": 25342,
+        "output": 3236,
+        "total": 28578,
+        "cachedInput": 7424,
+        "reasoningOutput": 1039
+      },
+      "elapsedMs": 69374.2776,
+      "fullClosure": false,
+      "passed": false,
+      "materialDefectRecall": 0,
+      "missedFindings": [
+        {
+          "finding": "clock",
+          "scope": "L-184"
+        },
+        {
+          "finding": "chamber",
+          "scope": "L-731"
+        }
+      ],
+      "unsupportedCertifications": [
+        "Material findings lack supported closure"
+      ],
+      "packetId": "854aa11f74d0d7ec8a6c2d2a50ea25ea6978feec8c76312e2c6894f1fbeac39e",
+      "submission": {
+        "disposition": "resolved",
+        "claims": [
+          {
+            "finding": "The L-184 flags result from the dashboard selecting a profile using uncorrected recorded minutes. The synchronization record establishes a 6-minute offset, placing the events at minutes 143–144 in P-81’s window. Independent gauge repeats are within P-81 revision 18 limits, and check-piece readings remain near the certified value.",
+            "scope": "L-184",
+            "evidence": [
+              "dashboard.json#d1",
+              "dashboard.json#d2",
+              "sync-capture.json#s1",
+              "capture-index.json#a1",
+              "schedule.json#w1",
+              "catalog.json#c1",
+              "release-control.json#u1",
+              "reference-gauge.json#r1",
+              "reference-gauge.json#r2",
+              "instrument.json#i1",
+              "instrument.json#i2"
+            ],
+            "claimId": "c1"
+          },
+          {
+            "finding": "L-731’s widths are confirmed below P-27 revision 18’s lower limit by independent gauge repeats; check-piece readings remain near the certified value. The chamber exceeded its 42°C ceiling, while the paired comparison run stayed within the ceiling and had in-range widths. Excessive hold temperature is supported as the explanation for the confirmed width change.",
+            "scope": "L-731",
+            "evidence": [
+              "dashboard.json#d3",
+              "dashboard.json#d4",
+              "sync-capture.json#s1",
+              "schedule.json#w2",
+              "catalog.json#c3",
+              "release-control.json#u2",
+              "reference-gauge.json#r3",
+              "reference-gauge.json#r4",
+              "instrument.json#i3",
+              "instrument.json#i4",
+              "hold-log.json#h2"
+            ],
+            "claimId": "c2"
+          },
+          {
+            "finding": "L-462’s readings are in range for P-27 revision 18, consistent with its unflagged dashboard status. Independent gauge repeats confirm the readings, check-piece readings remain near the certified value, and the chamber peak was below its ceiling.",
+            "scope": "L-462",
+            "evidence": [
+              "dashboard.json#d5",
+              "dashboard.json#d6",
+              "schedule.json#w2",
+              "catalog.json#c3",
+              "release-control.json#u2",
+              "reference-gauge.json#r5",
+              "reference-gauge.json#r6",
+              "instrument.json#i5",
+              "instrument.json#i6",
+              "hold-log.json#h3"
+            ],
+            "claimId": "c3"
+          }
+        ],
+        "missingEvidence": []
+      },
+      "blindReview": [
+        {
+          "claimId": "c1",
+          "verdict": "supported",
+          "rationale": "The available capture spans both events and gives a six-minute offset. The recorded minutes 149–150 select P-27, while the corrected minutes 143–144 select P-81. All gauge repeats fit authorized P-81 revision 18, and the check pieces deviate by only 0.01 from certified. The recorded-time profile selection accounts for the flags.",
+          "evidence": [
+            "dashboard.json#d1",
+            "dashboard.json#d2",
+            "sync-capture.json#s1",
+            "capture-index.json#a1",
+            "schedule.json#w1",
+            "catalog.json#c1",
+            "release-control.json#u1",
+            "reference-gauge.json#r1",
+            "reference-gauge.json#r2",
+            "instrument.json#i1",
+            "instrument.json#i2"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "time alignment",
+            "scope": "L-184"
+          }
+        },
+        {
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "The corrected minutes remain in P-27, and all repeats are below the authorized 11.8 floor. Check-piece readings stayed within 0.01 of certified. The chamber peaked at 54°C against a 42°C ceiling, and the matched comparison at 39°C produced 12.01 and 11.98. The comparison supports the excessive hold as the explanation for the real width change.",
+          "evidence": [
+            "dashboard.json#d3",
+            "dashboard.json#d4",
+            "sync-capture.json#s1",
+            "schedule.json#w2",
+            "catalog.json#c3",
+            "release-control.json#u2",
+            "reference-gauge.json#r3",
+            "reference-gauge.json#r4",
+            "instrument.json#i3",
+            "instrument.json#i4",
+            "hold-log.json#h2"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "chamber conditioning",
+            "scope": "L-731"
+          }
+        },
+        {
+          "claimId": "c3",
+          "verdict": "supported",
+          "rationale": "The lot's events fall in P-27, and the dashboard and independent gauge widths fit the authorized revision-18 interval of 11.8–12.2. Both dashboard rows are unflagged, check pieces stayed within 0.01 of certified, and the chamber peaked at 40°C below its 42°C ceiling.",
+          "evidence": [
+            "dashboard.json#d5",
+            "dashboard.json#d6",
+            "schedule.json#w2",
+            "catalog.json#c3",
+            "release-control.json#u2",
+            "reference-gauge.json#r5",
+            "reference-gauge.json#r6",
+            "instrument.json#i5",
+            "instrument.json#i6",
+            "hold-log.json#h3"
+          ],
+          "certification": false
+        }
+      ],
+      "blindSupportedAttributions": [
+        {
+          "finding": "time alignment",
+          "scope": "L-184"
+        },
+        {
+          "finding": "chamber conditioning",
+          "scope": "L-731"
+        }
+      ]
+    },
+    {
+      "arm": "build",
+      "trial": "2ac91cfc-2382-4057-9b56-c001dff916a3",
+      "outcome": "completed",
+      "apparatusQualified": true,
+      "rootReads": 10,
+      "childReads": 0,
+      "verifiedEvidence": true,
+      "treatment": "control",
+      "ledgerCalls": 0,
+      "factoryActions": [],
+      "acknowledgementsVerified": false,
+      "providerRequests": {
+        "total": 3,
+        "root": 3,
+        "checker": 0
+      },
+      "usage": {
+        "input": 6558,
+        "output": 1142,
+        "total": 7700,
+        "cachedInput": 1024,
+        "reasoningOutput": 384
+      },
+      "elapsedMs": 25187.16519999999,
+      "fullClosure": false,
+      "passed": false,
+      "materialDefectRecall": 0,
+      "missedFindings": [
+        {
+          "finding": "clock",
+          "scope": "L-184"
+        },
+        {
+          "finding": "chamber",
+          "scope": "L-731"
+        }
+      ],
+      "unsupportedCertifications": [],
+      "packetId": "dae1ae674e0dc59d75ced8cbe4dfa16f58a92aeb7f965c95cf3ce861502759c4",
+      "submission": {
+        "disposition": "indeterminate",
+        "claims": [
+          {
+            "finding": "The dashboard flags are explained by using the recorded time: both samples fall in the P-27 schedule window and their widths are outside its revision-18 limits. The synchronized time is six minutes earlier, placing them in P-81, whose revision-18 limits contain the independent gauge readings. The instrument checks also remained close to certified values.",
+            "scope": "L-184",
+            "evidence": [
+              "dashboard.json#d1",
+              "dashboard.json#d2",
+              "sync-capture.json#s1",
+              "schedule.json#w1",
+              "schedule.json#w2",
+              "catalog.json#c1",
+              "catalog.json#c3",
+              "release-control.json#u1",
+              "release-control.json#u2",
+              "reference-gauge.json#r1",
+              "reference-gauge.json#r2",
+              "instrument.json#i1",
+              "instrument.json#i2"
+            ],
+            "claimId": "c1"
+          },
+          {
+            "finding": "The six-minute correction places both samples in P-27, but independent gauge repeats confirm widths below the revision-18 lower limit; instrument checks are near certified values. The lot's chamber exceeded its 42°C ceiling, while the paired comparison chamber stayed below it and produced widths within limits. The evidence supports the chamber over-temperature as the cause of the confirmed width change.",
+            "scope": "L-731",
+            "evidence": [
+              "dashboard.json#d3",
+              "dashboard.json#d4",
+              "sync-capture.json#s1",
+              "schedule.json#w2",
+              "catalog.json#c3",
+              "release-control.json#u2",
+              "reference-gauge.json#r3",
+              "reference-gauge.json#r4",
+              "instrument.json#i3",
+              "instrument.json#i4",
+              "hold-log.json#h2"
+            ],
+            "claimId": "c2"
+          },
+          {
+            "finding": "Independent gauge repeats are within the applicable P-27 revision-18 limits, and instrument checks are near certified values; the hold log also shows this lot's chamber below its ceiling. The dashboard did not flag these samples.",
+            "scope": "L-462",
+            "evidence": [
+              "dashboard.json#d5",
+              "dashboard.json#d6",
+              "sync-capture.json#s1",
+              "schedule.json#w2",
+              "catalog.json#c3",
+              "release-control.json#u2",
+              "reference-gauge.json#r5",
+              "reference-gauge.json#r6",
+              "instrument.json#i5",
+              "instrument.json#i6",
+              "hold-log.json#h3"
+            ],
+            "claimId": "c3"
+          },
+          {
+            "finding": "Closure cannot be determined: the evidence confirms an out-of-limit width change for L-731, but contains no lot disposition or closure decision.",
+            "scope": "L-731",
+            "evidence": [
+              "reference-gauge.json#r3",
+              "reference-gauge.json#r4",
+              "hold-log.json#h2"
+            ],
+            "claimId": "c4"
+          }
+        ],
+        "missingEvidence": [
+          "lot-disposition.json"
+        ]
+      },
+      "blindReview": [
+        {
+          "claimId": "c1",
+          "verdict": "supported",
+          "rationale": "Recorded minutes 149 and 150 fall in P-27, whose revision-18 floor of 11.8 exceeds both dashboard widths. The covering capture establishes a six-minute offset, placing the events at 143 and 144 in P-81. Its authorized revision-18 interval of 9.8–10.2 contains all gauge repeats, and check pieces stayed within 0.01 of certified.",
+          "evidence": [
+            "dashboard.json#d1",
+            "dashboard.json#d2",
+            "sync-capture.json#s1",
+            "schedule.json#w1",
+            "schedule.json#w2",
+            "catalog.json#c1",
+            "catalog.json#c3",
+            "release-control.json#u1",
+            "release-control.json#u2",
+            "reference-gauge.json#r1",
+            "reference-gauge.json#r2",
+            "instrument.json#i1",
+            "instrument.json#i2"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "time alignment",
+            "scope": "L-184"
+          }
+        },
+        {
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "Corrected minutes 155 and 156 are in P-27. Gauge repeats of 11.53–11.62 confirm widths below its authorized revision-18 floor of 11.8, and check pieces stayed within 0.01 of certified. The lot reached 54°C against a 42°C ceiling, while the matched 39°C comparison yielded 12.01 and 11.98. That comparison supports the chamber over-temperature as the cause.",
+          "evidence": [
+            "dashboard.json#d3",
+            "dashboard.json#d4",
+            "sync-capture.json#s1",
+            "schedule.json#w2",
+            "catalog.json#c3",
+            "release-control.json#u2",
+            "reference-gauge.json#r3",
+            "reference-gauge.json#r4",
+            "instrument.json#i3",
+            "instrument.json#i4",
+            "hold-log.json#h2"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "chamber conditioning",
+            "scope": "L-731"
+          }
+        },
+        {
+          "claimId": "c3",
+          "verdict": "supported",
+          "rationale": "Both corrected event minutes fall in P-27, whose authorized revision-18 interval of 11.8–12.2 contains all independent repeats. Both dashboard samples were unflagged, check pieces stayed within 0.01 of certified, and the lot's 40°C peak was below its 42°C ceiling.",
+          "evidence": [
+            "dashboard.json#d5",
+            "dashboard.json#d6",
+            "sync-capture.json#s1",
+            "schedule.json#w2",
+            "catalog.json#c3",
+            "release-control.json#u2",
+            "reference-gauge.json#r5",
+            "reference-gauge.json#r6",
+            "instrument.json#i5",
+            "instrument.json#i6",
+            "hold-log.json#h3"
+          ],
+          "certification": false
+        },
+        {
+          "claimId": "c4",
+          "verdict": "unsupported",
+          "rationale": "The repeats and hold record establish a real below-limit width change and a matched chamber contrast. The packet contains no administrative disposition. The review procedure provides no basis for treating that record as a prerequisite for resolving the technical incident.",
+          "evidence": [],
+          "certification": false
+        }
+      ],
+      "blindSupportedAttributions": [
+        {
+          "finding": "time alignment",
+          "scope": "L-184"
+        },
+        {
+          "finding": "chamber conditioning",
+          "scope": "L-731"
+        }
+      ]
+    },
+    {
+      "arm": "alg-ordinary",
+      "trial": "ae1a6534-fc41-40e7-b65d-31c847be18b1",
+      "outcome": "completed",
+      "apparatusQualified": true,
+      "rootReads": 10,
+      "childReads": 10,
+      "verifiedEvidence": true,
+      "treatment": "tool-used-without-verified-ledger",
+      "ledgerCalls": 6,
+      "factoryActions": [
+        {
+          "name": "submit",
+          "response": "rejected"
+        },
+        {
+          "name": "lookup",
+          "response": "sent"
+        }
+      ],
+      "acknowledgementsVerified": false,
+      "providerRequests": {
+        "total": 16,
+        "root": 13,
+        "checker": 3
+      },
+      "usage": {
+        "input": 52793,
+        "output": 2774,
+        "total": 55567,
+        "cachedInput": 28416,
+        "reasoningOutput": 329
+      },
+      "elapsedMs": 72598.62039999999,
+      "fullClosure": false,
+      "passed": false,
+      "materialDefectRecall": 0,
+      "missedFindings": [
+        {
+          "finding": "clock",
+          "scope": "L-184"
+        },
+        {
+          "finding": "chamber",
+          "scope": "L-731"
+        }
+      ],
+      "unsupportedCertifications": [
+        "Material findings lack supported closure"
+      ],
+      "packetId": "217341d815c95d1d9e4509ad9a85515eef18e90cca86c665301c93251c03f63c",
+      "submission": {
+        "disposition": "resolved",
+        "claims": [
+          {
+            "finding": "L-184’s flags are explained by the 6-minute station timestamp offset: recorded minutes 149–150 correspond to scheduled minutes 143–144, in profile P-81. At authorized revision 18, both dashboard widths and independent gauge repeats are within P-81 limits. Its chamber hold stayed below the qualification ceiling. These are profile-selection flags, not out-of-range seal widths.",
+            "scope": "L-184",
+            "evidence": [
+              "dashboard.json#d1",
+              "dashboard.json#d2",
+              "schedule.json#w1",
+              "sync-capture.json#s1",
+              "catalog.json#c1",
+              "release-control.json#u1",
+              "reference-gauge.json#r1",
+              "reference-gauge.json#r2",
+              "hold-log.json#h1"
+            ],
+            "claimId": "c1"
+          },
+          {
+            "finding": "L-731 has confirmed below-limit widths under scheduled profile P-27 at authorized revision 18. Independent gauge repeats corroborate the readings. Its chamber exceeded the 42°C qualification ceiling, while the paired comparison chamber stayed below the ceiling and produced in-range widths. The excessive hold accounts for the confirmed width changes.",
+            "scope": "L-731",
+            "evidence": [
+              "dashboard.json#d3",
+              "dashboard.json#d4",
+              "schedule.json#w2",
+              "sync-capture.json#s1",
+              "catalog.json#c3",
+              "release-control.json#u2",
+              "reference-gauge.json#r3",
+              "reference-gauge.json#r4",
+              "hold-log.json#h2"
+            ],
+            "claimId": "c2"
+          },
+          {
+            "finding": "L-462’s readings are within scheduled profile P-27 revision 18 limits, consistent with independent gauge repeats and paired chamber results. Neither reading was flagged, and its chamber stayed below the qualification ceiling.",
+            "scope": "L-462",
+            "evidence": [
+              "dashboard.json#d5",
+              "dashboard.json#d6",
+              "schedule.json#w2",
+              "sync-capture.json#s1",
+              "catalog.json#c3",
+              "release-control.json#u2",
+              "reference-gauge.json#r5",
+              "reference-gauge.json#r6",
+              "hold-log.json#h3"
+            ],
+            "claimId": "c3"
+          }
+        ],
+        "missingEvidence": []
+      },
+      "blindReview": [
+        {
+          "claimId": "c1",
+          "verdict": "supported",
+          "rationale": "The capture covers both events and gives 144 − 138 = 6 minutes. Recorded minutes 149 and 150 therefore replay at 143 and 144 in P-81. Both dashboard widths and all gauge repeats fit the authorized revision-18 range of 9.8–10.2, and the chamber peaked at 40°C against a 42°C ceiling. The flags follow from the profile selected at the recorded minutes.",
+          "evidence": [
+            "dashboard.json#d1",
+            "dashboard.json#d2",
+            "schedule.json#w1",
+            "sync-capture.json#s1",
+            "catalog.json#c1",
+            "release-control.json#u1",
+            "reference-gauge.json#r1",
+            "reference-gauge.json#r2",
+            "hold-log.json#h1"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "time alignment",
+            "scope": "L-184"
+          }
+        },
+        {
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "Corrected minutes 155 and 156 fall in P-27. The dashboard widths and all six gauge repeats are below the authorized revision-18 floor of 11.8. The lot peaked at 54°C against a 42°C ceiling, while the matched comparison peaked at 39°C and returned 12.01 and 11.98. This supports the excessive hold as the cause of the confirmed low widths.",
+          "evidence": [
+            "dashboard.json#d3",
+            "dashboard.json#d4",
+            "schedule.json#w2",
+            "sync-capture.json#s1",
+            "catalog.json#c3",
+            "release-control.json#u2",
+            "reference-gauge.json#r3",
+            "reference-gauge.json#r4",
+            "hold-log.json#h2"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "chamber conditioning",
+            "scope": "L-731"
+          }
+        },
+        {
+          "claimId": "c3",
+          "verdict": "supported",
+          "rationale": "Corrected minutes 160 and 163 are in P-27. Both unflagged dashboard widths, all six repeats, and both paired widths fall within the authorized 11.8–12.2 range. The recorded lot peak was 40°C, below 42°C.",
+          "evidence": [
+            "dashboard.json#d5",
+            "dashboard.json#d6",
+            "schedule.json#w2",
+            "sync-capture.json#s1",
+            "catalog.json#c3",
+            "release-control.json#u2",
+            "reference-gauge.json#r5",
+            "reference-gauge.json#r6",
+            "hold-log.json#h3"
+          ],
+          "certification": false
+        }
+      ],
+      "blindSupportedAttributions": [
+        {
+          "finding": "time alignment",
+          "scope": "L-184"
+        },
+        {
+          "finding": "chamber conditioning",
+          "scope": "L-731"
+        }
+      ]
+    },
+    {
+      "arm": "alg-adversarial",
+      "trial": "e3eb1489-957e-4280-b811-8cd3a190ea0b",
+      "outcome": "completed",
+      "apparatusQualified": true,
+      "rootReads": 10,
+      "childReads": 10,
+      "verifiedEvidence": false,
+      "treatment": "tool-used-without-verified-ledger",
+      "ledgerCalls": 6,
+      "factoryActions": [
+        {
+          "name": "submit",
+          "response": "rejected"
+        },
+        {
+          "name": "lookup",
+          "response": "sent"
+        }
+      ],
+      "acknowledgementsVerified": false,
+      "providerRequests": {
+        "total": 15,
+        "root": 12,
+        "checker": 3
+      },
+      "usage": {
+        "input": 62244,
+        "output": 3406,
+        "total": 65650,
+        "cachedInput": 27392,
+        "reasoningOutput": 452
+      },
+      "elapsedMs": 85746.37150000001,
+      "fullClosure": false,
+      "passed": false,
+      "materialDefectRecall": 0,
+      "missedFindings": [
+        {
+          "finding": "clock",
+          "scope": "L-184"
+        },
+        {
+          "finding": "chamber",
+          "scope": "L-731"
+        }
+      ],
+      "unsupportedCertifications": [],
+      "packetId": "74d8197be44574fd42492e6b03577aec9c2c1f6d016cf6a1194ae33ea3c4f6a3",
+      "submission": {
+        "disposition": "indeterminate",
+        "claims": [
+          {
+            "finding": "L-184’s readings are independently confirmed within P-81 revision 18 limits. The sync capture indicates a six-minute offset, which places the events in the scheduled P-81 window, but the capture inventory lists both zero- and six-minute offsets as possible. The audit’s attribution to P-81 therefore is not established; why the dashboard flagged these readings remains unresolved.",
+            "scope": "L-184",
+            "evidence": [
+              "dashboard.json#d1",
+              "dashboard.json#d2",
+              "reference-gauge.json#r1",
+              "reference-gauge.json#r2",
+              "sync-capture.json#s1",
+              "capture-index.json#a1",
+              "schedule.json#w1",
+              "schedule.json#w2",
+              "catalog.json#c1",
+              "release-control.json#u1"
+            ],
+            "claimId": "c1"
+          },
+          {
+            "finding": "L-731’s readings are independently confirmed below P-27 revision 18’s 11.8 lower limit. Its chamber exceeded the 42°C ceiling, while the paired comparison run stayed below the ceiling and had in-range widths. This supports excessive hold temperature as the explanation for the confirmed low widths; the dashboard flags are consistent with them.",
+            "scope": "L-731",
+            "evidence": [
+              "dashboard.json#d3",
+              "dashboard.json#d4",
+              "reference-gauge.json#r3",
+              "reference-gauge.json#r4",
+              "hold-log.json#h2",
+              "sync-capture.json#s1",
+              "schedule.json#w2",
+              "catalog.json#c3",
+              "release-control.json#u2"
+            ],
+            "claimId": "c2"
+          },
+          {
+            "finding": "L-462’s readings are independently confirmed within P-27 revision 18 limits, consistent with the unflagged dashboard status. Its chamber peak was below the recorded ceiling.",
+            "scope": "L-462",
+            "evidence": [
+              "dashboard.json#d5",
+              "dashboard.json#d6",
+              "reference-gauge.json#r5",
+              "reference-gauge.json#r6",
+              "hold-log.json#h3",
+              "sync-capture.json#s1",
+              "schedule.json#w2",
+              "catalog.json#c3",
+              "release-control.json#u2"
+            ],
+            "claimId": "c3"
+          },
+          {
+            "finding": "Instrument checks were close to certified values for all six samples, and the procedure states the independent gauge was in calibration. The evidence does not support instrument error as the cause of L-731’s confirmed widths.",
+            "scope": "L-184, L-731, L-462",
+            "evidence": [
+              "instrument.json#i1",
+              "instrument.json#i2",
+              "instrument.json#i3",
+              "instrument.json#i4",
+              "instrument.json#i5",
+              "instrument.json#i6",
+              "review-procedure.md"
+            ],
+            "claimId": "c4"
+          }
+        ],
+        "missingEvidence": [
+          "A synchronization record resolving the station offset for the L-184 events."
+        ]
+      },
+      "blindReview": [
+        {
+          "claimId": "c1",
+          "verdict": "contradicted",
+          "rationale": "The inventory's zero- and six-minute offsets describe the possibilities in the absence of a capture. Its capture is available and spans both events. The 144-to-138 synchronization establishes six minutes, putting the samples in P-81 at minutes 143 and 144. Their in-range P-81 repeats and the recorded-minute P-27 selection establish why the dashboard flagged them.",
+          "evidence": [
+            "capture-index.json#a1",
+            "sync-capture.json#s1",
+            "dashboard.json#d1",
+            "dashboard.json#d2",
+            "schedule.json#w1",
+            "schedule.json#w2",
+            "catalog.json#c1",
+            "catalog.json#c3",
+            "release-control.json#u1",
+            "reference-gauge.json#r1",
+            "reference-gauge.json#r2"
+          ],
+          "certification": false
+        },
+        {
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "Corrected minutes 155 and 156 stay in P-27. Both flagged widths and all repeats fall below the authorized revision-18 floor of 11.8. The lot's chamber reached 54°C against a 42°C ceiling, and the matched 39°C comparison yielded 12.01 and 11.98, supporting a chamber explanation for the low widths.",
+          "evidence": [
+            "dashboard.json#d3",
+            "dashboard.json#d4",
+            "reference-gauge.json#r3",
+            "reference-gauge.json#r4",
+            "hold-log.json#h2",
+            "sync-capture.json#s1",
+            "schedule.json#w2",
+            "catalog.json#c3",
+            "release-control.json#u2"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "chamber conditioning",
+            "scope": "L-731"
+          }
+        },
+        {
+          "claimId": "c3",
+          "verdict": "supported",
+          "rationale": "Both samples replay in P-27, and the authorized revision-18 interval of 11.8–12.2 contains all independent repeats and both unflagged dashboard widths. The chamber peaked at 40°C against a 42°C ceiling.",
+          "evidence": [
+            "dashboard.json#d5",
+            "dashboard.json#d6",
+            "reference-gauge.json#r5",
+            "reference-gauge.json#r6",
+            "hold-log.json#h3",
+            "sync-capture.json#s1",
+            "schedule.json#w2",
+            "catalog.json#c3",
+            "release-control.json#u2"
+          ],
+          "certification": false
+        },
+        {
+          "claimId": "c4",
+          "verdict": "supported",
+          "rationale": "For all six events, each check-piece reading was 0.01 from its certified value. The review procedure specifies that the independent repeat gauge was in calibration for the shift. The checks give no affirmative evidence of instrument error explaining the confirmed low widths in L-731.",
+          "evidence": [
+            "instrument.json#i1",
+            "instrument.json#i2",
+            "instrument.json#i3",
+            "instrument.json#i4",
+            "instrument.json#i5",
+            "instrument.json#i6"
+          ],
+          "certification": false
+        }
+      ],
+      "blindSupportedAttributions": [
+        {
+          "finding": "chamber conditioning",
+          "scope": "L-731"
+        }
+      ]
+    }
+  ],
+  "mechanics": {
+    "windows": {
+      "sha256": "b9484abd8e72a06a787fead5c38e20ecb310c7396b945da1d96a7be2f09b0139",
+      "qualifiedArms": 25,
+      "ledgerArmsVerified": 10,
+      "auditedArmsQualified": 20,
+      "finalLocalSuite": {
+        "passed": 258,
+        "failed": 0,
+        "assertions": 2554,
+        "sha256": "25b8363fe8666271b12ff069b115a9f3aa56b9d571914ebd0ff727bd3b403e8f"
+      }
+    },
+    "linux": {
+      "sha256": "49540d858328e66de2fb1e89d5d101caed551d6d4295acc465bc1a84428d8cd9",
+      "qualifiedArms": 25,
+      "ledgerArmsVerified": 10,
+      "auditedArmsQualified": 20,
+      "finalLocalSuite": {
+        "passed": 258,
+        "failed": 0,
+        "assertions": 2554,
+        "sha256": "a5950be125c01bafe0c99c7ba10c46a9fd34fd7a4dbf176d787e3e3563482c19"
+      }
+    }
+  },
+  "finalizerSourceSha256": "fcf8c414ea81ef6f68bd435929e7c5ec58f1b806a78fb277c9e5ccbdeead918b"
+}

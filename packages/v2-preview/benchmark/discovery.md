@@ -43,6 +43,41 @@ claim requires fresh held-out incidents, repeated paired runs and uncertainty
 estimates on the **incident** as the sampling unit. Multiple claims about one
 lot do not create independent trials.
 
+## Measured pilot
+
+The independent review accepted both attributions for stock Build, Build with
+adversarial review, and ALG with ordinary review. The table counts supported
+cause-and-lot attributions as judged from the claims and their own citations.
+The frozen closure grade separately requires all specified row references.
+
+| Condition | Supported causes out of 2 | Complete closures out of 1 | Model requests |
+| --- | ---: | ---: | ---: |
+| Build | 2 | 0 | 3 |
+| Build with ordinary review | 1 | 0 | 9 |
+| Build with adversarial review | 2 | 0 | 8 |
+| ALG with ordinary review | 2 | 0 | 16 |
+| ALG with adversarial review | 1 | 0 | 15 |
+
+Eight supported attributions across the five answers lacked the full frozen
+citation set. The adversarial ALG answer incorrectly treated the clock evidence
+as inconclusive. Both ALG sessions created a ledger, attempted a rejected
+submission, then read decision revision zero. Neither supplied an acknowledged
+write and matching readback. This pilot measures installed behavior and gives
+no estimate of the effect of successful ledger use. [Submissions, blind decisions and usage](../evidence/discovery-pilot-luna.json)
+
+On the separate restart pair, Luna certified ALG's decision before the explicit
+relay. Both arms found five defects and two verified corrections. Both missed
+the exact response contract after resume, and ALG answered the final relay in
+prose. The first pair was interrupted by an observer that blocked compaction.
+The corrected pair used the original task, grader and budget. [Pair and intercepted attempt](../evidence/child-audit-luna-2.3.2.json)
+
 Run `bun packages/v2-preview/benchmark/discovery-run.ts --help` for the
 local qualification and two-step native freeze/execution commands. Keep private
 receipts and the arm key apart from the blinded review packets.
+
+Use `discovery-finalize.ts --review-guide` for reviewer instructions and
+`--help` for the finalization command. Keep the original independent freeze
+and run receipts. When grading a historical pilot, use the frozen benchmark
+sources from its commit and the finalizer used for adjudication. It verifies
+the source hashes, original read ledger, answers, anonymous packets, and
+review decisions before writing a separate results file.
