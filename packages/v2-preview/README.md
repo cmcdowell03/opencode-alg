@@ -286,6 +286,15 @@ identical bodies by digest while the full approved procedure is in context.
 Compaction starts a new window for these references. The durable tool results
 still contain the original fields.
 
+On the matched scripted handoff, ALG sent 8,929 fewer bytes on both Windows
+and WSL. Each platform's matrix retained all 92 eligible fields per arm.
+In the single native Luna pair, ALG used 126,770 input tokens (previously
+126,657), and Build used 45,843. After compaction, ALG loaded the skill, read
+the procedure and checked status. It gave the correct counts, action and
+prerequisite in prose and omitted both evidence references. Build returned
+all seven fields in the requested format. The native run missed the acceptance
+gate. [Comparison and receipt hashes](evidence/input-usage-2.3.2.json)
+
 The paired handoff receipt records cumulative UTF-8 request bytes by phase.
 Native runs also record provider input and output tokens and matched host cache
 reads. Cache reads are included in input tokens. Scripted runs can compare request
