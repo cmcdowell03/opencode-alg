@@ -1,6 +1,6 @@
 import { algTool } from "../acceptance/host.ts"
 import type { ClockAudit, Inspection } from "./case.ts"
-import { candidates, classifyHandoff, correctionHeader, defectFloor, handoffUserPhase, matchingCorrections,
+import { candidates, classifyHandoff, correctionHeader, correctionPrefix, defectFloor, handoffUserPhase, matchingCorrections,
   jsonObject, object, refutationId, refutationStatement, skillName, skillContent } from "./handoff-case.ts"
 import { textOf, type Completion, type TurnInput } from "./transport.ts"
 
@@ -46,8 +46,8 @@ export function scriptedHandoff({ messages, tools, summary }: TurnInput): Comple
   const useSkill = () => ({ tool: "skill", args: { id: skillName } })
 
   const correction = messages.map(message => textOf(message.content))
-    .map(value => value.replace(/\\n/g, "\n").replace(/\\"/g, '"')).find(value => value.includes(correctionHeader))
-  const audit = correction ? jsonObject(correction.slice(correction.indexOf(correctionHeader) + correctionHeader.length)
+    .map(value => value.replace(/\\n/g, "\n").replace(/\\"/g, '"')).find(value => value.includes(correctionPrefix))
+  const audit = correction ? jsonObject(correction.slice(correction.indexOf(correctionPrefix) + correctionHeader.length)
     .trim().match(/^\{.*\}/)?.[0] ?? "") : undefined
   const corrected = Array.isArray(audit?.auditRows) && cohort ? matchingCorrections(cohort, audit.auditRows as ClockAudit[]) : null
   const next = corrected ? "replay-clock-join" : "attribute-as-recorded"

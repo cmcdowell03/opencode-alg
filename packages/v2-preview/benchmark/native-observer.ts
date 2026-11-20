@@ -9,7 +9,7 @@ import type { RequestObservation } from "./compaction.ts"
 import { nativeLimits, nativeModel } from "./native-provider.ts"
 import type { Message } from "./transport.ts"
 import { wireTextParts } from "./skill-delivery.ts"
-import { investigationSchema } from "./input-usage.ts"
+import { calculatedFieldCount, investigationSchema } from "./input-usage.ts"
 
 export const nativeObserverID = "paired-benchmark-native-observer"
 const endpoint = "https://chatgpt.com/backend-api/codex/responses"
@@ -172,6 +172,7 @@ export function startNativeObserver(options: {
             oldSummary: contents.some(value => hasText(value, baselineSummary)),
             skill: contents.some(value => hasText(value, options.skill())), tools: input.tools, status: null,
             investigationSchema: input.investigationSchema,
+            calculatedFieldCount: calculatedFieldCount(input.messages),
           }
           requests.push(row)
           if (kind === "summary" && row.stale && !row.correction && !pending && !released) {

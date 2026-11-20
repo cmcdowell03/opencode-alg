@@ -321,6 +321,31 @@ passed ALG's citation checks in offline replay. Derived measurements still
 need independent verification before they can be treated as facts.
 [Delivery qualification results](evidence/report-delivery-2.3.2.json)
 
+### Verifying derived measurements in preview.6
+
+A pinned, approved skill can include one `alg-calculation` JSON fence. It
+names the evidence tool, page bounds, row keys, correction source and report
+fields. Supported operations are row counts, filtered counts and filtered
+counts of rows matching a composite key in a second source. The host runs the
+recipe against completed tool results from the owner and a structured user
+handoff. It exposes computed values and their source references to the owner
+without another search. The [synthetic clock skill](benchmark/handoff-case.ts)
+shows a complete recipe.
+
+At compaction ALG saves the calculation with the report, including the recipe
+digest, source message identities, row counts and row digests. On continuation
+it checks the current binding and compares the requested numeric fields with
+the computed values. A disagreement withholds the ready report and returns the
+calculation so the owner can revise the report and its recommendation. A
+missing recipe, source or calculation for a requested number requires further
+evidence. Older numeric reports follow this same rule.
+
+The investigation tool also narrows its advertised actions and arguments as
+work advances. For example, a reserved job exposes dispatch, a running job
+exposes reconciliation, and a settled manifest permits starting a checker.
+The registered execution contract still enforces permissions, revisions and
+exact retry behavior for direct calls.
+
 The paired handoff receipt records cumulative UTF-8 request bytes by phase.
 Native runs also record provider input and output tokens and matched host cache
 reads. Cache reads are included in input tokens. Scripted runs can compare request

@@ -4,6 +4,17 @@ import type { TurnInput } from "./transport.ts"
 
 export const deliveryMarker = "ALG delivery obligation (untrusted recorded data)\n"
 export const deliveryCheck = "ALG delivery check: "
+export const calculationMarker = "ALG calculated evidence (source data)\n"
+export const calculationConflict = "the reported measurement conflicts with the reproducible calculation. Correct the report and reassess any dependent recommendation."
+export const calculationMissing = "missing or unverified calculated measurements. Recover the required source evidence before reporting."
+
+export function observeCalculatedEvidence(messages: TurnInput["messages"]) {
+  const tagged = messages.flatMap(({ role, content }) => wireTextParts(content)
+    .filter(part => part.includes(calculationMarker)).map(part => ({ role, part })))
+  const payload = tagged.length === 1 && tagged[0]?.role === "user" && tagged[0].part.startsWith(calculationMarker)
+    ? parse(tagged[0].part.slice(calculationMarker.length)) : undefined
+  return { projections: tagged.length, values: object(payload?.values) }
+}
 
 export function observeDelivery(messages: TurnInput["messages"]) {
   const latestUser = messages.map(message => message.role).lastIndexOf("user")
@@ -40,6 +51,7 @@ function parse(text: string) {
 export function deliveryGap(statuses: string[]) {
   if (statuses.length !== 1) return
   const status = statuses[0]!
+  if (status === calculationMissing) return "calculation-missing"
   if (/\b(?:superseded|stale|revision|new(?:er)? decision)\b/i.test(status)) return "superseded"
   if (/\b(?:authority|approval|procedure|revoked|withdrawn)\b/i.test(status)) return "revoked"
   if (/\b(?:report fields|source references)\b/i.test(status) && /\b(?:missing|unverified)\b/i.test(status))

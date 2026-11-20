@@ -6,7 +6,7 @@ import { runtimeIdentity, sha256, waitFor } from "../acceptance/runtime.ts"
 import { startFactory } from "../acceptance/service.ts"
 import { armNames, checkerName, contextWindow, hasScopedEvidenceTools, installAlg, observeAlgDecision, observeTurn, pluginId, prepareHost,
   registerSkill, submitTurn, type ArmName, type Host, type Turn } from "./host.ts"
-import { briefKey, checkerInput, classifyHandoff, correctionHeader, finalInput, handoffId, initialInput, scoreHandoff,
+import { briefKey, checkerInput, classifyHandoff, correctionPrefix, finalInput, handoffId, initialInput, scoreHandoff,
   object, skillContent, skillName, variants, verifiedCorrection, type HandoffVariant } from "./handoff-case.ts"
 import { gradeHandoffDecisions } from "./handoff-audit.ts"
 import { scriptedHandoff } from "./handoff-script.ts"
@@ -48,9 +48,14 @@ async function runArm(arm: ArmName, options: Options, scratch: string, runtimeSh
   const modelWitness: { boundary: number; stage: "summary" | "continue"; observedAtMs: number; summarySha256: string | null; correction: boolean;
     initial: boolean; factualRefutation: boolean; pendingMeasurement: boolean; currentSkill: boolean; requestId: number;
     skillDelivery: ReturnType<typeof observeSkillDelivery>; skillRoles: string[] }[] = []
+  const initialSkillDelivery: { requestId: number; roles: ReturnType<typeof observeSkillDelivery>["roles"] }[] = []
   function classify(messages: Message[], requestId: number) {
     const desk = workload && longHandoffPhase(messages)
     const classified = desk ? { role: "root" as const, phase: desk } : classifyHandoff(messages)
+    if (!compactRequested && !continuing && classified.phase === "initial" && skill) {
+      const delivery = observeSkillDelivery(messages, skill)
+      if (delivery.roles.length) initialSkillDelivery.push({ requestId, roles: delivery.roles })
+    }
     if (compactRequested || continuing) {
       const contents = messages.map(message => wireTextParts(message.content).join("\n"))
       const facts = messages.filter(message => message.role === "user").map(message => wireTextParts(message.content).join("\n"))
@@ -58,7 +63,7 @@ async function runArm(arm: ArmName, options: Options, scratch: string, runtimeSh
       const skillDelivery = observeSkillDelivery(messages, skill)
       modelWitness.push({ boundary, stage: compactRequested ? "summary" : "continue", observedAtMs: performance.now(),
         summarySha256: compacted && contents.some(text => includes(text, compacted!.summary)) ? summaryHash(compacted.summary) : null,
-        correction: contents.some(text => text.includes(correctionHeader)),
+        correction: contents.some(text => text.includes(correctionPrefix)),
         initial: contents.some(text => text.includes(initialInput)),
         factualRefutation: facts.includes("refuted_hypothesis_statement"),
         pendingMeasurement: facts.includes('pending_measurement') && facts.includes("replay-clock-join"),
@@ -67,7 +72,7 @@ async function runArm(arm: ArmName, options: Options, scratch: string, runtimeSh
     }
     return classified
   }
-  const observerOptions = { id: model.id, classify, correction: correctionHeader,
+  const observerOptions = { id: model.id, classify, correction: correctionPrefix,
     stale: "attribute-as-recorded", skill: () => skill?.witness }
   const native = options.native && startNativeObserver(observerOptions)
   const scripted = native ? undefined : startTransport({ ...observerOptions, seed: 101,
@@ -454,6 +459,7 @@ async function runArm(arm: ArmName, options: Options, scratch: string, runtimeSh
   } : { noAlgBrief: briefBefore === null && briefAfter === null }
   return {
     arm, phase, failure, model, plugin, rootId, checkerId, skill: skill && { id: skill.id, sha256: skill.sha256, sourceSha256: skill.sourceSha256 },
+    initialSkillDelivery,
     skillAvailableAtContinue, actualFinalInput, correction, correctionObserved: !!correction &&
       !!raw.root?.some(row => row.type === "user" && row.text === correction),
     elapsedMs: performance.now() - started, sessionEvidence, requests: observer.requests, raw, ledger, beforeContinue,
@@ -479,6 +485,8 @@ export async function runHandoff(options: Options) {
     const arms = {} as Record<ArmName, Awaited<ReturnType<typeof runArm>>>
     for (const arm of order) arms[arm] = await runArm(arm, options, join(scratch, arm), runtime.bundleSha256)
     const { build, alg } = arms
+    const initialFullSkillDelivery = order.every(arm => arms[arm].initialSkillDelivery.some(witness =>
+      witness.roles.some(role => role === "tool" || role === "system" || role === "developer" || role === "instructions")))
     const parity = {
       model: build.model.providerID === alg.model.providerID && build.model.id === alg.model.id,
       skill: !!build.skill && build.skill.sha256 === alg.skill?.sha256 && build.skill.sourceSha256 === alg.skill.sourceSha256 &&
@@ -504,8 +512,10 @@ export async function runHandoff(options: Options) {
       checks.independentAuditAdmission && checks.noDuplicateAdmissions && checks.noRequeryAtContinuation
     return { schema: 2, caseId: handoffId, variant: options.variant, workload: options.extended ? "extended" : "single",
       previewWorkflowPassed, mode: options.native ? "native-openai-oauth" : "scripted-transport",
-      mechanicsOnly: !options.native, qualified, apparatusPassed, standalonePassed, installedBehaviorPassed, order, parity, runtime, prompts: { initialSha256: sha256(initialInput),
-        checkerSha256: sha256(checkerInput), final: finalInput }, limits: options.native ? nativeLimits :
+      mechanicsOnly: !options.native, qualified, apparatusPassed, standalonePassed, installedBehaviorPassed,
+      order, parity, initialFullSkillDelivery, runtime,
+      prompts: { initialSha256: sha256(initialInput), checkerSha256: sha256(checkerInput), final: finalInput },
+      limits: options.native ? nativeLimits :
         { calls: maxProviderCalls, requestBytes: maxProviderBytes }, arms }
   } finally {
     const real = await realpath(scratch)

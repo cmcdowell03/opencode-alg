@@ -1,5 +1,5 @@
 import { summaryHash, type RequestObservation } from "./compaction.ts"
-import { investigationSchema } from "./input-usage.ts"
+import { calculatedFieldCount, investigationSchema } from "./input-usage.ts"
 
 export const maxProviderCalls = 36
 export const maxProviderBytes = 192 * 1024
@@ -55,6 +55,7 @@ export function startTransport(options: {
         if (body.model !== options.id || !Array.isArray(body.messages)) return respond(new Response(null, { status: 400 }))
         receipt.tools = (body.tools ?? []).flatMap(tool => tool.function?.name ?? tool.name ?? [])
         receipt.investigationSchema = investigationSchema(body.tools)
+        receipt.calculatedFieldCount = calculatedFieldCount(body.messages)
         const content = body.messages.map(message => textOf(message.content))
         const text = content.join("\n")
         const summary = content.some(value => summarySignature.test(value))

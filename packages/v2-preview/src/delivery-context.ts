@@ -2,16 +2,20 @@ import { createHash } from "node:crypto"
 import { z } from "zod"
 import type { SessionContext } from "@opencode/plugin/promise/session"
 import { runContainedPath } from "../../../src/store.ts"
-import { deliverySchema, inspectDelivery, validateDelivery, type DeliveryBinding, type DeliveryHistory } from "./delivery.ts"
+import { deliverySchema, inspectDelivery, validateDelivery, type DeliveryBinding, type DeliveryHistory, type DeliveryReceipt } from "./delivery.ts"
 import { publishReceipt, readReceipt } from "./journal.ts"
+import { calculateFromHistory, calculationPolicyDigest, calculationReceiptSchema, type CalculationPolicy, type CalculationReceipt } from "./calculation.ts"
 
 const marker = "ALG delivery obligation (untrusted recorded data)\n"
+const calculationMarker = "ALG calculated evidence (source data)\n"
 const gap = z.enum(["missing_evidence", "stale_revision"])
 const boundarySchema = z.discriminatedUnion("kind", [
-  z.strictObject({ kind: z.literal("report"), receipt: deliverySchema }),
+  z.strictObject({ kind: z.literal("report"), receipt: deliverySchema, calculation: calculationReceiptSchema.optional() }),
   z.strictObject({ kind: z.literal("gap"), reason: gap }),
 ])
 const notices = {
+  calculation_conflict: "the reported measurement conflicts with the reproducible calculation. Correct the report and reassess any dependent recommendation.",
+  calculation_missing: "missing or unverified calculated measurements. Recover the required source evidence before reporting.",
   ready: "ready. Return the requested JSON object now from the recorded values. The decision and procedure are current. References match the earlier source records. No skill, procedure, status or evidence reread is needed. Reporting a recommendation does not authorize its execution.",
   missing_evidence: "missing or unverified report fields or source references. Recover only the missing evidence, or abstain if it cannot be verified.",
   stale_revision: "the saved report is superseded. Use the current decision and reconcile the changed fields before reporting.",
@@ -20,6 +24,26 @@ const notices = {
 type Notice = keyof typeof notices
 type BindingState = DeliveryBinding | "revoked" | "stale_revision"
 const bare = (text: string) => /^continue[.!]?$/i.test(text.trim())
+
+function compactCalculation({ values, sources }: CalculationReceipt) {
+  return { values, references: Object.fromEntries(Object.values(sources).map(s => [s.reportReferenceField, s.reference])) }
+}
+
+function measurementStatus(report: DeliveryReceipt, policy?: CalculationPolicy, proof?: CalculationReceipt): Notice {
+  const fields = report.requestedKeys.filter(key => typeof report.recordedAnswer[key] === "number" ||
+    (policy && Object.hasOwn(policy.operations, key)))
+  if (!fields.length) return "ready"
+  if (!policy || !proof?.sources.owner || proof.recipeSha256 !== calculationPolicyDigest(policy)) return "calculation_missing"
+  for (const key of fields) {
+    if (!Object.hasOwn(proof.values, key) || !Object.hasOwn(policy.operations, key) ||
+        (policy.operations[key]?.kind === "semijoinCount" && !proof.sources.correction)) return "calculation_missing"
+  }
+  for (const source of Object.values(proof.sources)) {
+    if (Object.hasOwn(report.recordedAnswer, source.reportReferenceField) &&
+        report.recordedAnswer[source.reportReferenceField] !== source.reference) return "calculation_missing"
+  }
+  return fields.every(key => report.recordedAnswer[key] === proof.values[key]) ? "ready" : "calculation_conflict"
+}
 
 function continuationIndex(request: SessionContext) {
   for (let i = request.messages.length - 1; i >= 0; i--) {
@@ -40,12 +64,33 @@ export class DeliveryContext {
     }
   }
 
+  private data(request: SessionContext, position: number, prefix: string, value: unknown) {
+    const json = JSON.stringify(value).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e")
+    const message: SessionContext["messages"][number] = { role: "user", content: [{ type: "text", text: prefix + json }] }
+    request.messages.splice(position, 0, message)
+    this.inserted.add(message)
+  }
+
+  /** Present the result while the owner is still able to correct its decision. */
+  async calculate(request: SessionContext, policy: CalculationPolicy, history: () => Promise<DeliveryHistory>,
+    stillApproved: () => Promise<boolean>) {
+    if (continuationIndex(request) >= 0) return
+    let i = request.messages.length - 1
+    while (i >= 0 && request.messages[i]?.role !== "user") i--
+    if (i < 0) return
+    const calculation = calculateFromHistory(policy, await history(), request.agent)
+    if (Object.keys(calculation.values).length && await stillApproved()) {
+      this.data(request, i, calculationMarker, compactCalculation(calculation))
+    }
+  }
+
   async prepare(
     request: SessionContext, compacting: boolean,
     directory: string, runId: string,
     history: () => Promise<DeliveryHistory>,
     // Throws on a denied owner or host read. Only a known authority gap has a user-visible hint.
     binding: () => Promise<BindingState>,
+    policy?: CalculationPolicy,
   ) {
     const position = compacting ? -1 : continuationIndex(request)
     if (!compacting && position < 0) return
@@ -78,13 +123,15 @@ export class DeliveryContext {
         if (!receipt) {
           await publishReceipt(path(boundary.id), { kind: "gap", reason: "stale_revision" })
         } else if (bareReport === undefined || bareReport.trim() === JSON.stringify(receipt.recordedAnswer)) {
-          await publishReceipt(path(boundary.id), { kind: "report", receipt: { ...receipt, compactionMessageId: boundary.id } })
+          await publishReceipt(path(boundary.id), { ...old, receipt: { ...receipt, compactionMessageId: boundary.id } })
         }
         return
       }
       const result = inspectDelivery(rows, current)
       if ("receipt" in result && result.receipt.compactionMessageId === boundary.id) {
-        await publishReceipt(path(boundary.id), { kind: "report", receipt: result.receipt })
+        const calculation = policy && calculateFromHistory(policy, rows.slice(0, cut), current.ownerAgent)
+        await publishReceipt(path(boundary.id), { kind: "report", receipt: result.receipt,
+          calculation })
       } else if ("reason" in result && gap.safeParse(result.reason).success) {
         await publishReceipt(path(boundary.id), { kind: "gap", reason: result.reason })
       }
@@ -106,13 +153,13 @@ export class DeliveryContext {
       const receipt = validateDelivery(saved.receipt, current, boundary.id)
       if (!receipt) status = "stale_revision"
       else {
-        status = "ready"
-        const data = JSON.stringify({ format: "json_object", fields: receipt.requestedKeys,
-          values: receipt.recordedAnswer, decision_revision: current.decision_revision })
-        const message: SessionContext["messages"][number] = { role: "user", content: [{ type: "text",
-          text: marker + data.replaceAll("<", "\\u003c").replaceAll(">", "\\u003e") }] }
-        request.messages.splice(position, 0, message)
-        this.inserted.add(message)
+        status = measurementStatus(receipt, policy, saved.calculation)
+        if (status === "ready") {
+          this.data(request, position, marker, { format: "json_object", fields: receipt.requestedKeys,
+            values: receipt.recordedAnswer, decision_revision: current.decision_revision })
+        } else if (status === "calculation_conflict" && saved.calculation) {
+          this.data(request, position, calculationMarker, compactCalculation(saved.calculation))
+        }
       }
     }
     const notice = { type: "text" as const, text: "ALG delivery check: " + notices[status] }

@@ -5,12 +5,13 @@ import { z } from "zod"
 import type { Plugin } from "@opencode/plugin"
 import type { SessionContext } from "@opencode/plugin/promise/session"
 import { createV2InvestigationBridge, refutationSchema, type V2InvestigationSession, type V2InvestigationView } from "../core/investigation.ts"
-import { procedureDigestSchema } from "../core/procedure-pin.ts"
+import { procedureDigestSchema, type ProcedurePin } from "../core/procedure-pin.ts"
 import type { PreQueryGate } from "../core/pre-query.ts"
 import { createPreQueryGate, preQueryPolicySchema, PreQueryBlockedError } from "./pre-query.ts"
 import { createOwnerContinuation } from "./continuation.ts"
 import { OwnerBrief } from "./brief.ts"
 import { DeliveryContext } from "./delivery-context.ts"
+import { parseCalculationPolicy, type CalculationPolicy } from "./calculation.ts"
 import { projectPreQueryReceipts } from "./pre-query-projection.ts"
 import { runContainedPath, runDir } from "../../../src/store.ts"
 import { registerTeamSources } from "./team-source.ts"
@@ -76,28 +77,55 @@ const toolInput = {
   },
   additionalProperties: false,
 } as const
-function requestToolInput(checker: boolean) {
-  const available = actions.filter(action => checker
-    ? action === "read" || action === "result" || action === "procedure"
-    : action !== "read" && action !== "result")
-  const fields = new Set(available.flatMap(action => {
-    const { required, optional } = actionFields(action)
-    return [...required, ...optional]
-  }))
-  const properties = Object.fromEntries(Object.entries(toolInput.properties).filter(([name]) => fields.has(name)))
-  return { ...toolInput, required: checker ? ["action", "runId"] : ["action"],
-    properties: { action: { ...toolInput.properties.action, enum: available }, ...properties } }
-}
-const ownerInput = requestToolInput(false), checkerInput = requestToolInput(true)
+type Action = typeof actions[number]
 
-function presentTool(request: SessionContext, checker: boolean) {
+function explicitlyRequests(request: SessionContext, action: "diagnostics" | "procedure") {
+  const latest = [...request.messages].reverse().find(message => message.role === "user")
+  const content = latest?.content
+  const text = typeof content === "string" ? content : content?.flatMap(part => part.type === "text" ? [part.text] : []).join(" ")
+  if (action === "diagnostics") {
+    return /\bdiagnostics\b|\b(?:show|list|report) (?:the )?(?:tool )?capabilities\b/i.test(text ?? "")
+  }
+  return /\b(?:read|show|display|fetch|retrieve|inspect|verify|review|quote|print|view|what is) (?:me )?(?:the )?(?:(?:current|approved|research) )*procedure\b|^\s*procedure\s*$/i.test(text ?? "")
+}
+
+function presentTool(request: SessionContext, available: Action[], checker = false, refutation = false) {
   const tool = request.tools?.[TOOL]
-  // Permissions and execution validation still apply to every call. Only narrow
-  // the plugin's own unmodified definition on this request.
-  if (tool && isDeepStrictEqual(tool.input, toolInput)) {
-    request.tools = { ...request.tools, [TOOL]: { ...tool, input: structuredClone(checker ? checkerInput : ownerInput) } }
+  // Host permissions and the registered execution contract still apply to every call.
+  if (!tool || !isDeepStrictEqual(tool.input, toolInput)) return
+  const tools = { ...request.tools }
+  if (available.length === 0) {
+    delete tools[TOOL]
+  } else {
+    const fields = new Set(available.flatMap(action => {
+      const { required } = actionFields(action)
+      return required
+    }))
+    if (refutation && fields.has("next_action")) fields.add("refutation")
+    const properties = Object.fromEntries(Object.entries(toolInput.properties).filter(([name]) => fields.has(name)))
+    tools[TOOL] = { ...tool, input: structuredClone({
+      ...toolInput, required: checker ? ["action", "runId"] : ["action"],
+      properties: { action: { ...toolInput.properties.action, enum: available }, ...properties },
+    }) }
+  }
+  request.tools = tools
+}
+
+function ownerActions(view: V2InvestigationView | null, checkerBound: boolean, checkerGranted: boolean): Action[] {
+  switch (view?.work?.status) {
+    case undefined: return view ? ["admit", "status", "set_next_measurement"] : ["create", "status"]
+    // An interrupted admission can leave a reservation before producer authorization.
+    case "reserved": return ["admit", "dispatch", "status"]
+    case "submitting": case "running": case "outcome_unknown": case "cancel_requested":
+      return ["reconcile", "status"]
+    case "result_recorded": case "reusable":
+      return ["reconcile", "status", "set_next_measurement",
+        ...(!checkerBound && view?.work?.manifest_digest ? ["start" as const] : []),
+        ...(checkerGranted ? ["revoke" as const] : [])]
+    case "failed_known": case "stale": case "abandoned": return ["status"]
   }
 }
+
 const inputSchema = z.object({
   action: actionName,
   runId: z.string().regex(/^v2-checker-[a-f0-9]{48}$/).optional(),
@@ -179,10 +207,11 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
   function activationPath(ownerId: string) {
     return runContainedPath(directory, journal(ownerId).runId, "activated-" + config.preQueryPolicy!.procedure.sourceSha256 + ".json")
   }
-  const gate = createPreQueryGate(config.preQueryPolicy, procedures, async (id, pin) => {
+  async function activationRecorded(id: string, pin: ProcedurePin) {
     const seen = await readReceipt(activationPath(id), activationSchema)
     return seen?.source === pin.sourceSha256 && seen.body === pin.sha256
-  })
+  }
+  const gate = createPreQueryGate(config.preQueryPolicy, procedures, activationRecorded)
   const bridge = trustedBridge(config, ctx.location.project.id, gate)
   const delivery = new DeliveryContext()
   const brief = bridge ? new OwnerBrief(host, async owner => {
@@ -479,22 +508,42 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       })
     }
     if (request.agent === config.checkerAgent) {
-      if (!compacting && config.checkerAgent !== config.ownerAgent) presentTool(request, true)
-      if (!bridge || !config.approvedProcedure) return
+      const presentChecker = (available: Action[]) => {
+        if (!compacting && config.checkerAgent !== config.ownerAgent) presentTool(request, available, true)
+      }
+      if (!bridge || (!config.approvedProcedure && (compacting || !request.tools?.[TOOL]))) return presentChecker([])
       const worker = await boundWorker(request.sessionID)
-      if (!worker?.binding.procedure) return
+      if (!worker) return presentChecker([])
       const { binding, session, store } = worker
       try {
         const grant = await store.read("grant")
         if (!grant || grant.work_key !== binding.work_key || grant.manifest_digest !== binding.manifest_digest ||
-            (await store.read("prompt"))?.promptId !== binding.promptId) return
-        await host.configuredChecker()
-        await host.assertResultPermission(session)
+            (await store.read("prompt"))?.promptId !== binding.promptId) return presentChecker([])
+        if (compacting) {
+          if (!binding.procedure) return
+          await host.configuredChecker()
+          await host.assertResultPermission(session)
+        } else {
+          const admitted = (await store.read("admission"))?.promptId === binding.promptId
+          await host.authorizedResult(binding, request, promptText(binding), admitted)
+        }
         await bridge.withCheckerGrant(scope(session), grant, async () => {
-          const current = await procedures.require(binding.procedure, false)
-          if (current) projectProcedure(current)
+          if (binding.procedure) {
+            const current = await procedures.require(binding.procedure, false)
+            if (current) projectProcedure(current)
+          }
+          if (compacting) return
+          const read = await store.read("read")
+          const hasCitation = read?.promptId === binding.promptId && read.citation.grant_id === grant.grant_id &&
+            read.citation.work_key === grant.work_key && read.citation.manifest_digest === grant.manifest_digest
+          const recorded = (await store.read("result"))?.promptId === binding.promptId
+          const available: Action[] = recorded ? [] : ["read"]
+          if (hasCitation && !recorded) available.push("result")
+          if (binding.procedure && explicitlyRequests(request, "procedure")) available.push("procedure")
+          presentChecker(available)
         })
       } catch {
+        presentChecker([])
         request.system.push({ type: "text", text: "ALG research procedure or checker grant unavailable. Use current verification before relying on prior procedure text." })
       }
       return
@@ -507,12 +556,19 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       return
     }
     if (!compacting && config.checkerAgent !== config.ownerAgent) {
-      presentTool(request, false)
       if (hasBrief) request.messages = projectPreQueryReceipts(request.messages, runtimeSha256)
     }
     try {
       const view = bridge?.primary(scope(owner))
       const store = journal(owner.id)
+      if (!compacting && config.checkerAgent !== config.ownerAgent) {
+        const settled = view?.work?.status === "result_recorded" || view?.work?.status === "reusable"
+        const binding = settled ? await store.read("binding") : undefined
+        const available = bridge ? ownerActions(view ?? null, !!binding, !!binding && !!await store.read("grant")) : ["diagnostics" as const]
+        if (bridge && explicitlyRequests(request, "diagnostics")) available.push("diagnostics")
+        if (config.approvedProcedure && explicitlyRequests(request, "procedure")) available.push("procedure")
+        presentTool(request, available, false, settled && !!view?.work?.manifest_digest)
+      }
       if (!view && !config.approvedProcedure) return
       if (view && brief && !hasBrief) return
       if (!hasBrief) {
@@ -523,18 +579,35 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
         const binding = await store.read("binding")
         if (binding) request.system.push({ type: "text", text: "ALG checker run " + binding.runId + ". Use status to reconcile the recorded child." })
       }
+      let calculationPolicy: CalculationPolicy | undefined
+      let window: ReturnType<typeof ctx.session.context> | undefined
+      const history = () => window ??= ctx.session.context({ sessionID: owner.id })
       try {
+        const pin = config.preQueryPolicy?.procedure
+        const activated = pin && !compacting && await activationRecorded(owner.id, pin).catch(() => false)
         const current = await selectedProcedure(view, false)
         if (current) {
           projectProcedure(current)
+          if (activated && current.sourceSha256 === pin.sourceSha256 && current.sha256 === pin.sha256) {
+            request.system.push({ type: "text", text: "Skill activation recorded. Approval rechecked for this request. Use the supplied procedure directly." })
+          }
           if (!compacting) compactProcedureReads(request, current, runtimeSha256)
+          if (bridge) calculationPolicy = parseCalculationPolicy(current.content)
+          if (calculationPolicy && !compacting) {
+            await delivery.calculate(request, calculationPolicy, history, async () => {
+              const freshOwner = await host.owner(request)
+              await ctx.permission.assert({ sessionID: freshOwner.id, agent: request.agent, action: TOOL, resources: ["*"] })
+              const fresh = await selectedProcedure(bridge?.primary(scope(freshOwner)), false)
+              return fresh?.sha256 === current.sha256 && fresh.sourceSha256 === current.sourceSha256
+            }).catch(() => { /* Incomplete history or a changed grant cannot verify a calculation. */ })
+          }
         }
       } catch {
         request.system.push({ type: "text", text: "ALG research procedure unavailable. Use current verification before relying on prior procedure text." })
       }
       if (view?.procedurePin && hasBrief && bridge) {
         await delivery.prepare(request, compacting, directory, store.runId,
-          () => ctx.session.context({ sessionID: owner.id }),
+          history,
           async () => {
             const fresh = await host.owner(request)
             await ctx.permission.assert({ sessionID: fresh.id, agent: request.agent, action: TOOL, resources: ["*"] })
@@ -551,9 +624,13 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
               next_action: after.decision.next_action, work: { work_key: work.work_key,
                 manifest_digest: work.manifest_digest, status: work.status },
               approval: { revision: config.approvedProcedureSha256, procedure_sha256: procedure.sha256 }, runtimeSha256 }
-          }).catch(() => { /* An unavailable receipt or denied owner cannot supply a delivery. */ })
+          }, calculationPolicy).catch(() => { /* An unavailable receipt or denied owner cannot supply a delivery. */ })
       }
     } catch {
+      if (!compacting && config.checkerAgent !== config.ownerAgent) {
+        presentTool(request, ["status", "reconcile", "diagnostics",
+          ...(config.approvedProcedure ? ["procedure" as const] : [])])
+      }
       request.system.push({ type: "text", text: "ALG V2 investigation status unavailable; reconcile." })
     }
   }
@@ -624,7 +701,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       if (editor.get(TOOL)) throw new Error("V2_PREVIEW_TOOL_COLLISION")
       editor.add({
         name: TOOL,
-        description: "Manage the investigation. Use the projected procedure, skill for required activation, and procedure for explicit reads.",
+        description: "Manage the investigation. Use the projected procedure and the native skill tool for required activation.",
         input: { ...toolInput, required: [...toolInput.required] },
         options: { permission: TOOL, codemode: false },
         async execute(input, call) {

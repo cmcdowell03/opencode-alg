@@ -168,7 +168,8 @@ export function createWorkbench({ maxAcceptedQueries = 16, variant = "positive" 
   }
 }
 
-export function startWorkbench(workbench: ReturnType<typeof createWorkbench>) {
+export function startWorkbench(workbench: ReturnType<typeof createWorkbench>,
+  options: { omitInspectionTotalRowsForLimit?: number } = {}) {
   const endpoints = { root: `/mcp/${randomUUID()}`, checker: `/mcp/${randomUUID()}` }
   const http = Bun.serve({
     hostname: "127.0.0.1", port: 0, development: false, maxRequestBodySize: 16 * 1024,
@@ -183,7 +184,20 @@ export function startWorkbench(workbench: ReturnType<typeof createWorkbench>) {
         const name = evidenceToolNames.find(tool => tool === params.name)
         if (!name) throw new Error("Unknown research tool")
         const call = path === endpoints.checker ? workbench.checkerCall : workbench.call
-        return { content: [{ type: "text", text: JSON.stringify(call(name, params.arguments ?? {})) }] }
+        const args = params.arguments ?? {}
+        const result = call(name, args)
+        if (options.omitInspectionTotalRowsForLimit !== undefined && path === endpoints.root &&
+            result.status === "ok" && result.op === "lookup") {
+          const requests = args.pages as { limit?: number | null }[]
+          const pages = result.pages.map((page, index) => {
+            if (page.source !== "inspection" || page.offset !== 0 ||
+                requests[index]?.limit !== options.omitInspectionTotalRowsForLimit) return page
+            const { totalRows, ...withoutTotal } = page
+            return withoutTotal
+          })
+          return { content: [{ type: "text", text: JSON.stringify({ ...result, pages }) }] }
+        }
+        return { content: [{ type: "text", text: JSON.stringify(result) }] }
       })
       try {
         await server.connect(transport)

@@ -30,6 +30,7 @@ async function fixture() {
   const directory = await mkdtemp(join(import.meta.dir, ".host-"))
   cleanup.push(() => rm(directory, { recursive: true, force: true }))
   const serviceCalls: string[] = []
+  const outcomes: { submit?: object; lookup?: object } = {}
   const connections: Server[] = []
   const manifest = {
     manifest_ref: "fixture:manifest", digest: "a".repeat(64), source_versions: ["fixture"],
@@ -49,7 +50,7 @@ async function fixture() {
           ? { valid: true, validity_key: params.arguments?.validity_key, access_scope: manifest.access_scope }
           : params.name === "read"
             ? { ...resultScope, cursor: null, next_cursor: null, rows: [{ synthetic_count: 1 }] }
-            : { kind: "result", result: manifest, actual_cost: 1 }
+            : outcomes[params.name as keyof typeof outcomes] ?? { kind: "result", result: manifest, actual_cost: 1 }
         return { content: [{ type: "text", text: JSON.stringify(value) }] }
       })
       const transport = new WebStandardStreamableHTTPServerTransport({
@@ -198,7 +199,7 @@ async function fixture() {
     return { call, detach, hooks, get toolInput() { return advertisedInput } }
   }
 
-  return { directory, sessions, histories, attach, counters, serviceCalls, state, catalog, installProcedure }
+  return { directory, sessions, histories, attach, counters, serviceCalls, state, catalog, installProcedure, outcomes }
 }
 
 async function ready(f: Awaited<ReturnType<typeof fixture>>, options?: unknown) {
@@ -209,25 +210,91 @@ async function ready(f: Awaited<ReturnType<typeof fixture>>, options?: unknown) 
   return host
 }
 
-test("the owner and checker receive only their action schemas while the registered contract stays intact", async () => {
+async function presented(
+  host: Awaited<ReturnType<Awaited<ReturnType<typeof fixture>>["attach"]>>,
+  sessionID = owner,
+  agent = "build",
+  text = "Continue.",
+  input = host.toolInput,
+) {
+  const skill = { description: "Native", input: { type: "object" } }
+  const request = { sessionID, agent, system: [], messages: [{ role: "user", content: [{ type: "text", text }] }],
+    tools: { [TOOL]: { description: "ALG", input }, skill } }
+  await host.hooks.get("context")!(request)
+  expect(request.tools.skill).toBe(skill)
+  return request.tools[TOOL]?.input
+}
+
+test("owner wire actions follow the durable investigation and keep settled reconciliation", async () => {
   const f = await fixture()
-  const host = await ready(f)
+  const host = await f.attach({ options: await f.installProcedure() })
+  const wire = () => presented(host)
+  const actions = async () => (await wire())?.properties.action.enum
+  expect(await actions()).toEqual(["create", "status"])
+  expect((await host.call("start")).error).toBe("RESULT_MANIFEST_REQUIRED")
+  expect(f.counters).toEqual({ create: 0, prompt: 0 })
+  const explicit = await presented(host, owner, "build", "Show diagnostics and read the procedure.")
+  expect(explicit?.properties.action.enum).toEqual(["create", "status", "diagnostics", "procedure"])
+  expect(await host.call("diagnostics")).toMatchObject({ ok: true, enabled: true })
+  expect(await host.call("procedure")).toMatchObject({ ok: true, procedure: { id: skillId } })
+
+  await host.call("create")
+  expect(await actions()).toEqual(["admit", "status", "set_next_measurement"])
+  expect((await wire())?.properties).not.toHaveProperty("refutation")
+  await host.call("admit")
+  expect(await actions()).toEqual(["admit", "dispatch", "status"])
+  expect(Object.keys((await wire())!.properties)).toEqual(["action"])
+  f.outcomes.submit = { kind: "running", external_job_id: "fixture-job" }
+  expect((await host.call("dispatch")).work.status).toBe("running")
+  expect(await actions()).toEqual(["reconcile", "status"])
+  f.outcomes.lookup = { kind: "unknown", reason: "Delayed visibility" }
+  expect((await host.call("reconcile")).work.status).toBe("outcome_unknown")
+  expect(await actions()).toEqual(["reconcile", "status"])
+  delete f.outcomes.lookup
+  expect((await host.call("reconcile")).work.status).toBe("result_recorded")
+  expect(await actions()).toEqual(["reconcile", "status", "set_next_measurement", "start"])
+  expect((await wire())?.properties).toHaveProperty("refutation")
+  expect(await host.call("reconcile")).toMatchObject({ ok: true, work: { status: "result_recorded" } })
+  expect(f.serviceCalls.filter(name => name === "submit")).toEqual(["submit"])
+})
+
+test("checker wire actions follow grant, citation and verdict while execution supports exact retries", async () => {
+  const f = await fixture()
+  const host = await ready(f, await f.installProcedure())
+  expect(await presented(host, owner, checkerAgent)).toBeUndefined()
   const { workerSessionId, runId } = (await host.call("start")).worker
-  async function projected(sessionID: string, agent: string, input = host.toolInput) {
-    const request = { sessionID, agent, system: [], messages: [], tools: { [TOOL]: { description: "ALG", input } } }
-    await host.hooks.get("context")!(request)
-    return request.tools[TOOL].input
-  }
-  const root = await projected(owner, "build"), worker = await projected(workerSessionId, checkerAgent)
-  expect(root.properties.action.enum).toContain("revoke")
-  expect(root.properties.action.enum).not.toContain("result")
-  expect(root.properties).not.toHaveProperty("citation")
-  expect(worker.properties.action.enum).toEqual(["read", "result", "procedure"])
-  expect(worker.required).toEqual(["action", "runId"])
-  expect(worker.properties).not.toHaveProperty("next_action")
+  const workerWire = () => presented(host, workerSessionId, checkerAgent)
+  const root = await presented(host)
+  expect(root?.properties.action.enum).toEqual(["reconcile", "status", "set_next_measurement", "revoke"])
+  expect(root?.properties).not.toHaveProperty("citation")
+  expect(await host.call("start")).toMatchObject({ ok: true, worker: { workerSessionId, runId } })
+  expect(f.counters).toEqual({ create: 1, prompt: 1 })
+
+  expect((await workerWire())?.properties.action.enum).toEqual(["read"])
+  expect((await workerWire())?.required).toEqual(["action", "runId"])
+  expect(Object.keys((await workerWire())!.properties)).toEqual(["action", "runId"])
+  expect((await presented(host, workerSessionId, checkerAgent, "Show the procedure."))?.properties.action.enum)
+    .toEqual(["read", "procedure"])
+  f.state.effectiveDeny = true
+  expect(await workerWire()).toBeUndefined()
+  expect(await host.call("read", { runId }, workerSessionId, checkerAgent)).toMatchObject({
+    ok: false, error: "CHECKER_RESULT_PERMISSION_DENIED",
+  })
+  f.state.effectiveDeny = false
+  const { citation } = await host.call("read", { runId }, workerSessionId, checkerAgent)
+  expect((await workerWire())?.properties.action.enum).toEqual(["read", "result"])
+  const verdict = { runId, citation, result: "pass" }
+  expect(await host.call("result", verdict, workerSessionId, checkerAgent)).toMatchObject({ ok: true })
+  expect(await workerWire()).toBeUndefined()
+  expect(await host.call("result", verdict, workerSessionId, checkerAgent)).toMatchObject({ ok: true })
+  expect(await host.call("revoke", { runId })).toMatchObject({ ok: true })
+  expect(await workerWire()).toBeUndefined()
+  expect(await host.call("result", verdict, workerSessionId, checkerAgent)).toMatchObject({ ok: false })
+
   expect(host.toolInput.properties.action.enum).toContain("result")
   const modified = { ...host.toolInput, required: ["action", "custom"] }
-  expect(await projected(owner, "build", modified)).toBe(modified)
+  expect(await presented(host, owner, "build", "Continue.", modified)).toBe(modified)
+  expect(await presented(host, workerSessionId, checkerAgent, "Continue.", modified)).toBe(modified)
   expect((await host.call("read", { runId })).error).toBe("CHECKER_REQUIRED")
 })
 

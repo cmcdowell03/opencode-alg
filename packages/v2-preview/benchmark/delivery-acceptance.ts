@@ -10,9 +10,10 @@ import { startFactory } from "../acceptance/service.ts"
 import { createV2InvestigationBridge } from "../core/investigation.ts"
 import { deliverySchema, type DeliveryReceipt } from "../src/delivery.ts"
 import { WorkerJournal } from "../src/journal.ts"
-import { deliveryGap, observeDelivery, scriptedDelivery } from "./delivery-script.ts"
+import { calculationConflict, calculationMissing, deliveryGap, observeCalculatedEvidence, observeDelivery,
+  scriptedDelivery } from "./delivery-script.ts"
 import { inspectAnswer } from "./handoff-audit.ts"
-import { checkerInput, classifyHandoff, correctionHeader, finalInput, initialInput, jsonObject, skillContent, skillName, verifiedCorrection } from "./handoff-case.ts"
+import { candidates, checkerInput, classifyHandoff, correctionPrefix, finalInput, initialInput, jsonObject, skillContent, skillName, verifiedCorrection } from "./handoff-case.ts"
 import { handoffJob, stageGate } from "./handoff-gate.ts"
 import { scriptedHandoff } from "./handoff-script.ts"
 import { checkerName, installAlg, observeAlgDecision, observeTurn, pluginId, prepareHost, registerSkill, submitTurn, type Host } from "./host.ts"
@@ -20,7 +21,8 @@ import { startTransport } from "./transport.ts"
 import { createWorkbench, startWorkbench } from "./workbench.ts"
 
 const cases = ["ready", "superseded", "revoked", "missing-reference"] as const
-type Case = typeof cases[number]
+const calculationCases = ["calculation-mismatch", "calculation-missing"] as const
+type Case = typeof cases[number] | typeof calculationCases[number]
 const model = { providerID: "paired-benchmark", id: "fixture" }
 const prefix = "alg-delivery-acceptance-"
 
@@ -31,17 +33,25 @@ async function run(binary: string, bundle: string, scenario: Case, scratch: stri
   const git = Bun.which("git")!
   const factory = startFactory(join(scratch, "factory"), false)
   const workbench = createWorkbench({ maxAcceptedQueries: 4 })
-  const evidence = startWorkbench(workbench)
+  const evidence = startWorkbench(workbench, {
+    // Only the deliberate negative withholds pagination metadata for the selected window.
+    omitInspectionTotalRowsForLimit: scenario === "calculation-missing" ? candidates[1] : undefined,
+  })
   const wire: ReturnType<typeof observeDelivery>[] = []
+  const calculated: ReturnType<typeof observeCalculatedEvidence>[] = []
   let continuing = false
   let host: Host | undefined
   const provider = startTransport({
-    id: model.id, seed: 101, classify: classifyHandoff, stale: "attribute-as-recorded", correction: correctionHeader,
+    id: model.id, seed: 101, classify: classifyHandoff, stale: "attribute-as-recorded", correction: correctionPrefix,
     skill: () => undefined,
     decide(input) {
       if (continuing) {
         const observed = observeDelivery(input.messages)
         wire.push(observed)
+        const calculation = observeCalculatedEvidence(input.messages)
+        calculated.push(calculation)
+        if (scenario === "calculation-mismatch" && calculation.values)
+          return { text: JSON.stringify(calculation.values) }
         return scriptedDelivery(input.messages, observed)
       }
       const phase = classifyHandoff(input.messages).phase
@@ -52,6 +62,11 @@ async function run(binary: string, bundle: string, scenario: Case, scratch: stri
         // Keep the report complete but remove the link to observed inspection evidence.
         report.inspectionRef = "unverified-inspection-reference"
         return { text: JSON.stringify(report) }
+      }
+      if (scenario === "calculation-mismatch" && phase === "correction" && !input.summary && "text" in result) {
+        const report = jsonObject(result.text)
+        if (report?.verifiedClockCorrections !== 3) throw new Error("Mismatch fixture did not observe the expected report")
+        return { text: JSON.stringify({ ...report, verifiedClockCorrections: 4 }) }
       }
       return result
     },
@@ -98,7 +113,9 @@ async function run(binary: string, bundle: string, scenario: Case, scratch: stri
     if (!correction) throw new Error("Independent correction fixture failed")
     const correctedTurn = await turn(correction)
     const corrected = inspectAnswer(correctedTurn.text, true)
-    if (scenario !== "missing-reference" && (corrected.observation !== "strict_object" || corrected.mismatchedFields?.length !== 0))
+    const expectedMismatches = scenario === "calculation-mismatch" ? ["verifiedClockCorrections"] :
+      scenario === "missing-reference" ? ["inspectionRef"] : []
+    if (corrected.observation !== "strict_object" || !isDeepStrictEqual(corrected.mismatchedFields, expectedMismatches))
       throw new Error("Corrected decision fixture failed")
     const decision = () => observeAlgDecision(factory, project.directory, root.projectID, root.id)
     if (decision()?.revision !== 2) throw new Error("Corrected decision revision was not recorded")
@@ -169,15 +186,31 @@ async function run(binary: string, bundle: string, scenario: Case, scratch: stri
       wire[0]?.revision === restart.receipt.binding.decision_revision &&
       isDeepStrictEqual(wire[0]?.values, restart.receipt.recordedAnswer) &&
       sha256(await readFile(restart.receiptPath, "utf8")) === restart.receiptSha256
+    const mismatch = scenario === "calculation-mismatch"
+    const missing = scenario === "calculation-missing"
+    const calculationNotice = mismatch ? calculationConflict : calculationMissing
+    const calculation = calculated[0]
     const checks = {
       ...(scenario === "ready" && { priorReceiptUsedAfterRestart: priorReceiptUsed === true }),
       bareContinuation: wire.length === 1 && wire.every(row => row.barePrompt >= 0) &&
         requests.length === wire.length && requests.every(row => row.status === 200),
-      currentDelivery: scenario === "ready"
+      currentDelivery: mismatch || missing
+        ? wire.every(row => row.projections === 0 && row.ready === 0 &&
+          isDeepStrictEqual(row.statuses, [calculationNotice]))
+        : scenario === "ready"
         ? wire.every(row => row.projections === 1 && row.statuses.length === 1 && row.noRereads &&
           !row.reportInStatus && row.revision === 2)
         : wire.every(row => row.projections === 0 && row.ready === 0 && deliveryGap(row.statuses) === scenario),
-      answer: scenario === "ready"
+      ...(mismatch || missing ? {
+        calculationEvidence: mismatch
+          ? calculation?.projections === 1 && calculation.values?.verifiedClockCorrections === 3
+          : calculation?.projections === 0,
+      } : {}),
+      answer: mismatch
+        ? abstention?.verifiedClockCorrections === 3 && isDeepStrictEqual(abstention, calculation?.values)
+        : missing
+        ? isDeepStrictEqual(abstention, { abstained: true, gap: "calculation-missing" })
+        : scenario === "ready"
         ? answer.observation === "strict_object" && answer.mismatchedFields?.length === 0
         : abstention?.abstained === true && abstention.gap === scenario && Object.keys(abstention).length === 2,
       zeroReads: factoryCalls === 0 && calls.length === 0 && receipts.length === 0,
@@ -185,6 +218,7 @@ async function run(binary: string, bundle: string, scenario: Case, scratch: stri
     return { scenario, runtime, passed: Object.values(checks).every(Boolean), checks, answer, final: final.text,
       restart: restart && { fromPid: restart.fromPid, toPid: restart.toPid, sessionId: root.id,
         compactionId: compaction.id, receiptSha256: restart.receiptSha256 },
+      ...(mismatch || missing ? { plantedReport: jsonObject(correctedTurn.text), calculated } : {}),
       continuation: { calls, factoryCalls, redundantToolCalls: calls.length,
         workbenchReceipts: receipts, wire: wire.map(({ values, ...row }) => ({ ...row, fields: Object.keys(values ?? {}) })) } }
   } finally {
@@ -199,8 +233,8 @@ async function run(binary: string, bundle: string, scenario: Case, scratch: stri
 
 export async function deliveryAcceptance(args: string[]) {
   const [binary, bundle, selected, ...extra] = args
-  if (!binary || !bundle || extra.length || (selected && !cases.includes(selected as Case)))
-    throw new Error("Usage: bun packages/v2-preview/benchmark/delivery-acceptance.ts <OpenCode 2.3.2 executable> <staged preview bundle> [ready|superseded|revoked|missing-reference]")
+  if (!binary || !bundle || extra.length || (selected && ![...cases, ...calculationCases].some(scenario => scenario === selected)))
+    throw new Error("Usage: bun packages/v2-preview/benchmark/delivery-acceptance.ts <OpenCode 2.3.2 executable> <staged preview bundle> [ready|superseded|revoked|missing-reference|calculation-mismatch|calculation-missing]")
   const parent = await realpath(tmpdir())
   for (const scenario of selected ? [selected as Case] : cases) {
     const scratch = await mkdtemp(join(parent, prefix))

@@ -176,8 +176,15 @@ test("a restarted owner can carry a report across consecutive cuts only while it
     const running = (name: string) => ({ ...compaction(name), status: "running" }) as Message
     const prepare = (rows: Message[], compacting: boolean) => new DeliveryContext().prepare(
       request, compacting, directory, runId, async () => rows, async () => live)
-    await prepare([...corrected, running("first")], true)
-    await prepare([compaction("first"), user("resume", "Continue."), answer("delivered"), running("second")], true)
+    await prepare([...corrected, running("uncalculated")], true)
+    await prepare([compaction("uncalculated"), user("check", "Continue.")], false)
+    expect(request.system[0]?.text).toContain("missing or unverified calculated measurements")
+    expect(request.messages).toHaveLength(1)
+    request.system.length = 0
+    const categorical = answer("delivered", '{"disposition":"recheck"}')
+    await prepare([user("requirement", "For each decision report one JSON object with disposition."),
+      ack(), categorical, running("first")], true)
+    await prepare([compaction("first"), user("resume", "Continue."), categorical, running("second")], true)
     await prepare([compaction("second"), running("third")], true)
     await prepare([compaction("third"), user("new", "Inspect the other batch."), running("fourth")], true)
     await prepare([compaction("fourth"), user("resume4", "Continue.")], false)

@@ -1,4 +1,6 @@
 import type { RequestObservation } from "./compaction.ts"
+import { wireTextParts } from "./skill-delivery.ts"
+import type { Message } from "./transport.ts"
 import type { collectSessionEvidence } from "./session-evidence.ts"
 
 type Sample = Pick<RequestObservation, "kind" | "role" | "phase" | "requestBytes" | "status"> & {
@@ -11,11 +13,31 @@ export function investigationSchema(tools: unknown) {
     const tool = entry?.function ?? entry
     if (tool?.name !== "alg_investigation") continue
     const actions = tool.parameters?.properties?.action?.enum
-    if (!Array.isArray(actions)) return null
+    if (!Array.isArray(actions) || actions.length > 32 ||
+        !actions.every(action => typeof action === "string" && /^[a-z_]{1,32}$/.test(action))) return null
     return { bytes: Buffer.byteLength(JSON.stringify(tool.parameters)), offersResult: actions.includes("result"),
-      offersDispatch: actions.includes("dispatch") }
+      offersDispatch: actions.includes("dispatch"), actions: actions as string[] }
   }
   return null
+}
+
+/** Count the exact user-role calculation payload seen on the wire, without logging source rows. */
+export function calculatedFieldCount(messages: Message[]) {
+  const marker = "ALG calculated evidence (source data)\n"
+  for (const message of messages) {
+    if (message.role !== "user") continue
+    for (const part of wireTextParts(message.content)) {
+      if (!part.startsWith(marker)) continue
+      try {
+        const values: unknown = JSON.parse(part.slice(marker.length)).values
+        if (values && typeof values === "object" && !Array.isArray(values)) {
+          const fields = Object.values(values)
+          if (fields.length && fields.every(Number.isFinite)) return fields.length
+        }
+      } catch { /* A prose mention is insufficient. */ }
+    }
+  }
+  return 0
 }
 
 function sumComplete(values: (number | null | undefined)[]) {

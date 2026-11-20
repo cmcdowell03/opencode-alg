@@ -90,6 +90,35 @@ remaining cases independently supersede the decision, withdraw approval and
 remove a required reference. Each must withhold the stale answer and identify
 the reason. The scripted responder can only see the on-wire handoff.
 
+### Deterministic calculation delivery
+
+Both handoff arms receive the identical full synthetic skill, including the
+operator-authored calculation recipe as compact JSON. It specifies bounded
+candidate selection, counted fields and the independently audited join without
+embedding answers. The initial per-arm wire witness records when the full skill body was
+seen. The historical skill bytes and pin hashes differ because they predate
+the recipe. The recipe binds the original page response's offset, total row
+count and next cursor to the native tool request's limit. Source responses,
+references and query budgets stay fixed. The existing independent oracle and
+native grader still score the report.
+
+Run the calculation cases separately from the existing four delivery scenarios
+and frozen qualification matrix, against the staged package with the local
+scripted transport.
+
+```sh
+bun packages/v2-preview/benchmark/delivery-acceptance.ts <opencode-2.3.2-binary> <absolute-staged-bundle-path> calculation-mismatch
+bun packages/v2-preview/benchmark/delivery-acceptance.ts <opencode-2.3.2-binary> <absolute-staged-bundle-path> calculation-missing
+```
+
+The mismatch case plants a reported correction count of 4 and requires the
+conflict notice and the host-calculated count of 3 in a separate user-role
+source-data projection. The missing calculation case removes `totalRows` from
+responses for the selected inspection window, including its replay, while
+keeping the source rows, reported values and references intact. It requires the
+missing-calculation notice and abstention. Both check that bare continuation
+projects no stale report and makes zero tool or source calls.
+
 Retain the existing local qualification matrix and native grading criteria.
 After the local gates pass, run one capped ALG-first Luna/Build pair on the
 same incident. Compare continuation and whole-run input, cache reads, output,

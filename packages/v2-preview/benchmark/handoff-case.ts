@@ -10,6 +10,7 @@ export const briefKey = "alg.v2.owner-brief"
 export const refutationId = "calibration-result-missing"
 export const refutationStatement = "A bounded calibration result is recorded for this investigation."
 export const correctionHeader = "Independent clock-audit handoff"
+export const correctionPrefix = correctionHeader + "\n{"
 export const skillName = "fab-clock-handoff"
 export const candidates = [4, 8, 12] as const
 export const defectFloor = 4
@@ -19,6 +20,28 @@ For each decision report one JSON object with cohortSize, defects, verifiedClock
 
 If the installed host exposes investigation bookkeeping, create the checkpoint and record the recommendation initially and after receiving independent facts. During initial setup, admit and dispatch its read-only calibration query once and reconcile the settled result once to check reuse. This calibration is separate from the cohort search. On updating the checkpoint after correction, use the settled calibration manifest to refute the hypothesis that the bounded calibration result is missing (ID "calibration-result-missing"). State the factual result without importing a recommendation from the calibration. On continuation, verify that the procedure is current. If unavailable, check that the old calibration cannot be readmitted. Do not execute the recommended next action.`
 export const checkerInput = `Independently retrieve the clock-audit source from the shared evidence workbench. Call lookup_pages with {"pages":[{"source":"clock-audit"}]}. Return one JSON object with auditRef and auditRows containing the exact source rows. This is a read-only facts handoff.`
+const inspectionKey = ["lot", "wafer", "recordedMinute"]
+const calculation = {
+  version: 1,
+  owner: {
+    tool: "evidence_lookup_pages", pagesKey: "pages", source: "inspection", sourceKey: "source",
+    referenceKey: "evidenceRef", reportReferenceField: "inspectionRef", rowsKey: "rows",
+    offsetKey: "offset", limitKey: "limit", cursorKey: "cursor", totalRowsKey: "totalRows", nextCursorKey: "nextCursor",
+    limits: candidates, rowKey: inspectionKey, qualify: { field: "defect", equals: true, minMatches: defectFloor },
+  },
+  correction: {
+    header: correctionHeader, referenceKey: "auditRef", reportReferenceField: "auditRef",
+    rowsKey: "auditRows", rowKey: inspectionKey,
+  },
+  operations: {
+    cohortSize: { kind: "count" },
+    defects: { kind: "filteredCount", where: { field: "defect", equals: true } },
+    verifiedClockCorrections: {
+      kind: "semijoinCount", where: { field: "status", equals: "verified" },
+      ownerKey: inspectionKey, correctionKey: inspectionKey,
+    },
+  },
+}
 export const skillContent = `---
 name: ${skillName}
 description: Select a bounded synthetic inspection cohort and account for an independent clock audit.
@@ -42,7 +65,11 @@ Otherwise recommend "attribute-as-recorded" with prerequisite
 
 At continuation, check whether this skill is still available and current
 before recommending any procedural action. The observed evidence and prior
-findings remain factual even if approval or skill availability is withdrawn.`
+findings remain factual even if approval or skill availability is withdrawn.
+
+\`\`\`alg-calculation
+${JSON.stringify(calculation)}
+\`\`\``
 
 export function object(value: unknown): Record<string, unknown> | undefined {
   return value !== null && typeof value === "object" && !Array.isArray(value)
@@ -64,7 +91,7 @@ export function handoffUserPhase(message: Message) {
   const text = textOf(message.content)
   if (text.includes(checkerInput)) return "checker"
   if (text.includes(finalInput)) return "continue"
-  if (text.includes(correctionHeader)) return "correction"
+  if (text.includes(correctionPrefix)) return "correction"
   return text.includes(initialInput) ? "initial" : null
 }
 

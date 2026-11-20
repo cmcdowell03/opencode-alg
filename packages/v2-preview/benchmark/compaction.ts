@@ -17,7 +17,8 @@ export type RequestObservation = {
   tools: string[]
   /** Actual UTF-8 HTTP request body length. Scripted usage fields do not measure input tokens. */
   requestBytes?: number
-  investigationSchema?: { bytes: number; offersResult: boolean; offersDispatch: boolean } | null
+  investigationSchema?: { bytes: number; offersResult: boolean; offersDispatch: boolean; actions?: string[] } | null
+  calculatedFieldCount?: number
   status: number | null
   scriptOutcome?: string
   summaryResponseSha256?: string | null
