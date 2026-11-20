@@ -170,7 +170,9 @@ export function startNativeObserver(options: {
           if (role === "other") return fail("NATIVE_UNBOUND_SESSION")
           if (options.allowedAgents && input.agent !== options.allowedAgents[role])
             return fail("NATIVE_AGENT_IDENTITY_MISMATCH")
-          if (options.profile && input.kind !== "primary") return fail("NATIVE_DISCOVERY_NONPRIMARY_BLOCKED")
+          if (options.profile === "discovery-v1" && input.kind !== "primary") return fail("NATIVE_DISCOVERY_NONPRIMARY_BLOCKED")
+          if (options.profile === "handoff-v1" && input.kind !== "primary" && input.kind !== "compaction")
+            return fail("NATIVE_HANDOFF_GENERATION_KIND_BLOCKED")
           if (input.kind === "compaction" && role !== "root") return fail("NATIVE_AUXILIARY_COMPACTION_BLOCKED")
           const allowedTools = options.allowedTools?.[role]
           if ((allowedTools && input.tools.some(tool => !allowedTools.includes(tool))) ||
@@ -351,7 +353,8 @@ async function setup(ctx: Plugin.Context) {
   const { endpoint: control, key, id, profile } = ctx.options
   if (ctx.app.version !== "2.3.2" || typeof control !== "string" ||
       !/^http:\/\/127\.0\.0\.1:\d{1,5}$/.test(control) || typeof key !== "string" ||
-      !/^[a-f0-9]{48}$/.test(key) || typeof id !== "string" || (profile !== undefined && profile !== "discovery-v1"))
+      !/^[a-f0-9]{48}$/.test(key) || typeof id !== "string" ||
+      (profile !== undefined && profile !== "discovery-v1" && profile !== "handoff-v1"))
     throw new Error("NATIVE_OBSERVER_OPTIONS_INVALID")
   nativeModel("openai/" + id)
 

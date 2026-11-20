@@ -49,7 +49,7 @@ async function runArm(arm: ArmName, options: Options, scratch: string, bundleSha
   }
   const providerOptions = { id: model.id, classify, stale: "unsupported", correction: handoffHeader,
     skill: () => skill?.witness }
-  const profile = options.nativeChildAudit ? "discovery-v1" : undefined
+  const profile = options.nativeChildAudit ? "handoff-v1" : undefined
   const native = options.native && startNativeObserver({ ...providerOptions, profile })
   const scripted = native ? undefined : startTransport({ ...providerOptions, seed: 103, decide: scriptedEvidenceHandoff })
   const observer = native || scripted!
@@ -262,7 +262,7 @@ export async function runEvidenceHandoff(options: Options) {
       passed: build.passed && alg.passed && Object.values(parity).every(Boolean),
       mode: options.native ? "native-openai-oauth" : "scripted-transport", mechanicsOnly: !options.native,
       freeze, nativeChildAudit: !!options.nativeChildAudit,
-      limits: options.native ? limitsFor(options.nativeChildAudit ? "discovery-v1" : undefined) :
+      limits: options.native ? limitsFor(options.nativeChildAudit ? "handoff-v1" : undefined) :
         { calls: maxProviderCalls, requestBytes: maxProviderBytes }, arms }
   } finally {
     const real = await realpath(scratch)

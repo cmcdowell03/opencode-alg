@@ -46,6 +46,27 @@ test("discovery records provider cache and reasoning counters from Responses usa
   })
 })
 
+test.each([
+  ["handoff-v1", "root", "compaction", 200],
+  ["handoff-v1", "checker", "compaction", 409],
+  ["discovery-v1", "root", "compaction", 409],
+  ["handoff-v1", "root", "other", 409],
+] as const)("observer %s admits only the declared %s/%s generation", async (profile, sessionID, kind, expected) => {
+  const observer = startNativeObserver({ id: "fixture", profile, stale: "obsolete", correction: "updated",
+    skill: () => undefined, classify: () => ({ role: "root", phase: "compaction" }) })
+  try {
+    observer.bindRoot("root")
+    observer.bindChecker("checker")
+    observer.releaseSummary()
+    const result = await fetch(observer.setupOptions.endpoint + "/begin", { method: "POST",
+      headers: { authorization: "Bearer " + observer.setupOptions.key },
+      body: JSON.stringify({ sessionID, kind, bytes: 100, messages: [], tools: [] }) })
+    expect(result.status).toBe(expected)
+    expect(observer.requests.length).toBe(expected === 200 ? 1 : 0)
+    if (expected === 200) expect(observer.requests[0]?.kind).toBe("summary")
+  } finally { observer.stop() }
+})
+
 test("observable model and budget failures stay outcomes, while host and transport faults stop paid dispatch", () => {
   expect(classifyDiscoveryFailure("NATIVE_PROVIDER_CALL_BUDGET", true)).toBe("budget-exhausted")
   expect(classifyDiscoveryFailure("NATIVE_ARM_DEADLINE", false)).toBe("apparatus-error")

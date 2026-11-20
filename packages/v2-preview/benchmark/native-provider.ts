@@ -29,8 +29,8 @@ export const discoveryNativeLimits = {
   armMs: 20 * 60_000,
 } as const
 
-export type NativeProfile = "discovery-v1"
-export const limitsFor = (profile?: NativeProfile) => profile === "discovery-v1" ? discoveryNativeLimits : nativeLimits
+export type NativeProfile = "discovery-v1" | "handoff-v1"
+export const limitsFor = (profile?: NativeProfile) => profile ? discoveryNativeLimits : nativeLimits
 
 export function nativeModel(value: string) {
   const id = /^openai\/([a-z0-9][a-z0-9._-]{0,95})$/i.exec(value)?.[1]
