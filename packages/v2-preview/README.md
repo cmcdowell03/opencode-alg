@@ -382,6 +382,15 @@ The [installed evidence handoff benchmark](benchmark/evidence-handoff.md)
 exercises a mid-search process restart and grades the native answer separately
 from ALG's application report.
 
+On Windows and WSL, both arms resumed at eight rows, qualified at twelve,
+and made zero duplicate admissions in the scripted held-out case. Both changed
+and exhausted sources produced abstentions. In one native Luna pair, ALG
+reported the correct five defects and two corrections in chat. Its decision
+write preceded the authoritative audit handoff, and it reached the 24-call cap
+without a certified final answer. Build miscounted four defects and stopped.
+ALG used 70,982 uncached input tokens and Build used 17,339. Both arms missed
+the frozen end-to-end gate. [Receipts and ordered replay](evidence/evidence-handoff-2.3.2.json)
+
 The paired handoff receipt records cumulative UTF-8 request bytes by phase.
 Native runs also record provider input and output tokens and matched host cache
 reads. Cache reads are included in input tokens. Scripted runs can compare request
