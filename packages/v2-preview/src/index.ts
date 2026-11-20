@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto"
 import { readFile } from "node:fs/promises"
+import { isDeepStrictEqual } from "node:util"
 import { z } from "zod"
 import type { Plugin } from "@opencode/plugin"
 import type { SessionContext } from "@opencode/plugin/promise/session"
@@ -9,6 +10,7 @@ import type { PreQueryGate } from "../core/pre-query.ts"
 import { createPreQueryGate, preQueryPolicySchema, PreQueryBlockedError } from "./pre-query.ts"
 import { createOwnerContinuation } from "./continuation.ts"
 import { OwnerBrief } from "./brief.ts"
+import { projectPreQueryReceipts } from "./pre-query-projection.ts"
 import { runContainedPath } from "../../../src/store.ts"
 import { registerTeamSources } from "./team-source.ts"
 import { registerResearchWorkers, researchRolesSchema, researchEvidenceOptionsSchema } from "./research-workers.ts"
@@ -18,6 +20,7 @@ import { InvestigationAdapterSchema } from "../../../src/operational-options.ts"
 import { canonicalDirectory, HOST_VERSION, InvestigationHost, TOOL } from "./host.ts"
 import { type Binding, citationKeys, citationSchema, sameCitation, verdictSchema, WorkerJournal, publishReceipt, readReceipt } from "./journal.ts"
 import { approvalFileSchema, pinOfProcedure, ResearchProcedure } from "./procedure.ts"
+import { compactProcedureReads } from "./procedure-history.ts"
 
 const agentId = z.string().regex(/^[\w-]{1,80}$/)
 const configSchema = z.object({
@@ -72,6 +75,28 @@ const toolInput = {
   },
   additionalProperties: false,
 } as const
+function requestToolInput(checker: boolean) {
+  const available = actions.filter(action => checker
+    ? action === "read" || action === "result" || action === "procedure"
+    : action !== "read" && action !== "result")
+  const fields = new Set(available.flatMap(action => {
+    const { required, optional } = actionFields(action)
+    return [...required, ...optional]
+  }))
+  const properties = Object.fromEntries(Object.entries(toolInput.properties).filter(([name]) => fields.has(name)))
+  return { ...toolInput, required: checker ? ["action", "runId"] : ["action"],
+    properties: { action: { ...toolInput.properties.action, enum: available }, ...properties } }
+}
+const ownerInput = requestToolInput(false), checkerInput = requestToolInput(true)
+
+function presentTool(request: SessionContext, checker: boolean) {
+  const tool = request.tools?.[TOOL]
+  // Permissions and execution validation still apply to every call. Only narrow
+  // the plugin's own unmodified definition on this request.
+  if (tool && isDeepStrictEqual(tool.input, toolInput)) {
+    request.tools = { ...request.tools, [TOOL]: { ...tool, input: structuredClone(checker ? checkerInput : ownerInput) } }
+  }
+}
 const inputSchema = z.object({
   action: actionName,
   runId: z.string().regex(/^v2-checker-[a-f0-9]{48}$/).optional(),
@@ -451,6 +476,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       })
     }
     if (request.agent === config.checkerAgent) {
+      if (!compacting && config.checkerAgent !== config.ownerAgent) presentTool(request, true)
       if (!bridge || !config.approvedProcedure) return
       const worker = await boundWorker(request.sessionID)
       if (!worker?.binding.procedure) return
@@ -477,6 +503,10 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
     } catch {
       return
     }
+    if (!compacting && config.checkerAgent !== config.ownerAgent) {
+      presentTool(request, false)
+      if (hasBrief) request.messages = projectPreQueryReceipts(request.messages, runtimeSha256)
+    }
     try {
       const view = bridge?.primary(scope(owner))
       const store = journal(owner.id)
@@ -492,7 +522,10 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       }
       try {
         const current = await selectedProcedure(view, false)
-        if (current) projectProcedure(current)
+        if (current) {
+          projectProcedure(current)
+          if (!compacting) compactProcedureReads(request, current, runtimeSha256)
+        }
       } catch {
         request.system.push({ type: "text", text: "ALG research procedure unavailable. Use current verification before relying on prior procedure text." })
       }
@@ -567,7 +600,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       if (editor.get(TOOL)) throw new Error("V2_PREVIEW_TOOL_COLLISION")
       editor.add({
         name: TOOL,
-        description: "Manage the current ALG V2 investigation, retrieve its approved research procedure, or read an authorized checker result.",
+        description: "Manage the investigation. Use the projected procedure, skill for required activation, and procedure for explicit reads.",
         input: { ...toolInput, required: [...toolInput.required] },
         options: { permission: TOOL, codemode: false },
         async execute(input, call) {

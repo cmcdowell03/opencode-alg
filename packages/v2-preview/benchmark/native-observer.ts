@@ -9,6 +9,7 @@ import type { RequestObservation } from "./compaction.ts"
 import { nativeLimits, nativeModel } from "./native-provider.ts"
 import type { Message } from "./transport.ts"
 import { wireTextParts } from "./skill-delivery.ts"
+import { investigationSchema } from "./input-usage.ts"
 
 export const nativeObserverID = "paired-benchmark-native-observer"
 const endpoint = "https://chatgpt.com/backend-api/codex/responses"
@@ -29,6 +30,7 @@ type NativeObservation = RequestObservation & {
 type Beginning = {
   sessionID: string; kind: "primary" | "compaction"; bytes: number
   messages: Message[]; tools: string[]
+  investigationSchema: ReturnType<typeof investigationSchema>
 }
 type Terminal = { status: number; bytes: number; usage: Usage | null; summary?: string
   httpStatus?: number; media?: ReturnType<typeof responseMedia>; invalidFraming?: boolean }
@@ -104,7 +106,7 @@ export function nativeBody(text: string, id: string) {
   // The pinned OAuth hook removes maxTokens for the Codex endpoint. Keep its wire format.
   const bytes = Buffer.byteLength(text)
   if (bytes > nativeLimits.requestBytes) throw new Error("NATIVE_REQUEST_BYTES_EXCEEDED")
-  return { bytes, messages, tools }
+  return { bytes, messages, tools, investigationSchema: investigationSchema(body.tools) }
 }
 
 export function startNativeObserver(options: {
@@ -169,6 +171,7 @@ export function startNativeObserver(options: {
             stale: text.includes(options.stale), correction: text.includes(options.correction),
             oldSummary: contents.some(value => hasText(value, baselineSummary)),
             skill: contents.some(value => hasText(value, options.skill())), tools: input.tools, status: null,
+            investigationSchema: input.investigationSchema,
           }
           requests.push(row)
           if (kind === "summary" && row.stale && !row.correction && !pending && !released) {
@@ -348,7 +351,7 @@ async function setup(ctx: Plugin.Context) {
       catch { return deny("NATIVE_REQUEST_SHAPE_OR_BUDGET") }
       const admissionSignal = AbortSignal.any([request.signal, AbortSignal.timeout(75_000)])
       const admitted = await rpc("/begin", {
-        sessionID: input.sessionID, kind: input.kind, bytes: parsed.bytes, messages: parsed.messages, tools: parsed.tools,
+        sessionID: input.sessionID, kind: input.kind, ...parsed,
       } satisfies Omit<Beginning, "kind"> & { kind: string }, admissionSignal)
       const requestID = await admitted.json()
       if (!count(requestID) || requestID === 0) return deny("NATIVE_REQUEST_CORRELATION")

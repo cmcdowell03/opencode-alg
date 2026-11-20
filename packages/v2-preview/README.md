@@ -274,6 +274,23 @@ explicit system and developer messages, and tool outputs. A tool read or a
 quotation in a user message cannot satisfy the system-projection check.
 Older receipts without this capture have unknown delivery roles.
 
+### Orchestrator input in preview.4
+
+The owner receives the current decision, its cited refutation, the next measurement
+and the live approved procedure. Its tool schema contains the actions the owner
+can call. The checker's schema contains the read, procedure and result actions.
+When successful ALG tool results repeat identical provenance, the model can
+resolve a reference to the full field in an earlier tool result in the same
+request. The same rule keeps the first full procedure read and identifies later
+identical bodies by digest while the full approved procedure is in context.
+Compaction starts a new window for these references. The durable tool results
+still contain the original fields.
+
+The paired handoff receipt records cumulative UTF-8 request bytes by phase.
+Native runs also record provider input and output tokens and matched host cache
+reads. Cache reads are included in input tokens. Scripted runs can compare request
+size and workflow correctness. Their token fields are null.
+
 ### Background compaction and independent research
 
 Run the same installed OpenCode 2.3.2 binary and the same synthetic investigation

@@ -16,6 +16,7 @@ import { handoffJob, stageGate } from "./handoff-gate.ts"
 import { nativeLimits, nativeModel, nativeProviderConfig, stageNativeCredential } from "./native-provider.ts"
 import { startNativeObserver } from "./native-observer.ts"
 import { summaryHash } from "./compaction.ts"
+import { inputUsage } from "./input-usage.ts"
 import { continuationSkillDelivery, observeSkillDelivery, wireTextParts } from "./skill-delivery.ts"
 import { collectSessionEvidence } from "./session-evidence.ts"
 import { includes, maxProviderBytes, maxProviderCalls, startTransport, type Message } from "./transport.ts"
@@ -456,6 +457,7 @@ async function runArm(arm: ArmName, options: Options, scratch: string, runtimeSh
     skillAvailableAtContinue, actualFinalInput, correction, correctionObserved: !!correction &&
       !!raw.root?.some(row => row.type === "user" && row.text === correction),
     elapsedMs: performance.now() - started, sessionEvidence, requests: observer.requests, raw, ledger, beforeContinue,
+    inputUsage: inputUsage(observer.requests, !!native, sessionEvidence),
     workload: workload?.snapshot({ rows: raw.root, requests: observer.requests, anchorAnswerId: corrected?.id ?? initial?.id,
       finalUserId: finalMessageId ?? undefined }) ?? null,
     decisions: { ...decisionEvidence, grade: decisionGrade }, gate, gateChecks, compaction, brief: { ...briefEvidence, checks: briefChecks },

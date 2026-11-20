@@ -124,6 +124,7 @@ async function fixture() {
 
   async function attach(overrides: Record<string, unknown> = {}) {
     const hooks = new Map<string, Hook>()
+    let advertisedInput: { properties: Record<string, unknown> & { action: { enum: string[] } }; required: string[] }
     let execute: Execute | undefined
     const hook = async (kind: string, callback: Hook) => {
       hooks.set(kind, callback)
@@ -180,8 +181,9 @@ async function fixture() {
       } },
       tool: {
         async transform(add: (editor: unknown) => void) {
-          add({ get: () => undefined, add: (definition: { name: string; execute: Execute }) => {
+          add({ get: () => undefined, add: (definition: { name: string; execute: Execute; input: typeof advertisedInput }) => {
             expect(definition.name).toBe(TOOL)
+            advertisedInput = definition.input
             execute = definition.execute
           } })
           return { dispose: async () => { execute = undefined } }
@@ -193,7 +195,7 @@ async function fixture() {
       if (!execute) throw new Error("tool missing")
       return JSON.parse((await execute({ action, ...fields }, { sessionID, agent, signal: new AbortController().signal })).content)
     }
-    return { call, detach, hooks }
+    return { call, detach, hooks, get toolInput() { return advertisedInput } }
   }
 
   return { directory, sessions, histories, attach, counters, serviceCalls, state, catalog, installProcedure }
@@ -206,6 +208,28 @@ async function ready(f: Awaited<ReturnType<typeof fixture>>, options?: unknown) 
   expect((await host.call("dispatch")).work.status).toBe("result_recorded")
   return host
 }
+
+test("the owner and checker receive only their action schemas while the registered contract stays intact", async () => {
+  const f = await fixture()
+  const host = await ready(f)
+  const { workerSessionId, runId } = (await host.call("start")).worker
+  async function projected(sessionID: string, agent: string, input = host.toolInput) {
+    const request = { sessionID, agent, system: [], messages: [], tools: { [TOOL]: { description: "ALG", input } } }
+    await host.hooks.get("context")!(request)
+    return request.tools[TOOL].input
+  }
+  const root = await projected(owner, "build"), worker = await projected(workerSessionId, checkerAgent)
+  expect(root.properties.action.enum).toContain("revoke")
+  expect(root.properties.action.enum).not.toContain("result")
+  expect(root.properties).not.toHaveProperty("citation")
+  expect(worker.properties.action.enum).toEqual(["read", "result", "procedure"])
+  expect(worker.required).toEqual(["action", "runId"])
+  expect(worker.properties).not.toHaveProperty("next_action")
+  expect(host.toolInput.properties.action.enum).toContain("result")
+  const modified = { ...host.toolInput, required: ["action", "custom"] }
+  expect(await projected(owner, "build", modified)).toBe(modified)
+  expect((await host.call("read", { runId })).error).toBe("CHECKER_REQUIRED")
+})
 
 test("an invalid dispatch returns its exact argument contract before any service call", async () => {
   const f = await fixture()

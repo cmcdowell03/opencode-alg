@@ -155,7 +155,7 @@ const pending = new Map<string, Promise<unknown>>()
 
 export class OwnerBrief {
   private readonly entry: Entry
-  private readonly projected = new WeakMap<Request["messages"], Request["messages"][number]>()
+  private readonly projected = new WeakSet<Request["messages"][number]>()
 
   constructor(private readonly host: Host, private readonly readSnapshot: ReadSnapshot) {
     if (host.context.app.version !== HOST_VERSION) throw new Error("BRIEF_HOST_UNSUPPORTED")
@@ -294,11 +294,10 @@ export class OwnerBrief {
   }
 
   private removeProjection(request: Request) {
-    const prior = this.projected.get(request.messages)
-    if (prior) {
-      const index = request.messages.indexOf(prior)
-      if (index !== -1) request.messages.splice(index, 1)
-      this.projected.delete(request.messages)
+    // Later context hooks may copy the message list while retaining the exact
+    // fact message. Only remove objects this instance previously inserted.
+    for (let index = request.messages.length - 1; index >= 0; index--) {
+      if (this.projected.has(request.messages[index]!)) request.messages.splice(index, 1)
     }
   }
 
@@ -319,7 +318,7 @@ export class OwnerBrief {
     while (latestUser >= 0 && request.messages[latestUser]?.role !== "user") latestUser--
     if (latestUser < 0) return
     request.messages.splice(latestUser, 0, projection)
-    this.projected.set(request.messages, projection)
+    this.projected.add(projection)
   }
 
   /** Use the destination ID from the native session fork hook. Forks have independent ALG state. */

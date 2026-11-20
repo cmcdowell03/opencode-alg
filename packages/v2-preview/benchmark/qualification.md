@@ -59,3 +59,19 @@ conservative simultaneous binomial bounds on paired wins and losses within
 each prespecified case-class and arm-order stratum, then combines the strata
 using their planned weights. A missing arm, an indeterminate outcome or a
 reused incident prevents a superiority claim.
+
+## Input efficiency comparison
+
+Use the archived preview.3 ALG-first Luna handoff as the historical baseline.
+Run the old and new package with the same active scripted handoff on each
+platform. Compare aggregate serialized request bytes with the Build control,
+the complete decision and authority checks, and the number of accepted jobs
+and evidence searches. Run the existing local matrix, including withdrawal and
+extended handoffs, on the candidate.
+
+After local qualification, one ALG-first native pair under the existing caps
+can measure actual provider input, cache reads, output, requests and elapsed
+time. Publish failed and incomplete attempts. Assess the correct standalone
+decision, grounded retention and independent workflow evidence alongside usage.
+The paired Build arm measures run-to-run variation. A comparison with one
+historical run cannot isolate which change caused a difference.

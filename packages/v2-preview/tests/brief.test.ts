@@ -309,6 +309,8 @@ test("request-local facts preserve the next user request and the tool call/resul
   ] as Request["messages"]
   const request = { ...caller, messages: [...history] }
   await Promise.all([f.brief.project(request), f.brief.project(request)])
+  request.messages = [...request.messages]
+  await f.brief.project(request)
   const fact = request.messages[1]
   const factText = JSON.stringify(fact)
   expect(fact?.role).toBe("user")
