@@ -106,6 +106,11 @@ the native checker child against one cached row and exported the explicitly
 recorded disposition without a model request. The case provider was
 scripted. [Platform receipts](evidence/read-only-qualification-2.3.2.json)
 
+Preview.10 corrected the missing-source field in an acknowledged export. The
+new regression reproduced the extra entry on preview.9. Windows and native
+Linux each passed 287 tests on the corrected package, along with the four
+installed scenarios and six scripted comparison arms. [Corrected package receipts](evidence/read-only-qualification-preview10-2.3.2.json)
+
 ## Run the recovery scenario
 
 From the repository root, run this command in PowerShell or Bash. Use absolute

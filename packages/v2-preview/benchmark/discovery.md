@@ -1,5 +1,52 @@
 # Blinded defect-discovery pilot
 
+## Measured read-only comparison
+
+All six predeclared Luna trials completed on OpenCode 2.3.2 with preview.9.
+Both ALG sessions recorded their findings and explicit disposition, read the
+same revision back, and exported a matching file. Neither submitted an external
+job. All six assistants returned the requested JSON shape. There were zero
+duplicate source reads within a role. The focused arms used the same
+harness-scheduled independent child. The native `/alg-review` command has
+separate installed-host coverage.
+
+| Condition | Complete task passes | Fully supported closures on Pine | Correctly supported abstentions on Elm | Model requests | Total provider tokens |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Stock Build | 0/2 | 0/1 | 0/1 | 6 | 12,128 |
+| Build with focused checker | 1/2 | 0/1 | 1/1 | 16 | 42,108 |
+| ALG with focused checker | 0/2 | 0/1 | 0/1 | 42 | 655,170 |
+
+On Pine, ALG identified the repeated reservation and the separate picking
+shortage on the first consignment. It attributed the other discrepancy to
+carrier tare, then called a one-unit discrepancy two units and closed the
+incident. All three arms fell short of full closure. The frozen rubric maps a
+compound claim to at most one target and requires row citations. Its recall
+score can therefore omit an explanation the assistant actually wrote.
+
+On Elm, all three assistants identified the missing signed tally and withheld
+closure. Independent review supported both ALG claims. Its final answer added
+a citation to the entire procedure file, which the owner had read but which
+did not meet the requested row-citation format. Stock Build omitted required
+rows. Only Build with the focused checker met every requirement.
+ALG's saved follow-up asked for the signed tally. A diagnostic requiring
+the finding's missing-evidence text to equal its bare path missed that
+match because the finding described the tally in a sentence.
+
+ALG used about 15.6 times the total provider tokens of the matched checker
+control. These totals include cached input. Both ALG sessions read eight
+sources per role; some repeated ledger status responses exceeded 23,000
+characters. These observations support testing compact acknowledgements and
+on-demand citation detail. Source provenance alone cannot check a numerical
+magnitude. Two incidents support a deployment finding and a diagnostic
+comparison. They give no reliable estimate of an overall accuracy advantage.
+[Frozen protocol](../evidence/read-only-discovery-luna-freeze.json) ·
+[Answers, blinded decisions and usage](../evidence/read-only-discovery-luna.json)
+
+Elm also exposed an export defect. The owner recorded one missing path and
+the exporter appended the finding's prose explanation as a second entry.
+Preview.10 preserves the owner-recorded list verbatim. The measured results
+above describe preview.9.
+
 ## Focused read-only pilot
 
 Select `--variant focused-read-only` for the new two-incident pilot. Pine
