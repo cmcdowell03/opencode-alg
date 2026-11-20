@@ -313,6 +313,14 @@ withdrawn procedure, or incomplete report calls for reconciliation or abstention
 A new task takes the normal investigation path. The initial release covers
 explicit recurring flat JSON objects with bounded fields and scalar values.
 
+In the capped Luna pair, ALG used all 24 calls before it could answer
+`Continue.`. Its corrected report already counted four verified corrections
+before compaction. Recomputing the join from the source rows gives three.
+Build returned all seven fields correctly in 14 calls. The saved report
+passed ALG's citation checks in offline replay. Derived measurements still
+need independent verification before they can be treated as facts.
+[Delivery qualification results](evidence/report-delivery-2.3.2.json)
+
 The paired handoff receipt records cumulative UTF-8 request bytes by phase.
 Native runs also record provider input and output tokens and matched host cache
 reads. Cache reads are included in input tokens. Scripted runs can compare request
