@@ -1,5 +1,83 @@
 # Blinded defect-discovery pilot
 
+## Focused read-only pilot
+
+Select `--variant focused-read-only` for the new two-incident pilot. Pine
+contains coexisting defects on one consignment. Elm has an unavailable record
+that prevents closure and a separate diagnosable defect. Both incidents run
+once in each of three assigned conditions: Build, Build with a focused ordinary
+checker, and read-only ALG with the same focused ordinary checker. The freeze
+preselects both incidents and their arm order.
+
+Both checkers get the same question from a public triage record, the same case,
+and the same source catalog, permissions, model, and read cap. Each starts in a
+fresh child without the owner's answer. Root sessions share the same source
+catalog and root read cap. All arms share the same model and aggregate
+48-request and 20-minute limits. Both reviewed arms have the same 48-call
+MCP source allowance for the checker, alongside the same 48-call allowance for
+the root. Build alone has one root turn. Both reviewed arms have the same
+initial, checker, and revision turn structure. The ALG-only instructions explain
+how to use the installed controls. The harness supplies the common checker
+question and records any separate evidence-linked question the ALG owner wrote.
+
+The scored output is the root assistant's actual final message. The first
+outcome dimension is strict JSON format on that raw text. The text grader can
+recover one unambiguous report object from fenced or wrapped text for semantic
+and citation scoring. Raw text without a recoverable report is counted as
+unscored content and appears in the format and assigned-arm results. A blind
+reviewer evaluates every recovered claim from the anonymous packet, including
+known categories. The frozen grade then reports separately:
+
+- Supported defect recall among content-scored answers, omitted and
+  unsubstantiated defects, and findings missing required row citations.
+- Citations backed by completed root `sources_discovery_read` results
+  matched to the source server receipt and contents. Checker reads have
+  their own namespace and receipts.
+- Correct disposition, exact unavailable evidence, complete incident closure,
+  supported abstention, and unsupported closure. The combined task pass also
+  requires strict format and verified citations.
+- For ALG, acknowledged finding writes, exact finding and closure readback at
+  the same decision revision, and a current `owner_recorded` report at the
+  same evidence revision. This operational receipt defines verified ledger
+  uptake. The canonical report's disposition, missing evidence, and
+  citation coverage, and the unresolved-evidence question are scored
+  separately. The native `/alg-report` export is captured after the final
+  answer when eligible and checked for matching bytes and zero added model
+  requests or source calls. The exported report has its own receipt.
+
+Report all issued arms by assignment, including budget exhaustion, apparatus
+failure, and unusable answers. The verified-ledger subset is descriptive.
+Treat the incident as the paired unit and publish the two paired results as a
+pilot. Loopback answers are scripted to exercise the receipts and grader.
+
+### Local qualification and native freeze
+
+Run from the shared checkout. Use the same explicit `$hostPath` and
+`$stagedPackage` for local qualification, freeze, and authorized execution.
+Choose fresh destinations whose parent directories already exist.
+
+```powershell
+bun --no-install packages/v2-preview/build.ts $stagedPackage
+bun test packages/v2-preview/benchmark/discovery-focused.test.ts packages/v2-preview/benchmark/discovery-native.test.ts packages/v2-preview/tests/discovery-cases.test.ts packages/v2-preview/tests/discovery-grade.test.ts packages/v2-preview/tests/discovery-finalize.test.ts
+bun --no-install packages/v2-preview/benchmark/discovery-run.ts --variant focused-read-only --case all --host $hostPath --package $stagedPackage --out $localReceipts
+```
+
+After local acceptance, freeze the exact staged host and package. The freeze
+pins source hashes, both cases and their oracles, arm order, both checker
+prompts, the revision and ALG prompts, and the budgets. Execute only the
+approved freeze. Keep its private receipts and key separate from the blind
+packets, and have the independent reviewer return decisions before unblinding.
+
+```powershell
+bun --no-install packages/v2-preview/benchmark/discovery-run.ts --variant focused-read-only --case all --host $hostPath --package $stagedPackage --native-model openai/gpt-6-luna --freeze $freeze
+# The next command makes paid model calls. Run only after approval.
+bun --no-install packages/v2-preview/benchmark/discovery-run.ts --variant focused-read-only --case all --host $hostPath --package $stagedPackage --native-model openai/gpt-6-luna --frozen $freeze --allow-model-calls --out $nativeReceipts
+bun --no-install packages/v2-preview/benchmark/discovery-finalize.ts --review-guide-focused
+bun --no-install packages/v2-preview/benchmark/discovery-finalize.ts --private "$nativeReceipts/private" --blinded "$nativeReceipts/blinded" --frozen $freeze --decisions $blindDecisions --output $adjudicatedReport
+```
+
+## Historical five-arm pilot
+
 The primary question is whether ALG helps an investigator find *every* material
 defect and cite the records that establish it. A second question is whether
 asking an independent reviewer to seek counterevidence adds value over an
@@ -77,7 +155,8 @@ receipts and the arm key apart from the blinded review packets.
 
 Use `discovery-finalize.ts --review-guide` for reviewer instructions and
 `--help` for the finalization command. Keep the original independent freeze
-and run receipts. When grading a historical pilot, use the frozen benchmark
-sources from its commit and the finalizer used for adjudication. It verifies
+and run receipts. The historical Luna benchmark was frozen at `4b1d378` and
+adjudicated with the finalizer at `dedcab5`. Use those revisions for historical
+reproduction. The finalizer verifies
 the source hashes, original read ledger, answers, anonymous packets, and
 review decisions before writing a separate results file.
