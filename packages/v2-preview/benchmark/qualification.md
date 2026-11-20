@@ -75,3 +75,23 @@ time. Publish failed and incomplete attempts. Assess the correct standalone
 decision, grounded retention and independent workflow evidence alongside usage.
 The paired Build arm measures run-to-run variation. A comparison with one
 historical run cannot isolate which change caused a difference.
+
+## Post-compaction report delivery
+
+Run the installed scripted delivery checks on Windows and Linux.
+
+```sh
+bun packages/v2-preview/benchmark/delivery-acceptance.ts <opencode-2.3.2-binary> <absolute-staged-bundle-path>
+```
+
+The ready case restarts the host after compaction. The first bare continuation
+must return all seven fields in one request with zero tool calls. The three
+remaining cases independently supersede the decision, withdraw approval and
+remove a required reference. Each must withhold the stale answer and identify
+the reason. The scripted responder can only see the on-wire handoff.
+
+Retain the existing local qualification matrix and native grading criteria.
+After the local gates pass, run one capped ALG-first Luna/Build pair on the
+same incident. Compare continuation and whole-run input, cache reads, output,
+calls, accepted searches and the independent answer grade against preview.4.
+Report partial arms and failed gates explicitly.

@@ -295,6 +295,24 @@ prerequisite in prose and omitted both evidence references. Build returned
 all seven fields in the requested format. The native run missed the acceptance
 gate. [Comparison and receipt hashes](evidence/input-usage-2.3.2.json)
 
+### Delivering a recurring report after compaction
+
+Preview.5 preserves an explicitly requested recurring JSON report across the
+native OpenCode compaction boundary. Before the host drops the old messages,
+ALG records the requested fields and their last reported scalar values in the
+owner's investigation journal. It binds the report to the acknowledged
+decision, settled work and manifest, procedure approval, and compaction ID.
+Source references must occur in earlier tool results or a user's structured
+evidence handoff. Counts and other reported values retain their original status
+as model observations.
+
+On the first bare `Continue.` after that compaction, the owner can return the
+report directly. ALG checks the live binding, supplies the fields as user-role
+data, and keeps its readiness instruction separate. A changed decision,
+withdrawn procedure, or incomplete report calls for reconciliation or abstention.
+A new task takes the normal investigation path. The initial release covers
+explicit recurring flat JSON objects with bounded fields and scalar values.
+
 The paired handoff receipt records cumulative UTF-8 request bytes by phase.
 Native runs also record provider input and output tokens and matched host cache
 reads. Cache reads are included in input tokens. Scripted runs can compare request

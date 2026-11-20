@@ -10,8 +10,9 @@ import type { PreQueryGate } from "../core/pre-query.ts"
 import { createPreQueryGate, preQueryPolicySchema, PreQueryBlockedError } from "./pre-query.ts"
 import { createOwnerContinuation } from "./continuation.ts"
 import { OwnerBrief } from "./brief.ts"
+import { DeliveryContext } from "./delivery-context.ts"
 import { projectPreQueryReceipts } from "./pre-query-projection.ts"
-import { runContainedPath } from "../../../src/store.ts"
+import { runContainedPath, runDir } from "../../../src/store.ts"
 import { registerTeamSources } from "./team-source.ts"
 import { registerResearchWorkers, researchRolesSchema, researchEvidenceOptionsSchema } from "./research-workers.ts"
 import { InvestigationWorkInputSchema } from "../../../src/investigation/index.ts"
@@ -183,6 +184,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
     return seen?.source === pin.sourceSha256 && seen.body === pin.sha256
   })
   const bridge = trustedBridge(config, ctx.location.project.id, gate)
+  const delivery = new DeliveryContext()
   const brief = bridge ? new OwnerBrief(host, async owner => {
     const view = bridge.primary(scope(owner))
     if (!view) return null
@@ -463,6 +465,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
 
   const recovery = async (request: SessionContext, compacting: boolean) => {
     if (disposed) return
+    delivery.clear(request)
     // The native host assembles keyed entries before either hook. Scrub inherited
     // or unauthorized owner state even when this turn belongs to another agent.
     const hasBrief = brief ? await brief.prepareRequest(request) : false
@@ -528,6 +531,27 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
         }
       } catch {
         request.system.push({ type: "text", text: "ALG research procedure unavailable. Use current verification before relying on prior procedure text." })
+      }
+      if (view?.procedurePin && hasBrief && bridge) {
+        await delivery.prepare(request, compacting, directory, store.runId,
+          () => ctx.session.context({ sessionID: owner.id }),
+          async () => {
+            const fresh = await host.owner(request)
+            await ctx.permission.assert({ sessionID: fresh.id, agent: request.agent, action: TOOL, resources: ["*"] })
+            const before = bridge.primary(scope(fresh))
+            if (!before?.procedurePin || !before.decision_revision) return "stale_revision"
+            const procedure = await selectedProcedure(before, false).catch(() => undefined)
+            if (!procedure || !config.approvedProcedureSha256) return "revoked"
+            const after = bridge.primary(scope(fresh))
+            const work = after?.work
+            if (!after || after.revision !== before.revision || !work?.manifest_digest ||
+                (work.status !== "reusable" && work.status !== "result_recorded")) return "stale_revision"
+            return { parentJournalPath: runDir(directory, store.runId), ownerSessionId: fresh.id,
+              projectId: fresh.projectID, ownerAgent: request.agent, decision_revision: after.decision_revision,
+              next_action: after.decision.next_action, work: { work_key: work.work_key,
+                manifest_digest: work.manifest_digest, status: work.status },
+              approval: { revision: config.approvedProcedureSha256, procedure_sha256: procedure.sha256 }, runtimeSha256 }
+          }).catch(() => { /* An unavailable receipt or denied owner cannot supply a delivery. */ })
       }
     } catch {
       request.system.push({ type: "text", text: "ALG V2 investigation status unavailable; reconcile." })
