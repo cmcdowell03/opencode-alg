@@ -13,7 +13,7 @@ import { object } from "./handoff-case.ts"
 import { type ArmName, type Host, type Turn, armNames, checkerName, contextWindow, installAlg, observeTurn,
   pluginId, prepareHost, registerSkill, submitTurn } from "./host.ts"
 import { startNativeObserver } from "./native-observer.ts"
-import { nativeLimits, nativeModel, nativeProviderConfig, stageNativeCredential } from "./native-provider.ts"
+import { limitsFor, nativeModel, nativeProviderConfig, stageNativeCredential } from "./native-provider.ts"
 import { summaryHash } from "./compaction.ts"
 import { inputUsage } from "./input-usage.ts"
 import { collectSessionEvidence } from "./session-evidence.ts"
@@ -49,7 +49,8 @@ async function runArm(arm: ArmName, options: Options, scratch: string, bundleSha
   }
   const providerOptions = { id: model.id, classify, stale: "unsupported", correction: handoffHeader,
     skill: () => skill?.witness }
-  const native = options.native && startNativeObserver(providerOptions)
+  const profile = options.nativeChildAudit ? "handoff-v1" : undefined
+  const native = options.native && startNativeObserver({ ...providerOptions, profile })
   const scripted = native ? undefined : startTransport({ ...providerOptions, seed: 103, decide: scriptedEvidenceHandoff })
   const observer = native || scripted!
   observer.releaseSummary()
@@ -71,7 +72,7 @@ async function runArm(arm: ArmName, options: Options, scratch: string, bundleSha
     const fixture = await fixtureProject(scratch, "project")
     const project = await prepareHost(scratch, { model, providerUrl: scripted?.url, checkerUrl: evidence.checkerEndpoint,
       evidenceUrl: evidence.endpoint, skill: { name: skillId, content: evidenceSkill },
-      providers: native ? nativeProviderConfig(contextWindow, model.id) : undefined, bundle: factory ? options.bundle : undefined })
+      providers: native ? nativeProviderConfig(contextWindow, model.id, profile) : undefined, bundle: factory ? options.bundle : undefined })
     project.config.compaction.auto = false
     const env: NodeJS.ProcessEnv = project.settings.env
     env.PATH = dirname(Bun.which("git")!) + delimiter + env.PATH
@@ -119,7 +120,7 @@ async function runArm(arm: ArmName, options: Options, scratch: string, bundleSha
     async function turn(text: string, session = root.id, record?: (id: string) => void) {
       const id = await submitTurn(host!, session, text)
       record?.(id)
-      return waitFor(() => observeTurn(host!, session, id), native ? 85_000 : 30_000, "Host response deadline")
+      return waitFor(() => observeTurn(host!, session, id), native ? (profile ? 240_000 : 85_000) : 30_000, "Host response deadline")
     }
     phase = "initial"
     initial = await turn(initialPrompt, root.id, id => { initialUserId = id })
@@ -261,7 +262,8 @@ export async function runEvidenceHandoff(options: Options) {
       passed: build.passed && alg.passed && Object.values(parity).every(Boolean),
       mode: options.native ? "native-openai-oauth" : "scripted-transport", mechanicsOnly: !options.native,
       freeze, nativeChildAudit: !!options.nativeChildAudit,
-      limits: options.native ? nativeLimits : { calls: maxProviderCalls, requestBytes: maxProviderBytes }, arms }
+      limits: options.native ? limitsFor(options.nativeChildAudit ? "handoff-v1" : undefined) :
+        { calls: maxProviderCalls, requestBytes: maxProviderBytes }, arms }
   } finally {
     const real = await realpath(scratch)
     if (dirname(real) !== parent || !basename(real).startsWith(prefix)) throw new Error("Evidence handoff scratch cleanup refused")

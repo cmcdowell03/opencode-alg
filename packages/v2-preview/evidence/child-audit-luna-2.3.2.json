@@ -1,0 +1,311 @@
+{
+  "schema": 1,
+  "model": "openai/gpt-6-luna",
+  "hostVersion": "2.3.2",
+  "implementationCommit": "08d4b8d",
+  "qualifiedObserverCommit": "39fffc8",
+  "firstAttempt": {
+    "buildRequests": 4,
+    "commit": "4b1d378",
+    "rawSha256": "d2259a4c4a21c19de8f145c8108d171d6b41fe7cec2cf42ccfd138106ce375e6",
+    "interception": "The discovery observer rejected the owner compaction request before dispatch.",
+    "algRequests": 7
+  },
+  "pairedMeasurement": {
+    "scenario": "held-out",
+    "mode": "native-openai-oauth",
+    "passed": false,
+    "order": [
+      "alg",
+      "build"
+    ],
+    "parity": {
+      "model": true,
+      "skill": true,
+      "treatment": true,
+      "budget": true,
+      "correction": true,
+      "work": true,
+      "runtimeUnchanged": true
+    },
+    "nativeChildAudit": true,
+    "limits": {
+      "calls": 48,
+      "requestBytes": 262144,
+      "responseBytes": 524288,
+      "armRequestBytes": 12582912,
+      "armResponseBytes": 25165824,
+      "outputTokens": 4096,
+      "outputDeltaBytes": 16384,
+      "armOutputTokens": 196608,
+      "requestMs": 90000,
+      "armMs": 1200000
+    },
+    "freeze": {
+      "evidenceSha256": "a0f8ba427d702e6fec132aec846993b02ce113e6cdfa786a359d8fe0b0a48768",
+      "oracleSha256": "cd2e5faf249a5248c42e2c17774967315304e74d7dc8fd8f47804123d75b2d45",
+      "graderSha256": "983f188068326de93dd55cf130de639f23fe1798f4c36359ce0f7e0e7b6f3ef5",
+      "skillSha256": "56be75ac46406e5cc8aa32ebe78fc78ae0f29270b47c4702c47f2127b467d2eb",
+      "promptsSha256": "5c0ba554d84382feb5ebba0c7f811e0c0ec0b5ee98eb483d9f6733dec0f13785"
+    },
+    "rawSha256": "adcdd9f9d49354d15317dbdd6a9fb128c002eb1d8952adcd28baa836755113e9",
+    "bundleSha256": "60fee8733847b3df124c0dc2c074359e85c4cc0dccf0bd3fcf516f8d38a5531b",
+    "arms": {
+      "alg": {
+        "passed": false,
+        "failure": null,
+        "phase": "complete",
+        "checks": {
+          "rootAndCheckerScopes": true,
+          "verifiedRestart": true,
+          "realCutAfterUnfinishedTurn": true,
+          "bareContinuation": true,
+          "observedCorrection": true,
+          "governedBookkeeping": true
+        },
+        "grade": {
+          "passed": false,
+          "checks": {
+            "stoppedWithUnfinishedEvidence": true,
+            "resumedFromNextLimit": true,
+            "resumedAnswer": false,
+            "finalAnswer": false,
+            "boundedWork": true,
+            "independentAudit": true,
+            "noDuplicateAdmissions": true,
+            "admissionLedger": true,
+            "unfinishedNotCertified": true,
+            "resumedEvidenceProjection": true,
+            "currentReport": true
+          },
+          "duplicateAdmissions": 0
+        },
+        "limits": {
+          "initial": [
+            4
+          ],
+          "resume": [
+            8,
+            12
+          ]
+        },
+        "elapsedMs": 70039.0841,
+        "restart": {
+          "fromPid": 194228,
+          "toPid": 196848,
+          "transcriptStable": true
+        },
+        "usage": {
+          "inputTokens": 104896,
+          "cachedInputTokens": 52608,
+          "uncachedInputTokens": 52288,
+          "outputTokens": 1708,
+          "requests": 25,
+          "requestBytes": 553338
+        },
+        "providerRequests": 25,
+        "acceptedSourceReads": 4,
+        "noticeIndex": 22,
+        "relayIndex": 30,
+        "observations": [
+          {
+            "index": 9,
+            "action": "status",
+            "ok": true,
+            "revision": 0,
+            "status": "incomplete",
+            "kind": "need_page",
+            "measurements": null
+          },
+          {
+            "index": 17,
+            "action": "status",
+            "ok": true,
+            "revision": 0,
+            "status": "incomplete",
+            "kind": "need_page",
+            "measurements": null
+          },
+          {
+            "index": 19,
+            "action": "status",
+            "ok": true,
+            "revision": 0,
+            "status": "incomplete",
+            "kind": "need_audit",
+            "measurements": {
+              "cohortSize": 12,
+              "defects": 5
+            }
+          },
+          {
+            "index": 24,
+            "action": "status",
+            "ok": true,
+            "revision": 0,
+            "status": "provisional",
+            "kind": "verified",
+            "measurements": {
+              "cohortSize": 12,
+              "defects": 5,
+              "verifiedClockCorrections": 2
+            }
+          },
+          {
+            "index": 26,
+            "action": "set_next_measurement",
+            "ok": true,
+            "revision": 1,
+            "status": null,
+            "kind": null,
+            "measurements": null
+          },
+          {
+            "index": 28,
+            "action": "status",
+            "ok": true,
+            "revision": 1,
+            "status": "verified",
+            "kind": null,
+            "measurements": {
+              "cohortSize": 12,
+              "defects": 5,
+              "verifiedClockCorrections": 2,
+              "inspectionRef": "52c23ff70a0d5c0c9bde",
+              "auditRef": "bd1285a1af511ca29142",
+              "nextAction": "replay-clock-join",
+              "prerequisite": "verified-clock-audit"
+            }
+          }
+        ],
+        "answers": [
+          {
+            "index": 10,
+            "fields": {
+              "status": "incomplete",
+              "cohortSize": null,
+              "defects": null,
+              "verifiedClockCorrections": null,
+              "nextAction": null,
+              "prerequisite": null
+            }
+          },
+          {
+            "index": 20,
+            "fields": {
+              "status": "awaiting_audit",
+              "cohortSize": 12,
+              "defects": 5,
+              "verifiedClockCorrections": null,
+              "nextAction": null,
+              "prerequisite": null
+            }
+          },
+          {
+            "index": 29,
+            "fields": {
+              "status": "verified",
+              "cohortSize": 12,
+              "defects": 5,
+              "verifiedClockCorrections": 2,
+              "nextAction": "replay-clock-join",
+              "prerequisite": "verified-clock-audit"
+            }
+          }
+        ]
+      },
+      "build": {
+        "passed": false,
+        "failure": null,
+        "phase": "complete",
+        "checks": {
+          "rootAndCheckerScopes": true,
+          "verifiedRestart": true,
+          "realCutAfterUnfinishedTurn": true,
+          "bareContinuation": true,
+          "observedCorrection": true,
+          "governedBookkeeping": true
+        },
+        "grade": {
+          "passed": false,
+          "checks": {
+            "stoppedWithUnfinishedEvidence": true,
+            "resumedFromNextLimit": true,
+            "resumedAnswer": false,
+            "finalAnswer": true,
+            "boundedWork": true,
+            "independentAudit": true,
+            "noDuplicateAdmissions": true,
+            "admissionLedger": true,
+            "noAlgEvidenceReport": true
+          },
+          "duplicateAdmissions": 0
+        },
+        "limits": {
+          "initial": [
+            4
+          ],
+          "resume": [
+            8,
+            12
+          ]
+        },
+        "elapsedMs": 44555.284400000004,
+        "restart": {
+          "fromPid": 194460,
+          "toPid": 203108,
+          "transcriptStable": true
+        },
+        "usage": {
+          "inputTokens": 36816,
+          "cachedInputTokens": 17792,
+          "uncachedInputTokens": 19024,
+          "outputTokens": 1112,
+          "requests": 15,
+          "requestBytes": 196107
+        },
+        "providerRequests": 15,
+        "acceptedSourceReads": 4,
+        "noticeIndex": 14,
+        "relayIndex": 16,
+        "observations": [],
+        "answers": [
+          {
+            "index": 4,
+            "fields": {
+              "status": "incomplete",
+              "cohortSize": null,
+              "defects": null,
+              "verifiedClockCorrections": null,
+              "nextAction": null,
+              "prerequisite": null
+            }
+          },
+          {
+            "index": 15,
+            "fields": {
+              "status": "verified",
+              "cohortSize": 12,
+              "defects": 5,
+              "verifiedClockCorrections": 2,
+              "nextAction": "replay-clock-join",
+              "prerequisite": "verified-clock-audit"
+            }
+          },
+          {
+            "index": 17,
+            "fields": {
+              "status": "verified",
+              "cohortSize": 12,
+              "defects": 5,
+              "verifiedClockCorrections": 2,
+              "nextAction": "replay-clock-join",
+              "prerequisite": "verified-clock-audit"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "interpretation": "Both arms used one real compaction and one process restart. The native ALG audit was provisional at index 24, acknowledged at 26 and certified at 28, before the explicit relay at 30. Both found five defects and two corrections. The frozen gate required exact report shapes at the requested turns. ALG returned an awaiting_audit report at resume and prose after the explicit relay. Build returned prose at resume."
+}
