@@ -52,8 +52,14 @@ const anchorSchema = z.discriminatedUnion("kind", [
 function conflictsWithAction(value: Record<string, unknown>, action: string): boolean {
   // A recorded action can include structured qualifiers after its identifier.
   const qualified = /^([\w-]+)(?:;\s*[\w-]+=[\w.-]+)+$/.exec(action)
-  return ["nextAction", "next_action"].some(name =>
-    Object.hasOwn(value, name) && value[name] !== action && value[name] !== qualified?.[1])
+  if (["nextAction", "next_action"].some(name =>
+    Object.hasOwn(value, name) && value[name] !== action && value[name] !== qualified?.[1])) return true
+  if (!qualified) return false
+  for (const entry of action.split(";").slice(1)) {
+    const [field, expected] = entry.trim().split("=")
+    if (field && Object.hasOwn(value, field) && value[field] !== expected) return true
+  }
+  return false
 }
 
 function refKey(name: string): boolean {

@@ -214,4 +214,10 @@ test("an action identifier agrees with the same bound action carrying structured
   expect(captureDelivery([...prior, answer("matching", '{"nextAction":"recheck"}')], qualified)?.recordedAnswer)
     .toEqual({ nextAction: "recheck" })
   expect(captureDelivery([...prior, answer("conflict", '{"nextAction":"audit-9"}')], qualified)).toBeUndefined()
+  const withRequirement = [user("request", "For each decision return one JSON object with nextAction and prerequisite."), write]
+  const both = { nextAction: "recheck", prerequisite: "audit-9" }
+  expect(captureDelivery([...withRequirement, answer("both", JSON.stringify(both))], qualified)?.recordedAnswer)
+    .toEqual(both)
+  expect(captureDelivery([...withRequirement, answer("wrong", JSON.stringify({ ...both, prerequisite: "unverified" }))],
+    qualified)).toBeUndefined()
 })
