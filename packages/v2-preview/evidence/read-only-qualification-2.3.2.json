@@ -1,0 +1,382 @@
+{
+  "implementation": "ed6a728",
+  "package": "opencode-alg-v2-preview@0.1.0-preview.9",
+  "platforms": {
+    "windows": {
+      "runtime": {
+        "version": "2.3.2",
+        "binarySha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+        "packageSha256": "644b76d174bed9c90347c9df2aabb35c72a3b10d0298431fedead4a2bbb20a3d",
+        "bundleSha256": "75a28a847434996e30644b81e94879918ba26a326ec6d102b0839ca51826d184"
+      },
+      "suite": {
+        "passed": 286,
+        "failed": 0,
+        "assertions": 2768,
+        "sha256": "28d6ef0b5040670d4ddd55e78fa509cb42dad8c1cd8d7417414d2719ba402a55"
+      },
+      "installedScenarios": [
+        {
+          "scenario": "stable",
+          "initialSourceReads": 1,
+          "repeatedSourceReads": 0,
+          "remoteCalls": 0,
+          "decisionRevision": 1,
+          "decisionAuthority": "receipt_bound",
+          "citations": [
+            "inspection-notes.md"
+          ],
+          "restart": {
+            "fromPid": 223584,
+            "toPid": 226340,
+            "sessionId": "ses_e05189b7dffe3WrzXQL7MUoE5M",
+            "compactionId": "msg_1fae775a1001IN3ALbSYmt4yAZ"
+          },
+          "report": {
+            "authority": "provisional",
+            "data": {
+              "disposition": "indeterminate",
+              "claims": [
+                {
+                  "finding": "Unit P-42 passed the pressure hold.",
+                  "scope": "Fixture bench P-42",
+                  "evidence": [
+                    "inspection-notes.md"
+                  ]
+                }
+              ],
+              "missingEvidence": []
+            }
+          },
+          "nativePermissionDenial": true,
+          "remoteRequestsRejected": 8,
+          "commandRefusal": "REPORT_REQUIRES_ACKNOWLEDGED_DISPOSITION",
+          "commandModelRequests": 0
+        },
+        {
+          "scenario": "absent",
+          "initialSourceReads": 1,
+          "repeatedSourceReads": 0,
+          "remoteCalls": 0,
+          "decisionRevision": 0,
+          "decisionAuthority": "no_decision",
+          "citations": [],
+          "restart": {
+            "fromPid": 211920,
+            "toPid": 225284,
+            "sessionId": "ses_e051870effferSvdzKWSptL6nN",
+            "compactionId": "msg_1fae794ba001BttZwLNbNzI7es"
+          },
+          "report": {
+            "refused": "REPORT_REQUIRES_RECEIPT_BOUND_DECISION"
+          }
+        },
+        {
+          "scenario": "changed",
+          "initialSourceReads": 2,
+          "repeatedSourceReads": 0,
+          "remoteCalls": 0,
+          "decisionRevision": 1,
+          "decisionAuthority": "evidence_unavailable",
+          "citations": [],
+          "restart": {
+            "fromPid": 216300,
+            "toPid": 226056,
+            "sessionId": "ses_e05184d82ffeNdWeAVaHSswKFn",
+            "compactionId": "msg_1fae7c0f4001x3JYtjiENVanNG"
+          },
+          "report": {
+            "refused": "EVIDENCE_READ_UNVERIFIED_REFERENCE"
+          }
+        },
+        {
+          "scenario": "coexisting",
+          "initialSourceReads": 2,
+          "repeatedSourceReads": 0,
+          "remoteCalls": 0,
+          "decisionRevision": 1,
+          "decisionAuthority": "receipt_bound",
+          "citations": [
+            "inspection-notes.md",
+            "sample-counts.json#seal",
+            "sample-counts.json#drift"
+          ],
+          "restart": {
+            "fromPid": 226024,
+            "toPid": 225964,
+            "sessionId": "ses_e05182703ffeBGJWj8xjBrMM2R",
+            "compactionId": "msg_1fae7e1420014E8HUFm1ICU7nX"
+          },
+          "report": {
+            "authority": "owner_recorded",
+            "data": {
+              "disposition": "resolved",
+              "claims": [
+                {
+                  "finding": "Sensor drift remains material during warmup.",
+                  "scope": "Fixture bench P-42 warmup",
+                  "evidence": [
+                    "sample-counts.json#drift"
+                  ]
+                },
+                {
+                  "finding": "Unit P-42 passed the pressure hold.",
+                  "scope": "Fixture bench P-42",
+                  "evidence": [
+                    "inspection-notes.md"
+                  ]
+                }
+              ],
+              "missingEvidence": []
+            }
+          },
+          "commandModelRequests": 0,
+          "command": {
+            "id": "msg_1fae7eb57001DtSQd4YWF6caHU",
+            "via": "native-inbox",
+            "path": ".opencode/runs/v2-checker-5d404498cfa2cdd24849bc1b7cce60c351fc9aab214940a6/reports/decision-1-e4.json",
+            "sha256": "4a67746c3398c451998edd9ba5212b67da3f9b3cc5e47ab9a28d11b4428e2194",
+            "revision": 1,
+            "evidenceRevision": 4,
+            "authority": "owner_recorded",
+            "report": {
+              "disposition": "resolved",
+              "claims": [
+                {
+                  "finding": "Sensor drift remains material during warmup.",
+                  "scope": "Fixture bench P-42 warmup",
+                  "evidence": [
+                    "sample-counts.json#drift"
+                  ]
+                },
+                {
+                  "finding": "Unit P-42 passed the pressure hold.",
+                  "scope": "Fixture bench P-42",
+                  "evidence": [
+                    "inspection-notes.md"
+                  ]
+                }
+              ],
+              "missingEvidence": []
+            }
+          },
+          "review": {
+            "launch": "native-command",
+            "childId": "ses_algrv_1_14ac0107e6f94a04b7f841f225efa9ff",
+            "promptId": "msg_b0385a47703b459c90c63b2dbf019819",
+            "verdictCallId": "read-only-fixture-17",
+            "cachedReferences": [
+              "sample-counts.json#drift"
+            ],
+            "decisionRevision": 1,
+            "evidenceRevision": 4,
+            "findingId": "warmup-drift",
+            "childModelRequests": 2,
+            "ownerContinuationRequests": 2,
+            "result": {
+              "outcome": "supports",
+              "citations": [
+                "sample-counts.json#drift"
+              ],
+              "analysis": "The recorded warmup row supports drift above the stated floor within this fixture run.",
+              "attribution": "independent-model-review"
+            }
+          }
+        }
+      ],
+      "installedReceiptSha256": "24e03b27a87472fbb5b7c9b48ea0b1cad2e360a1eefe1a5c66d833ff4f2ac579",
+      "scriptedComparison": {
+        "qualifiedArms": 6,
+        "reportSha256": "81b055888cab892499c5dcd6b352891902934a145b7f1989f6835e5ab5d059b7"
+      }
+    },
+    "linux": {
+      "runtime": {
+        "version": "2.3.2",
+        "binarySha256": "e6543f6e5c39c40971ba38afd1819ac852c29ac735b5a89065d3d148d47f27ad",
+        "packageSha256": "644b76d174bed9c90347c9df2aabb35c72a3b10d0298431fedead4a2bbb20a3d",
+        "bundleSha256": "75a28a847434996e30644b81e94879918ba26a326ec6d102b0839ca51826d184"
+      },
+      "suite": {
+        "passed": 286,
+        "failed": 0,
+        "assertions": 2768,
+        "sha256": "7423ae2126e4563e995a704724e777115d0ce0fe6204a4f36ed80b9a2a6f0a62"
+      },
+      "installedScenarios": [
+        {
+          "scenario": "stable",
+          "initialSourceReads": 1,
+          "repeatedSourceReads": 0,
+          "remoteCalls": 0,
+          "decisionRevision": 1,
+          "decisionAuthority": "receipt_bound",
+          "citations": [
+            "inspection-notes.md"
+          ],
+          "restart": {
+            "fromPid": 854,
+            "toPid": 880,
+            "sessionId": "ses_e051973dcffeua39FbXACa62FR",
+            "compactionId": "msg_1fae691f3001p6cYNYqOQf2dSZ"
+          },
+          "report": {
+            "authority": "provisional",
+            "data": {
+              "disposition": "indeterminate",
+              "claims": [
+                {
+                  "finding": "Unit P-42 passed the pressure hold.",
+                  "scope": "Fixture bench P-42",
+                  "evidence": [
+                    "inspection-notes.md"
+                  ]
+                }
+              ],
+              "missingEvidence": []
+            }
+          },
+          "nativePermissionDenial": true,
+          "remoteRequestsRejected": 8,
+          "commandRefusal": "REPORT_REQUIRES_ACKNOWLEDGED_DISPOSITION",
+          "commandModelRequests": 0
+        },
+        {
+          "scenario": "absent",
+          "initialSourceReads": 1,
+          "repeatedSourceReads": 0,
+          "remoteCalls": 0,
+          "decisionRevision": 0,
+          "decisionAuthority": "no_decision",
+          "citations": [],
+          "restart": {
+            "fromPid": 915,
+            "toPid": 940,
+            "sessionId": "ses_e051960cdffeemYVZndGs12z5M",
+            "compactionId": "msg_1fae6a35f001CDJ4vmu0xKIEF5"
+          },
+          "report": {
+            "refused": "REPORT_REQUIRES_RECEIPT_BOUND_DECISION"
+          }
+        },
+        {
+          "scenario": "changed",
+          "initialSourceReads": 2,
+          "repeatedSourceReads": 0,
+          "remoteCalls": 0,
+          "decisionRevision": 1,
+          "decisionAuthority": "evidence_unavailable",
+          "citations": [],
+          "restart": {
+            "fromPid": 976,
+            "toPid": 1001,
+            "sessionId": "ses_e05194f2fffe2mLDvPY277jziv",
+            "compactionId": "msg_1fae6b537001OBpJbb7e7ySknD"
+          },
+          "report": {
+            "refused": "EVIDENCE_READ_UNVERIFIED_REFERENCE"
+          }
+        },
+        {
+          "scenario": "coexisting",
+          "initialSourceReads": 2,
+          "repeatedSourceReads": 0,
+          "remoteCalls": 0,
+          "decisionRevision": 1,
+          "decisionAuthority": "receipt_bound",
+          "citations": [
+            "inspection-notes.md",
+            "sample-counts.json#seal",
+            "sample-counts.json#drift"
+          ],
+          "restart": {
+            "fromPid": 1036,
+            "toPid": 1061,
+            "sessionId": "ses_e05193cb1ffe2I70mGyFBl73pX",
+            "compactionId": "msg_1fae6ca2d0014cG6IN5phKe9hx"
+          },
+          "report": {
+            "authority": "owner_recorded",
+            "data": {
+              "disposition": "resolved",
+              "claims": [
+                {
+                  "finding": "Sensor drift remains material during warmup.",
+                  "scope": "Fixture bench P-42 warmup",
+                  "evidence": [
+                    "sample-counts.json#drift"
+                  ]
+                },
+                {
+                  "finding": "Unit P-42 passed the pressure hold.",
+                  "scope": "Fixture bench P-42",
+                  "evidence": [
+                    "inspection-notes.md"
+                  ]
+                }
+              ],
+              "missingEvidence": []
+            }
+          },
+          "commandModelRequests": 0,
+          "command": {
+            "id": "msg_1fae6d40a001iHb3VBIy8kpkCQ",
+            "via": "native-inbox",
+            "path": ".opencode/runs/v2-checker-bddd9976394b38fb13cca6409b6c44b4cda307db0d031e33/reports/decision-1-e4.json",
+            "sha256": "4a67746c3398c451998edd9ba5212b67da3f9b3cc5e47ab9a28d11b4428e2194",
+            "revision": 1,
+            "evidenceRevision": 4,
+            "authority": "owner_recorded",
+            "report": {
+              "disposition": "resolved",
+              "claims": [
+                {
+                  "finding": "Sensor drift remains material during warmup.",
+                  "scope": "Fixture bench P-42 warmup",
+                  "evidence": [
+                    "sample-counts.json#drift"
+                  ]
+                },
+                {
+                  "finding": "Unit P-42 passed the pressure hold.",
+                  "scope": "Fixture bench P-42",
+                  "evidence": [
+                    "inspection-notes.md"
+                  ]
+                }
+              ],
+              "missingEvidence": []
+            }
+          },
+          "review": {
+            "launch": "native-command",
+            "childId": "ses_algrv_1_0d2a4637828d4833ab375499acdcf60f",
+            "promptId": "msg_91ca83f205d141948d753b730101d209",
+            "verdictCallId": "read-only-fixture-17",
+            "cachedReferences": [
+              "sample-counts.json#drift"
+            ],
+            "decisionRevision": 1,
+            "evidenceRevision": 4,
+            "findingId": "warmup-drift",
+            "childModelRequests": 2,
+            "ownerContinuationRequests": 2,
+            "result": {
+              "outcome": "supports",
+              "citations": [
+                "sample-counts.json#drift"
+              ],
+              "analysis": "The recorded warmup row supports drift above the stated floor within this fixture run.",
+              "attribution": "independent-model-review"
+            }
+          }
+        }
+      ],
+      "installedReceiptSha256": "6eee071d80145a3e00a6b89da0f25157b58244a147643f2557372074fa3cbe1a",
+      "scriptedComparison": {
+        "qualifiedArms": 6,
+        "reportSha256": "4d4d3148e4ad3322eab964b0ad8da3e76a8fb7017d1dbc55e477169d97383f07"
+      }
+    }
+  }
+}

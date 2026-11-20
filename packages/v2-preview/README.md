@@ -94,6 +94,18 @@ the export. A matching receipt establishes which source was read. Assessing
 whether that source establishes a causal claim also requires reviewing the
 finding against the evidence.
 
+### Local OpenCode 2.3.2 qualification
+
+On Windows x64 and Linux x64 under WSL2, the same preview.9 bundle passed all
+286 preview tests per platform. In each of four installed scenarios the
+harness compacted the native session, restarted the OpenCode process and
+resumed the same session. There were zero source rereads after restart and
+zero external job calls. The cases covered stable evidence, an absent source,
+a changed source and two coexisting findings. The last case also exercised
+the native checker child against one cached row and exported the explicitly
+recorded disposition without a model request. The case provider was
+scripted. [Platform receipts](evidence/read-only-qualification-2.3.2.json)
+
 ## Run the recovery scenario
 
 From the repository root, run this command in PowerShell or Bash. Use absolute
