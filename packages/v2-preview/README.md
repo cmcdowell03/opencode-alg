@@ -346,6 +346,18 @@ exposes reconciliation, and a settled manifest permits starting a checker.
 The registered execution contract still enforces permissions, revisions and
 exact retry behavior for direct calls.
 
+On OpenCode 2.3.2, Windows and WSL each passed 176 tests, six installed delivery
+cases and eight scripted pairs with the same preview.6 bundle. In one native
+Luna pair, Build returned all seven fields correctly in 15 requests and 43,929
+input tokens. ALG used 22 requests and 116,181 input tokens. It stopped at
+four inspection rows with three defects, below the required four defects.
+The host withheld the calculated values. Luna still reported one verified
+correction before and after compaction. Build read the next permitted window
+and found eight rows, seven defects and three verified corrections. Only the
+audit reference qualified for ALG's retention score. The next test should
+exercise recovery from an incomplete search before the owner issues a report.
+[Local qualification and native comparison](evidence/calculation-actions-2.3.2.json)
+
 The paired handoff receipt records cumulative UTF-8 request bytes by phase.
 Native runs also record provider input and output tokens and matched host cache
 reads. Cache reads are included in input tokens. Scripted runs can compare request

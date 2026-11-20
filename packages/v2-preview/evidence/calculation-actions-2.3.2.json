@@ -1,0 +1,426 @@
+{
+  "case": "fab-clock-handoff-01",
+  "host": "OpenCode 2.3.2",
+  "plugin_version": "0.1.0-preview.6",
+  "code_commit": "28c89030c1d7e16180cc62b4afd6f88a4bd3e42d",
+  "bundle_sha256": "973f993fad04b48384ecde51cafad0863998beebd386ad838387707086a52db6",
+  "local_qualification": {
+    "windows": {
+      "binary_sha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+      "bundle_sha256": "973f993fad04b48384ecde51cafad0863998beebd386ad838387707086a52db6",
+      "package_metadata_sha256": "b8bca7f27256c7743f56a4ed1727ae49e9277d9a9bf336c03108f82c3b78059e",
+      "tests_passed": 176,
+      "tests_failed": 0,
+      "assertions": 1589,
+      "test_log_sha256": "ce22f13301856245758aaa965a59a6de361dfc3b5538614fae158673ccd6721c",
+      "scripted_pairs_passed": 8,
+      "scripted_matrix_sha256": "9cfc623b81c55c8d8e3b140fcc10e57e54af7b42c7811f4aaab22e7f3783233b",
+      "delivery_sha256": "9b59f3cc44bcc24c8e750bbe4b9f347b33f8f583ff5b9cc1c0ab6248f9872d36",
+      "delivery_cases": {
+        "ready": true,
+        "superseded": true,
+        "revoked": true,
+        "missing-reference": true,
+        "calculation-mismatch": true,
+        "calculation-missing": true
+      }
+    },
+    "linux": {
+      "binary_sha256": "e6543f6e5c39c40971ba38afd1819ac852c29ac735b5a89065d3d148d47f27ad",
+      "bundle_sha256": "973f993fad04b48384ecde51cafad0863998beebd386ad838387707086a52db6",
+      "package_metadata_sha256": "b8bca7f27256c7743f56a4ed1727ae49e9277d9a9bf336c03108f82c3b78059e",
+      "tests_passed": 176,
+      "tests_failed": 0,
+      "assertions": 1589,
+      "test_log_sha256": "961d7487c982b93a07ce5ee8466bd91e34ccab6dc7ecf3cfbcc708c848269bc3",
+      "scripted_pairs_passed": 8,
+      "scripted_matrix_sha256": "1a6be095b7f51ecf3d04db1a6fef2f32c31f686d4d1fe13c5a76500837ff1e90",
+      "delivery_sha256": "2a690770a0f48311568316af3403fdd158236338f3d8237ce51383174c0da6bc",
+      "delivery_cases": {
+        "ready": true,
+        "superseded": true,
+        "revoked": true,
+        "missing-reference": true,
+        "calculation-mismatch": true,
+        "calculation-missing": true
+      }
+    }
+  },
+  "historical_receipt_replay": {
+    "method": "Apply the newly approved recipe to the original archived owner and correction messages through the compaction cut. No model calls.",
+    "receipts": [
+      {
+        "archive_sha256": "7ed92028a45524284624c9e4aa31514209d116dd5bf9bb3caf1a353381076fb0",
+        "reported_verified_corrections": 4,
+        "calculated": {
+          "cohortSize": 8,
+          "defects": 7,
+          "verifiedClockCorrections": 3
+        },
+        "status": "verified",
+        "recipe_sha256": "1511d5c6373e569ab6d23621692210ba342885f93f8bda6ffa51973d75bac6ba",
+        "proof_sha256": "c7de2e1abade29e2e16b54c792ff2c42f215035af280241897320201f908a02b"
+      },
+      {
+        "archive_sha256": "ef51ee4baa6f518c53c3170be8ebc5e67f8b8224e807f5ed1cc8db14413871a9",
+        "reported_verified_corrections": 3,
+        "calculated": {
+          "cohortSize": 8,
+          "defects": 7,
+          "verifiedClockCorrections": 3
+        },
+        "status": "verified",
+        "recipe_sha256": "1511d5c6373e569ab6d23621692210ba342885f93f8bda6ffa51973d75bac6ba",
+        "proof_sha256": "b6f361cdd0e717680172b9c52ed6dae2d383f9d33fef97956b817a4791a20263"
+      }
+    ]
+  },
+  "live": {
+    "model": "openai/gpt-6-luna",
+    "platform": "Windows x64",
+    "scope": "One ALG-first paired run with one real compaction per arm and a synthetic incident. Both arms received the same skill and evidence access. User prompts and independent grader were held fixed.",
+    "limits": {
+      "calls": 24,
+      "requestBytes": 196608,
+      "responseBytes": 393216,
+      "armRequestBytes": 1048576,
+      "armResponseBytes": 4194304,
+      "outputTokens": 1024,
+      "outputDeltaBytes": 4096,
+      "armOutputTokens": 12000,
+      "requestMs": 45000,
+      "armMs": 300000
+    },
+    "order": [
+      "alg",
+      "build"
+    ],
+    "receipt_sha256": "02f33ee7c0a4bcc7ac73bedbd75078dc265b61a588f42deb6f386f57379f0bc7",
+    "user_prompt_sha256": "dc412a1dbb864be7bf42602877864710f23a3fe0540550f9b52c58471edb6f37",
+    "checker_prompt_sha256": "85c5a7e075a7333d3be616b34a06ffee7a4efa2e178ad7c2a8a9cfc04940efc1",
+    "continuation_prompt": "Continue.",
+    "shared_skill_body_sha256": "d70be57d167320327148962b2d2b0e0d14f275c8e621b86dad2c9aa891b41594",
+    "parity": {
+      "model": true,
+      "skill": true,
+      "evidence": true,
+      "correction": true,
+      "finalInput": true,
+      "treatment": true,
+      "runtimeUnchanged": true
+    },
+    "qualified": false,
+    "apparatus_passed": true,
+    "standalone_passed": false,
+    "installed_behavior_passed": false,
+    "arms": {
+      "alg": {
+        "phase": "complete",
+        "failure": null,
+        "requests": 22,
+        "input_tokens": 116181,
+        "cached_input_tokens": 39936,
+        "uncached_input_tokens": 76245,
+        "output_tokens": 2365,
+        "elapsed_ms": 76999,
+        "continuation_requests": 3,
+        "continuation_input_tokens": 12961,
+        "source_admissions": 2,
+        "standalone_checks_passed": 9,
+        "standalone_checks_total": 12,
+        "total_tokens": 118546,
+        "matched_provider_request_totals": true,
+        "usage_by_phase": {
+          "root/initial": {
+            "requests": 13,
+            "requestBytes": 418061,
+            "inputTokens": 69594,
+            "outputTokens": 1265
+          },
+          "checker/checker": {
+            "requests": 3,
+            "requestBytes": 28833,
+            "inputTokens": 5679,
+            "outputTokens": 287
+          },
+          "root/correction": {
+            "requests": 2,
+            "requestBytes": 120565,
+            "inputTokens": 17918,
+            "outputTokens": 228
+          },
+          "root/summary": {
+            "requests": 1,
+            "requestBytes": 68280,
+            "inputTokens": 10029,
+            "outputTokens": 473
+          },
+          "root/continue": {
+            "requests": 3,
+            "requestBytes": 59229,
+            "inputTokens": 12961,
+            "outputTokens": 112
+          }
+        },
+        "accepted_owner_prefix_sizes": [
+          4
+        ],
+        "duplicate_source_admissions": 0,
+        "accepted_calibration_computations": 1,
+        "precompaction_corrected_report_counts": {
+          "cohortSize": 4,
+          "defects": 3,
+          "verifiedClockCorrections": 1
+        },
+        "graded_final": {
+          "cohortSize": 4,
+          "defects": 3,
+          "verifiedClockCorrections": 1,
+          "inspectionRef": "4b0b4cfdcde64bba",
+          "auditRef": "10bbef2f5a7dd3bf",
+          "nextAction": "replay-clock-join",
+          "prerequisite": "verified-clock-audit"
+        },
+        "standalone_failed_checks": [
+          "initialFacts",
+          "retainedFacts",
+          "boundedSearch"
+        ],
+        "workflow_failed_checks": [
+          "correctedCheckpoint",
+          "durableCorrectedState",
+          "refutationVerified",
+          "correctedRevision",
+          "modelProjection"
+        ],
+        "decision_grade_status": "undecidable",
+        "compactions": 1,
+        "continuation_eligible_fields": [
+          "auditRef"
+        ],
+        "continuation_retention": {
+          "eligible": 1,
+          "retained": 1,
+          "unavailable": 0,
+          "lostWrong": 0,
+          "lossBounds": [
+            0,
+            0
+          ]
+        },
+        "postcompaction_tool_calls": [
+          "skill",
+          "status"
+        ],
+        "skill_roles_on_first_continuation": [
+          "developer"
+        ],
+        "request_count_by_calculated_field_count": {
+          "0": 19
+        },
+        "rejected_actions": [
+          "reconcile",
+          "set_next_measurement"
+        ],
+        "owner_action_sets_on_ordinary_requests": [
+          [
+            "create",
+            "status"
+          ],
+          [
+            "admit",
+            "status",
+            "set_next_measurement"
+          ],
+          [
+            "admit",
+            "dispatch",
+            "status"
+          ],
+          [
+            "reconcile",
+            "status",
+            "set_next_measurement",
+            "start"
+          ]
+        ],
+        "failed_search_replay": {
+          "archiveSha256": "02f33ee7c0a4bcc7ac73bedbd75078dc265b61a588f42deb6f386f57379f0bc7",
+          "sourceCut": 25,
+          "reported": 1,
+          "calculated": {},
+          "receiptStatus": "incomplete",
+          "validReceipt": true,
+          "recipeSha256": "1511d5c6373e569ab6d23621692210ba342885f93f8bda6ffa51973d75bac6ba",
+          "proofSha256": "fa10f48c318adcb678fac67aaae405c348ffb94ed47542f1d0ec8e1902fb11e1",
+          "sourceRows": {}
+        }
+      },
+      "build": {
+        "phase": "complete",
+        "failure": null,
+        "requests": 15,
+        "input_tokens": 43929,
+        "cached_input_tokens": 19712,
+        "uncached_input_tokens": 24217,
+        "output_tokens": 1563,
+        "elapsed_ms": 53128,
+        "continuation_requests": 2,
+        "continuation_input_tokens": 4731,
+        "source_admissions": 3,
+        "standalone_checks_passed": 12,
+        "standalone_checks_total": 12,
+        "total_tokens": 45492,
+        "matched_provider_request_totals": true,
+        "usage_by_phase": {
+          "root/initial": {
+            "requests": 8,
+            "requestBytes": 149060,
+            "inputTokens": 23183,
+            "outputTokens": 594
+          },
+          "checker/checker": {
+            "requests": 3,
+            "requestBytes": 28855,
+            "inputTokens": 5679,
+            "outputTokens": 287
+          },
+          "root/correction": {
+            "requests": 1,
+            "requestBytes": 36652,
+            "inputTokens": 4814,
+            "outputTokens": 143
+          },
+          "root/summary": {
+            "requests": 1,
+            "requestBytes": 42673,
+            "inputTokens": 5522,
+            "outputTokens": 370
+          },
+          "root/continue": {
+            "requests": 2,
+            "requestBytes": 23049,
+            "inputTokens": 4731,
+            "outputTokens": 169
+          }
+        },
+        "accepted_owner_prefix_sizes": [
+          4,
+          8
+        ],
+        "duplicate_source_admissions": 0,
+        "accepted_calibration_computations": null,
+        "precompaction_corrected_report_counts": {
+          "cohortSize": 8,
+          "defects": 7,
+          "verifiedClockCorrections": 3
+        },
+        "graded_final": {
+          "cohortSize": 8,
+          "defects": 7,
+          "verifiedClockCorrections": 3,
+          "inspectionRef": "4b0b4cfdcde64bba",
+          "auditRef": "10bbef2f5a7dd3bf",
+          "nextAction": "replay-clock-join",
+          "prerequisite": "verified-clock-audit"
+        },
+        "standalone_failed_checks": [],
+        "workflow_failed_checks": [],
+        "decision_grade_status": null,
+        "compactions": 1,
+        "continuation_eligible_fields": [
+          "cohortSize",
+          "defects",
+          "verifiedClockCorrections",
+          "inspectionRef",
+          "auditRef",
+          "nextAction",
+          "prerequisite"
+        ],
+        "continuation_retention": {
+          "eligible": 7,
+          "retained": 7,
+          "unavailable": 0,
+          "lostWrong": 0,
+          "lossBounds": [
+            0,
+            0
+          ]
+        },
+        "postcompaction_tool_calls": [
+          "skill"
+        ],
+        "skill_roles_on_first_continuation": [],
+        "request_count_by_calculated_field_count": {
+          "0": 12
+        }
+      }
+    }
+  },
+  "prior_native_pairs": {
+    "preview.4": {
+      "receipt_sha256": "ef51ee4baa6f518c53c3170be8ebc5e67f8b8224e807f5ed1cc8db14413871a9",
+      "alg": {
+        "requests": 24,
+        "input_tokens": 126770,
+        "cached_input_tokens": 59392,
+        "uncached_input_tokens": 67378,
+        "output_tokens": 2224,
+        "elapsed_ms": 72368,
+        "continuation_requests": 4,
+        "continuation_input_tokens": 18512,
+        "source_admissions": 3,
+        "standalone_checks_passed": 9,
+        "standalone_checks_total": 12
+      },
+      "build": {
+        "requests": 16,
+        "input_tokens": 45843,
+        "cached_input_tokens": 24320,
+        "uncached_input_tokens": 21523,
+        "output_tokens": 1523,
+        "elapsed_ms": 48390,
+        "continuation_requests": 2,
+        "continuation_input_tokens": 5079,
+        "source_admissions": 3,
+        "standalone_checks_passed": 12,
+        "standalone_checks_total": 12
+      }
+    },
+    "preview.5": {
+      "receipt_sha256": "7ed92028a45524284624c9e4aa31514209d116dd5bf9bb3caf1a353381076fb0",
+      "alg": {
+        "requests": 24,
+        "input_tokens": 139868,
+        "cached_input_tokens": 72960,
+        "uncached_input_tokens": 66908,
+        "output_tokens": 2271,
+        "elapsed_ms": 77612,
+        "continuation_requests": 0,
+        "continuation_input_tokens": 0,
+        "source_admissions": 3,
+        "standalone_checks_passed": 9,
+        "standalone_checks_total": 12
+      },
+      "build": {
+        "requests": 14,
+        "input_tokens": 37579,
+        "cached_input_tokens": 23168,
+        "uncached_input_tokens": 14411,
+        "output_tokens": 1375,
+        "elapsed_ms": 43533,
+        "continuation_requests": 1,
+        "continuation_input_tokens": 2005,
+        "source_admissions": 3,
+        "standalone_checks_passed": 12,
+        "standalone_checks_total": 12
+      }
+    }
+  },
+  "interpretation": [
+    "Build completed the qualifying search and produced all seven requested fields. ALG stopped at four inspection rows. The approved minimum was unmet. Calculation produced no values and the model nevertheless reported three unsupported numbers before and after compaction.",
+    "Only the audit reference was supportably correct before compaction for ALG. The continuation retention result covers that one eligible field. Build retained all seven eligible fields.",
+    "ALG used 2.64 times Build's provider input on this run. Relative to preview.5, ALG finished within the call cap with lower aggregate input and higher uncached input. The skill text changed for both arms and model sampling varied. These single pairs do not isolate the effect of either code change.",
+    "The local missing-proof acceptance fixture requires abstention from a scripted model. The native run shows that withholding a readiness receipt does not guarantee model abstention. A remaining design issue is how to tell the owner which authorized source page is still required before accepting its report."
+  ]
+}
