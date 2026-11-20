@@ -1,0 +1,341 @@
+{
+  "type": "installed-opencode-qualification",
+  "implementation": "08d4b8d",
+  "package": {
+    "name": "opencode-alg-v2-preview",
+    "version": "0.1.0-preview.8",
+    "host_version": "2.3.2",
+    "bundle_sha256": "60fee8733847b3df124c0dc2c074359e85c4cc0dccf0bd3fcf516f8d38a5531b",
+    "bundle_bytes": 1458282
+  },
+  "provider": "local deterministic loopback",
+  "hosts": [
+    {
+      "platform": "win32",
+      "hostBinarySha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+      "packageManifestSha256": "a82ac8fb61790c061c4d1863610e536f4674338f7dd778880f1c780f27aebad9",
+      "runtimeSha256": "60fee8733847b3df124c0dc2c074359e85c4cc0dccf0bd3fcf516f8d38a5531b",
+      "receiptSha256": "5916fe3229254d5dd924ad91f029e077c5a317b4905252bf686dc35f11cfc9f4",
+      "runs": [
+        {
+          "scenario": "lifecycle",
+          "checks": {
+            "approvedFixtureSkill": true,
+            "ownerIdentity": true,
+            "nativeSubagentRole": true,
+            "incompletePrefix": true,
+            "incompletePrefixRestart": true,
+            "nativeSpawnFromSelectedCohort": true,
+            "nativeChildIdentity": true,
+            "ownerIdleBeforeChildCompletion": true,
+            "nativeChildEvidence": true,
+            "boundedScopedReads": true,
+            "nativeProjectionBeforeHandoff": true,
+            "nativeVerifiedDecision": true,
+            "nativeVerifiedRestart": true,
+            "childTranscriptReopened": true,
+            "verifiedAfterRestartBeforeExplicitRows": true,
+            "matchingExplicitArrivalIdempotent": true,
+            "changedExplicitArrivalConflicts": true,
+            "providerRoleScopes": true,
+            "noPostWakeEvidenceOrFactoryReads": true,
+            "boundedLocalTransport": true
+          },
+          "nativeReport": {
+            "status": "verified",
+            "revision": 1,
+            "fields": {
+              "cohortSize": 12,
+              "defects": 5,
+              "verifiedClockCorrections": 2,
+              "inspectionRef": "52c23ff70a0d5c0c9bde",
+              "auditRef": "bd1285a1af511ca29142",
+              "nextAction": "replay-clock-join",
+              "prerequisite": "verified-clock-audit"
+            }
+          },
+          "rereadReport": "verified",
+          "restarts": [
+            {
+              "boundary": "incompletePrefix",
+              "transcriptStable": true
+            },
+            {
+              "boundary": "nativeVerified",
+              "transcriptStable": true
+            }
+          ],
+          "acceptedReads": 4,
+          "deniedReads": 0,
+          "providerRequests": 27
+        },
+        {
+          "scenario": "revoked",
+          "checks": {
+            "approvedFixtureSkill": true,
+            "ownerIdentity": true,
+            "nativeSubagentRole": true,
+            "incompletePrefix": true,
+            "incompletePrefixRestart": true,
+            "nativeSpawnFromSelectedCohort": true,
+            "nativeChildIdentity": true,
+            "ownerIdleBeforeChildCompletion": true,
+            "nativeChildEvidence": true,
+            "boundedScopedReads": true,
+            "nativeProjectionBeforeHandoff": true,
+            "nativeVerifiedDecision": true,
+            "nativeVerifiedRestart": true,
+            "childTranscriptReopened": true,
+            "verifiedAfterRestartBeforeExplicitRows": true,
+            "revokedApprovalWithholdsNativeEvidence": true,
+            "providerRoleScopes": true,
+            "noPostWakeEvidenceOrFactoryReads": true,
+            "boundedLocalTransport": true
+          },
+          "nativeReport": {
+            "status": "verified",
+            "revision": 1,
+            "fields": {
+              "cohortSize": 12,
+              "defects": 5,
+              "verifiedClockCorrections": 2,
+              "inspectionRef": "52c23ff70a0d5c0c9bde",
+              "auditRef": "bd1285a1af511ca29142",
+              "nextAction": "replay-clock-join",
+              "prerequisite": "verified-clock-audit"
+            }
+          },
+          "rereadReport": "verified",
+          "restarts": [
+            {
+              "boundary": "incompletePrefix",
+              "transcriptStable": true
+            },
+            {
+              "boundary": "nativeVerified",
+              "transcriptStable": true
+            }
+          ],
+          "acceptedReads": 4,
+          "deniedReads": 0,
+          "providerRequests": 25
+        }
+      ],
+      "suiteSnapshot": {
+        "passed": 247,
+        "failed": 0,
+        "assertions": 2402,
+        "sha256": "2646c7b00f73b25a79e6978e35caf8439284c01e3f1ca33db868e7dfdbcd015d"
+      },
+      "installedMatrix": {
+        "plannedPairs": 8,
+        "qualifiedPairs": 8,
+        "sha256": "12ba6410c0c89af2386588177c94a3954bfddf17e9fbc04bc27a9ee1501ce2ec"
+      },
+      "unchangedHandoffRegression": {
+        "held-out": true,
+        "exhausted": true,
+        "changed": true
+      }
+    },
+    {
+      "platform": "linux",
+      "hostBinarySha256": "e6543f6e5c39c40971ba38afd1819ac852c29ac735b5a89065d3d148d47f27ad",
+      "packageManifestSha256": "a82ac8fb61790c061c4d1863610e536f4674338f7dd778880f1c780f27aebad9",
+      "runtimeSha256": "60fee8733847b3df124c0dc2c074359e85c4cc0dccf0bd3fcf516f8d38a5531b",
+      "receiptSha256": "823c798eab85a7fe202d538ba838c6d3d75734d9e5d9dc20a05ce54fadd75903",
+      "runs": [
+        {
+          "scenario": "lifecycle",
+          "checks": {
+            "approvedFixtureSkill": true,
+            "ownerIdentity": true,
+            "nativeSubagentRole": true,
+            "incompletePrefix": true,
+            "incompletePrefixRestart": true,
+            "nativeSpawnFromSelectedCohort": true,
+            "nativeChildIdentity": true,
+            "ownerIdleBeforeChildCompletion": true,
+            "nativeChildEvidence": true,
+            "boundedScopedReads": true,
+            "nativeProjectionBeforeHandoff": true,
+            "nativeVerifiedDecision": true,
+            "nativeVerifiedRestart": true,
+            "childTranscriptReopened": true,
+            "verifiedAfterRestartBeforeExplicitRows": true,
+            "matchingExplicitArrivalIdempotent": true,
+            "changedExplicitArrivalConflicts": true,
+            "providerRoleScopes": true,
+            "noPostWakeEvidenceOrFactoryReads": true,
+            "boundedLocalTransport": true
+          },
+          "nativeReport": {
+            "status": "verified",
+            "revision": 1,
+            "fields": {
+              "cohortSize": 12,
+              "defects": 5,
+              "verifiedClockCorrections": 2,
+              "inspectionRef": "52c23ff70a0d5c0c9bde",
+              "auditRef": "bd1285a1af511ca29142",
+              "nextAction": "replay-clock-join",
+              "prerequisite": "verified-clock-audit"
+            }
+          },
+          "rereadReport": "verified",
+          "restarts": [
+            {
+              "boundary": "incompletePrefix",
+              "transcriptStable": true
+            },
+            {
+              "boundary": "nativeVerified",
+              "transcriptStable": true
+            }
+          ],
+          "acceptedReads": 4,
+          "deniedReads": 0,
+          "providerRequests": 27
+        },
+        {
+          "scenario": "revoked",
+          "checks": {
+            "approvedFixtureSkill": true,
+            "ownerIdentity": true,
+            "nativeSubagentRole": true,
+            "incompletePrefix": true,
+            "incompletePrefixRestart": true,
+            "nativeSpawnFromSelectedCohort": true,
+            "nativeChildIdentity": true,
+            "ownerIdleBeforeChildCompletion": true,
+            "nativeChildEvidence": true,
+            "boundedScopedReads": true,
+            "nativeProjectionBeforeHandoff": true,
+            "nativeVerifiedDecision": true,
+            "nativeVerifiedRestart": true,
+            "childTranscriptReopened": true,
+            "verifiedAfterRestartBeforeExplicitRows": true,
+            "revokedApprovalWithholdsNativeEvidence": true,
+            "providerRoleScopes": true,
+            "noPostWakeEvidenceOrFactoryReads": true,
+            "boundedLocalTransport": true
+          },
+          "nativeReport": {
+            "status": "verified",
+            "revision": 1,
+            "fields": {
+              "cohortSize": 12,
+              "defects": 5,
+              "verifiedClockCorrections": 2,
+              "inspectionRef": "52c23ff70a0d5c0c9bde",
+              "auditRef": "bd1285a1af511ca29142",
+              "nextAction": "replay-clock-join",
+              "prerequisite": "verified-clock-audit"
+            }
+          },
+          "rereadReport": "verified",
+          "restarts": [
+            {
+              "boundary": "incompletePrefix",
+              "transcriptStable": true
+            },
+            {
+              "boundary": "nativeVerified",
+              "transcriptStable": true
+            }
+          ],
+          "acceptedReads": 4,
+          "deniedReads": 0,
+          "providerRequests": 25
+        }
+      ],
+      "suiteSnapshot": {
+        "passed": 247,
+        "failed": 0,
+        "assertions": 2402,
+        "sha256": "e1226bfc4d63f9721081bc714c919d5d93aff2f6817352b6bfd3d1f550b60058"
+      },
+      "installedMatrix": {
+        "plannedPairs": 8,
+        "qualifiedPairs": 8,
+        "sha256": "c0f81b757060ddfe889060718b5d0fa8430fbe7da2125014de1e460c5dd95689"
+      },
+      "unchangedHandoffRegression": {
+        "held-out": true,
+        "exhausted": true,
+        "changed": true
+      }
+    }
+  ],
+  "archiveReplay": {
+    "kind": "archived_transcript_replay",
+    "archiveSha256": "45ae7020c06589a026895476da2b1280ec6d99b7cb511fde6599f798438b66c5",
+    "authorization": "reconstructed in fixture; installed host acceptance verifies live authority",
+    "completedCut": 7,
+    "unmodifiedTranscript": true,
+    "lookupMessage": "msg_1f9850aaf001QnCQX7yLy2NmPC",
+    "lookupCall": "call_85c1f17dd3114ebcaaf4dca301ab08a3",
+    "sourceDigest": "f75822bdc2311bfefb555fc1fc8f7e9038c11b4b43f201b8b83217dacc1b4d8b",
+    "before": "need_audit",
+    "atNotice": {
+      "index": 17,
+      "obligation": "verified",
+      "values": {
+        "cohortSize": 12,
+        "defects": 5,
+        "verifiedClockCorrections": 2
+      },
+      "proof": "6ed84e2fc4da3fe11cae538ad58203c68b458d264a6b92b435d80b3f35837cc1"
+    },
+    "atDecision": {
+      "index": 25,
+      "obligation": "verified",
+      "values": {
+        "cohortSize": 12,
+        "defects": 5,
+        "verifiedClockCorrections": 2
+      },
+      "proof": "6ed84e2fc4da3fe11cae538ad58203c68b458d264a6b92b435d80b3f35837cc1"
+    },
+    "atLaterUserRelay": {
+      "index": 29,
+      "obligation": "verified",
+      "values": {
+        "cohortSize": 12,
+        "defects": 5,
+        "verifiedClockCorrections": 2
+      },
+      "proof": "6ed84e2fc4da3fe11cae538ad58203c68b458d264a6b92b435d80b3f35837cc1"
+    }
+  },
+  "earlierWindowsAttempts": [
+    {
+      "sha256": "0d2e9570b9e5ca0699b5ae4f5de903f5ef3b71399b98e8d708ff7a01456152be",
+      "scenarioFailures": [
+        {
+          "scenario": "lifecycle",
+          "failure": "Installed preview or loopback workbench unavailable"
+        }
+      ]
+    },
+    {
+      "sha256": "ae2544d75fd8a36a2e8edfaf3039abbdaf8652292fd4b69fcc1f75bdfb7b385e",
+      "scenarioFailures": [
+        {
+          "scenario": "lifecycle",
+          "failure": "Installed preview or loopback workbench unavailable"
+        }
+      ]
+    },
+    {
+      "sha256": "970e7d700f144861fb53c3926d019472cdad1e44c36f7df8cf52d997f798b4c4",
+      "scenarioFailures": [
+        {
+          "scenario": "revoked",
+          "failure": "nativeVerified readiness: Readiness deadline exceeded {\"plugin\":{\"status\":\"active\"},\"workbenches\":{\"audit\":{\"status\":\"pending\"},\"evidence\":{\"status\":\"connected\"}},\"catalogErrors\":{\"plugin\":\"ClientError: Transport: The operation timed out.\",\"mcp\":\"ClientError: MalformedResponse\"}}"
+        }
+      ]
+    }
+  ],
+  "interpretation": "These installed hosts used scripted provider responses. The archive replay uses the recorded model transcript and reconstructed session authority. Neither observation measures the live model's end-to-end success rate."
+}

@@ -1,0 +1,199 @@
+{
+  "host": "OpenCode 2.3.2",
+  "case_id": "fab-clock-handoff-01",
+  "scope": "One ALG-first native Luna/Build comparison on the tuned synthetic clock incident. The provider call cap is per arm and includes the checker and compaction.",
+  "native_model": "openai/gpt-6-luna",
+  "order": [
+    "alg",
+    "build"
+  ],
+  "comparison": {
+    "previous_version": "0.1.0-preview.4",
+    "receipt_sha256": "ef51ee4baa6f518c53c3170be8ebc5e67f8b8224e807f5ed1cc8db14413871a9",
+    "alg": {
+      "requests": 24,
+      "input_tokens": 126770,
+      "cache_read_input_tokens": 59392,
+      "uncached_input_tokens": 67378,
+      "output_tokens": 2224,
+      "total_tokens": 128994,
+      "elapsed_ms": 72368,
+      "continuation_input_tokens": 18512
+    },
+    "build": {
+      "requests": 16,
+      "input_tokens": 45843,
+      "cache_read_input_tokens": 24320,
+      "uncached_input_tokens": 21523,
+      "output_tokens": 1523,
+      "total_tokens": 47366,
+      "elapsed_ms": 48390,
+      "continuation_input_tokens": 5079
+    }
+  },
+  "native": {
+    "code_commit": "092428d5c542a84ae4eac27555455646270a24fb",
+    "version": "0.1.0-preview.5",
+    "bundle_sha256": "bd1d7519c119a8fdd65f5a131af2bff6a84bffc2388caa3045b03e9367e001b7",
+    "receipt_sha256": "7ed92028a45524284624c9e4aa31514209d116dd5bf9bb3caf1a353381076fb0",
+    "qualified": false,
+    "apparatus_passed": false,
+    "standalone_passed": false,
+    "installed_behavior_passed": false,
+    "parity": {
+      "model": true,
+      "skill": true,
+      "evidence": true,
+      "correction": true,
+      "finalInput": true,
+      "treatment": true,
+      "runtimeUnchanged": true
+    },
+    "limits": {
+      "calls": 24,
+      "requestBytes": 196608,
+      "responseBytes": 393216,
+      "armRequestBytes": 1048576,
+      "armResponseBytes": 4194304,
+      "outputTokens": 1024,
+      "outputDeltaBytes": 4096,
+      "armOutputTokens": 12000,
+      "requestMs": 45000,
+      "armMs": 300000
+    },
+    "alg": {
+      "requests": 24,
+      "input_tokens": 139868,
+      "cache_read_input_tokens": 72960,
+      "uncached_input_tokens": 66908,
+      "output_tokens": 2271,
+      "total_tokens": 142139,
+      "elapsed_ms": 77612,
+      "continuation_input_tokens": null,
+      "failure": "NATIVE_PROVIDER_CALL_BUDGET",
+      "completed_provider_continuation_requests": 0,
+      "continuation_grade": "unobserved",
+      "input_by_stage": {
+        "checker/checker": 5172,
+        "root/correction": 29512,
+        "root/initial": 93871,
+        "root/summary": 11313
+      },
+      "incurred_request_counts": {
+        "root_initial": 17,
+        "checker": 3,
+        "root_correction": 3,
+        "root_compaction": 1
+      },
+      "before_compaction": {
+        "reported_verified_clock_corrections": 4,
+        "verified_clock_corrections_recomputed_from_source_rows": 3,
+        "cohort_size": 8,
+        "defects": 7,
+        "native_skill_loads": 3,
+        "explicit_alg_procedure_reads": 3,
+        "rejected_calls": [
+          "start: RESULT_MANIFEST_REQUIRED",
+          "dispatch: UNSUPPORTED_OR_INVALID_ACTION"
+        ],
+        "accepted_calibrations": 1,
+        "duplicate_workbench_admissions": 0
+      }
+    },
+    "build": {
+      "requests": 14,
+      "input_tokens": 37579,
+      "cache_read_input_tokens": 23168,
+      "uncached_input_tokens": 14411,
+      "output_tokens": 1375,
+      "total_tokens": 38954,
+      "elapsed_ms": 43533,
+      "continuation_input_tokens": 2005,
+      "failure": null,
+      "continuation_requests": 1,
+      "continuation_tool_calls": 0,
+      "retained_fields": 7,
+      "eligible_fields": 7,
+      "standalone_checks_passed": 12,
+      "standalone_checks_total": 12
+    }
+  },
+  "offline_replay": {
+    "using_code_commit": "88f2f5f142644c0578848cd901cde0f67aaeea23",
+    "method": "Reconstructed each native pre-compaction window with its recorded revision, runtime digest, approval and settled work. Supplied a synthetic journal location and project for the pure capture check.",
+    "previous_native": {
+      "capture_eligible": true,
+      "recorded_corrections": 3,
+      "citation_fields": 2
+    },
+    "current_native": {
+      "capture_eligible": true,
+      "recorded_corrections": 4,
+      "citation_fields": 2
+    },
+    "interpretation": "The final validator preserves the report and its citations, including an incorrect derived number. It does not verify the calculation. No paid continuation observed this projection."
+  },
+  "final_local": {
+    "code_commit": "88f2f5f142644c0578848cd901cde0f67aaeea23",
+    "version": "0.1.0-preview.5",
+    "bundle_sha256": "31f356f5e42e2ea933677990dee20923d8ae2cab7a5d5194305951d5d0e0b3fc",
+    "change_after_native_run": "Reported qualifier fields, including prerequisite, must exactly match the acknowledged action qualifiers when present. Local qualification and offline replay only.",
+    "platforms": {
+      "windows": {
+        "unit_tests_passed": 166,
+        "assertions": 1422,
+        "typecheck": "pass",
+        "unit_suite_sha256": "309c98616a0644f2db51ffb3132adf226194782a95fe21aefd222ef2acf8eb1c",
+        "matrix_pairs_passed": 8,
+        "matrix_pairs_planned": 8,
+        "matrix_summary_sha256": "d3b1756350601c85b7eb8311b53a45d06bb737ce2f7c379e0ccf5f021502cde9",
+        "installed_host_binary_sha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+        "installed_bundle_sha256": "31f356f5e42e2ea933677990dee20923d8ae2cab7a5d5194305951d5d0e0b3fc",
+        "delivery_cases_passed": [
+          "ready",
+          "superseded",
+          "revoked",
+          "missing-reference"
+        ],
+        "continuation_requests_per_case": 1,
+        "continuation_tool_calls_per_case": 0,
+        "factory_calls_per_continuation": 0,
+        "ready_fields_correct": 7,
+        "restored_same_session_after_native_restart": true,
+        "restored_report_sha256": "52345f76364c816423941a8bdc9b24f8c6740594c603ece0d36db4c7401506a5",
+        "delivery_receipts_sha256": "da1ebbc928d50c44a28affc0b543cf6bdd23a731aca0fca6e657b908c15ba167"
+      },
+      "linux": {
+        "unit_tests_passed": 166,
+        "assertions": 1422,
+        "typecheck": "pass",
+        "unit_suite_sha256": "6c29a6ec4ad0a70f316a373b8f1b1052bd634a6ff7db60acb4d78e81b773d2f4",
+        "matrix_pairs_passed": 8,
+        "matrix_pairs_planned": 8,
+        "matrix_summary_sha256": "9d2eddb21569a487596fe07f6a15b97fc1898c506f4aeba64390ef6b608d1c98",
+        "installed_host_binary_sha256": "e6543f6e5c39c40971ba38afd1819ac852c29ac735b5a89065d3d148d47f27ad",
+        "installed_bundle_sha256": "31f356f5e42e2ea933677990dee20923d8ae2cab7a5d5194305951d5d0e0b3fc",
+        "delivery_cases_passed": [
+          "ready",
+          "superseded",
+          "revoked",
+          "missing-reference"
+        ],
+        "continuation_requests_per_case": 1,
+        "continuation_tool_calls_per_case": 0,
+        "factory_calls_per_continuation": 0,
+        "ready_fields_correct": 7,
+        "restored_same_session_after_native_restart": true,
+        "restored_report_sha256": "1b68a5418753423fd11195a9a618e6134dd3920e3031e56210aef4da1b682b4a",
+        "delivery_receipts_sha256": "6fc09b0c46663cf145dd59f1140deaa77fbdc5cf91414a910125f5b1ce568dee"
+      }
+    },
+    "windows_first_suite": {
+      "passed": 165,
+      "failed": 1,
+      "reason": "The scoped evidence/settled manifest fixture exceeded the default five-second timeout while both platforms were active. The complete, unchanged Windows suite passed on retry.",
+      "receipt_sha256": "cad3ff93ee7cb326f7e15adb1743cc4d799423df639575b7951b411135000af9"
+    }
+  },
+  "interpretation": "The installed scripted hosts prove that a current recurring report can be delivered in one request without tool calls after a real restart. The single native ALG arm exhausted its cap before the provider processed the continuation, so live post-compaction quality and continuation cost are unmeasured. Build completed. The offline source-row count and capture replay expose a factual error that predates compaction."
+}

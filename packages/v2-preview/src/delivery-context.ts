@@ -1,0 +1,195 @@
+import { createHash } from "node:crypto"
+import { z } from "zod"
+import type { SessionContext } from "@opencode/plugin/promise/session"
+import { runContainedPath } from "../../../src/store.ts"
+import { deliverySchema, inspectDelivery, validateDelivery, type DeliveryBinding, type DeliveryHistory, type DeliveryReceipt } from "./delivery.ts"
+import { publishReceipt, readReceipt } from "./journal.ts"
+import { calculateFromHistory, calculationPolicyDigest, calculationReceiptSchema, type CalculationPolicy, type CalculationReceipt } from "./calculation.ts"
+import type { EvidenceProgress } from "./evidence-journal.ts"
+
+const marker = "ALG delivery obligation (untrusted recorded data)\n"
+const calculationMarker = "ALG calculated evidence (source data)\n"
+const gap = z.enum(["missing_evidence", "stale_revision"])
+const boundarySchema = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("report"), receipt: deliverySchema, calculation: calculationReceiptSchema.optional() }),
+  z.strictObject({ kind: z.literal("gap"), reason: gap }),
+])
+const notices = {
+  calculation_conflict: "the reported measurement conflicts with the reproducible calculation. Correct the report and reassess any dependent recommendation.",
+  calculation_missing: "missing or unverified calculated measurements. Recover the required source evidence before reporting.",
+  decision_pending: "the measured facts are available. Record the recommendation and prerequisite supported by the approved decision rule before publishing a verified report.",
+  ready: "ready. Return the requested JSON object now from the recorded values. The decision and procedure are current. References match the earlier source records. No skill, procedure, status or evidence reread is needed. Reporting a recommendation does not authorize its execution.",
+  missing_evidence: "missing or unverified report fields or source references. Recover only the missing evidence, or abstain if it cannot be verified.",
+  stale_revision: "the saved report is superseded. Use the current decision and reconcile the changed fields before reporting.",
+  revoked: "current procedure approval is unavailable. Withhold the prior recommendation and follow the user's withdrawal instructions.",
+} as const
+type Notice = keyof typeof notices
+type BindingState = DeliveryBinding | "revoked" | "stale_revision"
+const bare = (text: string) => /^continue[.!]?$/i.test(text.trim())
+
+function compactCalculation({ values, sources }: CalculationReceipt) {
+  return { values, references: Object.fromEntries(Object.values(sources).map(s => [s.reportReferenceField, s.reference])) }
+}
+
+function measurementStatus(report: DeliveryReceipt, policy?: CalculationPolicy, proof?: CalculationReceipt): Notice {
+  const fields = report.requestedKeys.filter(key => typeof report.recordedAnswer[key] === "number" ||
+    (policy && Object.hasOwn(policy.operations, key)))
+  if (!fields.length) return "ready"
+  if (!policy || !proof?.sources.owner || proof.recipeSha256 !== calculationPolicyDigest(policy)) return "calculation_missing"
+  for (const key of fields) {
+    if (!Object.hasOwn(proof.values, key) || !Object.hasOwn(policy.operations, key) ||
+        (policy.operations[key]?.kind === "semijoinCount" && !proof.sources.correction)) return "calculation_missing"
+  }
+  for (const source of Object.values(proof.sources)) {
+    if (Object.hasOwn(report.recordedAnswer, source.reportReferenceField) &&
+        report.recordedAnswer[source.reportReferenceField] !== source.reference) return "calculation_missing"
+  }
+  return fields.every(key => report.recordedAnswer[key] === proof.values[key]) ? "ready" : "calculation_conflict"
+}
+
+function continuationIndex(request: SessionContext) {
+  for (let i = request.messages.length - 1; i >= 0; i--) {
+    const message = request.messages[i]!
+    if (message.role !== "user") continue
+    return message.content.length === 1 && message.content[0]?.type === "text" && bare(message.content[0].text) ? i : -1
+  }
+  return -1
+}
+
+/** The host's context API drops pre-compaction messages when the boundary commits. */
+export class DeliveryContext {
+  private readonly inserted = new WeakSet<object>()
+
+  clear(request: SessionContext) {
+    for (const rows of [request.messages, request.system]) {
+      for (let i = rows.length - 1; i >= 0; i--) if (this.inserted.has(rows[i]!)) rows.splice(i, 1)
+    }
+  }
+
+  private data(request: SessionContext, position: number, prefix: string, value: unknown) {
+    const json = JSON.stringify(value).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e")
+    const message: SessionContext["messages"][number] = { role: "user", content: [{ type: "text", text: prefix + json }] }
+    request.messages.splice(position, 0, message)
+    this.inserted.add(message)
+  }
+
+  /** Instructions are static. Source identities, counts and bounds are data. */
+  projectProgress(request: SessionContext, progress: EvidenceProgress, certified = false) {
+    if (!progress.checkpoint) return
+    let i = request.messages.length - 1
+    while (i >= 0 && request.messages[i]?.role !== "user") i--
+    if (i < 0) return
+    const kind = progress.obligation.kind
+    if (kind === "verified" && progress.receipt.sources.correction?.child) {
+      const notice = { type: "text" as const, text: certified
+        ? "ALG verified the independent audit and recorded the decision. Use the verified report for the requested response."
+        : "ALG checked the completed child's audit against its recorded source read. Use the calculated measurements. If a decision is requested, acknowledge the supported action and prerequisite once." }
+      request.system.push(notice)
+      this.inserted.add(notice)
+    }
+    if (kind !== "verified") {
+      const instructions = {
+        need_page: "The cohort is incomplete. When the task permits another read, use the next approved prefix shown in the evidence progress. Honor any request to pause at this window.",
+        need_audit: "Use the verified cohort. Obtain the outstanding independent audit or report that it is pending.",
+        exhausted: "No approved window qualifies. Abstain and report the search limit.",
+        conflict: "The evidence conflicts. Abstain until the source can be revalidated.",
+        unavailable: "The evidence could not be validated. Withhold unsupported measurements.",
+      }
+      this.data(request, i, "ALG evidence progress (source data)\n", progress.obligation)
+      const notice = { type: "text" as const, text: "ALG evidence obligation: " + instructions[kind] }
+      request.system.push(notice)
+      this.inserted.add(notice)
+    }
+    const delivered = request.messages.some(message => this.inserted.has(message) && message.content.some(part =>
+      part.type === "text" && (part.text.startsWith(marker) || part.text.startsWith(calculationMarker))))
+    if (Object.keys(progress.receipt.values).length && !delivered) {
+      this.data(request, i, calculationMarker, compactCalculation(progress.receipt))
+    }
+  }
+
+  async prepare(
+    request: SessionContext, compacting: boolean,
+    directory: string, runId: string,
+    history: () => Promise<DeliveryHistory>,
+    // Throws on a denied owner or host read. Only a known authority gap has a user-visible hint.
+    binding: () => Promise<BindingState>,
+    policy?: CalculationPolicy, progress?: EvidenceProgress, certified = false,
+  ) {
+    const position = compacting ? -1 : continuationIndex(request)
+    if (!compacting && position < 0) return
+    const rows = await history()
+    let cut = rows.length - 1
+    while (cut >= 0 && rows[cut]?.type !== "compaction") cut--
+    const boundary = rows[cut]
+    if (boundary?.type !== "compaction") return
+    const path = (id: string) => runContainedPath(directory, runId, "delivery",
+      createHash("sha256").update(id).digest("hex") + ".json")
+    if (compacting) {
+      if (boundary.status !== "running" || cut !== rows.length - 1) return
+      const current = await binding()
+      if (typeof current === "string") return
+      // A second compaction can start from the previous summary. Only carry an already bound
+      // report across an empty interval or a bare continuation that delivered exactly that report.
+      const prior = rows[0]
+      if (prior?.type === "compaction" && prior.status === "completed") {
+        const interval = rows.slice(1, cut).filter(row => row.type !== "idle")
+        const [prompt, answer] = interval
+        const bareReport = interval.length === 2 && prompt?.type === "user" && bare(prompt.text) &&
+          !prompt.files?.length && !prompt.agents?.length && !prompt.skills?.length &&
+          answer?.type === "assistant" && answer.agent === current.ownerAgent && answer.finish === "stop" &&
+          answer.time.completed !== undefined && !answer.error && answer.content.length === 1 &&
+          answer.content[0]?.type === "text" ? answer.content[0].text : undefined
+        if (interval.length && bareReport === undefined) return
+        const old = await readReceipt(path(prior.id), boundarySchema, 24_576)
+        if (old?.kind !== "report") return
+        const receipt = validateDelivery(old.receipt, current, prior.id)
+        if (!receipt) {
+          await publishReceipt(path(boundary.id), { kind: "gap", reason: "stale_revision" })
+        } else if (bareReport === undefined || bareReport.trim() === JSON.stringify(receipt.recordedAnswer)) {
+          await publishReceipt(path(boundary.id), { ...old, receipt: { ...receipt, compactionMessageId: boundary.id } })
+        }
+        return
+      }
+      const result = inspectDelivery(rows, current)
+      if ("receipt" in result && result.receipt.compactionMessageId === boundary.id) {
+        const calculation = progress?.receipt ?? (policy && calculateFromHistory(policy, rows.slice(0, cut), current.ownerAgent))
+        await publishReceipt(path(boundary.id), { kind: "report", receipt: result.receipt,
+          calculation })
+      } else if ("reason" in result && gap.safeParse(result.reason).success) {
+        await publishReceipt(path(boundary.id), { kind: "gap", reason: result.reason })
+      }
+      return
+    }
+    if (boundary.status !== "completed") return
+    // Only the first request of a bare continuation directly following this cut may reuse the report.
+    const turns = rows.slice(cut + 1).filter(row => row.type !== "idle" && row.type !== "system")
+    const user = turns[0]
+    if (turns.length !== 1 || user?.type !== "user" || !bare(user.text) ||
+        user.files?.length || user.agents?.length || user.skills?.length) return
+    const saved = await readReceipt(path(boundary.id), boundarySchema, 24_576)
+    if (!saved) return
+    const current = await binding()
+    let status: Notice
+    if (typeof current === "string") status = current
+    else if (saved.kind === "gap") status = saved.reason
+    else {
+      const receipt = validateDelivery(saved.receipt, current, boundary.id)
+      if (!receipt) status = "stale_revision"
+      else {
+        const proof = progress?.checkpoint ? progress.receipt : saved.calculation
+        status = measurementStatus(receipt, policy, proof)
+        if (status === "ready" && policy?.decisionRules && !certified) status = "decision_pending"
+        if (status === "ready") {
+          this.data(request, position, marker, { format: "json_object", fields: receipt.requestedKeys,
+            values: { ...receipt.recordedAnswer, ...Object.fromEntries(Object.entries(proof?.values ?? {}).filter(([k]) => receipt.requestedKeys.includes(k))) },
+            decision_revision: current.decision_revision })
+        } else if ((status === "calculation_conflict" || status === "decision_pending") && proof) {
+          this.data(request, position, calculationMarker, compactCalculation(proof))
+        }
+      }
+    }
+    const notice = { type: "text" as const, text: "ALG delivery check: " + notices[status] }
+    request.system.push(notice)
+    this.inserted.add(notice)
+  }
+}

@@ -1,0 +1,253 @@
+{
+  "date": "2026-11-18",
+  "runtime_source": "e8de595",
+  "package": "0.1.0-preview.2",
+  "opencode": "2.3.2",
+  "bundle_sha256": "4de9439b924ef6bf1c4c33a45a1e229f3e0ba54345643fd05f4df951aa0a7306",
+  "platforms": {
+    "windows": {
+      "binary_sha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+      "package_manifest_sha256": "e16400dfb9dc67efe4f76ff2ad24ad547d21302be9e284c4f292b00e3665add9",
+      "focused_tests": {
+        "pass": 47,
+        "fail": 0,
+        "assertions": 492,
+        "typecheck": "pass"
+      },
+      "installation": {
+        "receipt_sha256": "0d18d882a10d588ec37118f7bfa14883aeaf825650e64b483e3b38ed9a5c5b9c",
+        "claims": {
+          "native": {
+            "host_boot": "PASS",
+            "plugin_absence": "PASS",
+            "primary_transport": "PASS",
+            "forced_compaction": "PASS"
+          },
+          "preview": {
+            "host_boot": "PASS",
+            "active_runtime": "PASS",
+            "accepted_ack_withheld_at_kill": "PASS",
+            "restart_same_session": "PASS",
+            "single_remote_admission": "PASS",
+            "forced_compaction_stale_checkpoint": "PASS",
+            "fresh_checker": "PASS",
+            "checker_bounded_cited_read": "PASS",
+            "revocation_denied_read": "PASS",
+            "cross_project_denied_read": "PASS",
+            "current_next_measurement": "PASS",
+            "end_user_measurement_handoff": "PASS",
+            "team_source_pinned_commit": "PASS",
+            "two_advisory_researchers": "PASS",
+            "background_compaction_race": "NOT_OBSERVED"
+          }
+        }
+      },
+      "scripted_pair": {
+        "case": "fab-defect-clock-01",
+        "order": [
+          "build",
+          "alg"
+        ],
+        "seed": 101,
+        "receipt_sha256": "97840f7061e3f6f29a4960d686bc29cd7a524456ceefe78fabb31bcc396f3853",
+        "parity": {
+          "model": true,
+          "skill": true,
+          "treatment": true,
+          "runtimeUnchanged": true
+        },
+        "prompt_sha256": [
+          "369173fefd19b9447a7ae357723277ce995e02cdc427babfc02ef3f52cd39693",
+          "64ec7fe11dfcd8ddeb35652f9608a28a74fc7dba459ade5265af43701a4e7614",
+          "27656ac58f9fe69e6011de3c4a15cbd29a82302beb77ff7825d2a321ac67891c"
+        ],
+        "arms": {
+          "build": {
+            "science": "pass",
+            "observed_background_race": "OBSERVED",
+            "metrics": {
+              "acceptedQueries": 6,
+              "duplicateAcceptedQueries": 0,
+              "cachedLookups": 5,
+              "skillActions": 3,
+              "wrongRootReturns": 0
+            }
+          },
+          "alg": {
+            "science": "pass",
+            "observed_background_race": "OBSERVED",
+            "metrics": {
+              "acceptedQueries": 6,
+              "duplicateAcceptedQueries": 0,
+              "cachedLookups": 5,
+              "skillActions": 3,
+              "wrongRootReturns": 0
+            }
+          }
+        },
+        "alg_decision_revisions": [
+          1,
+          2,
+          2
+        ],
+        "saved_while_old_summary_held": true
+      },
+      "native_code_mode": {
+        "receipt_sha256": "f31831fdc3ca29979ab3e63999bde8703735434aa8bc63e2ffdc9673164a66e6",
+        "verdict": "NATIVE_CODE_MODE_PASSED",
+        "aggregate": {
+          "inspected": 8,
+          "defects": 7,
+          "dispatchCount": 8,
+          "evidenceRefs": [
+            "4b0b4cfdcde64bba",
+            "496d39d19b779442"
+          ],
+          "witness": 808
+        },
+        "returned_bytes": 114,
+        "intermediate_rows_visible": false,
+        "forbidden_mcp_calls": 0
+      }
+    },
+    "linux_wsl": {
+      "binary_sha256": "e6543f6e5c39c40971ba38afd1819ac852c29ac735b5a89065d3d148d47f27ad",
+      "package_manifest_sha256": "e16400dfb9dc67efe4f76ff2ad24ad547d21302be9e284c4f292b00e3665add9",
+      "focused_tests": {
+        "pass": 47,
+        "fail": 0,
+        "assertions": 492,
+        "typecheck": "pass"
+      },
+      "installation": {
+        "receipt_sha256": "06b0475f83d293131b59081304f87e063e209ae2900dcbe5184fa57616c07fb7",
+        "claims": {
+          "native": {
+            "host_boot": "PASS",
+            "plugin_absence": "PASS",
+            "primary_transport": "PASS",
+            "forced_compaction": "PASS"
+          },
+          "preview": {
+            "host_boot": "PASS",
+            "active_runtime": "PASS",
+            "accepted_ack_withheld_at_kill": "PASS",
+            "restart_same_session": "PASS",
+            "single_remote_admission": "PASS",
+            "forced_compaction_stale_checkpoint": "PASS",
+            "fresh_checker": "PASS",
+            "checker_bounded_cited_read": "PASS",
+            "revocation_denied_read": "PASS",
+            "cross_project_denied_read": "PASS",
+            "current_next_measurement": "PASS",
+            "end_user_measurement_handoff": "PASS",
+            "team_source_pinned_commit": "PASS",
+            "two_advisory_researchers": "PASS",
+            "background_compaction_race": "NOT_OBSERVED"
+          }
+        }
+      },
+      "scripted_pair": {
+        "case": "fab-defect-clock-02",
+        "order": [
+          "alg",
+          "build"
+        ],
+        "seed": 101,
+        "receipt_sha256": "a85565cc522816ea95e6407a6f0bbc96ef9a23b18c7110386fb4a6a6e6ff9b72",
+        "parity": {
+          "model": true,
+          "skill": true,
+          "treatment": true,
+          "runtimeUnchanged": true
+        },
+        "prompt_sha256": [
+          "369173fefd19b9447a7ae357723277ce995e02cdc427babfc02ef3f52cd39693",
+          "64ec7fe11dfcd8ddeb35652f9608a28a74fc7dba459ade5265af43701a4e7614",
+          "27656ac58f9fe69e6011de3c4a15cbd29a82302beb77ff7825d2a321ac67891c"
+        ],
+        "arms": {
+          "alg": {
+            "science": "pass",
+            "observed_background_race": "OBSERVED",
+            "metrics": {
+              "acceptedQueries": 6,
+              "duplicateAcceptedQueries": 0,
+              "cachedLookups": 5,
+              "skillActions": 3,
+              "wrongRootReturns": 0
+            }
+          },
+          "build": {
+            "science": "pass",
+            "observed_background_race": "OBSERVED",
+            "metrics": {
+              "acceptedQueries": 6,
+              "duplicateAcceptedQueries": 0,
+              "cachedLookups": 5,
+              "skillActions": 3,
+              "wrongRootReturns": 0
+            }
+          }
+        },
+        "alg_decision_revisions": [
+          1,
+          2,
+          2
+        ],
+        "saved_while_old_summary_held": true
+      },
+      "native_code_mode": {
+        "receipt_sha256": "c40ec87acccba8da32c71be14aecfa379ab68a5ea10b05bd98d4dac054e57c9a",
+        "verdict": "NATIVE_CODE_MODE_PASSED",
+        "aggregate": {
+          "inspected": 8,
+          "defects": 7,
+          "dispatchCount": 8,
+          "evidenceRefs": [
+            "4b0b4cfdcde64bba",
+            "496d39d19b779442"
+          ],
+          "witness": 808
+        },
+        "returned_bytes": 114,
+        "intermediate_rows_visible": false,
+        "forbidden_mcp_calls": 0
+      }
+    }
+  },
+  "live_pair": {
+    "model": "openai/gpt-6-luna",
+    "platform": "windows",
+    "case": "fab-defect-clock-01",
+    "receipt_sha256": "5d8048d20e606ecb8566c2291b3c8dd731df9b54837ee2f5eb5f5053bbb70341",
+    "measured": false,
+    "qualified": false,
+    "arms": {
+      "build": {
+        "catalog": {
+          "oauth": true,
+          "modelAvailable": true
+        },
+        "dispatched_requests": 1,
+        "usage_receipts": 0,
+        "reported_tokens": null,
+        "failure": "NATIVE_RESPONSES_STREAM_REQUIRED",
+        "produced_initial_answer": false
+      },
+      "alg": {
+        "catalog": {
+          "oauth": true,
+          "modelAvailable": true
+        },
+        "dispatched_requests": 1,
+        "usage_receipts": 0,
+        "reported_tokens": null,
+        "failure": "NATIVE_RESPONSES_STREAM_REQUIRED",
+        "produced_initial_answer": false
+      }
+    },
+    "interpretation": "Both initial requests reached observer dispatch. The observer rejected the response media type before collecting a terminal event. Response bodies and original media types were not retained. Billing, scientific performance and live retention are unknown. No repeat paid trial. Subsequent offline regression accepts valid event framing with a nonstandard MIME and rejects non-event bodies."
+  },
+  "limits": "Scripted scientific outcomes verify the benchmark and host. Both arms can invoke the native skill. The paired fixture uses an independent host-created checker and synthetic data. Production datalake integration, model superiority and long-session endurance are unqualified."
+}

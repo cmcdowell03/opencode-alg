@@ -1,0 +1,232 @@
+{
+  "opencode": "2.3.2",
+  "opencode_binary_sha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+  "implementation_commit": "bb8367dcad4107afa66062f4348ed55e7d5e3b44",
+  "native_model": "openai/gpt-6-luna",
+  "scope": "One historical and one candidate ALG-first native pair on the same tuned incident. The local scripted matrices are separate measurements.",
+  "local_scripted": {
+    "windows": {
+      "v2_tests_passed": 147,
+      "typecheck": "pass",
+      "pairs_passed": 8,
+      "pairs_planned": 8,
+      "matrix_sha256": "b95aef982edc9aaa1dfecb8d09fc35a7712a1b584cce953c3c5ff9e8c901c7b1",
+      "measurements": {
+        "alg": {
+          "old_requests": 18,
+          "new_requests": 18,
+          "old_bytes": 290654,
+          "new_bytes": 281725,
+          "eligible": 92,
+          "retained": 92,
+          "observed_boundaries": 14,
+          "active_pair_answer_identical": true,
+          "old_receipt_sha256": "272ef80ee8a4541f42780a0e9d767435a6012fb725a1a11fdc1984da45ff4ddc",
+          "new_receipt_sha256": "970cadbbdf3ad1029c9d708be246a52c63d0128940ce3ccb99e5e372d61a38d6"
+        },
+        "build": {
+          "old_requests": 12,
+          "new_requests": 12,
+          "old_bytes": 120609,
+          "new_bytes": 120609,
+          "eligible": 92,
+          "retained": 92,
+          "observed_boundaries": 14,
+          "active_pair_answer_identical": true,
+          "old_receipt_sha256": "272ef80ee8a4541f42780a0e9d767435a6012fb725a1a11fdc1984da45ff4ddc",
+          "new_receipt_sha256": "970cadbbdf3ad1029c9d708be246a52c63d0128940ce3ccb99e5e372d61a38d6"
+        }
+      }
+    },
+    "linux_wsl": {
+      "v2_tests_passed": 147,
+      "typecheck": "pass",
+      "pairs_passed": 8,
+      "pairs_planned": 8,
+      "matrix_sha256": "bd04e60944739edb0675a941cca58f625b071415a45de2213c6793fcfdf826c1",
+      "measurements": {
+        "alg": {
+          "old_requests": 18,
+          "new_requests": 18,
+          "old_bytes": 289148,
+          "new_bytes": 280219,
+          "eligible": 92,
+          "retained": 92,
+          "observed_boundaries": 14,
+          "active_pair_answer_identical": true,
+          "old_receipt_sha256": "91499ec2d8aae4fbef19f9f7f425f5ad7527458270d28e503c76b34591f40bb3",
+          "new_receipt_sha256": "5f0db66c42e689f217c1fc9b4f0a24556083b05c6b91efb9e47b3042a75bbcb6"
+        },
+        "build": {
+          "old_requests": 12,
+          "new_requests": 12,
+          "old_bytes": 119637,
+          "new_bytes": 119637,
+          "eligible": 92,
+          "retained": 92,
+          "observed_boundaries": 14,
+          "active_pair_answer_identical": true,
+          "old_receipt_sha256": "91499ec2d8aae4fbef19f9f7f425f5ad7527458270d28e503c76b34591f40bb3",
+          "new_receipt_sha256": "5f0db66c42e689f217c1fc9b4f0a24556083b05c6b91efb9e47b3042a75bbcb6"
+        }
+      }
+    }
+  },
+  "native_pairs": {
+    "preview.3": {
+      "raw_receipt_sha256": "35eb1075b98f8d5eb04596f93cd106f4e9df2163acba1b028d5eb70d4f36eadc",
+      "bundle_sha256": "c430013339708ae2b5c8dc5ad4d10172055ef58c4898994581b037796e1b1e60",
+      "qualified": false,
+      "order": [
+        "alg",
+        "build"
+      ],
+      "arms": {
+        "alg": {
+          "requests": 23,
+          "input_tokens": 126657,
+          "cache_read_input_tokens": 72832,
+          "uncached_input_tokens": 53825,
+          "output_tokens": 1906,
+          "total_tokens": 128563,
+          "elapsed_ms": 68686,
+          "input_tokens_by_phase": {
+            "checker/checker": 5183,
+            "root/continue": 7785,
+            "root/correction": 27593,
+            "root/initial": 76028,
+            "root/summary": 10068
+          },
+          "standalone_final_parsed": true
+        },
+        "build": {
+          "requests": 15,
+          "input_tokens": 40092,
+          "cache_read_input_tokens": 23680,
+          "uncached_input_tokens": 16412,
+          "output_tokens": 1560,
+          "total_tokens": 41652,
+          "elapsed_ms": 47872,
+          "input_tokens_by_phase": {
+            "checker/checker": 5183,
+            "root/continue": 4464,
+            "root/correction": 4295,
+            "root/initial": 21184,
+            "root/summary": 4966
+          },
+          "standalone_final_parsed": true
+        }
+      }
+    },
+    "preview.4": {
+      "raw_receipt_sha256": "ef51ee4baa6f518c53c3170be8ebc5e67f8b8224e807f5ed1cc8db14413871a9",
+      "bundle_sha256": "bd69f8c57515b1f4de5104178b71d0282d9a87a179e9998187212c8760d43b51",
+      "qualified": false,
+      "order": [
+        "alg",
+        "build"
+      ],
+      "arms": {
+        "alg": {
+          "requests": 24,
+          "input_tokens": 126770,
+          "cache_read_input_tokens": 59392,
+          "uncached_input_tokens": 67378,
+          "output_tokens": 2224,
+          "total_tokens": 128994,
+          "elapsed_ms": 72368,
+          "input_tokens_by_phase": {
+            "checker/checker": 5183,
+            "root/continue": 18512,
+            "root/correction": 18963,
+            "root/initial": 72965,
+            "root/summary": 11147
+          },
+          "standalone_final_parsed": false
+        },
+        "build": {
+          "requests": 16,
+          "input_tokens": 45843,
+          "cache_read_input_tokens": 24320,
+          "uncached_input_tokens": 21523,
+          "output_tokens": 1523,
+          "total_tokens": 47366,
+          "elapsed_ms": 48390,
+          "input_tokens_by_phase": {
+            "checker/checker": 5183,
+            "root/continue": 5079,
+            "root/correction": 9121,
+            "root/initial": 21049,
+            "root/summary": 5411
+          },
+          "standalone_final_parsed": true
+        }
+      }
+    }
+  },
+  "candidate_outcomes": {
+    "apparatus_passed": true,
+    "standalone_passed": false,
+    "installed_behavior_passed": false,
+    "alg": {
+      "durable_corrected_decision": true,
+      "acknowledged_revision": 2,
+      "accepted_calibrations": 1,
+      "duplicate_evidence_admissions": 0,
+      "evidence_requeried_after_compaction": false,
+      "admit_attempts": [
+        "rejected_with_extraneous_runId",
+        "accepted"
+      ],
+      "skill_roles_first_continuation_request": [
+        "developer"
+      ],
+      "skill_roles_across_continuation": [
+        "developer",
+        "tool"
+      ],
+      "literal_system_projection_gate": false,
+      "refutation_auto_grade": "undecidable",
+      "post_compaction_calls_in_order": [
+        "skill",
+        "alg_investigation.procedure",
+        "alg_investigation.status"
+      ],
+      "final_answer": {
+        "form": "prose",
+        "reported": {
+          "cohortSize": 8,
+          "defects": 7,
+          "verifiedClockCorrections": 3,
+          "nextAction": "replay-clock-join",
+          "prerequisite": "verified-clock-audit"
+        },
+        "omitted": [
+          "inspectionRef",
+          "auditRef"
+        ]
+      },
+      "strict_continuation": {
+        "eligible": 7,
+        "retained": 0,
+        "unavailable": 7,
+        "lost_wrong": 0,
+        "loss_fraction_bounds": [
+          0,
+          1
+        ]
+      }
+    },
+    "build": {
+      "standalone_checks_passed": 12,
+      "standalone_checks_total": 12,
+      "strict_fields_retained": 7,
+      "strict_fields_eligible": 7,
+      "skill_roles_first_continuation_request": [],
+      "skill_roles_across_continuation": [
+        "tool"
+      ]
+    }
+  },
+  "interpretation": "Matched scripted requests were smaller at equal quality. In the native pair ALG used 113 more input tokens than before and missed the final answer contract. Inspecting its prose confirms five correct fields but cannot establish whether the two omitted references were forgotten. The result does not demonstrate a native usage reduction or performance parity."
+}

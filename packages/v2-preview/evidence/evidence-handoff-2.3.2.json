@@ -1,0 +1,416 @@
+{
+  "source_commit": "5a0f147a5e86181ea0b6093da07268ee08f29dcc",
+  "version": "0.1.0-preview.7",
+  "host": "OpenCode 2.3.2",
+  "package": {
+    "name": "opencode-alg-v2-preview",
+    "version": "0.1.0-preview.7",
+    "host_version": "2.3.2",
+    "bundle_sha256": "82488421d2a5a32848e9a936c3c7f14c685d08ad44ffddeb60c4e3861451e50a",
+    "bundle_bytes": 1414939
+  },
+  "local": {
+    "windows": {
+      "tests": 194,
+      "assertions": 1754,
+      "tests_failed": 0,
+      "test_log_sha256": "53ce3eee132574850c3001c33848e341be3bb75d3e806771f27e11fcbd1cfd2e",
+      "bundle_sha256": "82488421d2a5a32848e9a936c3c7f14c685d08ad44ffddeb60c4e3861451e50a",
+      "binary_sha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+      "scripted_pairs": 8,
+      "matrix_sha256": "14a10ca324efd5f6dd8329ce1701cd36f2574c46f46f252b3e596db6b167d521",
+      "delivery_cases": {
+        "ready": true,
+        "superseded": true,
+        "revoked": true,
+        "missing-reference": true,
+        "calculation-mismatch": true,
+        "calculation-missing": true
+      },
+      "delivery_sha256": "fd1c4629d82e6dbf84af378a09ec9e0282905ab0e2c708defa7a5eff1f583a57",
+      "restart_cases": {
+        "held-out": {
+          "receipt_sha256": "b095005528034792ad1c42a2059d804e55bd3cf3c0a34b6d5f07b3ef2454508f",
+          "verified_restarts": 2,
+          "matched_work": true,
+          "duplicate_admissions": 0,
+          "alg_report": {
+            "status": "verified",
+            "kind": null,
+            "revision": 1,
+            "fields": {
+              "cohortSize": 12,
+              "defects": 5,
+              "verifiedClockCorrections": 2,
+              "inspectionRef": "52c23ff70a0d5c0c9bde",
+              "auditRef": "bd1285a1af511ca29142",
+              "nextAction": "replay-clock-join",
+              "prerequisite": "verified-clock-audit"
+            }
+          }
+        },
+        "changed": {
+          "receipt_sha256": "e1590495c19e5e603d1f8cd58875d6827bec044b445cc5b0c7d4aa545bffd1a5",
+          "verified_restarts": 2,
+          "matched_work": true,
+          "duplicate_admissions": 0,
+          "alg_report": {
+            "status": "abstained",
+            "kind": "conflict",
+            "revision": null,
+            "fields": null
+          }
+        },
+        "exhausted": {
+          "receipt_sha256": "000b9a20f8043348da2ef5e28fb40dad9a36bc82626c9240184ff6b7c002ee52",
+          "verified_restarts": 2,
+          "matched_work": true,
+          "duplicate_admissions": 0,
+          "alg_report": {
+            "status": "abstained",
+            "kind": "exhausted",
+            "revision": null,
+            "fields": null
+          }
+        }
+      }
+    },
+    "linux_wsl": {
+      "tests": 194,
+      "assertions": 1754,
+      "tests_failed": 0,
+      "test_log_sha256": "c055bdc6446f07a5b389c52b71fb3ea3ac84e20af96f3abf05447c74a8da3724",
+      "bundle_sha256": "82488421d2a5a32848e9a936c3c7f14c685d08ad44ffddeb60c4e3861451e50a",
+      "binary_sha256": "e6543f6e5c39c40971ba38afd1819ac852c29ac735b5a89065d3d148d47f27ad",
+      "scripted_pairs": 8,
+      "matrix_sha256": "d215b3a21c4c2fc59dc2563e95e46f18991c8b28d6de1501c7181cc604cf52f8",
+      "delivery_cases": {
+        "ready": true,
+        "superseded": true,
+        "revoked": true,
+        "missing-reference": true,
+        "calculation-mismatch": true,
+        "calculation-missing": true
+      },
+      "delivery_sha256": "5ab1befa09c97c14d80c6cc91c7b5e56e2f79d743ab4aa56fa3de6ce0960db6b",
+      "restart_cases": {
+        "held-out": {
+          "receipt_sha256": "a90e9fd1fc2e366067cf18f41e26e5732845252838e549d7f0d870548a8a9412",
+          "verified_restarts": 2,
+          "matched_work": true,
+          "duplicate_admissions": 0,
+          "alg_report": {
+            "status": "verified",
+            "kind": null,
+            "revision": 1,
+            "fields": {
+              "cohortSize": 12,
+              "defects": 5,
+              "verifiedClockCorrections": 2,
+              "inspectionRef": "52c23ff70a0d5c0c9bde",
+              "auditRef": "bd1285a1af511ca29142",
+              "nextAction": "replay-clock-join",
+              "prerequisite": "verified-clock-audit"
+            }
+          }
+        },
+        "changed": {
+          "receipt_sha256": "16163269b9e04815fdc99f5b3f41ce53b14f6b1bb984ad6e5b89ebecc287b4d6",
+          "verified_restarts": 2,
+          "matched_work": true,
+          "duplicate_admissions": 0,
+          "alg_report": {
+            "status": "abstained",
+            "kind": "conflict",
+            "revision": null,
+            "fields": null
+          }
+        },
+        "exhausted": {
+          "receipt_sha256": "146fcdfcf2ace063195c6a60a9d6c3590e3afe5c08f834eee522b130b6bca442",
+          "verified_restarts": 2,
+          "matched_work": true,
+          "duplicate_admissions": 0,
+          "alg_report": {
+            "status": "abstained",
+            "kind": "exhausted",
+            "revision": null,
+            "fields": null
+          }
+        }
+      }
+    }
+  },
+  "original_failure_replay": {
+    "archiveSha256": "02f33ee7c0a4bcc7ac73bedbd75078dc265b61a588f42deb6f386f57379f0bc7",
+    "first": {
+      "kind": "need_page",
+      "source": "inspection",
+      "rowCount": 4,
+      "matches": 3,
+      "threshold": 4,
+      "nextLimit": 8
+    },
+    "beforeCut": {
+      "kind": "need_page",
+      "source": "inspection",
+      "rowCount": 4,
+      "matches": 3,
+      "threshold": 4,
+      "nextLimit": 8
+    },
+    "restored": {
+      "kind": "need_page",
+      "source": "inspection",
+      "rowCount": 4,
+      "matches": 3,
+      "threshold": 4,
+      "nextLimit": 8
+    },
+    "calculated": {},
+    "checkpoint": "724124bccda4d0130046cae28e75bd023eea921a96d40ba749c4d95fe1d48076"
+  },
+  "scope": "Scripted transfer of an unfinished search on two local platforms, followed by one ALG-first Windows Luna/Build pair. The live fixture has a different source, selection threshold and answer from the earlier incident. Both arms receive the same approved recipe, read permissions, shared query budget, request cap and oracle. ALG also exercises its governed calibration and report certification.",
+  "native": {
+    "receipt_sha256": "45ae7020c06589a026895476da2b1280ec6d99b7cb511fde6599f798438b66c5",
+    "model": "openai/gpt-6-luna",
+    "runtime_bundle": "82488421d2a5a32848e9a936c3c7f14c685d08ad44ffddeb60c4e3861451e50a",
+    "platform": "Windows x64",
+    "qualified": false,
+    "order": [
+      "alg",
+      "build"
+    ],
+    "budget": {
+      "calls": 24,
+      "requestBytes": 196608,
+      "responseBytes": 393216,
+      "armRequestBytes": 1048576,
+      "armResponseBytes": 4194304,
+      "outputTokens": 1024,
+      "outputDeltaBytes": 4096,
+      "armOutputTokens": 12000,
+      "requestMs": 45000,
+      "armMs": 300000
+    },
+    "parity": {
+      "model": true,
+      "skill": true,
+      "treatment": true,
+      "budget": true,
+      "correction": true,
+      "work": true,
+      "runtimeUnchanged": true
+    },
+    "freeze": {
+      "evidenceSha256": "a0f8ba427d702e6fec132aec846993b02ce113e6cdfa786a359d8fe0b0a48768",
+      "oracleSha256": "cd2e5faf249a5248c42e2c17774967315304e74d7dc8fd8f47804123d75b2d45",
+      "graderSha256": "983f188068326de93dd55cf130de639f23fe1798f4c36359ce0f7e0e7b6f3ef5",
+      "skillSha256": "56be75ac46406e5cc8aa32ebe78fc78ae0f29270b47c4702c47f2127b467d2eb",
+      "promptsSha256": "5c0ba554d84382feb5ebba0c7f811e0c0ec0b5ee98eb483d9f6733dec0f13785"
+    },
+    "arms": {
+      "alg": {
+        "passed": false,
+        "failure": "NATIVE_PROVIDER_CALL_BUDGET",
+        "restart_verified": true,
+        "compaction_witnessed": true,
+        "root_window_requests": {
+          "initial": [
+            4
+          ],
+          "resume": [
+            8,
+            12
+          ]
+        },
+        "unique_source_admissions": 4,
+        "duplicate_admissions": 0,
+        "requests": 24,
+        "input_tokens": 103878,
+        "cache_read_tokens": 32896,
+        "uncached_input_tokens": 70982,
+        "output_tokens": 1874,
+        "elapsed_ms": 71738,
+        "usage_by_phase": {
+          "root/initial": {
+            "requests": 4,
+            "requestBytes": 60649,
+            "inputTokens": 12264,
+            "outputTokens": 110
+          },
+          "root/summary": {
+            "requests": 1,
+            "requestBytes": 19159,
+            "inputTokens": 3846,
+            "outputTokens": 482
+          },
+          "root/resume": {
+            "requests": 14,
+            "requestBytes": 419596,
+            "inputTokens": 72125,
+            "outputTokens": 915
+          },
+          "checker/audit": {
+            "requests": 4,
+            "requestBytes": 39820,
+            "inputTokens": 7855,
+            "outputTokens": 234
+          },
+          "root/resolve": {
+            "requests": 1,
+            "requestBytes": 50279,
+            "inputTokens": 7788,
+            "outputTokens": 133
+          }
+        },
+        "grade_failures": [
+          "resumedAnswer",
+          "finalAnswer",
+          "currentReport"
+        ],
+        "host_failures": [],
+        "calibrations": 1,
+        "resume_obligation": [
+          {
+            "kind": "need_page",
+            "source": "inspection",
+            "rowCount": 4,
+            "matches": 2,
+            "threshold": 5,
+            "nextLimit": 8
+          }
+        ],
+        "report_statuses": [
+          [
+            "incomplete",
+            "need_page"
+          ],
+          [
+            "incomplete",
+            "need_page"
+          ],
+          [
+            "incomplete",
+            "need_audit"
+          ],
+          [
+            "incomplete",
+            "need_audit"
+          ],
+          [
+            "incomplete",
+            "need_audit"
+          ]
+        ],
+        "acknowledged_revisions": [
+          1
+        ]
+      },
+      "build": {
+        "passed": false,
+        "failure": null,
+        "restart_verified": true,
+        "compaction_witnessed": true,
+        "root_window_requests": {
+          "initial": [
+            4
+          ],
+          "resume": [
+            8,
+            12
+          ]
+        },
+        "unique_source_admissions": 4,
+        "duplicate_admissions": 0,
+        "requests": 15,
+        "input_tokens": 38203,
+        "cache_read_tokens": 20864,
+        "uncached_input_tokens": 17339,
+        "output_tokens": 1393,
+        "elapsed_ms": 45084,
+        "usage_by_phase": {
+          "root/initial": {
+            "requests": 4,
+            "requestBytes": 57582,
+            "inputTokens": 8924,
+            "outputTokens": 161
+          },
+          "root/summary": {
+            "requests": 1,
+            "requestBytes": 24413,
+            "inputTokens": 3238,
+            "outputTokens": 531
+          },
+          "root/resume": {
+            "requests": 5,
+            "requestBytes": 83079,
+            "inputTokens": 14221,
+            "outputTokens": 406
+          },
+          "checker/audit": {
+            "requests": 4,
+            "requestBytes": 39850,
+            "inputTokens": 7855,
+            "outputTokens": 234
+          },
+          "root/resolve": {
+            "requests": 1,
+            "requestBytes": 27688,
+            "inputTokens": 3965,
+            "outputTokens": 61
+          }
+        },
+        "grade_failures": [
+          "resumedAnswer",
+          "finalAnswer"
+        ],
+        "host_failures": [],
+        "calibrations": null,
+        "resume_obligation": [],
+        "report_statuses": [],
+        "acknowledged_revisions": []
+      }
+    }
+  },
+  "native_order_replay": {
+    "completed_cut": 7,
+    "child_completion": 17,
+    "decision_acknowledgement": 25,
+    "structured_audit": 29,
+    "at_child": {
+      "obligation": "need_audit",
+      "measurements": {
+        "cohortSize": 12,
+        "defects": 5
+      },
+      "status": "incomplete",
+      "proof_sha256": "bbb12c5d26ec30afc883b8a8c4299428e1c2d0ab397b0e102b1ed28162c08285"
+    },
+    "at_acknowledgement": {
+      "obligation": "need_audit",
+      "measurements": {
+        "cohortSize": 12,
+        "defects": 5
+      },
+      "status": "incomplete",
+      "proof_sha256": "bbb12c5d26ec30afc883b8a8c4299428e1c2d0ab397b0e102b1ed28162c08285"
+    },
+    "after_structured_audit": {
+      "obligation": "verified",
+      "measurements": {
+        "cohortSize": 12,
+        "defects": 5,
+        "verifiedClockCorrections": 2
+      },
+      "status": "verified",
+      "proof_sha256": "a518748163f8b0f538450ec4744b68f56b5b363978a5fdf3a5481dc6f9c8dae0"
+    }
+  },
+  "interpretation": [
+    "ALG and Build performed the same four source admissions, including the independent audit. Both restored the next authorized prefix correctly and neither admitted duplicate work.",
+    "ALG's resumed answer gave 12 rows and 5 defects with extra prose. After OpenCode delivered the child-completion notification it described the correct 2 corrections and recommendation in prose and a differently keyed JSON object. Its acknowledgement preceded the authoritative structured audit. The host had verified the cohort, had not yet verified the join, and did not certify the proposed report. After the structured audit the independent replay verified all three numbers. The live arm exhausted its 24-request budget before producing a new certified report or a passing final answer.",
+    "Build reported 4 defects in the 12-row cohort and abstained for exhaustion. The independent oracle found 5 defects and 2 matching verified audit rows. Build finished below the request cap, with a wrong answer. Both native arms failed the frozen answer checks.",
+    "This single synthetic incident tests process restart and one real compaction. The held-out case and prompt differ from the earlier preview.6 case. Its resume-stage token totals include the automatically delivered child notification before the explicit handoff, so whole-run usage is the appropriate comparison."
+  ]
+}
