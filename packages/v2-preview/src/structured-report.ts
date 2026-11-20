@@ -32,7 +32,8 @@ export function renderInvestigationReport(report: unknown): string {
 }
 
 type SessionID = Parameters<Plugin.Context["session"]["synthetic"]>[0]["sessionID"]
-type Current = { runId: string; revision: number; evidenceRevision?: number } & ({ report: unknown } | { calculation: unknown })
+type Current = { runId: string; revision: number; evidenceRevision?: number } &
+  ({ report: unknown; reportAuthority?: string } | { calculation: unknown })
 
 const calculatedReport = z.strictObject({
   status: z.literal("verified"),
@@ -71,6 +72,9 @@ export function registerReportCommand(
       if (evidenceRevision !== undefined && (!Number.isSafeInteger(evidenceRevision) || evidenceRevision < 0)) {
         throw new Error("REPORT_REVISION_INVALID")
       }
+      if ("report" in current && current.reportAuthority !== "owner_recorded") {
+        throw new Error("REPORT_DECISION_UNACKNOWLEDGED")
+      }
       const json = "report" in current ? renderInvestigationReport(current.report) :
         renderCalculatedReport(current.calculation, current.revision)
       const bytes = Buffer.from(json + "\n")
@@ -93,7 +97,9 @@ export function registerReportCommand(
         sessionID, delivery: "queue", resume: false,
         text: "ALG exported the acknowledged investigation report to " + reportPath + " (SHA-256 " + digest + ").",
         description: "Investigation report · " + reportPath,
-        metadata: { algReport: { version: 1, revision: current.revision, evidenceRevision, path: reportPath, sha256: digest } },
+        metadata: { algReport: { version: 1, revision: current.revision,
+          ...(evidenceRevision !== undefined && { evidenceRevision }), path: reportPath,
+          authority: "report" in current ? "owner_recorded" : "verified_calculation", sha256: digest } },
       })
     },
   }))

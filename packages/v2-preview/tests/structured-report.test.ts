@@ -37,6 +37,7 @@ test("an explicit export publishes the exact bytes, does not wake the model and 
   type Send = Plugin.Context["session"]["synthetic"]
   const sends: Parameters<Send>[0][] = []
   let authorized = true
+  let authority = "owner_recorded"
   try {
     await registerReportCommand({
       command: { transform: async fn => {
@@ -47,10 +48,13 @@ test("an explicit export publishes the exact bytes, does not wake the model and 
     }, directory, async sessionID => {
       expect(String(sessionID)).toBe("ses_owner")
       if (!authorized) throw new Error("OWNER_REQUIRED")
-      return { runId: "test-owner", revision: 2, report }
+      return { runId: "test-owner", revision: 2, report, reportAuthority: authority }
     })
     expect(command?.name).toBe("alg-report")
     const invoke = () => command!.execute({ sessionID: "ses_owner", prompt: { text: "" }, delivery: "queue" } as Parameters<CommandDefinition["execute"]>[0])
+    authority = "provisional"
+    await expect(invoke()).rejects.toThrow("REPORT_DECISION_UNACKNOWLEDGED")
+    authority = "owner_recorded"
     await invoke()
     await invoke()
     expect(sends).toHaveLength(2)

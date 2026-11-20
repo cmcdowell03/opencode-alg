@@ -29,12 +29,35 @@ export interface V2InvestigationSession {
   readonly parentID?: string | null
 }
 
-export interface V2InvestigationOptions {
+export type InvestigationMode = "job-backed" | "read-only"
+
+interface JobBackedOptions {
+  readonly investigationMode?: "job-backed"
   readonly port: InvestigationMcpPort
   /** The operator-approved synthetic recipe and bound query, supplied by host configuration. */
   readonly approvedJob: InvestigationWorkInput
   readonly preQuery?: PreQueryGate
 }
+
+export type V2InvestigationOptions = JobBackedOptions | { readonly investigationMode: "read-only" }
+
+export const reportDecisionSchema = z.strictObject({
+  disposition: z.enum(["resolved", "indeterminate"]),
+  missingEvidence: z.array(z.string().trim().min(1).max(1024)).max(16),
+}).refine(decision => decision.disposition !== "resolved" || decision.missingEvidence.length === 0)
+
+const decisionSourcesSchema = z.strictObject({
+  sources: z.array(z.strictObject({
+    id: z.string().regex(/^[a-f0-9]{64}$/),
+    reference: z.string().min(1).max(1024),
+  })).max(16),
+  calculationProof: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+  reportDecision: z.strictObject({
+    decision: reportDecisionSchema,
+    findingsSha256: z.string().regex(/^[a-f0-9]{64}$/),
+  }).optional(),
+}).refine(sources => !sources.reportDecision || (sources.sources.length > 0 && !sources.calculationProof))
+export type ReadOnlyDecisionSources = z.infer<typeof decisionSourcesSchema>
 
 type ResultSelection = Pick<CheckerResultGrantInput, "work_key" | "manifest_digest">
 type CheckerSelection = ResultSelection & { grant_id: string }
@@ -43,7 +66,11 @@ export const refutationSchema = z.object({
   statement: z.string().trim().min(1).refine(text => Buffer.byteLength(JSON.stringify(text)) <= 480),
   manifest_digest: z.string().regex(/^[a-f0-9]{64}$/),
 }).strict()
-type NextMeasurement = { expected_decision_revision: number; next_action: string; refutation?: z.infer<typeof refutationSchema> }
+type NextMeasurement = {
+  expected_decision_revision: number
+  next_action: string
+  refutation?: z.infer<typeof refutationSchema>
+}
 
 const MAX_PROJECTION_BYTES = 3072
 const MAX_DECISION_BYTES = 1024
@@ -107,6 +134,9 @@ function decisionProcedurePin(ledger: InvestigationLedger): ProcedurePin | undef
 }
 
 function view(ledger: InvestigationLedger, preQuery?: PreQueryReceipt) {
+  const investigationMode: InvestigationMode = ledger.scope.run_id.startsWith("alg-v2-ro-") ? "read-only" : "job-backed"
+  const rawSources = ledger.checkpoint.scope.v2_decision_sources
+  const decisionSources = rawSources === undefined ? undefined : decisionSourcesSchema.parse(rawSources)
   const current = ledger.work[0]
   const work = current ? {
     work_key: current.work_key,
@@ -115,11 +145,13 @@ function view(ledger: InvestigationLedger, preQuery?: PreQueryReceipt) {
       ? { manifest_digest: current.result.digest } : {}),
   } : null
   const decision = decisionEvidence(ledger.checkpoint)
-  const lifecycle = current ? guidance[current.status] : "Admit the approved synthetic job."
+  const lifecycle = investigationMode === "read-only"
+    ? "Inspect approved sources, use status to recover observed references, and cite them when recording findings or a next measurement."
+    : current ? guidance[current.status] : "Admit the approved synthetic job."
   if (!decision.next_action) decision.next_action = lifecycle
   const base = { revision: ledger.revision, decision_revision: decisionRevision(ledger), work, guidance: lifecycle }
   const procedurePin = decisionProcedurePin(ledger)
-  const gate = preQuery ? { preQuery } : {}
+  const gate = { investigationMode, decisionSources, ...(preQuery ? { preQuery } : {}) }
   const full = JSON.stringify({ ...base, decision })
   if (Buffer.byteLength(full) <= MAX_PROJECTION_BYTES) return { ...base, ...gate, procedurePin, decision, projection: full }
 
@@ -138,10 +170,29 @@ function view(ledger: InvestigationLedger, preQuery?: PreQueryReceipt) {
 
 export type V2InvestigationView = ReturnType<typeof view>
 
-export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2InvestigationOptions) {
-  const job = structuredClone(InvestigationWorkInputSchema.parse(approvedJob))
-  if (job.purpose !== "analysis" || job.generation !== 0) throw new Error("expected one approved synthetic analysis job")
-  const approval = identity("v2-approved-", canonicalJson(job))
+export function createV2InvestigationBridge(options: V2InvestigationOptions) {
+  const readOnly = options.investigationMode === "read-only"
+  const jobContext = options.investigationMode === "read-only" ? undefined : {
+    port: options.port,
+    preQuery: options.preQuery,
+    job: structuredClone(InvestigationWorkInputSchema.parse(options.approvedJob)),
+  }
+  const approval = jobContext && identity("v2-approved-", canonicalJson(jobContext.job))
+  if (jobContext && (jobContext.job.purpose !== "analysis" || jobContext.job.generation !== 0)) {
+    throw new Error("expected one approved synthetic analysis job")
+  }
+
+  function jobAccess() {
+    if (!jobContext) throw new Error("READ_ONLY_ACTION_UNAVAILABLE")
+    return { ...jobContext, approval: approval! }
+  }
+
+  function checkMode(ledger: InvestigationLedger): void {
+    if (readOnly && (ledger.work.length !== 0 || ledger.remote_profile || ledger.cost_limit !== 0 ||
+        ledger.reserved_cost !== 0 || ledger.cumulative_cost !== 0 || ledger.checker_result_grants?.length)) {
+      throw new Error("READ_ONLY_LEDGER_UNVERIFIED")
+    }
+  }
 
   function scope(ctx: V2InvestigationSession, child = false): InvestigationScope {
     const validID = (id: unknown, limit: number): id is string =>
@@ -159,9 +210,12 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
       project_directory: realpathSync(ctx.directory),
       project_id: ctx.projectID,
       owner_id: owner,
-      run_id: identity("alg-v2-inv-", ctx.projectID, owner),
+      // Keep the historical job-backed identity untouched. A configuration change
+      // can never reinterpret its reservations, manifests, or checker grants.
+      run_id: identity(readOnly ? "alg-v2-ro-" : "alg-v2-inv-", ctx.projectID, owner),
     }
-    if (!investigationPortIsQualified(port, result) || port.capabilities.project_id !== ctx.projectID) {
+    if (jobContext && (!investigationPortIsQualified(jobContext.port, result) ||
+        jobContext.port.capabilities.project_id !== ctx.projectID)) {
       throw new Error("qualified investigation port for the verified project required")
     }
     return result
@@ -180,7 +234,9 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
       { owner: binding.run_id, leaseMs: 1_000, heartbeatMs: 250, waitMs: 2_000 },
     )
     try {
-      return await operate(store, store.snapshot)
+      const ledger = store.snapshot
+      checkMode(ledger)
+      return await operate(store, ledger)
     } finally {
       lock.release()
     }
@@ -197,10 +253,13 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
     if (ctx.parentID != null) return undefined
     const binding = scope(ctx)
     if (!existsSync(runContainedPath(binding.project_directory, binding.run_id, "investigation", "head.json"))) return undefined
-    return InvestigationStore.open(binding).snapshot
+    const ledger = InvestigationStore.open(binding).snapshot
+    checkMode(ledger)
+    return ledger
   }
 
   function checkPolicy(ledger: Readonly<InvestigationLedger>, permitBinding = false) {
+    const { preQuery } = jobAccess()
     const boundPolicy = ledger.checkpoint.scope.v2_pre_query_policy
     if (boundPolicy === undefined && permitBinding) return
     if (boundPolicy !== preQuery?.policySha256) {
@@ -209,10 +268,12 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
   }
 
   function evaluated(store: InvestigationStore, ledger: InvestigationLedger) {
+    const { job, preQuery } = jobAccess()
     return preQuery?.evaluate(store.scope, job, decisionProcedurePin(ledger))
   }
 
   function existingView(ledger: InvestigationLedger, receipt: PreQueryReceipt | undefined) {
+    const { job, port, approval } = jobAccess()
     if (!receipt) return view(ledger)
     // Reuse only the manifest reference of a settled, exact admission from this ledger.
     // Result pages still use the canonical store's fresh access and validity checks.
@@ -239,9 +300,11 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
   return {
     create(ctx: V2InvestigationSession): V2InvestigationView {
       const store = InvestigationStore.open(scope(ctx), {
-        create: true, costLimit: job.reserved_cost, maxAdmissions: 1,
+        create: true, costLimit: jobContext?.job.reserved_cost ?? 0, maxAdmissions: 1,
       })
-      return view(store.snapshot)
+      const ledger = store.snapshot
+      checkMode(ledger)
+      return view(ledger)
     },
 
     primary(ctx: V2InvestigationSession): V2InvestigationView | null {
@@ -251,6 +314,8 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
 
     /** Input to the research-role allowlist. This is a dated, settled observation. */
     advisoryEvidence(ctx: V2InvestigationSession) {
+      if (readOnly) return undefined
+      const { approval } = jobAccess()
       const ledger = ownerLedger(ctx)
       const work = ledger?.work[0]
       if (!ledger || ledger.work.length !== 1 || !work?.result || work.purpose !== "analysis" ||
@@ -261,7 +326,8 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
         revision: ledger.revision, decision_revision: decisionRevision(ledger), coverage: work.result.coverage }
     },
 
-    admit(ctx: V2InvestigationSession): Promise<V2InvestigationView> {
+    async admit(ctx: V2InvestigationSession): Promise<V2InvestigationView> {
+      const { job, port, preQuery, approval } = jobAccess()
       return ownerOperation(ctx, async (store, ledger) => {
         assertWritable(ledger)
         const existing = ledger.work[0]
@@ -291,7 +357,8 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
       })
     },
 
-    dispatch(ctx: V2InvestigationSession): Promise<V2InvestigationView> {
+    async dispatch(ctx: V2InvestigationSession): Promise<V2InvestigationView> {
+      const { port, preQuery, approval } = jobAccess()
       return ownerOperation(ctx, async (store, ledger) => {
         assertWritable(ledger)
         checkPolicy(ledger)
@@ -310,7 +377,8 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
       })
     },
 
-    reconcile(ctx: V2InvestigationSession): Promise<V2InvestigationView> {
+    async reconcile(ctx: V2InvestigationSession): Promise<V2InvestigationView> {
+      const { port } = jobAccess()
       return ownerOperation(ctx, async (store, ledger) => {
         const work = ledger.work[0]
         if (!work) throw new Error("approved investigation job has not been admitted")
@@ -329,11 +397,14 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
       ctx: V2InvestigationSession,
       input: NextMeasurement,
       verifyProcedure?: () => Promise<ProcedurePin | undefined>,
+      observeSources?: () => Promise<ReadOnlyDecisionSources>,
     ): Promise<V2InvestigationView> {
       return ownerOperation(ctx, async (store, ledger) => {
         assertWritable(ledger)
         const revision = decisionRevision(ledger)
-        if (input.expected_decision_revision !== revision) throw new Error("stale investigation decision revision")
+        if (input.expected_decision_revision !== revision) {
+          throw new Error(readOnly ? "STALE_INVESTIGATION_DECISION_REVISION" : "stale investigation decision revision")
+        }
         const action = input.next_action
         if (typeof action !== "string" || !action.trim() || Buffer.byteLength(JSON.stringify(action)) > MAX_DECISION_BYTES) {
           throw new Error("next measurement exceeds the 1024-byte JSON budget or is empty")
@@ -341,6 +412,7 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
         if (revision === Number.MAX_SAFE_INTEGER) throw new Error("investigation decision revision exhausted")
         const patch: Partial<typeof ledger.checkpoint> = {}
         if (input.refutation !== undefined) {
+          if (readOnly) throw new Error("READ_ONLY_ACTION_UNAVAILABLE")
           const refutation = refutationSchema.parse(input.refutation)
           const work = ledger.work[0]
           if (!work || !["result_recorded", "reusable"].includes(work.status) || work.result?.digest !== refutation.manifest_digest)
@@ -352,14 +424,22 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
           patch.decision_focus = { hypothesis_ids: [hypothesis.id], contradictions: [] }
         }
         const previousPin = decisionProcedurePin(ledger)
+        const sources = readOnly && observeSources ? decisionSourcesSchema.parse(await observeSources()) : undefined
         const pin = await verifyProcedure?.()
+        if (sources?.calculationProof && !pin) throw new Error("RESEARCH_PROCEDURE_UNVERIFIED")
         if (!pin && previousPin) throw new Error("RESEARCH_PROCEDURE_UNVERIFIED")
+        const checkpointScope = { ...ledger.checkpoint.scope }
+        if (readOnly) {
+          // A source-free update is a question. Clear any binding inherited from the previous revision.
+          delete checkpointScope.v2_decision_sources
+          if (sources && (sources.sources.length || sources.calculationProof)) checkpointScope.v2_decision_sources = sources
+        }
         // The checkpoint head is the sole publication point for the decision and its approval.
         await store.updateCheckpoint({
           ...patch,
           next_action: action,
           scope: {
-            ...ledger.checkpoint.scope,
+            ...checkpointScope,
             v2_decision_revision: revision + 1,
             ...(pin ? { v2_decision_procedure: pin } : {}),
           },
@@ -368,7 +448,19 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
       })
     },
 
-    grant(ctx: V2InvestigationSession, checker: V2InvestigationSession, selection: ResultSelection) {
+    withReadOnlyDecision<T>(ctx: V2InvestigationSession, expectedRevision: number | undefined,
+      use: (current: V2InvestigationView) => Promise<T>): Promise<T> {
+      return ownerOperation(ctx, async (_store, ledger) => {
+        if (!readOnly) throw new Error("JOB_BACKED_ACTION_UNAVAILABLE")
+        if (expectedRevision !== undefined && expectedRevision !== decisionRevision(ledger)) {
+          throw new Error("STALE_INVESTIGATION_DECISION_REVISION")
+        }
+        return use(view(ledger))
+      })
+    },
+
+    async grant(ctx: V2InvestigationSession, checker: V2InvestigationSession, selection: ResultSelection) {
+      jobAccess()
       return ownerOperation(ctx, async (store, ledger) => {
         assertWritable(ledger)
         const binding = scope(checker, true)
@@ -385,7 +477,8 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
       })
     },
 
-    revoke(ctx: V2InvestigationSession, selection: Omit<CheckerResultGrantRevokeInput, "producer_node">) {
+    async revoke(ctx: V2InvestigationSession, selection: Omit<CheckerResultGrantRevokeInput, "producer_node">) {
+      jobAccess()
       return ownerOperation(ctx, async (store, ledger) => {
         assertWritable(ledger)
         return store.revokeCheckerResult({
@@ -399,6 +492,7 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
     },
 
     async checkerRead(ctx: V2InvestigationSession, selection: CheckerSelection) {
+      const { port } = jobAccess()
       const binding = scope(ctx, true)
       const store = InvestigationStore.open(binding)
       const grant = requireCheckerGrant(store.snapshot, ctx.sessionID, selection)
@@ -407,6 +501,7 @@ export function createV2InvestigationBridge({ port, approvedJob, preQuery }: V2I
 
     /** Fence a local, host-verified checker receipt against concurrent revocation. Keep network calls outside publish. */
     async withCheckerGrant<T>(ctx: V2InvestigationSession, selection: CheckerSelection, publish: () => T | Promise<T>): Promise<T> {
+      jobAccess()
       return lockedOperation(scope(ctx, true), async (_store, ledger) => {
         requireCheckerGrant(ledger, ctx.sessionID, selection)
         const expiry = ledger.work[0]?.result?.expires_at
