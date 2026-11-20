@@ -510,10 +510,10 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       return refs.length ? [{ finding: finding.interpretation, scope: finding.scope ?? "Inspected sources",
         evidence: [...new Set(refs)] }] : []
     })
-    const missingEvidence = [...new Set([
-      ...(decision?.missingEvidence ?? []),
-      ...evidence.findings.flatMap(finding => finding.missingEvidence ? [finding.missingEvidence] : []),
-    ])]
+    // Once recorded, the owner supplies the final report fields. A finding's
+    // explanation is useful during investigation but can change the report contract.
+    const missingEvidence = decision?.missingEvidence ??
+      [...new Set(evidence.findings.flatMap(finding => finding.missingEvidence ? [finding.missingEvidence] : []))]
     return { disposition: decision?.disposition ?? "indeterminate", claims, missingEvidence }
   }
 

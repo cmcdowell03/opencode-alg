@@ -125,6 +125,31 @@ test("read-only actions fence submissions, stale revisions, and receipt-free rep
   }
 })
 
+test("an acknowledged missing-source list survives rendering without the finding's explanatory prose", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "alg-report-gap-"))
+  const host = await fixture(directory)
+  try {
+    await host.call("create")
+    host.history([sourceResult("index", "The calibration index names the unavailable trace.")])
+    const reference = "calibration/trace.json"
+    const explanation = "The signed trace at " + reference + " would establish whether the measurement drifted."
+    const finding = { id: "drift", scope: "Batch A", interpretation: "The cause remains open.",
+      support: ["notes.md"], counterevidence: [], missingEvidence: explanation }
+    expect(await host.call("record_finding", { expected_decision_revision: 0, finding })).toMatchObject({ ok: true })
+    const closed = await host.call("set_next_measurement", { expected_decision_revision: 0,
+      next_action: "Obtain the signed calibration trace", evidence_refs: ["notes.md"],
+      report_decision: { disposition: "indeterminate", missingEvidence: [reference] } })
+    expect(closed).toMatchObject({ ok: true, decision_revision: 1 })
+    const rendered = await host.call("render_report", { expected_decision_revision: 1 })
+    expect(rendered.report_authority).toBe("owner_recorded")
+    expect(JSON.parse(rendered.text).missingEvidence).toEqual([reference])
+    expect((await host.call("status")).evidence.findings[0].missingEvidence).toBe(explanation)
+  } finally {
+    await host.detach()
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
 test("saved citations survive restart and express disposition stays tied to the exact findings", async () => {
   const directory = await mkdtemp(join(tmpdir(), "alg-read-only-"))
   const first = await fixture(directory)
