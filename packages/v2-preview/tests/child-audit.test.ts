@@ -4,7 +4,7 @@ import { inspectCalculationProgress, parseCalculationPolicy } from "../src/calcu
 import { childAuditConfigSchema, createChildEvidenceReader, type ChildAuditConfig } from "../src/child-audit.ts"
 import type { DeliveryHistory } from "../src/delivery.ts"
 
-const config = { agent: "research-checker", tool: "audit_lookup_pages", source: "clock-audit", scope: "whole-source" } as const
+const config = { agent: "research-checker", tool: "audit_lookup_pages", source: "clock-audit", scope: "whole-source" as const }
 const directory = process.cwd()
 const recipe = {
   version: 1,
