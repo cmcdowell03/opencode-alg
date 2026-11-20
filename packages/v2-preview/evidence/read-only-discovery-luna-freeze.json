@@ -1,0 +1,76 @@
+{
+  "schema": "discovery-freeze-v2",
+  "variant": "focused-read-only",
+  "model": "openai/gpt-6-luna",
+  "mode": "native-oauth",
+  "host": {
+    "version": "2.3.2",
+    "binarySha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+    "packageSha256": "644b76d174bed9c90347c9df2aabb35c72a3b10d0298431fedead4a2bbb20a3d",
+    "bundleSha256": "75a28a847434996e30644b81e94879918ba26a326ec6d102b0839ca51826d184"
+  },
+  "caps": {
+    "calls": 48,
+    "requestBytes": 262144,
+    "responseBytes": 524288,
+    "armRequestBytes": 12582912,
+    "armResponseBytes": 25165824,
+    "outputTokens": 4096,
+    "outputDeltaBytes": 16384,
+    "armOutputTokens": 196608,
+    "requestMs": 90000,
+    "armMs": 1200000,
+    "sourceCalls": 96,
+    "sourceCallsPerRole": 48
+  },
+  "cases": [
+    {
+      "id": "depot-pine",
+      "caseSha256": "ee8a4a3c51b34309d9dd21149d288ef4556f98b5f0ed1bbd961cd6f25efec559",
+      "promptSha256": "aeb1f12d3407ab59937348c8302eb4c49e68394d31d1031e26bf264c027f6d73",
+      "order": [
+        "build",
+        "build-focused",
+        "alg-focused"
+      ],
+      "checkerPromptSha256": "9d8acea9e8a4bccf7f63c4cc9687dd4da21d812efc43856d22a62ff93dcae61b"
+    },
+    {
+      "id": "depot-elm",
+      "caseSha256": "254c755c9744f3897953b058adcf8254b772477f9ec4236a38bda8f797eda5f8",
+      "promptSha256": "aeb1f12d3407ab59937348c8302eb4c49e68394d31d1031e26bf264c027f6d73",
+      "order": [
+        "build-focused",
+        "alg-focused",
+        "build"
+      ],
+      "checkerPromptSha256": "af70bd9ced2797a7695ce0141a19584f29d3eb0d05fbd3b3e2003dbf0da09774"
+    }
+  ],
+  "audit": {
+    "revisionPromptSha256": "c3e237b0b573689e4568724f7a4863541368fd626b3dc90e4b064965082b58ab"
+  },
+  "ledgerPromptSha256": "7d6b4eae3dc96673b4c0d622b32e31beffa269d1c91bf8ea14be8b7e531382ba",
+  "sourceDigestMode": "utf8-lf-v1",
+  "files": {
+    "discovery-run.ts": "fd13254c12f8f8d66d53f8b2a423772b33a9dac4a9a4c222e80c476fc0ce8c03",
+    "discovery-cases.ts": "8f4ee5fce661d9d8b0430736b38ddf5d45bc3b6ed7e0a1bddea4fd59435cb846",
+    "discovery-grade.ts": "64630381068d4bcb3c36fceddbf4de1a9ace9d97df8b3942b4cd4c79c8916264",
+    "discovery-host.ts": "785f2d5f9f61821041363e247d276d5140b7652b72cb7e7db88ecc50e4dbf5dd",
+    "discovery-tools.ts": "194b238e0910d07baa77d8cc79de9bb30211b2103455cd9f9f87ebdd2cabe5da",
+    "native-observer.ts": "91be3f91f2f676181401157f07eb619d9b2c0b246588c9a1e253602d5296547a",
+    "native-provider.ts": "ae29388fcb985e6fbb61f1645b07161a456869ad21387d5c9859c2bf0d713c82",
+    "compaction.ts": "ba148b7d0b96f0f7817306e6e96829d57e76f177b258910fad422d90703db028",
+    "input-usage.ts": "4084c44ec7e6875313739822a93a0177602fad7867220006da64c021b42c56bf",
+    "skill-delivery.ts": "b4474f46f536621c3616276df46dd6390be0fd4a875e8593dd66e6b242696bd3",
+    "host.ts": "bfebf585ce7b659720a7b521eaf330afa0cc1f4313e24cd72d2007d1887d6cf9",
+    "../acceptance/host.ts": "2c2077d0aefc2b6fb0f926f5b7cc6592c144c2f8eed787b1269c9cc2d7c86d36",
+    "../acceptance/runtime.ts": "a7a361a353329c0968b38427493d251d594f55e411e904d6ccecc510b615464c",
+    "../acceptance/service.ts": "0842d28af70815c23ed1207e4fbf9a7f67146e17ab19388566f38c5ab1921555",
+    "discovery-finalize.ts": "f933f339300a6be65509ceee7041ec1c8e08194dd942bb5af2947b31b84c16a8",
+    "discovery-held-out.ts": "e65abce1cd44484ab4ce5a874d7f535c7143381c4f553f2bc213ec4b7b2b9bbd",
+    "discovery-protocol.ts": "490347e745e71dedeae5ba510618a88f813a416af00f99429cd6c1fd503227fe",
+    "discovery-ledger.ts": "ec2aec92037495aa54b3ba5c2368bc13435a3ea876f072b0fc63158c282e9fb2",
+    "../../../src/persistence.ts": "5fa363320d77ad8ac6f96cc66156afaeb31588e78a920c1ebe3fdc2c50cc97c4"
+  }
+}

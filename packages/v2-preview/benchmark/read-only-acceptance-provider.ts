@@ -37,7 +37,9 @@ export function startReadOnlyProvider() {
         }
         if (summary !== (phase === "compaction")) throw new Error("Unexpected generation kind")
         const completion = queue.shift()
-        if (!completion) throw new Error(`Unscheduled model generation during ${phase}`)
+        if (!completion) throw new Error(`Unscheduled model generation during ${phase}: ${JSON.stringify({
+          tools: [...tools.keys()], messages: messages.map(message => [message.role, textOf(message.content).slice(0, 300)]),
+        })}`)
         // Deliberately permit the fixture model to emit unadvertised calls. OpenCode must reject them.
         requests.push({ phase, summary, messages, tools, completion })
         return wireResponse(body.stream === true, requests.length, completion)

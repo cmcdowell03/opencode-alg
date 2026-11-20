@@ -424,15 +424,15 @@ async function run(binary: string, bundle: string, scenario: Scenario, scratch: 
     assert.ok(wire.includes("Await a follow-up request."), "Resumed model request missed the actual compaction")
     assert.ok(!wire.includes("obs-A57") && !wire.includes("obs-B91"), "Raw Markdown survived into the resumed request")
 
-    let review: Awaited<ReturnType<typeof nativeReview>> | undefined
+    let review: Awaited<ReturnType<typeof nativeReview>>["receipt"] | undefined
     if (close) {
-      review = await nativeReview(running, provider, resumed, directory, after.evidence.revision)
-      const reviewStatus = valueOf(await turn("review-status", [alg("status")], "Check the recorded scoped review."), "status")
-      assert.deepEqual(reviewStatus.checkerReview, { status: "recorded", workerSessionId: review.childId,
-        decisionRevision: review.decisionRevision, evidenceRevision: review.evidenceRevision,
-        findingId: review.findingId, result: review.result })
-      assert.equal(reviewStatus.decision_revision, revision)
-      assert.deepEqual(reviewStatus.decision_evidence, after.decisionEvidence)
+      const source = rows(after.evidence.sources, "Review source index").find(source => source.path === paths.samples)
+      const cited = rows(source?.references, "Review references").find(entry => entry.reference === drift)
+      assert.ok(cited, "Review receipt missing from persisted owner status")
+      const observation = await nativeReview(running, provider, resumed, directory, after.evidence.revision, cited)
+      review = observation.receipt
+      assert.equal(observation.status.decision_revision, revision)
+      assert.deepEqual(observation.status.decision_evidence, after.decisionEvidence)
       assert.equal(await readFile(audit, "utf8"), readBytes, "Native review repeated a source read")
     }
 
@@ -490,7 +490,7 @@ export async function readOnlyAcceptance(args: string[]) {
       console.log(JSON.stringify({ mode: "installed-read-only-acceptance", ...await run(executable, staged, scenario, scratch) }))
     } catch (error) {
       console.error(JSON.stringify({ mode: "installed-read-only-acceptance", scenario, passed: false,
-        error: error instanceof Error ? error.stack : String(error) }))
+        error: String(error), ...(error instanceof Error && { stack: error.stack }) }))
       process.exitCode = 1
     } finally {
       const target = await realpath(scratch)
