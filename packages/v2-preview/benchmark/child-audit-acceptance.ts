@@ -2,7 +2,7 @@ import { mkdtemp, open, realpath, rename, rm, writeFile } from "node:fs/promises
 import { tmpdir } from "node:os"
 import { basename, dirname, join } from "node:path"
 import { isDeepStrictEqual } from "node:util"
-import type { SessionInfo } from "@opencode/client"
+import type { McpServer, PluginState, SessionInfo } from "@opencode/client"
 import { algTool, hostVersion, owner, receiptsFor, requestOptions, startHost, toolCalls, transcript } from "../acceptance/host.ts"
 import { runtimeIdentity, sha256, waitFor } from "../acceptance/runtime.ts"
 import { startFactory } from "../acceptance/service.ts"
@@ -12,13 +12,14 @@ import { expectedAnswers } from "./evidence-handoff-grade.ts"
 import { jsonObject, object } from "./handoff-case.ts"
 import { hasScopedEvidenceTools, installAlg, observeTurn, pluginId, prepareHost, registerSkill, submitTurn, type Host } from "./host.ts"
 import { maxProviderBytes, maxProviderCalls, startTransport } from "./transport.ts"
-import { createWorkbench, startWorkbench } from "./workbench.ts"
+import { createWorkbench, evidenceToolNames, startWorkbench } from "./workbench.ts"
 
 type Row = Awaited<ReturnType<typeof transcript>>[number]
 type Runtime = Awaited<ReturnType<typeof runtimeIdentity>>
 const scenarios = ["lifecycle", "revoked"] as const
 type Scenario = typeof scenarios[number]
 const scratchPrefix = "alg-child-audit-"
+const readinessMs = 20_000
 const model = { providerID: "paired-benchmark", id: "fixture" }
 const fixtureModel = (actual: SessionInfo["model"]) =>
   actual?.providerID === model.providerID && actual.id === model.id
@@ -94,6 +95,12 @@ async function runScenario(binary: string, bundle: string, scratch: string, scen
   const wires: (ReturnType<typeof auditWire> & { id: number; phase: string })[] = []
   const checks: Record<string, boolean> = {}
   const restarts: { boundary: string; cutId: string; fromPid: number; toPid: number; transcriptStable: boolean }[] = []
+  const readiness: {
+    boundary: string; pid: number; elapsedMs: number; ready: boolean; requiresWorkbenches: boolean
+    plugin: PluginState | { status: "missing" | "unobserved" }
+    workbenches: Record<string, McpServer["status"]>
+    catalogErrors: { plugin?: string; mcp?: string }
+  }[] = []
   let phase: Phase = "initial"
   let skill: Awaited<ReturnType<typeof registerSkill>> | undefined
   const provider = startTransport({
@@ -143,16 +150,47 @@ async function runScenario(binary: string, bundle: string, scratch: string, scen
     check("ownerIdentity", !root.parentID && root.agent === owner && fixtureModel(root.model))
     factory.bindProject(root.projectID)
 
-    async function ready() {
-      await waitFor(async () => {
-        const client = host!.client
-        const plugin = (await client.plugin.list({ location }, requestOptions())).data.find(row => row.id === pluginId)
-        if (plugin?.state.status === "failed") throw new Error("Installed preview plugin failed")
-        const mcp = (await client.mcp.list({ location }, requestOptions())).data
-        if (plugin?.state.status === "active" && mcp.length === 2 && mcp.every(row => row.status.status === "connected")) return true
-      }, 8000, "Installed preview or loopback workbench unavailable")
+    async function ready(boundary: string) {
+      const { client, info, process: hostProcess } = host!
+      const started = performance.now()
+      const requiresWorkbenches = boundary !== "nativeVerified"
+      const sample: typeof readiness[number] = {
+        boundary, pid: info.pid, elapsedMs: 0, ready: false, requiresWorkbenches,
+        plugin: { status: "unobserved" }, workbenches: {}, catalogErrors: {},
+      }
+      readiness.push(sample)
+      try {
+        await waitFor(async () => {
+          if (hostProcess.exited()) throw new Error("Host exited during readiness")
+          const timeout = Math.max(1, Math.min(3000, Math.floor(readinessMs - (performance.now() - started))))
+          const [plugins, workbenches] = await Promise.allSettled([
+            client.plugin.list({ location }, requestOptions(timeout)),
+            requiresWorkbenches ? client.mcp.list({ location }, requestOptions(timeout)) : Promise.resolve(undefined),
+          ])
+          sample.catalogErrors = {}
+          if (plugins.status === "fulfilled")
+            sample.plugin = plugins.value.data.find(row => row.id === pluginId)?.state ?? { status: "missing" }
+          else sample.catalogErrors.plugin = String(plugins.reason)
+          if (workbenches.status === "rejected") sample.catalogErrors.mcp = String(workbenches.reason)
+          else if (workbenches.value)
+            sample.workbenches = Object.fromEntries(workbenches.value.data.map(row => [row.name, row.status]))
+          if (sample.plugin.status === "failed") throw new Error("Installed preview plugin failed")
+          const workbenchesReady = !requiresWorkbenches || (Object.keys(sample.workbenches).length === 2 &&
+            ["evidence", "audit"].every(name => sample.workbenches[name]?.status === "connected"))
+          if (Object.keys(sample.catalogErrors).length === 0 && sample.plugin.status === "active" &&
+              workbenchesReady) {
+            sample.ready = true
+            return true
+          }
+        }, readinessMs, "Readiness deadline exceeded")
+      } catch (error) {
+        const endState = JSON.stringify({ plugin: sample.plugin, workbenches: sample.workbenches, catalogErrors: sample.catalogErrors })
+        throw new Error(boundary + " readiness: " + (error instanceof Error ? error.message : String(error)) + " " + endState)
+      } finally {
+        sample.elapsedMs = performance.now() - started
+      }
     }
-    await ready()
+    await ready("installed")
     const role = (await host.client.agent.get({ location, agentID: childAudit.agent }, requestOptions())).data
     check("nativeSubagentRole", role.id === childAudit.agent && role.mode === "subagent" && role.hidden === false &&
       role.permissions.some(row => row.action === childAudit.tool && row.effect === "allow"))
@@ -162,7 +200,7 @@ async function runScenario(binary: string, bundle: string, scratch: string, scen
       const id = await submitTurn(host!, rootSession.id, text)
       return waitFor(() => observeTurn(host!, rootSession.id, id), 25_000, "Owner operator turn timed out: " + phase)
     }
-    async function compactAndRestart(boundary: string) {
+    async function compactAndRestart(boundary: "incompletePrefix" | "nativeVerified") {
       phase = "compact"
       const previous = new Set((await rows()).map(row => row.id))
       await host!.client.session.compact({ sessionID: rootSession.id, delivery: "queue" }, requestOptions())
@@ -183,7 +221,7 @@ async function runScenario(binary: string, bundle: string, scratch: string, scen
       check(boundary + "Restart", fromPid !== host.info.pid && loaded.id === rootSession.id &&
         loaded.projectID === rootSession.projectID && loaded.agent === owner && transcriptStable &&
         isDeepStrictEqual(workbench.snapshot(), ledger))
-      await ready()
+      await ready(boundary)
     }
 
     const initial = await turn(initialPrompt)
@@ -264,6 +302,7 @@ async function runScenario(binary: string, bundle: string, scratch: string, scen
       ack.input.next_action === fields.nextAction + "; prerequisite=" + fields.prerequisite &&
       ack.value.decision_revision === report.revision && report.revision === nativeStatus.value.decision_revision)
 
+    const nativeRequestCount = provider.requests.length
     await compactAndRestart("nativeVerified")
     const reopenedChild = await host!.client.session.get({ sessionID: childId }, requestOptions())
     check("childTranscriptReopened", reopenedChild.parentID === root.id && reopenedChild.agent === role.id &&
@@ -303,10 +342,12 @@ async function runScenario(binary: string, bundle: string, scratch: string, scen
         isDeepStrictEqual(negativeStatus.value.evidenceReport, { status: "incomplete", reason: "approval_unavailable" }) &&
         wires.filter(row => row.phase === "revoked").every(row => row.calculation.projections === 0))
     }
-    const ordinary = provider.requests.filter(row => row.kind === "ordinary")
+    const ordinary = provider.requests.slice(0, nativeRequestCount).filter(row => row.kind === "ordinary")
+    const reopenedRequests = provider.requests.slice(nativeRequestCount)
     check("providerRoleScopes", hasScopedEvidenceTools(ordinary.filter(row => row.role === "root"),
       ordinary.filter(row => row.role === "checker")) &&
-      ordinary.filter(row => row.role === "checker").every(row => !row.tools.includes(algTool) && !row.tools.includes(childTool)))
+      ordinary.filter(row => row.role === "checker").every(row => !row.tools.includes(algTool) && !row.tools.includes(childTool)) &&
+      reopenedRequests.every(row => row.role === "root" && evidenceToolNames.every(name => !row.tools.includes("audit_" + name))))
     const work = await factory.evidence()
     check("noPostWakeEvidenceOrFactoryReads", isDeepStrictEqual(nativeProofReads, workbench.snapshot()) &&
       factory.audit.length === factoryOffset && work.ledger.acceptedComputations === 1 && work.jobs.length === 1)
@@ -330,7 +371,7 @@ async function runScenario(binary: string, bundle: string, scratch: string, scen
       await factory.stop()
     }
   }
-  return { scenario, passed: failure === null, failure, hostLog, checks, restarts, elapsedMs: performance.now() - startedAt,
+  return { scenario, passed: failure === null, failure, hostLog, checks, restarts, readiness, elapsedMs: performance.now() - startedAt,
     root: root && { id: root.id, projectID: root.projectID, agent: root.agent, model: root.model },
     child: child && { id: child.id, parentID: child.parentID, projectID: child.projectID, agent: child.agent, model: child.model },
     wakeNoticeId: wake?.notice.id, wakeIdleId: wake?.idleId,
