@@ -181,6 +181,7 @@ async function fixture() {
         if (state.effectiveDeny) throw new Error("effective deny")
       } },
       tool: {
+        hook,
         async transform(add: (editor: unknown) => void) {
           add({ get: () => undefined, add: (definition: { name: string; execute: Execute; input: typeof advertisedInput }) => {
             expect(definition.name).toBe(TOOL)
@@ -255,6 +256,28 @@ test("owner wire actions follow the durable investigation and keep settled recon
   expect(await actions()).toEqual(["reconcile", "status", "set_next_measurement", "start"])
   expect((await wire())?.properties).toHaveProperty("refutation")
   expect(await host.call("reconcile")).toMatchObject({ ok: true, work: { status: "result_recorded" } })
+  expect(f.serviceCalls.filter(name => name === "submit")).toEqual(["submit"])
+})
+
+test("successful owner setup omits only duplicate lifecycle guidance", async () => {
+  const f = await fixture()
+  const host = await f.attach()
+  for (const action of ["create", "admit", "dispatch", "reconcile"]) {
+    const result = await host.call(action)
+    const { guidance, worker, ...status } = await host.call("status")
+    expect(status.ok).toBe(true)
+    expect(guidance).toBe(status.decision.next_action)
+    expect(typeof guidance).toBe("string")
+    const expected = action === "reconcile" ? { ...status, worker } : status
+    expect(result).toEqual(expected)
+  }
+  const next_action = "Review the settled calibration against an independent source"
+  expect(await host.call("set_next_measurement", { expected_decision_revision: 0, next_action }))
+    .toMatchObject({ ok: true, decision_revision: 1, decision: { next_action } })
+  const status = await host.call("status")
+  expect(status.guidance).not.toBe(next_action)
+  expect(typeof status.guidance).toBe("string")
+  expect(await host.call("reconcile")).toEqual(status)
   expect(f.serviceCalls.filter(name => name === "submit")).toEqual(["submit"])
 })
 

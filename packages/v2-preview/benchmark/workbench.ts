@@ -81,9 +81,22 @@ function onlyKeys(value: Record<string, unknown>, keys: string[]) {
   return Object.keys(value).every(key => keys.includes(key))
 }
 
-export function createWorkbench({ maxAcceptedQueries = 16, variant = "positive" }: { maxAcceptedQueries?: number; variant?: CaseVariant } = {}) {
+type WorkbenchFixture = {
+  id: string
+  sources: readonly Source[]
+  evidence: FabEvidence
+  reference: (source: Source) => string
+  pageRows?: (request: PageRequest, rows: FabEvidence[Source]) => FabEvidence[Source]
+}
+
+export function createWorkbench({ maxAcceptedQueries = 16, variant = "positive", fixture }: {
+  maxAcceptedQueries?: number; variant?: CaseVariant; fixture?: WorkbenchFixture
+} = {}) {
   if (!Number.isSafeInteger(maxAcceptedQueries) || maxAcceptedQueries < 0) throw new Error("Invalid query admission limit")
-  const evidence = generateFabEvidence(variant)
+  const evidence = fixture?.evidence ?? generateFabEvidence(variant)
+  const id = fixture?.id ?? caseId(variant)
+  const available: readonly Source[] = fixture?.sources ?? sourceNames
+  const reference = (source: Source) => fixture ? fixture.reference(source) : evidenceRef(source, variant)
   const receipts: WorkbenchReceipt[] = []
   const accepted = new Map<string, Lookup>()
   const cursors = new Map<string, { scope: Scope; source: Source; offset: number }>()
@@ -107,9 +120,9 @@ export function createWorkbench({ maxAcceptedQueries = 16, variant = "positive" 
     const args = record(input)
     if (name === mapSources && args && Object.keys(args).length === 0) {
       append("mapped")
-      return { status: "ok", op: "map", caseId: caseId(variant), maxPageRows, maxPages,
-        sources: sourceNames.filter(source => canRead(source, scope))
-          .map(source => ({ source, evidenceRef: evidenceRef(source, variant), totalRows: evidence[source].length, fields: [...fields[source]] })),
+      return { status: "ok", op: "map", caseId: id, maxPageRows, maxPages,
+        sources: available.filter(source => canRead(source, scope))
+          .map(source => ({ source, evidenceRef: reference(source), totalRows: evidence[source].length, fields: [...fields[source]] })),
       }
     }
     if (name !== lookupPages || !args || !onlyKeys(args, ["pages"]) || !Array.isArray(args.pages) ||
@@ -120,7 +133,7 @@ export function createWorkbench({ maxAcceptedQueries = 16, variant = "positive" 
       const page = record(item)
       if (!page || !onlyKeys(page, ["source", "cursor", "limit"]) || typeof page.source !== "string")
         return deny("invalid_request")
-      const source = sourceNames.find(name => name === page.source)
+      const source = available.find(name => name === page.source)
       if (!source || !canRead(source, scope)) return deny("source_unavailable")
       // Provider payloads can materialize omitted optional fields as null.
       const limit = page.limit ?? maxPageRows
@@ -146,11 +159,12 @@ export function createWorkbench({ maxAcceptedQueries = 16, variant = "positive" 
     const result: Lookup = {
       status: "ok", op: "lookup", queryId: `query-${accepted.size + 1}`,
       pages: requests.map(({ source, offset, limit }) => {
-        const rows = evidence[source].slice(offset, offset + limit)
+        const prefix = evidence[source].slice(offset, offset + limit)
+        const rows = fixture?.pageRows?.({ source, offset, limit }, prefix) ?? prefix
         const next = offset + rows.length
         const nextCursor = next < evidence[source].length ? randomUUID() : null
         if (nextCursor) cursors.set(nextCursor, { scope, source, offset: next })
-        return { source, evidenceRef: evidenceRef(source, variant), offset, totalRows: evidence[source].length, rows, nextCursor }
+        return { source, evidenceRef: reference(source), offset, totalRows: evidence[source].length, rows, nextCursor }
       }),
     }
     accepted.set(key, result)
@@ -162,7 +176,7 @@ export function createWorkbench({ maxAcceptedQueries = 16, variant = "positive" 
     call: (name: EvidenceToolName, input: unknown) => call(name, input, "root"),
     checkerCall: (name: EvidenceToolName, input: unknown) => call(name, input, "checker"),
     snapshot: (): WorkbenchSnapshot => ({
-      caseId: caseId(variant), maxAcceptedQueries, calls: receipts.length, acceptedQueries: accepted.size,
+      caseId: id, maxAcceptedQueries, calls: receipts.length, acceptedQueries: accepted.size,
       deniedQueries, receipts: structuredClone(receipts),
     }),
   }

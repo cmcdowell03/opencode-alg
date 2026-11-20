@@ -5,6 +5,7 @@ import { runContainedPath } from "../../../src/store.ts"
 import { deliverySchema, inspectDelivery, validateDelivery, type DeliveryBinding, type DeliveryHistory, type DeliveryReceipt } from "./delivery.ts"
 import { publishReceipt, readReceipt } from "./journal.ts"
 import { calculateFromHistory, calculationPolicyDigest, calculationReceiptSchema, type CalculationPolicy, type CalculationReceipt } from "./calculation.ts"
+import type { EvidenceProgress } from "./evidence-journal.ts"
 
 const marker = "ALG delivery obligation (untrusted recorded data)\n"
 const calculationMarker = "ALG calculated evidence (source data)\n"
@@ -16,6 +17,7 @@ const boundarySchema = z.discriminatedUnion("kind", [
 const notices = {
   calculation_conflict: "the reported measurement conflicts with the reproducible calculation. Correct the report and reassess any dependent recommendation.",
   calculation_missing: "missing or unverified calculated measurements. Recover the required source evidence before reporting.",
+  decision_pending: "the measured facts are available. Record the recommendation and prerequisite supported by the approved decision rule before publishing a verified report.",
   ready: "ready. Return the requested JSON object now from the recorded values. The decision and procedure are current. References match the earlier source records. No skill, procedure, status or evidence reread is needed. Reporting a recommendation does not authorize its execution.",
   missing_evidence: "missing or unverified report fields or source references. Recover only the missing evidence, or abstain if it cannot be verified.",
   stale_revision: "the saved report is superseded. Use the current decision and reconcile the changed fields before reporting.",
@@ -71,16 +73,30 @@ export class DeliveryContext {
     this.inserted.add(message)
   }
 
-  /** Present the result while the owner is still able to correct its decision. */
-  async calculate(request: SessionContext, policy: CalculationPolicy, history: () => Promise<DeliveryHistory>,
-    stillApproved: () => Promise<boolean>) {
-    if (continuationIndex(request) >= 0) return
+  /** Instructions are static. Source identities, counts and bounds are data. */
+  projectProgress(request: SessionContext, progress: EvidenceProgress) {
+    if (!progress.checkpoint) return
     let i = request.messages.length - 1
     while (i >= 0 && request.messages[i]?.role !== "user") i--
     if (i < 0) return
-    const calculation = calculateFromHistory(policy, await history(), request.agent)
-    if (Object.keys(calculation.values).length && await stillApproved()) {
-      this.data(request, i, calculationMarker, compactCalculation(calculation))
+    const kind = progress.obligation.kind
+    if (kind !== "verified") {
+      const instructions = {
+        need_page: "The cohort is incomplete. When the task permits another read, use the next approved prefix shown in the evidence progress. Honor any request to pause at this window.",
+        need_audit: "Use the verified cohort. Obtain the outstanding independent audit or report that it is pending.",
+        exhausted: "No approved window qualifies. Abstain and report the search limit.",
+        conflict: "The evidence conflicts. Abstain until the source can be revalidated.",
+        unavailable: "The evidence could not be validated. Withhold unsupported measurements.",
+      }
+      this.data(request, i, "ALG evidence progress (source data)\n", progress.obligation)
+      const notice = { type: "text" as const, text: "ALG evidence obligation: " + instructions[kind] }
+      request.system.push(notice)
+      this.inserted.add(notice)
+    }
+    const delivered = request.messages.some(message => this.inserted.has(message) && message.content.some(part =>
+      part.type === "text" && (part.text.startsWith(marker) || part.text.startsWith(calculationMarker))))
+    if (Object.keys(progress.receipt.values).length && !delivered) {
+      this.data(request, i, calculationMarker, compactCalculation(progress.receipt))
     }
   }
 
@@ -90,7 +106,7 @@ export class DeliveryContext {
     history: () => Promise<DeliveryHistory>,
     // Throws on a denied owner or host read. Only a known authority gap has a user-visible hint.
     binding: () => Promise<BindingState>,
-    policy?: CalculationPolicy,
+    policy?: CalculationPolicy, progress?: EvidenceProgress, certified = false,
   ) {
     const position = compacting ? -1 : continuationIndex(request)
     if (!compacting && position < 0) return
@@ -129,7 +145,7 @@ export class DeliveryContext {
       }
       const result = inspectDelivery(rows, current)
       if ("receipt" in result && result.receipt.compactionMessageId === boundary.id) {
-        const calculation = policy && calculateFromHistory(policy, rows.slice(0, cut), current.ownerAgent)
+        const calculation = progress?.receipt ?? (policy && calculateFromHistory(policy, rows.slice(0, cut), current.ownerAgent))
         await publishReceipt(path(boundary.id), { kind: "report", receipt: result.receipt,
           calculation })
       } else if ("reason" in result && gap.safeParse(result.reason).success) {
@@ -153,12 +169,15 @@ export class DeliveryContext {
       const receipt = validateDelivery(saved.receipt, current, boundary.id)
       if (!receipt) status = "stale_revision"
       else {
-        status = measurementStatus(receipt, policy, saved.calculation)
+        const proof = progress?.checkpoint ? progress.receipt : saved.calculation
+        status = measurementStatus(receipt, policy, proof)
+        if (status === "ready" && policy?.decisionRules && !certified) status = "decision_pending"
         if (status === "ready") {
           this.data(request, position, marker, { format: "json_object", fields: receipt.requestedKeys,
-            values: receipt.recordedAnswer, decision_revision: current.decision_revision })
-        } else if (status === "calculation_conflict" && saved.calculation) {
-          this.data(request, position, calculationMarker, compactCalculation(saved.calculation))
+            values: { ...receipt.recordedAnswer, ...Object.fromEntries(Object.entries(proof?.values ?? {}).filter(([k]) => receipt.requestedKeys.includes(k))) },
+            decision_revision: current.decision_revision })
+        } else if ((status === "calculation_conflict" || status === "decision_pending") && proof) {
+          this.data(request, position, calculationMarker, compactCalculation(proof))
         }
       }
     }

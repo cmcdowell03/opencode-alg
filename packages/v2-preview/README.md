@@ -358,6 +358,30 @@ audit reference qualified for ALG's retention score. The next test should
 exercise recovery from an incomplete search before the owner issues a report.
 [Local qualification and native comparison](evidence/calculation-actions-2.3.2.json)
 
+### Resuming a partially observed cohort in preview.7
+
+ALG records the last validated source window and the next permitted limit under
+the owner's existing investigation journal. A compaction points to the exact
+checkpoint it observed. After a restart, the owner can continue with the next
+window using the same approved recipe. The plugin checks that the overlapping
+rows and source reference still agree. If the approved windows run out, the
+application reports abstention. A conflicting source also requires revalidation.
+An early independent audit can be reused when its reference, row digest and
+row count identify the selected owner cohort.
+
+The owner's `status` result includes `evidenceReport` once the recipe has
+observed relevant evidence. `incomplete` describes the outstanding read or
+audit. `provisional` exposes measured facts while the recommendation is
+unconfirmed. For a policy with `decisionRules`, `verified` returns the
+calculated fields and source references once the approved rule and a subsequent
+acknowledged decision agree on the action and prerequisite. Approval, settled
+work, source evidence and decision revision are checked on read. An assistant
+can still write its own provisional answer in the native chat.
+
+The [installed evidence handoff benchmark](benchmark/evidence-handoff.md)
+exercises a mid-search process restart and grades the native answer separately
+from ALG's application report.
+
 The paired handoff receipt records cumulative UTF-8 request bytes by phase.
 Native runs also record provider input and output tokens and matched host cache
 reads. Cache reads are included in input tokens. Scripted runs can compare request

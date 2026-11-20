@@ -11,6 +11,8 @@ import { createPreQueryGate, preQueryPolicySchema, PreQueryBlockedError } from "
 import { createOwnerContinuation } from "./continuation.ts"
 import { OwnerBrief } from "./brief.ts"
 import { DeliveryContext } from "./delivery-context.ts"
+import type { DeliveryHistory } from "./delivery.ts"
+import { EvidenceJournal, type EvidenceProgress } from "./evidence-journal.ts"
 import { parseCalculationPolicy, type CalculationPolicy } from "./calculation.ts"
 import { projectPreQueryReceipts } from "./pre-query-projection.ts"
 import { runContainedPath, runDir } from "../../../src/store.ts"
@@ -185,10 +187,11 @@ function promptText(binding: Binding): string {
   ].join("\n")
 }
 
-function investigation(view: V2InvestigationView | null) {
+function investigation(view: V2InvestigationView | null, omitDuplicateGuidance = false) {
   if (!view) return null
   return { revision: view.revision, decision_revision: view.decision_revision, work: view.work, decision: view.decision,
-    guidance: view.guidance, ...(view.preQuery ? { preQuery: view.preQuery } : {}) }
+    ...(omitDuplicateGuidance && view.guidance === view.decision.next_action ? {} : { guidance: view.guidance }),
+    ...(view.preQuery ? { preQuery: view.preQuery } : {}) }
 }
 
 async function setup(ctx: Context): Promise<() => Promise<void>> {
@@ -214,6 +217,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
   const gate = createPreQueryGate(config.preQueryPolicy, procedures, activationRecorded)
   const bridge = trustedBridge(config, ctx.location.project.id, gate)
   const delivery = new DeliveryContext()
+  let observedEvidenceTool: string | undefined
   const brief = bridge ? new OwnerBrief(host, async owner => {
     const view = bridge.primary(scope(owner))
     if (!view) return null
@@ -259,9 +263,33 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       : procedures.current(reload)
   }
 
+  async function evidenceFor(owner: Session, history: () => Promise<DeliveryHistory>, compacting = false,
+    current?: Awaited<ReturnType<typeof selectedProcedure>>) {
+    if (!bridge || !config.approvedProcedureSha256 || !owner.agent) return
+    current ??= await selectedProcedure(bridge.primary(scope(owner)), false)
+    const policy = current && parseCalculationPolicy(current.content)
+    if (!current || !policy) return
+    const caller = { sessionID: owner.id, agent: owner.agent }
+    const pin = pinOfProcedure(current)
+    async function authorize() {
+      const fresh = await host.owner(caller)
+      await ctx.permission.assert({ ...caller, action: TOOL, resources: ["*"] })
+      await ctx.permission.assert({ ...caller, action: policy!.owner.tool, resources: ["*"] })
+      const now = await selectedProcedure(bridge!.primary(scope(fresh)), false)
+      if (!now || !isDeepStrictEqual(pinOfProcedure(now), pin)) throw new Error("EVIDENCE_APPROVAL_CHANGED")
+    }
+    const ledger = new EvidenceJournal(directory, journal(owner.id).runId,
+      [owner.projectID, owner.id, owner.agent, runtimeSha256, config.approvedProcedureSha256, pin.id, pin.path, pin.sha256, pin.sourceSha256])
+    await authorize()
+    observedEvidenceTool = policy.owner.tool
+    const progress = await ledger.observe(policy, await history(), owner.agent, compacting)
+    await authorize()
+    return { ledger, policy, progress, authorize }
+  }
+
   async function verifiedInvestigation(view: V2InvestigationView | null) {
     if (view?.procedurePin) await procedures.require(view.procedurePin)
-    return investigation(view)
+    return investigation(view, true)
   }
 
   async function workerStatus(store: WorkerJournal) {
@@ -447,13 +475,23 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
         return { ...await verifiedInvestigation(result), worker: await workerStatus(store) }
       }
       case "set_next_measurement": {
-        return { ...investigation(await bridge.setNextMeasurement(scope(owner), {
+        // Link to facts that were available *before* this write. A later audit
+        // cannot retrospectively certify an earlier recommendation.
+        const evidence = await evidenceFor(owner, () => ctx.session.context({ sessionID: owner.id })).catch(() => undefined)
+        const updated = await bridge.setNextMeasurement(scope(owner), {
           expected_decision_revision: input.expected_decision_revision!,
           next_action: input.next_action!, refutation: input.refutation,
         }, async () => {
           const current = await procedures.current()
           return current && pinOfProcedure(current)
-        })) }
+        })
+        if (evidence?.progress.receipt.status === "verified") {
+          // The decision is already committed. An unavailable certificate keeps
+          // the report provisional and must not turn that write into a retry.
+          await evidence.authorize().then(() => evidence.ledger.acknowledged(
+            evidence.policy, evidence.progress, updated)).catch(() => {})
+        }
+        return { ...investigation(updated) }
       }
       case "status": {
         const view = bridge.primary(scope(owner))
@@ -461,9 +499,17 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
         if (view?.procedurePin && !await selectedProcedure(view).catch(() => undefined)) {
           return { work: view.work, revision: view.revision, decision_revision: view.decision_revision,
             decision: { hypotheses: view.decision.hypotheses, contradictions: view.decision.contradictions, next_action: null },
-            procedure_authority: "unavailable", worker }
+            procedure_authority: "unavailable", evidenceReport: { status: "incomplete", reason: "approval_unavailable" }, worker }
         }
-        return { ...investigation(view), worker }
+        const evidenceReport = await (async () => {
+          const evidence = await evidenceFor(owner, () => ctx.session.context({ sessionID: owner.id }))
+          if (!evidence || !evidence.progress.checkpoint) return
+          const report = await evidence.ledger.report(evidence.policy, evidence.progress, view)
+          await evidence.authorize()
+          if (view?.revision !== bridge.primary(scope(owner))?.revision) return { status: "incomplete", reason: "revision_changed" }
+          return report
+        })().catch(() => ({ status: "incomplete", reason: "unavailable" }))
+        return { ...investigation(view), worker, ...(evidenceReport && { evidenceReport }) }
       }
       case "start": return { worker: await launch(bridge, owner, store, call.signal) }
       case "revoke": {
@@ -580,6 +626,9 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
         if (binding) request.system.push({ type: "text", text: "ALG checker run " + binding.runId + ". Use status to reconcile the recorded child." })
       }
       let calculationPolicy: CalculationPolicy | undefined
+      let progress: EvidenceProgress | undefined
+      let authorizeEvidence: (() => Promise<void>) | undefined
+      let certified = false
       let window: ReturnType<typeof ctx.session.context> | undefined
       const history = () => window ??= ctx.session.context({ sessionID: owner.id })
       try {
@@ -593,17 +642,22 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
           }
           if (!compacting) compactProcedureReads(request, current, runtimeSha256)
           if (bridge) calculationPolicy = parseCalculationPolicy(current.content)
-          if (calculationPolicy && !compacting) {
-            await delivery.calculate(request, calculationPolicy, history, async () => {
-              const freshOwner = await host.owner(request)
-              await ctx.permission.assert({ sessionID: freshOwner.id, agent: request.agent, action: TOOL, resources: ["*"] })
-              const fresh = await selectedProcedure(bridge?.primary(scope(freshOwner)), false)
-              return fresh?.sha256 === current.sha256 && fresh.sourceSha256 === current.sourceSha256
-            }).catch(() => { /* Incomplete history or a changed grant cannot verify a calculation. */ })
+          if (calculationPolicy) {
+            const evidence = await evidenceFor(owner, history, compacting, current)
+            if (evidence) {
+              if (calculationPolicy.decisionRules && evidence.progress.receipt.status === "verified") {
+                certified = (await evidence.ledger.report(calculationPolicy, evidence.progress, view ?? null)).status === "verified"
+                await evidence.authorize()
+                certified &&= view?.revision === bridge?.primary(scope(owner))?.revision
+              }
+              progress = evidence.progress
+              authorizeEvidence = evidence.authorize
+            }
           }
         }
       } catch {
         request.system.push({ type: "text", text: "ALG research procedure unavailable. Use current verification before relying on prior procedure text." })
+        if (calculationPolicy) return
       }
       if (view?.procedurePin && hasBrief && bridge) {
         await delivery.prepare(request, compacting, directory, store.runId,
@@ -624,7 +678,16 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
               next_action: after.decision.next_action, work: { work_key: work.work_key,
                 manifest_digest: work.manifest_digest, status: work.status },
               approval: { revision: config.approvedProcedureSha256, procedure_sha256: procedure.sha256 }, runtimeSha256 }
-          }, calculationPolicy).catch(() => { /* An unavailable receipt or denied owner cannot supply a delivery. */ })
+          }, calculationPolicy, progress, certified).catch(() => { /* An unavailable receipt or denied owner cannot supply a delivery. */ })
+      }
+      if (!compacting && progress && authorizeEvidence) {
+        try {
+          await authorizeEvidence()
+          delivery.projectProgress(request, progress)
+        } catch {
+          delivery.clear(request)
+          request.system.push({ type: "text", text: "ALG evidence approval is unavailable. Withhold unsupported measurements." })
+        }
       }
     } catch {
       if (!compacting && config.checkerAgent !== config.ownerAgent) {
@@ -650,8 +713,17 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       }))
     }
     if (continuation) registrations.push(await ctx.session.hook("experimental.idle", event => continuation.onIdle(event)))
-    if (config.preQueryPolicy) registrations.push(await ctx.tool.hook("execute.after", async event => {
-      if (disposed || event.tool !== "skill" || event.agent !== config.ownerAgent || event.status !== "completed") return
+    if (bridge && config.approvedProcedure) registrations.push(await ctx.tool.hook("execute.after", async event => {
+      if (disposed || event.agent !== config.ownerAgent || event.status !== "completed") return
+      if (event.tool === observedEvidenceTool) {
+        // Hosts may publish the native result after this callback. The context
+        // and compaction hooks also consume that same immutable call ID.
+        try {
+          const owner = await host.owner(event)
+          await evidenceFor(owner, () => ctx.session.context({ sessionID: owner.id }))
+        } catch { /* A denied or unfinished observation cannot certify a result. */ }
+      }
+      if (event.tool !== "skill" || !config.preQueryPolicy) return
       try {
         const owner = await host.owner(event)
         const pin = config.preQueryPolicy!.procedure

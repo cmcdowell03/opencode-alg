@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test"
 import {
-  calculateFromHistory, calculationPolicyDigest, calculationReceiptSchema,
-  parseCalculationPolicy, validateCalculationReceipt, type CalculationPolicy,
+  calculateFromHistory, calculationCheckpointSchema, calculationPolicyDigest, calculationReceiptSchema,
+  inspectCalculationProgress, parseCalculationPolicy, validateCalculationReceipt,
+  type CalculationCheckpoint, type CalculationPolicy,
 } from "../src/calculation.ts"
 import type { DeliveryHistory } from "../src/delivery.ts"
 
@@ -207,4 +208,238 @@ test("requires every source page to come from the bound owner agent", () => {
   expect(calculateFromHistory(policy, before, "other").values).toEqual({})
   expect(calculateFromHistory(policy, before, "").values).toEqual({})
   expect(calculate(policy, [...before, switched, audit()]).status).toBe("verified")
+})
+
+test("the legacy whole-history entry point tolerates out-of-order prefixes and per-page references", () => {
+  const result = calculate(policy, [start, page("later", 4, { ref: "sample-4" }),
+    page("first", 2, { ref: "sample-2" }), audit()])
+  expect(result).toMatchObject({
+    status: "verified", values: { total: 4, flagged: 2, matched: 3 },
+    sources: { owner: { reference: "sample-4" } },
+  })
+})
+
+const inspect = (history: DeliveryHistory, checkpoint?: CalculationCheckpoint | null, advertised = policy) =>
+  inspectCalculationProgress(advertised, history, "owner", checkpoint)
+const reload = (checkpoint: CalculationCheckpoint | null) =>
+  calculationCheckpointSchema.parse(JSON.parse(JSON.stringify(checkpoint)))
+const withThreshold = (minMatches: number): CalculationPolicy => ({
+  ...policy, owner: { ...policy.owner, qualify: { ...policy.owner.qualify, minMatches } },
+})
+const compact: Message = { type: "compaction", id: "compacted" as Message["id"],
+  status: "completed", reason: "manual", summary: audit().text, time }
+const resume = user("resume", "Continue.")
+const firstPage = page("short", 2)
+const laterPage = page("selected", 4)
+
+test("only real recipe work starts obligations, and the ladder stops at the first valid cohort", () => {
+  expect(inspect([start, fake, user("header", recipe.correction.header)], null)).toMatchObject({
+    obligation: { kind: "unavailable" }, checkpoint: null, receipt: { values: {} },
+  })
+  expect(inspect([start, page("cursor", 2, {}, { pages: [{ source: "sample", limit: 2, cursor: "opaque" }] })]))
+    .toMatchObject({ obligation: { kind: "unavailable" }, checkpoint: null })
+  expect(inspect([start, firstPage], undefined, withThreshold(1))).toMatchObject({
+    obligation: { kind: "need_audit", reason: "missing", rowCount: 2, matches: 1, threshold: 1 },
+    receipt: { values: { total: 2, flagged: 1 } },
+  })
+  const partial = inspect([start, firstPage])
+  expect(partial.obligation).toEqual({ kind: "need_page", source: "sample", nextLimit: 4, rowCount: 2, matches: 1, threshold: 2 })
+  expect(partial.receipt.values).toEqual({})
+  expect(inspect(before)).toMatchObject({
+    obligation: { kind: "need_audit", rowCount: 4, matches: 2, threshold: 2 },
+    receipt: { sources: { owner: { limit: 4, messageId: "selected" } } },
+  })
+  const exhausted = inspect(before, null, withThreshold(4))
+  expect(exhausted).toMatchObject({
+    obligation: { kind: "exhausted", rowCount: 5, matches: 3, threshold: 4 }, receipt: { values: {} },
+  })
+  expect(inspect([], reload(exhausted.checkpoint), withThreshold(4))).toEqual(exhausted)
+  const capped = { ...withThreshold(4), owner: { ...withThreshold(4).owner, limits: [2, 4] } }
+  expect(inspect([start, firstPage, laterPage], null, capped).obligation.kind).toBe("exhausted")
+  const countsOnly: CalculationPolicy = { ...policy, operations: { total: { kind: "count" } } }
+  expect(inspect(before, null, countsOnly)).toMatchObject({
+    obligation: { kind: "verified" }, receipt: { status: "verified", values: { total: 4 } },
+  })
+})
+
+test("resumes the next limit using only suffix messages and preserves original provenance on replay", () => {
+  const partial = inspect([start, firstPage])
+  const saved = reload(partial.checkpoint)
+  const waiting = inspect([compact, resume, laterPage], saved)
+  expect(waiting).toMatchObject({
+    obligation: { kind: "need_audit", reason: "missing" },
+    receipt: { values: { total: 4, flagged: 2 }, sources: { owner: { messageId: "selected", callId: "call-selected" } } },
+  })
+  expect(inspect([start, firstPage, compact, resume, laterPage], saved)).toEqual(waiting)
+  const repeated = inspect([laterPage, page("fresh-replay", 4), audit()], reload(waiting.checkpoint))
+  expect(repeated.obligation.kind).toBe("verified")
+  expect(repeated.receipt).toEqual(calculate(policy, [...before, audit()]))
+  expect(inspect([compact, resume, audit()], reload(repeated.checkpoint))).toEqual(repeated)
+  expect(inspect([audit([])], reload(repeated.checkpoint)).obligation.kind).toBe("conflict")
+
+  const firstWithSecret = page("short", 2, { records: [{ ...rows[0], privateComment: "row secret" }, rows[1]] })
+  const checkpoint = JSON.stringify(inspect([start, firstWithSecret]).checkpoint)
+  expect(checkpoint).not.toContain("row secret")
+  expect(checkpoint).not.toContain("privateComment")
+  expect(checkpoint).not.toContain('"records"')
+  const waitingJson = JSON.stringify(waiting.checkpoint)
+  expect(waitingJson).not.toContain('"A"')
+  expect(waitingJson).not.toContain('"group"')
+  expect(repeated.checkpoint?.selected?.keys).toBeUndefined()
+})
+
+test("a cut before the first lookup preserves a silent task anchor for the post-cut first page", () => {
+  const unrelated = page("ordinary-call", 2, {}, undefined, "other_lookup")
+  expect(inspect([start, unrelated])).toMatchObject({ checkpoint: null, obligation: { kind: "unavailable" } })
+  expect(inspectCalculationProgress(policy, [resume], "owner", null, true).checkpoint).toBeNull()
+  const cut = inspectCalculationProgress(policy, [start, unrelated], "owner", null, true)
+  expect(cut).toMatchObject({
+    obligation: { kind: "unavailable" }, receipt: { status: "incomplete", values: {}, sources: {} },
+    checkpoint: { dormant: true, task: { id: start.id }, messages: {}, calls: [], pages: [] },
+  })
+  const dormant = reload(cut.checkpoint)
+  expect(dormant.task.fingerprint).toMatch(/^[a-f0-9]{64}$/)
+  expect(JSON.stringify(dormant)).not.toContain(start.text)
+  expect(inspect([compact, resume, unrelated], dormant)).toMatchObject({
+    checkpoint: null, obligation: { kind: "unavailable" }, receipt: { values: {} },
+  })
+  expect(inspectCalculationProgress(policy, [compact, resume], "owner", dormant, true)).toEqual(cut)
+  const fresh = user("different-task", "Summarize the unrelated notes.")
+  expect(inspect([fresh, unrelated], dormant).obligation).toEqual({ kind: "unavailable" })
+  expect(inspectCalculationProgress(policy, [fresh], "owner", dormant, true).checkpoint?.task.id).toBe(fresh.id)
+  const first = inspect([compact, resume, firstPage], dormant)
+  expect(first.obligation).toMatchObject({ kind: "need_page", nextLimit: 4 })
+  expect(first.checkpoint?.dormant).toBeUndefined()
+  expect(first).toEqual(inspect([start, firstPage]))
+})
+
+test("rejects mutated prefixes, changed snapshots and reused native call identities across restart", () => {
+  const saved = reload(inspect([start, firstPage]).checkpoint)
+  const reusedCall = { ...laterPage, content: [{ ...laterPage.content[0]!, id: "call-short" }] } as Assistant
+  for (const conflicting of [
+    page("short", 2, { records: [{ ...rows[0], id: 11 }, rows[1]] }),
+    page("changed-prefix", 4, { records: [{ ...rows[0], note: "changed" }, ...rows.slice(1, 4)] }),
+    page("changed-snapshot", 4, { ref: "sample-2" }),
+    page("changed-total", 4, { total: 6 }),
+    page("invalid-echo", 4, { limit: 2 }),
+    reusedCall,
+  ]) {
+    const rejected = inspect([conflicting], saved)
+    expect(rejected.obligation.kind).toBe("conflict")
+    expect(rejected.receipt.values).toEqual({})
+    expect(inspect([laterPage], reload(rejected.checkpoint))).toEqual(rejected)
+  }
+  expect(inspect([start, laterPage]).obligation).toEqual({ kind: "conflict", reason: "owner" })
+  expect(inspect([page("surplus", 6, { ref: "sample-2" })], reload(inspect(before).checkpoint))
+    .obligation.kind).toBe("conflict")
+})
+
+test("a malformed first native owner response durably conflicts while unrelated requests stay silent", () => {
+  const malformed = { records: "invalid evidence" }
+  for (const unrelated of [
+    page("wrong-tool", 2, malformed, undefined, "other_lookup"),
+    page("wrong-source", 2, malformed, { pages: [{ source: "other", limit: 2 }] }),
+    page("wrong-offset", 2, malformed, { pages: [{ source: "sample", limit: 2, offset: 1 }] }),
+    page("provider-executed", 2, malformed, undefined, recipe.owner.tool, true),
+  ]) expect(inspect([start, unrelated])).toMatchObject({ obligation: { kind: "unavailable" }, checkpoint: null })
+
+  const blocked = inspect([start, page("malformed", 2, malformed)])
+  expect(blocked).toMatchObject({
+    obligation: { kind: "conflict", reason: "owner" }, receipt: { status: "incomplete", values: {} },
+    checkpoint: { conflict: "owner", pages: [] },
+  })
+  expect(inspect([compact, resume, firstPage, laterPage, audit()], reload(blocked.checkpoint))).toEqual(blocked)
+  expect(inspect([user("reopened", "Try the same recipe on a new snapshot."), firstPage], reload(blocked.checkpoint))
+    .obligation).toMatchObject({ kind: "need_page", nextLimit: 4 })
+})
+
+test("an early handoff requires exact snapshot and coverage or a freshly validated audit", () => {
+  const waiting = inspect(before)
+  if (waiting.obligation.kind !== "need_audit") throw new Error("expected a selected cohort")
+  const coverage = waiting.obligation.ownerCoverage
+  const bound = (id: string, ownerCoverage: typeof coverage, records = reviews) =>
+    user(id, recipe.correction.header + "\n" + JSON.stringify({ ref: "review-1", records, ownerCoverage }))
+  const early = inspect([start, firstPage, audit()])
+  expect(early.obligation.kind).toBe("need_page")
+  const tooEarly = inspect([compact, laterPage, audit()], reload(early.checkpoint))
+  expect(tooEarly).toMatchObject({ obligation: { kind: "need_audit", reason: "revalidation" },
+    receipt: { status: "incomplete", values: { total: 4, flagged: 2 } } })
+  expect(tooEarly.receipt.sources.correction).toBeUndefined()
+  expect(inspect([audit(reviews, "review-1", "new-validation")], reload(tooEarly.checkpoint)).receipt.values.matched).toBe(3)
+
+  const attached = inspect([start, bound("early-attested", coverage), firstPage])
+  const matched = inspect([compact, laterPage], reload(attached.checkpoint))
+  expect(matched).toMatchObject({ obligation: { kind: "verified" },
+    receipt: { values: { matched: 3 }, sources: { correction: { messageId: "early-attested" } } } })
+  expect(matched.checkpoint?.earlyAudit).toBeUndefined()
+  for (const different of [{ ...coverage, reference: "earlier-snapshot" }, { ...coverage, rowCount: 2 },
+    { ...coverage, rowsSha256: "0".repeat(64) }]) {
+    const previous = inspect([start, firstPage, bound("old-audit", different)])
+    const rejected = inspect([laterPage], reload(previous.checkpoint))
+    expect(rejected.obligation).toMatchObject({ kind: "need_audit", reason: "revalidation", ownerCoverage: coverage })
+    expect(inspect([bound("later-stale-audit", different)], reload(rejected.checkpoint)).obligation)
+      .toMatchObject({ kind: "need_audit", reason: "revalidation" })
+  }
+  const contradictory = inspect([start, firstPage, bound("early-attested", coverage), bound("conflict", coverage, [])])
+  expect(inspect([laterPage], reload(contradictory.checkpoint)).obligation)
+    .toMatchObject({ kind: "need_audit", reason: "revalidation" })
+})
+
+test("fresh task evidence can yield different counts and cannot inherit the previous problem's progress", () => {
+  const old = inspect([...before, audit()])
+  const startNew = user("genuinely-new", "Inspect a new snapshot of parts.")
+  expect(inspect([startNew, fake], reload(old.checkpoint))).toMatchObject({
+    checkpoint: null, obligation: { kind: "unavailable" }, receipt: { values: {} },
+  })
+  const changed = rows.map(row => ({ ...row, group: "new-" + row.group }))
+  const newFirst = page("new-first", 2, { ref: "sample-2", records: changed.slice(0, 2) })
+  const newLater = page("new-later", 4, { ref: "sample-2", records: changed.slice(0, 4) })
+  const current = inspect([startNew, newFirst], reload(old.checkpoint))
+  const newAudit = audit(reviews, "review-2", "new-audit")
+  const next = inspect([compact, newLater, newAudit], reload(current.checkpoint))
+  expect(next).toMatchObject({
+    obligation: { kind: "verified" },
+    receipt: { values: { total: 4, flagged: 2, matched: 0 }, sources: { owner: { reference: "sample-2" } } },
+  })
+  expect(next.receipt.proofSha256).not.toBe(old.receipt.proofSha256)
+  expect(inspect([user("task", "Different text under old task ID")], reload(old.checkpoint)).obligation)
+    .toEqual({ kind: "conflict", reason: "history" })
+})
+
+test("strict checkpoint loading rejects oversize, unknown, tampered and misbound evidence", () => {
+  const partial = reload(inspect([start, firstPage]).checkpoint)
+  const waiting = reload(inspect(before).checkpoint)
+  for (const invalid of [
+    { ...partial, rawRows: rows },
+    { ...partial, pages: [{ ...partial.pages[0]!, rawRows: rows }] },
+    { ...partial, version: 2 },
+    { ...partial, calls: [...partial.calls, ...partial.calls] },
+    { ...partial, calls: Array.from({ length: 2049 }, (_, i) => i.toString(16).padStart(64, "0")) },
+    { ...partial, pages: [{ ...partial.pages[0]!, matches: 2 }] },
+    { ...waiting, selected: { ...waiting.selected, keys: { matched: ["raw-private-data"] } } },
+  ]) {
+    expect(calculationCheckpointSchema.safeParse(invalid).success).toBe(false)
+    expect(inspect([], invalid as CalculationCheckpoint)).toMatchObject({
+      obligation: { kind: "conflict", reason: "checkpoint" }, checkpoint: null,
+    })
+  }
+  expect(inspect([], partial, withThreshold(3)).obligation).toEqual({ kind: "conflict", reason: "checkpoint" })
+  expect(inspectCalculationProgress(policy, [], "other", partial).obligation)
+    .toEqual({ kind: "conflict", reason: "checkpoint" })
+})
+
+test("validates the optional single approved decision rule against a named operation", () => {
+  const decisionRules = {
+    field: "matched", minimum: 1,
+    whenMet: { nextAction: "replay-clock-join", prerequisite: "verified-clock-audit" },
+    otherwise: { nextAction: "attribute-as-recorded", prerequisite: "independent-clock-audit" },
+  }
+  const approved = parseCalculationPolicy(skill(JSON.stringify({ ...recipe, decisionRules })))!
+  expect(approved.decisionRules).toEqual(decisionRules)
+  expect(calculationPolicyDigest(approved)).not.toBe(calculationPolicyDigest(policy))
+  for (const invalid of [[decisionRules], { ...decisionRules, field: "missing" }, { ...decisionRules, minimum: -1 },
+    { ...decisionRules, minimum: 1.5 }, { ...decisionRules, minimum: Number.MAX_SAFE_INTEGER + 1 },
+    { ...decisionRules, whenMet: { ...decisionRules.whenMet, extra: true } }]) {
+    expect(parseCalculationPolicy(skill(JSON.stringify({ ...recipe, decisionRules: invalid })))).toBeUndefined()
+  }
 })
