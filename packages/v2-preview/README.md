@@ -427,6 +427,13 @@ an abstention. Compaction saves the source locator with the measurement, and
 the owner rechecks current authority before projecting or certifying it. The
 owner must still write the supported action and prerequisite after observation.
 
+On Windows and Linux, the same preview bundle preserved the verified audit
+through two native restarts per scenario. Source work stayed at three owner
+reads and one independent checker read. A matching relay kept the decision
+revision, a conflicting relay caused abstention, and approval withdrawal
+withheld the report. Qualification used real OpenCode 2.3.2 hosts and a
+scripted provider. [Platform receipts and archived Luna transcript replay](evidence/child-audit-2.3.2.json)
+
 The paired handoff receipt records cumulative UTF-8 request bytes by phase.
 Native runs also record provider input and output tokens and matched host cache
 reads. Cache reads are included in input tokens. Scripted runs can compare request
