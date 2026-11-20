@@ -5,7 +5,7 @@ import { createHash } from "node:crypto"
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { registerReportCommand, renderInvestigationReport } from "../src/structured-report.ts"
+import { registerReportCommand, renderCalculatedReport, renderInvestigationReport } from "../src/structured-report.ts"
 
 const report = {
   claims: [{ scope: "lot A", finding: "Gauge confirms the excursion", evidence: ["gauge.json#A"] }],
@@ -21,6 +21,14 @@ test("the JSON contract includes only the requested fields, in stable order", ()
   expect(JSON.parse(renderInvestigationReport({ disposition: "indeterminate", claims: [], missingEvidence: ["shift log"] }))).toEqual({
     disposition: "indeterminate", claims: [], missingEvidence: ["shift log"],
   })
+})
+
+test("numeric handoffs render only the certified revision and preserve zeros and null references", () => {
+  const fields = { observed: 12, corrected: 0, auditRef: null, nextAction: "review" }
+  const certificate = { status: "verified", revision: 3, fields }
+  expect(renderCalculatedReport(certificate, 3)).toBe(JSON.stringify(fields))
+  expect(() => renderCalculatedReport(certificate, 4)).toThrow("VERIFIED_CALCULATION_REQUIRED")
+  expect(() => renderCalculatedReport({ ...certificate, status: "provisional" }, 3)).toThrow("VERIFIED_CALCULATION_REQUIRED")
 })
 
 test("an explicit export publishes the exact bytes, does not wake the model and detects a conflicting receipt", async () => {

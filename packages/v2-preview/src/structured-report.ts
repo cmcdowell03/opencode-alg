@@ -32,7 +32,28 @@ export function renderInvestigationReport(report: unknown): string {
 }
 
 type SessionID = Parameters<Plugin.Context["session"]["synthetic"]>[0]["sessionID"]
-type Current = { runId: string; revision: number; report: unknown }
+type Current = { runId: string; revision: number; evidenceRevision?: number } & ({ report: unknown } | { calculation: unknown })
+
+const calculatedReport = z.strictObject({
+  status: z.literal("verified"),
+  revision: z.number().int().positive(),
+  fields: z.record(z.string().regex(/^[A-Za-z_][A-Za-z0-9_-]{0,63}$/),
+    z.union([z.number().finite(), z.string().min(1).max(2048), z.boolean(), z.null()])),
+})
+
+/** Accept the evidence journal's current certificate, never measurements from an unclosed decision. */
+export function renderCalculatedReport(certificate: unknown, revision: number): string {
+  const parsed = calculatedReport.safeParse(certificate)
+  if (!parsed.success || parsed.data.revision !== revision) throw new Error("VERIFIED_CALCULATION_REQUIRED")
+  const { fields } = parsed.data
+  const keys = Object.keys(fields)
+  if (!keys.length || keys.length > 64 || keys.some(k => ["constructor", "__proto__", "prototype"].includes(k))) {
+    throw new Error("REPORT_CONTRACT_INVALID")
+  }
+  const json = JSON.stringify(fields)
+  if (Buffer.byteLength(json) > 65536) throw new Error("REPORT_TOO_LARGE")
+  return json
+}
 
 /** An explicit user command delivers the acknowledged revision without a generation. */
 export function registerReportCommand(
@@ -46,10 +67,16 @@ export function registerReportCommand(
     async execute({ sessionID }) {
       const current = await readCurrent(sessionID)
       if (!Number.isSafeInteger(current.revision) || current.revision < 1) throw new Error("REPORT_REVISION_INVALID")
-      const json = renderInvestigationReport(current.report)
+      const evidenceRevision = current.evidenceRevision
+      if (evidenceRevision !== undefined && (!Number.isSafeInteger(evidenceRevision) || evidenceRevision < 0)) {
+        throw new Error("REPORT_REVISION_INVALID")
+      }
+      const json = "report" in current ? renderInvestigationReport(current.report) :
+        renderCalculatedReport(current.calculation, current.revision)
       const bytes = Buffer.from(json + "\n")
       const digest = createHash("sha256").update(bytes).digest("hex")
-      const path = runContainedPath(directory, current.runId, "reports", "decision-" + current.revision + ".json")
+      const version = String(current.revision) + (evidenceRevision === undefined ? "" : "-e" + evidenceRevision)
+      const path = runContainedPath(directory, current.runId, "reports", "decision-" + version + ".json")
       const created = await publishReceipt(path, JSON.parse(json))
       if (!created) {
         const file = await open(path, "r")
@@ -66,7 +93,7 @@ export function registerReportCommand(
         sessionID, delivery: "queue", resume: false,
         text: "ALG exported the acknowledged investigation report to " + reportPath + " (SHA-256 " + digest + ").",
         description: "Investigation report · " + reportPath,
-        metadata: { algReport: { version: 1, revision: current.revision, path: reportPath, sha256: digest } },
+        metadata: { algReport: { version: 1, revision: current.revision, evidenceRevision, path: reportPath, sha256: digest } },
       })
     },
   }))
