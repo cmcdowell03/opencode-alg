@@ -4,13 +4,20 @@ import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { isDeepStrictEqual } from "node:util"
 import { buildDiscoveryCases, type DiscoveryCase, type DiscoveryFinding } from "./discovery-cases.ts"
+import { buildHeldOutDiscoveryCases } from "./discovery-held-out.ts"
+import { evaluateDiscoveryLedger, type DiscoveryLedgerCall, type DiscoveryRead, type DiscoveryReportFile } from "./discovery-ledger.ts"
+import { focusedSourceCallsPerRole, scopedTools, sourceCallCap } from "./discovery-tools.ts"
+import { discoveryNativeLimits } from "./native-provider.ts"
+import { revisionInstructions } from "./discovery-host.ts"
+import { focusedArms, focusedCheckerPrompt, focusedComparisons, focusedLedgerInstructions, focusedVariant, orderDiscoveryArms } from "./discovery-protocol.ts"
+import { focusedFreezeFiles } from "./discovery-run.ts"
 import {
-  buildDiscoveryReviewPacket, gradeDiscovery, parseDiscoverySubmission,
+  buildDiscoveryReviewPacket, focusedDiscoveryAnswer, gradeDiscovery, parseDiscoverySubmission,
   type DiscoveryAdjudication, type DiscoveryReviewPacket,
 } from "./discovery-grade.ts"
 
 const arms = ["build", "alg-ordinary", "alg-adversarial", "build-ordinary", "build-adversarial"] as const
-type Arm = typeof arms[number]
+type Arm = typeof arms[number] | typeof focusedArms[number]
 const comparisons = {
   stockBuildVsAlgOrdinary: ["build", "alg-ordinary"],
   stockBuildVsAlgAdversarial: ["build", "alg-adversarial"],
@@ -25,6 +32,12 @@ const vocabulary = {
   "chamber conditioning": "chamber",
   "catalog release": "catalog",
   "measurement scatter": "noise",
+  "evidence coverage": "coverage",
+} as const satisfies Record<string, DiscoveryFinding>
+const focusedVocabulary = {
+  "reservation retransmission": "duplicate",
+  "carrier tare error": "tare",
+  "pick-pack shortage": "short-pick",
   "evidence coverage": "coverage",
 } as const satisfies Record<string, DiscoveryFinding>
 
@@ -68,22 +81,32 @@ function json(content: string, label: string): unknown {
 }
 
 async function freeze(protocol: Record<string, unknown>) {
-  check(protocol.schema === "discovery-freeze-v1" &&
+  const focused = protocol.schema === "discovery-freeze-v2" && protocol.variant === focusedVariant
+  check((focused || protocol.schema === "discovery-freeze-v1") &&
     (protocol.mode === "native-oauth" && text(protocol.model) ||
       protocol.mode === "synthetic-scripted" && protocol.model === null), "Invalid discovery freeze")
   const host = record(protocol.host, "frozen host")
   check(host.version === "2.3.2" && digest(host.binarySha256) && digest(host.packageSha256), "Invalid frozen runtime digests")
   const files = record(protocol.files, "frozen file manifest")
   check(protocol.sourceDigestMode === undefined || protocol.sourceDigestMode === "utf8-lf-v1", "Unknown frozen source digest mode")
-  match(Object.keys(files).sort(), [...sourceFiles].sort(), "Frozen source file coverage mismatch")
-  await Promise.all(sourceFiles.map(async path => {
+  const manifest = focused ? focusedFreezeFiles : sourceFiles
+  match(Object.keys(files).sort(), [...manifest].sort(), "Frozen source file coverage mismatch")
+  await Promise.all(manifest.map(async path => {
     const current = await artifact(resolve(location, path))
     const actual = protocol.sourceDigestMode === "utf8-lf-v1" ? sha256(current.text.replace(/\r\n/g, "\n")) : current.sha256
     check(actual === files[path], `Frozen source digest mismatch: ${path}`)
   }))
-  const localCases = buildDiscoveryCases()
+  const localCases = focused ? buildHeldOutDiscoveryCases() : buildDiscoveryCases()
   const frozenCases = rows(protocol.cases, "frozen cases")
   check(frozenCases.length > 0 && frozenCases.length <= localCases.length, "Invalid frozen case count")
+  if (focused) {
+    check(digest(host.bundleSha256) && protocol.sourceDigestMode === "utf8-lf-v1", "Invalid focused runtime or digest mode")
+    check(protocol.mode !== "native-oauth" || frozenCases.length === localCases.length, "Incomplete native focused cohort")
+    match(protocol.ledgerPromptSha256, sha256(focusedLedgerInstructions), "Focused control prompt digest mismatch")
+    match(protocol.caps, { ...discoveryNativeLimits, sourceCalls: sourceCallCap, sourceCallsPerRole: focusedSourceCallsPerRole },
+      "Focused budget differs from freeze")
+    match(protocol.audit, { revisionPromptSha256: sha256(revisionInstructions) }, "Focused revision prompt differs from freeze")
+  }
   let lastIndex = -1
   return frozenCases.map(frozen => {
     const index = localCases.findIndex(incident => frozen.id === incident.id)
@@ -92,9 +115,10 @@ async function freeze(protocol: Record<string, unknown>) {
     const fixture = localCases[index]!
     check(frozen.caseSha256 === sha256(JSON.stringify(fixture)) && frozen.promptSha256 === sha256(fixture.input.prompt),
       `Frozen fixture digest mismatch: ${fixture.id}`)
-    const pivot = index % arms.length
-    const order = [...arms.slice(pivot), ...arms.slice(0, pivot)]
+    const order = orderDiscoveryArms<Arm>(focused ? focusedArms : arms, index)
     match(frozen.order, order, `Frozen arm order mismatch: ${fixture.id}`)
+    if (fixture.focus) match(frozen.checkerPromptSha256, sha256(focusedCheckerPrompt(fixture.input.prompt, fixture.focus)),
+      `Frozen checker prompt digest mismatch: ${fixture.id}`)
     return { fixture, order }
   })
 }
@@ -116,6 +140,8 @@ type Attempt = Trial & {
   submission: unknown
   verifiedSourcePaths: string[]
   reviewed: DiscoveryAdjudication[]
+  mechanism?: ReturnType<typeof evaluateDiscoveryLedger> | null
+  assistantFormat?: "no-assistant-text" | "valid" | "invalid"
 }
 
 function verifiedReads(receipt: Record<string, unknown>, fixture: DiscoveryCase) {
@@ -133,7 +159,7 @@ function verifiedReads(receipt: Record<string, unknown>, fixture: DiscoveryCase)
   })
 }
 
-function reviewDecision(row: Record<string, unknown>): DiscoveryAdjudication {
+function reviewDecision(row: Record<string, unknown>, focused: boolean): DiscoveryAdjudication {
   check(Object.keys(row).every(key => ["packetId", "claimId", "verdict", "rationale", "evidence", "certification", "equivalentTo"].includes(key)) &&
     typeof row.packetId === "string" && digest(row.packetId) && text(row.claimId) && text(row.rationale) &&
     Array.isArray(row.evidence) && row.evidence.every(text) &&
@@ -146,7 +172,7 @@ function reviewDecision(row: Record<string, unknown>): DiscoveryAdjudication {
     check(Object.keys(equivalence).length === 2 && text(equivalence.finding) && text(equivalence.scope),
       "equivalentTo requires a public finding and lot scope")
     const label = equivalence.finding.trim().toLowerCase()
-    const finding = Object.entries(vocabulary).find(([name, key]) => name === label || key === label)?.[1]
+    const finding = Object.entries(focused ? focusedVocabulary : vocabulary).find(([name, key]) => name === label || key === label)?.[1]
     check(finding, `Unknown equivalentTo finding "${label}". See --review-guide.`)
     equivalentTo = { finding, scope: equivalence.scope.trim().toUpperCase() }
   }
@@ -156,7 +182,7 @@ function reviewDecision(row: Record<string, unknown>): DiscoveryAdjudication {
   }
 }
 
-async function decisions(path: string, hashes: Record<string, string>) {
+async function decisions(path: string, hashes: Record<string, string>, focused: boolean) {
   const directory = (await lstat(path)).isDirectory()
   const files = directory ? (await readdir(path)).sort() : [path]
   const entries = new Map<string, DiscoveryAdjudication>()
@@ -168,7 +194,7 @@ async function decisions(path: string, hashes: Record<string, string>) {
     const root = Array.isArray(parsed) ? null : record(parsed, "review envelope")
     if (root) check(root.schema === "discovery-adjudication-v1" && Object.keys(root).length === 2, "Invalid review envelope")
     for (const row of rows(root ? root.decisions : parsed, "review decisions")) {
-      const decision = reviewDecision(row)
+      const decision = reviewDecision(row, focused)
       const key = decision.packetId + "/" + decision.claimId
       check(!entries.has(key), `Duplicate blind decision: ${key}`)
       entries.set(key, decision)
@@ -204,14 +230,15 @@ function gradeReviews(attempts: Attempt[], reviews: DiscoveryAdjudication[]) {
       if (!equivalentTo) return review
       const claim = packet.submission.claims.find(row => row.claimId === review.claimId)!
       const target = attempt.fixture.oracle.targets.find(row => row.finding === equivalentTo.finding && row.scope === equivalentTo.scope)
-      if (target?.requiredRefs.every(ref => claim.evidence.includes(ref))) return review
+      if (target && (attempt.fixture.focus || target.requiredRefs.every(ref => claim.evidence.includes(ref)))) return review
       const { packetId, claimId } = review
       noncredited.set(packetId + "/" + claimId, {
         packetId, claimId, equivalentTo, reason: target ? "original-citations-incomplete" : "frozen-target-absent",
       })
       return decision
     })
-    const opts = { verifiedSourcePaths: attempt.verifiedSourcePaths }
+    const opts = { verifiedSourcePaths: attempt.verifiedSourcePaths,
+      strictAssistantFormat: attempt.assistantFormat === undefined ? undefined : attempt.assistantFormat === "valid" }
     // Reviewers can decide every claim without a list of the host grader's pending IDs.
     const validated = gradeDiscovery(attempt.fixture, attempt.submission, { ...opts, adjudications: all })
     check(!validated.adjudicationErrors.length, `Invalid decision evidence in packet ${attempt.packet.packetId}: ${validated.adjudicationErrors.join(", ")}`)
@@ -226,16 +253,16 @@ function gradeReviews(attempts: Attempt[], reviews: DiscoveryAdjudication[]) {
 
 const ratio = (numerator: number, denominator: number) => ({ numerator, denominator, rate: denominator ? numerator / denominator : null })
 
-function metrics(attempts: Attempt[], stage: "raw" | "final") {
+function metrics(attempts: Attempt[], stage: "raw" | "final", focused: boolean) {
   const count = (predicate: (grade: Grade, attempt: Attempt) => boolean) =>
     attempts.filter(attempt => predicate(attempt[stage], attempt)).length
   const sum = (value: (grade: Grade, attempt: Attempt) => number) =>
     attempts.reduce((total, attempt) => total + value(attempt[stage], attempt), 0)
-  const findings = attempts.flatMap(attempt => attempt.fixture.oracle.targets.map(target => ({
+  const findings = attempts.filter(attempt => !focused || attempt[stage].diagnostics?.contentScored).flatMap(attempt => attempt.fixture.oracle.targets.map(target => ({
     ...target, found: !attempt[stage].missedFindings.some(missed => missed.finding === target.finding && missed.scope === target.scope),
   })))
   const defect = findings.filter(row => row.materialDefect)
-  const byFinding = (Object.values(vocabulary)).map(finding => {
+  const byFinding = (Object.values(focused ? focusedVocabulary : vocabulary)).map(finding => {
     const eligible = findings.filter(row => row.finding === finding)
     return [finding, ratio(eligible.filter(row => row.found).length, eligible.length)] as const
   })
@@ -268,12 +295,33 @@ function metrics(attempts: Attempt[], stage: "raw" | "final") {
       pendingClaims: sum(grade => grade.pendingClaims.length),
       severeMisses: sum(grade => grade.severeMisses.length),
       unsupportedCertifications: sum(grade => grade.unsupportedCertifications.length),
+      ...(focused && {
+        formatFailures: count((_, row) => row.assistantFormat === "invalid"),
+        noAssistantText: count((_, row) => !row.assistantFormat || row.assistantFormat === "no-assistant-text"),
+        contentUnscored: count(grade => grade.diagnostics?.contentScored === false),
+        omittedDefects: sum(grade => grade.diagnostics?.omittedDefects.length ?? 0),
+        unsubstantiatedDefects: sum(grade => grade.diagnostics?.unsubstantiatedDefects.length ?? 0),
+        citationIncompleteFindings: sum(grade => grade.diagnostics?.citationIncompleteFindings.length ?? 0),
+        citationsWithoutVerifiedReads: sum(grade => grade.diagnostics?.citationsWithoutVerifiedReads?.length ?? 0),
+        abstentionOnMissingEvidence: count(grade => grade.diagnostics?.abstentionOnMissingEvidence === true),
+        unsupportedClosure: count(grade => grade.diagnostics?.unsupportedClosure === true),
+        recordedFindingReadback: count((_, row) => row.mechanism?.exactFindingReadback === true),
+        receiptBoundCanonicalReport: count((_, row) => row.mechanism?.reportMatchesReadback === true),
+        appliedLedgerMechanism: count((_, row) => row.mechanism?.applied === true),
+        canonicalCorrectDisposition: count((_, row) => row.mechanism?.dispositionCorrect === true),
+        canonicalExactMissingEvidence: count((_, row) => row.mechanism?.canonicalMissingEvidenceExact === true),
+        canonicalCompleteCitations: count((_, row) => row.mechanism?.canonicalCitationComplete === true),
+        canonicalUnsupportedClosure: count((_, row) => row.mechanism?.canonicalUnsupportedClosure === true),
+        commandFileMatches: count((_, row) => row.mechanism?.commandFileMatches === true),
+        unresolvedEvidenceQuestion: count((_, row) => row.mechanism?.questionFromUnresolvedEvidence === true),
+        questionAddressesFrozenGap: count((_, row) => row.mechanism?.questionAddressesFrozenGap === true),
+      }),
     },
   }
 }
 
-function pairedSummary(fixtures: DiscoveryCase[], attempts: Attempt[], nativeComparable: boolean, stage: "raw" | "final") {
-  return Object.fromEntries(Object.entries(comparisons).map(([key, [first, second]]) => {
+function pairedSummary(fixtures: DiscoveryCase[], attempts: Attempt[], nativeComparable: boolean, stage: "raw" | "final", focused: boolean) {
+  return Object.fromEntries(Object.entries(focused ? focusedComparisons : comparisons).map(([key, [first, second]]) => {
     const pairs = fixtures.map(fixture => {
       const baseline = attempts.find(row => row.case === fixture.id && row.arm === first)
       const treatment = attempts.find(row => row.case === fixture.id && row.arm === second)
@@ -318,12 +366,14 @@ export async function finalizeDiscovery(options: FinalizeOptions) {
   const readJson = async (scope: "private" | "blinded", file: string) => json(await read(scope, file), scope + "/" + file)
   const provisional = await artifact(join(privateDir, "report.json"))
   const report = record(json(provisional.text, "report.json"), "provisional report")
-  check(report.schema === "discovery-report-v1" && typeof report.runtimeUnchanged === "boolean" &&
+  const focused = report.schema === "discovery-report-v2" && report.variant === focusedVariant
+  check((focused || report.schema === "discovery-report-v1") && typeof report.runtimeUnchanged === "boolean" &&
     typeof report.qualified === "boolean" && (report.interrupted === null || typeof report.interrupted === "string"),
   "Invalid provisional discovery report")
   const manifest = record(report.artifactSha256, "receipt artifact digests")
   const protocol = record(await readJson("private", "protocol.json"), "receipt protocol")
   check(report.mode === protocol.mode, "Receipt and frozen protocol modes differ")
+  check(focused === (protocol.schema === "discovery-freeze-v2"), "Receipt and frozen protocol variants differ")
   let externalFreeze: string | null = null
   if (options.frozen) {
     externalFreeze = (await artifact(options.frozen)).sha256
@@ -390,14 +440,57 @@ export async function finalizeDiscovery(options: FinalizeOptions) {
     check(outcome && (outcome !== "apparatus-error") === receipt.apparatusQualified &&
       (!receipt.qualified || outcome === "completed"), "Invalid trial outcome or qualification")
     const verifiedSourcePaths = verifiedReads(receipt, fixture)
-    const submission = parseDiscoverySubmission(receipt.final)
+    let mechanism: Attempt["mechanism"]
+    if (focused) {
+      const assistant = record(receipt.assistantFinal, "assistant final receipt")
+      match(assistant.text, receipt.final, "Final assistant receipt differs from scored text")
+      check(receipt.final === null ? assistant.messageId === null : text(assistant.messageId), "Missing assistant final message authority")
+      const trialEvents = events.filter(row => row.trial === trial.trial)
+      const turn = trialEvents.find(row => row.event === "turn-complete" && row.answerId === assistant.messageId)
+      if (receipt.final !== null) check(turn?.scope === "root" && turn.answer === receipt.final &&
+        turn.phase === (trial.arm === "build" ? "initial" : "revision"), "Scored answer is not the observed final root turn")
+      if (trial.arm !== "build" && receipt.apparatusQualified && receipt.outcome === "completed") {
+        const checker = trialEvents.find(row => row.event === "prompt" && row.phase === "audit")
+        match(checker?.sha256, sha256(focusedCheckerPrompt(fixture.input.prompt, fixture.focus!)), "Matched checker prompt differs")
+      }
+      const observedRoot = trialEvents.filter(row => row.event === "turn-complete" && row.scope === "root")
+        .flatMap(row => rows(row.verifiedReads, "observed root reads"))
+      const hostReads = rows(receipt.rootReads, "private verified root reads")
+      check(hostReads.every(read => read.tool === scopedTools("root").read && text(read.callId) && text(read.messageId) &&
+        (receipt.final === null || observedRoot.some(observed => isDeepStrictEqual(read, observed)))),
+      "Root read missing from host turn observations")
+      const ledger = rows(receipt.ledgerCalls, "ledger call receipts")
+      mechanism = null
+      if (trial.arm === "alg-focused") {
+        match(ledger, trialEvents.find(row => row.event === "ledger-observation")?.calls, "Ledger call journal mismatch")
+        const file = receipt.reportFile === null ? null : record(receipt.reportFile, "canonical report file")
+        if (file) {
+          check(text(file.text) && sha256(file.text) === file.sha256, "Canonical file content digest mismatch")
+          const observed = trialEvents.find(row => row.event === "canonical-report-file" && row.messageId === file.messageId)
+          check(observed, "Canonical file missing from host journal")
+          for (const [key, value] of Object.entries(file)) match(observed[key], value, "Canonical file receipt mismatch")
+        }
+        mechanism = evaluateDiscoveryLedger({ calls: ledger as DiscoveryLedgerCall[], reads: hostReads as DiscoveryRead[],
+          bundleSha256: String(record(protocol.host, "focused runtime").bundleSha256), incident: fixture,
+          file: file as DiscoveryReportFile | null })
+      } else {
+        check(!ledger.length && receipt.reportFile === null, "Control received an ALG ledger or report")
+      }
+      match(receipt.mechanism, mechanism, "Focused ledger result does not replay")
+      match(receipt.ledgerVerified, mechanism?.applied === true, "Focused receipt misreports treatment uptake")
+    }
+    const recovered = focused ? focusedDiscoveryAnswer(receipt.final) :
+      { value: parseDiscoverySubmission(receipt.final), strictFormat: undefined }
+    const submission = recovered.value
     const packet = buildDiscoveryReviewPacket(fixture, submission)
-    const raw = gradeDiscovery(fixture, submission, { verifiedSourcePaths })
+    const raw = gradeDiscovery(fixture, submission, { verifiedSourcePaths, strictAssistantFormat: recovered.strictFormat })
     check(outcome !== "completed" || raw.validSubmission, "Completed trial has an invalid report")
     match(receipt.grade, raw, `Provisional grade does not replay: ${name}`)
     match(await readJson("blinded", name), { trial: trial.trial, packet }, `Blinded packet differs from frozen sources or raw answer: ${name}`)
     attempts.push({ ...trial, fixture, qualified: receipt.qualified, apparatusQualified: receipt.apparatusQualified,
-      treatment: receipt.treatment, outcome, receiptPresent: true, packet, raw, final: raw, submission, verifiedSourcePaths, reviewed: [] })
+      treatment: receipt.treatment, outcome, receiptPresent: true, packet, raw, final: raw, submission, verifiedSourcePaths, reviewed: [],
+      ...(focused && { mechanism,
+        assistantFormat: receipt.final === null ? "no-assistant-text" : recovered.strictFormat ? "valid" : "invalid" }) })
   }
   match(declaredDigests, manifest, "Receipt artifact digest or manifest coverage mismatch")
   const committed = attempts.filter(row => row.receiptPresent)
@@ -407,7 +500,7 @@ export async function finalizeDiscovery(options: FinalizeOptions) {
   match(report.allEvidenceQualified, report.qualified && committed.every(row => row.qualified), "Provisional evidence qualification differs from receipts")
   const nativeComparable = protocol.mode === "native-oauth" && report.runtimeUnchanged
   const fixtures = cases.map(({ fixture }) => fixture)
-  const rawPairs = pairedSummary(fixtures, attempts, nativeComparable, "raw")
+  const rawPairs = pairedSummary(fixtures, attempts, nativeComparable, "raw", focused)
   const rawComparisons = Object.fromEntries(Object.entries(rawPairs).map(([name, summary]) => [name,
     summary.pairs.filter(pair => committed.some(row => row.trial === pair.baseline) && committed.some(row => row.trial === pair.treatment))
       .map(pair => {
@@ -418,19 +511,20 @@ export async function finalizeDiscovery(options: FinalizeOptions) {
       })]))
   match(report.comparisons, rawComparisons, "Provisional pair comparisons disagree with replay")
   const decisionDigests: Record<string, string> = {}
-  const reviews = await decisions(options.decisions, decisionDigests)
+  const reviews = await decisions(options.decisions, decisionDigests, focused)
   const noncreditedEquivalences = gradeReviews(attempts, reviews)
   const aggregate = (stage: "raw" | "final") => ({
-    overall: metrics(attempts, stage),
-    byArm: Object.fromEntries(arms.map(arm => {
+    overall: metrics(attempts, stage, focused),
+    byArm: Object.fromEntries((focused ? focusedArms : arms).map(arm => {
       const selected = attempts.filter(row => row.arm === arm)
       const expected = planned.filter(row => row.arm === arm).length
-      return [arm, { planned: expected, notAttempted: expected - selected.length, ...metrics(selected, stage) }]
+      return [arm, { planned: expected, notAttempted: expected - selected.length, ...metrics(selected, stage, focused) }]
     })),
-    comparisons: stage === "raw" ? rawPairs : pairedSummary(fixtures, attempts, nativeComparable, "final"),
+    comparisons: stage === "raw" ? rawPairs : pairedSummary(fixtures, attempts, nativeComparable, "final", focused),
   })
   const output = {
-    schema: "discovery-finalization-v1",
+    schema: focused ? "discovery-finalization-v2" : "discovery-finalization-v1",
+    ...(focused && { variant: focusedVariant }),
     mode: protocol.mode, runtimeUnchanged: report.runtimeUnchanged, qualified: report.qualified, allEvidenceQualified: report.allEvidenceQualified, interrupted: report.interrupted,
     counts: { planned: planned.length, attempted: started.length, committed: committed.length,
       withoutCommittedReceipt: started.length - committed.length, notAttempted: planned.length - started.length },
@@ -442,6 +536,7 @@ export async function finalizeDiscovery(options: FinalizeOptions) {
       trial: row.trial, case: row.case, arm: row.arm, qualified: row.qualified, apparatusQualified: row.apparatusQualified,
       treatment: row.treatment, outcome: row.outcome, receiptPresent: row.receiptPresent, packetId: row.packet?.packetId ?? null,
       rawProvisionalGrade: row.raw, adjudicatedGrade: row.final,
+      ...(focused && { mechanism: row.mechanism ?? null, assistantFormat: row.assistantFormat ?? "no-assistant-text" }),
     })),
   }
   await writeFile(options.output, JSON.stringify(output, null, 2) + "\n", { flag: "wx", mode: 0o600 })
@@ -453,6 +548,7 @@ const usage = [
   "  --private <receipts/private> [--blinded <receipts/blinded>] --decisions <json-or-directory> --output <new-report.json>",
   "  [--frozen <original-protocol.json>]  Required for native receipts.",
   "  --review-guide  Print only the public reviewer instructions.",
+  "  --review-guide-focused  Print the public reviewer instructions for focused-read-only.",
 ].join("\n")
 
 const reviewGuide = [
@@ -471,6 +567,13 @@ const reviewGuide = [
 export async function runDiscoveryFinalizeCLI(args: string[]) {
   if (args.length === 1 && args[0] === "--help") { console.log(usage); return }
   if (args.length === 1 && args[0] === "--review-guide") { console.log(reviewGuide); return }
+  if (args.length === 1 && args[0] === "--review-guide-focused") {
+    console.log(reviewGuide.replace(Object.keys(vocabulary).join(", "), Object.keys(focusedVocabulary).join(", ")).replace(
+      "Select a category only when the claim itself states that attribution and its original citations establish it.",
+      "Decide every claim you receive. Select a category when a paraphrase makes that attribution and its cited rows establish it. The grader separately checks the stricter frozen citation set.")
+      .replace("<lot ID>", "<consignment ID>"))
+    return
+  }
   const allowed = ["--private", "--blinded", "--frozen", "--decisions", "--output"]
   const flags = new Map<string, string>()
   for (let index = 0; index < args.length; index += 2) {

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import type { V2InvestigationView } from "../core/investigation.ts"
+import { createV2InvestigationBridge, type V2InvestigationView } from "../core/investigation.ts"
 import type { CalculationPolicy } from "../src/calculation.ts"
 import type { DeliveryHistory } from "../src/delivery.ts"
 import { DeliveryContext } from "../src/delivery-context.ts"
@@ -120,5 +120,40 @@ test("recovery at child completion, compaction and acknowledgement only certifie
     allowed = false
     await expect(journal().observe(recipe, suffix, "build", false, reader)).rejects.toThrow("CHILD_AUDIT_NO_LONGER_VERIFIED")
     expect((await journal().observe(recipe, [...suffix, task("Other task")], "build", false, reader)).checkpoint).toBeNull()
+  } finally { await rm(directory, { recursive: true, force: true }) }
+})
+
+
+test("read-only calculation binds the approved observed proof to a ledger revision without a manifest", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "alg-read-only-calculation-"))
+  const owner = { directory, projectID: "project", sessionID: "owner" }
+  const makeBridge = () => createV2InvestigationBridge({ investigationMode: "read-only" })
+  const journal = () => new EvidenceJournal(directory, "owner-report", ["owner", "policy", "read-only"])
+
+  try {
+    const bridge = makeBridge()
+    bridge.create(owner)
+    const next_action = "review; prerequisite=sample"
+    const pin = async () => decision.procedurePin
+    const early = await journal().observe(policy, [task("Investigate"), page(1)], "build")
+    expect(journal().calculationProof(policy, early, next_action)).toBeUndefined()
+    const before = await bridge.setNextMeasurement(owner, { expected_decision_revision: 0, next_action }, pin)
+    const history = [task("Investigate"), page(1), page(2)]
+    const complete = await journal().observe(policy, [...history, cut("running")], "build", true)
+    expect((await journal().report(policy, complete, before)).status).toBe("provisional")
+    expect(journal().calculationProof(policy, complete, "hold; prerequisite=audit")).toBeUndefined()
+    const proof = journal().calculationProof(policy, complete, next_action)
+    expect(proof).toBe(complete.receipt.proofSha256)
+    const after = await bridge.setNextMeasurement(owner, { expected_decision_revision: 1, next_action }, pin,
+      async () => ({ sources: [], calculationProof: proof }))
+    expect(after.work).toBeNull()
+    expect(after.decisionSources).toEqual({ sources: [], calculationProof: proof })
+    const resumed = await journal().observe(policy, [cut("completed"), task("Continue.")], "build")
+    expect(await journal().report(policy, resumed, makeBridge().primary(owner))).toEqual({
+      status: "verified", revision: 2, fields: { total: 2, sampleRef: "batch-a", nextAction: "review", prerequisite: "sample" },
+    })
+    const later = await bridge.setNextMeasurement(owner, { expected_decision_revision: 2, next_action: "Open question" }, pin)
+    expect(later.decisionSources).toBeUndefined()
+    expect((await journal().report(policy, resumed, later)).status).toBe("provisional")
   } finally { await rm(directory, { recursive: true, force: true }) }
 })

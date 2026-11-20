@@ -3,7 +3,7 @@ import { stat } from "node:fs/promises"
 import { z } from "zod"
 import { runContainedPath } from "../../../src/store.ts"
 import type { V2InvestigationView } from "../core/investigation.ts"
-import { calculationCheckpointMaxBytes, calculationCheckpointSchema, inspectCalculationProgress,
+import { calculationCheckpointMaxBytes, calculationCheckpointSchema, inspectCalculationProgress, validateCalculationReceipt,
   type CalculationPolicy, type ChildAuditOrigin, type VerifiedChildAudit } from "./calculation.ts"
 import type { DeliveryHistory } from "./delivery.ts"
 import { publishReceipt, readReceipt } from "./journal.ts"
@@ -12,6 +12,18 @@ const hash = z.string().regex(/^[a-f0-9]{64}$/)
 const cutSchema = z.strictObject({ checkpoint: hash })
 const decisionSchema = z.strictObject({ revision: z.number().int().positive(), proof: hash, work: z.string(), manifest: hash, action: z.string() })
 export type EvidenceProgress = ReturnType<typeof inspectCalculationProgress>
+type VerifiedCalculationReport = {
+  status: "verified"
+  revision: number
+  fields: Record<string, string | number>
+}
+type UnverifiedCalculationReport = {
+  status: "incomplete" | "abstained" | "provisional"
+  measurements: EvidenceProgress["receipt"]["values"]
+  references: Record<string, string>
+  obligation: EvidenceProgress["obligation"]
+}
+export type CalculationReport = VerifiedCalculationReport | UnverifiedCalculationReport
 type Notice = Omit<ChildAuditOrigin, "sourceProof">
 export interface ChildEvidenceReader {
   notice(row: DeliveryHistory[number]): Notice | undefined
@@ -85,19 +97,33 @@ export class EvidenceJournal {
     return progress
   }
 
-  private decision(policy: CalculationPolicy, progress: EvidenceProgress, view: V2InvestigationView | null) {
+  /** Certify only the configured rule over the validated receipt captured before the decision. */
+  calculationProof(policy: CalculationPolicy, progress: EvidenceProgress, nextAction: string) {
+    return this.choice(policy, progress, nextAction) ? progress.receipt.proofSha256 : undefined
+  }
+
+  private choice(policy: CalculationPolicy, progress: EvidenceProgress, nextAction: string) {
     const rule = policy.decisionRules
     const proof = progress.receipt
-    if (!rule || proof.status !== "verified" || !view?.procedurePin || !view.decision_revision ||
-        !view.work?.manifest_digest || !["reusable", "result_recorded"].includes(view.work.status)) return
+    if (!rule || progress.obligation.kind !== "verified" || proof.status !== "verified" ||
+        !validateCalculationReceipt(proof) || !proof.sources.owner) return
     const value = proof.values[rule.field]
     if (value === undefined) return
     const choice = value >= rule.minimum ? rule.whenMet : rule.otherwise
     // A free-form checkpoint may still be useful, but cannot certify an action/prerequisite pair.
-    const [action, qualifier, ...extra] = (view.decision.next_action ?? "").split(";").map(s => s.trim())
+    const [action, qualifier, ...extra] = nextAction.split(";").map(s => s.trim())
     if (extra.length || action !== choice.nextAction || qualifier !== "prerequisite=" + choice.prerequisite) return
-    const stamp = { revision: view.decision_revision, proof: proof.proofSha256, work: view.work.work_key,
-      manifest: view.work.manifest_digest, action: view.decision.next_action! }
+    return choice
+  }
+
+  private decision(policy: CalculationPolicy, progress: EvidenceProgress, view: V2InvestigationView | null) {
+    if (!view?.procedurePin || !view.decision_revision || !view.work?.manifest_digest ||
+        !["reusable", "result_recorded"].includes(view.work.status)) return
+    const action = view.decision.next_action
+    const choice = action && this.choice(policy, progress, action)
+    if (!choice) return
+    const stamp = { revision: view.decision_revision, proof: progress.receipt.proofSha256, work: view.work.work_key,
+      manifest: view.work.manifest_digest, action }
     return { choice, stamp, path: this.path("decision", String(stamp.revision)) }
   }
 
@@ -107,7 +133,7 @@ export class EvidenceJournal {
     if (decision) await publishReceipt(decision.path, decision.stamp)
   }
 
-  async report(policy: CalculationPolicy, progress: EvidenceProgress, view: V2InvestigationView | null) {
+  async report(policy: CalculationPolicy, progress: EvidenceProgress, view: V2InvestigationView | null): Promise<CalculationReport> {
     const { obligation, receipt } = progress
     const measurements = receipt.values
     const references = Object.fromEntries(Object.values(receipt.sources).map(s => [s.reportReferenceField, s.reference]))
@@ -115,12 +141,23 @@ export class EvidenceJournal {
       const status = obligation.kind === "exhausted" || obligation.kind === "conflict" ? "abstained" : "incomplete"
       return { status, obligation, measurements, references }
     }
-    const decision = this.decision(policy, progress, view)
-    if (decision && (!Object.hasOwn(measurements, "nextAction") && !Object.hasOwn(measurements, "prerequisite")) &&
-        !Object.hasOwn(references, "nextAction") && !Object.hasOwn(references, "prerequisite")) {
-      const saved = await readReceipt(decision.path, decisionSchema)
-      if (saved && digest(saved) === digest(decision.stamp))
-        return { status: "verified", revision: saved.revision, fields: { ...measurements, ...references, ...decision.choice } }
+    if (["nextAction", "prerequisite"].some(key => Object.hasOwn(measurements, key) || Object.hasOwn(references, key))) {
+      return { status: "provisional", measurements, references, obligation }
+    }
+    if (view?.investigationMode === "read-only") {
+      const action = view.decision.next_action
+      const choice = action && this.choice(policy, progress, action)
+      if (choice && view.decision_revision > 0 && view.procedurePin &&
+          view.decisionSources?.calculationProof === receipt.proofSha256) {
+        return { status: "verified", revision: view.decision_revision, fields: { ...measurements, ...references, ...choice } }
+      }
+    } else {
+      const decision = this.decision(policy, progress, view)
+      if (decision) {
+        const saved = await readReceipt(decision.path, decisionSchema)
+        if (saved && digest(saved) === digest(decision.stamp))
+          return { status: "verified", revision: saved.revision, fields: { ...measurements, ...references, ...decision.choice } }
+      }
     }
     return { status: "provisional", measurements, references, obligation }
   }
