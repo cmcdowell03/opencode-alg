@@ -391,6 +391,42 @@ without a certified final answer. Build miscounted four defects and stopped.
 ALG used 70,982 uncached input tokens and Build used 17,339. Both arms missed
 the frozen end-to-end gate. [Receipts and ordered replay](evidence/evidence-handoff-2.3.2.json)
 
+### Verify an independent child on its native completion
+
+For an investigation with a pinned calculation procedure, opt in with the
+following plugin option. Set the three names to the deployed subagent,
+native lookup tool and source. Both the subagent's tool permission and its
+`tool.use` permission must explicitly allow this read.
+
+```json
+{
+  "childAudit": {
+    "agent": "research-checker",
+    "tool": "audit_lookup_pages",
+    "source": "clock-audit",
+    "scope": "whole-source"
+  }
+}
+```
+
+OpenCode's completion wakes the owner. ALG uses the event as a locator and
+reads the finished child's tool input, complete result and final answer from
+OpenCode. It checks the parent, workspace, role, permissions and selected
+cohort before computing the approved measurements. The default scope,
+`selected-cohort`, requires the tool result to identify the owner task,
+source message, call, reference, row digest and count in `ownerCoverage`.
+Choose `whole-source` only for an endpoint returning the entire named dataset
+for a local join, as in the example. A child reading that endpoint without a
+coverage record must have been created after cohort selection. The default lookup shape
+is a single offset-zero page of at most 24 rows. A different field layout can
+be configured through `childAudit.mapping`. Larger or paginated audits need
+an appropriate evidence contract before they can certify a decision.
+
+A later relay of the same rows preserves the proof. Conflicting rows produce
+an abstention. Compaction saves the source locator with the measurement, and
+the owner rechecks current authority before projecting or certifying it. The
+owner must still write the supported action and prerequisite after observation.
+
 The paired handoff receipt records cumulative UTF-8 request bytes by phase.
 Native runs also record provider input and output tokens and matched host cache
 reads. Cache reads are included in input tokens. Scripted runs can compare request

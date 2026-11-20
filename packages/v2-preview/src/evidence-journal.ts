@@ -3,7 +3,8 @@ import { stat } from "node:fs/promises"
 import { z } from "zod"
 import { runContainedPath } from "../../../src/store.ts"
 import type { V2InvestigationView } from "../core/investigation.ts"
-import { calculationCheckpointMaxBytes, calculationCheckpointSchema, inspectCalculationProgress, type CalculationPolicy } from "./calculation.ts"
+import { calculationCheckpointMaxBytes, calculationCheckpointSchema, inspectCalculationProgress,
+  type CalculationPolicy, type ChildAuditOrigin, type VerifiedChildAudit } from "./calculation.ts"
 import type { DeliveryHistory } from "./delivery.ts"
 import { publishReceipt, readReceipt } from "./journal.ts"
 
@@ -11,6 +12,19 @@ const hash = z.string().regex(/^[a-f0-9]{64}$/)
 const cutSchema = z.strictObject({ checkpoint: hash })
 const decisionSchema = z.strictObject({ revision: z.number().int().positive(), proof: hash, work: z.string(), manifest: hash, action: z.string() })
 export type EvidenceProgress = ReturnType<typeof inspectCalculationProgress>
+type Notice = Omit<ChildAuditOrigin, "sourceProof">
+export interface ChildEvidenceReader {
+  notice(row: DeliveryHistory[number]): Notice | undefined
+  resolve(notice: Notice, progress: EvidenceProgress): Promise<VerifiedChildAudit | undefined>
+}
+
+/** Re-read authority for an adopted child even if the original notice was compacted. */
+export async function revalidateChildEvidence(progress: EvidenceProgress, reader?: ChildEvidenceReader) {
+  const origin = progress.receipt.sources.correction?.child
+  if (!origin) return
+  const verified = await reader?.resolve(origin, progress)
+  if (verified?.origin.sourceProof !== origin.sourceProof) throw new Error("CHILD_AUDIT_NO_LONGER_VERIFIED")
+}
 const digest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex")
 
 /** Immutable observations and compaction pointers live under the existing owner journal. */
@@ -24,7 +38,7 @@ export class EvidenceJournal {
     return runContainedPath(this.directory, this.runId, "evidence", this.prefix, kind, id + ".json")
   }
 
-  async observe(policy: CalculationPolicy, history: DeliveryHistory, agent: string, compacting = false) {
+  async observe(policy: CalculationPolicy, history: DeliveryHistory, agent: string, compacting = false, reader?: ChildEvidenceReader) {
     const last = history.at(-1)
     const cut = compacting && last?.type === "compaction" && last.status === "running" ? last : undefined
     const window = cut ? history.slice(0, -1) : history
@@ -37,7 +51,22 @@ export class EvidenceJournal {
     const pointer = anchor && await readReceipt(this.path("cut", digest(anchor.id)), cutSchema)
     const checkpoint = pointer && await readReceipt(this.path("state", pointer.checkpoint), calculationCheckpointSchema, calculationCheckpointMaxBytes + 1)
     if (pointer && checkpoint?.proofSha256 !== pointer.checkpoint) throw new Error("EVIDENCE_CHECKPOINT_INVALID")
-    const progress = inspectCalculationProgress(policy, previous < 0 ? window : window.slice(previous + 1), agent, checkpoint, !!cut)
+    const suffix = previous < 0 ? window : window.slice(previous + 1)
+    const audits = new Map<string, VerifiedChildAudit>()
+    if (reader) {
+      let notices = 0
+      for (const [index, row] of suffix.entries()) {
+        const notice = reader.notice(row)
+        if (!notice) continue
+        if (++notices > 16) throw new Error("CHILD_AUDIT_WINDOW_LIMIT")
+        const before = inspectCalculationProgress(policy, suffix.slice(0, index), agent, checkpoint, false, audits)
+        if (!before.checkpoint?.selected || before.checkpoint.conflict) continue
+        const verified = await reader.resolve(notice, before)
+        if (verified) audits.set(row.id, verified)
+      }
+    }
+    const progress = inspectCalculationProgress(policy, suffix, agent, checkpoint, !!cut, audits)
+    await revalidateChildEvidence(progress, reader)
     if (progress.checkpoint) {
       const id = progress.checkpoint.proofSha256
       const path = this.path("state", id)

@@ -74,12 +74,19 @@ export class DeliveryContext {
   }
 
   /** Instructions are static. Source identities, counts and bounds are data. */
-  projectProgress(request: SessionContext, progress: EvidenceProgress) {
+  projectProgress(request: SessionContext, progress: EvidenceProgress, certified = false) {
     if (!progress.checkpoint) return
     let i = request.messages.length - 1
     while (i >= 0 && request.messages[i]?.role !== "user") i--
     if (i < 0) return
     const kind = progress.obligation.kind
+    if (kind === "verified" && progress.receipt.sources.correction?.child) {
+      const notice = { type: "text" as const, text: certified
+        ? "ALG verified the independent audit and recorded the decision. Use the verified report for the requested response."
+        : "ALG checked the completed child's audit against its recorded source read. Use the calculated measurements. If a decision is requested, acknowledge the supported action and prerequisite once." }
+      request.system.push(notice)
+      this.inserted.add(notice)
+    }
     if (kind !== "verified") {
       const instructions = {
         need_page: "The cohort is incomplete. When the task permits another read, use the next approved prefix shown in the evidence progress. Honor any request to pause at this window.",

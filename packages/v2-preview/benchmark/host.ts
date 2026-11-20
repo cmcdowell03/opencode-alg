@@ -123,13 +123,15 @@ export async function observeTurn(host: Host, sessionID: string, id: string): Pr
 }
 
 export async function installAlg(project: Awaited<ReturnType<typeof prepareHost>>, bundle: string,
-  skill: Awaited<ReturnType<typeof registerSkill>>, factory: ReturnType<typeof startFactory>) {
+  skill: Awaited<ReturnType<typeof registerSkill>>, factory: ReturnType<typeof startFactory>,
+  childAudit?: import("../src/child-audit.ts").ChildAuditConfig) {
   const body = JSON.stringify({ id: skill.id, path: project.skillRelative, sha256: skill.sha256, sourceSha256: skill.sourceSha256 })
   await writeFile(join(project.directory, approval), body, { flag: "wx" })
   project.config.plugins.push({
     package: pathToFileURL(bundle).href,
     options: { enabled: true, ownerAgent: owner, adapter: factory.adapter, approvedJob,
-      checkerAgent: "alg-investigation-checker", approvedProcedure: approval, approvedProcedureSha256: sha256(body) },
+        checkerAgent: "alg-investigation-checker", approvedProcedure: approval, approvedProcedureSha256: sha256(body),
+        ...(childAudit && { childAudit }) },
   })
   await writeFile(project.configPath, JSON.stringify(project.config))
 }

@@ -12,7 +12,8 @@ import { createOwnerContinuation } from "./continuation.ts"
 import { OwnerBrief } from "./brief.ts"
 import { DeliveryContext } from "./delivery-context.ts"
 import type { DeliveryHistory } from "./delivery.ts"
-import { EvidenceJournal, type EvidenceProgress } from "./evidence-journal.ts"
+import { EvidenceJournal, revalidateChildEvidence, type EvidenceProgress } from "./evidence-journal.ts"
+import { childAuditConfigSchema, createChildEvidenceReader } from "./child-audit.ts"
 import { parseCalculationPolicy, type CalculationPolicy } from "./calculation.ts"
 import { projectPreQueryReceipts } from "./pre-query-projection.ts"
 import { runContainedPath, runDir } from "../../../src/store.ts"
@@ -40,6 +41,7 @@ const configSchema = z.object({
   approvedProcedureSha256: procedureDigestSchema.optional(),
   preQueryPolicy: preQueryPolicySchema.optional(),
   continueOnEvidence: z.boolean().default(false),
+  childAudit: childAuditConfigSchema.optional(),
 }).strict().refine(config => (config.approvedProcedure === undefined) === (config.approvedProcedureSha256 === undefined))
 
 const actions = [
@@ -206,6 +208,8 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
   const procedures = new ResearchProcedure(ctx, directory, config.approvedProcedure, config.approvedProcedureSha256)
   if (config.preQueryPolicy && (!config.enabled || !config.approvedProcedure)) throw new Error("PRE_QUERY_REQUIRES_APPROVED_PROCEDURE")
   if (config.continueOnEvidence && !config.enabled) throw new Error("CONTINUATION_REQUIRES_ENABLED_INVESTIGATION")
+  if (config.childAudit && (!config.enabled || !config.approvedProcedure || config.childAudit.agent === config.ownerAgent))
+    throw new Error("CHILD_AUDIT_REQUIRES_APPROVED_INVESTIGATION_AND_DISTINCT_AGENT")
   const activationSchema = z.object({ source: procedureDigestSchema, body: procedureDigestSchema }).strict()
   function activationPath(ownerId: string) {
     return runContainedPath(directory, journal(ownerId).runId, "activated-" + config.preQueryPolicy!.procedure.sourceSha256 + ".json")
@@ -271,18 +275,23 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
     if (!current || !policy) return
     const caller = { sessionID: owner.id, agent: owner.agent }
     const pin = pinOfProcedure(current)
+    const reader = config.childAudit && createChildEvidenceReader(ctx, config.childAudit, owner, policy)
+    let observed: EvidenceProgress | undefined
     async function authorize() {
       const fresh = await host.owner(caller)
       await ctx.permission.assert({ ...caller, action: TOOL, resources: ["*"] })
       await ctx.permission.assert({ ...caller, action: policy!.owner.tool, resources: ["*"] })
       const now = await selectedProcedure(bridge!.primary(scope(fresh)), false)
       if (!now || !isDeepStrictEqual(pinOfProcedure(now), pin)) throw new Error("EVIDENCE_APPROVAL_CHANGED")
+      if (observed) await revalidateChildEvidence(observed, reader)
     }
     const ledger = new EvidenceJournal(directory, journal(owner.id).runId,
-      [owner.projectID, owner.id, owner.agent, runtimeSha256, config.approvedProcedureSha256, pin.id, pin.path, pin.sha256, pin.sourceSha256])
+      [owner.projectID, owner.id, owner.agent, runtimeSha256, config.approvedProcedureSha256, pin.id, pin.path, pin.sha256,
+        pin.sourceSha256, ...(config.childAudit ? [JSON.stringify(config.childAudit)] : [])])
     await authorize()
     observedEvidenceTool = policy.owner.tool
-    const progress = await ledger.observe(policy, await history(), owner.agent, compacting)
+    const progress = await ledger.observe(policy, await history(), owner.agent, compacting, reader)
+    observed = progress
     await authorize()
     return { ledger, policy, progress, authorize }
   }
@@ -683,7 +692,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       if (!compacting && progress && authorizeEvidence) {
         try {
           await authorizeEvidence()
-          delivery.projectProgress(request, progress)
+          delivery.projectProgress(request, progress, certified)
         } catch {
           delivery.clear(request)
           request.system.push({ type: "text", text: "ALG evidence approval is unavailable. Withhold unsupported measurements." })

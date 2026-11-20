@@ -20,7 +20,7 @@ import { collectSessionEvidence } from "./session-evidence.ts"
 import { maxProviderBytes, maxProviderCalls, startTransport, type Message } from "./transport.ts"
 import { createWorkbench, evidenceToolNames, startWorkbench } from "./workbench.ts"
 
-type Options = { binary: string; bundle: string; scenario: EvidenceCase; reverse?: boolean
+type Options = { binary: string; bundle: string; scenario: EvidenceCase; reverse?: boolean; nativeChildAudit?: boolean
   native?: { model: string; authPath?: string } }
 const prefix = "alg-v2-evidence-handoff-"
 const fixtureModel = { providerID: "paired-benchmark", id: "fixture" }
@@ -84,7 +84,8 @@ async function runArm(arm: ArmName, options: Options, scratch: string, bundleSha
     if (factory || native) {
       await host.process.kill()
       if (native) project.config.plugins.push(await native.stage(join(scratch, "observer")))
-      if (factory) await installAlg(project, options.bundle, skill, factory)
+      if (factory) await installAlg(project, options.bundle, skill, factory, options.nativeChildAudit
+        ? { agent: checkerName, tool: "audit_lookup_pages", source: "clock-audit", scope: "whole-source" } : undefined)
       await writeFile(project.configPath, JSON.stringify(project.config))
       host = await start()
     }
@@ -183,10 +184,17 @@ async function runArm(arm: ArmName, options: Options, scratch: string, bundleSha
   const ledger = workbench.snapshot()
   const resumedWire = wires.find(row => row.phase === "resume")
   const initialLimits = lookupLimits(initial), resumeLimits = lookupLimits(resumed)
+  // A native completion can wake the owner before the benchmark's explicit
+  // relay. Include that turn in the assessment, bounded by the graded answer.
+  const noticeIndex = rootRows?.findIndex(row => row.type === "synthetic" && row.metadata?.source === "subagent" &&
+    row.metadata.childID === checkerId && row.metadata.state === "completed" && row.metadata.agent === checkerName) ?? -1
+  const finalIndex = rootRows?.findIndex(row => row.id === final?.id) ?? -1
+  const decisionRows = options.nativeChildAudit && noticeIndex >= 0 && finalIndex > noticeIndex
+    ? rootRows!.slice(noticeIndex + 1, finalIndex + 1) : final?.rows ?? []
   const grade = evidenceDecisionGrade(options.scenario, arm, {
     initial: initial?.text ?? null, resume: resumed?.text ?? null, final: final?.text ?? null, checkerVerified: !!correction,
     ledger, beforeRestart, initialLimits, resumeLimits, initialStatus: status(initial), resumeStatus: status(resumed),
-    finalStatus: status(final), acknowledgements: receiptsFor(final?.rows ?? [], "set_next_measurement"), resumedWire, bundleSha256,
+    finalStatus: receiptsFor(decisionRows, "status"), acknowledgements: receiptsFor(decisionRows, "set_next_measurement"), resumedWire, bundleSha256,
   })
   const indexOf = (id?: string) => rootRows?.findIndex(row => row.id === id) ?? -1
   const summaryRequests = observer.requests.filter(row => row.kind === "summary" && row.role === "root" && row.status === 200)
@@ -252,7 +260,7 @@ export async function runEvidenceHandoff(options: Options) {
     return { schema: 1, caseId: fixture.id, scenario: options.scenario, order, runtime, parity,
       passed: build.passed && alg.passed && Object.values(parity).every(Boolean),
       mode: options.native ? "native-openai-oauth" : "scripted-transport", mechanicsOnly: !options.native,
-      freeze,
+      freeze, nativeChildAudit: !!options.nativeChildAudit,
       limits: options.native ? nativeLimits : { calls: maxProviderCalls, requestBytes: maxProviderBytes }, arms }
   } finally {
     const real = await realpath(scratch)
@@ -261,15 +269,15 @@ export async function runEvidenceHandoff(options: Options) {
   }
 }
 
-const usage = "Usage: bun packages/v2-preview/benchmark/evidence-handoff.ts --host <OpenCode 2.3.2> --package <staged bundle> --out <new JSON> [--case held-out|exhausted|changed] [--order build-first|alg-first] [--native-model openai/<id> --allow-model-calls [--auth-file <path>]]"
+const usage = "Usage: bun packages/v2-preview/benchmark/evidence-handoff.ts --host <OpenCode 2.3.2> --package <staged bundle> --out <new JSON> [--case held-out|exhausted|changed] [--order build-first|alg-first] [--native-child-audit] [--native-model openai/<id> --allow-model-calls [--auth-file <path>]]"
 if (import.meta.main) {
   const args = process.argv.slice(2)
   if (args.length === 1 && args[0] === "--help") console.log(usage)
   else {
     const flags = new Map<string, string>()
-    const allowed = ["--host", "--package", "--out", "--case", "--order", "--native-model", "--auth-file", "--allow-model-calls"]
+    const allowed = ["--host", "--package", "--out", "--case", "--order", "--native-model", "--auth-file", "--allow-model-calls", "--native-child-audit"]
     for (let i = 0; i < args.length; i++) {
-      const flag = args[i]!, value = flag === "--allow-model-calls" ? "true" : args[++i]
+      const flag = args[i]!, value = ["--allow-model-calls", "--native-child-audit"].includes(flag) ? "true" : args[++i]
       if (!allowed.includes(flag) || flags.has(flag) || !value || value.startsWith("--")) throw new Error(usage)
       flags.set(flag, value)
     }
@@ -284,7 +292,7 @@ if (import.meta.main) {
     const file = await open(resolve(out), "wx")
     try {
       const result = await runEvidenceHandoff({ binary: executable, bundle: staged,
-        scenario: scenario as EvidenceCase, reverse: order === "alg-first",
+        scenario: scenario as EvidenceCase, reverse: order === "alg-first", nativeChildAudit: flags.has("--native-child-audit"),
         native: model ? { model, authPath: authPath && resolve(authPath) } : undefined })
       await file.writeFile(JSON.stringify(result, null, 2) + "\n")
       await file.sync()

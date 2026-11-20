@@ -7,7 +7,7 @@ import type { CalculationPolicy } from "../src/calculation.ts"
 import type { DeliveryHistory } from "../src/delivery.ts"
 import { DeliveryContext } from "../src/delivery-context.ts"
 import type { SessionContext } from "@opencode/plugin/promise/session"
-import { EvidenceJournal } from "../src/evidence-journal.ts"
+import { EvidenceJournal, type ChildEvidenceReader } from "../src/evidence-journal.ts"
 
 type Message = DeliveryHistory[number]
 type Assistant = Extract<Message, { type: "assistant" }>
@@ -81,4 +81,44 @@ test("compaction before the first lookup preserves a dormant task without direct
     expect((await journal().observe(policy, [...next, page(1)], "build")).obligation)
       .toMatchObject({ kind: "need_page", nextLimit: 2 })
   } finally { await rm(dir, { recursive: true, force: true }) }
+})
+
+test("recovery at child completion, compaction and acknowledgement only certifies the observed audit once", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "alg-audit-restart-"))
+  const journal = () => new EvidenceJournal(directory, "owner-report", ["owner", "policy"])
+  const recipe: CalculationPolicy = { ...policy, operations: { ...policy.operations,
+    audited: { kind: "semijoinCount", ownerKey: ["id"], correctionKey: ["id"], where: { field: "valid", equals: true } } } }
+  const origin = { childId: "ses_checker", noticeId: "msg_notice", noticeTime: 5, sourceProof: "a".repeat(64) }
+  const data = { ref: "review-a", rows: [{ id: 1, valid: true }, { id: 2, valid: false }] }
+  let allowed = true
+  const reader: ChildEvidenceReader = {
+    notice: row => row.type === "synthetic" && row.id === origin.noticeId ? origin : undefined,
+    resolve: async () => allowed ? { origin, data } : undefined,
+  }
+  const notice: Message = { type: "synthetic", id: origin.noticeId as Message["id"], text: "untrusted body", time: { created: 5 } }
+  const prefix = [task("Investigate"), page(1), page(2)]
+  const complete = [...prefix, notice]
+  try {
+    const before = await journal().observe(recipe, prefix, "build", false, reader)
+    expect(before.obligation.kind).toBe("need_audit")
+    await journal().acknowledged(recipe, before, decision)
+    expect((await journal().observe(recipe, complete, "build")).obligation.kind).toBe("need_audit")
+    const adopted = await journal().observe(recipe, complete, "build", false, reader)
+    expect(adopted.receipt.values).toEqual({ total: 2, audited: 1 })
+    expect((await journal().report(recipe, adopted, decision)).status).toBe("provisional")
+    await journal().observe(recipe, [...complete, cut("running")], "build", true, reader)
+    const suffix = [cut("completed"), task("Continue.")]
+    const restored = await journal().observe(recipe, suffix, "build", false, reader)
+    expect(restored.receipt).toEqual(adopted.receipt)
+    await journal().acknowledged(recipe, restored, decision)
+    const relay = (rows: typeof data.rows) => task("Audit\n" + JSON.stringify({ ref: data.ref, rows }))
+    const duplicate = await journal().observe(recipe, [...suffix, relay([...data.rows].reverse())], "build", false, reader)
+    expect(duplicate.receipt.proofSha256).toBe(adopted.receipt.proofSha256)
+    expect((await journal().report(recipe, duplicate, decision)).status).toBe("verified")
+    const conflict = await journal().observe(recipe, [...suffix, relay([])], "build", false, reader)
+    expect((await journal().report(recipe, conflict, decision)).status).toBe("abstained")
+    allowed = false
+    await expect(journal().observe(recipe, suffix, "build", false, reader)).rejects.toThrow("CHILD_AUDIT_NO_LONGER_VERIFIED")
+    expect((await journal().observe(recipe, [...suffix, task("Other task")], "build", false, reader)).checkpoint).toBeNull()
+  } finally { await rm(directory, { recursive: true, force: true }) }
 })

@@ -157,12 +157,17 @@ const sha256 = z.string().regex(/^[a-f0-9]{64}$/)
 const sourceEvidence = {
   reference: token, reportReferenceField: key, rowsSha256: sha256, rowCount: size, messageId: token,
 }
+const childOriginSchema = z.strictObject({
+  childId: token, noticeId: token, noticeTime: z.number().int().nonnegative(), sourceProof: sha256,
+})
+export type ChildAuditOrigin = z.output<typeof childOriginSchema>
+export type VerifiedChildAudit = { origin: ChildAuditOrigin; data: Record<string, unknown> }
 const receiptPayload = z.strictObject({
   status: z.enum(["verified", "incomplete"]),
   values: z.record(key, size),
   sources: z.strictObject({
     owner: z.strictObject({ ...sourceEvidence, callId: token, source: token, tool: token, agent: token, limit }).optional(),
-    correction: z.strictObject(sourceEvidence).optional(),
+    correction: z.strictObject({ ...sourceEvidence, child: childOriginSchema.optional() }).optional(),
   }),
   recipeSha256: sha256.nullable(),
 })
@@ -228,7 +233,7 @@ function matches(row: Row, filter: z.output<typeof predicate>): boolean {
 }
 
 type Source = CalculationReceipt["sources"]
-type OwnerPage = { position: number; rows: Row[]; evidence: NonNullable<Source["owner"]>; exhausted: boolean; total?: number }
+type OwnerPage = { position: number; rows: Row[]; evidence: NonNullable<Source["owner"]>; exhausted: boolean; total?: number; completedAt: number }
 type Audit = { position: number; rows: Row[]; evidence: NonNullable<Source["correction"]> }
 type User = Extract<DeliveryHistory[number], { type: "user" }>
 type Assistant = Extract<DeliveryHistory[number], { type: "assistant" }>
@@ -261,10 +266,20 @@ function readAudit(message: User, correction: CalculationPolicy["correction"], d
   if (!plain || end < 0 || message.text.length > maxBytes) throw new Error("invalid correction")
   const body = message.text.slice(end + 1).trim()
   const data = decode(/^\x60{3}json[ \t]*\r?\n([\s\S]*?)\r?\n\x60{3}$/.exec(body)?.[1] ?? body)
+  return auditData(message.id, correction, data)
+}
+
+function auditData(id: string, correction: CalculationPolicy["correction"], data: Record<string, unknown>, child?: ChildAuditOrigin) {
   const rows = readRows(data[correction.rowsKey], correction.rowKey)
+  // Audit rows form a keyed set. Ordering can differ between the tool result
+  // and an independent relay of the same observations.
+  rows.sort((a, b) => {
+    const left = tuple(a, correction.rowKey), right = tuple(b, correction.rowKey)
+    return left < right ? -1 : left > right ? 1 : 0
+  })
   const reference = token.parse(data[correction.referenceKey])
   return { rows, data, evidence: { reference, rowsSha256: digest(rows), rowCount: rows.length,
-    messageId: message.id, reportReferenceField: correction.reportReferenceField } }
+    messageId: id, reportReferenceField: correction.reportReferenceField, ...(child && { child }) } }
 }
 
 function readPage(
@@ -313,7 +328,7 @@ function readPage(
     throw new Error("invalid exhaustion")
   }
   const reference = token.parse(record[owner.referenceKey])
-  return { rows, exhausted, total, evidence: { reference, rowsSha256: digest(rows),
+  return { rows, exhausted, total, completedAt: part.time.completed, evidence: { reference, rowsSha256: digest(rows),
     rowCount: rows.length, messageId: message.id, callId: part.id, source: owner.source, tool: owner.tool, agent: ownerAgent,
     limit: requested, reportReferenceField: owner.reportReferenceField } }
 }
@@ -327,6 +342,7 @@ const projections = z.record(key, z.array(sha256).max(maxRows).refine(distinct))
   .refine(values => Object.keys(values).length <= 24)
 const pageSummary = z.strictObject({
   evidence: ownerEvidenceSchema, matches: size, exhausted: z.boolean(), total: totalRows.optional(),
+  completedAt: z.number().int().nonnegative().optional(),
 }).refine(({ evidence: { rowCount, limit }, matches, exhausted, total }) =>
   matches <= rowCount && rowCount <= limit && (exhausted || rowCount === limit) &&
   (total === undefined || (rowCount === Math.min(total, limit) && exhausted === (rowCount === total))))
@@ -525,7 +541,7 @@ function addPage(policy: CalculationPolicy, state: Progress, page: Omit<OwnerPag
   if (qualifies) {
     state.selected = { values: baseValues(policy, rows), keys: ownerKeys(policy, rows) }
   }
-  state.pages.push({ evidence, matches: count, exhausted, total })
+  state.pages.push({ evidence, matches: count, exhausted, total, completedAt: page.completedAt })
   if (state.earlyAudit && (qualifies || exhausted || state.pages.length === policy.owner.limits.length)) {
     const audit = state.earlyAudit
     delete state.earlyAudit
@@ -559,6 +575,7 @@ function addAudit(policy: CalculationPolicy, state: Progress, current: ReturnTyp
 export function inspectCalculationProgress(
   policy: CalculationPolicy | undefined, history: DeliveryHistory, ownerAgent: string,
   checkpoint?: CalculationCheckpoint | null, preserveTask = false,
+  childAudits?: ReadonlyMap<string, VerifiedChildAudit>,
 ): CalculationProgress {
   const checked = policySchema.safeParse(policy)
   if (!checked.success || !token.safeParse(ownerAgent).success) {
@@ -607,6 +624,20 @@ export function inspectCalculationProgress(
     const id = digest(message.id)
     const previous = state?.messages[id]
     const isTaskId = message.id === task?.id
+    // A synthetic notification alone carries no evidence. Only the verified
+    // child lookup made for this exact native notice can supply audit rows.
+    const child = message.type === "synthetic" && childAudits?.get(message.id)
+    if (child && state?.selected && !state.conflict) {
+      try {
+        if (isTaskId || child.origin.noticeId !== message.id ||
+            (previous && previous !== child.origin.sourceProof)) throw new Error("child provenance changed")
+        if (!previous) {
+          remember(id, child.origin.sourceProof)
+          addAudit(policy, state, auditData(message.id, correction, child.data, child.origin))
+        }
+      } catch { fail("audit") }
+      continue
+    }
     if (message.type === "user") {
       const { kind, plain } = userMessage(message, correction)
       const fingerprint = digest([kind, message.text, plain])
