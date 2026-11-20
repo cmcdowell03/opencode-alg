@@ -1,0 +1,60 @@
+{
+  "schema": "discovery-freeze-v1",
+  "model": "openai/gpt-6-luna",
+  "mode": "native-oauth",
+  "host": {
+    "version": "2.3.2",
+    "binarySha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+    "packageSha256": "a82ac8fb61790c061c4d1863610e536f4674338f7dd778880f1c780f27aebad9",
+    "bundleSha256": "60fee8733847b3df124c0dc2c074359e85c4cc0dccf0bd3fcf516f8d38a5531b"
+  },
+  "caps": {
+    "calls": 48,
+    "requestBytes": 262144,
+    "responseBytes": 524288,
+    "armRequestBytes": 12582912,
+    "armResponseBytes": 25165824,
+    "outputTokens": 4096,
+    "outputDeltaBytes": 16384,
+    "armOutputTokens": 196608,
+    "requestMs": 90000,
+    "armMs": 1200000,
+    "sourceCalls": 96
+  },
+  "cases": [
+    {
+      "id": "d-0a6f",
+      "caseSha256": "bc6cb51f6e975f629dd7e864ef1de4fa122ff59217ac63aa8bf82e1f42c05ee7",
+      "promptSha256": "2571743816af94de0864662de85faff87b11e2c4d14ced8fe82f3a21fb6f169f",
+      "order": [
+        "build-ordinary",
+        "build-adversarial",
+        "build",
+        "alg-ordinary",
+        "alg-adversarial"
+      ]
+    }
+  ],
+  "audit": {
+    "checkerPromptSha256": "97eaeeb10e9c5ec3bb94df53d55f2129c70175d9bc05b84939730d22efd1aa80",
+    "revisionPromptSha256": "c3e237b0b573689e4568724f7a4863541368fd626b3dc90e4b064965082b58ab"
+  },
+  "ledgerPromptSha256": "dca840d632abc363dc54b5521a18e43a4816440a551cc7bda2f940ab8f536f7c",
+  "sourceDigestMode": "utf8-lf-v1",
+  "files": {
+    "discovery-run.ts": "013c0710adbaf23cfb1865b7bda4b8464d7718f8ff6257027465196d5208fd64",
+    "discovery-cases.ts": "1a76d16bd5abdb0ff19f4ae7d9aee336a6381fc49177b571fbbeb45684c43892",
+    "discovery-grade.ts": "f48b3dedf6874ac677111c90fab257da450ad9ae7a229392ed23c84a2b019f6b",
+    "discovery-host.ts": "7811f48aabbb4c941b2837b20d05b2e1eead1b48acf0cabf5d10ca001fad899d",
+    "discovery-tools.ts": "0536ede996745fac21d2b14d218a6119e42a1be147485a0422226bc0704ec3fb",
+    "native-observer.ts": "0829a4f23a80f5a30cbea42406e4d8d275dcea862be8a734f1daa053045a5992",
+    "native-provider.ts": "e68ea4ac1a891db998505e7ddd19b3d533e442956cb41e8afcff6ecbcc1ec94e",
+    "compaction.ts": "ba148b7d0b96f0f7817306e6e96829d57e76f177b258910fad422d90703db028",
+    "input-usage.ts": "4084c44ec7e6875313739822a93a0177602fad7867220006da64c021b42c56bf",
+    "skill-delivery.ts": "b4474f46f536621c3616276df46dd6390be0fd4a875e8593dd66e6b242696bd3",
+    "host.ts": "bfebf585ce7b659720a7b521eaf330afa0cc1f4313e24cd72d2007d1887d6cf9",
+    "../acceptance/host.ts": "2c2077d0aefc2b6fb0f926f5b7cc6592c144c2f8eed787b1269c9cc2d7c86d36",
+    "../acceptance/runtime.ts": "a7a361a353329c0968b38427493d251d594f55e411e904d6ccecc510b615464c",
+    "../acceptance/service.ts": "0842d28af70815c23ed1207e4fbf9a7f67146e17ab19388566f38c5ab1921555"
+  }
+}

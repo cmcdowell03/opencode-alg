@@ -16,22 +16,39 @@ export const nativeLimits = {
   armMs: 300_000,
 } as const
 
+export const discoveryNativeLimits = {
+  calls: 48,
+  requestBytes: 256 * 1024,
+  responseBytes: 512 * 1024,
+  armRequestBytes: 48 * 256 * 1024,
+  armResponseBytes: 48 * 512 * 1024,
+  outputTokens: 4096,
+  outputDeltaBytes: 16 * 1024,
+  armOutputTokens: 48 * 4096,
+  requestMs: 90_000,
+  armMs: 20 * 60_000,
+} as const
+
+export type NativeProfile = "discovery-v1"
+export const limitsFor = (profile?: NativeProfile) => profile === "discovery-v1" ? discoveryNativeLimits : nativeLimits
+
 export function nativeModel(value: string) {
   const id = /^openai\/([a-z0-9][a-z0-9._-]{0,95})$/i.exec(value)?.[1]
   if (!id || !value.startsWith("openai/")) throw new Error("Native benchmark requires an explicit openai/ model ID")
   return { providerID: "openai" as const, id }
 }
 
-export function nativeProviderConfig(context: number, id: string) {
+export function nativeProviderConfig(context: number, id: string, profile?: NativeProfile) {
   nativeModel("openai/" + id)
   if (!Number.isSafeInteger(context) || context < 8192 || context > 32768)
     throw new Error("Invalid native benchmark compaction context window")
+  const limits = limitsFor(profile)
   return {
     openai: {
       settings: { transport: "http", encoding: "none", compaction: { type: "summary" },
-        timeout: nativeLimits.requestMs, headerTimeout: nativeLimits.requestMs, chunkTimeout: nativeLimits.requestMs },
+        timeout: limits.requestMs, headerTimeout: limits.requestMs, chunkTimeout: limits.requestMs },
       models: { [id]: { settings: { compaction: { type: "summary" }, encoding: "none" },
-        limit: { context, output: nativeLimits.outputTokens } } },
+        limit: { context, output: limits.outputTokens } } },
     },
   }
 }
