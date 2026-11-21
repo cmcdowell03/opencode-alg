@@ -171,6 +171,43 @@ with the same bundle and five-second test timeout.
 bun packages/v2-preview/benchmark/active-question-acceptance.ts /path/to/opencode /path/to/alg-v2-preview-bundle
 ```
 
+### Native Luna graph-loop comparison
+
+On two new dispatch incidents, every condition received the same six staging
+batches and an 8,192-token host context, with automatic compaction enabled.
+The grader checked the assistant's final answer against the cited source
+rows. Each condition had the same 48-request ceiling per incident.
+
+| Condition | Final answers | Passed frozen incident grade | Completed automatic compactions | Provider calls | Input tokens |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Stock Build | 2/2 | 1/2 | 6 | 43 | 176,529 |
+| Build with focused checker | 2/2 | 1/2 | 6 | 61 | 207,596 |
+| ALG graph loop with focused checker | 0/2 | 0/2 | 26 | 96 | 425,468 |
+
+ALG used both 48-call allocations. At Willow Yard it recorded the calibration
+finding, then spent 15 summary requests in staging batch 2. At Sedge Quay it
+completed all six staging counts correctly and recovered the calibration for
+the later conversion, then exhausted the budget in the final phase. Both ALG
+final dispositions are unobserved. The two Build conditions both passed Sedge
+Quay and missed Willow Yard. The configured window intentionally exercises
+context pressure. Production compaction rates remain unmeasured.
+
+A supplemental audit matched all 38 completed automatic compactions to
+provider summary responses by digest and time. The five arms that reached
+the post-compaction conversion used the correct method, calibration seal
+and result. Only Sedge Quay ALG did so without a fresh registry read.
+An independent reviewer saw the sources and anonymous submissions for the
+two pending Willow Yard coverage claims. The cited rows contradicted both.
+The incident grades remained unchanged.
+[Compaction attribution](evidence/active-question-luna-attribution.json) · [Anonymous claim review](evidence/active-question-luna-claim-review.json)
+
+The next experiment should test whether the owner can finish a self-contained
+user turn while the graph stays idle. Keep the same receipt-bound resumption
+when a later turn actually depends on the investigation. Observe the graph
+brief and tool-schema bytes in each request, the number of consecutive
+summaries without a completed user turn, and final incident accuracy.
+[Frozen protocol](evidence/active-question-luna-freeze.json) · [Measured results](evidence/active-question-luna.json)
+
 ## Run the recovery scenario
 
 From the repository root, run this command in PowerShell or Bash. Use absolute
