@@ -3,6 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { Plugin } from "@opencode/plugin"
+import type { SessionContext } from "@opencode/plugin/promise/session"
 import { createV2InvestigationBridge } from "../core/investigation.ts"
 import type { DeliveryHistory } from "../src/delivery.ts"
 import { TOOL } from "../src/host.ts"
@@ -27,15 +28,15 @@ function sourceResult(id: string, content: string, path = "notes.md"): DeliveryH
     }] }
 }
 
-async function fixture(directory: string) {
+async function fixture(directory: string, overrides: Record<string, unknown> = {}) {
   let execute: Execute | undefined
   let command: Command | undefined
   let input: { properties: { action: { enum: string[] } } } | undefined
   let history: DeliveryHistory = []
-  const hooks = new Map<string, (request: unknown) => Promise<void>>()
+  const hooks = new Map<string, ((request: unknown) => Promise<void>)[]>()
   const entries = new Map<string, unknown>()
   const commandNotices: unknown[] = []
-  const options = { enabled: true, investigationMode: "read-only", readOnlyEvidenceTools: [sourceTool] }
+  const options = { enabled: true, investigationMode: "read-only", readOnlyEvidenceTools: [sourceTool], ...overrides }
   let allowSourceRead = true
   let allowed = true
   let allowedNativeUse = true
@@ -47,7 +48,7 @@ async function fixture(directory: string) {
     return { dispose: async () => {} }
   }
   const hook = (key: string, callback: (request: unknown) => Promise<void>) => {
-    hooks.set(key, callback)
+    hooks.set(key, [...hooks.get(key) ?? [], callback])
     return { dispose: async () => {} }
   }
   const detach = await runtime.setup({
@@ -85,14 +86,152 @@ async function fixture(directory: string) {
       return JSON.parse((await execute!({ action, ...fields },
         { sessionID: caller, agent, signal: new AbortController().signal })).content)
     },
-    async request(kind = "context") {
-      const request = { sessionID, agent, messages: [{ role: "user", content: [{ type: "text", text: "Continue." }] }],
-        system: [], tools: { [TOOL]: { description: "", input } } }
-      await hooks.get(kind)!(request)
+    async request(kind = "context", extra: unknown[] = []) {
+      const messages = [...extra, { role: "user", content: [{ type: "text", text: "Continue." }] }] as SessionContext["messages"]
+      const request = { sessionID, agent, messages,
+        system: [] as { type: "text"; text: string }[], tools: { [TOOL]: { description: "", input } } }
+      for (const callback of hooks.get(kind) ?? []) await callback(request)
       return request
     },
   }
 }
+
+function toolStatus(receipt: unknown) {
+  return [
+    { role: "assistant", content: [{ type: "tool-call", name: TOOL, id: "status-1", input: { action: "status" } }] },
+    { role: "tool", content: [{ type: "tool-result", name: TOOL, id: "status-1", result: { type: "text", value: JSON.stringify(receipt) } }] },
+  ]
+}
+
+function graphFrame(request: Awaited<ReturnType<Awaited<ReturnType<typeof fixture>>["request"]>>, delta = false) {
+  const label = delta ? "ALG active question delta " : "ALG active question "
+  const text = request.messages.flatMap(message => message.content.flatMap(part => part.type === "text" ? [part.text] : []))
+    .find(text => text.startsWith(label + "(untrusted recorded data)\n"))
+  return text && JSON.parse(text.slice(text.indexOf("\n") + 1))
+}
+
+test("graph loop checks visible status, deltas, compaction and no-progress writes", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "alg-graph-question-"))
+  const host = await fixture(directory, { graphLoop: true })
+  try {
+    await host.call("create")
+    const initial = await host.call("status")
+    expect(initial).toMatchObject({ ok: true, active_question: { state: "investigate", decision_revision: 0 } })
+    expect(typeof initial.active_question?.question).toBe("string")
+    expect(typeof initial.active_question?.next_action).toBe("string")
+    expect(initial.evidence).toBeUndefined()
+    expect(graphFrame(await host.request())).toEqual(initial.active_question)
+    expect(graphFrame(await host.request("context", toolStatus(initial)))).toBeUndefined()
+    // Neither a tool result without its native call nor a pre-compaction anchor covers the current request.
+    expect(graphFrame(await host.request("context", toolStatus(initial).slice(1)))).toEqual(initial.active_question)
+    expect(graphFrame(await host.request("context", [
+      ...toolStatus(initial), { role: "assistant", content: [{ type: "compaction" }] },
+    ]))).toEqual(initial.active_question)
+    expect(graphFrame(await host.request("compaction"))).toBeUndefined()
+
+    host.history([sourceResult("first", "An inspected observation.", "a.md")])
+    const before = await host.call("status")
+    const update = { expected_decision_revision: 0, next_action: "Inspect the affected interval.", evidence_refs: ["a.md"] }
+    expect(await host.call("set_next_measurement", update)).toMatchObject({ ok: true, decision_revision: 1, outcome: "recorded" })
+    expect(graphFrame(await host.request("context", toolStatus(before)), true)).toMatchObject({
+      set: { decision_revision: 1, question: "Inspect the affected interval." },
+    })
+    expect(await host.call("set_next_measurement", { ...update, expected_decision_revision: 1 }))
+      .toMatchObject({ ok: true, decision_revision: 1, outcome: "reused", reason: "no_progress" })
+    expect(await host.call("set_next_measurement", { ...update, expected_decision_revision: 1, next_action: "Check another interval." }))
+      .toMatchObject({ ok: true, decision_revision: 2, outcome: "recorded" })
+    const after = await host.call("status")
+    const restarted = await fixture(directory, { graphLoop: true })
+    try {
+      expect(graphFrame(await restarted.request())).toEqual(after.active_question)
+    } finally { await restarted.detach() }
+  } finally {
+    await host.detach()
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
+test("graph loop reuses closure and reopens only the finding linked to a changed source", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "alg-graph-source-"))
+  const host = await fixture(directory, { graphLoop: true, readOnlyCacheSourceBytes: true })
+  try {
+    const original = [sourceResult("one", "First observation.", "a.md"), sourceResult("two", "Independent observation.", "b.md")]
+    host.history(original)
+    await host.call("create")
+    const finding = (id: string, reference: string) => ({
+      expected_decision_revision: 0, finding: { id, scope: "Recorded interval", interpretation: "An observation.",
+        support: [reference], counterevidence: [] },
+    })
+    expect(await host.call("record_finding", finding("affected", "a.md"))).toMatchObject({
+      ok: true, finding_id: "affected", finding_status: "supported", outcome: "recorded",
+    })
+    expect((await host.call("record_finding", finding("affected", "a.md")))).toMatchObject({
+      ok: true, finding_id: "affected", outcome: "reused", reason: "no_progress",
+    })
+    await host.call("record_finding", finding("unaffected", "b.md"))
+    expect(await host.call("status")).toMatchObject({ active_question: {
+      state: "investigate", next_action: expect.stringContaining("receipt-bound report decision"),
+    } })
+    const closure = { expected_decision_revision: 0, next_action: "Close the investigation.",
+      evidence_refs: ["a.md", "b.md"], report_decision: { disposition: "resolved", missingEvidence: [] } }
+    expect(await host.call("set_next_measurement", closure)).toMatchObject({ ok: true, decision_revision: 1 })
+    expect(graphFrame(await host.request())).toMatchObject({ state: "reuse", decision_revision: 1 })
+    expect(await host.call("set_next_measurement", { ...closure, expected_decision_revision: 1, next_action: "Same closure." }))
+      .toMatchObject({ ok: true, decision_revision: 1, outcome: "reused", reason: "current_report" })
+    host.history([...original, sourceResult("three", "Unrelated observation.", "c.md")])
+    expect(graphFrame(await host.request())).toMatchObject({ state: "reuse", decision_revision: 1 })
+    host.history([sourceResult("change", "Revised observation.", "a.md")])
+    expect(graphFrame(await host.request())).toMatchObject({
+      state: "revalidate", affected_findings: ["affected"], finding: { id: "affected",
+        support: [], invalidated_sources: [{ relation: "support", reference: "a.md" }] },
+      source_revalidation: [{ path: "a.md", state: "confirm_once" }],
+    })
+    const explicit = await host.call("status", { finding_id: "unaffected" })
+    expect(explicit.evidence.findings).toMatchObject([{ id: "unaffected", status: "supported" }])
+    expect(await host.call("status", { snapshot_refs: ["a.md", "b.md"] })).toMatchObject({
+      ok: true, evidence_snapshot: { cache_enabled: true, evidence: [{ source: { reference: "b.md" } }], missing: ["a.md"] },
+    })
+    host.history([sourceResult("confirm", "Revised observation.", "a.md")])
+    expect(graphFrame(await host.request())).toMatchObject({
+      state: "revalidate", affected_findings: ["affected"], source_revalidation: [{ path: "a.md", state: "confirmed" }],
+    })
+    expect(await host.call("status", { snapshot_refs: ["a.md"] })).toMatchObject({
+      ok: true, evidence_snapshot: { evidence: [{ source: { reference: "a.md" }, data: "Revised observation." }], missing: [] },
+    })
+    expect(await host.call("record_finding", { ...finding("affected", "a.md"), expected_decision_revision: 1 }))
+      .toMatchObject({ ok: true, outcome: "recorded", finding_status: "supported" })
+    expect(graphFrame(await host.request())).toMatchObject({ state: "investigate" })
+    expect(await host.call("set_next_measurement", { ...closure, expected_decision_revision: 1 }))
+      .toMatchObject({ ok: true, outcome: "recorded", decision_revision: 2 })
+    expect(graphFrame(await host.request())).toMatchObject({ state: "reuse", decision_revision: 2 })
+    host.revokeSource()
+    expect(await host.call("status", { snapshot_refs: ["b.md"] })).toMatchObject({ ok: false })
+    expect(graphFrame(await host.request())).toBeUndefined()
+  } finally {
+    await host.detach()
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
+test("graph loop waits at a recorded gap and allows newly available evidence", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "alg-graph-wait-"))
+  const host = await fixture(directory, { graphLoop: true })
+  try {
+    await host.call("create")
+    const missing = { id: "gap", interpretation: "The reading is missing.", support: [], counterevidence: [],
+      missingEvidence: "A timestamped reading." }
+    expect(await host.call("record_finding", { expected_decision_revision: 0, finding: missing })).toMatchObject({ ok: true })
+    expect(graphFrame(await host.request())).toMatchObject({ state: "stop", reason: "missing_evidence", decision_revision: 0 })
+    host.history([sourceResult("fresh", "A newly available timestamped reading.")])
+    expect(graphFrame(await host.request())).toMatchObject({ state: "investigate", decision_revision: 0 })
+    expect(await host.call("status", { snapshot_refs: ["notes.md"] })).toMatchObject({
+      ok: true, evidence_snapshot: { cache_enabled: false, evidence: [], missing: ["notes.md"] },
+    })
+  } finally {
+    await host.detach()
+    await rm(directory, { recursive: true, force: true })
+  }
+})
 
 test("read-only actions fence submissions, stale revisions, and receipt-free reports", async () => {
   const directory = await mkdtemp(join(tmpdir(), "alg-read-only-"))
