@@ -72,6 +72,7 @@ export type EvidenceFinding = Omit<EvidenceFindingInput, "support" | "counterevi
   status: "supported" | "contested" | "unresolved"
   support: SourceReceipt[]
   counterevidence: SourceReceipt[]
+  invalidatedSources?: { relation: "support" | "counterevidence"; reference: string }[]
 }
 export type EvidenceReadView = {
   revision: number
@@ -296,16 +297,21 @@ export class EvidenceReadStore {
     } finally { lock.release() }
   }
 
-  private sources(journal: Journal): EvidenceSource[] {
+  private sources(journal: Journal, invalidated?: Map<string, string>): EvidenceSource[] {
     const inspected = journal.sources.filter(source => this.tools.has(source.tool))
     return journal.sources.map(({ rowIds, state, cachedBytes: _, ...anchor }) => {
       let status: EvidenceSource["status"] = this.tools.has(anchor.tool) ? state : "stale"
       if (status === "inspected" && inspected.some(other =>
         other.path === anchor.path && other.sha256 !== anchor.sha256)) status = "conflicted"
       const refs = /\.md$/i.test(anchor.path) ? [anchor.path] : rowIds.map(id => anchor.path + "#" + id)
-      const references = status === "inspected" ? refs.map(reference => ({
-        ...anchor, reference, id: sha256(JSON.stringify([this.key, anchor.tool, anchor.sha256, reference])),
-      })) : []
+      const references: SourceReceipt[] = []
+      if (status === "inspected" || (invalidated && status !== "stale")) {
+        for (const reference of refs) {
+          const id = sha256(JSON.stringify([this.key, anchor.tool, anchor.sha256, reference]))
+          if (status === "inspected") references.push({ ...anchor, reference, id })
+          else invalidated?.set(id, reference)
+        }
+      }
       return { ...anchor, status, references }
     })
   }
@@ -319,7 +325,8 @@ export class EvidenceReadStore {
   }
 
   private project(journal: Journal): EvidenceReadView {
-    const sources = this.sources(journal)
+    const invalidated = new Map<string, string>()
+    const sources = this.sources(journal, invalidated)
     const verified = new Map(sources.flatMap(source => source.references.map(row => [row.id, row] as const)))
     const links = (ids: string[]) => ids.flatMap(id => verified.get(id) ?? [])
     const findings = journal.findings.map((record): EvidenceFinding => {
@@ -328,7 +335,13 @@ export class EvidenceReadStore {
       const incomplete = record.missingEvidence || support.length !== record.support.length ||
         counterevidence.length !== record.counterevidence.length
       const status = counterevidence.length ? "contested" : incomplete || !support.length ? "unresolved" : "supported"
-      return { ...record, attribution: "model", status, support, counterevidence }
+      const invalidatedSources = (["support", "counterevidence"] as const).flatMap(relation =>
+        record[relation].flatMap(id => {
+          const reference = invalidated.get(id)
+          return reference ? [{ relation, reference }] : []
+        }))
+      return { ...record, attribution: "model", status, support, counterevidence,
+        ...(invalidatedSources.length && { invalidatedSources }) }
     })
     return { revision: journal.revision, sources, findings, question: journal.question }
   }

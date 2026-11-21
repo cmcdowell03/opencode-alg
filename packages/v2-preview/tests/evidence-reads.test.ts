@@ -106,7 +106,9 @@ test("superseded digests and conflicting native receipts invalidate persisted re
   await store().recordFinding({ id: "notes", interpretation: "Witness present", support: [ref!.id], counterevidence: [] })
   const changed = await store().observe([cut("completed"), read("two", "notes.md", "No witness")])
   expect(changed.sources[0]).toMatchObject({ status: "changed", references: [] })
-  expect(changed.findings[0]).toMatchObject({ status: "unresolved", support: [] })
+  expect(changed.findings[0]).toMatchObject({ status: "unresolved", support: [],
+    invalidatedSources: [{ relation: "support", reference: "notes.md" }] })
+  expect((await store([]).view()).findings[0]?.invalidatedSources).toBeUndefined()
   await expect(store().checkReferences([ref!.id])).rejects.toThrow("EVIDENCE_READ_UNVERIFIED_REFERENCE")
   expect((await store().observe([initial])).revision).toBe(changed.revision)
   const conflict = await store().observe([read("three", "other.md", "same upstream receipt", { receipt: "receipt-one" }),

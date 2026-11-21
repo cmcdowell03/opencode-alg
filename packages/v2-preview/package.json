@@ -1,6 +1,6 @@
 {
   "name": "opencode-alg-v2-preview",
-  "version": "0.1.0-preview.10",
+  "version": "0.1.0-preview.11",
   "private": true,
   "type": "module",
   "description": "Isolated OpenCode 2.3.2 investigation preview",
