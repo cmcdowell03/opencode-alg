@@ -94,6 +94,25 @@ the export. A matching receipt establishes which source was read. Assessing
 whether that source establishes a causal claim also requires reviewing the
 finding against the evidence.
 
+### Deciding what to read on the next pass
+
+Suppose tool drift and inspection bias both explain the same yield drop.
+Keep both findings linked to their own supporting and contradictory rows.
+Choose a measurement that could distinguish them, such as a reference lot
+measured on both inspection tools. When its result is already recorded and
+still applies, use the existing receipt. When the source changes, revisit
+each finding that depended on that source. A historical reference explains
+why a finding reopened. A current observation is required to support a new
+decision. If the distinguishing observation is unavailable, record that
+specific gap and stop.
+
+Evaluate this loop at three separate points. Inspect the actual next model
+request to establish which facts and approved skill survived. Inspect the
+subsequent action to establish whether the orchestrator used that information
+and avoided a redundant read. Finally, check the answer against the incident
+evidence. A small prompt, a successful tool call, or an accurate ledger
+export alone cannot establish that the orchestrator solved the incident.
+
 ### Local OpenCode 2.3.2 qualification
 
 On Windows x64 and Linux x64 under WSL2, the same preview.9 bundle passed all
