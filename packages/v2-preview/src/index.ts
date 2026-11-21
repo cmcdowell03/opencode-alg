@@ -524,11 +524,11 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
     current: Awaited<ReturnType<typeof selectedProcedure>>) {
     const byId = new Map(evidence.sources.flatMap(source => source.references.map(receipt => [receipt.id, receipt.reference] as const)))
     const binding = view?.decisionSources?.sources
-    const disposition = view && binding?.length && binding.every(ref => byId.get(ref.id) === ref.reference)
-      ? acknowledgedReport(view, evidence)?.disposition : undefined
+    const report = view && binding?.length && binding.every(ref => byId.get(ref.id) === ref.reference)
+      ? acknowledgedReport(view, evidence) : undefined
     return activeQuestion(view, evidence, {
       approval: current ? "verified" : config.approvedProcedure || view?.procedurePin ? "unavailable" : "not_configured",
-      procedureSha256: current?.sha256, disposition,
+      procedureSha256: current?.sha256, disposition: report?.disposition, reportGaps: report?.missingEvidence,
     })
   }
 

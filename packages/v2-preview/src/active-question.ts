@@ -56,6 +56,7 @@ export function activeQuestion(view: DecisionFacts | null,
   approval: "verified" | "unavailable" | "not_configured"
   procedureSha256?: string
   disposition?: "resolved" | "indeterminate"
+  reportGaps?: readonly string[]
 }) {
   const affected = evidence.findings.filter(finding => finding.invalidatedSources?.length)
   const pinned = evidence.findings.find(finding => finding.id === evidence.question?.findingId)
@@ -96,6 +97,26 @@ export function activeQuestion(view: DecisionFacts | null,
     ...base, state: "reuse", reason: "current_report",
     next_action: "Use render_report at this decision revision.",
   } as const
+  if (options.disposition === "indeterminate" && options.reportGaps?.length) {
+    const bound = new Set(view.decisionSources?.sources.map(source => source.id))
+    const current = evidence.sources.flatMap(source => source.references)
+    const available = [...new Set(options.reportGaps)].filter(reference => {
+      if (!reviewSourceReference(reference)) return false
+      const matching = current.filter(receipt => receipt.reference === reference)
+      return matching.length === 1 && !bound.has(matching[0]!.id) && !linked.has(matching[0]!.id)
+    })
+    if (available.length) {
+      const finding = open.find(entry => entry.missingEvidence && available.includes(entry.missingEvidence))
+      return {
+        ...base, state: "investigate", reason: "missing_evidence_available",
+        question: "Does the now-inspected evidence resolve the recorded gap?",
+        next_action: "Read the matching reference with scoped status or a cached snapshot, then reassess the recorded gap.",
+        available_references: available.slice(0, maxLinks),
+        omitted_available_references: Math.max(0, available.length - maxLinks),
+        ...(finding && { finding: findingBrief(finding) }),
+      } as const
+    }
+  }
   if (options.disposition === "indeterminate" || (!inspect && missing && !hasUnlinkedReference)) return {
     ...base, state: "stop", reason: "missing_evidence",
     next_action: "State the recorded gap and wait for evidence that can resolve it.",

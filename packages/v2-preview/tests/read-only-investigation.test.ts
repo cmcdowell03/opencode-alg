@@ -233,6 +233,46 @@ test("graph loop waits at a recorded gap and allows newly available evidence", a
   }
 })
 
+test("an acknowledged indeterminate report resumes on an exact missing reference", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "alg-graph-report-gap-"))
+  const options = { graphLoop: true }
+  const host = await fixture(directory, options)
+  try {
+    await host.call("create")
+    host.history([sourceResult("basis", "Existing report evidence.", "basis.md")])
+    const finding = { id: "gap", interpretation: "The report needs the second reading.", scope: "Second reading",
+      support: ["basis.md"], counterevidence: [], missingEvidence: "missing.json#second" }
+    expect(await host.call("record_finding", { expected_decision_revision: 0, finding })).toMatchObject({ ok: true })
+    expect(await host.call("set_next_measurement", { expected_decision_revision: 0,
+      next_action: "Wait for the second reading.", evidence_refs: ["basis.md"],
+      report_decision: { disposition: "indeterminate", missingEvidence: ["missing.json#second"] },
+    })).toMatchObject({ ok: true, decision_revision: 1 })
+    expect(graphFrame(await host.request())).toMatchObject({ state: "stop", reason: "missing_evidence" })
+
+    const second = JSON.stringify([{ id: "second", reading: 15 }])
+    host.history([sourceResult("other", second, "unrelated.json")])
+    expect(graphFrame(await host.request())).toMatchObject({ state: "stop", reason: "missing_evidence" })
+    host.history([sourceResult("wrong", JSON.stringify([{ id: "first", reading: 15 }]), "missing.json")])
+    expect(graphFrame(await host.request())).toMatchObject({ state: "stop", reason: "missing_evidence" })
+    host.history([sourceResult("changed", second, "missing.json")])
+    expect(graphFrame(await host.request())).toMatchObject({ state: "stop", reason: "missing_evidence" })
+    host.history([sourceResult("confirmed", second, "missing.json")])
+    expect(graphFrame(await host.request())).toMatchObject({
+      state: "investigate", reason: "missing_evidence_available", decision_revision: 1,
+      available_references: ["missing.json#second"], finding: { id: "gap", status: "unresolved" },
+    })
+    const restarted = await fixture(directory, options)
+    try {
+      expect(graphFrame(await restarted.request())).toMatchObject({
+        state: "investigate", reason: "missing_evidence_available", decision_revision: 1,
+      })
+    } finally { await restarted.detach() }
+  } finally {
+    await host.detach()
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
 test("read-only actions fence submissions, stale revisions, and receipt-free reports", async () => {
   const directory = await mkdtemp(join(tmpdir(), "alg-read-only-"))
   const host = await fixture(directory)
