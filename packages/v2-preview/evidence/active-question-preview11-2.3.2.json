@@ -3,6 +3,11 @@
   "implementation": "4a108e6725279558f29a40d570520029fd5a4d20",
   "package": "opencode-alg-v2-preview@0.1.0-preview.11",
   "openCodeVersion": "2.3.2",
+  "naturalCompactionHarnessQualification": {
+    "scope": "Local scripted provider exercising real native host automatic compaction. The script used the expected conversion as a fixture. Its answer alone does not measure operand retention.",
+    "windows": { "assigned": 6, "completed": 6, "autoAppliedArms": 6, "reportSha256": "0a481baf0b76851964bfbc1bd54a17c64b1b8260735256cbc7445f7dc40c2145" },
+    "linuxWsl": { "source": "f0282ea", "assigned": 6, "completed": 6, "autoAppliedArms": 6, "reportSha256": "cb82a31b3c305fdc43d1fc41d90450462eb64b03e4be47aa21ae1777b3bb15b2" }
+  },
   "bundleSha256": "788367c2bbd39cfc5413d928a40347277ef885bdb55654252720b1fd65392609",
   "packageSha256": "5ff776e1a98240829426518e100f25bcf9108ac831ff5246d3e600d001809d95",
   "activeQuestion": {
