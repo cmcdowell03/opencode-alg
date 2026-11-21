@@ -96,6 +96,11 @@ finding against the evidence.
 
 ### Deciding what to read on the next pass
 
+Set `graphLoop: true` in the read-only plugin options above to enable the
+active question. The ordinary `status` response then returns a compact view
+for the orchestrator. Use `status` with `finding_id` to inspect one finding,
+or `detail: true` for the full view.
+
 Suppose tool drift and inspection bias both explain the same yield drop.
 Keep both findings linked to their own supporting and contradictory rows.
 Choose a measurement that could distinguish them, such as a reference lot
@@ -105,6 +110,12 @@ each finding that depended on that source. A historical reference explains
 why a finding reopened. A current observation is required to support a new
 decision. If the distinguishing observation is unavailable, record that
 specific gap and stop.
+
+In graph-loop mode a changed source path can acquire a new usable revision
+after two distinct completed reads of the replacement agree on its digest.
+Replaying one tool call cannot confirm it. Confirmation makes the new
+snapshot available for inspection. Each dependent finding still needs to be
+rebound to current evidence. Conflicting receipts remain quarantined.
 
 Evaluate this loop at three separate points. Inspect the actual next model
 request to establish which facts and approved skill survived. Inspect the

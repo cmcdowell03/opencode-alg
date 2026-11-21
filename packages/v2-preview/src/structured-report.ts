@@ -5,6 +5,7 @@ import { relative, sep } from "node:path"
 import { z } from "zod"
 import { runContainedPath } from "../../../src/store.ts"
 import { publishReceipt } from "./journal.ts"
+import { NumericVerificationSchema } from "../core/numeric-claim.ts"
 
 // The caller binds the decision to observed reads. Shape validation alone cannot
 // establish that a cited row supports an interpretation.
@@ -16,6 +17,7 @@ const reportSchema = z.strictObject({
     finding: text,
     scope: text,
     evidence: z.array(reference).min(1).max(64),
+    numericClaim: NumericVerificationSchema.optional(),
   })).max(64),
   missingEvidence: z.array(reference).max(64),
 })
@@ -23,7 +25,10 @@ const reportSchema = z.strictObject({
 export function renderInvestigationReport(report: unknown): string {
   const parsed = reportSchema.safeParse(report)
   if (!parsed.success || (parsed.data.disposition === "resolved" &&
-      (!parsed.data.claims.length || parsed.data.missingEvidence.length))) {
+      (!parsed.data.claims.length || parsed.data.missingEvidence.length ||
+        parsed.data.claims.some(claim => claim.numericClaim && claim.numericClaim.status !== "verified"))) ||
+      parsed.data.claims.some(claim => claim.numericClaim?.status === "verified" &&
+        claim.numericClaim.references.some(ref => !claim.evidence.includes(ref)))) {
     throw new Error("REPORT_CONTRACT_INVALID")
   }
   const json = JSON.stringify(parsed.data)

@@ -34,12 +34,12 @@ const cut = (status: "running" | "completed"): Message => ({
 })
 
 async function journalTest(run: (make: (
-  tools?: string[], sessionId?: string, projectId?: string, runId?: string, cacheSourceBytes?: boolean,
+  tools?: string[], sessionId?: string, projectId?: string, runId?: string, cacheSourceBytes?: boolean, confirmSourceRevisions?: boolean,
 ) => EvidenceReadStore) => Promise<void>) {
   const directory = await mkdtemp(join(tmpdir(), "alg-evidence-reads-"))
   try {
-    await run((tools = [tool], sessionId = "owner", projectId = "project", runId = "owner-journal", cacheSourceBytes = false) =>
-      new EvidenceReadStore(directory, runId, { projectId, sessionId, tools, cacheSourceBytes }))
+    await run((tools = [tool], sessionId = "owner", projectId = "project", runId = "owner-journal", cacheSourceBytes = false, confirmSourceRevisions = false) =>
+      new EvidenceReadStore(directory, runId, { projectId, sessionId, tools, cacheSourceBytes, confirmSourceRevisions }))
   } finally { await rm(directory, { recursive: true, force: true }) }
 }
 
@@ -165,6 +165,35 @@ test("historical rejected reads stay idempotent after a successful retry", async
   const corrupt = read("retry", "notes.md", "Rewritten", { sha256: digest("Witness") })
   expect((await store().observe([corrupt])).sources[0]?.status).toBe("conflicted")
   await expect(store().checkReferences(["notes.md"])).rejects.toThrow("EVIDENCE_READ_UNVERIFIED_REFERENCE")
+}))
+
+test("two independent matching reads confirm a changed version without reviving old findings", async () => journalTest(async store => {
+  const scoped = (allowed = [tool]) => store(allowed, "owner", "project", "owner-journal", true, true)
+  const path = "observations.json"
+  const makeRead = (call: string, value: number) =>
+    read(call, path, JSON.stringify([{ id: "lot", value }]), { receipt: "version-" + value })
+  const original = makeRead("baseline", 30)
+  const changed = makeRead("changed", 10)
+  const row = path + "#lot"
+  const initial = await scoped().observe([original])
+  const firstId = initial.sources[0]!.references[0]!.id
+  const input = { id: "yield", interpretation: "Observed the baseline", support: [row], counterevidence: [] }
+  await scoped().recordFinding(input)
+  const pending = await scoped().observe([changed])
+  expect(pending.sources[0]?.status).toBe("changed")
+  expect(await scoped().observe([original, changed])).toEqual(pending)
+  const confirmed = await scoped().observe([makeRead("confirm", 10)])
+  expect(confirmed.sources[0]?.status).toBe("inspected")
+  expect(confirmed.findings[0]).toMatchObject({ status: "unresolved", support: [],
+    invalidatedSources: [{ relation: "support", reference: row }] })
+  expect((await scoped().snapshotReferences([row])).evidence[0]?.data).toEqual({ id: "lot", value: 10 })
+  expect((await scoped([]).view()).findings[0]?.invalidatedSources).toBeUndefined()
+  await scoped().observe([makeRead("rollback", 30), makeRead("confirm-rollback", 30)])
+  await expect(scoped().checkReferences([firstId])).rejects.toThrow("UNVERIFIED_REFERENCE")
+  expect((await scoped().view()).findings[0]?.status).toBe("unresolved")
+  expect((await scoped().recordFinding(input)).findings[0]?.status).toBe("supported")
+  const conflicted = await scoped().observe([read("another", "other.json", "[]", { receipt: "version-30" })])
+  expect(conflicted.sources.map(source => source.status)).toEqual(["conflicted", "conflicted"])
 }))
 
 test("opted-in source snapshots disclose cited rows only, within the owner and byte budget", async () => journalTest(async store => {
