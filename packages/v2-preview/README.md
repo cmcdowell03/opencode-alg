@@ -141,6 +141,36 @@ new regression reproduced the extra entry on preview.9. Windows and native
 Linux each passed 287 tests on the corrected package, along with the four
 installed scenarios and six scripted comparison arms. [Corrected package receipts](evidence/read-only-qualification-preview10-2.3.2.json)
 
+Preview.11 passed the installed active-question scenario on Windows x64 and
+Linux x64 under WSL2 using the same bundle. Its SHA-256 was
+`788367c2bbd39cfc5413d928a40347277ef885bdb55654252720b1fd65392609`.
+Each host sent 25 requests to the local OpenAI-compatible
+`active-question-fixture/fixture` provider, including one manual compaction.
+The scripted provider used the actual request payloads to choose tool calls
+and return the saved findings. It received 354,118 request bytes on Windows
+and 352,568 on Linux. The run measured installed behavior with simulated
+responses and made zero paid model calls.
+
+The scenario compared a physical restriction with logger bias and stopped
+at an explicit evidence gap. After the logger record changed, compaction and
+a process restart reopened only the pressure finding. The first resumed
+request carried the approved pressure procedure and the confirmation route.
+The provider confirmed the amended record once, used the procedure to select
+the independent gauge, and reused the resolved report at decision revision
+3. Each host made six source reads in total, with zero repeated reads of
+unchanged sources and zero source reads during report reuse.
+
+The final revision `4a108e6` also passed 298 tests with 2,877 assertions,
+four installed read-only regression scenarios, and six scripted comparison
+arms on each platform. The first Windows suite run passed 297 tests and
+timed out in the offline settled-manifest test. The retry passed all gates
+with the same bundle and five-second test timeout.
+[Active-question and regression receipts](evidence/active-question-preview11-2.3.2.json)
+
+```sh
+bun packages/v2-preview/benchmark/active-question-acceptance.ts /path/to/opencode /path/to/alg-v2-preview-bundle
+```
+
 ## Run the recovery scenario
 
 From the repository root, run this command in PowerShell or Bash. Use absolute
