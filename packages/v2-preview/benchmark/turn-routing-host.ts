@@ -16,7 +16,7 @@ export const triageBookkeeping = (id: string) => id === "willow-yard" ? bookkeep
 
 // OpenCode normally reads this cached project ID from the common Git directory.
 // The isolated fixture supplies empty repository metadata without an external Git runner.
-async function fixtureProject(scratch: string) {
+export async function fixtureProject(scratch: string) {
   const directory = join(scratch, "project")
   const metadata = join(directory, ".git")
   await mkdir(join(metadata, "objects"), { recursive: true })

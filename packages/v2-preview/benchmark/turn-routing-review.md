@@ -71,3 +71,41 @@ count toward citation coverage in the grade.
 All outputs are new files. The native report and trial receipts remain
 read-only. The packet and apply commands run locally without a host, provider
 or credentials.
+
+## Native synthesis pairs
+
+Run each command against one terminal run directory. Use a separate directory
+and separate decisions for conditional pair B if it runs.
+
+```powershell
+bun packages/v2-preview/benchmark/synthesis-pair-review.ts packet --run PAIR_RUN
+bun packages/v2-preview/benchmark/synthesis-pair-review.ts apply --run PAIR_RUN --decisions decisions.json
+```
+
+Packet writes `PAIR_RUN/review-packets.json` and
+`PAIR_RUN/private/review-key.json`. Share only the packet file and the reviewer
+instructions above. Ask the reviewer to assess each answer on its own against
+the supplied final sources, inspect every citation position for relevance and
+validity, and cite the specific rows in each verdict. For these fixtures the
+optional equivalent finding codes are `catalog` and `coverage`, with the lot ID
+as scope. The reviewer returns the same decisions JSON envelope shown above.
+Keep the key, arm mapping, scores, and native artifacts private until the
+reviewer has returned decisions. Apply can take explicit `--packets`, `--key`,
+and `--out` paths when using files prepared earlier.
+For the runner's conditional gate, apply pair A with `--out STUDY/primary-review.json`
+where `STUDY` is the runner's study directory and `PAIR_RUN` is
+`STUDY/primary-live`.
+
+Apply writes `PAIR_RUN/review-report.json` with schema
+`synthesis-pair-supplemental-review-v1`. It records the case ID, report, freeze,
+packet and decision hashes, runtime identity result, and counts for assigned,
+attempted, missing finals, unreviewable finals, primary passes (`frozenPassed`),
+and supplemental passes. Each of the two arm rows includes the outcome, final
+presence, packet ID if available, verified root paths, unchanged natural-long
+grade and pass flag, supplemental grade and pass flag, and claim decisions
+with their unverified citations. A missing answer still occupies its assigned
+row. An unattempted assignment has outcome `not-attempted`.
+
+The packet contains the final source versions. In pair B a root receipt for
+the superseded version is historical evidence. Citations into the replaced
+source require a matching root read of the final digest and its source receipt.

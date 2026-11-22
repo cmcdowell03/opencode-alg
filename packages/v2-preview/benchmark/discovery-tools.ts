@@ -77,6 +77,11 @@ export function startDiscoverySources(sources: readonly Source[], perRoleCap?: n
     endpoints: { root: server.url.origin + endpoints.root, checker: server.url.origin + endpoints.checker },
     receipts, calls: () => calls, callsByScope: () => ({ ...callsByScope }),
     catalog: paths.map(path => ({ path, sha256: sha256(contents.get(path)!) })),
+    replace(change: { path: string; before: string; after: string }) {
+      if (contents.get(change.path) !== change.before || change.before === change.after ||
+          Buffer.byteLength(change.after) > 16 * 1024) throw new Error("SOURCE_REVISION_MISMATCH")
+      contents.set(change.path, change.after)
+    },
     stop: () => server.stop(true),
   }
 }

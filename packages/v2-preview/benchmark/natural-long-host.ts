@@ -44,6 +44,7 @@ export type NaturalLongTrialAdapter = {
   scripted: typeof naturalLongScript
   triageBookkeeping: string
   turnRouting?: "routed-compact"
+  afterBridgeReplacement?: { path: string; before: string; after: string }
   observe: (evidence: RoutingEvidence) => void
 }
 
@@ -56,7 +57,12 @@ export async function runNaturalLongArm(options: {
   const model = native ? nativeModel(naturalModelID) : scriptedModel
   const started = performance.now()
   const deadline = started + (native ? caps.armMs : 100_000)
-  const sources = startDiscoverySources(fixture.incident.input.sources, focusedSourceCallsPerRole)
+  const correction = adapter?.afterBridgeReplacement
+  if (correction && !fixture.incident.input.sources.some(s => s.path === correction.path && s.content === correction.after)) {
+    throw new Error("FINAL_SOURCE_REVISION_MISMATCH")
+  }
+  const sources = startDiscoverySources(fixture.incident.input.sources.map(source =>
+    correction?.path === source.path ? { path: source.path, content: correction.before } : source), focusedSourceCallsPerRole)
   const allowedTools = {
     root: [...Object.values(scopedTools("root")), "skill", ...(installed ? ["alg_investigation"] : [])],
     checker: [...Object.values(scopedTools("checker")), "skill"],
@@ -200,6 +206,11 @@ export async function runNaturalLongArm(options: {
     bridgeReceiptStart = sources.receipts.length
     try { bridge = (await turn("bridge", fixture.bridge)).text }
     finally { bridgeReceiptStop = sources.receipts.length }
+    if (correction) {
+      sources.replace(correction)
+      await log({ event: "source-replaced", phase: "after-bridge", path: correction.path,
+        beforeSha256: sha256(correction.before), afterSha256: sha256(correction.after) })
+    }
     let note = noAdvisory
     if (checkerID) {
       const check = await turn("checker", fixture.checkerPrompt, checkerID)
@@ -256,7 +267,8 @@ export async function runNaturalLongArm(options: {
         .filter(row => row.scope === "root" && row.outcome === "read" && row.path === fixture.files.registry).map(row => row.id),
   })
   adapter?.observe({ rootRows, checkerRows, requests, inputs, turns, pin, metrics, rootReads })
-  const accuracy = scoreNaturalLong(fixture, final, rootReads.map(row => row.path))
+  const accuracy = scoreNaturalLong(fixture, final, rootReads.filter(row =>
+    !correction || row.path !== correction.path || row.sha256 === sha256(correction.after)).map(row => row.path))
   const stagingAccuracy = fixture.batches.map((batch, i) => {
     const phase = "batch-" + (i + 1)
     const answer = turns.find(turn => turn.phase === phase)?.answer
