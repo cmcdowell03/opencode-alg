@@ -1,0 +1,515 @@
+{
+  "schema": 1,
+  "status": "passed",
+  "implementation": "3c9188a9d1e7c6d8bd262eaa565c34acf6340259",
+  "package": "opencode-alg-v2-preview@0.1.0-preview.12",
+  "identity": {
+    "sourceArchiveSha256": "01df49ea837ff8bde2bf452282868a8fffe2819a0caf8ef60524d80388dcdae7",
+    "bundleSha256": "a7037175ddf39e9d279629528b310dca88526c3a25157d1576ad1cd8d9f94b71",
+    "packageManifestSha256": "8ab14e1dc9f2979c3146af45ca2ddb224552b31c076fe67e4cc6b564794441c9",
+    "packageJsonSha256": "9765633e4ec986066358fd411beb043a213b88b7a8b32639b98d010e977142b2",
+    "manifestFiles": 2
+  },
+  "platforms": {
+    "windows": {
+      "runtime": {
+        "version": "2.3.2",
+        "binarySha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+        "packageSha256": "8ab14e1dc9f2979c3146af45ca2ddb224552b31c076fe67e4cc6b564794441c9",
+        "bundleSha256": "a7037175ddf39e9d279629528b310dca88526c3a25157d1576ad1cd8d9f94b71",
+        "manifestFiles": 2,
+        "platform": "win32",
+        "arch": "x64",
+        "release": "10.0.26300"
+      },
+      "gate": {
+        "receiptDirectory": "../v2-isolated-hosts/ro-qualify-windows-3c9188a",
+        "typecheck": "passed",
+        "suite": {
+          "bun": "1.3.14",
+          "passed": 326,
+          "failed": 0,
+          "unhandledErrors": 0,
+          "assertions": 3084,
+          "tests": 326,
+          "files": 44,
+          "elapsedSeconds": 77.65,
+          "failures": [],
+          "errorCodes": [],
+          "logSha256": "73b698cdbc0aeb5a5227d47cbb2cec394bcc408431a74e62d10d081b90f050ac"
+        },
+        "status": "passed",
+        "receiptWallSpanSeconds": 126.38,
+        "compatibility": {
+          "passed": 4,
+          "failed": 0,
+          "restartedAfterCompaction": 4,
+          "remoteCalls": 0,
+          "repeatedSourceReads": 0,
+          "receiptSha256": "f0352b76086fb81e3bc085379547f00fb903d71df15f6db0755c86a17f1cf3f1",
+          "receiptWriteSpanSeconds": 30.474
+        },
+        "loopback": {
+          "expected": 6,
+          "passed": 6,
+          "failed": 0,
+          "cases": [
+            "depot-elm",
+            "depot-pine"
+          ],
+          "arms": [
+            "alg-focused",
+            "build",
+            "build-focused"
+          ],
+          "localProviderCalls": 96,
+          "reportSha256": "003936b5dcb2a8660488ca27f7b68fb7906926ab88c5dff970409b7e4e6ecc90",
+          "protocolSha256": "e00ef26ce7795d71006040f91ffa288811a566ac3ac207f0a69aa9b890eb88ed",
+          "elapsedOutputSpanSeconds": null
+        }
+      }
+    },
+    "linux": {
+      "runtime": {
+        "version": "2.3.2",
+        "binarySha256": "e6543f6e5c39c40971ba38afd1819ac852c29ac735b5a89065d3d148d47f27ad",
+        "packageSha256": "8ab14e1dc9f2979c3146af45ca2ddb224552b31c076fe67e4cc6b564794441c9",
+        "bundleSha256": "a7037175ddf39e9d279629528b310dca88526c3a25157d1576ad1cd8d9f94b71",
+        "manifestFiles": 2,
+        "platform": "linux",
+        "arch": "x64",
+        "release": "6.18.58.1-microsoft-standard-WSL2"
+      },
+      "environment": "native Linux x64 executable under WSL2",
+      "gate": {
+        "receiptDirectory": "../v2-isolated-hosts/ro-qualify-linux-3c9188a",
+        "typecheck": "passed",
+        "suite": {
+          "bun": "1.3.14",
+          "passed": 326,
+          "failed": 0,
+          "unhandledErrors": 0,
+          "assertions": 3084,
+          "tests": 326,
+          "files": 44,
+          "elapsedSeconds": 43.57,
+          "failures": [],
+          "errorCodes": [],
+          "logSha256": "4dd039c9feb3351de2e1719b2d58c919142d610022cc31aed3bf80b990d8c348"
+        },
+        "status": "passed",
+        "receiptWallSpanSeconds": 94.878,
+        "compatibility": {
+          "passed": 4,
+          "failed": 0,
+          "restartedAfterCompaction": 4,
+          "remoteCalls": 0,
+          "repeatedSourceReads": 0,
+          "receiptSha256": "f8903a8d8f8fe4ea137109bfc04b622152264a14a9ec627ce52b5e1240199805",
+          "receiptWriteSpanSeconds": 33.989
+        },
+        "loopback": {
+          "expected": 6,
+          "passed": 6,
+          "failed": 0,
+          "cases": [
+            "depot-elm",
+            "depot-pine"
+          ],
+          "arms": [
+            "alg-focused",
+            "build",
+            "build-focused"
+          ],
+          "localProviderCalls": 96,
+          "reportSha256": "706352808eedcf33e7e29567578622af32bcfb7b04d206774ea6250b587f03cc",
+          "protocolSha256": "b19289a44ae2eabbffa916773d7ba3febeb3c7ae8132fc9764aa794cb7a1707d",
+          "elapsedOutputSpanSeconds": 16.809
+        }
+      }
+    }
+  },
+  "compatibilityCases": {
+    "stable": {
+      "initialSourceReads": 1,
+      "decisionRevision": 1,
+      "decisionAuthority": "receipt_bound",
+      "citations": [
+        "inspection-notes.md"
+      ],
+      "report": "provisional/indeterminate",
+      "nativePermissionDenial": true,
+      "remoteRequestsRejected": 8,
+      "commandRefusal": "REPORT_REQUIRES_ACKNOWLEDGED_DISPOSITION",
+      "commandModelRequests": 0
+    },
+    "absent": {
+      "initialSourceReads": 1,
+      "decisionRevision": 0,
+      "decisionAuthority": "no_decision",
+      "citations": [],
+      "report": "REPORT_REQUIRES_RECEIPT_BOUND_DECISION"
+    },
+    "changed": {
+      "initialSourceReads": 2,
+      "decisionRevision": 1,
+      "decisionAuthority": "evidence_unavailable",
+      "citations": [],
+      "report": "EVIDENCE_READ_UNVERIFIED_REFERENCE"
+    },
+    "coexisting": {
+      "initialSourceReads": 2,
+      "decisionRevision": 1,
+      "decisionAuthority": "receipt_bound",
+      "citations": [
+        "inspection-notes.md",
+        "sample-counts.json#seal",
+        "sample-counts.json#drift"
+      ],
+      "report": "owner_recorded/resolved",
+      "commandModelRequests": 0,
+      "commandDelivery": "native-inbox",
+      "commandEvidenceRevision": 4,
+      "review": {
+        "launch": "native-command",
+        "findingId": "warmup-drift",
+        "cachedReferences": [
+          "sample-counts.json#drift"
+        ],
+        "outcome": "supports"
+      }
+    }
+  },
+  "installedRoutingComparison": {
+    "windows": {
+      "receipt": "../turn-routing-acceptance-windows-3c9188a.json",
+      "receiptSha256": "f0235cb391701c6aa78869abded782736bdc82611189e21fdb25cb6f2a37ee27",
+      "status": "passed",
+      "arms": {
+        "legacy": {
+          "requestBytes": 400072,
+          "elapsedMs": 19902,
+          "nativeYields": 6,
+          "unrelatedLedgerOpens": {
+            "method": "unmeasured",
+            "watchedFiles": null,
+            "uniqueWatchedFilesOpened": null
+          },
+          "noProgressYieldObserved": false
+        },
+        "routed": {
+          "requestBytes": 338435,
+          "elapsedMs": 19644,
+          "nativeYields": 6,
+          "unrelatedLedgerOpens": {
+            "method": "unmeasured",
+            "watchedFiles": null,
+            "uniqueWatchedFilesOpened": null
+          },
+          "noProgressYieldObserved": true
+        },
+        "routed-compact": {
+          "requestBytes": 288199,
+          "elapsedMs": 16898,
+          "nativeYields": 6,
+          "unrelatedLedgerOpens": {
+            "method": "unmeasured",
+            "watchedFiles": null,
+            "uniqueWatchedFilesOpened": null
+          },
+          "noProgressYieldObserved": true
+        }
+      }
+    },
+    "linux": {
+      "receipt": "../turn-routing-acceptance-linux-3c9188a.json",
+      "receiptSha256": "aba4057762305eb6f7388eda157761321ae0cc848e4528c7940d60a771fb8c43",
+      "status": "passed",
+      "arms": {
+        "legacy": {
+          "requestBytes": 398577,
+          "elapsedMs": 12826,
+          "nativeYields": 6,
+          "unrelatedLedgerOpens": {
+            "method": "linux-inotify",
+            "watchedFiles": 3,
+            "uniqueWatchedFilesOpened": 3
+          },
+          "noProgressYieldObserved": false
+        },
+        "routed": {
+          "requestBytes": 336875,
+          "elapsedMs": 14091,
+          "nativeYields": 6,
+          "unrelatedLedgerOpens": {
+            "method": "linux-inotify",
+            "watchedFiles": 3,
+            "uniqueWatchedFilesOpened": 0
+          },
+          "noProgressYieldObserved": true
+        },
+        "routed-compact": {
+          "requestBytes": 286639,
+          "elapsedMs": 11831,
+          "nativeYields": 6,
+          "unrelatedLedgerOpens": {
+            "method": "linux-inotify",
+            "watchedFiles": 3,
+            "uniqueWatchedFilesOpened": 0
+          },
+          "noProgressYieldObserved": true
+        }
+      }
+    },
+    "freeze": {
+      "receipt": "../turn-routing-acceptance-freeze-3c9188a.json",
+      "sha256": "b1c7693a02af5d51b14dd25dc073a5ffe0138494b03c9bc3991a4d1af653e647"
+    },
+    "localProvider": "payload-driven local OpenCode provider",
+    "matchedRequestsPerRoutedArm": 24,
+    "schemaBytesSaved": 50812,
+    "schemaPercentSaved": 44.79,
+    "schemaDefinition": "UTF-8 bytes of the serialized alg_investigation input schema on each request. An absent schema contributes zero.",
+    "schemaByArm": {
+      "legacy": {
+        "requests": 23,
+        "requestsByPhase": {
+          "retain": 7,
+          "unrelated": 1,
+          "compaction": 1,
+          "compute": 5,
+          "repeat": 5,
+          "amend": 4
+        },
+        "schemaBytes": 110072,
+        "schemaBytesByPhase": {
+          "retain": 30769,
+          "unrelated": 4955,
+          "compaction": 4978,
+          "compute": 24775,
+          "repeat": 24775,
+          "amend": 19820
+        }
+      },
+      "routed": {
+        "requests": 24,
+        "requestsByPhase": {
+          "retain": 7,
+          "unrelated": 1,
+          "compaction": 1,
+          "compute": 5,
+          "repeat": 5,
+          "amend": 5
+        },
+        "schemaBytes": 113444,
+        "schemaBytesByPhase": {
+          "retain": 34692,
+          "unrelated": 4908,
+          "compaction": 0,
+          "compute": 24540,
+          "repeat": 24540,
+          "amend": 24764
+        }
+      },
+      "routed-compact": {
+        "requests": 24,
+        "requestsByPhase": {
+          "retain": 7,
+          "unrelated": 1,
+          "compaction": 1,
+          "compute": 5,
+          "repeat": 5,
+          "amend": 5
+        },
+        "schemaBytes": 62632,
+        "schemaBytesByPhase": {
+          "retain": 30720,
+          "unrelated": 936,
+          "compaction": 0,
+          "compute": 5092,
+          "repeat": 5092,
+          "amend": 20792
+        }
+      }
+    },
+    "observations": {
+      "correctedPressureKpa": 171,
+      "sourceReference": "reference-gauge.json#reference",
+      "procedurePath": ".opencode/skills/pressure-correction/SKILL.md",
+      "procedureSha256": "a7f2b5f18e10e28262b360152e60183854c943066bc9188c0960b24b0d349465",
+      "findingCatalogIds": [
+        "saved-reference",
+        "saved-controls"
+      ],
+      "unrelatedHadGraphOrProcedureProjections": false,
+      "sourceReadsByPhase": {
+        "retain": [
+          "reference-gauge.json",
+          "control-inventory.json"
+        ],
+        "unrelated": [],
+        "compute": [],
+        "repeat": [],
+        "amend": [
+          "reference-gauge.json"
+        ]
+      },
+      "reopenedFinding": {
+        "id": "saved-reference",
+        "status": "unresolved"
+      },
+      "unaffectedFinding": {
+        "id": "saved-controls",
+        "status": "supported"
+      },
+      "compactionThenProcessRestart": true,
+      "remoteCalls": 0
+    }
+  },
+  "nativeBenchmarkQualification": {
+    "mode": "local-scripted",
+    "sameProtocolExceptRuntime": true,
+    "localPaidCalls": 0,
+    "platforms": {
+      "windows": {
+        "report": "../turn-routing-qual-3c9188a/report.json",
+        "reportSha256": "45515cbadfe882200381264cb8105b7bb541c9d21c0f6072aa03419f733fef35",
+        "protocolSha256": "4df23886d5ad2c2458844e723e164526a5ec6c31ca7749ec20792059d37b98c8",
+        "assigned": 7,
+        "completed": 7,
+        "passed": 7,
+        "failed": 0,
+        "elapsedSeconds": 57.891
+      },
+      "linux": {
+        "report": "../v2-isolated-hosts/natural-scripted-linux-ca106e8/report.json",
+        "reportSha256": "0783f9b96d3293b82950bede8a74d66642279ae2923fb7dd023dcd9d9b17cb3e",
+        "protocolSha256": "df55658ca54804be8ade712c5bee439b92aad16920b420318910cfed762027b6",
+        "assigned": 7,
+        "completed": 7,
+        "passed": 7,
+        "failed": 0,
+        "elapsedSeconds": 23.761,
+        "checkoutCommit": "ca106e89fca2b7eeec152af089ad8e84af3c64eb",
+        "sourceArchiveSha256": "78f20c1fec8825c1082d1793af3d4aac716cf20264b1317fe2d9633094cafc4f",
+        "terminalLogSha256": "545e79cbe2bb8d35e33d1e6f5c5a495cc87340a366819a6bf56ea12b88ced082",
+        "preflight": {
+          "typecheck": "passed",
+          "benchmarkRegressions": {
+            "passed": 5,
+            "failed": 0,
+            "files": [
+              "turn-routing-acceptance.test.ts",
+              "turn-routing-script.test.ts"
+            ]
+          },
+          "launcher": "../v2-isolated-hosts/routed-linux-ca106e8.sh",
+          "launcherSha256": "1fe9aa197eab531b9421a9dad04ff5d71ff4442de3b907666e88f665a4a241db",
+          "receiptBasis": "The fail-fast launcher runs tests and typecheck before qualification. Only the seven-arm output was saved to the qualification log."
+        }
+      }
+    },
+    "nativeFreeze": {
+      "receipt": "../turn-routing-frozen-3c9188a.json",
+      "sha256": "e25469cf1efe1e9132c1615e217dac5be0547d406c32e0c0955f915a0735e2c0",
+      "assigned": 7
+    }
+  },
+  "priorCandidate": {
+    "implementation": "691df9b1c2cf208e5dfd5aefd620759382e7be28",
+    "bundleSha256": "0ac2ea6a81ee7556c8424b5bf4ac0fb9c1f695d5e4d1408a127fb77a792778f4",
+    "platformAttempts": [
+      {
+        "receiptDirectory": "../v2-isolated-hosts/ro-qualify-windows-691df9b",
+        "status": "failed",
+        "suite": {
+          "bun": "1.3.14",
+          "passed": 325,
+          "failed": 1,
+          "unhandledErrors": 1,
+          "assertions": 3077,
+          "tests": 326,
+          "files": 44,
+          "elapsedSeconds": 115.52,
+          "failures": [
+            {
+              "test": "verifies committed scoped evidence and reuses the exact settled manifest offline",
+              "timingMs": 5082.19,
+              "timeoutMs": 5000
+            }
+          ],
+          "errorCodes": [
+            "RESEARCH_PROCEDURE_UNVERIFIED"
+          ],
+          "logSha256": "ce2655d13b880862b196ba1adb8dc0fb3d6cfca3ff2c63512ef4f821b21f6344"
+        }
+      },
+      {
+        "receiptDirectory": "../v2-isolated-hosts/ro-qualify-windows-691df9b1c2",
+        "status": "passed",
+        "suite": {
+          "bun": "1.3.14",
+          "passed": 326,
+          "failed": 0,
+          "unhandledErrors": 0,
+          "assertions": 3084,
+          "tests": 326,
+          "files": 44,
+          "elapsedSeconds": 73.02,
+          "failures": [],
+          "errorCodes": [],
+          "logSha256": "35d11aec2b3e2b9a334711e334e13263d7bb7254d44c9580c1a4e75363f7a689"
+        }
+      },
+      {
+        "receiptDirectory": "../v2-isolated-hosts/ro-qualify-linux-691df9b",
+        "status": "passed",
+        "suite": {
+          "bun": "1.3.14",
+          "passed": 326,
+          "failed": 0,
+          "unhandledErrors": 0,
+          "assertions": 3084,
+          "tests": 326,
+          "files": 44,
+          "elapsedSeconds": 30.97,
+          "failures": [],
+          "errorCodes": [],
+          "logSha256": "b219fb730b3778da1b2c26476a25023f4a3b6a3d22439e2f325409309e720275"
+        }
+      }
+    ],
+    "installed": {
+      "windows": {
+        "receipt": "../turn-routing-acceptance-win-691df9b.json",
+        "sha256": "bc03ce83786a887476d931d4cae51733a90cf072b36e71d067d2a0833828324d",
+        "passed": true,
+        "routedUniqueWatchedFilesOpened": {
+          "routed": null,
+          "routed-compact": null
+        }
+      },
+      "linux": {
+        "receipt": "../turn-routing-acceptance-wsl-691df9b-inotify.json",
+        "sha256": "96fa59ad6b46ea49f023f5de8a9b2e2f3cfff7d9d9099dd8e4decda9ddba36ae",
+        "passed": false,
+        "routedUniqueWatchedFilesOpened": {
+          "routed": 2,
+          "routed-compact": 2
+        },
+        "failure": "The unrelated turn opened two watched investigation ledger files in each routed arm."
+      }
+    }
+  },
+  "timingNotes": [
+    "Suite elapsed comes from Bun. Receipt wall spans use file creation and last-write timestamps.",
+    "Seven-arm qualification elapsed comes from the native host run-start and run-end journal events.",
+    "The full-gate receipt span starts at suite log creation and ends at loopback report write.",
+    "The loopback receipt span starts at protocol creation. The compatibility span covers creation to last write of its receipts."
+  ],
+  "missingInfo": [
+    "Exact whole-gate and typecheck elapsed times and per-case compatibility timings were not emitted.",
+    "The Windows installed probe did not measure file opens. Linux inotify reports distinct opened watched paths.",
+    "Qualification used local scripted fixtures. Live native-model results are outside this evidence."
+  ]
+}

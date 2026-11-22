@@ -134,6 +134,16 @@ definition on the wire. An owner that needs earlier evidence can request
 current citations with `finding_id`. Recording a new measurement still
 requires a scoped investigation and the normal evidence checks.
 
+On OpenCode 2.3.2 for Windows and Linux, the owner retained a calibration,
+counted flagged rows in the next prompt with zero tool calls, then recovered
+the calibration after manual compaction and restart. It applied the approved
+procedure to compute 171.00 kPa from cached operands and cited the source row.
+An amended calibration reopened only its dependent finding. Across 24
+matched requests the compact schema used 62,632 bytes versus 113,444 bytes
+with full schemas. Linux observed zero ledger-file opens during the count.
+Windows measured file contents and tool calls; file opens were unmeasured.
+These runs used a scripted provider. [Local platform receipts](evidence/turn-routing-platforms.json)
+
 ### Local OpenCode 2.3.2 qualification
 
 On Windows x64 and Linux x64 under WSL2, the same preview.9 bundle passed all
