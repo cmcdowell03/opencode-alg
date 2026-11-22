@@ -32,11 +32,26 @@ export const naturalLongPromptProtocol = { bookkeeping, advisoryNote, noAdvisory
 type Event = (event: Record<string, unknown>) => Promise<void>
 type Transcript = Awaited<ReturnType<typeof transcript>>
 
+type Pin = Awaited<ReturnType<typeof registerSkill>>
+type RoutingEvidence = {
+  rootRows: Transcript; checkerRows: Transcript; requests: Parameters<typeof measureNaturalLong>[0]["requests"]
+  inputs: ReadonlyMap<number, Message[]>; turns: readonly { phase: string; promptId: string }[]
+  pin?: Pin; metrics: ReturnType<typeof measureNaturalLong>; rootReads: ReturnType<typeof observedReads>
+}
+
+export type NaturalLongTrialAdapter = {
+  fixtureProject: (scratch: string) => ReturnType<typeof fixtureProject>
+  scripted: typeof naturalLongScript
+  triageBookkeeping: string
+  turnRouting?: "routed-compact"
+  observe: (evidence: RoutingEvidence) => void
+}
+
 export async function runNaturalLongArm(options: {
   binary: string; bundle: string; bundleSha256: string; scratch: string; fixture: NaturalLongCase; arm: NaturalLongArm
-  native?: { authPath?: string }; log: Event
+  native?: { authPath?: string }; log: Event; adapter?: NaturalLongTrialAdapter
 }) {
-  const { fixture, arm, scratch, native, log } = options
+  const { fixture, arm, scratch, native, log, adapter } = options
   const installed = arm === "alg-graph-focused", audited = arm !== "build"
   const model = native ? nativeModel(naturalModelID) : scriptedModel
   const started = performance.now()
@@ -64,7 +79,7 @@ export async function runNaturalLongArm(options: {
   })
   live?.releaseSummary()
   const scripted = live ? undefined : startTransport({
-    id: model.id, seed: 4307, classify, decide: naturalLongScript(fixture, () => phase, installed),
+    id: model.id, seed: 4307, classify, decide: (adapter?.scripted ?? naturalLongScript)(fixture, () => phase, installed),
     stale: "", correction: "", skill: () => pin?.witness,
   })
   scripted?.releaseSummary()
@@ -79,7 +94,7 @@ export async function runNaturalLongArm(options: {
   let stage = "setup", ready = false
   const turns: { phase: string; promptId: string; assistantId?: string; answer?: string; elapsedMs?: number }[] = []
   try {
-    const workspace = await fixtureProject(scratch, "project")
+    const workspace = await (adapter ? adapter.fixtureProject(scratch) : fixtureProject(scratch, "project"))
     const project = await prepareHost(scratch, {
       model, providerUrl: scripted?.url,
       providers: live ? nativeProviderConfig(contextTokens, model.id, "handoff-v1") : undefined,
@@ -116,6 +131,7 @@ export async function runNaturalLongArm(options: {
       await writeFile(join(project.directory, approval), manifest, { flag: "wx" })
       project.config.plugins.push({ package: pathToFileURL(options.bundle).href,
         options: { enabled: true, ownerAgent: owner, investigationMode: "read-only", graphLoop: true,
+          ...(adapter?.turnRouting && { turnRouting: adapter.turnRouting }),
           readOnlyEvidenceTools: [scopedTools("root").read], approvedProcedure: approval, approvedProcedureSha256: sha256(manifest) } })
       await writeFile(project.configPath, JSON.stringify(project.config))
       host = await startHost(options.binary, project.directory, project.settings)
@@ -179,7 +195,7 @@ export async function runNaturalLongArm(options: {
       await log({ event: "turn-end", phase, promptId, assistantId: turn.id, elapsedMs: row.elapsedMs })
       return turn
     }
-    await turn("triage", fixture.triage + "\n\n" + bookkeeping)
+    await turn("triage", fixture.triage + "\n\n" + (adapter?.triageBookkeeping ?? bookkeeping))
     for (const [index, batch] of fixture.batches.entries()) await turn("batch-" + (index + 1), batch.prompt)
     bridgeReceiptStart = sources.receipts.length
     try { bridge = (await turn("bridge", fixture.bridge)).text }
@@ -239,6 +255,7 @@ export async function runNaturalLongArm(options: {
       sources.receipts.slice(bridgeReceiptStart, bridgeReceiptStop ?? undefined)
         .filter(row => row.scope === "root" && row.outcome === "read" && row.path === fixture.files.registry).map(row => row.id),
   })
+  adapter?.observe({ rootRows, checkerRows, requests, inputs, turns, pin, metrics, rootReads })
   const accuracy = scoreNaturalLong(fixture, final, rootReads.map(row => row.path))
   const stagingAccuracy = fixture.batches.map((batch, i) => {
     const phase = "batch-" + (i + 1)

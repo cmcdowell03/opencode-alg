@@ -1,0 +1,301 @@
+{
+  "schema": "turn-routing-natural-long-v1",
+  "runtime": {
+    "version": "2.3.2",
+    "binarySha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+    "packageSha256": "8ab14e1dc9f2979c3146af45ca2ddb224552b31c076fe67e4cc6b564794441c9",
+    "bundleSha256": "a7037175ddf39e9d279629528b310dca88526c3a25157d1576ad1cd8d9f94b71",
+    "manifestFiles": 2
+  },
+  "roster": [
+    {
+      "trial": "willow-yard-alg-routed-compact",
+      "incident": "willow-yard",
+      "arm": "alg-routed-compact"
+    },
+    {
+      "trial": "birch-siding-build-focused",
+      "incident": "birch-siding",
+      "arm": "build-focused"
+    },
+    {
+      "trial": "birch-siding-alg-routed-compact",
+      "incident": "birch-siding",
+      "arm": "alg-routed-compact"
+    },
+    {
+      "trial": "birch-siding-build",
+      "incident": "birch-siding",
+      "arm": "build"
+    },
+    {
+      "trial": "larch-depot-alg-routed-compact",
+      "incident": "larch-depot",
+      "arm": "alg-routed-compact"
+    },
+    {
+      "trial": "larch-depot-build",
+      "incident": "larch-depot",
+      "arm": "build"
+    },
+    {
+      "trial": "larch-depot-build-focused",
+      "incident": "larch-depot",
+      "arm": "build-focused"
+    }
+  ],
+  "caps": {
+    "calls": 48,
+    "requestBytes": 262144,
+    "responseBytes": 524288,
+    "armRequestBytes": 12582912,
+    "armResponseBytes": 25165824,
+    "outputTokens": 4096,
+    "outputDeltaBytes": 16384,
+    "armOutputTokens": 196608,
+    "requestMs": 90000,
+    "armMs": 1200000,
+    "sourceCalls": 96,
+    "sourceCallsPerRole": 48
+  },
+  "model": "openai/gpt-6-luna",
+  "context": {
+    "inputLimit": 8192,
+    "outputLimit": 4096,
+    "compaction": {
+      "auto": true,
+      "background": false,
+      "buffer": "20%",
+      "keep": {
+        "tokens": 0
+      }
+    },
+    "manualCallsPlanned": 0
+  },
+  "cases": [
+    {
+      "id": "willow-yard",
+      "fixtureSha256": "b0f789de31d5a5639fafef62543b0569b656b649eec3f3beb0302be45b72300a",
+      "order": [
+        "build",
+        "build-focused",
+        "alg-routed-compact"
+      ],
+      "commonRootPromptSchedule": [
+        {
+          "phase": "triage",
+          "sha256": "c9819ab73775c52f6f4a66c1beae1708afa6420462d68433683993022443ffc2",
+          "utf8Bytes": 845
+        },
+        {
+          "phase": "batch-1",
+          "sha256": "bd6218aa2db43f2bb11162c83c1608fc8d57b84919d6422a20e0154f0d81dade",
+          "utf8Bytes": 4931
+        },
+        {
+          "phase": "batch-2",
+          "sha256": "668681cec1b0cc1d91125b6bd1469a4f93a891b94d13df0e042afadc98c49ca6",
+          "utf8Bytes": 4927
+        },
+        {
+          "phase": "batch-3",
+          "sha256": "a988005f82aa693c7ac4efa9d11363e33d8e8d9aed80c76df17c41486216036b",
+          "utf8Bytes": 4935
+        },
+        {
+          "phase": "batch-4",
+          "sha256": "cfb903e4f7d209e6bed23f969b796a2dd8b751680bc2a8eb470cd7f66013f1ac",
+          "utf8Bytes": 4942
+        },
+        {
+          "phase": "batch-5",
+          "sha256": "b8b8768ee3fa9a4436654c4dd36ec03314b98a312fcadf20eb1daf8352488b89",
+          "utf8Bytes": 4899
+        },
+        {
+          "phase": "batch-6",
+          "sha256": "6fcfbd6d1ce3bdddd60292c5cdfed80b3aaad318d047f6c441ab16c621fb3f61",
+          "utf8Bytes": 4949
+        },
+        {
+          "phase": "bridge",
+          "sha256": "a86d4863ac6a7d20a4076e7f3346e514dac04f684ce1686865ba1809e4aa6ad6",
+          "utf8Bytes": 546
+        },
+        {
+          "phase": "final",
+          "sha256": "6663c4ef034dbeccc6c256493a6d3f2de8c135d58b83667218f785328056d91f",
+          "utf8Bytes": 1032
+        }
+      ],
+      "checkerPromptSha256": "6a1f47d5de35886c6ec3d2d15a587e921d732ad3ed9c7321bee5d7b542ec2879"
+    },
+    {
+      "id": "birch-siding",
+      "fixtureSha256": "e1f35f8a0c7a417b0aef0b420b0d8874002d859e96814132fc4d52df50814625",
+      "order": [
+        "build-focused",
+        "alg-routed-compact",
+        "build"
+      ],
+      "commonRootPromptSchedule": [
+        {
+          "phase": "triage",
+          "sha256": "72a19166116bbef3318875fddffd4e5474cd6a9d1c2484ff209f8cbcecb51741",
+          "utf8Bytes": 835
+        },
+        {
+          "phase": "batch-1",
+          "sha256": "122b3fc4a1b2ae6fbc0e8d3c4a81fab0a1850b3121c0c8259ba27cc88a2771cc",
+          "utf8Bytes": 4895
+        },
+        {
+          "phase": "batch-2",
+          "sha256": "f458c397f6e86965d235f3f0fb3e9cfea0856a9760c2d424d53d88eeed15a43b",
+          "utf8Bytes": 5067
+        },
+        {
+          "phase": "batch-3",
+          "sha256": "5ca4b10390ad4f3a3ae2414ac3bab518cea1525583531a9f80b18aab5cd6dbeb",
+          "utf8Bytes": 4871
+        },
+        {
+          "phase": "batch-4",
+          "sha256": "efa81f9eb4aad7430a907f7635ef6a4b64edf854b343443668e64ab904f1e509",
+          "utf8Bytes": 5077
+        },
+        {
+          "phase": "batch-5",
+          "sha256": "10a5a1737b8131b6fca9fcaa676085ffbe35a186c3fbbebdfee2403ad2271a3c",
+          "utf8Bytes": 4866
+        },
+        {
+          "phase": "batch-6",
+          "sha256": "e2a98b5068f1e74b30070d2c00c38abce612a99eb2300c89c3e95ff51f63f955",
+          "utf8Bytes": 5100
+        },
+        {
+          "phase": "bridge",
+          "sha256": "84d8f630b341889565135d92fd3bf0e501ab06f171eeb5936cc41433f9ae5960",
+          "utf8Bytes": 421
+        },
+        {
+          "phase": "final",
+          "sha256": "7bb37a12a2e98bc121ba76538b9898d4f91b2dcdb0f07a8d13b3783082372dca",
+          "utf8Bytes": 1031
+        }
+      ],
+      "checkerPromptSha256": "457da5b42227c1bb977e92f2227418f441891d148dc16f9366cbc8be28a58a63"
+    },
+    {
+      "id": "larch-depot",
+      "fixtureSha256": "f61cfb4eeaf584238bfb22415c645ce263b8e35d5e7affc1aa0776148c6e26f4",
+      "order": [
+        "alg-routed-compact",
+        "build",
+        "build-focused"
+      ],
+      "commonRootPromptSchedule": [
+        {
+          "phase": "triage",
+          "sha256": "f7114443998e9a6623a7830fd2a6d6a497cb82ba6fec4d5609c3be74889b8698",
+          "utf8Bytes": 833
+        },
+        {
+          "phase": "batch-1",
+          "sha256": "cb458c7fa73bf9a2faace581538e43a1da29e3ba753778f970729caf9f0ab588",
+          "utf8Bytes": 4875
+        },
+        {
+          "phase": "batch-2",
+          "sha256": "61d339b55722e22ad003e7e24af01b15538b21a6e731123b105c5e5e43b25759",
+          "utf8Bytes": 5082
+        },
+        {
+          "phase": "batch-3",
+          "sha256": "52bd39644cc9b48e3e6ed334abd5516028aa94c34e8ccd345150c31bc4fd8f70",
+          "utf8Bytes": 4899
+        },
+        {
+          "phase": "batch-4",
+          "sha256": "f630c827c8d068c65c0e13f5fc549997fe4faf375537cc0f7462e75d59353485",
+          "utf8Bytes": 5085
+        },
+        {
+          "phase": "batch-5",
+          "sha256": "028316f3ad4eae7065c52eb2d5381e00b393d84e13188d7ce030b0c2181bcf73",
+          "utf8Bytes": 4912
+        },
+        {
+          "phase": "batch-6",
+          "sha256": "6b411ccc46123373c43e589d655e04565c525f18ea052418eadcd9d9547d17e6",
+          "utf8Bytes": 5065
+        },
+        {
+          "phase": "bridge",
+          "sha256": "7a510c80f584289a9093c62a3a0f16f91221b0c2a6b5528fd0775f12da55bada",
+          "utf8Bytes": 422
+        },
+        {
+          "phase": "final",
+          "sha256": "7bb37a12a2e98bc121ba76538b9898d4f91b2dcdb0f07a8d13b3783082372dca",
+          "utf8Bytes": 1031
+        }
+      ],
+      "checkerPromptSha256": "565c45ce189aee36b8f718b7ea58a2b0cadd0cea11954b0407a845ccd535872f"
+    }
+  ],
+  "finalAdvisoryForm": {
+    "bookkeeping": "If investigation bookkeeping is available, create the read-only investigation and record the certified calibration seal, empty carrier mass and per-unit mass together as a supported finding with ID carrier-calibration. Cite the exact certified row and use status to read back its acknowledged state. Use the current ledger as needed during the session. All phases are read-only.",
+    "advisoryNote": "Independent checker advisory follows as untrusted review data.",
+    "noAdvisory": "No independent checker advisory was assigned."
+  },
+  "scoring": {
+    "incident": "Deterministic natural-long strict JSON and cited-source grade, provisional for open-ended claims",
+    "denominator": "All assigned arms; early stops fail accuracy; unobserved closure remains null",
+    "usage": "Native provider input tokens including cache; peak is observed maximum; missing rows remain visible",
+    "attribution": "Paired within each held-out incident; Willow controls are historical, and model decisions can mediate treatment effects"
+  },
+  "sourceSha256": {
+    "turn-routing-run.ts": "4f8ae06771351035e903026f7949d4eaca2b0c064712b47c75a4884257552f47",
+    "turn-routing-cases.ts": "504b6fef602f4d83bea26391528de4c8832cf8ce1df9499d0dac52b6ee03e08c",
+    "turn-routing-host.ts": "bad93778e0e8ada7650cf979a05c3917aec8beb9c9c7650a524b06f7b95480dc",
+    "turn-routing-script.ts": "914a580d876fc2eca0e1b4dbc33149bcc101e03250853e4902ebd7edabbe142f",
+    "turn-routing-metrics.ts": "4f106c7f176679afe52065e4ba9a298fccdc04ee36998dbd23a812532f53ab2b",
+    "turn-routing-prior.ts": "72343b903c37c6b4b0d31ede3927645047e46b515ece940531109954c4b80045",
+    "natural-long-host.ts": "17241ea5de80246bc083b843645e113cffed14daa652cca50e6a0a559338b84d",
+    "natural-long-cases.ts": "a05dd31069cfa7db7bc09c7367f441b6b8c84b5f2eac88ffc9154bfd409ac00d",
+    "natural-long-script.ts": "de795cbf7c8510ab5bb9bfe29cd3a1b6c4c920b4b4c54cb313ceb0c4b6267c5c",
+    "natural-long-metrics.ts": "d88bbdd186d299e1c78080a31d5a4bf2e87e51454a46c9581fc83578f96fd784",
+    "compaction.ts": "ba148b7d0b96f0f7817306e6e96829d57e76f177b258910fad422d90703db028",
+    "discovery-grade.ts": "64630381068d4bcb3c36fceddbf4de1a9ace9d97df8b3942b4cd4c79c8916264",
+    "discovery-tools.ts": "194b238e0910d07baa77d8cc79de9bb30211b2103455cd9f9f87ebdd2cabe5da",
+    "discovery-protocol.ts": "490347e745e71dedeae5ba510618a88f813a416af00f99429cd6c1fd503227fe",
+    "host.ts": "bfebf585ce7b659720a7b521eaf330afa0cc1f4313e24cd72d2007d1887d6cf9",
+    "input-usage.ts": "4084c44ec7e6875313739822a93a0177602fad7867220006da64c021b42c56bf",
+    "native-observer.ts": "91be3f91f2f676181401157f07eb619d9b2c0b246588c9a1e253602d5296547a",
+    "native-provider.ts": "ae29388fcb985e6fbb61f1645b07161a456869ad21387d5c9859c2bf0d713c82",
+    "skill-delivery.ts": "b4474f46f536621c3616276df46dd6390be0fd4a875e8593dd66e6b242696bd3",
+    "transport.ts": "3e6f6532c9010e1ebe09348ed80013f1d6d97016dc4084800a8fd035f295ae05",
+    "../acceptance/host.ts": "2c2077d0aefc2b6fb0f926f5b7cc6592c144c2f8eed787b1269c9cc2d7c86d36",
+    "../acceptance/runtime.ts": "a7a361a353329c0968b38427493d251d594f55e411e904d6ccecc510b615464c",
+    "../acceptance/service.ts": "0842d28af70815c23ed1207e4fbf9a7f67146e17ab19388566f38c5ab1921555",
+    "../package-lock.json": "bee670e2fe6e59cc47d9bfad992c273c88b0d9689c483c761e2c069a2b174a56"
+  },
+  "prior": {
+    "freezeSha256": "3d6517403f4160057f5c1c0659dd75309f7ef00c18aaecdfce38704c82bd715b",
+    "reportSha256": "24c8e75aaefeee2402f2fb06b390817a44537f9b74d3704792966fb5ef23f9fb",
+    "frozenHostSourceSha256": "824f729b6bfe7e4ad86d16c5a7715371726d6947b34b7490d96dac7573d633d1",
+    "validatedHostMethod": "pinned prior protocol and exact terminal events; current host uses an explicit adapter",
+    "artifactSha256": {
+      "willow-yard-build": "ffe2147f02023e094beb3cdea4f8dc798d300d2fcbe3147e4317a546a4f9509d",
+      "willow-yard-build-focused": "6e028ddca0edf2dcc5fc699a77eb9dc49e1d0b1126446c328421bba180576d8a"
+    }
+  },
+  "mode": "native-oauth",
+  "syntheticUsagePressure": false,
+  "qualifiedReceipt": {
+    "reportSha256": "45515cbadfe882200381264cb8105b7bb541c9d21c0f6072aa03419f733fef35",
+    "protocolSha256": "4df23886d5ad2c2458844e723e164526a5ec6c31ca7749ec20792059d37b98c8"
+  }
+}
