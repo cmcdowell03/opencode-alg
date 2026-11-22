@@ -22,7 +22,7 @@ From the repository root, supply a native OpenCode 2.3.2 executable and a staged
 bun packages/v2-preview/benchmark/turn-routing-run.ts --qualify NEW_OUTPUT_DIR --host OPENCODE_BINARY --package STAGED_PREVIEW
 ```
 
-The scripted roster includes the same seven new trials. It uses a loopback-only fake model and needs no historical private receipts or credentials. It tests catalog-to-detail recall after automatic compaction, validates procedure delivery, and calculates bridge units using the gross from the user turn and operands recovered from the source or lookup output. The fixture's scripted final answers exercise scoring and transport. They do not measure model incident-solving ability.
+The scripted roster includes the same seven new trials. It uses a loopback-only fake model and needs no historical private receipts or credentials. It tests catalog-to-detail recall after automatic compaction, validates procedure delivery, and calculates bridge units using the gross from the user turn and operands recovered from the source or lookup output. The fixture's scripted final answers exercise scoring and transport. Model incident-solving accuracy comes from the native trial.
 
 Freeze and native replay require the archived natural-long freeze, terminal receipt chain, exact prior runtime, and staged final bundle. The original natural-long host has an opt-in adapter. Without that adapter, it retains the original configuration, prompts and receipt shape. Use the pinned prior revision for byte-exact historical source reproduction. The new freeze records the original host hash through its archived protocol and verifies the exact original Willow prompt events and both terminal controls.
 
@@ -32,3 +32,9 @@ bun packages/v2-preview/benchmark/turn-routing-run.ts --freeze NEW_FREEZE_JSON -
 
 After explicit GO, use the frozen artifact with `--frozen FILE --allow-model-calls --out NEW_OUTPUT_DIR`. The live run reserves the freeze before credential staging and writes a journal, terminal receipt per assigned arm, and report. Keep the original freeze path and reservation together.
 
+
+Generate the compact native readout from the terminal output directory. The reader verifies the recorded hashes and arm journal before writing.
+
+```sh
+bun packages/v2-preview/benchmark/turn-routing-readout.ts NATIVE_OUTPUT_DIR NEW_EVIDENCE_MD
+```

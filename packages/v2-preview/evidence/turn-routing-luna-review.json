@@ -1,0 +1,1336 @@
+{
+  "schema": "turn-routing-supplemental-review-v1",
+  "reportSha256": "155be2b2c0761be3c28e6d07789488fd85bf4504ae1a76698f32679d387a51d5",
+  "freezeSha256": "e25469cf1efe1e9132c1615e217dac5be0547d406c32e0c0955f915a0735e2c0",
+  "packetsSha256": "592aaa82a37f0ebc7f07ff158f01864ca246cfed6ea06b0e29e3cd789ac3c91d",
+  "decisionsSha256": "6fc60234d8bb078a3ddcd4be0fbe221652eacdd98963989b4f129a893a687f42",
+  "runtimeUnchanged": true,
+  "assigned": 7,
+  "frozenPassed": 4,
+  "supplementalPassed": 3,
+  "missingFinals": 2,
+  "arms": [
+    {
+      "trial": "willow-yard-alg-routed-compact",
+      "incident": "willow-yard",
+      "arm": "alg-routed-compact",
+      "outcome": "complete",
+      "finalPresent": true,
+      "packetId": "7856637ea08030c23e335895efb8f8c09f67738139ad70481b69c243d3f617c1",
+      "verifiedRootPaths": [
+        "registry/certified-carriers.json",
+        "close/board.json",
+        "dock/signed-counts.json",
+        "dock/weight-export.json",
+        "scanner/reservations.json",
+        "transfer/custody.json"
+      ],
+      "frozenPass": false,
+      "frozen": {
+        "correct": false,
+        "closureAsserted": false,
+        "unsupportedClosure": false,
+        "strictFormat": true,
+        "disposition": "indeterminate",
+        "grade": {
+          "passed": false,
+          "validSubmission": true,
+          "materialDefectRecall": 0,
+          "fullIncidentClosure": false,
+          "correctAbstention": false,
+          "supportedClaims": 0,
+          "unsupportedClaims": [
+            "c1",
+            "c2"
+          ],
+          "unsupportedCertifications": [],
+          "severeMisses": [
+            {
+              "finding": "duplicate",
+              "scope": "WY-418"
+            },
+            {
+              "finding": "short-pick",
+              "scope": "WY-418"
+            },
+            {
+              "finding": "tare",
+              "scope": "WY-662"
+            }
+          ],
+          "missedFindings": [
+            {
+              "finding": "duplicate",
+              "scope": "WY-418"
+            },
+            {
+              "finding": "short-pick",
+              "scope": "WY-418"
+            },
+            {
+              "finding": "tare",
+              "scope": "WY-662"
+            }
+          ],
+          "reviewRequired": true,
+          "pendingClaims": [
+            "c3",
+            "c4",
+            "c5"
+          ],
+          "claims": [
+            {
+              "claimId": "c1",
+              "target": {
+                "finding": "duplicate",
+                "scope": "WY-418",
+                "requiredRefs": [
+                  "close/board.json#board-WY-418",
+                  "scanner/reservations.json#scan-WY-418-1",
+                  "scanner/reservations.json#scan-WY-418-3"
+                ],
+                "materialDefect": true
+              },
+              "status": "unsupported",
+              "reason": "Missing or invalid supporting source rows"
+            },
+            {
+              "claimId": "c2",
+              "target": {
+                "finding": "short-pick",
+                "scope": "WY-418",
+                "requiredRefs": [
+                  "close/board.json#board-WY-418",
+                  "dock/signed-counts.json#count-WY-418",
+                  "transfer/custody.json#custody-WY-418",
+                  "scanner/reservations.json#scan-WY-418-1",
+                  "scanner/reservations.json#scan-WY-418-2",
+                  "scanner/reservations.json#scan-WY-418-3",
+                  "scanner/reservations.json#scan-WY-418-4",
+                  "scanner/reservations.json#scan-WY-418-5"
+                ],
+                "materialDefect": true
+              },
+              "status": "unsupported",
+              "reason": "Missing or invalid supporting source rows"
+            },
+            {
+              "claimId": "c3",
+              "target": null,
+              "status": "pending",
+              "reason": "Blinded review required"
+            },
+            {
+              "claimId": "c4",
+              "target": null,
+              "status": "pending",
+              "reason": "Blinded review required"
+            },
+            {
+              "claimId": "c5",
+              "target": null,
+              "status": "pending",
+              "reason": "Blinded review required"
+            }
+          ],
+          "adjudicationErrors": [],
+          "verifiedEvidence": true
+        }
+      },
+      "supplementalPass": false,
+      "supplementalGrade": {
+        "passed": false,
+        "validSubmission": true,
+        "materialDefectRecall": 0,
+        "fullIncidentClosure": false,
+        "correctAbstention": false,
+        "supportedClaims": 0,
+        "unsupportedClaims": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "unsupportedCertifications": [],
+        "severeMisses": [
+          {
+            "finding": "duplicate",
+            "scope": "WY-418"
+          },
+          {
+            "finding": "short-pick",
+            "scope": "WY-418"
+          },
+          {
+            "finding": "tare",
+            "scope": "WY-662"
+          }
+        ],
+        "missedFindings": [
+          {
+            "finding": "duplicate",
+            "scope": "WY-418"
+          },
+          {
+            "finding": "short-pick",
+            "scope": "WY-418"
+          },
+          {
+            "finding": "tare",
+            "scope": "WY-662"
+          }
+        ],
+        "reviewRequired": false,
+        "pendingClaims": [],
+        "claims": [
+          {
+            "claimId": "c1",
+            "target": {
+              "finding": "duplicate",
+              "scope": "WY-418",
+              "requiredRefs": [
+                "close/board.json#board-WY-418",
+                "scanner/reservations.json#scan-WY-418-1",
+                "scanner/reservations.json#scan-WY-418-3"
+              ],
+              "materialDefect": true
+            },
+            "status": "unsupported",
+            "reason": "Missing or invalid supporting source rows"
+          },
+          {
+            "claimId": "c2",
+            "target": {
+              "finding": "short-pick",
+              "scope": "WY-418",
+              "requiredRefs": [
+                "close/board.json#board-WY-418",
+                "dock/signed-counts.json#count-WY-418",
+                "transfer/custody.json#custody-WY-418",
+                "scanner/reservations.json#scan-WY-418-1",
+                "scanner/reservations.json#scan-WY-418-2",
+                "scanner/reservations.json#scan-WY-418-3",
+                "scanner/reservations.json#scan-WY-418-4",
+                "scanner/reservations.json#scan-WY-418-5"
+              ],
+              "materialDefect": true
+            },
+            "status": "unsupported",
+            "reason": "Missing or invalid supporting source rows"
+          },
+          {
+            "claimId": "c3",
+            "target": null,
+            "status": "contradicted",
+            "reason": "The four reservation codes are distinct and the signed intact-seal count accounts for all four units. Custody records zero overflow. The physical count contradicts the alleged short pick."
+          },
+          {
+            "claimId": "c4",
+            "target": null,
+            "status": "contradicted",
+            "reason": "The reservation records contain four distinct codes after removing the repeated S2K scan. The signed intact-seal count is three with no release exception, and custody records zero overflow and no transfer tally path. These records resolve the discrepancy as a one-unit shortage without a missing decisive tally."
+          },
+          {
+            "claimId": "c5",
+            "target": null,
+            "status": "contradicted",
+            "reason": "The four reservations match the signed four-unit count, and custody records no overflow or tally path. The export used a 27 kg deduction where the certified tare is 17 kg. Correcting the deduction gives (37 − 17) / 5 = 4 units, resolving the flag with the available records."
+          }
+        ],
+        "adjudicationErrors": [],
+        "verifiedEvidence": true
+      },
+      "reviewed": [
+        {
+          "packetId": "7856637ea08030c23e335895efb8f8c09f67738139ad70481b69c243d3f617c1",
+          "claimId": "c1",
+          "verdict": "supported",
+          "rationale": "The two cited scans both carry reservation S2K for WY-418, establishing a retransmission. The claim omits the flag row requested by the prompt.",
+          "evidence": [
+            "scanner/reservations.json#scan-WY-418-1",
+            "scanner/reservations.json#scan-WY-418-3"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [],
+          "frozenPending": false,
+          "unverifiedCitations": []
+        },
+        {
+          "packetId": "7856637ea08030c23e335895efb8f8c09f67738139ad70481b69c243d3f617c1",
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "The cited intake rows establish four distinct reservations for WY-418. The signed intact-seal count is three, with no release exception and no overflow in custody, establishing a one-unit physical shortage. The claim omits the flag row requested by the prompt.",
+          "evidence": [
+            "scanner/reservations.json#scan-WY-418-1",
+            "scanner/reservations.json#scan-WY-418-2",
+            "scanner/reservations.json#scan-WY-418-4",
+            "scanner/reservations.json#scan-WY-418-5",
+            "dock/signed-counts.json#count-WY-418",
+            "transfer/custody.json#custody-WY-418"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [],
+          "frozenPending": false,
+          "unverifiedCitations": []
+        },
+        {
+          "packetId": "7856637ea08030c23e335895efb8f8c09f67738139ad70481b69c243d3f617c1",
+          "claimId": "c3",
+          "verdict": "contradicted",
+          "rationale": "The four reservation codes are distinct and the signed intact-seal count accounts for all four units. Custody records zero overflow. The physical count contradicts the alleged short pick.",
+          "evidence": [
+            "scanner/reservations.json#scan-WY-662-1",
+            "scanner/reservations.json#scan-WY-662-2",
+            "scanner/reservations.json#scan-WY-662-3",
+            "scanner/reservations.json#scan-WY-662-4",
+            "dock/signed-counts.json#count-WY-662",
+            "transfer/custody.json#custody-WY-662"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [],
+          "frozenPending": true,
+          "unverifiedCitations": []
+        },
+        {
+          "packetId": "7856637ea08030c23e335895efb8f8c09f67738139ad70481b69c243d3f617c1",
+          "claimId": "c4",
+          "verdict": "contradicted",
+          "rationale": "The reservation records contain four distinct codes after removing the repeated S2K scan. The signed intact-seal count is three with no release exception, and custody records zero overflow and no transfer tally path. These records resolve the discrepancy as a one-unit shortage without a missing decisive tally.",
+          "evidence": [
+            "close/board.json#board-WY-418",
+            "scanner/reservations.json#scan-WY-418-3",
+            "scanner/reservations.json#scan-WY-418-1",
+            "scanner/reservations.json#scan-WY-418-2",
+            "scanner/reservations.json#scan-WY-418-4",
+            "scanner/reservations.json#scan-WY-418-5",
+            "dock/signed-counts.json#count-WY-418",
+            "transfer/custody.json#custody-WY-418"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [],
+          "frozenPending": true,
+          "unverifiedCitations": []
+        },
+        {
+          "packetId": "7856637ea08030c23e335895efb8f8c09f67738139ad70481b69c243d3f617c1",
+          "claimId": "c5",
+          "verdict": "contradicted",
+          "rationale": "The four reservations match the signed four-unit count, and custody records no overflow or tally path. The export used a 27 kg deduction where the certified tare is 17 kg. Correcting the deduction gives (37 − 17) / 5 = 4 units, resolving the flag with the available records.",
+          "evidence": [
+            "close/board.json#board-WY-662",
+            "scanner/reservations.json#scan-WY-662-1",
+            "scanner/reservations.json#scan-WY-662-2",
+            "scanner/reservations.json#scan-WY-662-3",
+            "scanner/reservations.json#scan-WY-662-4",
+            "dock/signed-counts.json#count-WY-662",
+            "transfer/custody.json#custody-WY-662",
+            "dock/weight-export.json#weight-WY-662",
+            "registry/certified-carriers.json#registry-WY-662"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [],
+          "frozenPending": true,
+          "unverifiedCitations": []
+        }
+      ]
+    },
+    {
+      "trial": "birch-siding-build-focused",
+      "incident": "birch-siding",
+      "arm": "build-focused",
+      "outcome": "complete",
+      "finalPresent": true,
+      "packetId": "e4ad7ce418dd3b2d9ea5459e15dc7f10b68ff79582f8682fd0fb1cd4bd9db3c2",
+      "verifiedRootPaths": [
+        "registry/carrier-versions.json",
+        "close/review-index.json",
+        "dock/verified-unloads.json",
+        "transfer/custody-index.json",
+        "transfer/release-tally.json",
+        "scanner/intake.json",
+        "dock/mass-export.json"
+      ],
+      "frozenPass": true,
+      "frozen": {
+        "correct": true,
+        "closureAsserted": true,
+        "unsupportedClosure": false,
+        "strictFormat": true,
+        "disposition": "resolved",
+        "grade": {
+          "passed": true,
+          "validSubmission": true,
+          "materialDefectRecall": 1,
+          "fullIncidentClosure": true,
+          "correctAbstention": false,
+          "supportedClaims": 2,
+          "unsupportedClaims": [],
+          "unsupportedCertifications": [],
+          "severeMisses": [],
+          "missedFindings": [],
+          "reviewRequired": false,
+          "pendingClaims": [],
+          "claims": [
+            {
+              "claimId": "c1",
+              "target": {
+                "finding": "tare",
+                "scope": "BS-213",
+                "requiredRefs": [
+                  "close/review-index.json#flag-213",
+                  "dock/mass-export.json#mass-a",
+                  "registry/carrier-versions.json#cal-new",
+                  "dock/verified-unloads.json#signed-a"
+                ],
+                "materialDefect": true
+              },
+              "status": "supported",
+              "reason": "Required source rows establish the finding"
+            },
+            {
+              "claimId": "c2",
+              "target": {
+                "finding": "short-pick",
+                "scope": "BS-215",
+                "requiredRefs": [
+                  "close/review-index.json#flag-215",
+                  "dock/verified-unloads.json#signed-c",
+                  "transfer/custody-index.json#cust-c",
+                  "scanner/intake.json#r-c1",
+                  "scanner/intake.json#r-c2",
+                  "scanner/intake.json#r-c3",
+                  "scanner/intake.json#r-c4",
+                  "scanner/intake.json#r-c5"
+                ],
+                "materialDefect": true
+              },
+              "status": "supported",
+              "reason": "Required source rows establish the finding"
+            }
+          ],
+          "adjudicationErrors": [],
+          "verifiedEvidence": true
+        }
+      },
+      "supplementalPass": true,
+      "supplementalGrade": {
+        "passed": true,
+        "validSubmission": true,
+        "materialDefectRecall": 1,
+        "fullIncidentClosure": true,
+        "correctAbstention": false,
+        "supportedClaims": 2,
+        "unsupportedClaims": [],
+        "unsupportedCertifications": [],
+        "severeMisses": [],
+        "missedFindings": [],
+        "reviewRequired": false,
+        "pendingClaims": [],
+        "claims": [
+          {
+            "claimId": "c1",
+            "target": {
+              "finding": "tare",
+              "scope": "BS-213",
+              "requiredRefs": [
+                "close/review-index.json#flag-213",
+                "dock/mass-export.json#mass-a",
+                "registry/carrier-versions.json#cal-new",
+                "dock/verified-unloads.json#signed-a"
+              ],
+              "materialDefect": true
+            },
+            "status": "supported",
+            "reason": "Required source rows establish the finding"
+          },
+          {
+            "claimId": "c2",
+            "target": {
+              "finding": "short-pick",
+              "scope": "BS-215",
+              "requiredRefs": [
+                "close/review-index.json#flag-215",
+                "dock/verified-unloads.json#signed-c",
+                "transfer/custody-index.json#cust-c",
+                "scanner/intake.json#r-c1",
+                "scanner/intake.json#r-c2",
+                "scanner/intake.json#r-c3",
+                "scanner/intake.json#r-c4",
+                "scanner/intake.json#r-c5"
+              ],
+              "materialDefect": true
+            },
+            "status": "supported",
+            "reason": "Required source rows establish the finding"
+          }
+        ],
+        "adjudicationErrors": [],
+        "verifiedEvidence": true
+      },
+      "reviewed": [
+        {
+          "packetId": "e4ad7ce418dd3b2d9ea5459e15dc7f10b68ff79582f8682fd0fb1cd4bd9db3c2",
+          "claimId": "c1",
+          "verdict": "supported",
+          "rationale": "The flag records three exported units against four reservations. For the same T17-R2 carrier, the export deducted 28 kg and the certified tare is 25.5 kg. Using the certified tare gives (35.5 − 25.5) / 2.5 = 4 units, matching the signed unload.",
+          "evidence": [
+            "close/review-index.json#flag-213",
+            "dock/mass-export.json#mass-a",
+            "registry/carrier-versions.json#cal-new",
+            "dock/verified-unloads.json#signed-a"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [],
+          "frozenPending": false,
+          "unverifiedCitations": []
+        },
+        {
+          "packetId": "e4ad7ce418dd3b2d9ea5459e15dc7f10b68ff79582f8682fd0fb1cd4bd9db3c2",
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "The flag records five reservations and four exported units. The five intake rows are distinct, the intact-seal signed unload counted four, and custody records zero overflow. One unit is physically short.",
+          "evidence": [
+            "close/review-index.json#flag-215",
+            "scanner/intake.json#r-c1",
+            "scanner/intake.json#r-c2",
+            "scanner/intake.json#r-c3",
+            "scanner/intake.json#r-c4",
+            "scanner/intake.json#r-c5",
+            "dock/verified-unloads.json#signed-c",
+            "transfer/custody-index.json#cust-c"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [],
+          "frozenPending": false,
+          "unverifiedCitations": []
+        }
+      ]
+    },
+    {
+      "trial": "birch-siding-alg-routed-compact",
+      "incident": "birch-siding",
+      "arm": "alg-routed-compact",
+      "outcome": "early-stop",
+      "finalPresent": false,
+      "packetId": null,
+      "verifiedRootPaths": [
+        "registry/carrier-versions.json",
+        "close/review-index.json",
+        "dock/mass-export.json",
+        "dock/verified-unloads.json",
+        "scanner/intake.json",
+        "transfer/custody-index.json",
+        "transfer/release-tally.json"
+      ],
+      "frozenPass": false,
+      "frozen": {
+        "correct": false,
+        "closureAsserted": false,
+        "unsupportedClosure": false,
+        "strictFormat": false,
+        "disposition": null,
+        "grade": {
+          "passed": false,
+          "validSubmission": false,
+          "materialDefectRecall": 0,
+          "fullIncidentClosure": false,
+          "correctAbstention": false,
+          "supportedClaims": 0,
+          "unsupportedClaims": [],
+          "unsupportedCertifications": [],
+          "severeMisses": [
+            {
+              "finding": "tare",
+              "scope": "BS-213"
+            },
+            {
+              "finding": "short-pick",
+              "scope": "BS-215"
+            }
+          ],
+          "missedFindings": [
+            {
+              "finding": "tare",
+              "scope": "BS-213"
+            },
+            {
+              "finding": "short-pick",
+              "scope": "BS-215"
+            }
+          ],
+          "reviewRequired": false,
+          "pendingClaims": [],
+          "claims": [],
+          "adjudicationErrors": [],
+          "verifiedEvidence": false
+        }
+      },
+      "supplementalPass": false,
+      "supplementalGrade": {
+        "passed": false,
+        "validSubmission": false,
+        "materialDefectRecall": 0,
+        "fullIncidentClosure": false,
+        "correctAbstention": false,
+        "supportedClaims": 0,
+        "unsupportedClaims": [],
+        "unsupportedCertifications": [],
+        "severeMisses": [
+          {
+            "finding": "tare",
+            "scope": "BS-213"
+          },
+          {
+            "finding": "short-pick",
+            "scope": "BS-215"
+          }
+        ],
+        "missedFindings": [
+          {
+            "finding": "tare",
+            "scope": "BS-213"
+          },
+          {
+            "finding": "short-pick",
+            "scope": "BS-215"
+          }
+        ],
+        "reviewRequired": false,
+        "pendingClaims": [],
+        "claims": [],
+        "adjudicationErrors": [],
+        "verifiedEvidence": false
+      },
+      "reviewed": []
+    },
+    {
+      "trial": "birch-siding-build",
+      "incident": "birch-siding",
+      "arm": "build",
+      "outcome": "complete",
+      "finalPresent": true,
+      "packetId": "75c292abb8b92c5c1bcce006fc888090ec2eadf82c2791b9b89a083741c6434e",
+      "verifiedRootPaths": [
+        "registry/carrier-versions.json",
+        "close/review-index.json",
+        "dock/mass-export.json",
+        "dock/verified-unloads.json",
+        "scanner/intake.json",
+        "transfer/custody-index.json",
+        "transfer/release-tally.json"
+      ],
+      "frozenPass": true,
+      "frozen": {
+        "correct": true,
+        "closureAsserted": true,
+        "unsupportedClosure": false,
+        "strictFormat": true,
+        "disposition": "resolved",
+        "grade": {
+          "passed": true,
+          "validSubmission": true,
+          "materialDefectRecall": 1,
+          "fullIncidentClosure": true,
+          "correctAbstention": false,
+          "supportedClaims": 2,
+          "unsupportedClaims": [],
+          "unsupportedCertifications": [],
+          "severeMisses": [],
+          "missedFindings": [],
+          "reviewRequired": false,
+          "pendingClaims": [],
+          "claims": [
+            {
+              "claimId": "c1",
+              "target": {
+                "finding": "tare",
+                "scope": "BS-213",
+                "requiredRefs": [
+                  "close/review-index.json#flag-213",
+                  "dock/mass-export.json#mass-a",
+                  "registry/carrier-versions.json#cal-new",
+                  "dock/verified-unloads.json#signed-a"
+                ],
+                "materialDefect": true
+              },
+              "status": "supported",
+              "reason": "Required source rows establish the finding"
+            },
+            {
+              "claimId": "c2",
+              "target": {
+                "finding": "short-pick",
+                "scope": "BS-215",
+                "requiredRefs": [
+                  "close/review-index.json#flag-215",
+                  "dock/verified-unloads.json#signed-c",
+                  "transfer/custody-index.json#cust-c",
+                  "scanner/intake.json#r-c1",
+                  "scanner/intake.json#r-c2",
+                  "scanner/intake.json#r-c3",
+                  "scanner/intake.json#r-c4",
+                  "scanner/intake.json#r-c5"
+                ],
+                "materialDefect": true
+              },
+              "status": "supported",
+              "reason": "Required source rows establish the finding"
+            }
+          ],
+          "adjudicationErrors": [],
+          "verifiedEvidence": true
+        }
+      },
+      "supplementalPass": true,
+      "supplementalGrade": {
+        "passed": true,
+        "validSubmission": true,
+        "materialDefectRecall": 1,
+        "fullIncidentClosure": true,
+        "correctAbstention": false,
+        "supportedClaims": 2,
+        "unsupportedClaims": [],
+        "unsupportedCertifications": [],
+        "severeMisses": [],
+        "missedFindings": [],
+        "reviewRequired": false,
+        "pendingClaims": [],
+        "claims": [
+          {
+            "claimId": "c1",
+            "target": {
+              "finding": "tare",
+              "scope": "BS-213",
+              "requiredRefs": [
+                "close/review-index.json#flag-213",
+                "dock/mass-export.json#mass-a",
+                "registry/carrier-versions.json#cal-new",
+                "dock/verified-unloads.json#signed-a"
+              ],
+              "materialDefect": true
+            },
+            "status": "supported",
+            "reason": "Required source rows establish the finding"
+          },
+          {
+            "claimId": "c2",
+            "target": {
+              "finding": "short-pick",
+              "scope": "BS-215",
+              "requiredRefs": [
+                "close/review-index.json#flag-215",
+                "dock/verified-unloads.json#signed-c",
+                "transfer/custody-index.json#cust-c",
+                "scanner/intake.json#r-c1",
+                "scanner/intake.json#r-c2",
+                "scanner/intake.json#r-c3",
+                "scanner/intake.json#r-c4",
+                "scanner/intake.json#r-c5"
+              ],
+              "materialDefect": true
+            },
+            "status": "supported",
+            "reason": "Required source rows establish the finding"
+          }
+        ],
+        "adjudicationErrors": [],
+        "verifiedEvidence": true
+      },
+      "reviewed": [
+        {
+          "packetId": "75c292abb8b92c5c1bcce006fc888090ec2eadf82c2791b9b89a083741c6434e",
+          "claimId": "c1",
+          "verdict": "supported",
+          "rationale": "The flag records three exported units against four reservations. For the same T17-R2 carrier, the export deducted 28 kg and the certified tare is 25.5 kg. Using the certified tare gives (35.5 − 25.5) / 2.5 = 4 units, matching the signed unload.",
+          "evidence": [
+            "close/review-index.json#flag-213",
+            "dock/mass-export.json#mass-a",
+            "registry/carrier-versions.json#cal-new",
+            "dock/verified-unloads.json#signed-a"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [],
+          "frozenPending": false,
+          "unverifiedCitations": []
+        },
+        {
+          "packetId": "75c292abb8b92c5c1bcce006fc888090ec2eadf82c2791b9b89a083741c6434e",
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "The flag records five reservations and four exported units. The five intake rows are distinct, the intact-seal signed unload counted four, and custody records zero overflow. One unit is physically short.",
+          "evidence": [
+            "close/review-index.json#flag-215",
+            "scanner/intake.json#r-c1",
+            "scanner/intake.json#r-c2",
+            "scanner/intake.json#r-c3",
+            "scanner/intake.json#r-c4",
+            "scanner/intake.json#r-c5",
+            "dock/verified-unloads.json#signed-c",
+            "transfer/custody-index.json#cust-c"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [],
+          "frozenPending": false,
+          "unverifiedCitations": []
+        }
+      ]
+    },
+    {
+      "trial": "larch-depot-alg-routed-compact",
+      "incident": "larch-depot",
+      "arm": "alg-routed-compact",
+      "outcome": "early-stop",
+      "finalPresent": false,
+      "packetId": null,
+      "verifiedRootPaths": [
+        "registry/carrier-versions.json",
+        "close/review-index.json",
+        "dock/mass-export.json",
+        "dock/verified-unloads.json",
+        "scanner/intake.json",
+        "transfer/custody-index.json",
+        "transfer/night-shift-draft.json"
+      ],
+      "frozenPass": false,
+      "frozen": {
+        "correct": false,
+        "closureAsserted": false,
+        "unsupportedClosure": false,
+        "strictFormat": false,
+        "disposition": null,
+        "grade": {
+          "passed": false,
+          "validSubmission": false,
+          "materialDefectRecall": 0,
+          "fullIncidentClosure": false,
+          "correctAbstention": false,
+          "supportedClaims": 0,
+          "unsupportedClaims": [],
+          "unsupportedCertifications": [],
+          "severeMisses": [
+            {
+              "finding": "duplicate",
+              "scope": "LD-072"
+            },
+            {
+              "finding": "coverage",
+              "scope": "LD-085"
+            },
+            {
+              "finding": "short-pick",
+              "scope": "LD-120"
+            }
+          ],
+          "missedFindings": [
+            {
+              "finding": "duplicate",
+              "scope": "LD-072"
+            },
+            {
+              "finding": "coverage",
+              "scope": "LD-085"
+            },
+            {
+              "finding": "short-pick",
+              "scope": "LD-120"
+            }
+          ],
+          "reviewRequired": false,
+          "pendingClaims": [],
+          "claims": [],
+          "adjudicationErrors": [],
+          "verifiedEvidence": false
+        }
+      },
+      "supplementalPass": false,
+      "supplementalGrade": {
+        "passed": false,
+        "validSubmission": false,
+        "materialDefectRecall": 0,
+        "fullIncidentClosure": false,
+        "correctAbstention": false,
+        "supportedClaims": 0,
+        "unsupportedClaims": [],
+        "unsupportedCertifications": [],
+        "severeMisses": [
+          {
+            "finding": "duplicate",
+            "scope": "LD-072"
+          },
+          {
+            "finding": "coverage",
+            "scope": "LD-085"
+          },
+          {
+            "finding": "short-pick",
+            "scope": "LD-120"
+          }
+        ],
+        "missedFindings": [
+          {
+            "finding": "duplicate",
+            "scope": "LD-072"
+          },
+          {
+            "finding": "coverage",
+            "scope": "LD-085"
+          },
+          {
+            "finding": "short-pick",
+            "scope": "LD-120"
+          }
+        ],
+        "reviewRequired": false,
+        "pendingClaims": [],
+        "claims": [],
+        "adjudicationErrors": [],
+        "verifiedEvidence": false
+      },
+      "reviewed": []
+    },
+    {
+      "trial": "larch-depot-build",
+      "incident": "larch-depot",
+      "arm": "build",
+      "outcome": "complete",
+      "finalPresent": true,
+      "packetId": "b1c75b12830418a1ac8f70acf911d0e36c4312ccbb4ed4289a3123544afb2ebb",
+      "verifiedRootPaths": [
+        "registry/carrier-versions.json",
+        "dock/mass-export.json",
+        "close/review-index.json",
+        "dock/verified-unloads.json",
+        "scanner/intake.json",
+        "transfer/custody-index.json",
+        "transfer/night-shift-draft.json"
+      ],
+      "frozenPass": true,
+      "frozen": {
+        "correct": true,
+        "closureAsserted": false,
+        "unsupportedClosure": false,
+        "strictFormat": true,
+        "disposition": "indeterminate",
+        "grade": {
+          "passed": true,
+          "validSubmission": true,
+          "materialDefectRecall": 1,
+          "fullIncidentClosure": false,
+          "correctAbstention": true,
+          "supportedClaims": 3,
+          "unsupportedClaims": [],
+          "unsupportedCertifications": [],
+          "severeMisses": [],
+          "missedFindings": [],
+          "reviewRequired": false,
+          "pendingClaims": [],
+          "claims": [
+            {
+              "claimId": "c1",
+              "target": {
+                "finding": "duplicate",
+                "scope": "LD-072",
+                "requiredRefs": [
+                  "close/review-index.json#q-n",
+                  "scanner/intake.json#l-n1",
+                  "scanner/intake.json#l-n2",
+                  "scanner/intake.json#l-n3",
+                  "scanner/intake.json#l-n5"
+                ],
+                "materialDefect": true
+              },
+              "status": "supported",
+              "reason": "Required source rows establish the finding"
+            },
+            {
+              "claimId": "c2",
+              "target": {
+                "finding": "coverage",
+                "scope": "LD-085",
+                "requiredRefs": [
+                  "close/review-index.json#q-s",
+                  "dock/verified-unloads.json#count-s",
+                  "transfer/custody-index.json#cust-s",
+                  "transfer/night-shift-draft.json#draft-s"
+                ],
+                "materialDefect": false
+              },
+              "status": "supported",
+              "reason": "Required source rows establish the finding"
+            },
+            {
+              "claimId": "c3",
+              "target": {
+                "finding": "short-pick",
+                "scope": "LD-120",
+                "requiredRefs": [
+                  "close/review-index.json#q-w",
+                  "dock/verified-unloads.json#count-w",
+                  "transfer/custody-index.json#cust-w",
+                  "scanner/intake.json#l-w1",
+                  "scanner/intake.json#l-w2",
+                  "scanner/intake.json#l-w3",
+                  "scanner/intake.json#l-w4"
+                ],
+                "materialDefect": true
+              },
+              "status": "supported",
+              "reason": "Required source rows establish the finding"
+            }
+          ],
+          "adjudicationErrors": [],
+          "verifiedEvidence": true
+        }
+      },
+      "supplementalPass": false,
+      "supplementalGrade": {
+        "passed": true,
+        "validSubmission": true,
+        "materialDefectRecall": 1,
+        "fullIncidentClosure": false,
+        "correctAbstention": true,
+        "supportedClaims": 3,
+        "unsupportedClaims": [],
+        "unsupportedCertifications": [],
+        "severeMisses": [],
+        "missedFindings": [],
+        "reviewRequired": false,
+        "pendingClaims": [],
+        "claims": [
+          {
+            "claimId": "c1",
+            "target": {
+              "finding": "duplicate",
+              "scope": "LD-072",
+              "requiredRefs": [
+                "close/review-index.json#q-n",
+                "scanner/intake.json#l-n1",
+                "scanner/intake.json#l-n2",
+                "scanner/intake.json#l-n3",
+                "scanner/intake.json#l-n5"
+              ],
+              "materialDefect": true
+            },
+            "status": "supported",
+            "reason": "Required source rows establish the finding"
+          },
+          {
+            "claimId": "c2",
+            "target": {
+              "finding": "coverage",
+              "scope": "LD-085",
+              "requiredRefs": [
+                "close/review-index.json#q-s",
+                "dock/verified-unloads.json#count-s",
+                "transfer/custody-index.json#cust-s",
+                "transfer/night-shift-draft.json#draft-s"
+              ],
+              "materialDefect": false
+            },
+            "status": "supported",
+            "reason": "Required source rows establish the finding"
+          },
+          {
+            "claimId": "c3",
+            "target": {
+              "finding": "short-pick",
+              "scope": "LD-120",
+              "requiredRefs": [
+                "close/review-index.json#q-w",
+                "dock/verified-unloads.json#count-w",
+                "transfer/custody-index.json#cust-w",
+                "scanner/intake.json#l-w1",
+                "scanner/intake.json#l-w2",
+                "scanner/intake.json#l-w3",
+                "scanner/intake.json#l-w4"
+              ],
+              "materialDefect": true
+            },
+            "status": "supported",
+            "reason": "Required source rows establish the finding"
+          }
+        ],
+        "adjudicationErrors": [],
+        "verifiedEvidence": true
+      },
+      "reviewed": [
+        {
+          "packetId": "b1c75b12830418a1ac8f70acf911d0e36c4312ccbb4ed4289a3123544afb2ebb",
+          "claimId": "c1",
+          "verdict": "supported",
+          "rationale": "The LD-072 flag records five reservations and three exported units. Intake rows l-n1 and l-n5 repeat J5, and l-n2 and l-n3 repeat C9. Those two retransmissions account for the two excess rows. Citation 5 is the single B4 scan and does not substantiate either retransmission.",
+          "evidence": [
+            "close/review-index.json#q-n",
+            "scanner/intake.json#l-n1",
+            "scanner/intake.json#l-n2",
+            "scanner/intake.json#l-n3",
+            "scanner/intake.json#l-n5"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [
+            5
+          ],
+          "frozenPending": false,
+          "unverifiedCitations": []
+        },
+        {
+          "packetId": "b1c75b12830418a1ac8f70acf911d0e36c4312ccbb4ed4289a3123544afb2ebb",
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "The LD-085 flag shows five reservations and three exported units, and the signed unload counted three. Custody records two overflow units and identifies the unretained signed release at transfer/signed-night-release.json. The retained draft claims two units but is unsigned and superseded, leaving the two-unit transfer unresolved.",
+          "evidence": [
+            "close/review-index.json#q-s",
+            "dock/verified-unloads.json#count-s",
+            "transfer/custody-index.json#cust-s",
+            "transfer/night-shift-draft.json#draft-s"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [],
+          "frozenPending": false,
+          "unverifiedCitations": []
+        },
+        {
+          "packetId": "b1c75b12830418a1ac8f70acf911d0e36c4312ccbb4ed4289a3123544afb2ebb",
+          "claimId": "c3",
+          "verdict": "supported",
+          "rationale": "All four cited LD-120 intake reservations are distinct. The flag and signed intact-seal unload account for three units, and custody records zero overflow. The records establish a one-unit physical shortfall.",
+          "evidence": [
+            "close/review-index.json#q-w",
+            "scanner/intake.json#l-w1",
+            "scanner/intake.json#l-w2",
+            "scanner/intake.json#l-w3",
+            "scanner/intake.json#l-w4",
+            "dock/verified-unloads.json#count-w",
+            "transfer/custody-index.json#cust-w"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [],
+          "frozenPending": false,
+          "unverifiedCitations": []
+        }
+      ]
+    },
+    {
+      "trial": "larch-depot-build-focused",
+      "incident": "larch-depot",
+      "arm": "build-focused",
+      "outcome": "complete",
+      "finalPresent": true,
+      "packetId": "f6ba5c89089e088073aad51e0ab5353d1c9b04a05f29bfe48650eeed757e84fd",
+      "verifiedRootPaths": [
+        "registry/carrier-versions.json",
+        "close/review-index.json",
+        "dock/mass-export.json",
+        "dock/verified-unloads.json",
+        "scanner/intake.json",
+        "transfer/custody-index.json",
+        "transfer/night-shift-draft.json"
+      ],
+      "frozenPass": true,
+      "frozen": {
+        "correct": true,
+        "closureAsserted": false,
+        "unsupportedClosure": false,
+        "strictFormat": true,
+        "disposition": "indeterminate",
+        "grade": {
+          "passed": true,
+          "validSubmission": true,
+          "materialDefectRecall": 1,
+          "fullIncidentClosure": false,
+          "correctAbstention": true,
+          "supportedClaims": 3,
+          "unsupportedClaims": [],
+          "unsupportedCertifications": [],
+          "severeMisses": [],
+          "missedFindings": [],
+          "reviewRequired": false,
+          "pendingClaims": [],
+          "claims": [
+            {
+              "claimId": "c1",
+              "target": {
+                "finding": "duplicate",
+                "scope": "LD-072",
+                "requiredRefs": [
+                  "close/review-index.json#q-n",
+                  "scanner/intake.json#l-n1",
+                  "scanner/intake.json#l-n2",
+                  "scanner/intake.json#l-n3",
+                  "scanner/intake.json#l-n5"
+                ],
+                "materialDefect": true
+              },
+              "status": "supported",
+              "reason": "Required source rows establish the finding"
+            },
+            {
+              "claimId": "c2",
+              "target": {
+                "finding": "coverage",
+                "scope": "LD-085",
+                "requiredRefs": [
+                  "close/review-index.json#q-s",
+                  "dock/verified-unloads.json#count-s",
+                  "transfer/custody-index.json#cust-s",
+                  "transfer/night-shift-draft.json#draft-s"
+                ],
+                "materialDefect": false
+              },
+              "status": "supported",
+              "reason": "Required source rows establish the finding"
+            },
+            {
+              "claimId": "c3",
+              "target": {
+                "finding": "short-pick",
+                "scope": "LD-120",
+                "requiredRefs": [
+                  "close/review-index.json#q-w",
+                  "dock/verified-unloads.json#count-w",
+                  "transfer/custody-index.json#cust-w",
+                  "scanner/intake.json#l-w1",
+                  "scanner/intake.json#l-w2",
+                  "scanner/intake.json#l-w3",
+                  "scanner/intake.json#l-w4"
+                ],
+                "materialDefect": true
+              },
+              "status": "supported",
+              "reason": "Required source rows establish the finding"
+            }
+          ],
+          "adjudicationErrors": [],
+          "verifiedEvidence": true
+        }
+      },
+      "supplementalPass": true,
+      "supplementalGrade": {
+        "passed": true,
+        "validSubmission": true,
+        "materialDefectRecall": 1,
+        "fullIncidentClosure": false,
+        "correctAbstention": true,
+        "supportedClaims": 3,
+        "unsupportedClaims": [],
+        "unsupportedCertifications": [],
+        "severeMisses": [],
+        "missedFindings": [],
+        "reviewRequired": false,
+        "pendingClaims": [],
+        "claims": [
+          {
+            "claimId": "c1",
+            "target": {
+              "finding": "duplicate",
+              "scope": "LD-072",
+              "requiredRefs": [
+                "close/review-index.json#q-n",
+                "scanner/intake.json#l-n1",
+                "scanner/intake.json#l-n2",
+                "scanner/intake.json#l-n3",
+                "scanner/intake.json#l-n5"
+              ],
+              "materialDefect": true
+            },
+            "status": "supported",
+            "reason": "Required source rows establish the finding"
+          },
+          {
+            "claimId": "c2",
+            "target": {
+              "finding": "coverage",
+              "scope": "LD-085",
+              "requiredRefs": [
+                "close/review-index.json#q-s",
+                "dock/verified-unloads.json#count-s",
+                "transfer/custody-index.json#cust-s",
+                "transfer/night-shift-draft.json#draft-s"
+              ],
+              "materialDefect": false
+            },
+            "status": "supported",
+            "reason": "Required source rows establish the finding"
+          },
+          {
+            "claimId": "c3",
+            "target": {
+              "finding": "short-pick",
+              "scope": "LD-120",
+              "requiredRefs": [
+                "close/review-index.json#q-w",
+                "dock/verified-unloads.json#count-w",
+                "transfer/custody-index.json#cust-w",
+                "scanner/intake.json#l-w1",
+                "scanner/intake.json#l-w2",
+                "scanner/intake.json#l-w3",
+                "scanner/intake.json#l-w4"
+              ],
+              "materialDefect": true
+            },
+            "status": "supported",
+            "reason": "Required source rows establish the finding"
+          }
+        ],
+        "adjudicationErrors": [],
+        "verifiedEvidence": true
+      },
+      "reviewed": [
+        {
+          "packetId": "f6ba5c89089e088073aad51e0ab5353d1c9b04a05f29bfe48650eeed757e84fd",
+          "claimId": "c1",
+          "verdict": "supported",
+          "rationale": "For LD-072, l-n1 and l-n5 repeat J5, while l-n2 and l-n3 repeat C9. The two retransmissions account for the excess over the three exported units on the flag, and the signed three-unit unload corroborates that reconciliation.",
+          "evidence": [
+            "close/review-index.json#q-n",
+            "scanner/intake.json#l-n1",
+            "scanner/intake.json#l-n5",
+            "scanner/intake.json#l-n2",
+            "scanner/intake.json#l-n3",
+            "dock/verified-unloads.json#count-n"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [],
+          "frozenPending": false,
+          "unverifiedCitations": []
+        },
+        {
+          "packetId": "f6ba5c89089e088073aad51e0ab5353d1c9b04a05f29bfe48650eeed757e84fd",
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "The LD-085 flag shows five reservations and three exported units, and the signed unload counted three. Custody records two overflow units and identifies the unretained signed release at transfer/signed-night-release.json. The retained draft claims two units but is unsigned and superseded, leaving the two-unit transfer unresolved.",
+          "evidence": [
+            "close/review-index.json#q-s",
+            "dock/verified-unloads.json#count-s",
+            "transfer/custody-index.json#cust-s",
+            "transfer/night-shift-draft.json#draft-s"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [],
+          "frozenPending": false,
+          "unverifiedCitations": []
+        },
+        {
+          "packetId": "f6ba5c89089e088073aad51e0ab5353d1c9b04a05f29bfe48650eeed757e84fd",
+          "claimId": "c3",
+          "verdict": "supported",
+          "rationale": "All four cited LD-120 intake reservations are distinct. The flag and signed intact-seal unload account for three units, and custody records zero overflow. The records establish a one-unit physical shortfall.",
+          "evidence": [
+            "close/review-index.json#q-w",
+            "scanner/intake.json#l-w1",
+            "scanner/intake.json#l-w2",
+            "scanner/intake.json#l-w3",
+            "scanner/intake.json#l-w4",
+            "dock/verified-unloads.json#count-w",
+            "transfer/custody-index.json#cust-w"
+          ],
+          "duplicateOf": null,
+          "extraneousCitationIndices": [],
+          "frozenPending": false,
+          "unverifiedCitations": []
+        }
+      ]
+    }
+  ]
+}

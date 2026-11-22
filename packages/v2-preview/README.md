@@ -144,6 +144,24 @@ with full schemas. Linux observed zero ledger-file opens during the count.
 Windows measured file contents and tool calls; file opens were unmeasured.
 These runs used a scripted provider. [Local platform receipts](evidence/turn-routing-platforms.json)
 
+In the frozen native Luna comparison, routed ALG reached a final answer on
+the Willow Yard regression with eight automatic compactions, down from
+sixteen on preview.11. It still missed the incident grade. On two new
+held-out incidents, stock Build and Build with a focused checker each passed
+both. Routed ALG with the same checker reached final synthesis on both and
+exhausted the 48-call ceiling before returning either answer. Each routed
+run on the held-out incidents made six status calls during final synthesis and
+had ten completed automatic compactions. Each Build control had three.
+The blind citation review upheld both focused Build passes and flagged one
+irrelevant citation in stock Build's Larch answer. In all three routed ALG
+runs the model used the correct calibration after compaction without a fresh
+registry read. Its final conversion request contained the calibration seal
+in graph status. None of the three demonstrated a lookup of the specific
+source-linked finding through the catalog. Turn routing remains opt-in.
+[Measured results](benchmark/turn-routing-native-evidence.md) ·
+[Blind citation review](evidence/turn-routing-luna-review.json) ·
+[Protocol and scoring](benchmark/turn-routing-protocol.md)
+
 ### Local OpenCode 2.3.2 qualification
 
 On Windows x64 and Linux x64 under WSL2, the same preview.9 bundle passed all
