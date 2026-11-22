@@ -198,6 +198,15 @@ restart from the same investigation ledger. A successful synthesis call
 returns control to the owner for the answer. Calling `create` or recording
 new work can reopen the graph on the same turn.
 
+On OpenCode 2.3.2, the Windows and WSL2 Linux installations each passed 345
+tests. A scripted provider answered from a selected finding with its exact
+row citation, named the recorded gap when asked about both findings, and
+reopened only the affected claim after observing a source correction. The
+readout matched across a native process restart. In the 24-request routed
+comparison, the compact schema occupied 80,733 bytes in preview.13 and
+62,632 bytes in preview.12. The earlier Luna incident scores apply to
+preview.12. [Preview.13 platform evidence](evidence/scoped-synthesis-preview13.json)
+
 ### Local OpenCode 2.3.2 qualification
 
 On Windows x64 and Linux x64 under WSL2, the same preview.9 bundle passed all
