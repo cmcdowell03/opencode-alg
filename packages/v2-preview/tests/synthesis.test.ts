@@ -43,7 +43,7 @@ test("answers only an explicit complete set with exact accessible citations", ()
     selection: "all-recorded", coverage: "selected-claims-only", nextMove: "select-claims",
   })
   expect(buildSynthesisReadout(evidence, { claims: ["claim", "unknown"] })).toMatchObject({
-    nextMove: "scoped-indeterminate", claims: [{ id: "claim" }, { id: "unknown", state: "unknown", signature: null }],
+    nextMove: "assess-unrecorded", claims: [{ id: "claim" }, { id: "unknown", state: "unknown", signature: null }],
   })
   expect(readout.claims[0]!.support![0]).not.toHaveProperty("callId")
   evidence.sources[0]!.references = [{ ...link, callId: "repeated-native-call" }]

@@ -181,6 +181,11 @@ its details fit. `scoped-indeterminate` identifies an incomplete set, and
 `recheck` identifies a changed source dependency. An empty list inventories
 recorded findings. When supported claims exceed the 16 KiB readout limit,
 `read-detail` points the owner to the affected `finding_id` selectors.
+An unknown ID returns `assess-unrecorded`. The owner can use the evidence
+already in context or retrieve an inspected row with `status.snapshot_refs`
+when the source cache is enabled. This matters for the previous Luna runs on
+Birch and Larch. Each acknowledged just one calibration finding, and neither
+recorded an incident finding during final synthesis.
 The host verifies citation links and recorded arithmetic. Interpretation
 remains attributed to the agent.
 

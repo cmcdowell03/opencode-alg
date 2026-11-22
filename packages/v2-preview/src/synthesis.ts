@@ -158,7 +158,7 @@ export function buildSynthesisReadout(evidence: EvidenceReadView, request: Reque
     // Change entries align with claims by index. No out-of-selection baseline keys are emitted.
     changes,
     truncated: true,
-    nextMove: "scoped-indeterminate" as "answer-selected" | "scoped-indeterminate" | "recheck" | "select-claims" | "read-detail",
+    nextMove: "scoped-indeterminate" as "answer-selected" | "scoped-indeterminate" | "recheck" | "select-claims" | "read-detail" | "assess-unrecorded",
   }
 
   // Reserve room for the longest nextMove value and every row's omission metadata
@@ -185,6 +185,7 @@ export function buildSynthesisReadout(evidence: EvidenceReadView, request: Reque
   readout.truncated = readout.claims.some(row => row.omitted !== undefined)
   if (projected.some(({ result }) => result?.stale)) readout.nextMove = "recheck"
   else if (!explicit) readout.nextMove = "select-claims"
+  else if (readout.claims.some(row => row.state === "unknown")) readout.nextMove = "assess-unrecorded"
   else if (readout.claims.every(row => row.state === "supported-scoped")) {
     readout.nextMove = readout.truncated ? "read-detail" : "answer-selected"
   }

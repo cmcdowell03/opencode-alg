@@ -132,7 +132,7 @@ function registeredInput(readOnly: boolean, graphLoop: boolean, routed: boolean)
         evidence_refs, finding, report_decision, source_path, source_tool, reference_offset, finding_id,
         ...(graphLoop && { detail, snapshot_refs, finding: z.toJSONSchema(findingSchema) }),
         ...(routed && { synthesis: { ...z.toJSONSchema(synthesisRequestSchema),
-          description: "Read findings, gaps and exact citations together. List the finding IDs needed for this answer, or [] to inventory recorded findings. Optional baseline compares earlier claim signatures." } }),
+          description: "Read findings, gaps and citations for selected IDs, or [] for an inventory. For assess-unrecorded, evaluate the missing IDs against already inspected evidence. Optional baseline compares prior signatures." } }),
         expected_decision_revision: { ...common.expected_decision_revision,
           description: "Required for set_next_measurement and record_finding. Optional for render_report." },
       } : { refutation, runId, citation, result }),

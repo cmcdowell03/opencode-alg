@@ -450,7 +450,7 @@ test("status pages every source reference while recovery projects only the index
 
 test.each(["routed", "routed-compact"])("synthesis reads selected evidence through the %s registered tool", async turnRouting => {
   const directory = await mkdtemp(join(tmpdir(), "alg-synthesis-"))
-  const host = await fixture(directory, { graphLoop: true, turnRouting })
+  const host = await fixture(directory, { graphLoop: true, turnRouting, readOnlyCacheSourceBytes: true })
   const rejectNetwork = () => {
     throw new Error("Unexpected network request from synthesis")
   }
@@ -494,7 +494,7 @@ test.each(["routed", "routed-compact"])("synthesis reads selected evidence throu
       ],
     })
     expect(await readout(["affected", "gap", "disputed", "unknown"])).toMatchObject({
-      nextMove: "scoped-indeterminate",
+      nextMove: "assess-unrecorded",
       claims: [
         { id: "affected", state: "supported-scoped" },
         { id: "gap", state: "missing", scope: "Carrier C", missingEvidence: "A signed calibration trace." },
@@ -503,6 +503,14 @@ test.each(["routed", "routed-compact"])("synthesis reads selected evidence throu
           support: [{ reference: "a.md" }], counterevidence: [{ reference: "b.md" }] },
         { id: "unknown", state: "unknown", signature: null },
       ],
+    })
+    // The evidence may precede a recorded claim. A missing ID cannot justify
+    // an incident-level abstention or another external search.
+    expect(await readout(["unrecorded-scale"])).toMatchObject({
+      nextMove: "assess-unrecorded", claims: [{ id: "unrecorded-scale", state: "unknown" }],
+    })
+    expect(await host.call("status", { snapshot_refs: ["b.md"] })).toMatchObject({
+      ok: true, evidence_snapshot: { evidence: [{ data: "The independent log certifies scale 20." }] },
     })
     const selector = { synthesis: { claims: ["affected"] } }
     const child = await host.call("status", selector, "ses_child")
