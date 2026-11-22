@@ -32,12 +32,15 @@ import { compactProcedureReads } from "./procedure-history.ts"
 import { selectReviewQuestion } from "./scoped-review.ts"
 import { registerReadOnlyReview, reviewTool } from "./read-only-review.ts"
 import { ActiveQuestionProjection, activeQuestion } from "./active-question.ts"
+import { buildTurnStatus, presentTurnTool, turnRoutingSchema } from "./turn-tool.ts"
+import { TurnParticipation } from "./turn-participation.ts"
 
 const agentId = z.string().regex(/^[\w-]{1,80}$/)
 const configSchema = z.object({
   enabled: z.boolean().default(false),
   investigationMode: z.enum(["job-backed", "read-only"]).default("job-backed"),
   graphLoop: z.boolean().default(false),
+  turnRouting: turnRoutingSchema,
   readOnlyCacheSourceBytes: z.boolean().default(false),
   readOnlyEvidenceTools: z.array(z.string().regex(/^[\w-]{1,128}$/)).max(16)
     .refine(tools => new Set(tools).size === tools.length && !tools.includes(TOOL) && !tools.includes(reviewTool)).default([]),
@@ -289,6 +292,8 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
   const config = parsed.data
   const readOnly = config.investigationMode === "read-only"
   const graphLoop = config.graphLoop
+  const turnRouting = config.turnRouting
+  if (turnRouting && (!graphLoop || !readOnly || !config.enabled)) throw new Error("TURN_ROUTING_REQUIRES_READ_ONLY_GRAPH")
   if (graphLoop && !readOnly) throw new Error("READ_ONLY_CONFIGURATION_UNQUALIFIED")
   if (readOnly && (config.ownerAgent === config.checkerAgent || config.preQueryPolicy ||
       config.continueOnEvidence || config.researchRoles || config.researchEvidence)) {
@@ -319,6 +324,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
   const bridge = trustedBridge(config, ctx.location.project.id, gate)
   const delivery = new DeliveryContext()
   const graph = graphLoop ? new ActiveQuestionProjection() : undefined
+  const participation = turnRouting ? new TurnParticipation() : undefined
   let observedEvidenceTool: string | undefined
   const brief = bridge ? new OwnerBrief(host, async owner => {
     if (graphLoop) return null
@@ -843,16 +849,28 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       }
       case "status": {
         const view = bridge.primary(scope(owner))
-        if (graphLoop && !input.detail && !evidenceStatusFields.some(field => input[field] !== undefined)) {
+        if (graphLoop && !input.detail && !evidenceStatusFields.some(field =>
+          input[field] !== undefined && !(turnRouting && field === "finding_id"))) {
           const base = { investigationMode: "read-only", work: null, revision: view?.revision,
             decision_revision: view?.decision_revision ?? 0 }
           if (!view) {
-            if (input.snapshot_refs) throw new Error("INVESTIGATION_REQUIRED")
-            const current = await selectedProcedure(null, false).catch(() => undefined)
+            if (input.snapshot_refs || input.finding_id) throw new Error("INVESTIGATION_REQUIRED")
             await assertReadOnlyTool(owner, TOOL)
+            if (turnRouting) return { ...base, evidence_revision: 0, finding_index: [], initialized: false }
+            const current = await selectedProcedure(null, false).catch(() => undefined)
             return { ...base, evidence_revision: 0, active_question: graphQuestion(null, emptyEvidence, current) }
           }
           const { store: reads, evidence, authorize } = await observeReads(owner)
+          if (turnRouting) {
+            const current = await selectedProcedure(view, false).catch(() => undefined)
+            const selection = input.snapshot_refs ?
+              { snapshot: await reads.snapshotReferences(input.snapshot_refs), cache_enabled: config.readOnlyCacheSourceBytes } :
+              input.finding_id ? { finding_id: input.finding_id } : undefined
+            await authorize()
+            if (view.revision !== bridge.primary(scope(owner))?.revision ||
+                evidence.revision !== (await reads.view()).revision) throw new Error("EVIDENCE_REVISION_CHANGED")
+            return buildTurnStatus({ revision: view.revision, evidence, question: graphQuestion(view, evidence, current), selection })
+          }
           if (input.snapshot_refs) {
             const snapshot = await reads.snapshotReferences(input.snapshot_refs)
             await authorize()
@@ -995,6 +1013,16 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
     try {
       const view = bridge?.primary(scope(owner))
       const store = journal(owner.id)
+      let ownerHistory: ReturnType<typeof ctx.session.context> | undefined
+      const historyForTurn = () => ownerHistory ??= ctx.session.context({ sessionID: owner.id })
+      const route = await participation?.route(request, historyForTurn, { ownerAgent: config.ownerAgent, runtimeSha256, compacting })
+      if (route && compacting) {
+        // Preserve completed source receipts before the native window is discarded.
+        // A summary request cannot perform a measurement.
+        presentTurnTool(request, registeredInput(true, true), "idle", [])
+        if (view) await observeReads(owner, historyForTurn)
+        return
+      }
       if (!compacting && config.checkerAgent !== config.ownerAgent) {
         const settled = view?.work?.status === "result_recorded" || view?.work?.status === "reusable"
         const binding = settled ? await store.read("binding") : undefined
@@ -1003,8 +1031,12 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
           : ownerActions(view ?? null, !!binding, !!binding && !!await store.read("grant"))
         if (bridge && explicitlyRequests(request, "diagnostics")) available.push("diagnostics")
         if (config.approvedProcedure && (readOnly || explicitlyRequests(request, "procedure"))) available.push("procedure")
-        presentTool(request, available, false, settled && !!view?.work?.manifest_digest, readOnly, graphLoop)
+        if (route && view) available.push("create") // Idempotently open an existing investigation for this turn.
+        const presented = route && presentTurnTool(request, registeredInput(true, true),
+          route.mode === "passive" ? "idle" : route.mode, available, turnRouting === "routed-compact")
+        if (!presented) presentTool(request, available, false, settled && !!view?.work?.manifest_digest, readOnly, graphLoop)
       }
+      if (route?.mode === "passive") return
       if (!view && !config.approvedProcedure && !graph) return
       if (view && brief && !hasBrief && !graphLoop) return
       if (!hasBrief) {
@@ -1013,13 +1045,27 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       }
       let graphProcedure: Awaited<ReturnType<typeof selectedProcedure>>
       if (graph && bridge) {
-        const reads = view && await observeReads(owner)
+        const reads = view && await observeReads(owner, historyForTurn)
         graphProcedure = await selectedProcedure(view, false).catch(() => undefined)
         if (reads) await reads.authorize()
         else await assertReadOnlyTool(owner, TOOL)
         if (view?.revision !== bridge.primary(scope(owner))?.revision ||
             (reads && reads.evidence.revision !== (await reads.store.view()).revision)) throw new Error("EVIDENCE_REVISION_CHANGED")
-        graph.project(request, graphQuestion(view ?? null, reads ? reads.evidence : emptyEvidence, graphProcedure), runtimeSha256, compacting)
+        const evidence = reads ? reads.evidence : emptyEvidence
+        const question = graphQuestion(view ?? null, evidence, graphProcedure)
+        if (!route) graph.project(request, question, runtimeSha256, compacting)
+        else if (route.mode === "active" && participation) {
+          // Source reads can receive a new call ID while returning the same data.
+          // Only changes that can affect the decision rearm an automatic pass.
+          const revision = createHash("sha256").update(canonicalJson({
+            findings: findingsDigest(evidence), question: evidence.question,
+            sources: evidence.sources.map(({ tool, path, sha256, status }) => [tool, path, sha256, status]),
+            approval: question.approval, procedure: question.procedure_sha256 ?? null,
+          })).digest("hex")
+          const guidance = participation.decide(request.sessionID, route, { revision,
+            action: question.reason, pending: question.state === "investigate" || question.state === "revalidate" })
+          if (guidance === "project" || guidance === "restore") graph.project(request, question, runtimeSha256, false)
+        }
       } else if (view && readOnly) {
         const { evidence } = await observeReads(owner)
         const question = selectReviewQuestion(evidence, acknowledgedReport(view, evidence)?.disposition === "resolved")
@@ -1226,7 +1272,8 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       if (editor.get(TOOL)) throw new Error("V2_PREVIEW_TOOL_COLLISION")
       editor.add({
         name: TOOL,
-        description: readOnly ? "Record findings and next measurements from inspected sources and render the acknowledged report."
+        description: turnRouting ? "Use status to recall earlier project findings when needed. Use create to begin an investigation. Answer self-contained requests directly."
+          : readOnly ? "Record findings and next measurements from inspected sources and render the acknowledged report."
           : "Manage the investigation. Use the projected procedure and the native skill tool for required activation.",
         input: registeredInput(readOnly, graphLoop),
         options: { permission: TOOL, codemode: false },

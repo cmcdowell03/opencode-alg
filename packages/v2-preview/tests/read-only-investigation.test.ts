@@ -110,6 +110,32 @@ function graphFrame(request: Awaited<ReturnType<Awaited<ReturnType<typeof fixtur
   return text && JSON.parse(text.slice(text.indexOf("\n") + 1))
 }
 
+test("a fresh user turn stays independent of a durable investigation and can discover the saved calibration", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "alg-independent-turn-"))
+  const host = await fixture(directory, { graphLoop: true, turnRouting: "routed-compact" })
+  try {
+    expect(await host.call("create")).toMatchObject({ ok: true })
+    host.history([sourceResult("cert", '[{"id":"c7","scale":12}]', "calibrations.json")])
+    expect(await host.call("record_finding", { expected_decision_revision: 0, finding: {
+      id: "carrier-c7", scope: "carrier C7", interpretation: "Certified scale is 12.",
+      support: ["calibrations.json#c7"], counterevidence: [],
+    } })).toMatchObject({ ok: true, finding_status: "supported" })
+    const status = await host.call("status")
+    expect(status.finding_index).toEqual([{ id: "carrier-c7", scope: "carrier C7", status: "supported" }])
+    // The completed status belongs to the preceding turn.
+    const fresh = await host.request("context", toolStatus(status))
+    expect(graphFrame(fresh)).toBeUndefined()
+    expect(fresh.system.map(part => part.text).join(" ")).not.toContain("active question")
+    expect(JSON.stringify(fresh.tools[TOOL].input)).not.toContain("numericClaim")
+    const recall = await host.call("status", { finding_id: status.finding_index[0].id })
+    expect(recall.evidence.findings[0]).toMatchObject({ interpretation: "Certified scale is 12.",
+      support: [{ reference: "calibrations.json#c7" }] })
+  } finally {
+    await host.detach()
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
 test("graph loop checks visible status, deltas, compaction and no-progress writes", async () => {
   const directory = await mkdtemp(join(tmpdir(), "alg-graph-question-"))
   const host = await fixture(directory, { graphLoop: true })

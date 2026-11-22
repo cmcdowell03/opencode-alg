@@ -124,6 +124,16 @@ and avoided a redundant read. Finally, check the answer against the incident
 evidence. A small prompt, a successful tool call, or an accurate ledger
 export alone cannot establish that the orchestrator solved the incident.
 
+### Turn-local investigations
+
+The preview.12 read-only graph also accepts `turnRouting: "routed"` and
+`turnRouting: "routed-compact"`. Both let the owner answer a fresh request
+directly. The compact option additionally reduces the investigation tool
+definition on the wire. An owner that needs earlier evidence can request
+`status`, select an ID from `finding_index`, and read the finding and its
+current citations with `finding_id`. Recording a new measurement still
+requires a scoped investigation and the normal evidence checks.
+
 ### Local OpenCode 2.3.2 qualification
 
 On Windows x64 and Linux x64 under WSL2, the same preview.9 bundle passed all
