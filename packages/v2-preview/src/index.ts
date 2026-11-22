@@ -1011,11 +1011,17 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       if (hasBrief) request.messages = projectPreQueryReceipts(request.messages, runtimeSha256)
     }
     try {
-      const view = bridge?.primary(scope(owner))
-      const store = journal(owner.id)
       let ownerHistory: ReturnType<typeof ctx.session.context> | undefined
       const historyForTurn = () => ownerHistory ??= ctx.session.context({ sessionID: owner.id })
       const route = await participation?.route(request, historyForTurn, { ownerAgent: config.ownerAgent, runtimeSha256, compacting })
+      if (route?.mode === "passive" && !compacting) {
+        const available: Action[] = ["status", "create"]
+        if (config.approvedProcedure) available.push("procedure")
+        if (explicitlyRequests(request, "diagnostics")) available.push("diagnostics")
+        presentTurnTool(request, registeredInput(true, true), "idle", available, turnRouting === "routed-compact")
+        return
+      }
+      const view = bridge?.primary(scope(owner))
       if (route && compacting) {
         // Preserve completed source receipts before the native window is discarded.
         // A summary request cannot perform a measurement.
@@ -1023,6 +1029,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
         if (view) await observeReads(owner, historyForTurn)
         return
       }
+      const store = journal(owner.id)
       if (!compacting && config.checkerAgent !== config.ownerAgent) {
         const settled = view?.work?.status === "result_recorded" || view?.work?.status === "reusable"
         const binding = settled ? await store.read("binding") : undefined
@@ -1032,11 +1039,10 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
         if (bridge && explicitlyRequests(request, "diagnostics")) available.push("diagnostics")
         if (config.approvedProcedure && (readOnly || explicitlyRequests(request, "procedure"))) available.push("procedure")
         if (route && view) available.push("create") // Idempotently open an existing investigation for this turn.
-        const presented = route && presentTurnTool(request, registeredInput(true, true),
-          route.mode === "passive" ? "idle" : route.mode, available, turnRouting === "routed-compact")
+        const presented = route && route.mode !== "passive" && presentTurnTool(request, registeredInput(true, true),
+          route.mode, available, turnRouting === "routed-compact")
         if (!presented) presentTool(request, available, false, settled && !!view?.work?.manifest_digest, readOnly, graphLoop)
       }
-      if (route?.mode === "passive") return
       if (!view && !config.approvedProcedure && !graph) return
       if (view && brief && !hasBrief && !graphLoop) return
       if (!hasBrief) {
