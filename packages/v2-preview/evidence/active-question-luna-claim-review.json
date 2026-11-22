@@ -1,0 +1,129 @@
+{
+  "schema": "active-question-luna-claim-review-v1",
+  "scope": "Supplemental anonymous review of every pending claim after the frozen comparison. The reviewer saw only each anonymous submission, the incident prompt and its source data. Original grades are preserved.",
+  "frozenSha256": "3d6517403f4160057f5c1c0659dd75309f7ef00c18aaecdfce38704c82bd715b",
+  "arms": [
+    {
+      "trial": "willow-yard-build",
+      "packetId": "0e1ad997c224716904f368f808777109fc5b3976b6f619b83991f6d33bdd3fee",
+      "strictFormat": true,
+      "finalPass": false,
+      "independentReviews": [
+        {
+          "packetId": "0e1ad997c224716904f368f808777109fc5b3976b6f619b83991f6d33bdd3fee",
+          "claimId": "c1",
+          "verdict": "contradicted",
+          "rationale": "The board flags five reservations against three exported units. The signed count records three units with an intact seal and no release exception. The custody index records zero overflow and a null tally path. The board discrepancy calls for reconciliation, while the count and custody rows contradict a material transfer coverage gap for WY-418.",
+          "evidence": [
+            "close/board.json#board-WY-418",
+            "dock/signed-counts.json#count-WY-418",
+            "transfer/custody.json#custody-WY-418"
+          ]
+        }
+      ],
+      "materialRecall": 0.3333333333333333,
+      "severeMisses": [
+        {
+          "finding": "duplicate",
+          "scope": "WY-418"
+        },
+        {
+          "finding": "short-pick",
+          "scope": "WY-418"
+        }
+      ],
+      "unsupportedClaims": [
+        "c1"
+      ]
+    },
+    {
+      "trial": "willow-yard-build-focused",
+      "packetId": "f1442a5372baf8d676a5571a074a1cd9986c5fa6ec9af2ca3ed9216ff0646b39",
+      "strictFormat": true,
+      "finalPass": false,
+      "independentReviews": [
+        {
+          "packetId": "f1442a5372baf8d676a5571a074a1cd9986c5fa6ec9af2ca3ed9216ff0646b39",
+          "claimId": "c3",
+          "verdict": "contradicted",
+          "rationale": "The signed count records three units with an intact seal and no release exception. The custody index records zero overflow and a null tally path. Those entries contradict a material custody coverage gap for WY-418 and provide no basis for requiring the packing tally named in the submission.",
+          "evidence": [
+            "dock/signed-counts.json#count-WY-418",
+            "transfer/custody.json#custody-WY-418"
+          ]
+        }
+      ],
+      "materialRecall": 0.6666666666666666,
+      "severeMisses": [
+        {
+          "finding": "short-pick",
+          "scope": "WY-418"
+        }
+      ],
+      "unsupportedClaims": [
+        "c2",
+        "c3"
+      ]
+    },
+    {
+      "trial": "willow-yard-alg-graph-focused",
+      "strictFormat": false,
+      "finalPass": false,
+      "independentReviews": [],
+      "materialRecall": 0,
+      "severeMisses": [
+        {
+          "finding": "duplicate",
+          "scope": "WY-418"
+        },
+        {
+          "finding": "short-pick",
+          "scope": "WY-418"
+        },
+        {
+          "finding": "tare",
+          "scope": "WY-662"
+        }
+      ],
+      "unsupportedClaims": []
+    },
+    {
+      "trial": "sedge-quay-build-focused",
+      "packetId": "4d7859e92734ed7e4669365f5b2735f7f66a2d34cd5cef9e89d425c8277b5adf",
+      "strictFormat": true,
+      "finalPass": true,
+      "independentReviews": [],
+      "materialRecall": 1,
+      "severeMisses": [],
+      "unsupportedClaims": []
+    },
+    {
+      "trial": "sedge-quay-alg-graph-focused",
+      "strictFormat": false,
+      "finalPass": false,
+      "independentReviews": [],
+      "materialRecall": 0,
+      "severeMisses": [
+        {
+          "finding": "coverage",
+          "scope": "SQ-026"
+        },
+        {
+          "finding": "duplicate",
+          "scope": "SQ-344"
+        }
+      ],
+      "unsupportedClaims": []
+    },
+    {
+      "trial": "sedge-quay-build",
+      "packetId": "4d7859e92734ed7e4669365f5b2735f7f66a2d34cd5cef9e89d425c8277b5adf",
+      "strictFormat": true,
+      "finalPass": true,
+      "independentReviews": [],
+      "materialRecall": 1,
+      "severeMisses": [],
+      "unsupportedClaims": []
+    }
+  ]
+}

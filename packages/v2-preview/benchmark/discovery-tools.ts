@@ -4,6 +4,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js"
 import { asObject } from "../acceptance/host.ts"
 import { sha256 } from "../acceptance/runtime.ts"
+import type { DiscoveryCase } from "./discovery-cases.ts"
 import { discoveryNativeLimits as limits } from "./native-provider.ts"
 
 export type Scope = "root" | "checker"
@@ -21,8 +22,9 @@ const definitions = [
     inputSchema: { type: "object" as const, properties: { path: { type: "string" } }, required: ["path"], additionalProperties: false } },
 ]
 export const sourceCallCap = 96
+export const focusedSourceCallsPerRole = 48
 
-export function startDiscoverySources(sources: readonly Source[]) {
+export function startDiscoverySources(sources: readonly Source[], perRoleCap?: number) {
   if (!sources.length || sources.length > 32) throw new Error("Expected a bounded discovery source catalog")
   const contents = new Map(sources.map(({ path, content }) => {
     if (!/^[a-zA-Z0-9_.-]+(?:\/[a-zA-Z0-9_.-]+)*$/.test(path) ||
@@ -35,6 +37,7 @@ export function startDiscoverySources(sources: readonly Source[]) {
   const endpoints = { root: "/" + randomUUID(), checker: "/" + randomUUID() }
   const receipts: { id: string; scope: Scope; path: string | null; outcome: "listed" | "read" | "denied"; sha256: string | null }[] = []
   let calls = 0
+  const callsByScope = { root: 0, checker: 0 }
   const server = Bun.serve({
     hostname: "127.0.0.1", port: 0, development: false, maxRequestBodySize: 8192,
     async fetch(request) {
@@ -47,7 +50,10 @@ export function startDiscoverySources(sources: readonly Source[]) {
       mcp.setRequestHandler(CallToolRequestSchema, async ({ params }) => {
         const args = params.arguments ?? {}
         const id = randomUUID()
-        if (++calls > sourceCallCap) return { isError: true, content: [{ type: "text", text: "Source call cap reached" }] }
+        calls++
+        callsByScope[scope]++
+        if (calls > sourceCallCap || (perRoleCap !== undefined && callsByScope[scope] > perRoleCap))
+          return { isError: true, content: [{ type: "text", text: "Source call cap reached" }] }
         if (params.name === list && Object.keys(args).length === 0) {
           receipts.push({ id, scope, path: null, outcome: "listed", sha256: null })
           return { content: [{ type: "text", text: JSON.stringify({ paths }) }] }
@@ -69,7 +75,13 @@ export function startDiscoverySources(sources: readonly Source[]) {
   })
   return {
     endpoints: { root: server.url.origin + endpoints.root, checker: server.url.origin + endpoints.checker },
-    receipts, calls: () => calls, catalog: paths.map(path => ({ path, sha256: sha256(contents.get(path)!) })),
+    receipts, calls: () => calls, callsByScope: () => ({ ...callsByScope }),
+    catalog: paths.map(path => ({ path, sha256: sha256(contents.get(path)!) })),
+    replace(change: { path: string; before: string; after: string }) {
+      if (contents.get(change.path) !== change.before || change.before === change.after ||
+          Buffer.byteLength(change.after) > 16 * 1024) throw new Error("SOURCE_REVISION_MISMATCH")
+      contents.set(change.path, change.after)
+    },
     stop: () => server.stop(true),
   }
 }
@@ -77,10 +89,42 @@ export function startDiscoverySources(sources: readonly Source[]) {
 export const scriptedModel = { providerID: "paired-benchmark", id: "fixture" }
 
 /** An apparatus exercise. The canned answer is deliberately independent of the case oracle. */
-export function startDiscoveryScript(options: { firstPath: string; allowedTools: Record<Scope, readonly string[]> }) {
+export function startDiscoveryScript(options: {
+  firstPath: string; allowedTools: Record<Scope, readonly string[]>; incident?: DiscoveryCase
+}) {
   const requests: { id: number; role: Scope; tools: string[]; requestBytes: number; status: number }[] = []
   const counts = { root: 0, checker: 0 }
   let failure: string | null = null
+  const focused = options.incident
+  const scriptedClaims = focused?.oracle.targets.map(target => ({
+    finding: target.finding, scope: target.scope, evidence: target.requiredRefs.slice(),
+  })) ?? []
+  const scriptedMissingEvidence = focused?.oracle.missingEvidence ?? ["Additional corroborating evidence."]
+  function focusedSteps(role: Scope, installed: boolean, incident: DiscoveryCase) {
+    const { list, read } = scopedTools(role)
+    const paths = [...new Set([incident.focus!.path, ...scriptedClaims.flatMap(row => row.evidence.map(ref => ref.split("#")[0]!))])]
+    const unresolved = scriptedClaims.find(row => row.finding === "coverage")
+    const decisionRefs = unresolved?.evidence ?? scriptedClaims[0]!.evidence
+    const nextAction = unresolved ? "Does the signed tally at " + scriptedMissingEvidence[0] + " establish dispatch for " +
+      unresolved.scope + "?" : "Send the reconciled consignment findings for independent review."
+    return [
+      { name: list, args: {} },
+      ...(installed ? [{ name: "alg_investigation", args: { action: "create" } }] : []),
+      ...paths.map(path => ({ name: read, args: { path } })),
+      ...(installed ? [
+        ...scriptedClaims.map((claim, index) => ({ name: "alg_investigation", args: { action: "record_finding",
+          expected_decision_revision: 0, finding: { id: "finding-" + (index + 1), scope: claim.scope,
+            interpretation: claim.finding, support: claim.evidence, counterevidence: [],
+            ...(claim === unresolved && { missingEvidence: scriptedMissingEvidence[0] }) } } })),
+        { name: "alg_investigation", args: { action: "set_next_measurement", expected_decision_revision: 0,
+          next_action: nextAction, evidence_refs: decisionRefs,
+          report_decision: { disposition: scriptedMissingEvidence.length ? "indeterminate" : "resolved",
+            missingEvidence: scriptedMissingEvidence } } },
+        { name: "alg_investigation", args: { action: "status" } },
+        { name: "alg_investigation", args: { action: "render_report", expected_decision_revision: 1 } },
+      ] : []),
+    ]
+  }
   const server = Bun.serve({
     hostname: "127.0.0.1", port: 0, development: false, maxRequestBodySize: limits.requestBytes,
     async fetch(request) {
@@ -110,7 +154,8 @@ export function startDiscoveryScript(options: { firstPath: string; allowedTools:
       }
       requests.push({ id, role, tools, requestBytes: bytes.byteLength, status: 200 })
       const turn = counts[role]++
-      const tool = turn === 0 ? { name: own.list, args: {} } :
+      const tool = focused ? focusedSteps(role, tools.includes("alg_investigation"), focused)[turn] :
+        turn === 0 ? { name: own.list, args: {} } :
         turn === 1 ? { name: own.read, args: { path: options.firstPath } } :
         role === "root" && tools.includes("alg_investigation") ?
           turn === 2 ? { name: "alg_investigation", args: { action: "create" } } :
@@ -121,7 +166,8 @@ export function startDiscoveryScript(options: { firstPath: string; allowedTools:
       const base = { id: "discovery-" + id, created: 1, model: scriptedModel.id, object: "chat.completion.chunk" }
       const delta = tool ? { tool_calls: [{ index: 0, id: base.id, type: "function",
         function: { name: tool.name, arguments: JSON.stringify(tool.args) } }] } :
-        { content: JSON.stringify({ disposition: "indeterminate", claims: [], missingEvidence: ["Additional corroborating evidence."] }) }
+        { content: JSON.stringify({ disposition: scriptedMissingEvidence.length ? "indeterminate" : "resolved",
+          claims: scriptedClaims, missingEvidence: scriptedMissingEvidence }) }
       const chunk = (choices: unknown[], usage?: unknown) => "data: " + JSON.stringify({ ...base, choices, usage }) + "\n\n"
       return new Response(chunk([{ index: 0, delta: { role: "assistant", ...delta }, finish_reason: null }]) +
         chunk([{ index: 0, delta: {}, finish_reason: tool ? "tool_calls" : "stop" }]) +

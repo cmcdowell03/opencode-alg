@@ -1,0 +1,777 @@
+{
+  "schema": "active-question-luna-natural-trio-v1",
+  "scope": "One frozen Windows Luna run. Two incidents and three matched assignments per incident. The frozen primary endpoint grades the actual final categorical answer and cited evidence. All attempted arms count, including early stops. A missing final is an accuracy miss with no observed closure. Pending claims are unadjudicated. Apparatus qualification checks runtime identity and session/tool scope; arm completion is reported separately.",
+  "model": "openai/gpt-6-luna",
+  "runtime": {
+    "version": "2.3.2",
+    "binarySha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+    "packageSha256": "5ff776e1a98240829426518e100f25bcf9108ac831ff5246d3e600d001809d95",
+    "bundleSha256": "788367c2bbd39cfc5413d928a40347277ef885bdb55654252720b1fd65392609",
+    "manifestFiles": 2
+  },
+  "context": {
+    "configuredModelContextTokens": 8192,
+    "configuredOutputTokens": 4096,
+    "compaction": {
+      "auto": true,
+      "background": false,
+      "buffer": "20%",
+      "keep": {
+        "tokens": 0
+      }
+    },
+    "manualCallsPlanned": 0,
+    "syntheticUsagePressure": false
+  },
+  "limitsPerArm": {
+    "calls": 48,
+    "requestBytes": 262144,
+    "responseBytes": 524288,
+    "armRequestBytes": 12582912,
+    "armResponseBytes": 25165824,
+    "outputTokens": 4096,
+    "outputDeltaBytes": 16384,
+    "armOutputTokens": 196608,
+    "requestMs": 90000,
+    "armMs": 1200000,
+    "sourceCalls": 96,
+    "sourceCallsPerRole": 48
+  },
+  "intentToTreat": {
+    "assigned": 6,
+    "attempted": 6,
+    "completed": 4,
+    "earlyStops": 2,
+    "apparatusErrors": 0,
+    "finalObserved": 4,
+    "closureUnscorable": 2,
+    "accuracyPasses": 2,
+    "resolvedAssertions": 0,
+    "unsupportedClosures": 0,
+    "autoApplied": 6,
+    "allUsageCovered": 6,
+    "byArm": {
+      "build": {
+        "attempted": 2,
+        "completed": 2,
+        "earlyStops": 0,
+        "apparatusErrors": 0,
+        "finalObserved": 2,
+        "closureUnscorable": 0,
+        "accuracyPasses": 1,
+        "resolvedAssertions": 0,
+        "unsupportedClosures": 0,
+        "autoApplied": 2,
+        "allUsageCovered": 2
+      },
+      "build-focused": {
+        "attempted": 2,
+        "completed": 2,
+        "earlyStops": 0,
+        "apparatusErrors": 0,
+        "finalObserved": 2,
+        "closureUnscorable": 0,
+        "accuracyPasses": 1,
+        "resolvedAssertions": 0,
+        "unsupportedClosures": 0,
+        "autoApplied": 2,
+        "allUsageCovered": 2
+      },
+      "alg-graph-focused": {
+        "attempted": 2,
+        "completed": 0,
+        "earlyStops": 2,
+        "apparatusErrors": 0,
+        "finalObserved": 0,
+        "closureUnscorable": 2,
+        "accuracyPasses": 0,
+        "resolvedAssertions": 0,
+        "unsupportedClosures": 0,
+        "autoApplied": 2,
+        "allUsageCovered": 2
+      }
+    }
+  },
+  "runtimeUnchanged": true,
+  "apparatusQualified": true,
+  "elapsedMs": 669585,
+  "stagingTotals": {
+    "planned": 36,
+    "answered": 31,
+    "correct": 21
+  },
+  "boundaryTotals": {
+    "automaticCompleted": 38,
+    "automaticStillRunningInTerminalTranscripts": 2,
+    "automaticCompletedWithCorrelatedReentry": 38,
+    "manualRequests": 0,
+    "observedManual": 0
+  },
+  "supplementalAttribution": {
+    "file": "active-question-luna-attribution.json",
+    "sha256": "349ab7665d4252e2703e83b1fcbd1385a1ec3b36a62f0392ab95db0d70c7c855",
+    "summary": "Timing disambiguated the 10 boundaries with repeated summary hashes and supported all 38 recorded reentries. A correct bridge answer and seal readback do not establish the provenance of both numerical operands."
+  },
+  "usageTotals": {
+    "calls": 200,
+    "admissions": 200,
+    "terminalReceipts": 200,
+    "missingInputRows": 0,
+    "observedInputRows": 200,
+    "missingCachedInputRows": 0,
+    "missingReasoningOutputRows": 0,
+    "non200ProviderRows": 0,
+    "observedInputTokens": 809593,
+    "observedOutputTokens": 22432,
+    "observedCachedInputTokens": 462464,
+    "observedReasoningOutputTokens": 3369,
+    "peakObservedInputTokens": 7425,
+    "peakRequestBodyBytes": 36469
+  },
+  "units": {
+    "peakInputTokens": "maximum provider-reported input tokens, including cached input, among observed requests",
+    "peakRequestBodyBytes": "maximum UTF-8 bytes of the observed HTTP request body, including schemas",
+    "sameRoleRereads": "repeat source-server reads of the exact same path and digest within a role",
+    "previouslyPresentedPayloadsAcrossRequests": "sum of distinct verified path/digest payloads per request that were delivered on an earlier request to the same role",
+    "bridge": "actual method code, calibration seal and converted units scored separately, with wire provenance measured independently"
+  },
+  "cases": [
+    {
+      "id": "willow-yard",
+      "fixtureSha256": "b0f789de31d5a5639fafef62543b0569b656b649eec3f3beb0302be45b72300a",
+      "order": [
+        "build",
+        "build-focused",
+        "alg-graph-focused"
+      ]
+    },
+    {
+      "id": "sedge-quay",
+      "fixtureSha256": "55a00ac888e1d59ca11bd2fb302c9b2218985a42a6b34ea52ceea4b7a7e34ea2",
+      "order": [
+        "build-focused",
+        "alg-graph-focused",
+        "build"
+      ]
+    }
+  ],
+  "arms": [
+    {
+      "incident": "willow-yard",
+      "arm": "build",
+      "outcome": "complete",
+      "problem": null,
+      "stopPhase": "complete",
+      "effectiveContext": {
+        "context": 8192,
+        "input": 272000,
+        "output": 4096
+      },
+      "identityAndScope": true,
+      "elapsedMs": 66955,
+      "final": {
+        "observed": true,
+        "disposition": "indeterminate",
+        "accuracy": false,
+        "materialDefectRecall": 0.3333333333333333,
+        "strictFormat": true,
+        "strictClosure": false,
+        "strictCorrectAbstention": false,
+        "unsupportedClosure": false,
+        "pendingClaims": [
+          "c1"
+        ],
+        "missedFindings": [
+          {
+            "finding": "duplicate",
+            "scope": "WY-418"
+          },
+          {
+            "finding": "short-pick",
+            "scope": "WY-418"
+          }
+        ],
+        "verifiedEvidence": true
+      },
+      "staging": {
+        "answered": 6,
+        "correct": 3,
+        "planned": 6
+      },
+      "boundary": {
+        "classification": "auto-applied",
+        "manualRequests": 0,
+        "automaticCompleted": 3,
+        "correlatedAutoReentries": 3,
+        "observedManual": 0,
+        "failedAutomatic": 0,
+        "providerSummaryCalls": 3,
+        "repeatedSuccessfulSummaryHashes": 0
+      },
+      "bridge": {
+        "answerPresent": true,
+        "finalRequestId": 19,
+        "afterObservedAuto": true,
+        "registryPayloadVisibleDuringBridge": true,
+        "freshRegistryReadsDuringBridge": 2,
+        "earlierRegistryPayloadVisibleDuringBridge": false,
+        "correctMethodCode": true,
+        "correctEarlyCalibrationSeal": true,
+        "correctConversion": true
+      },
+      "usage": {
+        "calls": 22,
+        "admissions": 22,
+        "terminalReceipts": 22,
+        "observedInputRows": 22,
+        "missingInputRows": 0,
+        "missingCachedInputRows": 0,
+        "missingReasoningOutputRows": 0,
+        "non200ProviderRows": 0,
+        "inputTokens": 92413,
+        "outputTokens": 1789,
+        "cachedInputTokens": 55680,
+        "reasoningOutputTokens": 384,
+        "peakInputTokens": 7378,
+        "peakPrimaryRootInputTokens": 6803,
+        "peakRequestBodyBytes": 32699
+      },
+      "evidenceReads": {
+        "root": 10,
+        "checker": 0,
+        "sameRoleRereads": 4,
+        "crossRoleOverlap": 0,
+        "duplicatedPayloadsInSameRequest": 1,
+        "previouslyPresentedPayloadsAcrossRequests": 7
+      },
+      "treatment": {
+        "checkerAssigned": false,
+        "checkerVerifiedReads": 0,
+        "graphAssigned": false,
+        "graphToolOffered": false,
+        "graphRecordedFindingReceipts": 0,
+        "graphProjectionOrStatusAfterAuto": false,
+        "graphCalibrationReadbackAfterAuto": false,
+        "bridgeFactFromSummary": false,
+        "bridgeFactFromSource": true,
+        "bridgeProcedureSeenAfterAuto": true
+      },
+      "contentHashes": {
+        "privateArmReceiptSha256": "ffe2147f02023e094beb3cdea4f8dc798d300d2fcbe3147e4317a546a4f9509d",
+        "finalAnswerUtf8Sha256": "2a8e3a1809266f1be9c6c751053bdee2fb139a22c0e73a6f1aa83c1924ea898b",
+        "bridgeAnswerUtf8Sha256": "c83c085fa66c245087df038707c3f2f8beae79f5ce0a415b8a3b1e2038e63b64"
+      }
+    },
+    {
+      "incident": "willow-yard",
+      "arm": "build-focused",
+      "outcome": "complete",
+      "problem": null,
+      "stopPhase": "complete",
+      "effectiveContext": {
+        "context": 8192,
+        "input": 272000,
+        "output": 4096
+      },
+      "identityAndScope": true,
+      "elapsedMs": 85668,
+      "final": {
+        "observed": true,
+        "disposition": "indeterminate",
+        "accuracy": false,
+        "materialDefectRecall": 0.6666666666666666,
+        "strictFormat": true,
+        "strictClosure": false,
+        "strictCorrectAbstention": false,
+        "unsupportedClosure": false,
+        "pendingClaims": [
+          "c3"
+        ],
+        "missedFindings": [
+          {
+            "finding": "short-pick",
+            "scope": "WY-418"
+          }
+        ],
+        "verifiedEvidence": true
+      },
+      "staging": {
+        "answered": 6,
+        "correct": 3,
+        "planned": 6
+      },
+      "boundary": {
+        "classification": "auto-applied",
+        "manualRequests": 0,
+        "automaticCompleted": 3,
+        "correlatedAutoReentries": 3,
+        "observedManual": 0,
+        "failedAutomatic": 0,
+        "providerSummaryCalls": 3,
+        "repeatedSuccessfulSummaryHashes": 0
+      },
+      "bridge": {
+        "answerPresent": true,
+        "finalRequestId": 18,
+        "afterObservedAuto": true,
+        "registryPayloadVisibleDuringBridge": true,
+        "freshRegistryReadsDuringBridge": 1,
+        "earlierRegistryPayloadVisibleDuringBridge": false,
+        "correctMethodCode": true,
+        "correctEarlyCalibrationSeal": true,
+        "correctConversion": true
+      },
+      "usage": {
+        "calls": 31,
+        "admissions": 31,
+        "terminalReceipts": 31,
+        "observedInputRows": 31,
+        "missingInputRows": 0,
+        "missingCachedInputRows": 0,
+        "missingReasoningOutputRows": 0,
+        "non200ProviderRows": 0,
+        "inputTokens": 104530,
+        "outputTokens": 2402,
+        "cachedInputTokens": 65664,
+        "reasoningOutputTokens": 485,
+        "peakInputTokens": 7379,
+        "peakPrimaryRootInputTokens": 6804,
+        "peakRequestBodyBytes": 29179
+      },
+      "evidenceReads": {
+        "root": 8,
+        "checker": 6,
+        "sameRoleRereads": 2,
+        "crossRoleOverlap": 6,
+        "duplicatedPayloadsInSameRequest": 1,
+        "previouslyPresentedPayloadsAcrossRequests": 26
+      },
+      "treatment": {
+        "checkerAssigned": true,
+        "checkerVerifiedReads": 6,
+        "graphAssigned": false,
+        "graphToolOffered": false,
+        "graphRecordedFindingReceipts": 0,
+        "graphProjectionOrStatusAfterAuto": false,
+        "graphCalibrationReadbackAfterAuto": false,
+        "bridgeFactFromSummary": false,
+        "bridgeFactFromSource": true,
+        "bridgeProcedureSeenAfterAuto": true
+      },
+      "contentHashes": {
+        "privateArmReceiptSha256": "6e028ddca0edf2dcc5fc699a77eb9dc49e1d0b1126446c328421bba180576d8a",
+        "finalAnswerUtf8Sha256": "ce44417d723ee049eed142d2f47c78fde760a7a3b0b6f07d628c7d55b5cbfa56",
+        "bridgeAnswerUtf8Sha256": "c83c085fa66c245087df038707c3f2f8beae79f5ce0a415b8a3b1e2038e63b64"
+      }
+    },
+    {
+      "incident": "willow-yard",
+      "arm": "alg-graph-focused",
+      "outcome": "early-stop",
+      "problem": "NATIVE_PROVIDER_CALL_BUDGET",
+      "stopPhase": "batch-2",
+      "effectiveContext": {
+        "context": 8192,
+        "input": 272000,
+        "output": 4096
+      },
+      "identityAndScope": true,
+      "elapsedMs": 201863,
+      "final": {
+        "observed": false,
+        "disposition": null,
+        "accuracy": false,
+        "materialDefectRecall": 0,
+        "strictFormat": false,
+        "strictClosure": false,
+        "strictCorrectAbstention": false,
+        "unsupportedClosure": false,
+        "pendingClaims": [],
+        "missedFindings": [
+          {
+            "finding": "duplicate",
+            "scope": "WY-418"
+          },
+          {
+            "finding": "short-pick",
+            "scope": "WY-418"
+          },
+          {
+            "finding": "tare",
+            "scope": "WY-662"
+          }
+        ],
+        "verifiedEvidence": false
+      },
+      "staging": {
+        "answered": 1,
+        "correct": 1,
+        "planned": 6
+      },
+      "boundary": {
+        "classification": "auto-applied",
+        "manualRequests": 0,
+        "automaticCompleted": 16,
+        "correlatedAutoReentries": 16,
+        "observedManual": 0,
+        "failedAutomatic": 0,
+        "providerSummaryCalls": 16,
+        "repeatedSuccessfulSummaryHashes": 8
+      },
+      "bridge": {
+        "answerPresent": false,
+        "finalRequestId": null,
+        "afterObservedAuto": false,
+        "registryPayloadVisibleDuringBridge": false,
+        "freshRegistryReadsDuringBridge": 0,
+        "earlierRegistryPayloadVisibleDuringBridge": false,
+        "correctMethodCode": false,
+        "correctEarlyCalibrationSeal": false,
+        "correctConversion": false
+      },
+      "usage": {
+        "calls": 48,
+        "admissions": 48,
+        "terminalReceipts": 48,
+        "observedInputRows": 48,
+        "missingInputRows": 0,
+        "missingCachedInputRows": 0,
+        "missingReasoningOutputRows": 0,
+        "non200ProviderRows": 0,
+        "inputTokens": 200536,
+        "outputTokens": 7901,
+        "cachedInputTokens": 125184,
+        "reasoningOutputTokens": 282,
+        "peakInputTokens": 6957,
+        "peakPrimaryRootInputTokens": 6957,
+        "peakRequestBodyBytes": 30564
+      },
+      "evidenceReads": {
+        "root": 6,
+        "checker": 0,
+        "sameRoleRereads": 0,
+        "crossRoleOverlap": 0,
+        "duplicatedPayloadsInSameRequest": 0,
+        "previouslyPresentedPayloadsAcrossRequests": 5
+      },
+      "treatment": {
+        "checkerAssigned": true,
+        "checkerVerifiedReads": 0,
+        "graphAssigned": true,
+        "graphToolOffered": true,
+        "graphRecordedFindingReceipts": 1,
+        "graphProjectionOrStatusAfterAuto": true,
+        "graphCalibrationReadbackAfterAuto": false,
+        "bridgeFactFromSummary": false,
+        "bridgeFactFromSource": false,
+        "bridgeProcedureSeenAfterAuto": false
+      },
+      "contentHashes": {
+        "privateArmReceiptSha256": "7f99167f729e4817dc76c26d7fce514aa0750a9dcf668652df0478984644fa4f",
+        "finalAnswerUtf8Sha256": null,
+        "bridgeAnswerUtf8Sha256": null
+      }
+    },
+    {
+      "incident": "sedge-quay",
+      "arm": "build-focused",
+      "outcome": "complete",
+      "problem": null,
+      "stopPhase": "complete",
+      "effectiveContext": {
+        "context": 8192,
+        "input": 272000,
+        "output": 4096
+      },
+      "identityAndScope": true,
+      "elapsedMs": 77542,
+      "final": {
+        "observed": true,
+        "disposition": "indeterminate",
+        "accuracy": true,
+        "materialDefectRecall": 1,
+        "strictFormat": true,
+        "strictClosure": false,
+        "strictCorrectAbstention": true,
+        "unsupportedClosure": false,
+        "pendingClaims": [],
+        "missedFindings": [],
+        "verifiedEvidence": true
+      },
+      "staging": {
+        "answered": 6,
+        "correct": 4,
+        "planned": 6
+      },
+      "boundary": {
+        "classification": "auto-applied",
+        "manualRequests": 0,
+        "automaticCompleted": 3,
+        "correlatedAutoReentries": 3,
+        "observedManual": 0,
+        "failedAutomatic": 0,
+        "providerSummaryCalls": 3,
+        "repeatedSuccessfulSummaryHashes": 0
+      },
+      "bridge": {
+        "answerPresent": true,
+        "finalRequestId": 17,
+        "afterObservedAuto": true,
+        "registryPayloadVisibleDuringBridge": true,
+        "freshRegistryReadsDuringBridge": 1,
+        "earlierRegistryPayloadVisibleDuringBridge": false,
+        "correctMethodCode": true,
+        "correctEarlyCalibrationSeal": true,
+        "correctConversion": true
+      },
+      "usage": {
+        "calls": 30,
+        "admissions": 30,
+        "terminalReceipts": 30,
+        "observedInputRows": 30,
+        "missingInputRows": 0,
+        "missingCachedInputRows": 0,
+        "missingReasoningOutputRows": 0,
+        "non200ProviderRows": 0,
+        "inputTokens": 103066,
+        "outputTokens": 2280,
+        "cachedInputTokens": 68352,
+        "reasoningOutputTokens": 523,
+        "peakInputTokens": 7415,
+        "peakPrimaryRootInputTokens": 6814,
+        "peakRequestBodyBytes": 36469
+      },
+      "evidenceReads": {
+        "root": 8,
+        "checker": 6,
+        "sameRoleRereads": 2,
+        "crossRoleOverlap": 6,
+        "duplicatedPayloadsInSameRequest": 1,
+        "previouslyPresentedPayloadsAcrossRequests": 24
+      },
+      "treatment": {
+        "checkerAssigned": true,
+        "checkerVerifiedReads": 6,
+        "graphAssigned": false,
+        "graphToolOffered": false,
+        "graphRecordedFindingReceipts": 0,
+        "graphProjectionOrStatusAfterAuto": false,
+        "graphCalibrationReadbackAfterAuto": false,
+        "bridgeFactFromSummary": false,
+        "bridgeFactFromSource": true,
+        "bridgeProcedureSeenAfterAuto": true
+      },
+      "contentHashes": {
+        "privateArmReceiptSha256": "2f8e6cce6ed539c46b86ca581aebd0cbb19e3d535c5aebaff2fdc7d53e1b3c85",
+        "finalAnswerUtf8Sha256": "e4a578c92434b0c88605b7a45cb0d00ec95818fcfcdbe30b7ca13f4cedde8656",
+        "bridgeAnswerUtf8Sha256": "ab65948b2018c9d67447bf5ebc57c0e9f2ae111ddff2fa634c00c23d6081ee0b"
+      }
+    },
+    {
+      "incident": "sedge-quay",
+      "arm": "alg-graph-focused",
+      "outcome": "early-stop",
+      "problem": "NATIVE_PROVIDER_CALL_BUDGET",
+      "stopPhase": "final",
+      "effectiveContext": {
+        "context": 8192,
+        "input": 272000,
+        "output": 4096
+      },
+      "identityAndScope": true,
+      "elapsedMs": 175858,
+      "final": {
+        "observed": false,
+        "disposition": null,
+        "accuracy": false,
+        "materialDefectRecall": 0,
+        "strictFormat": false,
+        "strictClosure": false,
+        "strictCorrectAbstention": false,
+        "unsupportedClosure": false,
+        "pendingClaims": [],
+        "missedFindings": [
+          {
+            "finding": "coverage",
+            "scope": "SQ-026"
+          },
+          {
+            "finding": "duplicate",
+            "scope": "SQ-344"
+          }
+        ],
+        "verifiedEvidence": false
+      },
+      "staging": {
+        "answered": 6,
+        "correct": 6,
+        "planned": 6
+      },
+      "boundary": {
+        "classification": "auto-applied",
+        "manualRequests": 0,
+        "automaticCompleted": 10,
+        "correlatedAutoReentries": 10,
+        "observedManual": 0,
+        "failedAutomatic": 0,
+        "providerSummaryCalls": 10,
+        "repeatedSuccessfulSummaryHashes": 0
+      },
+      "bridge": {
+        "answerPresent": true,
+        "finalRequestId": 31,
+        "afterObservedAuto": true,
+        "registryPayloadVisibleDuringBridge": false,
+        "freshRegistryReadsDuringBridge": 0,
+        "earlierRegistryPayloadVisibleDuringBridge": false,
+        "correctMethodCode": true,
+        "correctEarlyCalibrationSeal": true,
+        "correctConversion": true
+      },
+      "usage": {
+        "calls": 48,
+        "admissions": 48,
+        "terminalReceipts": 48,
+        "observedInputRows": 48,
+        "missingInputRows": 0,
+        "missingCachedInputRows": 0,
+        "missingReasoningOutputRows": 0,
+        "non200ProviderRows": 0,
+        "inputTokens": 224932,
+        "outputTokens": 6299,
+        "cachedInputTokens": 114560,
+        "reasoningOutputTokens": 1308,
+        "peakInputTokens": 7125,
+        "peakPrimaryRootInputTokens": 6548,
+        "peakRequestBodyBytes": 32057
+      },
+      "evidenceReads": {
+        "root": 6,
+        "checker": 6,
+        "sameRoleRereads": 0,
+        "crossRoleOverlap": 6,
+        "duplicatedPayloadsInSameRequest": 0,
+        "previouslyPresentedPayloadsAcrossRequests": 14
+      },
+      "treatment": {
+        "checkerAssigned": true,
+        "checkerVerifiedReads": 6,
+        "graphAssigned": true,
+        "graphToolOffered": true,
+        "graphRecordedFindingReceipts": 1,
+        "graphProjectionOrStatusAfterAuto": true,
+        "graphCalibrationReadbackAfterAuto": true,
+        "bridgeFactFromSummary": false,
+        "bridgeFactFromSource": false,
+        "bridgeProcedureSeenAfterAuto": true
+      },
+      "contentHashes": {
+        "privateArmReceiptSha256": "d5aa8108ccf1f4187178e52ba8290ce239c4ef03fb0d1fc3b579cad4b49bad1c",
+        "finalAnswerUtf8Sha256": null,
+        "bridgeAnswerUtf8Sha256": "ab65948b2018c9d67447bf5ebc57c0e9f2ae111ddff2fa634c00c23d6081ee0b"
+      }
+    },
+    {
+      "incident": "sedge-quay",
+      "arm": "build",
+      "outcome": "complete",
+      "problem": null,
+      "stopPhase": "complete",
+      "effectiveContext": {
+        "context": 8192,
+        "input": 272000,
+        "output": 4096
+      },
+      "identityAndScope": true,
+      "elapsedMs": 61077,
+      "final": {
+        "observed": true,
+        "disposition": "indeterminate",
+        "accuracy": true,
+        "materialDefectRecall": 1,
+        "strictFormat": true,
+        "strictClosure": false,
+        "strictCorrectAbstention": true,
+        "unsupportedClosure": false,
+        "pendingClaims": [],
+        "missedFindings": [],
+        "verifiedEvidence": true
+      },
+      "staging": {
+        "answered": 6,
+        "correct": 4,
+        "planned": 6
+      },
+      "boundary": {
+        "classification": "auto-applied",
+        "manualRequests": 0,
+        "automaticCompleted": 3,
+        "correlatedAutoReentries": 3,
+        "observedManual": 0,
+        "failedAutomatic": 0,
+        "providerSummaryCalls": 3,
+        "repeatedSuccessfulSummaryHashes": 0
+      },
+      "bridge": {
+        "answerPresent": true,
+        "finalRequestId": 18,
+        "afterObservedAuto": true,
+        "registryPayloadVisibleDuringBridge": true,
+        "freshRegistryReadsDuringBridge": 1,
+        "earlierRegistryPayloadVisibleDuringBridge": false,
+        "correctMethodCode": true,
+        "correctEarlyCalibrationSeal": true,
+        "correctConversion": true
+      },
+      "usage": {
+        "calls": 21,
+        "admissions": 21,
+        "terminalReceipts": 21,
+        "observedInputRows": 21,
+        "missingInputRows": 0,
+        "missingCachedInputRows": 0,
+        "missingReasoningOutputRows": 0,
+        "non200ProviderRows": 0,
+        "inputTokens": 84116,
+        "outputTokens": 1761,
+        "cachedInputTokens": 33024,
+        "reasoningOutputTokens": 387,
+        "peakInputTokens": 7425,
+        "peakPrimaryRootInputTokens": 6824,
+        "peakRequestBodyBytes": 32978
+      },
+      "evidenceReads": {
+        "root": 8,
+        "checker": 0,
+        "sameRoleRereads": 2,
+        "crossRoleOverlap": 0,
+        "duplicatedPayloadsInSameRequest": 1,
+        "previouslyPresentedPayloadsAcrossRequests": 7
+      },
+      "treatment": {
+        "checkerAssigned": false,
+        "checkerVerifiedReads": 0,
+        "graphAssigned": false,
+        "graphToolOffered": false,
+        "graphRecordedFindingReceipts": 0,
+        "graphProjectionOrStatusAfterAuto": false,
+        "graphCalibrationReadbackAfterAuto": false,
+        "bridgeFactFromSummary": false,
+        "bridgeFactFromSource": true,
+        "bridgeProcedureSeenAfterAuto": true
+      },
+      "contentHashes": {
+        "privateArmReceiptSha256": "cdb957bae18834718848b53478e13ed753c258f78ff358f1a0fc514e49765151",
+        "finalAnswerUtf8Sha256": "e4a578c92434b0c88605b7a45cb0d00ec95818fcfcdbe30b7ca13f4cedde8656",
+        "bridgeAnswerUtf8Sha256": "ab65948b2018c9d67447bf5ebc57c0e9f2ae111ddff2fa634c00c23d6081ee0b"
+      }
+    }
+  ],
+  "contentHashes": {
+    "frozenProtocolSha256": "3d6517403f4160057f5c1c0659dd75309f7ef00c18aaecdfce38704c82bd715b",
+    "nativeReportSha256": "24c8e75aaefeee2402f2fb06b390817a44537f9b74d3704792966fb5ef23f9fb",
+    "nativeJournalSha256": "945175ba96cfe19131c418968538968f5646a1ab1a7a176b2b72af909ef6d6b7",
+    "rosterSha256": "9a2467556ce00c80e0dc5d00b5f6a56c2f099f660f97d4a32f818d16fc3b45b5",
+    "scriptedReportSha256": "0a481baf0b76851964bfbc1bd54a17c64b1b8260735256cbc7445f7dc40c2145"
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "schema": "natural-long-trio-v1",
+  "mode": "native-oauth",
+  "model": "openai/gpt-6-luna",
+  "runtime": {
+    "version": "2.3.2",
+    "binarySha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+    "packageSha256": "5ff776e1a98240829426518e100f25bcf9108ac831ff5246d3e600d001809d95",
+    "bundleSha256": "788367c2bbd39cfc5413d928a40347277ef885bdb55654252720b1fd65392609",
+    "manifestFiles": 2
+  },
+  "context": {
+    "configuredModelContextTokens": 8192,
+    "configuredOutputTokens": 4096,
+    "compaction": {
+      "auto": true,
+      "background": false,
+      "buffer": "20%",
+      "keep": {
+        "tokens": 0
+      }
+    },
+    "manualCallsPlanned": 0,
+    "syntheticUsagePressure": false
+  },
+  "caps": {
+    "calls": 48,
+    "requestBytes": 262144,
+    "responseBytes": 524288,
+    "armRequestBytes": 12582912,
+    "armResponseBytes": 25165824,
+    "outputTokens": 4096,
+    "outputDeltaBytes": 16384,
+    "armOutputTokens": 196608,
+    "requestMs": 90000,
+    "armMs": 1200000,
+    "sourceCalls": 96,
+    "sourceCallsPerRole": 48
+  },
+  "cases": [
+    {
+      "id": "willow-yard",
+      "fixtureSha256": "b0f789de31d5a5639fafef62543b0569b656b649eec3f3beb0302be45b72300a",
+      "order": [
+        "build",
+        "build-focused",
+        "alg-graph-focused"
+      ],
+      "commonRootPromptSchedule": [
+        {
+          "phase": "triage",
+          "sha256": "c9819ab73775c52f6f4a66c1beae1708afa6420462d68433683993022443ffc2",
+          "utf8Bytes": 845
+        },
+        {
+          "phase": "batch-1",
+          "sha256": "bd6218aa2db43f2bb11162c83c1608fc8d57b84919d6422a20e0154f0d81dade",
+          "utf8Bytes": 4931
+        },
+        {
+          "phase": "batch-2",
+          "sha256": "668681cec1b0cc1d91125b6bd1469a4f93a891b94d13df0e042afadc98c49ca6",
+          "utf8Bytes": 4927
+        },
+        {
+          "phase": "batch-3",
+          "sha256": "a988005f82aa693c7ac4efa9d11363e33d8e8d9aed80c76df17c41486216036b",
+          "utf8Bytes": 4935
+        },
+        {
+          "phase": "batch-4",
+          "sha256": "cfb903e4f7d209e6bed23f969b796a2dd8b751680bc2a8eb470cd7f66013f1ac",
+          "utf8Bytes": 4942
+        },
+        {
+          "phase": "batch-5",
+          "sha256": "b8b8768ee3fa9a4436654c4dd36ec03314b98a312fcadf20eb1daf8352488b89",
+          "utf8Bytes": 4899
+        },
+        {
+          "phase": "batch-6",
+          "sha256": "6fcfbd6d1ce3bdddd60292c5cdfed80b3aaad318d047f6c441ab16c621fb3f61",
+          "utf8Bytes": 4949
+        },
+        {
+          "phase": "bridge",
+          "sha256": "a86d4863ac6a7d20a4076e7f3346e514dac04f684ce1686865ba1809e4aa6ad6",
+          "utf8Bytes": 546
+        },
+        {
+          "phase": "final",
+          "sha256": "6663c4ef034dbeccc6c256493a6d3f2de8c135d58b83667218f785328056d91f",
+          "utf8Bytes": 1032
+        }
+      ],
+      "checkerPromptSha256": "6a1f47d5de35886c6ec3d2d15a587e921d732ad3ed9c7321bee5d7b542ec2879"
+    },
+    {
+      "id": "sedge-quay",
+      "fixtureSha256": "55a00ac888e1d59ca11bd2fb302c9b2218985a42a6b34ea52ceea4b7a7e34ea2",
+      "order": [
+        "build-focused",
+        "alg-graph-focused",
+        "build"
+      ],
+      "commonRootPromptSchedule": [
+        {
+          "phase": "triage",
+          "sha256": "2f42db49d66c825063ab9fbf2f868b7c97490bfa24c3b9f7db65bf268c54eec4",
+          "utf8Bytes": 845
+        },
+        {
+          "phase": "batch-1",
+          "sha256": "1cf956e6a5b8c91f9742190f9d5913819fbcc420e87409ed537a5d4c737e6f03",
+          "utf8Bytes": 4944
+        },
+        {
+          "phase": "batch-2",
+          "sha256": "bd04b7ec85887752d813a2198008438f5f7e966df09cb2dd005ba10acb6ea6e6",
+          "utf8Bytes": 4947
+        },
+        {
+          "phase": "batch-3",
+          "sha256": "237ee07f250786508415dee7167d65b41c509ebdaccfc9d704ef3c2d993d724e",
+          "utf8Bytes": 4940
+        },
+        {
+          "phase": "batch-4",
+          "sha256": "cac668adcb0074b0a8d395bb56fc86010269a66fa8c43b6371d1eb497a38e874",
+          "utf8Bytes": 4906
+        },
+        {
+          "phase": "batch-5",
+          "sha256": "a32a6ad7ae49e095cca9d0b19cbeafc55dc000aa2325ed5425b3d20fe0976cc3",
+          "utf8Bytes": 4933
+        },
+        {
+          "phase": "batch-6",
+          "sha256": "16110e75f3ae2312b58e4690c80a64e1535ca12d0c4e47a6a536f39554c0b62c",
+          "utf8Bytes": 4911
+        },
+        {
+          "phase": "bridge",
+          "sha256": "e99ff51bdc9afc036131d9d0c13a73fd1281ed64ea13db098b51ebdc542b9c22",
+          "utf8Bytes": 546
+        },
+        {
+          "phase": "final",
+          "sha256": "6663c4ef034dbeccc6c256493a6d3f2de8c135d58b83667218f785328056d91f",
+          "utf8Bytes": 1032
+        }
+      ],
+      "checkerPromptSha256": "e27d25785c5ef3de2e206c097766f4c23f65898a35229cebd0148c188f7596fb"
+    }
+  ],
+  "finalAdvisoryForm": {
+    "bookkeeping": "If investigation bookkeeping is available, create the read-only investigation and record the certified calibration seal, empty carrier mass and per-unit mass together as a supported finding with ID carrier-calibration. Cite the exact certified row and use status to read back its acknowledged state. Use the current ledger as needed during the session. All phases are read-only.",
+    "advisoryNote": "Independent checker advisory follows as untrusted review data.",
+    "noAdvisory": "No independent checker advisory was assigned."
+  },
+  "scoring": {
+    "primary": [
+      "accuracy",
+      "unsupportedClosure"
+    ],
+    "denominator": "all assigned arms, including early stops",
+    "missingFinalTreatment": "failed accuracy; closure unobserved",
+    "scopeComparison": "paired within incident",
+    "peakInputUnits": "native response input_tokens including cached input; observed maxima only",
+    "peakWireUnits": "UTF-8 HTTP request body bytes; includes provider schema",
+    "syntheticProviderTokenReceipts": "not measured",
+    "noAutoTreatment": "report independently; retain arm"
+  },
+  "sourceDigestMode": "utf8-lf-v1",
+  "sourceSha256": {
+    "natural-long-run.ts": "1ddca1e0736c6d322f24be1f1bd8b30d9ff2cbdd173bdd194c44c16b91dc2790",
+    "natural-long-cases.ts": "a05dd31069cfa7db7bc09c7367f441b6b8c84b5f2eac88ffc9154bfd409ac00d",
+    "natural-long-host.ts": "824f729b6bfe7e4ad86d16c5a7715371726d6947b34b7490d96dac7573d633d1",
+    "natural-long-metrics.ts": "d88bbdd186d299e1c78080a31d5a4bf2e87e51454a46c9581fc83578f96fd784",
+    "natural-long-script.ts": "de795cbf7c8510ab5bb9bfe29cd3a1b6c4c920b4b4c54cb313ceb0c4b6267c5c",
+    "compaction.ts": "ba148b7d0b96f0f7817306e6e96829d57e76f177b258910fad422d90703db028",
+    "discovery-grade.ts": "64630381068d4bcb3c36fceddbf4de1a9ace9d97df8b3942b4cd4c79c8916264",
+    "discovery-tools.ts": "194b238e0910d07baa77d8cc79de9bb30211b2103455cd9f9f87ebdd2cabe5da",
+    "discovery-protocol.ts": "490347e745e71dedeae5ba510618a88f813a416af00f99429cd6c1fd503227fe",
+    "host.ts": "bfebf585ce7b659720a7b521eaf330afa0cc1f4313e24cd72d2007d1887d6cf9",
+    "input-usage.ts": "4084c44ec7e6875313739822a93a0177602fad7867220006da64c021b42c56bf",
+    "native-observer.ts": "91be3f91f2f676181401157f07eb619d9b2c0b246588c9a1e253602d5296547a",
+    "native-provider.ts": "ae29388fcb985e6fbb61f1645b07161a456869ad21387d5c9859c2bf0d713c82",
+    "skill-delivery.ts": "b4474f46f536621c3616276df46dd6390be0fd4a875e8593dd66e6b242696bd3",
+    "transport.ts": "3e6f6532c9010e1ebe09348ed80013f1d6d97016dc4084800a8fd035f295ae05",
+    "../acceptance/host.ts": "2c2077d0aefc2b6fb0f926f5b7cc6592c144c2f8eed787b1269c9cc2d7c86d36",
+    "../acceptance/runtime.ts": "a7a361a353329c0968b38427493d251d594f55e411e904d6ccecc510b615464c",
+    "../acceptance/service.ts": "0842d28af70815c23ed1207e4fbf9a7f67146e17ab19388566f38c5ab1921555",
+    "../package-lock.json": "5e47946133ad0ca8c8fd6544a00d88780c2faf8c86d70d33b2ede145dd8d2420"
+  }
+}

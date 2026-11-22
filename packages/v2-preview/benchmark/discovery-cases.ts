@@ -1,7 +1,7 @@
 export type DiscoverySource = { path: string; content: string }
 export type DiscoveryInput = { prompt: string; sources: readonly DiscoverySource[] }
 
-export type DiscoveryFinding = "clock" | "chamber" | "catalog" | "noise" | "coverage"
+export type DiscoveryFinding = "clock" | "chamber" | "catalog" | "noise" | "coverage" | "duplicate" | "tare" | "short-pick"
 
 export type DiscoveryTarget = {
   finding: DiscoveryFinding
@@ -14,7 +14,8 @@ export type DiscoveryOracle = {
   targets: readonly DiscoveryTarget[]
   missingEvidence: readonly string[]
 }
-export type DiscoveryCase = { id: string; input: DiscoveryInput; oracle: DiscoveryOracle }
+export type DiscoveryFocus = { path: string; rowId: string; question: string }
+export type DiscoveryCase = { id: string; input: DiscoveryInput; oracle: DiscoveryOracle; focus?: DiscoveryFocus }
 
 const prompt = `At shift review, the dashboard showed an unexpected rise in out-of-range seal-width readings. Investigate the available records. Explain what accounts for the flags, identify the affected lots, and decide whether this incident can be closed. Use the same standard of evidence for each explanation. Report all material findings and clearly identify anything that remains unresolved.
 

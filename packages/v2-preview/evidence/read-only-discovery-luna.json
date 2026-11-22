@@ -1,0 +1,2171 @@
+{
+  "implementationCommit": "ed6a728",
+  "model": "openai/gpt-6-luna",
+  "host": {
+    "version": "2.3.2",
+    "binarySha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+    "packageSha256": "644b76d174bed9c90347c9df2aabb35c72a3b10d0298431fedead4a2bbb20a3d",
+    "bundleSha256": "75a28a847434996e30644b81e94879918ba26a326ec6d102b0839ca51826d184"
+  },
+  "freezeSha256": "0c4d9f1366cf7a644977237b147a7eec41675c8e07ab48a1619765f4e6468fa0",
+  "rawReportSha256": "2408d3e77879c81ba8b74ad748f3b8593c1f6d574f0035d3308ac1f4ead99f56",
+  "finalizedReportSha256": "3a35292473d1c4508443939b996305e7c5ae34dc862efe4c5e534fd797da9219",
+  "blindDecisionsSha256": "aa610ca6d46c7cea0da8a18d186489636fe399240ebb144ea8e493f3f41894aa",
+  "counts": {
+    "planned": 6,
+    "attempted": 6,
+    "committed": 6,
+    "withoutCommittedReceipt": 0,
+    "notAttempted": 0
+  },
+  "qualified": true,
+  "allEvidenceQualified": true,
+  "reviewer": "Fresh-context GPT-6.2 Sol with public incident records and anonymous submissions.",
+  "rawProvisional": {
+    "overall": {
+      "attempted": 6,
+      "fields": {
+        "receivedReport": {
+          "numerator": 6,
+          "denominator": 6,
+          "rate": 1
+        },
+        "validSubmission": {
+          "numerator": 6,
+          "denominator": 6,
+          "rate": 1
+        },
+        "qualified": {
+          "numerator": 6,
+          "denominator": 6,
+          "rate": 1
+        },
+        "apparatusQualified": {
+          "numerator": 6,
+          "denominator": 6,
+          "rate": 1
+        },
+        "passed": {
+          "numerator": 0,
+          "denominator": 6,
+          "rate": 0
+        },
+        "verifiedEvidence": {
+          "numerator": 3,
+          "denominator": 6,
+          "rate": 0.5
+        },
+        "fullIncidentClosure": {
+          "numerator": 0,
+          "denominator": 6,
+          "rate": 0
+        },
+        "correctAbstention": {
+          "numerator": 0,
+          "denominator": 6,
+          "rate": 0
+        },
+        "reviewRequired": {
+          "numerator": 6,
+          "denominator": 6,
+          "rate": 1
+        },
+        "hasSupportedClaims": {
+          "numerator": 0,
+          "denominator": 6,
+          "rate": 0
+        },
+        "hasUnsupportedClaims": {
+          "numerator": 0,
+          "denominator": 6,
+          "rate": 0
+        },
+        "hasSevereMiss": {
+          "numerator": 6,
+          "denominator": 6,
+          "rate": 1
+        },
+        "hasUnsupportedCertification": {
+          "numerator": 1,
+          "denominator": 6,
+          "rate": 0.16666666666666666
+        }
+      },
+      "materialDefectRecall": {
+        "numerator": 0,
+        "denominator": 12,
+        "rate": 0
+      },
+      "recallByFinding": {
+        "duplicate": {
+          "numerator": 0,
+          "denominator": 6,
+          "rate": 0
+        },
+        "tare": {
+          "numerator": 0,
+          "denominator": 3,
+          "rate": 0
+        },
+        "short-pick": {
+          "numerator": 0,
+          "denominator": 3,
+          "rate": 0
+        },
+        "coverage": {
+          "numerator": 0,
+          "denominator": 3,
+          "rate": 0
+        }
+      },
+      "eligibleClosure": {
+        "numerator": 0,
+        "denominator": 3,
+        "rate": 0
+      },
+      "eligibleAbstention": {
+        "numerator": 0,
+        "denominator": 3,
+        "rate": 0
+      },
+      "outcomes": {
+        "completed": 6,
+        "model-output-failure": 0,
+        "budget-exhausted": 0,
+        "apparatus-error": 0,
+        "uncommitted": 0
+      },
+      "counts": {
+        "supportedClaims": 0,
+        "unsupportedClaims": 0,
+        "pendingClaims": 15,
+        "severeMisses": 15,
+        "unsupportedCertifications": 1,
+        "formatFailures": 0,
+        "noAssistantText": 0,
+        "contentUnscored": 0,
+        "omittedDefects": 12,
+        "unsubstantiatedDefects": 0,
+        "citationIncompleteFindings": 0,
+        "citationsWithoutVerifiedReads": 5,
+        "abstentionOnMissingEvidence": 3,
+        "unsupportedClosure": 1,
+        "recordedFindingReadback": 2,
+        "receiptBoundCanonicalReport": 2,
+        "appliedLedgerMechanism": 2,
+        "canonicalCorrectDisposition": 2,
+        "canonicalExactMissingEvidence": 1,
+        "canonicalCompleteCitations": 2,
+        "canonicalUnsupportedClosure": 0,
+        "commandFileMatches": 2,
+        "unresolvedEvidenceQuestion": 1,
+        "questionAddressesFrozenGap": 0
+      }
+    },
+    "byArm": {
+      "build": {
+        "planned": 2,
+        "notAttempted": 0,
+        "attempted": 2,
+        "fields": {
+          "receivedReport": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "validSubmission": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "qualified": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "apparatusQualified": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "passed": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "verifiedEvidence": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "fullIncidentClosure": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "correctAbstention": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "reviewRequired": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "hasSupportedClaims": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "hasUnsupportedClaims": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "hasSevereMiss": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "hasUnsupportedCertification": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          }
+        },
+        "materialDefectRecall": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0
+        },
+        "recallByFinding": {
+          "duplicate": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "tare": {
+            "numerator": 0,
+            "denominator": 1,
+            "rate": 0
+          },
+          "short-pick": {
+            "numerator": 0,
+            "denominator": 1,
+            "rate": 0
+          },
+          "coverage": {
+            "numerator": 0,
+            "denominator": 1,
+            "rate": 0
+          }
+        },
+        "eligibleClosure": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0
+        },
+        "eligibleAbstention": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0
+        },
+        "outcomes": {
+          "completed": 2,
+          "model-output-failure": 0,
+          "budget-exhausted": 0,
+          "apparatus-error": 0,
+          "uncommitted": 0
+        },
+        "counts": {
+          "supportedClaims": 0,
+          "unsupportedClaims": 0,
+          "pendingClaims": 4,
+          "severeMisses": 5,
+          "unsupportedCertifications": 0,
+          "formatFailures": 0,
+          "noAssistantText": 0,
+          "contentUnscored": 0,
+          "omittedDefects": 4,
+          "unsubstantiatedDefects": 0,
+          "citationIncompleteFindings": 0,
+          "citationsWithoutVerifiedReads": 0,
+          "abstentionOnMissingEvidence": 1,
+          "unsupportedClosure": 0,
+          "recordedFindingReadback": 0,
+          "receiptBoundCanonicalReport": 0,
+          "appliedLedgerMechanism": 0,
+          "canonicalCorrectDisposition": 0,
+          "canonicalExactMissingEvidence": 0,
+          "canonicalCompleteCitations": 0,
+          "canonicalUnsupportedClosure": 0,
+          "commandFileMatches": 0,
+          "unresolvedEvidenceQuestion": 0,
+          "questionAddressesFrozenGap": 0
+        }
+      },
+      "build-focused": {
+        "planned": 2,
+        "notAttempted": 0,
+        "attempted": 2,
+        "fields": {
+          "receivedReport": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "validSubmission": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "qualified": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "apparatusQualified": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "passed": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "verifiedEvidence": {
+            "numerator": 1,
+            "denominator": 2,
+            "rate": 0.5
+          },
+          "fullIncidentClosure": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "correctAbstention": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "reviewRequired": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "hasSupportedClaims": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "hasUnsupportedClaims": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "hasSevereMiss": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "hasUnsupportedCertification": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          }
+        },
+        "materialDefectRecall": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0
+        },
+        "recallByFinding": {
+          "duplicate": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "tare": {
+            "numerator": 0,
+            "denominator": 1,
+            "rate": 0
+          },
+          "short-pick": {
+            "numerator": 0,
+            "denominator": 1,
+            "rate": 0
+          },
+          "coverage": {
+            "numerator": 0,
+            "denominator": 1,
+            "rate": 0
+          }
+        },
+        "eligibleClosure": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0
+        },
+        "eligibleAbstention": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0
+        },
+        "outcomes": {
+          "completed": 2,
+          "model-output-failure": 0,
+          "budget-exhausted": 0,
+          "apparatus-error": 0,
+          "uncommitted": 0
+        },
+        "counts": {
+          "supportedClaims": 0,
+          "unsupportedClaims": 0,
+          "pendingClaims": 7,
+          "severeMisses": 5,
+          "unsupportedCertifications": 0,
+          "formatFailures": 0,
+          "noAssistantText": 0,
+          "contentUnscored": 0,
+          "omittedDefects": 4,
+          "unsubstantiatedDefects": 0,
+          "citationIncompleteFindings": 0,
+          "citationsWithoutVerifiedReads": 3,
+          "abstentionOnMissingEvidence": 1,
+          "unsupportedClosure": 0,
+          "recordedFindingReadback": 0,
+          "receiptBoundCanonicalReport": 0,
+          "appliedLedgerMechanism": 0,
+          "canonicalCorrectDisposition": 0,
+          "canonicalExactMissingEvidence": 0,
+          "canonicalCompleteCitations": 0,
+          "canonicalUnsupportedClosure": 0,
+          "commandFileMatches": 0,
+          "unresolvedEvidenceQuestion": 0,
+          "questionAddressesFrozenGap": 0
+        }
+      },
+      "alg-focused": {
+        "planned": 2,
+        "notAttempted": 0,
+        "attempted": 2,
+        "fields": {
+          "receivedReport": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "validSubmission": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "qualified": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "apparatusQualified": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "passed": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "verifiedEvidence": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "fullIncidentClosure": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "correctAbstention": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "reviewRequired": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "hasSupportedClaims": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "hasUnsupportedClaims": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "hasSevereMiss": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "hasUnsupportedCertification": {
+            "numerator": 1,
+            "denominator": 2,
+            "rate": 0.5
+          }
+        },
+        "materialDefectRecall": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0
+        },
+        "recallByFinding": {
+          "duplicate": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "tare": {
+            "numerator": 0,
+            "denominator": 1,
+            "rate": 0
+          },
+          "short-pick": {
+            "numerator": 0,
+            "denominator": 1,
+            "rate": 0
+          },
+          "coverage": {
+            "numerator": 0,
+            "denominator": 1,
+            "rate": 0
+          }
+        },
+        "eligibleClosure": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0
+        },
+        "eligibleAbstention": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0
+        },
+        "outcomes": {
+          "completed": 2,
+          "model-output-failure": 0,
+          "budget-exhausted": 0,
+          "apparatus-error": 0,
+          "uncommitted": 0
+        },
+        "counts": {
+          "supportedClaims": 0,
+          "unsupportedClaims": 0,
+          "pendingClaims": 4,
+          "severeMisses": 5,
+          "unsupportedCertifications": 1,
+          "formatFailures": 0,
+          "noAssistantText": 0,
+          "contentUnscored": 0,
+          "omittedDefects": 4,
+          "unsubstantiatedDefects": 0,
+          "citationIncompleteFindings": 0,
+          "citationsWithoutVerifiedReads": 2,
+          "abstentionOnMissingEvidence": 1,
+          "unsupportedClosure": 1,
+          "recordedFindingReadback": 2,
+          "receiptBoundCanonicalReport": 2,
+          "appliedLedgerMechanism": 2,
+          "canonicalCorrectDisposition": 2,
+          "canonicalExactMissingEvidence": 1,
+          "canonicalCompleteCitations": 2,
+          "canonicalUnsupportedClosure": 0,
+          "commandFileMatches": 2,
+          "unresolvedEvidenceQuestion": 1,
+          "questionAddressesFrozenGap": 0
+        }
+      }
+    },
+    "comparisons": {
+      "stockBuildVsBuildFocused": {
+        "baselineArm": "build",
+        "treatmentArm": "build-focused",
+        "plannedPairs": 2,
+        "attempted": {
+          "pairs": 2,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 0,
+          "neitherPassed": 2
+        },
+        "comparable": {
+          "pairs": 0,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 0,
+          "neitherPassed": 0
+        },
+        "verifiedLedger": {
+          "pairs": 0,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 0,
+          "neitherPassed": 0
+        },
+        "pairs": [
+          {
+            "case": "depot-pine",
+            "baseline": "5bfa64b3-77b9-47fa-8fa8-acc7e726a4a4",
+            "treatment": "c611fed8-6295-4a91-b60c-ac3a8a06604c",
+            "baselinePassed": false,
+            "treatmentPassed": false,
+            "baselineOutcome": "completed",
+            "treatmentOutcome": "completed",
+            "comparable": false,
+            "verifiedLedgerInAssignedAlgArms": true
+          },
+          {
+            "case": "depot-elm",
+            "baseline": "c2cafbee-d589-4070-a22c-84e1dbae55b3",
+            "treatment": "c3db3935-cc09-44d8-b3b8-599af78476fc",
+            "baselinePassed": false,
+            "treatmentPassed": false,
+            "baselineOutcome": "completed",
+            "treatmentOutcome": "completed",
+            "comparable": false,
+            "verifiedLedgerInAssignedAlgArms": true
+          }
+        ]
+      },
+      "stockBuildVsAlgFocused": {
+        "baselineArm": "build",
+        "treatmentArm": "alg-focused",
+        "plannedPairs": 2,
+        "attempted": {
+          "pairs": 2,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 0,
+          "neitherPassed": 2
+        },
+        "comparable": {
+          "pairs": 0,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 0,
+          "neitherPassed": 0
+        },
+        "verifiedLedger": {
+          "pairs": 0,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 0,
+          "neitherPassed": 0
+        },
+        "pairs": [
+          {
+            "case": "depot-pine",
+            "baseline": "5bfa64b3-77b9-47fa-8fa8-acc7e726a4a4",
+            "treatment": "09b6438d-b1cc-4815-9701-392c05953319",
+            "baselinePassed": false,
+            "treatmentPassed": false,
+            "baselineOutcome": "completed",
+            "treatmentOutcome": "completed",
+            "comparable": false,
+            "verifiedLedgerInAssignedAlgArms": true
+          },
+          {
+            "case": "depot-elm",
+            "baseline": "c2cafbee-d589-4070-a22c-84e1dbae55b3",
+            "treatment": "b5b43b3d-20ad-4c94-9eb8-1d9b42c32451",
+            "baselinePassed": false,
+            "treatmentPassed": false,
+            "baselineOutcome": "completed",
+            "treatmentOutcome": "completed",
+            "comparable": false,
+            "verifiedLedgerInAssignedAlgArms": true
+          }
+        ]
+      },
+      "installedAlgWithSameFocusedChecker": {
+        "baselineArm": "build-focused",
+        "treatmentArm": "alg-focused",
+        "plannedPairs": 2,
+        "attempted": {
+          "pairs": 2,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 0,
+          "neitherPassed": 2
+        },
+        "comparable": {
+          "pairs": 0,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 0,
+          "neitherPassed": 0
+        },
+        "verifiedLedger": {
+          "pairs": 0,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 0,
+          "neitherPassed": 0
+        },
+        "pairs": [
+          {
+            "case": "depot-pine",
+            "baseline": "c611fed8-6295-4a91-b60c-ac3a8a06604c",
+            "treatment": "09b6438d-b1cc-4815-9701-392c05953319",
+            "baselinePassed": false,
+            "treatmentPassed": false,
+            "baselineOutcome": "completed",
+            "treatmentOutcome": "completed",
+            "comparable": false,
+            "verifiedLedgerInAssignedAlgArms": true
+          },
+          {
+            "case": "depot-elm",
+            "baseline": "c3db3935-cc09-44d8-b3b8-599af78476fc",
+            "treatment": "b5b43b3d-20ad-4c94-9eb8-1d9b42c32451",
+            "baselinePassed": false,
+            "treatmentPassed": false,
+            "baselineOutcome": "completed",
+            "treatmentOutcome": "completed",
+            "comparable": false,
+            "verifiedLedgerInAssignedAlgArms": true
+          }
+        ]
+      }
+    }
+  },
+  "adjudicated": {
+    "overall": {
+      "attempted": 6,
+      "fields": {
+        "receivedReport": {
+          "numerator": 6,
+          "denominator": 6,
+          "rate": 1
+        },
+        "validSubmission": {
+          "numerator": 6,
+          "denominator": 6,
+          "rate": 1
+        },
+        "qualified": {
+          "numerator": 6,
+          "denominator": 6,
+          "rate": 1
+        },
+        "apparatusQualified": {
+          "numerator": 6,
+          "denominator": 6,
+          "rate": 1
+        },
+        "passed": {
+          "numerator": 1,
+          "denominator": 6,
+          "rate": 0.16666666666666666
+        },
+        "verifiedEvidence": {
+          "numerator": 3,
+          "denominator": 6,
+          "rate": 0.5
+        },
+        "fullIncidentClosure": {
+          "numerator": 0,
+          "denominator": 6,
+          "rate": 0
+        },
+        "correctAbstention": {
+          "numerator": 1,
+          "denominator": 6,
+          "rate": 0.16666666666666666
+        },
+        "reviewRequired": {
+          "numerator": 0,
+          "denominator": 6,
+          "rate": 0
+        },
+        "hasSupportedClaims": {
+          "numerator": 4,
+          "denominator": 6,
+          "rate": 0.6666666666666666
+        },
+        "hasUnsupportedClaims": {
+          "numerator": 3,
+          "denominator": 6,
+          "rate": 0.5
+        },
+        "hasSevereMiss": {
+          "numerator": 4,
+          "denominator": 6,
+          "rate": 0.6666666666666666
+        },
+        "hasUnsupportedCertification": {
+          "numerator": 4,
+          "denominator": 6,
+          "rate": 0.6666666666666666
+        }
+      },
+      "materialDefectRecall": {
+        "numerator": 4,
+        "denominator": 12,
+        "rate": 0.3333333333333333
+      },
+      "recallByFinding": {
+        "duplicate": {
+          "numerator": 2,
+          "denominator": 6,
+          "rate": 0.3333333333333333
+        },
+        "tare": {
+          "numerator": 1,
+          "denominator": 3,
+          "rate": 0.3333333333333333
+        },
+        "short-pick": {
+          "numerator": 1,
+          "denominator": 3,
+          "rate": 0.3333333333333333
+        },
+        "coverage": {
+          "numerator": 2,
+          "denominator": 3,
+          "rate": 0.6666666666666666
+        }
+      },
+      "eligibleClosure": {
+        "numerator": 0,
+        "denominator": 3,
+        "rate": 0
+      },
+      "eligibleAbstention": {
+        "numerator": 1,
+        "denominator": 3,
+        "rate": 0.3333333333333333
+      },
+      "outcomes": {
+        "completed": 6,
+        "model-output-failure": 0,
+        "budget-exhausted": 0,
+        "apparatus-error": 0,
+        "uncommitted": 0
+      },
+      "counts": {
+        "supportedClaims": 7,
+        "unsupportedClaims": 8,
+        "pendingClaims": 0,
+        "severeMisses": 9,
+        "unsupportedCertifications": 10,
+        "formatFailures": 0,
+        "noAssistantText": 0,
+        "contentUnscored": 0,
+        "omittedDefects": 8,
+        "unsubstantiatedDefects": 0,
+        "citationIncompleteFindings": 2,
+        "citationsWithoutVerifiedReads": 5,
+        "abstentionOnMissingEvidence": 3,
+        "unsupportedClosure": 2,
+        "recordedFindingReadback": 2,
+        "receiptBoundCanonicalReport": 2,
+        "appliedLedgerMechanism": 2,
+        "canonicalCorrectDisposition": 2,
+        "canonicalExactMissingEvidence": 1,
+        "canonicalCompleteCitations": 2,
+        "canonicalUnsupportedClosure": 0,
+        "commandFileMatches": 2,
+        "unresolvedEvidenceQuestion": 1,
+        "questionAddressesFrozenGap": 0
+      }
+    },
+    "byArm": {
+      "build": {
+        "planned": 2,
+        "notAttempted": 0,
+        "attempted": 2,
+        "fields": {
+          "receivedReport": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "validSubmission": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "qualified": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "apparatusQualified": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "passed": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "verifiedEvidence": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "fullIncidentClosure": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "correctAbstention": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "reviewRequired": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "hasSupportedClaims": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "hasUnsupportedClaims": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "hasSevereMiss": {
+            "numerator": 1,
+            "denominator": 2,
+            "rate": 0.5
+          },
+          "hasUnsupportedCertification": {
+            "numerator": 1,
+            "denominator": 2,
+            "rate": 0.5
+          }
+        },
+        "materialDefectRecall": {
+          "numerator": 3,
+          "denominator": 4,
+          "rate": 0.75
+        },
+        "recallByFinding": {
+          "duplicate": {
+            "numerator": 1,
+            "denominator": 2,
+            "rate": 0.5
+          },
+          "tare": {
+            "numerator": 1,
+            "denominator": 1,
+            "rate": 1
+          },
+          "short-pick": {
+            "numerator": 1,
+            "denominator": 1,
+            "rate": 1
+          },
+          "coverage": {
+            "numerator": 1,
+            "denominator": 1,
+            "rate": 1
+          }
+        },
+        "eligibleClosure": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0
+        },
+        "eligibleAbstention": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0
+        },
+        "outcomes": {
+          "completed": 2,
+          "model-output-failure": 0,
+          "budget-exhausted": 0,
+          "apparatus-error": 0,
+          "uncommitted": 0
+        },
+        "counts": {
+          "supportedClaims": 4,
+          "unsupportedClaims": 0,
+          "pendingClaims": 0,
+          "severeMisses": 1,
+          "unsupportedCertifications": 1,
+          "formatFailures": 0,
+          "noAssistantText": 0,
+          "contentUnscored": 0,
+          "omittedDefects": 1,
+          "unsubstantiatedDefects": 0,
+          "citationIncompleteFindings": 2,
+          "citationsWithoutVerifiedReads": 0,
+          "abstentionOnMissingEvidence": 1,
+          "unsupportedClosure": 1,
+          "recordedFindingReadback": 0,
+          "receiptBoundCanonicalReport": 0,
+          "appliedLedgerMechanism": 0,
+          "canonicalCorrectDisposition": 0,
+          "canonicalExactMissingEvidence": 0,
+          "canonicalCompleteCitations": 0,
+          "canonicalUnsupportedClosure": 0,
+          "commandFileMatches": 0,
+          "unresolvedEvidenceQuestion": 0,
+          "questionAddressesFrozenGap": 0
+        }
+      },
+      "build-focused": {
+        "planned": 2,
+        "notAttempted": 0,
+        "attempted": 2,
+        "fields": {
+          "receivedReport": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "validSubmission": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "qualified": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "apparatusQualified": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "passed": {
+            "numerator": 1,
+            "denominator": 2,
+            "rate": 0.5
+          },
+          "verifiedEvidence": {
+            "numerator": 1,
+            "denominator": 2,
+            "rate": 0.5
+          },
+          "fullIncidentClosure": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "correctAbstention": {
+            "numerator": 1,
+            "denominator": 2,
+            "rate": 0.5
+          },
+          "reviewRequired": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "hasSupportedClaims": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "hasUnsupportedClaims": {
+            "numerator": 1,
+            "denominator": 2,
+            "rate": 0.5
+          },
+          "hasSevereMiss": {
+            "numerator": 1,
+            "denominator": 2,
+            "rate": 0.5
+          },
+          "hasUnsupportedCertification": {
+            "numerator": 1,
+            "denominator": 2,
+            "rate": 0.5
+          }
+        },
+        "materialDefectRecall": {
+          "numerator": 1,
+          "denominator": 4,
+          "rate": 0.25
+        },
+        "recallByFinding": {
+          "duplicate": {
+            "numerator": 1,
+            "denominator": 2,
+            "rate": 0.5
+          },
+          "tare": {
+            "numerator": 0,
+            "denominator": 1,
+            "rate": 0
+          },
+          "short-pick": {
+            "numerator": 0,
+            "denominator": 1,
+            "rate": 0
+          },
+          "coverage": {
+            "numerator": 1,
+            "denominator": 1,
+            "rate": 1
+          }
+        },
+        "eligibleClosure": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0
+        },
+        "eligibleAbstention": {
+          "numerator": 1,
+          "denominator": 1,
+          "rate": 1
+        },
+        "outcomes": {
+          "completed": 2,
+          "model-output-failure": 0,
+          "budget-exhausted": 0,
+          "apparatus-error": 0,
+          "uncommitted": 0
+        },
+        "counts": {
+          "supportedClaims": 3,
+          "unsupportedClaims": 4,
+          "pendingClaims": 0,
+          "severeMisses": 3,
+          "unsupportedCertifications": 3,
+          "formatFailures": 0,
+          "noAssistantText": 0,
+          "contentUnscored": 0,
+          "omittedDefects": 3,
+          "unsubstantiatedDefects": 0,
+          "citationIncompleteFindings": 0,
+          "citationsWithoutVerifiedReads": 3,
+          "abstentionOnMissingEvidence": 1,
+          "unsupportedClosure": 0,
+          "recordedFindingReadback": 0,
+          "receiptBoundCanonicalReport": 0,
+          "appliedLedgerMechanism": 0,
+          "canonicalCorrectDisposition": 0,
+          "canonicalExactMissingEvidence": 0,
+          "canonicalCompleteCitations": 0,
+          "canonicalUnsupportedClosure": 0,
+          "commandFileMatches": 0,
+          "unresolvedEvidenceQuestion": 0,
+          "questionAddressesFrozenGap": 0
+        }
+      },
+      "alg-focused": {
+        "planned": 2,
+        "notAttempted": 0,
+        "attempted": 2,
+        "fields": {
+          "receivedReport": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "validSubmission": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "qualified": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "apparatusQualified": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "passed": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "verifiedEvidence": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "fullIncidentClosure": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "correctAbstention": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "reviewRequired": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "hasSupportedClaims": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "hasUnsupportedClaims": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "hasSevereMiss": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          },
+          "hasUnsupportedCertification": {
+            "numerator": 2,
+            "denominator": 2,
+            "rate": 1
+          }
+        },
+        "materialDefectRecall": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0
+        },
+        "recallByFinding": {
+          "duplicate": {
+            "numerator": 0,
+            "denominator": 2,
+            "rate": 0
+          },
+          "tare": {
+            "numerator": 0,
+            "denominator": 1,
+            "rate": 0
+          },
+          "short-pick": {
+            "numerator": 0,
+            "denominator": 1,
+            "rate": 0
+          },
+          "coverage": {
+            "numerator": 0,
+            "denominator": 1,
+            "rate": 0
+          }
+        },
+        "eligibleClosure": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0
+        },
+        "eligibleAbstention": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0
+        },
+        "outcomes": {
+          "completed": 2,
+          "model-output-failure": 0,
+          "budget-exhausted": 0,
+          "apparatus-error": 0,
+          "uncommitted": 0
+        },
+        "counts": {
+          "supportedClaims": 0,
+          "unsupportedClaims": 4,
+          "pendingClaims": 0,
+          "severeMisses": 5,
+          "unsupportedCertifications": 6,
+          "formatFailures": 0,
+          "noAssistantText": 0,
+          "contentUnscored": 0,
+          "omittedDefects": 4,
+          "unsubstantiatedDefects": 0,
+          "citationIncompleteFindings": 0,
+          "citationsWithoutVerifiedReads": 2,
+          "abstentionOnMissingEvidence": 1,
+          "unsupportedClosure": 1,
+          "recordedFindingReadback": 2,
+          "receiptBoundCanonicalReport": 2,
+          "appliedLedgerMechanism": 2,
+          "canonicalCorrectDisposition": 2,
+          "canonicalExactMissingEvidence": 1,
+          "canonicalCompleteCitations": 2,
+          "canonicalUnsupportedClosure": 0,
+          "commandFileMatches": 2,
+          "unresolvedEvidenceQuestion": 1,
+          "questionAddressesFrozenGap": 0
+        }
+      }
+    },
+    "comparisons": {
+      "stockBuildVsBuildFocused": {
+        "baselineArm": "build",
+        "treatmentArm": "build-focused",
+        "plannedPairs": 2,
+        "attempted": {
+          "pairs": 2,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 1,
+          "neitherPassed": 1
+        },
+        "comparable": {
+          "pairs": 2,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 1,
+          "neitherPassed": 1
+        },
+        "verifiedLedger": {
+          "pairs": 2,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 1,
+          "neitherPassed": 1
+        },
+        "pairs": [
+          {
+            "case": "depot-pine",
+            "baseline": "5bfa64b3-77b9-47fa-8fa8-acc7e726a4a4",
+            "treatment": "c611fed8-6295-4a91-b60c-ac3a8a06604c",
+            "baselinePassed": false,
+            "treatmentPassed": false,
+            "baselineOutcome": "completed",
+            "treatmentOutcome": "completed",
+            "comparable": true,
+            "verifiedLedgerInAssignedAlgArms": true
+          },
+          {
+            "case": "depot-elm",
+            "baseline": "c2cafbee-d589-4070-a22c-84e1dbae55b3",
+            "treatment": "c3db3935-cc09-44d8-b3b8-599af78476fc",
+            "baselinePassed": false,
+            "treatmentPassed": true,
+            "baselineOutcome": "completed",
+            "treatmentOutcome": "completed",
+            "comparable": true,
+            "verifiedLedgerInAssignedAlgArms": true
+          }
+        ]
+      },
+      "stockBuildVsAlgFocused": {
+        "baselineArm": "build",
+        "treatmentArm": "alg-focused",
+        "plannedPairs": 2,
+        "attempted": {
+          "pairs": 2,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 0,
+          "neitherPassed": 2
+        },
+        "comparable": {
+          "pairs": 2,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 0,
+          "neitherPassed": 2
+        },
+        "verifiedLedger": {
+          "pairs": 2,
+          "bothPassed": 0,
+          "baselineOnly": 0,
+          "treatmentOnly": 0,
+          "neitherPassed": 2
+        },
+        "pairs": [
+          {
+            "case": "depot-pine",
+            "baseline": "5bfa64b3-77b9-47fa-8fa8-acc7e726a4a4",
+            "treatment": "09b6438d-b1cc-4815-9701-392c05953319",
+            "baselinePassed": false,
+            "treatmentPassed": false,
+            "baselineOutcome": "completed",
+            "treatmentOutcome": "completed",
+            "comparable": true,
+            "verifiedLedgerInAssignedAlgArms": true
+          },
+          {
+            "case": "depot-elm",
+            "baseline": "c2cafbee-d589-4070-a22c-84e1dbae55b3",
+            "treatment": "b5b43b3d-20ad-4c94-9eb8-1d9b42c32451",
+            "baselinePassed": false,
+            "treatmentPassed": false,
+            "baselineOutcome": "completed",
+            "treatmentOutcome": "completed",
+            "comparable": true,
+            "verifiedLedgerInAssignedAlgArms": true
+          }
+        ]
+      },
+      "installedAlgWithSameFocusedChecker": {
+        "baselineArm": "build-focused",
+        "treatmentArm": "alg-focused",
+        "plannedPairs": 2,
+        "attempted": {
+          "pairs": 2,
+          "bothPassed": 0,
+          "baselineOnly": 1,
+          "treatmentOnly": 0,
+          "neitherPassed": 1
+        },
+        "comparable": {
+          "pairs": 2,
+          "bothPassed": 0,
+          "baselineOnly": 1,
+          "treatmentOnly": 0,
+          "neitherPassed": 1
+        },
+        "verifiedLedger": {
+          "pairs": 2,
+          "bothPassed": 0,
+          "baselineOnly": 1,
+          "treatmentOnly": 0,
+          "neitherPassed": 1
+        },
+        "pairs": [
+          {
+            "case": "depot-pine",
+            "baseline": "c611fed8-6295-4a91-b60c-ac3a8a06604c",
+            "treatment": "09b6438d-b1cc-4815-9701-392c05953319",
+            "baselinePassed": false,
+            "treatmentPassed": false,
+            "baselineOutcome": "completed",
+            "treatmentOutcome": "completed",
+            "comparable": true,
+            "verifiedLedgerInAssignedAlgArms": true
+          },
+          {
+            "case": "depot-elm",
+            "baseline": "c3db3935-cc09-44d8-b3b8-599af78476fc",
+            "treatment": "b5b43b3d-20ad-4c94-9eb8-1d9b42c32451",
+            "baselinePassed": true,
+            "treatmentPassed": false,
+            "baselineOutcome": "completed",
+            "treatmentOutcome": "completed",
+            "comparable": true,
+            "verifiedLedgerInAssignedAlgArms": true
+          }
+        ]
+      }
+    }
+  },
+  "arms": [
+    {
+      "incident": "depot-pine",
+      "arm": "build",
+      "outcome": "completed",
+      "apparatusQualified": true,
+      "treatment": "control",
+      "receiptSha256": "ea6e1c48fc288d252e5d31a65119867257228fdd1bfa5b06fade2f5f6f6080c6",
+      "packetId": "601e1a92763974f5595cf65a39b1c529f994a98f6b590fa8b83558c3180503eb",
+      "assistantText": "{\"disposition\":\"resolved\",\"claims\":[{\"finding\":\"One of the four scanner rows is a retransmission of reservation 91A; the three unique reservations exceed the two units unloaded by one, attributable to pick/pack behind an intact seal with no release exception.\",\"scope\":\"DP-214\",\"evidence\":[\"shift/reconciliation.json#board-DP-214\",\"shift/reservations.json#scan-DP-214-1\",\"shift/reservations.json#scan-DP-214-2\",\"shift/reservations.json#scan-DP-214-3\",\"shift/reservations.json#scan-DP-214-4\",\"dock/seal-counts.json#seal-DP-214\"]},{\"finding\":\"All three reserved units were unloaded; the board’s apparent one-unit shortage results from deducting 16 kg instead of the certified 12 kg carrier mass, making the weight-derived count two instead of three.\",\"scope\":\"DP-503\",\"evidence\":[\"shift/reconciliation.json#board-DP-503\",\"shift/reservations.json#scan-DP-503-1\",\"shift/reservations.json#scan-DP-503-2\",\"shift/reservations.json#scan-DP-503-3\",\"dock/seal-counts.json#seal-DP-503\",\"dock/weight-export.json#weigh-DP-503\",\"registry/carriers.json#carrier-K-28\"]}],\"missingEvidence\":[]}",
+      "assistantFormat": "valid",
+      "closure": false,
+      "correctAbstention": false,
+      "passed": false,
+      "recall": 0.6666666666666666,
+      "severeMisses": [
+        {
+          "finding": "duplicate",
+          "scope": "DP-214"
+        }
+      ],
+      "unsupportedCertifications": [
+        "Material findings lack supported closure"
+      ],
+      "unsupportedClaims": [],
+      "diagnostics": {
+        "disposition": "resolved",
+        "formatFailure": false,
+        "contentScored": true,
+        "missingEvidenceExact": true,
+        "abstentionOnMissingEvidence": false,
+        "omittedDefects": [
+          {
+            "finding": "duplicate",
+            "scope": "DP-214"
+          }
+        ],
+        "unsubstantiatedDefects": [],
+        "citationIncompleteFindings": [],
+        "citationsWithoutVerifiedReads": [],
+        "unsupportedClosure": true
+      },
+      "mechanism": null,
+      "reviews": [
+        {
+          "packetId": "601e1a92763974f5595cf65a39b1c529f994a98f6b590fa8b83558c3180503eb",
+          "claimId": "c1",
+          "verdict": "supported",
+          "rationale": "Token 91A occurs twice, accounting for one unit of the raw 4-to-2 gap. The three distinct reservations and two unloaded pieces leave a one-unit physical shortfall. The intact seal and absence of a release exception establish pick/pack attribution under the packet method.",
+          "evidence": [
+            "shift/reconciliation.json#board-DP-214",
+            "shift/reservations.json#scan-DP-214-1",
+            "shift/reservations.json#scan-DP-214-2",
+            "shift/reservations.json#scan-DP-214-3",
+            "shift/reservations.json#scan-DP-214-4",
+            "dock/seal-counts.json#seal-DP-214"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "pick-pack shortage",
+            "scope": "DP-214"
+          }
+        },
+        {
+          "packetId": "601e1a92763974f5595cf65a39b1c529f994a98f6b590fa8b83558c3180503eb",
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "Three distinct reservations match the three pieces unloaded. At 4 kg per unit, subtracting 16 kg from 24 kg yields two units, while subtracting the certified 12 kg yields three. The 4 kg excess deduction accounts for the board’s one-unit flag.",
+          "evidence": [
+            "shift/reconciliation.json#board-DP-503",
+            "shift/reservations.json#scan-DP-503-1",
+            "shift/reservations.json#scan-DP-503-2",
+            "shift/reservations.json#scan-DP-503-3",
+            "dock/seal-counts.json#seal-DP-503",
+            "dock/weight-export.json#weigh-DP-503",
+            "registry/carriers.json#carrier-K-28"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "carrier tare error",
+            "scope": "DP-503"
+          }
+        }
+      ],
+      "rootReads": 8,
+      "checkerReads": 0,
+      "withinRoleDuplicateReads": 0,
+      "providerCalls": {
+        "total": 3,
+        "root": 3,
+        "checker": 0
+      },
+      "usage": {
+        "input": 5295,
+        "output": 858,
+        "total": 6153,
+        "cachedInput": 2048,
+        "reasoningOutput": 370
+      },
+      "elapsedMs": 20151.6855
+    },
+    {
+      "incident": "depot-pine",
+      "arm": "build-focused",
+      "outcome": "completed",
+      "apparatusQualified": true,
+      "treatment": "control",
+      "receiptSha256": "8d9155e483388f20e218c131fdfdfbff0a04b8cd09794a7e95a3790ec6a7b102",
+      "packetId": "87a0fe0dc130b9b05805d1dd7f13c72319a876485d8579f959044eadd9c49d03",
+      "assistantText": "{\"disposition\":\"indeterminate\",\"claims\":[{\"finding\":\"The four raw scanner rows contain only three distinct reservation tokens because 91A appears twice; retransmissions count once, so expected dispatch is three units.\",\"scope\":\"DP-214\",\"evidence\":[\"shift/reconciliation.json#board-DP-214\",\"shift/reservations.json#scan-DP-214-1\",\"shift/reservations.json#scan-DP-214-3\",\"shift/reservations.json#scan-DP-214-2\",\"shift/reservations.json#scan-DP-214-4\",\"method.md\"]},{\"finding\":\"Two units were unloaded behind an intact seal with no release exception, establishing a one-unit pick/pack shortfall against three distinct reservations.\",\"scope\":\"DP-214\",\"evidence\":[\"dock/seal-counts.json#seal-DP-214\",\"shift/reservations.json#scan-DP-214-1\",\"shift/reservations.json#scan-DP-214-2\",\"shift/reservations.json#scan-DP-214-4\",\"method.md\"]},{\"finding\":\"Dock weight corroborates two unloaded units: (20 kg gross − 10 kg carrier mass deducted) ÷ 5 kg per unit = 2.\",\"scope\":\"DP-214\",\"evidence\":[\"dock/weight-export.json#weigh-DP-214\",\"registry/carriers.json#carrier-K-11\"]},{\"finding\":\"It cannot be determined whether overflow dispatch accounts for any additional gap because no signed tally or expected tally path is available.\",\"scope\":\"DP-214\",\"evidence\":[\"overflow/custody-index.json\",\"method.md\"]},{\"finding\":\"All three expected units were unloaded. The export deducted 16 kg rather than the carrier’s certified 12 kg tare, understating dispatch by one unit and causing the reconciliation flag.\",\"scope\":\"DP-503\",\"evidence\":[\"shift/seal-counts.json#seal-DP-503\",\"dock/weight-export.json#weigh-DP-503\",\"registry/carriers.json#carrier-K-28\",\"shift/reconciliation.json#board-DP-503\"]}],\"missingEvidence\":[\"overflow/DP-214 signed overflow tally (expected path unavailable; custody index empty)\"]}",
+      "assistantFormat": "valid",
+      "closure": false,
+      "correctAbstention": false,
+      "passed": false,
+      "recall": 0,
+      "severeMisses": [
+        {
+          "finding": "duplicate",
+          "scope": "DP-214"
+        },
+        {
+          "finding": "short-pick",
+          "scope": "DP-214"
+        },
+        {
+          "finding": "tare",
+          "scope": "DP-503"
+        }
+      ],
+      "unsupportedCertifications": [
+        "Claim c1 asserts a certification the sources do not establish",
+        "Claim c2 asserts a certification the sources do not establish",
+        "Claim c5 asserts a certification the sources do not establish"
+      ],
+      "unsupportedClaims": [
+        "c1",
+        "c2",
+        "c4",
+        "c5"
+      ],
+      "diagnostics": {
+        "disposition": "indeterminate",
+        "formatFailure": false,
+        "contentScored": true,
+        "missingEvidenceExact": false,
+        "abstentionOnMissingEvidence": false,
+        "omittedDefects": [
+          {
+            "finding": "duplicate",
+            "scope": "DP-214"
+          },
+          {
+            "finding": "short-pick",
+            "scope": "DP-214"
+          },
+          {
+            "finding": "tare",
+            "scope": "DP-503"
+          }
+        ],
+        "unsubstantiatedDefects": [],
+        "citationIncompleteFindings": [],
+        "citationsWithoutVerifiedReads": [
+          "method.md",
+          "overflow/custody-index.json",
+          "shift/seal-counts.json#seal-DP-503"
+        ],
+        "unsupportedClosure": false
+      },
+      "mechanism": null,
+      "reviews": [
+        {
+          "packetId": "87a0fe0dc130b9b05805d1dd7f13c72319a876485d8579f959044eadd9c49d03",
+          "claimId": "c1",
+          "verdict": "supported",
+          "rationale": "The four scanner rows contain tokens 91A, 95C, 91A, and 93B. Under the packet’s reservation rule, the repeat contributes zero additional expected units, leaving three.",
+          "evidence": [
+            "shift/reconciliation.json#board-DP-214",
+            "shift/reservations.json#scan-DP-214-1",
+            "shift/reservations.json#scan-DP-214-2",
+            "shift/reservations.json#scan-DP-214-3",
+            "shift/reservations.json#scan-DP-214-4"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "reservation retransmission",
+            "scope": "DP-214"
+          }
+        },
+        {
+          "packetId": "87a0fe0dc130b9b05805d1dd7f13c72319a876485d8579f959044eadd9c49d03",
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "The cited scanner rows establish three distinct reservations and the seal row records two unloaded pieces, an intact seal, and no release exception. Under the packet method the resulting one-unit physical shortfall is attributable to pick/pack.",
+          "evidence": [
+            "dock/seal-counts.json#seal-DP-214",
+            "shift/reservations.json#scan-DP-214-1",
+            "shift/reservations.json#scan-DP-214-2",
+            "shift/reservations.json#scan-DP-214-4"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "pick-pack shortage",
+            "scope": "DP-214"
+          }
+        },
+        {
+          "packetId": "87a0fe0dc130b9b05805d1dd7f13c72319a876485d8579f959044eadd9c49d03",
+          "claimId": "c3",
+          "verdict": "supported",
+          "rationale": "The 10 kg deduction matches the certified tare. The remaining 10 kg divided by 5 kg per unit gives two units, corroborating the unloaded count.",
+          "evidence": [
+            "dock/weight-export.json#weigh-DP-214",
+            "registry/carriers.json#carrier-K-11"
+          ],
+          "certification": false
+        },
+        {
+          "packetId": "87a0fe0dc130b9b05805d1dd7f13c72319a876485d8579f959044eadd9c49d03",
+          "claimId": "c4",
+          "verdict": "unsupported",
+          "rationale": "The empty custody index supplies no overflow reservation or transfer for DP-214. The repeated scanner token and the one-unit physical shortfall already account for the full raw gap, so the packet supplies no basis for an additional gap requiring an overflow tally.",
+          "evidence": [],
+          "certification": false
+        },
+        {
+          "packetId": "87a0fe0dc130b9b05805d1dd7f13c72319a876485d8579f959044eadd9c49d03",
+          "claimId": "c5",
+          "verdict": "supported",
+          "rationale": "The board shows a 3-to-2 gap. The export gives two units after the 16 kg deduction, and the certified 12 kg tare gives three units from the same 24 kg gross at 4 kg per unit. The packet’s three-piece count agrees and is filed under dock/seal-counts.json.",
+          "evidence": [
+            "shift/reconciliation.json#board-DP-503",
+            "dock/weight-export.json#weigh-DP-503",
+            "registry/carriers.json#carrier-K-28"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "carrier tare error",
+            "scope": "DP-503"
+          }
+        }
+      ],
+      "rootReads": 8,
+      "checkerReads": 8,
+      "withinRoleDuplicateReads": 0,
+      "providerCalls": {
+        "total": 8,
+        "root": 5,
+        "checker": 3
+      },
+      "usage": {
+        "input": 19664,
+        "output": 2177,
+        "total": 21841,
+        "cachedInput": 9856,
+        "reasoningOutput": 221
+      },
+      "elapsedMs": 49158.6452
+    },
+    {
+      "incident": "depot-pine",
+      "arm": "alg-focused",
+      "outcome": "completed",
+      "apparatusQualified": true,
+      "treatment": "verified-ledger",
+      "receiptSha256": "e847f8a02ce9828a89147944c39bea97bddb961601cefa6d90bf36185611a8e8",
+      "packetId": "d66d856a9fa9fa11d908025da97a1c3c99b1a9c3915a3bf7068d478ef8e46fa6",
+      "assistantText": "{\"disposition\":\"resolved\",\"claims\":[{\"finding\":\"The four scanner rows represent three distinct reservations because reservation 91A was retransmitted. The remaining one-unit shortfall is attributable to pick/pack: the seal was intact with no release exception, and the independent count and corrected weight establish two unloaded units. The raw two-unit gap consists of one duplicate scan and one pick/pack shortage.\",\"scope\":\"DP-214\",\"evidence\":[\"shift/reservations.json#scan-DP-214-1\",\"shift/reservations.json#scan-DP-214-2\",\"shift/reservations.json#scan-DP-214-3\",\"shift/reservations.json#scan-DP-214-4\",\"shift/reconciliation.json#board-DP-214\",\"method.md\",\"dock/seal-counts.json#seal-DP-214\",\"dock/weight-export.json#weigh-DP-214\",\"registry/carriers.json#carrier-K-11\"]},{\"finding\":\"Three distinct reservations and the intact-seal count establish three units unloaded. The weight export deducted 16 kg rather than the certified 12 kg carrier mass, causing the apparent two-unit shortage.\",\"scope\":\"DP-503\",\"evidence\":[\"shift/reconciliation.json#board-DP-503\",\"shift/reservations.json#scan-DP-503-1\",\"shift/reservations.json#scan-DP-503-2\",\"shift/reservations.json#scan-DP-503-3\",\"dock/seal-counts.json#seal-DP-503\",\"dock/weight-export.json#weigh-DP-503\",\"registry/carriers.json#carrier-K-28\",\"method.md\"]}],\"missingEvidence\":[]}",
+      "assistantFormat": "valid",
+      "closure": false,
+      "correctAbstention": false,
+      "passed": false,
+      "recall": 0,
+      "severeMisses": [
+        {
+          "finding": "duplicate",
+          "scope": "DP-214"
+        },
+        {
+          "finding": "short-pick",
+          "scope": "DP-214"
+        },
+        {
+          "finding": "tare",
+          "scope": "DP-503"
+        }
+      ],
+      "unsupportedCertifications": [
+        "Claim c1 asserts a certification the sources do not establish",
+        "Claim c2 asserts a certification the sources do not establish",
+        "Material findings lack supported closure",
+        "Closure relies on unsupported or contradicted claims",
+        "Citations lack verified source reads"
+      ],
+      "unsupportedClaims": [
+        "c1",
+        "c2"
+      ],
+      "diagnostics": {
+        "disposition": "resolved",
+        "formatFailure": false,
+        "contentScored": true,
+        "missingEvidenceExact": true,
+        "abstentionOnMissingEvidence": false,
+        "omittedDefects": [
+          {
+            "finding": "duplicate",
+            "scope": "DP-214"
+          },
+          {
+            "finding": "short-pick",
+            "scope": "DP-214"
+          },
+          {
+            "finding": "tare",
+            "scope": "DP-503"
+          }
+        ],
+        "unsubstantiatedDefects": [],
+        "citationIncompleteFindings": [],
+        "citationsWithoutVerifiedReads": [
+          "method.md"
+        ],
+        "unsupportedClosure": true
+      },
+      "mechanism": {
+        "applied": true,
+        "readOnlyCreated": true,
+        "findingWrites": 2,
+        "exactFindingReadback": true,
+        "revision": 1,
+        "questionFromUnresolvedEvidence": false,
+        "questionAddressesFrozenGap": false,
+        "reportDecisionReadback": true,
+        "reportMatchesReadback": true,
+        "reportAuthority": "owner_recorded",
+        "dispositionCorrect": true,
+        "canonicalMissingEvidenceExact": true,
+        "canonicalCitationComplete": true,
+        "canonicalUnsupportedClosure": false,
+        "commandFileMatches": true
+      },
+      "reviews": [
+        {
+          "packetId": "d66d856a9fa9fa11d908025da97a1c3c99b1a9c3915a3bf7068d478ef8e46fa6",
+          "claimId": "c1",
+          "verdict": "supported",
+          "rationale": "The repeat of 91A reduces four raw scanner rows to three distinct reservations. The intact seal and lack of a release exception establish pick/pack attribution for the one-unit shortfall against the two-piece count. Corrected mass also gives two units, so the raw gap of two consists of one repeat and one missing piece.",
+          "evidence": [
+            "shift/reconciliation.json#board-DP-214",
+            "shift/reservations.json#scan-DP-214-1",
+            "shift/reservations.json#scan-DP-214-2",
+            "shift/reservations.json#scan-DP-214-3",
+            "shift/reservations.json#scan-DP-214-4",
+            "dock/seal-counts.json#seal-DP-214",
+            "dock/weight-export.json#weigh-DP-214",
+            "registry/carriers.json#carrier-K-11"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "pick-pack shortage",
+            "scope": "DP-214"
+          }
+        },
+        {
+          "packetId": "d66d856a9fa9fa11d908025da97a1c3c99b1a9c3915a3bf7068d478ef8e46fa6",
+          "claimId": "c2",
+          "verdict": "contradicted",
+          "rationale": "The reservations, intact-seal count, and recorded tare error agree with the claim, but its shortage magnitude is wrong. The 16 kg deduction from 24 kg yields two units at 4 kg each and the certified 12 kg deduction yields three. The board therefore shows a one-unit apparent shortage.",
+          "evidence": [
+            "shift/reconciliation.json#board-DP-503",
+            "dock/seal-counts.json#seal-DP-503",
+            "dock/weight-export.json#weigh-DP-503",
+            "registry/carriers.json#carrier-K-28"
+          ],
+          "certification": true
+        }
+      ],
+      "rootReads": 8,
+      "checkerReads": 8,
+      "withinRoleDuplicateReads": 0,
+      "providerCalls": {
+        "total": 19,
+        "root": 16,
+        "checker": 3
+      },
+      "usage": {
+        "input": 263114,
+        "output": 3290,
+        "total": 266404,
+        "cachedInput": 124288,
+        "reasoningOutput": 475
+      },
+      "elapsedMs": 86401.4958
+    },
+    {
+      "incident": "depot-elm",
+      "arm": "build-focused",
+      "outcome": "completed",
+      "apparatusQualified": true,
+      "treatment": "control",
+      "receiptSha256": "7072abda13f455c322e6038d4e606c6c7fb86e88cb186533ceca56f9b136590e",
+      "packetId": "d5acf3c5072e10910657ecd58f1ee8d42851f3f1eeb66bf3adbfe44d569b2925",
+      "assistantText": "{\"disposition\":\"indeterminate\",\"claims\":[{\"finding\":\"Two units were unloaded; the records do not establish whether the two remaining overflow-reserved units reached dispatch.\",\"scope\":\"DE-169\",\"evidence\":[\"shift/reconciliation.json#board-DE-169\",\"shift/reservations.json#scan-DE-169-1\",\"shift/reservations.json#scan-DE-169-2\",\"shift/reservations.json#scan-DE-169-3\",\"shift/reservations.json#scan-DE-169-4\",\"dock/seal-counts.json#seal-DE-169\",\"dock/weight-export.json#weigh-DE-169\",\"overflow/custody-index.json#transfer-DE-169\"]},{\"finding\":\"The apparent shortage is due to a duplicate scan of reservation token 3MP; the two distinct reserved units match the two unloaded units.\",\"scope\":\"DE-371\",\"evidence\":[\"shift/reconciliation.json#board-DE-371\",\"shift/reservations.json#scan-DE-371-1\",\"shift/reservations.json#scan-DE-371-2\",\"shift/reservations.json#scan-DE-371-3\",\"dock/seal-counts.json#seal-DE-371\",\"dock/weight-export.json#weigh-DE-371\"]}],\"missingEvidence\":[\"overflow/east-0618-signed.json\"]}",
+      "assistantFormat": "valid",
+      "closure": false,
+      "correctAbstention": true,
+      "passed": true,
+      "recall": 1,
+      "severeMisses": [],
+      "unsupportedCertifications": [],
+      "unsupportedClaims": [],
+      "diagnostics": {
+        "disposition": "indeterminate",
+        "formatFailure": false,
+        "contentScored": true,
+        "missingEvidenceExact": true,
+        "abstentionOnMissingEvidence": true,
+        "omittedDefects": [],
+        "unsubstantiatedDefects": [],
+        "citationIncompleteFindings": [],
+        "citationsWithoutVerifiedReads": [],
+        "unsupportedClosure": false
+      },
+      "mechanism": null,
+      "reviews": [
+        {
+          "packetId": "d5acf3c5072e10910657ecd58f1ee8d42851f3f1eeb66bf3adbfe44d569b2925",
+          "claimId": "c1",
+          "verdict": "supported",
+          "rationale": "The seal count confirms two unloaded units against four distinct reservations. The two overflow reservations are recorded, but the signed tally was not retained, leaving their dispatch unconfirmed.",
+          "evidence": [
+            "shift/reconciliation.json#board-DE-169",
+            "shift/reservations.json#scan-DE-169-1",
+            "shift/reservations.json#scan-DE-169-2",
+            "shift/reservations.json#scan-DE-169-3",
+            "shift/reservations.json#scan-DE-169-4",
+            "dock/seal-counts.json#seal-DE-169",
+            "overflow/custody-index.json#transfer-DE-169"
+          ],
+          "certification": false,
+          "equivalentTo": {
+            "finding": "evidence coverage",
+            "scope": "DE-169"
+          }
+        },
+        {
+          "packetId": "d5acf3c5072e10910657ecd58f1ee8d42851f3f1eeb66bf3adbfe44d569b2925",
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "The board counts three scanner rows, including two rows for token 3MP. The two distinct reservations match the intact-seal count of two unloaded units, so the duplicate accounts for the one-unit apparent shortage.",
+          "evidence": [
+            "shift/reconciliation.json#board-DE-371",
+            "shift/reservations.json#scan-DE-371-1",
+            "shift/reservations.json#scan-DE-371-2",
+            "shift/reservations.json#scan-DE-371-3",
+            "dock/seal-counts.json#seal-DE-371"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "reservation retransmission",
+            "scope": "DE-371"
+          }
+        }
+      ],
+      "rootReads": 8,
+      "checkerReads": 8,
+      "withinRoleDuplicateReads": 0,
+      "providerCalls": {
+        "total": 8,
+        "root": 5,
+        "checker": 3
+      },
+      "usage": {
+        "input": 18799,
+        "output": 1468,
+        "total": 20267,
+        "cachedInput": 9728,
+        "reasoningOutput": 137
+      },
+      "elapsedMs": 39008.11540000001
+    },
+    {
+      "incident": "depot-elm",
+      "arm": "alg-focused",
+      "outcome": "completed",
+      "apparatusQualified": true,
+      "treatment": "verified-ledger",
+      "receiptSha256": "c7d8172a0aecaea86c6332221ddf5f5e9aa110812fcc16cab0ed2c3fa54ef35e",
+      "packetId": "218228bba538c5c69f9ca634b663db56a6ae8003de68e53adee36fd7b042b419",
+      "assistantText": "{\"disposition\":\"indeterminate\",\"claims\":[{\"finding\":\"DE-371’s apparent shortage is a duplicate scan: reservation 3MP was counted twice, leaving two distinct units, matching the dock count and corrected mass.\",\"scope\":\"DE-371\",\"evidence\":[\"shift/reconciliation.json#board-DE-371\",\"shift/reservations.json#scan-DE-371-1\",\"shift/reservations.json#scan-DE-371-2\",\"shift/reservations.json#scan-DE-371-3\",\"dock/seal-counts.json#seal-DE-371\",\"dock/weight-export.json#weigh-DE-371\",\"registry/carriers.json#carrier-V-24\",\"method.md\"]},{\"finding\":\"DE-169 had four distinct reserved units, but only two are confirmed at the dock. Whether the other two reserved for overflow reached dispatch cannot be determined from the available records.\",\"scope\":\"DE-169\",\"evidence\":[\"shift/reconciliation.json#board-DE-169\",\"shift/reservations.json#scan-DE-169-1\",\"shift/reservations.json#scan-DE-169-2\",\"shift/reservations.json#scan-DE-169-3\",\"shift/reservations.json#scan-DE-169-4\",\"dock/seal-counts.json#seal-DE-169\",\"overflow/custody-index.json#transfer-DE-169\",\"method.md\"]}],\"missingEvidence\":[\"overflow/east-0618-signed.json\"]}",
+      "assistantFormat": "valid",
+      "closure": false,
+      "correctAbstention": false,
+      "passed": false,
+      "recall": 0,
+      "severeMisses": [
+        {
+          "finding": "coverage",
+          "scope": "DE-169"
+        },
+        {
+          "finding": "duplicate",
+          "scope": "DE-371"
+        }
+      ],
+      "unsupportedCertifications": [
+        "Claim c1 asserts a certification the sources do not establish"
+      ],
+      "unsupportedClaims": [
+        "c1",
+        "c2"
+      ],
+      "diagnostics": {
+        "disposition": "indeterminate",
+        "formatFailure": false,
+        "contentScored": true,
+        "missingEvidenceExact": true,
+        "abstentionOnMissingEvidence": true,
+        "omittedDefects": [
+          {
+            "finding": "duplicate",
+            "scope": "DE-371"
+          }
+        ],
+        "unsubstantiatedDefects": [],
+        "citationIncompleteFindings": [],
+        "citationsWithoutVerifiedReads": [
+          "method.md"
+        ],
+        "unsupportedClosure": false
+      },
+      "mechanism": {
+        "applied": true,
+        "readOnlyCreated": true,
+        "findingWrites": 2,
+        "exactFindingReadback": true,
+        "revision": 2,
+        "questionFromUnresolvedEvidence": true,
+        "questionAddressesFrozenGap": false,
+        "reportDecisionReadback": true,
+        "reportMatchesReadback": true,
+        "reportAuthority": "owner_recorded",
+        "dispositionCorrect": true,
+        "canonicalMissingEvidenceExact": false,
+        "canonicalCitationComplete": true,
+        "canonicalUnsupportedClosure": false,
+        "commandFileMatches": true
+      },
+      "reviews": [
+        {
+          "packetId": "218228bba538c5c69f9ca634b663db56a6ae8003de68e53adee36fd7b042b419",
+          "claimId": "c1",
+          "verdict": "supported",
+          "rationale": "Counting 3MP once reduces the board’s raw expected count from three to two. The intact-seal count is two, and subtracting the certified 10 kg tare from 14 kg gross gives two units at 2 kg each.",
+          "evidence": [
+            "shift/reconciliation.json#board-DE-371",
+            "shift/reservations.json#scan-DE-371-1",
+            "shift/reservations.json#scan-DE-371-2",
+            "shift/reservations.json#scan-DE-371-3",
+            "dock/seal-counts.json#seal-DE-371",
+            "dock/weight-export.json#weigh-DE-371",
+            "registry/carriers.json#carrier-V-24"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "reservation retransmission",
+            "scope": "DE-371"
+          }
+        },
+        {
+          "packetId": "218228bba538c5c69f9ca634b663db56a6ae8003de68e53adee36fd7b042b419",
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "The four distinct reservation tokens and two unloaded pieces leave two units outside the confirmed dock count. The custody row assigns two units to overflow and marks the signed tally as unretained, so dispatch of those units remains unresolved.",
+          "evidence": [
+            "shift/reconciliation.json#board-DE-169",
+            "shift/reservations.json#scan-DE-169-1",
+            "shift/reservations.json#scan-DE-169-2",
+            "shift/reservations.json#scan-DE-169-3",
+            "shift/reservations.json#scan-DE-169-4",
+            "dock/seal-counts.json#seal-DE-169",
+            "overflow/custody-index.json#transfer-DE-169"
+          ],
+          "certification": false,
+          "equivalentTo": {
+            "finding": "evidence coverage",
+            "scope": "DE-169"
+          }
+        }
+      ],
+      "rootReads": 8,
+      "checkerReads": 8,
+      "withinRoleDuplicateReads": 0,
+      "providerCalls": {
+        "total": 23,
+        "root": 19,
+        "checker": 4
+      },
+      "usage": {
+        "input": 386088,
+        "output": 2678,
+        "total": 388766,
+        "cachedInput": 195456,
+        "reasoningOutput": 219
+      },
+      "elapsedMs": 78813.33529999998
+    },
+    {
+      "incident": "depot-elm",
+      "arm": "build",
+      "outcome": "completed",
+      "apparatusQualified": true,
+      "treatment": "control",
+      "receiptSha256": "af73f5ca85f89d2826cbef53d63f1d0c8d15e73cfd9b7d19ec18ff210f705374",
+      "packetId": "11e2f39b2aa2128cb50965654ed74f4f4e28e35808c78fd4a9a9a4ac86464d11",
+      "assistantText": "{\"disposition\":\"indeterminate\",\"claims\":[{\"finding\":\"The third scanner row repeats reservation 3MP, so DE-371 has two unique reserved units, not three; its two-unit dock count matches, and the flag is explained by a retransmission.\",\"scope\":\"DE-371\",\"evidence\":[\"shift/reservations.json#scan-DE-371-1\",\"shift/reservations.json#scan-DE-371-2\",\"shift/reservations.json#scan-DE-371-3\",\"dock/seal-counts.json#seal-DE-371\",\"dock/weight-export.json#weigh-DE-371\"]},{\"finding\":\"DE-169 has four distinct reservations but only two units counted at the dock; two units were reserved for overflow, but the available records cannot establish whether they reached dispatch or were lost.\",\"scope\":\"DE-169\",\"evidence\":[\"shift/reservations.json#scan-DE-169-1\",\"shift/reservations.json#scan-DE-169-2\",\"shift/reservations.json#scan-DE-169-3\",\"shift/reservations.json#scan-DE-169-4\",\"dock/seal-counts.json#seal-DE-169\",\"overflow/custody-index.json#transfer-DE-169\"]}],\"missingEvidence\":[\"overflow/east-0618-signed.json\"]}",
+      "assistantFormat": "valid",
+      "closure": false,
+      "correctAbstention": false,
+      "passed": false,
+      "recall": 1,
+      "severeMisses": [],
+      "unsupportedCertifications": [],
+      "unsupportedClaims": [],
+      "diagnostics": {
+        "disposition": "indeterminate",
+        "formatFailure": false,
+        "contentScored": true,
+        "missingEvidenceExact": true,
+        "abstentionOnMissingEvidence": true,
+        "omittedDefects": [],
+        "unsubstantiatedDefects": [],
+        "citationIncompleteFindings": [
+          {
+            "finding": "coverage",
+            "scope": "DE-169"
+          },
+          {
+            "finding": "duplicate",
+            "scope": "DE-371"
+          }
+        ],
+        "citationsWithoutVerifiedReads": [],
+        "unsupportedClosure": false
+      },
+      "mechanism": null,
+      "reviews": [
+        {
+          "packetId": "11e2f39b2aa2128cb50965654ed74f4f4e28e35808c78fd4a9a9a4ac86464d11",
+          "claimId": "c1",
+          "verdict": "supported",
+          "rationale": "The first and third scanner rows carry token 3MP. Counting it once leaves two reserved units, exactly the intact-seal dock count. The duplicate accounts for the one-unit flag.",
+          "evidence": [
+            "shift/reservations.json#scan-DE-371-1",
+            "shift/reservations.json#scan-DE-371-2",
+            "shift/reservations.json#scan-DE-371-3",
+            "dock/seal-counts.json#seal-DE-371"
+          ],
+          "certification": true,
+          "equivalentTo": {
+            "finding": "reservation retransmission",
+            "scope": "DE-371"
+          }
+        },
+        {
+          "packetId": "11e2f39b2aa2128cb50965654ed74f4f4e28e35808c78fd4a9a9a4ac86464d11",
+          "claimId": "c2",
+          "verdict": "supported",
+          "rationale": "Four distinct tokens establish four reservations and the dock count confirms two unloaded units. The custody index records two overflow reservations and an unretained signed tally, leaving their dispatch or loss unresolved.",
+          "evidence": [
+            "shift/reservations.json#scan-DE-169-1",
+            "shift/reservations.json#scan-DE-169-2",
+            "shift/reservations.json#scan-DE-169-3",
+            "shift/reservations.json#scan-DE-169-4",
+            "dock/seal-counts.json#seal-DE-169",
+            "overflow/custody-index.json#transfer-DE-169"
+          ],
+          "certification": false,
+          "equivalentTo": {
+            "finding": "evidence coverage",
+            "scope": "DE-169"
+          }
+        }
+      ],
+      "rootReads": 8,
+      "checkerReads": 0,
+      "withinRoleDuplicateReads": 0,
+      "providerCalls": {
+        "total": 3,
+        "root": 3,
+        "checker": 0
+      },
+      "usage": {
+        "input": 5344,
+        "output": 631,
+        "total": 5975,
+        "cachedInput": 1024,
+        "reasoningOutput": 168
+      },
+      "elapsedMs": 16148.328600000008
+    }
+  ]
+}

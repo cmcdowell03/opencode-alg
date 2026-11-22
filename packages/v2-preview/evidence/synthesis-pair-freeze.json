@@ -1,0 +1,64 @@
+{
+  "schema": "synthesis-pair-freeze-index-v1",
+  "pluginRuntime": "1557dc8",
+  "package": "0.1.0-preview.13",
+  "runtime": {
+    "version": "2.3.2",
+    "binarySha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+    "packageSha256": "405916a17dd777f884b78859cb24c8f8e49901621983eb1dde122aa68fb7da42",
+    "bundleSha256": "d4bd87f20fcd1aebbb26b3484fb86dc21176686e2ad3611ed5795119c659f4a6",
+    "manifestFiles": 2
+  },
+  "model": "openai/gpt-6-luna",
+  "context": {
+    "tokens": 8192,
+    "compaction": {
+      "auto": true,
+      "background": false,
+      "buffer": "20%",
+      "keep": {
+        "tokens": 0
+      }
+    },
+    "manualBoundaries": 0
+  },
+  "caps": {
+    "calls": 48,
+    "requestBytes": 262144,
+    "responseBytes": 524288,
+    "armRequestBytes": 12582912,
+    "armResponseBytes": 25165824,
+    "outputTokens": 4096,
+    "outputDeltaBytes": 16384,
+    "armOutputTokens": 196608,
+    "requestMs": 90000,
+    "armMs": 1200000,
+    "sourceCalls": 96,
+    "sourceCallsPerRole": 48
+  },
+  "decisionRule": "Count both assigned arms; missing finals fail. Score supported material findings, disposition, missing evidence and exact row citations blind before inspecting traces. Open the second pair only if routed ALG completes the primary with a passing blinded incident grade and correct bridge units, seal and method.",
+  "stages": [
+    {
+      "stage": "primary",
+      "case": "riverbend-seal-audit",
+      "fixtureSha256": "848a90937add235b627cceb38ec3466491b2165ef37c0442d1e0b9d59bf61001",
+      "roster": [
+        "build-focused",
+        "alg-routed-compact"
+      ],
+      "freezeSha256": "b6e5033bdc75a00640eb7ec2121e9cb3351943e4b9e5482fdb63bab145084045",
+      "qualificationSha256": "fec4c78ff300fa27b4c2c9b691ce6df79c18df647608bf680058925b4f7e0564"
+    },
+    {
+      "stage": "conditional",
+      "case": "northline-seal-audit",
+      "fixtureSha256": "7cd42ad6c83b1ddde1b39f7e8a05a9d6666f305b3025a8315793f5ec1ad12539",
+      "roster": [
+        "alg-routed-compact",
+        "build-focused"
+      ],
+      "freezeSha256": "b2d186ad8ca2f873df21365f56ac7c3495ce2bf70f59f5161d9f3d5e3a42bb8f",
+      "qualificationSha256": "a75d53c97536c746815575f93776779a811757f14a40a243d96779bf613d29c5"
+    }
+  ]
+}

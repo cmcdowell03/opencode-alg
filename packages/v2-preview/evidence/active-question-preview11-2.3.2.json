@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "implementation": "4a108e6725279558f29a40d570520029fd5a4d20",
+  "package": "opencode-alg-v2-preview@0.1.0-preview.11",
+  "openCodeVersion": "2.3.2",
+  "naturalCompactionHarnessQualification": {
+    "scope": "Local scripted provider exercising real native host automatic compaction. The script used the expected conversion as a fixture. Its answer alone does not measure operand retention.",
+    "windows": { "assigned": 6, "completed": 6, "autoAppliedArms": 6, "reportSha256": "0a481baf0b76851964bfbc1bd54a17c64b1b8260735256cbc7445f7dc40c2145" },
+    "linuxWsl": { "source": "f0282ea", "assigned": 6, "completed": 6, "autoAppliedArms": 6, "reportSha256": "cb82a31b3c305fdc43d1fc41d90450462eb64b03e4be47aa21ae1777b3bb15b2" }
+  },
+  "bundleSha256": "788367c2bbd39cfc5413d928a40347277ef885bdb55654252720b1fd65392609",
+  "packageSha256": "5ff776e1a98240829426518e100f25bcf9108ac831ff5246d3e600d001809d95",
+  "activeQuestion": {
+    "harness": "benchmark/active-question-acceptance.ts",
+    "modelSimulation": {
+      "model": "active-question-fixture/fixture",
+      "endpoint": "Loopback OpenAI-compatible POST /v1/chat/completions",
+      "responses": "Deterministic tool calls and text scripted against actual host request payloads, with synthetic 1100 input and 32 output tokens per response.",
+      "paidModelCalls": 0
+    },
+    "providerRequestsPerPlatform": 25,
+    "manualCompactionsPerPlatform": 1,
+    "nativeSourceReadsPerPlatform": 6,
+    "sourceReadSequence": [
+      "pressure-logger.json",
+      "mechanical-trace.json",
+      "control-inventory.json",
+      "pressure-logger.json",
+      "pressure-logger.json",
+      "reference-gauge.json"
+    ],
+    "repeatedUnchangedSourceReadsPerPlatform": 0,
+    "sourceReadsDuringReusePerPlatform": 0,
+    "externalAttemptsPerPlatform": 0,
+    "competingExplanations": [
+      "physical restriction",
+      "pressure logger bias"
+    ],
+    "contestedFinding": {
+      "support": [
+        "pressure-logger.json#hold"
+      ],
+      "counterevidence": [
+        "mechanical-trace.json#motion"
+      ]
+    },
+    "stop": {
+      "reason": "missing_evidence",
+      "decisionRevision": 1,
+      "missingEvidence": [
+        "An independent pressure measurement is needed to distinguish a real pressure drop from logger bias."
+      ]
+    },
+    "restart": {
+      "sameSession": true,
+      "newProcess": true,
+      "compactionSummaryOnFirstRequest": true,
+      "rawSourceWitnessesOnFirstRequest": [],
+      "affectedFindings": [
+        "pressure-signal"
+      ],
+      "invalidatedSources": [
+        {
+          "relation": "support",
+          "reference": "pressure-logger.json#hold"
+        }
+      ],
+      "historicalDecisionAuthority": "evidence_unavailable",
+      "currentLoggerReceiptRebound": true
+    },
+    "procedure": {
+      "approvedId": "pressure-trace-discrimination",
+      "decoyId": "control-inventory-audit",
+      "approvedBodyOnFirstResumedRequest": true,
+      "decoyBodyDelivered": false,
+      "procedureSelectedRead": "reference-gauge.json"
+    },
+    "reuse": {
+      "kind": "current_report",
+      "decisionRevision": 3,
+      "evidenceRevision": 10,
+      "reportAuthority": "owner_recorded",
+      "disposition": "resolved",
+      "claims": [
+        {
+          "finding": "Two spare controls are present.",
+          "scope": "Bench inventory",
+          "evidence": [
+            "control-inventory.json#stock"
+          ]
+        },
+        {
+          "finding": "Independent gauge stayed nominal while the logger alone indicated a drop.",
+          "scope": "P-42 pressure hold, single bench trial",
+          "evidence": [
+            "pressure-logger.json#hold",
+            "reference-gauge.json#reference"
+          ]
+        }
+      ]
+    }
+  },
+  "platforms": {
+    "windows": {
+      "environment": {
+        "platform": "win32",
+        "arch": "x64",
+        "release": "10.0.26300"
+      },
+      "hostBinarySha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+      "activeQuestion": {
+        "passed": true,
+        "elapsedMs": 22109,
+        "providerRequestBytes": 354118,
+        "receiptSha256": "ca0f0fc88809c0c395c1e4de9112165edb20cd2a0ccab00815e938c5cf768d2f",
+        "firstResumedPayloadSha256": "e04450e1d33452d5e42ebc72ab990ceee93455df19dc8fe234af3c034b99517d",
+        "firstResumedPayloadBytes": 10323,
+        "resolvedProcedureSha256": "9261b8de8cfebfd1745c27a84b56bb780209fadaf9d5b5db9ec17b0c55955fa3"
+      },
+      "regression": {
+        "suite": {
+          "passed": 298,
+          "failed": 0,
+          "assertions": 2877,
+          "files": 42,
+          "elapsedSeconds": 74.03,
+          "logSha256": "5076c29f1888e7b9b9abab56750950be62836f2741be3288205e0cdd0dbe3039"
+        },
+        "installed": {
+          "passed": [
+            "stable",
+            "absent",
+            "changed",
+            "coexisting"
+          ],
+          "receiptSha256": "923640255b045135a4ed31f4b32c4d3c1a726622af6b5d723948d539d3831488"
+        },
+        "scriptedComparison": {
+          "qualifiedArms": 6,
+          "reportSha256": "0a4dfc5bc497bdfb038fc8f022b999a494b581336aa63a61bd8513fabd2fde34"
+        },
+        "initialAttempt": {
+          "outcome": "suite_timeout",
+          "passed": 297,
+          "failed": 1,
+          "unhandledErrors": 1,
+          "assertions": 2873,
+          "elapsedSeconds": 134.08,
+          "timedOutTest": "verifies committed scoped evidence and reuses the exact settled manifest offline",
+          "testElapsedMs": 5032.69,
+          "timeoutMs": 5000,
+          "logSha256": "d38c3378387adb3bc7b92d9ac553e1b873074db4c898062c5df84b6b586f08fa"
+        },
+        "passingRun": "ro-qualify-windows-4a108e6725"
+      }
+    },
+    "linux": {
+      "environment": {
+        "platform": "linux",
+        "arch": "x64",
+        "release": "6.18.58.1-microsoft-standard-WSL2"
+      },
+      "hostBinarySha256": "e6543f6e5c39c40971ba38afd1819ac852c29ac735b5a89065d3d148d47f27ad",
+      "activeQuestion": {
+        "passed": true,
+        "elapsedMs": 12715,
+        "providerRequestBytes": 352568,
+        "receiptSha256": "e1686292fc582fb68b2900006b4a261e1e6c0b2a6958d5e763c1c46812313aa5",
+        "firstResumedPayloadSha256": "d8f16a12f92e5b7fb676962f5807aebc924a2543c72f88e3a88d126d87675e3f",
+        "firstResumedPayloadBytes": 10261,
+        "resolvedProcedureSha256": "f409cdc5374e923fc7b7cb4bcb0609fbf5065f9780c35e44acf22952df4b1b91"
+      },
+      "regression": {
+        "suite": {
+          "passed": 298,
+          "failed": 0,
+          "assertions": 2877,
+          "files": 42,
+          "elapsedSeconds": 40.68,
+          "logSha256": "083ade9d0dd7748cc0c6ff105b8030139043ef3e324496d99f2372a0600fa19c"
+        },
+        "installed": {
+          "passed": [
+            "stable",
+            "absent",
+            "changed",
+            "coexisting"
+          ],
+          "receiptSha256": "dee931fd6337fad0fc9617c772e309bd206eef18065f8d0172b4d64d83adf5d0"
+        },
+        "scriptedComparison": {
+          "qualifiedArms": 6,
+          "reportSha256": "02abbaa395faa6e93036bfd7b82ff9382cce218ebf232fa56fbf02cf327b480a"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,2757 @@
+{
+  "schema": "active-question-luna-attribution-v1",
+  "scope": "Post-run audit of the six assigned native OAuth arms, from locally persisted receipts. Supplemental measurement with no effect on frozen scoring.",
+  "input": {
+    "runDirectory": "natural-long-luna-4a108e6",
+    "mode": "native-oauth",
+    "model": "openai/gpt-6-luna",
+    "freezeSha256": "3d6517403f4160057f5c1c0659dd75309f7ef00c18aaecdfce38704c82bd715b",
+    "protocolSha256": "3d6517403f4160057f5c1c0659dd75309f7ef00c18aaecdfce38704c82bd715b",
+    "rosterSha256": "9a2467556ce00c80e0dc5d00b5f6a56c2f099f660f97d4a32f818d16fc3b45b5",
+    "eventsSha256": "945175ba96cfe19131c418968538968f5646a1ab1a7a176b2b72af909ef6d6b7",
+    "finalReportSha256": "24c8e75aaefeee2402f2fb06b390817a44537f9b74d3704792966fb5ef23f9fb",
+    "hostBinarySha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+    "bundleSha256": "788367c2bbd39cfc5413d928a40347277ef885bdb55654252720b1fd65392609",
+    "frozenReportSaysRuntimeUnchanged": true
+  },
+  "method": {
+    "multiplicity": "Group successful terminal provider summary rows with a digest by role and exact recorded normalized summary hash, within each arm. Cross-arm repetitions are descriptive only.",
+    "boundaryTiming": "Use host creation epoch milliseconds and the matching provider admission/terminal journal timestamps. Estimate observer start from paired wall/monotonic samples using median offset plus half a millisecond for log quantization. Require a unique root digest match inside the guarded interval from this host creation to the next, and monotonic response ordering. Report unambiguous hash alone separately. Require logged same-session successful root reentry after summary finish, before a later summary request or host boundary.",
+    "timingGuardMs": 2.0,
+    "postUseLimit": "Checkpoint presence comes from the frozen scorer's recorded request IDs. Raw provider request bodies and host boundary completion timestamps are absent. The audit cross-checks timing and identity of those IDs and cannot replay checkpoint extraction, distinguish an identical checkpoint body by instance, or establish operand provenance.",
+    "bridgeLimit": "Bridge answer correctness is an outcome. Seal delivery, fresh reads and procedure delivery are observations and do not establish where the model obtained both numerical operands.",
+    "scriptedLimit": "The no-paid scripted bridge returned fixture.bridgeAnswer.units when the seal text was visible. Scripted evidence receives no operand-survival or independent-calculation credit and was excluded from this attribution audit."
+  },
+  "totals": {
+    "assignedArms": 6,
+    "verifiedArmReceipts": 6,
+    "rawHostAutoByStatus": {
+      "completed": 38,
+      "running": 2
+    },
+    "rawHostManual": 0,
+    "maxProviderClockAnchorSpreadMs": 1.032,
+    "successfulSummaryResponses": 38,
+    "successfulSummaryResponsesWithoutHash": 0,
+    "successfulSummaryResponsesByRole": {
+      "root": 38
+    },
+    "withinArmRepeatedRoleHashGroups": 2,
+    "maxWithinArmRoleHashMultiplicity": 7,
+    "pooledRepeatedRoleHashGroups": 2,
+    "completedAutoBoundariesWithUniqueTimedSummary": 38,
+    "completedAutoBoundariesWithAmbiguousSummaryHashAlone": 10,
+    "completedAutoBoundariesWithHashAmbiguityResolvedByTiming": 10,
+    "completedAutoBoundariesWithAmbiguousTimingWindow": 0,
+    "completedAutoBoundariesWithDifferentTimingMatch": 0,
+    "completedAutoBoundariesWithFrozenPostUse": 38,
+    "completedAutoBoundariesWithTimingSupportedPostUse": 38,
+    "frozenAutoPostUseRequests": 94,
+    "timingSupportedAutoPostUseRequests": 94,
+    "singletonHashAndTimingSupportedAutoPostUseRequests": 84,
+    "loggedSummaryAdmissionMinusHostCreatedMsRange": [
+      6,
+      157
+    ],
+    "loggedSummaryTerminalMinusHostCreatedMsRange": [
+      4948,
+      15465
+    ],
+    "firstCreditedPostUseStartMinusSummaryFinishMsRange": [
+      16.276,
+      180.103
+    ],
+    "allCreditedPostUseStartMinusSummaryFinishMsRange": [
+      16.276,
+      32793.811
+    ],
+    "frozenBridgeFinalAfterAuto": 5,
+    "timingSupportedBridgeFinalAfterAuto": 5,
+    "singletonHashAndTimingSupportedBridgeFinalAfterAuto": 5,
+    "bridgeAttributionChanges": 0,
+    "nativeBridgeAnswersPresent": 5,
+    "nativeBridgeMethodsCorrect": 5,
+    "nativeBridgeCalibrationSealsCorrect": 5,
+    "nativeBridgeConversionsCorrect": 5,
+    "nativeBridgeConversionsCorrectWithZeroFreshRegistryReads": 1,
+    "nativeBridgeConversionsCorrectAndAfterTimingSupportedAuto": 5
+  },
+  "arms": [
+    {
+      "trial": "willow-yard-build",
+      "incident": "willow-yard",
+      "arm": "build",
+      "receiptStatus": "verified_sha256",
+      "receiptSha256": "ffe2147f02023e094beb3cdea4f8dc798d300d2fcbe3147e4317a546a4f9509d",
+      "outcome": "complete",
+      "problem": null,
+      "lastStage": "complete",
+      "rootTranscriptAvailable": true,
+      "providerRequestCount": 22,
+      "providerClock": {
+        "matchedJournalAnchors": 44,
+        "loggedWallMinusMonotonicSpreadMs": 0.967
+      },
+      "rawHost": {
+        "autoByStatus": {
+          "completed": 3
+        },
+        "manual": 0,
+        "allBoundaries": 3
+      },
+      "successfulSummaries": {
+        "requests": 3,
+        "byRole": {
+          "root": 3
+        },
+        "withoutHash": 0,
+        "roleHashGroups": 3,
+        "repeatedRoleHashGroups": [],
+        "maxSameRoleHashMultiplicity": 1
+      },
+      "attribution": {
+        "frozenClassification": "auto-applied",
+        "boundaries": [
+          {
+            "ordinal": 1,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288083631,
+            "summarySha256": "327560b44fb0c96c6ac1370a67c484331abfdb9c4fe835bc7ff71e0016cb6838",
+            "frozenSummaryRequestId": 7,
+            "timingMatchedSummaryRequestId": 7,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              7
+            ],
+            "timingEligibleRequestIds": [
+              7
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 7,
+                "phase": "batch-3",
+                "estimatedObserverStartMinusHostCreatedMs": 23.311,
+                "loggedAdmissionMinusHostCreatedMs": 23,
+                "loggedTerminalMinusHostCreatedMs": 6596,
+                "nextHostCreatedMinusLoggedTerminalMs": 2959,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 2,
+            "timingSupportedPostUseRequestCount": 2,
+            "postUse": [
+              {
+                "requestId": 8,
+                "phase": "batch-3",
+                "startAfterSummaryFinishMs": 21.25,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 9,
+                "phase": "batch-4",
+                "startAfterSummaryFinishMs": 1467.34,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 2,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288093186,
+            "summarySha256": "965657d0e6de822d751b3ee587db8d96dcf9d3807d575a2e2dc8b8250119a81e",
+            "frozenSummaryRequestId": 10,
+            "timingMatchedSummaryRequestId": 10,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              10
+            ],
+            "timingEligibleRequestIds": [
+              10
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 10,
+                "phase": "batch-5",
+                "estimatedObserverStartMinusHostCreatedMs": 7.633,
+                "loggedAdmissionMinusHostCreatedMs": 7,
+                "loggedTerminalMinusHostCreatedMs": 8405,
+                "nextHostCreatedMinusLoggedTerminalMs": 8677,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 4,
+            "timingSupportedPostUseRequestCount": 4,
+            "postUse": [
+              {
+                "requestId": 11,
+                "phase": "batch-5",
+                "startAfterSummaryFinishMs": 43.98,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 12,
+                "phase": "batch-6",
+                "startAfterSummaryFinishMs": 2079.155,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 13,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 4310.781,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 14,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 6373.715,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 3,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288110268,
+            "summarySha256": "1c42fd6b14d3af6a6e1bb191f9e32496b268eddfac116c393e5b333f293e6923",
+            "frozenSummaryRequestId": 15,
+            "timingMatchedSummaryRequestId": 15,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              15
+            ],
+            "timingEligibleRequestIds": [
+              15
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 15,
+                "phase": "bridge",
+                "estimatedObserverStartMinusHostCreatedMs": 6.48,
+                "loggedAdmissionMinusHostCreatedMs": 6,
+                "loggedTerminalMinusHostCreatedMs": 4972,
+                "nextHostCreatedMinusLoggedTerminalMs": null,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 7,
+            "timingSupportedPostUseRequestCount": 7,
+            "postUse": [
+              {
+                "requestId": 16,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 16.276,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 17,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 1530.579,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 18,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 2694.75,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 19,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 4080.915,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 20,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 5637.724,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 21,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 6927.154,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 22,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 10808.18,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          }
+        ],
+        "frozenAutoPostUseRequests": 13,
+        "timingSupportedAutoPostUseRequests": 13,
+        "frozenOnlyAutoPostUseRequestIds": [],
+        "singletonHashAndTimingSupportedAutoPostUseRequests": 13
+      },
+      "bridge": {
+        "answerPresent": true,
+        "finalRequestId": 19,
+        "afterObservedAuto": true,
+        "registryPayloadVisibleDuringBridge": true,
+        "freshRegistryReadsDuringBridge": 2,
+        "earlierRegistryPayloadVisibleDuringBridge": false,
+        "correctMethodCode": true,
+        "correctEarlyCalibrationSeal": true,
+        "correctConversion": true,
+        "timingSupportedFinalAfterAuto": true,
+        "singletonHashAndTimingSupportedFinalAfterAuto": true,
+        "postUseAttributionChanged": false,
+        "timingSupportedBridgeRequestIds": [
+          13,
+          14,
+          16,
+          17,
+          18,
+          19
+        ],
+        "graphSealOnWireRequestIds": [],
+        "summarySealOnWireRequestIds": [],
+        "verifiedRegistryOnWireRequestIds": [
+          19
+        ]
+      }
+    },
+    {
+      "trial": "willow-yard-build-focused",
+      "incident": "willow-yard",
+      "arm": "build-focused",
+      "receiptStatus": "verified_sha256",
+      "receiptSha256": "6e028ddca0edf2dcc5fc699a77eb9dc49e1d0b1126446c328421bba180576d8a",
+      "outcome": "complete",
+      "problem": null,
+      "lastStage": "complete",
+      "rootTranscriptAvailable": true,
+      "providerRequestCount": 31,
+      "providerClock": {
+        "matchedJournalAnchors": 62,
+        "loggedWallMinusMonotonicSpreadMs": 0.984
+      },
+      "rawHost": {
+        "autoByStatus": {
+          "completed": 3
+        },
+        "manual": 0,
+        "allBoundaries": 3
+      },
+      "successfulSummaries": {
+        "requests": 3,
+        "byRole": {
+          "root": 3
+        },
+        "withoutHash": 0,
+        "roleHashGroups": 3,
+        "repeatedRoleHashGroups": [],
+        "maxSameRoleHashMultiplicity": 1
+      },
+      "attribution": {
+        "frozenClassification": "auto-applied",
+        "boundaries": [
+          {
+            "ordinal": 1,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288148070,
+            "summarySha256": "d25fad009d0cef06fd331433c2be66a39522bbf9f124c0e25cadb05cdec8a348",
+            "frozenSummaryRequestId": 7,
+            "timingMatchedSummaryRequestId": 7,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              7
+            ],
+            "timingEligibleRequestIds": [
+              7
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 7,
+                "phase": "batch-3",
+                "estimatedObserverStartMinusHostCreatedMs": 8.832,
+                "loggedAdmissionMinusHostCreatedMs": 8,
+                "loggedTerminalMinusHostCreatedMs": 5527,
+                "nextHostCreatedMinusLoggedTerminalMs": 2750,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 2,
+            "timingSupportedPostUseRequestCount": 2,
+            "postUse": [
+              {
+                "requestId": 8,
+                "phase": "batch-3",
+                "startAfterSummaryFinishMs": 21.878,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 9,
+                "phase": "batch-4",
+                "startAfterSummaryFinishMs": 1416.623,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 2,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288156347,
+            "summarySha256": "1f8428cb47cc47a4632d1994db79decdd1a0553da0174dd58259a2485996f05f",
+            "frozenSummaryRequestId": 10,
+            "timingMatchedSummaryRequestId": 10,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              10
+            ],
+            "timingEligibleRequestIds": [
+              10
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 10,
+                "phase": "batch-5",
+                "estimatedObserverStartMinusHostCreatedMs": 8.649,
+                "loggedAdmissionMinusHostCreatedMs": 8,
+                "loggedTerminalMinusHostCreatedMs": 7533,
+                "nextHostCreatedMinusLoggedTerminalMs": 6018,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 3,
+            "timingSupportedPostUseRequestCount": 3,
+            "postUse": [
+              {
+                "requestId": 11,
+                "phase": "batch-5",
+                "startAfterSummaryFinishMs": 22.75,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 12,
+                "phase": "batch-6",
+                "startAfterSummaryFinishMs": 1320.994,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 13,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 4593.751,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 3,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288169898,
+            "summarySha256": "d4738f6b42e8e3f3f518027488ea1d1911a888f7fc92f68617e1af79e17e7566",
+            "frozenSummaryRequestId": 14,
+            "timingMatchedSummaryRequestId": 14,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              14
+            ],
+            "timingEligibleRequestIds": [
+              14
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 14,
+                "phase": "bridge",
+                "estimatedObserverStartMinusHostCreatedMs": 13.4,
+                "loggedAdmissionMinusHostCreatedMs": 13,
+                "loggedTerminalMinusHostCreatedMs": 4948,
+                "nextHostCreatedMinusLoggedTerminalMs": null,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 8,
+            "timingSupportedPostUseRequestCount": 8,
+            "postUse": [
+              {
+                "requestId": 15,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 18.957,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 16,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 1297.489,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 17,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 2625.649,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 18,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 4018.205,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 28,
+                "phase": "checker",
+                "startAfterSummaryFinishMs": 25950.807,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 29,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 27539.988,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 30,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 29241.788,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 31,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 32774.052,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          }
+        ],
+        "frozenAutoPostUseRequests": 13,
+        "timingSupportedAutoPostUseRequests": 13,
+        "frozenOnlyAutoPostUseRequestIds": [],
+        "singletonHashAndTimingSupportedAutoPostUseRequests": 13
+      },
+      "bridge": {
+        "answerPresent": true,
+        "finalRequestId": 18,
+        "afterObservedAuto": true,
+        "registryPayloadVisibleDuringBridge": true,
+        "freshRegistryReadsDuringBridge": 1,
+        "earlierRegistryPayloadVisibleDuringBridge": false,
+        "correctMethodCode": true,
+        "correctEarlyCalibrationSeal": true,
+        "correctConversion": true,
+        "timingSupportedFinalAfterAuto": true,
+        "singletonHashAndTimingSupportedFinalAfterAuto": true,
+        "postUseAttributionChanged": false,
+        "timingSupportedBridgeRequestIds": [
+          13,
+          15,
+          16,
+          17,
+          18
+        ],
+        "graphSealOnWireRequestIds": [],
+        "summarySealOnWireRequestIds": [],
+        "verifiedRegistryOnWireRequestIds": [
+          18
+        ]
+      }
+    },
+    {
+      "trial": "willow-yard-alg-graph-focused",
+      "incident": "willow-yard",
+      "arm": "alg-graph-focused",
+      "receiptStatus": "verified_sha256",
+      "receiptSha256": "7f99167f729e4817dc76c26d7fce514aa0750a9dcf668652df0478984644fa4f",
+      "outcome": "early-stop",
+      "problem": "NATIVE_PROVIDER_CALL_BUDGET",
+      "lastStage": "batch-2",
+      "rootTranscriptAvailable": true,
+      "providerRequestCount": 48,
+      "providerClock": {
+        "matchedJournalAnchors": 96,
+        "loggedWallMinusMonotonicSpreadMs": 0.963
+      },
+      "rawHost": {
+        "autoByStatus": {
+          "completed": 16,
+          "running": 1
+        },
+        "manual": 0,
+        "allBoundaries": 17
+      },
+      "successfulSummaries": {
+        "requests": 16,
+        "byRole": {
+          "root": 16
+        },
+        "withoutHash": 0,
+        "roleHashGroups": 8,
+        "repeatedRoleHashGroups": [
+          {
+            "role": "root",
+            "summarySha256": "08ff8294063127106b31e36ee004f2b612ad2cc1517aa75687d526adf33bf4cd",
+            "requestIds": [
+              29,
+              31,
+              33,
+              35,
+              37,
+              39,
+              41
+            ]
+          },
+          {
+            "role": "root",
+            "summarySha256": "71539b73c563799cfcbe8c26fd8948111bbe756b51fc0a69cce4c5b6f7a821f5",
+            "requestIds": [
+              43,
+              45,
+              47
+            ]
+          }
+        ],
+        "maxSameRoleHashMultiplicity": 7
+      },
+      "attribution": {
+        "frozenClassification": "auto-applied",
+        "boundaries": [
+          {
+            "ordinal": 1,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288243666,
+            "summarySha256": "6f83921cea3be59ae62a63206e4a2f0bc384b263905002e81dfcf649151c2084",
+            "frozenSummaryRequestId": 11,
+            "timingMatchedSummaryRequestId": 11,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              11
+            ],
+            "timingEligibleRequestIds": [
+              11
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 11,
+                "phase": "batch-1",
+                "estimatedObserverStartMinusHostCreatedMs": 157.358,
+                "loggedAdmissionMinusHostCreatedMs": 157,
+                "loggedTerminalMinusHostCreatedMs": 5548,
+                "nextHostCreatedMinusLoggedTerminalMs": 3661,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 2,
+            "timingSupportedPostUseRequestCount": 2,
+            "postUse": [
+              {
+                "requestId": 12,
+                "phase": "batch-1",
+                "startAfterSummaryFinishMs": 97.658,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 13,
+                "phase": "batch-1",
+                "startAfterSummaryFinishMs": 1679.722,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 2,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288252875,
+            "summarySha256": "bcdccc99752dbbee46c740e740752b293a6eb0684da534daf3c2b74e3b76e18d",
+            "frozenSummaryRequestId": 14,
+            "timingMatchedSummaryRequestId": 14,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              14
+            ],
+            "timingEligibleRequestIds": [
+              14
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 14,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 89.219,
+                "loggedAdmissionMinusHostCreatedMs": 89,
+                "loggedTerminalMinusHostCreatedMs": 6454,
+                "nextHostCreatedMinusLoggedTerminalMs": 7053,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 2,
+            "timingSupportedPostUseRequestCount": 2,
+            "postUse": [
+              {
+                "requestId": 15,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 110.288,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 16,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 1588.204,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 3,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288266382,
+            "summarySha256": "0dcc4d655aa9c501140924495c708cb371666f9107ca07dc9d6fc0f9749af02b",
+            "frozenSummaryRequestId": 17,
+            "timingMatchedSummaryRequestId": 17,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              17
+            ],
+            "timingEligibleRequestIds": [
+              17
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 17,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 102.019,
+                "loggedAdmissionMinusHostCreatedMs": 102,
+                "loggedTerminalMinusHostCreatedMs": 6572,
+                "nextHostCreatedMinusLoggedTerminalMs": 11232,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 5,
+            "timingSupportedPostUseRequestCount": 5,
+            "postUse": [
+              {
+                "requestId": 18,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 157.432,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 19,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 1626.976,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 20,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 2999.041,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 21,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 4647.402,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 22,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 8083.091,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 4,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288284186,
+            "summarySha256": "80dbf5ca50fb6a7e89a78293be1e28197a11555c58dfd9b07a12fead94b40b15",
+            "frozenSummaryRequestId": 23,
+            "timingMatchedSummaryRequestId": 23,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              23
+            ],
+            "timingEligibleRequestIds": [
+              23
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 23,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 106.076,
+                "loggedAdmissionMinusHostCreatedMs": 106,
+                "loggedTerminalMinusHostCreatedMs": 6950,
+                "nextHostCreatedMinusLoggedTerminalMs": 2439,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 24,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 116.031,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 5,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288293575,
+            "summarySha256": "36f1760a3b1185a2bbe27fceadf5a25317a7e702bc321912e02609a13bd67707",
+            "frozenSummaryRequestId": 25,
+            "timingMatchedSummaryRequestId": 25,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              25
+            ],
+            "timingEligibleRequestIds": [
+              25
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 25,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 100.858,
+                "loggedAdmissionMinusHostCreatedMs": 101,
+                "loggedTerminalMinusHostCreatedMs": 8920,
+                "nextHostCreatedMinusLoggedTerminalMs": 1389,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 26,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 115.363,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 6,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288303884,
+            "summarySha256": "5e8eab04808a1fe60646dd06915a432f56437c7f9e58609205827c6c5efdf6d7",
+            "frozenSummaryRequestId": 27,
+            "timingMatchedSummaryRequestId": 27,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              27
+            ],
+            "timingEligibleRequestIds": [
+              27
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 27,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 74.535,
+                "loggedAdmissionMinusHostCreatedMs": 74,
+                "loggedTerminalMinusHostCreatedMs": 9007,
+                "nextHostCreatedMinusLoggedTerminalMs": 1825,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 28,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 89.914,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 7,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288314716,
+            "summarySha256": "08ff8294063127106b31e36ee004f2b612ad2cc1517aa75687d526adf33bf4cd",
+            "frozenSummaryRequestId": 29,
+            "timingMatchedSummaryRequestId": 29,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              29,
+              31,
+              33,
+              35,
+              37,
+              39,
+              41
+            ],
+            "timingEligibleRequestIds": [
+              29
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 29,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 97.841,
+                "loggedAdmissionMinusHostCreatedMs": 98,
+                "loggedTerminalMinusHostCreatedMs": 8953,
+                "nextHostCreatedMinusLoggedTerminalMs": 1429,
+                "inGuardedWindow": true
+              },
+              {
+                "requestId": 31,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 10467.286,
+                "loggedAdmissionMinusHostCreatedMs": 10467,
+                "loggedTerminalMinusHostCreatedMs": 19303,
+                "nextHostCreatedMinusLoggedTerminalMs": -8921,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 33,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 21126.205,
+                "loggedAdmissionMinusHostCreatedMs": 21126,
+                "loggedTerminalMinusHostCreatedMs": 30349,
+                "nextHostCreatedMinusLoggedTerminalMs": -19967,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 35,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 32423.242,
+                "loggedAdmissionMinusHostCreatedMs": 32423,
+                "loggedTerminalMinusHostCreatedMs": 41433,
+                "nextHostCreatedMinusLoggedTerminalMs": -31051,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 37,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 43323.855,
+                "loggedAdmissionMinusHostCreatedMs": 43324,
+                "loggedTerminalMinusHostCreatedMs": 52269,
+                "nextHostCreatedMinusLoggedTerminalMs": -41887,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 39,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 53785.64,
+                "loggedAdmissionMinusHostCreatedMs": 53785,
+                "loggedTerminalMinusHostCreatedMs": 62697,
+                "nextHostCreatedMinusLoggedTerminalMs": -52315,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 41,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 64285.013,
+                "loggedAdmissionMinusHostCreatedMs": 64285,
+                "loggedTerminalMinusHostCreatedMs": 73444,
+                "nextHostCreatedMinusLoggedTerminalMs": -63062,
+                "inGuardedWindow": false
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 30,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 87.848,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 8,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288325098,
+            "summarySha256": "08ff8294063127106b31e36ee004f2b612ad2cc1517aa75687d526adf33bf4cd",
+            "frozenSummaryRequestId": 31,
+            "timingMatchedSummaryRequestId": 31,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              29,
+              31,
+              33,
+              35,
+              37,
+              39,
+              41
+            ],
+            "timingEligibleRequestIds": [
+              31
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 29,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -10284.159,
+                "loggedAdmissionMinusHostCreatedMs": -10284,
+                "loggedTerminalMinusHostCreatedMs": -1429,
+                "nextHostCreatedMinusLoggedTerminalMs": 12058,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 31,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 85.286,
+                "loggedAdmissionMinusHostCreatedMs": 85,
+                "loggedTerminalMinusHostCreatedMs": 8921,
+                "nextHostCreatedMinusLoggedTerminalMs": 1708,
+                "inGuardedWindow": true
+              },
+              {
+                "requestId": 33,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 10744.205,
+                "loggedAdmissionMinusHostCreatedMs": 10744,
+                "loggedTerminalMinusHostCreatedMs": 19967,
+                "nextHostCreatedMinusLoggedTerminalMs": -9338,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 35,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 22041.242,
+                "loggedAdmissionMinusHostCreatedMs": 22041,
+                "loggedTerminalMinusHostCreatedMs": 31051,
+                "nextHostCreatedMinusLoggedTerminalMs": -20422,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 37,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 32941.855,
+                "loggedAdmissionMinusHostCreatedMs": 32942,
+                "loggedTerminalMinusHostCreatedMs": 41887,
+                "nextHostCreatedMinusLoggedTerminalMs": -31258,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 39,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 43403.64,
+                "loggedAdmissionMinusHostCreatedMs": 43403,
+                "loggedTerminalMinusHostCreatedMs": 52315,
+                "nextHostCreatedMinusLoggedTerminalMs": -41686,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 41,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 53903.013,
+                "loggedAdmissionMinusHostCreatedMs": 53903,
+                "loggedTerminalMinusHostCreatedMs": 63062,
+                "nextHostCreatedMinusLoggedTerminalMs": -52433,
+                "inGuardedWindow": false
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 32,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 167.252,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 9,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288335727,
+            "summarySha256": "08ff8294063127106b31e36ee004f2b612ad2cc1517aa75687d526adf33bf4cd",
+            "frozenSummaryRequestId": 33,
+            "timingMatchedSummaryRequestId": 33,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              29,
+              31,
+              33,
+              35,
+              37,
+              39,
+              41
+            ],
+            "timingEligibleRequestIds": [
+              33
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 29,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -20913.159,
+                "loggedAdmissionMinusHostCreatedMs": -20913,
+                "loggedTerminalMinusHostCreatedMs": -12058,
+                "nextHostCreatedMinusLoggedTerminalMs": 23376,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 31,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -10543.714,
+                "loggedAdmissionMinusHostCreatedMs": -10544,
+                "loggedTerminalMinusHostCreatedMs": -1708,
+                "nextHostCreatedMinusLoggedTerminalMs": 13026,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 33,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 115.205,
+                "loggedAdmissionMinusHostCreatedMs": 115,
+                "loggedTerminalMinusHostCreatedMs": 9338,
+                "nextHostCreatedMinusLoggedTerminalMs": 1980,
+                "inGuardedWindow": true
+              },
+              {
+                "requestId": 35,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 11412.242,
+                "loggedAdmissionMinusHostCreatedMs": 11412,
+                "loggedTerminalMinusHostCreatedMs": 20422,
+                "nextHostCreatedMinusLoggedTerminalMs": -9104,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 37,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 22312.855,
+                "loggedAdmissionMinusHostCreatedMs": 22313,
+                "loggedTerminalMinusHostCreatedMs": 31258,
+                "nextHostCreatedMinusLoggedTerminalMs": -19940,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 39,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 32774.64,
+                "loggedAdmissionMinusHostCreatedMs": 32774,
+                "loggedTerminalMinusHostCreatedMs": 41686,
+                "nextHostCreatedMinusLoggedTerminalMs": -30368,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 41,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 43274.013,
+                "loggedAdmissionMinusHostCreatedMs": 43274,
+                "loggedTerminalMinusHostCreatedMs": 52433,
+                "nextHostCreatedMinusLoggedTerminalMs": -41115,
+                "inGuardedWindow": false
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 34,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 130.549,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 10,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288347045,
+            "summarySha256": "08ff8294063127106b31e36ee004f2b612ad2cc1517aa75687d526adf33bf4cd",
+            "frozenSummaryRequestId": 35,
+            "timingMatchedSummaryRequestId": 35,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              29,
+              31,
+              33,
+              35,
+              37,
+              39,
+              41
+            ],
+            "timingEligibleRequestIds": [
+              35
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 29,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -32231.159,
+                "loggedAdmissionMinusHostCreatedMs": -32231,
+                "loggedTerminalMinusHostCreatedMs": -23376,
+                "nextHostCreatedMinusLoggedTerminalMs": 34315,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 31,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -21861.714,
+                "loggedAdmissionMinusHostCreatedMs": -21862,
+                "loggedTerminalMinusHostCreatedMs": -13026,
+                "nextHostCreatedMinusLoggedTerminalMs": 23965,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 33,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -11202.795,
+                "loggedAdmissionMinusHostCreatedMs": -11203,
+                "loggedTerminalMinusHostCreatedMs": -1980,
+                "nextHostCreatedMinusLoggedTerminalMs": 12919,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 35,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 94.242,
+                "loggedAdmissionMinusHostCreatedMs": 94,
+                "loggedTerminalMinusHostCreatedMs": 9104,
+                "nextHostCreatedMinusLoggedTerminalMs": 1835,
+                "inGuardedWindow": true
+              },
+              {
+                "requestId": 37,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 10994.855,
+                "loggedAdmissionMinusHostCreatedMs": 10995,
+                "loggedTerminalMinusHostCreatedMs": 19940,
+                "nextHostCreatedMinusLoggedTerminalMs": -9001,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 39,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 21456.64,
+                "loggedAdmissionMinusHostCreatedMs": 21456,
+                "loggedTerminalMinusHostCreatedMs": 30368,
+                "nextHostCreatedMinusLoggedTerminalMs": -19429,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 41,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 31956.013,
+                "loggedAdmissionMinusHostCreatedMs": 31956,
+                "loggedTerminalMinusHostCreatedMs": 41115,
+                "nextHostCreatedMinusLoggedTerminalMs": -30176,
+                "inGuardedWindow": false
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 36,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 108.388,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 11,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288357984,
+            "summarySha256": "08ff8294063127106b31e36ee004f2b612ad2cc1517aa75687d526adf33bf4cd",
+            "frozenSummaryRequestId": 37,
+            "timingMatchedSummaryRequestId": 37,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              29,
+              31,
+              33,
+              35,
+              37,
+              39,
+              41
+            ],
+            "timingEligibleRequestIds": [
+              37
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 29,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -43170.159,
+                "loggedAdmissionMinusHostCreatedMs": -43170,
+                "loggedTerminalMinusHostCreatedMs": -34315,
+                "nextHostCreatedMinusLoggedTerminalMs": 44754,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 31,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -32800.714,
+                "loggedAdmissionMinusHostCreatedMs": -32801,
+                "loggedTerminalMinusHostCreatedMs": -23965,
+                "nextHostCreatedMinusLoggedTerminalMs": 34404,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 33,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -22141.795,
+                "loggedAdmissionMinusHostCreatedMs": -22142,
+                "loggedTerminalMinusHostCreatedMs": -12919,
+                "nextHostCreatedMinusLoggedTerminalMs": 23358,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 35,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -10844.758,
+                "loggedAdmissionMinusHostCreatedMs": -10845,
+                "loggedTerminalMinusHostCreatedMs": -1835,
+                "nextHostCreatedMinusLoggedTerminalMs": 12274,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 37,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 55.855,
+                "loggedAdmissionMinusHostCreatedMs": 56,
+                "loggedTerminalMinusHostCreatedMs": 9001,
+                "nextHostCreatedMinusLoggedTerminalMs": 1438,
+                "inGuardedWindow": true
+              },
+              {
+                "requestId": 39,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 10517.64,
+                "loggedAdmissionMinusHostCreatedMs": 10517,
+                "loggedTerminalMinusHostCreatedMs": 19429,
+                "nextHostCreatedMinusLoggedTerminalMs": -8990,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 41,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 21017.013,
+                "loggedAdmissionMinusHostCreatedMs": 21017,
+                "loggedTerminalMinusHostCreatedMs": 30176,
+                "nextHostCreatedMinusLoggedTerminalMs": -19737,
+                "inGuardedWindow": false
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 38,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 85.244,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 12,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288368423,
+            "summarySha256": "08ff8294063127106b31e36ee004f2b612ad2cc1517aa75687d526adf33bf4cd",
+            "frozenSummaryRequestId": 39,
+            "timingMatchedSummaryRequestId": 39,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              29,
+              31,
+              33,
+              35,
+              37,
+              39,
+              41
+            ],
+            "timingEligibleRequestIds": [
+              39
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 29,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -53609.159,
+                "loggedAdmissionMinusHostCreatedMs": -53609,
+                "loggedTerminalMinusHostCreatedMs": -44754,
+                "nextHostCreatedMinusLoggedTerminalMs": 55224,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 31,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -43239.714,
+                "loggedAdmissionMinusHostCreatedMs": -43240,
+                "loggedTerminalMinusHostCreatedMs": -34404,
+                "nextHostCreatedMinusLoggedTerminalMs": 44874,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 33,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -32580.795,
+                "loggedAdmissionMinusHostCreatedMs": -32581,
+                "loggedTerminalMinusHostCreatedMs": -23358,
+                "nextHostCreatedMinusLoggedTerminalMs": 33828,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 35,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -21283.758,
+                "loggedAdmissionMinusHostCreatedMs": -21284,
+                "loggedTerminalMinusHostCreatedMs": -12274,
+                "nextHostCreatedMinusLoggedTerminalMs": 22744,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 37,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -10383.145,
+                "loggedAdmissionMinusHostCreatedMs": -10383,
+                "loggedTerminalMinusHostCreatedMs": -1438,
+                "nextHostCreatedMinusLoggedTerminalMs": 11908,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 39,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 78.64,
+                "loggedAdmissionMinusHostCreatedMs": 78,
+                "loggedTerminalMinusHostCreatedMs": 8990,
+                "nextHostCreatedMinusLoggedTerminalMs": 1480,
+                "inGuardedWindow": true
+              },
+              {
+                "requestId": 41,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 10578.013,
+                "loggedAdmissionMinusHostCreatedMs": 10578,
+                "loggedTerminalMinusHostCreatedMs": 19737,
+                "nextHostCreatedMinusLoggedTerminalMs": -9267,
+                "inGuardedWindow": false
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 40,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 141.352,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 13,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288378893,
+            "summarySha256": "08ff8294063127106b31e36ee004f2b612ad2cc1517aa75687d526adf33bf4cd",
+            "frozenSummaryRequestId": 41,
+            "timingMatchedSummaryRequestId": 41,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              29,
+              31,
+              33,
+              35,
+              37,
+              39,
+              41
+            ],
+            "timingEligibleRequestIds": [
+              41
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 29,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -64079.159,
+                "loggedAdmissionMinusHostCreatedMs": -64079,
+                "loggedTerminalMinusHostCreatedMs": -55224,
+                "nextHostCreatedMinusLoggedTerminalMs": 66087,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 31,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -53709.714,
+                "loggedAdmissionMinusHostCreatedMs": -53710,
+                "loggedTerminalMinusHostCreatedMs": -44874,
+                "nextHostCreatedMinusLoggedTerminalMs": 55737,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 33,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -43050.795,
+                "loggedAdmissionMinusHostCreatedMs": -43051,
+                "loggedTerminalMinusHostCreatedMs": -33828,
+                "nextHostCreatedMinusLoggedTerminalMs": 44691,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 35,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -31753.758,
+                "loggedAdmissionMinusHostCreatedMs": -31754,
+                "loggedTerminalMinusHostCreatedMs": -22744,
+                "nextHostCreatedMinusLoggedTerminalMs": 33607,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 37,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -20853.145,
+                "loggedAdmissionMinusHostCreatedMs": -20853,
+                "loggedTerminalMinusHostCreatedMs": -11908,
+                "nextHostCreatedMinusLoggedTerminalMs": 22771,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 39,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -10391.36,
+                "loggedAdmissionMinusHostCreatedMs": -10392,
+                "loggedTerminalMinusHostCreatedMs": -1480,
+                "nextHostCreatedMinusLoggedTerminalMs": 12343,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 41,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 108.013,
+                "loggedAdmissionMinusHostCreatedMs": 108,
+                "loggedTerminalMinusHostCreatedMs": 9267,
+                "nextHostCreatedMinusLoggedTerminalMs": 1596,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 42,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 102.653,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 14,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288389756,
+            "summarySha256": "71539b73c563799cfcbe8c26fd8948111bbe756b51fc0a69cce4c5b6f7a821f5",
+            "frozenSummaryRequestId": 43,
+            "timingMatchedSummaryRequestId": 43,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              43,
+              45,
+              47
+            ],
+            "timingEligibleRequestIds": [
+              43
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 43,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 114.159,
+                "loggedAdmissionMinusHostCreatedMs": 114,
+                "loggedTerminalMinusHostCreatedMs": 8943,
+                "nextHostCreatedMinusLoggedTerminalMs": 1492,
+                "inGuardedWindow": true
+              },
+              {
+                "requestId": 45,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 10524.003,
+                "loggedAdmissionMinusHostCreatedMs": 10524,
+                "loggedTerminalMinusHostCreatedMs": 19563,
+                "nextHostCreatedMinusLoggedTerminalMs": -9128,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 47,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 21475.224,
+                "loggedAdmissionMinusHostCreatedMs": 21475,
+                "loggedTerminalMinusHostCreatedMs": 30376,
+                "nextHostCreatedMinusLoggedTerminalMs": -19941,
+                "inGuardedWindow": false
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 44,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 180.103,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 15,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288400191,
+            "summarySha256": "71539b73c563799cfcbe8c26fd8948111bbe756b51fc0a69cce4c5b6f7a821f5",
+            "frozenSummaryRequestId": 45,
+            "timingMatchedSummaryRequestId": 45,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              43,
+              45,
+              47
+            ],
+            "timingEligibleRequestIds": [
+              45
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 43,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -10320.841,
+                "loggedAdmissionMinusHostCreatedMs": -10321,
+                "loggedTerminalMinusHostCreatedMs": -1492,
+                "nextHostCreatedMinusLoggedTerminalMs": 12461,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 45,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 89.003,
+                "loggedAdmissionMinusHostCreatedMs": 89,
+                "loggedTerminalMinusHostCreatedMs": 9128,
+                "nextHostCreatedMinusLoggedTerminalMs": 1841,
+                "inGuardedWindow": true
+              },
+              {
+                "requestId": 47,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 11040.224,
+                "loggedAdmissionMinusHostCreatedMs": 11040,
+                "loggedTerminalMinusHostCreatedMs": 19941,
+                "nextHostCreatedMinusLoggedTerminalMs": -8972,
+                "inGuardedWindow": false
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 46,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 150.619,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 16,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288411160,
+            "summarySha256": "71539b73c563799cfcbe8c26fd8948111bbe756b51fc0a69cce4c5b6f7a821f5",
+            "frozenSummaryRequestId": 47,
+            "timingMatchedSummaryRequestId": 47,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              43,
+              45,
+              47
+            ],
+            "timingEligibleRequestIds": [
+              47
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 43,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -21289.841,
+                "loggedAdmissionMinusHostCreatedMs": -21290,
+                "loggedTerminalMinusHostCreatedMs": -12461,
+                "nextHostCreatedMinusLoggedTerminalMs": 23000,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 45,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": -10879.997,
+                "loggedAdmissionMinusHostCreatedMs": -10880,
+                "loggedTerminalMinusHostCreatedMs": -1841,
+                "nextHostCreatedMinusLoggedTerminalMs": 12380,
+                "inGuardedWindow": false
+              },
+              {
+                "requestId": 47,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 71.224,
+                "loggedAdmissionMinusHostCreatedMs": 71,
+                "loggedTerminalMinusHostCreatedMs": 8972,
+                "nextHostCreatedMinusLoggedTerminalMs": 1567,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 48,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 92.284,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 17,
+            "reason": "auto",
+            "status": "running",
+            "hostCreatedEpochMs": 1795288421699,
+            "summarySha256": null,
+            "frozenSummaryRequestId": null,
+            "timingMatchedSummaryRequestId": null,
+            "sameRoleSameHashSuccessfulRequestIds": [],
+            "timingEligibleRequestIds": [],
+            "candidateTiming": [],
+            "correlation": "host_not_completed",
+            "frozenPostUseRequestCount": 0,
+            "timingSupportedPostUseRequestCount": 0,
+            "postUse": []
+          }
+        ],
+        "frozenAutoPostUseRequests": 22,
+        "timingSupportedAutoPostUseRequests": 22,
+        "frozenOnlyAutoPostUseRequestIds": [],
+        "singletonHashAndTimingSupportedAutoPostUseRequests": 12
+      },
+      "bridge": {
+        "answerPresent": false,
+        "finalRequestId": null,
+        "afterObservedAuto": false,
+        "registryPayloadVisibleDuringBridge": false,
+        "freshRegistryReadsDuringBridge": 0,
+        "earlierRegistryPayloadVisibleDuringBridge": false,
+        "correctMethodCode": false,
+        "correctEarlyCalibrationSeal": false,
+        "correctConversion": false,
+        "timingSupportedFinalAfterAuto": false,
+        "singletonHashAndTimingSupportedFinalAfterAuto": false,
+        "postUseAttributionChanged": false,
+        "timingSupportedBridgeRequestIds": [],
+        "graphSealOnWireRequestIds": [],
+        "summarySealOnWireRequestIds": [],
+        "verifiedRegistryOnWireRequestIds": []
+      }
+    },
+    {
+      "trial": "sedge-quay-build-focused",
+      "incident": "sedge-quay",
+      "arm": "build-focused",
+      "receiptStatus": "verified_sha256",
+      "receiptSha256": "2f8e6cce6ed539c46b86ca581aebd0cbb19e3d535c5aebaff2fdc7d53e1b3c85",
+      "outcome": "complete",
+      "problem": null,
+      "lastStage": "complete",
+      "rootTranscriptAvailable": true,
+      "providerRequestCount": 30,
+      "providerClock": {
+        "matchedJournalAnchors": 60,
+        "loggedWallMinusMonotonicSpreadMs": 0.987
+      },
+      "rawHost": {
+        "autoByStatus": {
+          "completed": 3
+        },
+        "manual": 0,
+        "allBoundaries": 3
+      },
+      "successfulSummaries": {
+        "requests": 3,
+        "byRole": {
+          "root": 3
+        },
+        "withoutHash": 0,
+        "roleHashGroups": 3,
+        "repeatedRoleHashGroups": [],
+        "maxSameRoleHashMultiplicity": 1
+      },
+      "attribution": {
+        "frozenClassification": "auto-applied",
+        "boundaries": [
+          {
+            "ordinal": 1,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288436782,
+            "summarySha256": "ca05437eb01c7a2d094b655b2dc989dc88688decb6c8887ee1a214eb784348b0",
+            "frozenSummaryRequestId": 7,
+            "timingMatchedSummaryRequestId": 7,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              7
+            ],
+            "timingEligibleRequestIds": [
+              7
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 7,
+                "phase": "batch-3",
+                "estimatedObserverStartMinusHostCreatedMs": 12.531,
+                "loggedAdmissionMinusHostCreatedMs": 12,
+                "loggedTerminalMinusHostCreatedMs": 6103,
+                "nextHostCreatedMinusLoggedTerminalMs": 2594,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 2,
+            "timingSupportedPostUseRequestCount": 2,
+            "postUse": [
+              {
+                "requestId": 8,
+                "phase": "batch-3",
+                "startAfterSummaryFinishMs": 30.099,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 9,
+                "phase": "batch-4",
+                "startAfterSummaryFinishMs": 1412.03,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 2,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288445479,
+            "summarySha256": "6c3b906a8b861f6b62b4e1b945733de82887f078ba6fdb632ec5cebef11e2a6f",
+            "frozenSummaryRequestId": 10,
+            "timingMatchedSummaryRequestId": 10,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              10
+            ],
+            "timingEligibleRequestIds": [
+              10
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 10,
+                "phase": "batch-5",
+                "estimatedObserverStartMinusHostCreatedMs": 11.721,
+                "loggedAdmissionMinusHostCreatedMs": 12,
+                "loggedTerminalMinusHostCreatedMs": 5416,
+                "nextHostCreatedMinusLoggedTerminalMs": 4288,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 3,
+            "timingSupportedPostUseRequestCount": 3,
+            "postUse": [
+              {
+                "requestId": 11,
+                "phase": "batch-5",
+                "startAfterSummaryFinishMs": 29.81,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 12,
+                "phase": "batch-6",
+                "startAfterSummaryFinishMs": 1265.775,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 13,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 2700.698,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 3,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288455183,
+            "summarySha256": "bd1a5ca48bd5fc8bf8ce6021fb73ff2518e65fbe938f3068657649d28a97efe7",
+            "frozenSummaryRequestId": 14,
+            "timingMatchedSummaryRequestId": 14,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              14
+            ],
+            "timingEligibleRequestIds": [
+              14
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 14,
+                "phase": "bridge",
+                "estimatedObserverStartMinusHostCreatedMs": 15.19,
+                "loggedAdmissionMinusHostCreatedMs": 15,
+                "loggedTerminalMinusHostCreatedMs": 5227,
+                "nextHostCreatedMinusLoggedTerminalMs": null,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 8,
+            "timingSupportedPostUseRequestCount": 8,
+            "postUse": [
+              {
+                "requestId": 15,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 32.351,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 16,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 1498.917,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 17,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 3450.973,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 26,
+                "phase": "checker",
+                "startAfterSummaryFinishMs": 23541.084,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 27,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 25283.372,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 28,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 26545.119,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 29,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 27877.156,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 30,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 32793.811,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          }
+        ],
+        "frozenAutoPostUseRequests": 13,
+        "timingSupportedAutoPostUseRequests": 13,
+        "frozenOnlyAutoPostUseRequestIds": [],
+        "singletonHashAndTimingSupportedAutoPostUseRequests": 13
+      },
+      "bridge": {
+        "answerPresent": true,
+        "finalRequestId": 17,
+        "afterObservedAuto": true,
+        "registryPayloadVisibleDuringBridge": true,
+        "freshRegistryReadsDuringBridge": 1,
+        "earlierRegistryPayloadVisibleDuringBridge": false,
+        "correctMethodCode": true,
+        "correctEarlyCalibrationSeal": true,
+        "correctConversion": true,
+        "timingSupportedFinalAfterAuto": true,
+        "singletonHashAndTimingSupportedFinalAfterAuto": true,
+        "postUseAttributionChanged": false,
+        "timingSupportedBridgeRequestIds": [
+          13,
+          15,
+          16,
+          17
+        ],
+        "graphSealOnWireRequestIds": [],
+        "summarySealOnWireRequestIds": [],
+        "verifiedRegistryOnWireRequestIds": [
+          17
+        ]
+      }
+    },
+    {
+      "trial": "sedge-quay-alg-graph-focused",
+      "incident": "sedge-quay",
+      "arm": "alg-graph-focused",
+      "receiptStatus": "verified_sha256",
+      "receiptSha256": "d5aa8108ccf1f4187178e52ba8290ce239c4ef03fb0d1fc3b579cad4b49bad1c",
+      "outcome": "early-stop",
+      "problem": "NATIVE_PROVIDER_CALL_BUDGET",
+      "lastStage": "final",
+      "rootTranscriptAvailable": true,
+      "providerRequestCount": 48,
+      "providerClock": {
+        "matchedJournalAnchors": 96,
+        "loggedWallMinusMonotonicSpreadMs": 1.032
+      },
+      "rawHost": {
+        "autoByStatus": {
+          "completed": 10,
+          "running": 1
+        },
+        "manual": 0,
+        "allBoundaries": 11
+      },
+      "successfulSummaries": {
+        "requests": 10,
+        "byRole": {
+          "root": 10
+        },
+        "withoutHash": 0,
+        "roleHashGroups": 10,
+        "repeatedRoleHashGroups": [],
+        "maxSameRoleHashMultiplicity": 1
+      },
+      "attribution": {
+        "frozenClassification": "auto-applied",
+        "boundaries": [
+          {
+            "ordinal": 1,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288526252,
+            "summarySha256": "efaa72bea532a107afce814543134b450e896a4168c810c4e59da1a507bdce93",
+            "frozenSummaryRequestId": 11,
+            "timingMatchedSummaryRequestId": 11,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              11
+            ],
+            "timingEligibleRequestIds": [
+              11
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 11,
+                "phase": "batch-1",
+                "estimatedObserverStartMinusHostCreatedMs": 148.905,
+                "loggedAdmissionMinusHostCreatedMs": 149,
+                "loggedTerminalMinusHostCreatedMs": 5593,
+                "nextHostCreatedMinusLoggedTerminalMs": 6693,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 2,
+            "timingSupportedPostUseRequestCount": 2,
+            "postUse": [
+              {
+                "requestId": 12,
+                "phase": "batch-1",
+                "startAfterSummaryFinishMs": 123.266,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 13,
+                "phase": "batch-1",
+                "startAfterSummaryFinishMs": 2303.683,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 2,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288538538,
+            "summarySha256": "8ba73d70650ead5ea46912619f64c32b9134195049a8b3c12b0b644d727f38b1",
+            "frozenSummaryRequestId": 14,
+            "timingMatchedSummaryRequestId": 14,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              14
+            ],
+            "timingEligibleRequestIds": [
+              14
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 14,
+                "phase": "batch-2",
+                "estimatedObserverStartMinusHostCreatedMs": 113.424,
+                "loggedAdmissionMinusHostCreatedMs": 114,
+                "loggedTerminalMinusHostCreatedMs": 5642,
+                "nextHostCreatedMinusLoggedTerminalMs": 4459,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 2,
+            "timingSupportedPostUseRequestCount": 2,
+            "postUse": [
+              {
+                "requestId": 15,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 114.99,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 16,
+                "phase": "batch-2",
+                "startAfterSummaryFinishMs": 2039.642,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 3,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288548639,
+            "summarySha256": "764ffdf91ada571eab128e826c8486ba995d7730e326d494493b6b1e3c0a9c85",
+            "frozenSummaryRequestId": 17,
+            "timingMatchedSummaryRequestId": 17,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              17
+            ],
+            "timingEligibleRequestIds": [
+              17
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 17,
+                "phase": "batch-3",
+                "estimatedObserverStartMinusHostCreatedMs": 105.098,
+                "loggedAdmissionMinusHostCreatedMs": 105,
+                "loggedTerminalMinusHostCreatedMs": 6128,
+                "nextHostCreatedMinusLoggedTerminalMs": 6146,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 2,
+            "timingSupportedPostUseRequestCount": 2,
+            "postUse": [
+              {
+                "requestId": 18,
+                "phase": "batch-3",
+                "startAfterSummaryFinishMs": 130.117,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 19,
+                "phase": "batch-3",
+                "startAfterSummaryFinishMs": 2264.586,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 4,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288560913,
+            "summarySha256": "5385978e1be25bdeda76214aa5829e7e738d2fa7fd87146105f402041d2d0631",
+            "frozenSummaryRequestId": 20,
+            "timingMatchedSummaryRequestId": 20,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              20
+            ],
+            "timingEligibleRequestIds": [
+              20
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 20,
+                "phase": "batch-4",
+                "estimatedObserverStartMinusHostCreatedMs": 125.998,
+                "loggedAdmissionMinusHostCreatedMs": 126,
+                "loggedTerminalMinusHostCreatedMs": 6292,
+                "nextHostCreatedMinusLoggedTerminalMs": 6047,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 2,
+            "timingSupportedPostUseRequestCount": 2,
+            "postUse": [
+              {
+                "requestId": 21,
+                "phase": "batch-4",
+                "startAfterSummaryFinishMs": 151.023,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 22,
+                "phase": "batch-4",
+                "startAfterSummaryFinishMs": 1645.053,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 5,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288573252,
+            "summarySha256": "4941c8974e35261beaf57bfda5c8c7752a9e8a9a73d04e1a05abd57e0c286984",
+            "frozenSummaryRequestId": 23,
+            "timingMatchedSummaryRequestId": 23,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              23
+            ],
+            "timingEligibleRequestIds": [
+              23
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 23,
+                "phase": "batch-5",
+                "estimatedObserverStartMinusHostCreatedMs": 66.433,
+                "loggedAdmissionMinusHostCreatedMs": 66,
+                "loggedTerminalMinusHostCreatedMs": 6819,
+                "nextHostCreatedMinusLoggedTerminalMs": 4817,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 2,
+            "timingSupportedPostUseRequestCount": 2,
+            "postUse": [
+              {
+                "requestId": 24,
+                "phase": "batch-5",
+                "startAfterSummaryFinishMs": 85.583,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 25,
+                "phase": "batch-5",
+                "startAfterSummaryFinishMs": 1519.588,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 6,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288584888,
+            "summarySha256": "52ed5fdafcabc4b418d01dfe8b36d06314815f860009e184c665555a81652024",
+            "frozenSummaryRequestId": 26,
+            "timingMatchedSummaryRequestId": 26,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              26
+            ],
+            "timingEligibleRequestIds": [
+              26
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 26,
+                "phase": "batch-6",
+                "estimatedObserverStartMinusHostCreatedMs": 77.37,
+                "loggedAdmissionMinusHostCreatedMs": 77,
+                "loggedTerminalMinusHostCreatedMs": 6846,
+                "nextHostCreatedMinusLoggedTerminalMs": 5605,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 2,
+            "timingSupportedPostUseRequestCount": 2,
+            "postUse": [
+              {
+                "requestId": 27,
+                "phase": "batch-6",
+                "startAfterSummaryFinishMs": 129.465,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 28,
+                "phase": "batch-6",
+                "startAfterSummaryFinishMs": 1704.003,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 7,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288597339,
+            "summarySha256": "ceb03785a6100724be94fd6b61db3c330b2af3655cafaddf99c739d4caeb0425",
+            "frozenSummaryRequestId": 29,
+            "timingMatchedSummaryRequestId": 29,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              29
+            ],
+            "timingEligibleRequestIds": [
+              29
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 29,
+                "phase": "bridge",
+                "estimatedObserverStartMinusHostCreatedMs": 71.573,
+                "loggedAdmissionMinusHostCreatedMs": 71,
+                "loggedTerminalMinusHostCreatedMs": 7946,
+                "nextHostCreatedMinusLoggedTerminalMs": 27405,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 5,
+            "timingSupportedPostUseRequestCount": 5,
+            "postUse": [
+              {
+                "requestId": 30,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 107.14,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 31,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 1760.422,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 39,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 20260.87,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 40,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 21776.248,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 41,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 23561.215,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 8,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288632690,
+            "summarySha256": "ec9617a2ef7b8711c096c24444c8484388e299b7b26556586552a6975535a25a",
+            "frozenSummaryRequestId": 42,
+            "timingMatchedSummaryRequestId": 42,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              42
+            ],
+            "timingEligibleRequestIds": [
+              42
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 42,
+                "phase": "final",
+                "estimatedObserverStartMinusHostCreatedMs": 128.795,
+                "loggedAdmissionMinusHostCreatedMs": 129,
+                "loggedTerminalMinusHostCreatedMs": 9375,
+                "nextHostCreatedMinusLoggedTerminalMs": 4530,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 2,
+            "timingSupportedPostUseRequestCount": 2,
+            "postUse": [
+              {
+                "requestId": 43,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 55.487,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 44,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 2536.623,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 9,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288646595,
+            "summarySha256": "f1167d222e4f33a621b8fbf8b6b2afe54a0840973e9b845e29c824e17687672e",
+            "frozenSummaryRequestId": 45,
+            "timingMatchedSummaryRequestId": 45,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              45
+            ],
+            "timingEligibleRequestIds": [
+              45
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 45,
+                "phase": "final",
+                "estimatedObserverStartMinusHostCreatedMs": 42.738,
+                "loggedAdmissionMinusHostCreatedMs": 42,
+                "loggedTerminalMinusHostCreatedMs": 9225,
+                "nextHostCreatedMinusLoggedTerminalMs": 1952,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 46,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 65.137,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 10,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288657772,
+            "summarySha256": "9b2ced88cb03f8b9d83297d4551e1ee80caf00d2dbbeec47c7d4217b186c032f",
+            "frozenSummaryRequestId": 47,
+            "timingMatchedSummaryRequestId": 47,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              47
+            ],
+            "timingEligibleRequestIds": [
+              47
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 47,
+                "phase": "final",
+                "estimatedObserverStartMinusHostCreatedMs": 49.908,
+                "loggedAdmissionMinusHostCreatedMs": 50,
+                "loggedTerminalMinusHostCreatedMs": 15465,
+                "nextHostCreatedMinusLoggedTerminalMs": 2016,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 1,
+            "timingSupportedPostUseRequestCount": 1,
+            "postUse": [
+              {
+                "requestId": 48,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 58.105,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 11,
+            "reason": "auto",
+            "status": "running",
+            "hostCreatedEpochMs": 1795288675253,
+            "summarySha256": null,
+            "frozenSummaryRequestId": null,
+            "timingMatchedSummaryRequestId": null,
+            "sameRoleSameHashSuccessfulRequestIds": [],
+            "timingEligibleRequestIds": [],
+            "candidateTiming": [],
+            "correlation": "host_not_completed",
+            "frozenPostUseRequestCount": 0,
+            "timingSupportedPostUseRequestCount": 0,
+            "postUse": []
+          }
+        ],
+        "frozenAutoPostUseRequests": 21,
+        "timingSupportedAutoPostUseRequests": 21,
+        "frozenOnlyAutoPostUseRequestIds": [],
+        "singletonHashAndTimingSupportedAutoPostUseRequests": 21
+      },
+      "bridge": {
+        "answerPresent": true,
+        "finalRequestId": 31,
+        "afterObservedAuto": true,
+        "registryPayloadVisibleDuringBridge": false,
+        "freshRegistryReadsDuringBridge": 0,
+        "earlierRegistryPayloadVisibleDuringBridge": false,
+        "correctMethodCode": true,
+        "correctEarlyCalibrationSeal": true,
+        "correctConversion": true,
+        "timingSupportedFinalAfterAuto": true,
+        "singletonHashAndTimingSupportedFinalAfterAuto": true,
+        "postUseAttributionChanged": false,
+        "timingSupportedBridgeRequestIds": [
+          30,
+          31
+        ],
+        "graphSealOnWireRequestIds": [
+          31
+        ],
+        "summarySealOnWireRequestIds": [],
+        "verifiedRegistryOnWireRequestIds": []
+      }
+    },
+    {
+      "trial": "sedge-quay-build",
+      "incident": "sedge-quay",
+      "arm": "build",
+      "receiptStatus": "verified_sha256",
+      "receiptSha256": "cdb957bae18834718848b53478e13ed753c258f78ff358f1a0fc514e49765151",
+      "outcome": "complete",
+      "problem": null,
+      "lastStage": "complete",
+      "rootTranscriptAvailable": true,
+      "providerRequestCount": 21,
+      "providerClock": {
+        "matchedJournalAnchors": 42,
+        "loggedWallMinusMonotonicSpreadMs": 0.983
+      },
+      "rawHost": {
+        "autoByStatus": {
+          "completed": 3
+        },
+        "manual": 0,
+        "allBoundaries": 3
+      },
+      "successfulSummaries": {
+        "requests": 3,
+        "byRole": {
+          "root": 3
+        },
+        "withoutHash": 0,
+        "roleHashGroups": 3,
+        "repeatedRoleHashGroups": [],
+        "maxSameRoleHashMultiplicity": 1
+      },
+      "attribution": {
+        "frozenClassification": "auto-applied",
+        "boundaries": [
+          {
+            "ordinal": 1,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288690105,
+            "summarySha256": "551cb71384435dce7705c7153ff30180a55ccef2eb46cd0d886c8384445da9a1",
+            "frozenSummaryRequestId": 7,
+            "timingMatchedSummaryRequestId": 7,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              7
+            ],
+            "timingEligibleRequestIds": [
+              7
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 7,
+                "phase": "batch-3",
+                "estimatedObserverStartMinusHostCreatedMs": 8.011,
+                "loggedAdmissionMinusHostCreatedMs": 8,
+                "loggedTerminalMinusHostCreatedMs": 5805,
+                "nextHostCreatedMinusLoggedTerminalMs": 3730,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 2,
+            "timingSupportedPostUseRequestCount": 2,
+            "postUse": [
+              {
+                "requestId": 8,
+                "phase": "batch-3",
+                "startAfterSummaryFinishMs": 16.658,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 9,
+                "phase": "batch-4",
+                "startAfterSummaryFinishMs": 1603.905,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 2,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288699640,
+            "summarySha256": "bd55502ef052b85fed3f4ce9aad31535bf325e3d99c6af5d196364f11387b004",
+            "frozenSummaryRequestId": 10,
+            "timingMatchedSummaryRequestId": 10,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              10
+            ],
+            "timingEligibleRequestIds": [
+              10
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 10,
+                "phase": "batch-5",
+                "estimatedObserverStartMinusHostCreatedMs": 10.984,
+                "loggedAdmissionMinusHostCreatedMs": 11,
+                "loggedTerminalMinusHostCreatedMs": 6210,
+                "nextHostCreatedMinusLoggedTerminalMs": 5691,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 3,
+            "timingSupportedPostUseRequestCount": 3,
+            "postUse": [
+              {
+                "requestId": 11,
+                "phase": "batch-5",
+                "startAfterSummaryFinishMs": 29.274,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 12,
+                "phase": "batch-6",
+                "startAfterSummaryFinishMs": 1250.188,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 13,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 2615.986,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          },
+          {
+            "ordinal": 3,
+            "reason": "auto",
+            "status": "completed",
+            "hostCreatedEpochMs": 1795288711541,
+            "summarySha256": "083bb345178331f96631370f5270f5a1722893689591111df8cddc894d03bdaa",
+            "frozenSummaryRequestId": 14,
+            "timingMatchedSummaryRequestId": 14,
+            "sameRoleSameHashSuccessfulRequestIds": [
+              14
+            ],
+            "timingEligibleRequestIds": [
+              14
+            ],
+            "candidateTiming": [
+              {
+                "requestId": 14,
+                "phase": "bridge",
+                "estimatedObserverStartMinusHostCreatedMs": 8.271,
+                "loggedAdmissionMinusHostCreatedMs": 8,
+                "loggedTerminalMinusHostCreatedMs": 6092,
+                "nextHostCreatedMinusLoggedTerminalMs": null,
+                "inGuardedWindow": true
+              }
+            ],
+            "correlation": "unique_timed_match",
+            "frozenPostUseRequestCount": 7,
+            "timingSupportedPostUseRequestCount": 7,
+            "postUse": [
+              {
+                "requestId": 15,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 16.526,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 16,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 1516.084,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 17,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 2828.456,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 18,
+                "phase": "bridge",
+                "startAfterSummaryFinishMs": 4533.639,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 19,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 6579.594,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 20,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 8189.84,
+                "timingAndIdentitySupported": true
+              },
+              {
+                "requestId": 21,
+                "phase": "final",
+                "startAfterSummaryFinishMs": 11757.676,
+                "timingAndIdentitySupported": true
+              }
+            ]
+          }
+        ],
+        "frozenAutoPostUseRequests": 12,
+        "timingSupportedAutoPostUseRequests": 12,
+        "frozenOnlyAutoPostUseRequestIds": [],
+        "singletonHashAndTimingSupportedAutoPostUseRequests": 12
+      },
+      "bridge": {
+        "answerPresent": true,
+        "finalRequestId": 18,
+        "afterObservedAuto": true,
+        "registryPayloadVisibleDuringBridge": true,
+        "freshRegistryReadsDuringBridge": 1,
+        "earlierRegistryPayloadVisibleDuringBridge": false,
+        "correctMethodCode": true,
+        "correctEarlyCalibrationSeal": true,
+        "correctConversion": true,
+        "timingSupportedFinalAfterAuto": true,
+        "singletonHashAndTimingSupportedFinalAfterAuto": true,
+        "postUseAttributionChanged": false,
+        "timingSupportedBridgeRequestIds": [
+          13,
+          15,
+          16,
+          17,
+          18
+        ],
+        "graphSealOnWireRequestIds": [],
+        "summarySealOnWireRequestIds": [],
+        "verifiedRegistryOnWireRequestIds": [
+          18
+        ]
+      }
+    }
+  ]
+}

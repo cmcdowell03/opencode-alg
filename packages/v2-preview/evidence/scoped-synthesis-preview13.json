@@ -1,0 +1,248 @@
+{
+  "runtimeCommit": "1557dc8f480487ea85a811a3fd7d5885b6cc4530",
+  "packageVersion": "0.1.0-preview.13",
+  "openCodeVersion": "2.3.2",
+  "bundleSha256": "d4bd87f20fcd1aebbb26b3484fb86dc21176686e2ad3611ed5795119c659f4a6",
+  "sourceArchiveSha256": "1588cceea3d603d2733124e8052892f3ab2b80831cb61a43181a313888faae1a",
+  "provider": "local scripted",
+  "platforms": {
+    "windows": {
+      "host": {
+        "platform": "win32",
+        "arch": "x64",
+        "release": "10.0.26300"
+      },
+      "binarySha256": "5d52d86e2c3fd2c4d51cefc893f64c9ee66bc2e9535332195802f7c646b2a3a3",
+      "packageSha256": "405916a17dd777f884b78859cb24c8f8e49901621983eb1dde122aa68fb7da42",
+      "suite": {
+        "passed": 345,
+        "failed": 0,
+        "assertions": 3253
+      },
+      "gates": [
+        "synthesis",
+        "typecheck",
+        "suite",
+        "compatibility",
+        "loopback",
+        "routing",
+        "routing-qualification"
+      ],
+      "compatibilityCases": [
+        "stable",
+        "absent",
+        "changed",
+        "coexisting"
+      ],
+      "scriptedComparison": {
+        "qualified": true,
+        "completed": 6,
+        "expected": 6
+      },
+      "scriptedRouting": {
+        "assigned": 7,
+        "attempted": 7,
+        "qualificationPassed": true,
+        "runtimeUnchanged": true
+      },
+      "synthesis": {
+        "final": "Calibration: 12 (reference-gauge.json#reference).",
+        "actionsAfterReadout": [
+          "status",
+          "create"
+        ],
+        "activeGuidanceAfterReadout": false,
+        "restartProcessChanged": true,
+        "sameReadoutAfterRestart": true,
+        "mixedNextMove": "scoped-indeterminate",
+        "missingEvidence": "No independent check has been received.",
+        "afterCorrection": [
+          {
+            "id": "bench-calibration",
+            "state": "invalidated"
+          },
+          {
+            "id": "independent-check",
+            "state": "missing"
+          }
+        ],
+        "changes": [
+          "changed",
+          "unchanged"
+        ],
+        "changedNextMove": "recheck",
+        "observedSourceReads": 2,
+        "externalAttempts": 0,
+        "stageRequests": [
+          {
+            "phase": "retain",
+            "requests": 5
+          },
+          {
+            "phase": "single-claim",
+            "requests": 3
+          },
+          {
+            "phase": "before-restart",
+            "requests": 2
+          },
+          {
+            "phase": "after-restart",
+            "requests": 2
+          },
+          {
+            "phase": "observe-change",
+            "requests": 4
+          },
+          {
+            "phase": "after-observed-change",
+            "requests": 2
+          }
+        ]
+      },
+      "schemaComparison": [
+        {
+          "mode": "legacy",
+          "requests": 23,
+          "schemaBytes": 110072
+        },
+        {
+          "mode": "routed",
+          "requests": 24,
+          "schemaBytes": 131545
+        },
+        {
+          "mode": "routed-compact",
+          "requests": 24,
+          "schemaBytes": 80733
+        }
+      ],
+      "artifactSha256": {
+        "synthesis.json": "ca52c8de261f425a1feb2cbc0383a19e7af03e22e75547f5726fb4bf741757fa",
+        "routing.json": "76b10515803e85005f7064ef6a3dc5b95939f5aecc74e12fe9f2f421d7cedb00",
+        "routing-qualification/report.json": "de88d4829dd0d70919b418652da60ca1b5b5559c425644820bc0dc6308d1250e",
+        "gates.jsonl": "845eb2e04efc14562f7208258698675fc44ea158f28c766cf105c93609e4a804",
+        "suite.log": "db3f4cfbfddb7fc1bc5b1f2d63b1ece5a5990666a33e509aab9e5c48d9140969"
+      }
+    },
+    "linux": {
+      "host": {
+        "platform": "linux",
+        "arch": "x64",
+        "release": "6.18.58.1-microsoft-standard-WSL2"
+      },
+      "binarySha256": "e6543f6e5c39c40971ba38afd1819ac852c29ac735b5a89065d3d148d47f27ad",
+      "packageSha256": "405916a17dd777f884b78859cb24c8f8e49901621983eb1dde122aa68fb7da42",
+      "suite": {
+        "passed": 345,
+        "failed": 0,
+        "assertions": 3253
+      },
+      "gates": [
+        "synthesis",
+        "typecheck",
+        "suite",
+        "compatibility",
+        "loopback",
+        "routing",
+        "routing-qualification"
+      ],
+      "compatibilityCases": [
+        "stable",
+        "absent",
+        "changed",
+        "coexisting"
+      ],
+      "scriptedComparison": {
+        "qualified": true,
+        "completed": 6,
+        "expected": 6
+      },
+      "scriptedRouting": {
+        "assigned": 7,
+        "attempted": 7,
+        "qualificationPassed": true,
+        "runtimeUnchanged": true
+      },
+      "synthesis": {
+        "final": "Calibration: 12 (reference-gauge.json#reference).",
+        "actionsAfterReadout": [
+          "status",
+          "create"
+        ],
+        "activeGuidanceAfterReadout": false,
+        "restartProcessChanged": true,
+        "sameReadoutAfterRestart": true,
+        "mixedNextMove": "scoped-indeterminate",
+        "missingEvidence": "No independent check has been received.",
+        "afterCorrection": [
+          {
+            "id": "bench-calibration",
+            "state": "invalidated"
+          },
+          {
+            "id": "independent-check",
+            "state": "missing"
+          }
+        ],
+        "changes": [
+          "changed",
+          "unchanged"
+        ],
+        "changedNextMove": "recheck",
+        "observedSourceReads": 2,
+        "externalAttempts": 0,
+        "stageRequests": [
+          {
+            "phase": "retain",
+            "requests": 5
+          },
+          {
+            "phase": "single-claim",
+            "requests": 3
+          },
+          {
+            "phase": "before-restart",
+            "requests": 2
+          },
+          {
+            "phase": "after-restart",
+            "requests": 2
+          },
+          {
+            "phase": "observe-change",
+            "requests": 4
+          },
+          {
+            "phase": "after-observed-change",
+            "requests": 2
+          }
+        ]
+      },
+      "schemaComparison": [
+        {
+          "mode": "legacy",
+          "requests": 23,
+          "schemaBytes": 110072
+        },
+        {
+          "mode": "routed",
+          "requests": 24,
+          "schemaBytes": 131545
+        },
+        {
+          "mode": "routed-compact",
+          "requests": 24,
+          "schemaBytes": 80733
+        }
+      ],
+      "artifactSha256": {
+        "synthesis.json": "fe0135bab196c29fbc3a3597474879b340966f9f622856d3a03bd09524b342a0",
+        "routing.json": "21771bff5fabc71f7da14855aff42a20eaa748cd46e24a614acd0d508b0241af",
+        "routing-qualification/report.json": "199514cba3225aca2e56e9960d75091ad18b8282ea7218046a6d452fd2c0831b",
+        "gates.jsonl": "5e9f45e2322d3391f1682df0c807280d442003d9ec2d0aa4d95416fb4ab5b0f3",
+        "suite.log": "5e8ab6177fb20afc124ddf3284c7794adc5c3321b518358eb32955786a612778"
+      }
+    }
+  }
+}

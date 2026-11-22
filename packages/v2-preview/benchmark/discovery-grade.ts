@@ -31,6 +31,7 @@ export type DiscoveryAdjudication = {
 type GradeOptions = {
   verifiedSourcePaths?: readonly string[]
   adjudications?: readonly DiscoveryAdjudication[]
+  strictAssistantFormat?: boolean
 }
 
 type ClaimGrade = {
@@ -47,7 +48,10 @@ const aliases: Record<DiscoveryFinding, readonly string[]> = {
   catalog: ["catalog", "stale catalog", "stale catalog revision", "outdated catalog", "wrong catalog revision", "stale limits"],
   noise: ["noise", "measurement noise", "instrument noise", "gauge noise", "instrument scatter", "measurement scatter"],
   coverage: ["coverage", "unresolved clock alignment", "unresolved time alignment", "missing synchronization evidence",
-    "missing sync capture", "missing decisive source", "indeterminate timing"],
+    "missing sync capture", "missing decisive source", "indeterminate timing", "missing custody tally", "unresolved overflow dispatch"],
+  duplicate: ["duplicate", "duplicate reservation", "duplicate scan", "duplicate scanner rows", "reservation retransmission"],
+  tare: ["tare", "incorrect tare", "carrier tare error", "wrong carrier mass", "wrong tare"],
+  "short-pick": ["short pick", "pick pack shortfall", "packing shortage", "physical shortage", "actual short pick"],
 }
 
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value)
@@ -69,15 +73,41 @@ function readSubmission(value: unknown): DiscoverySubmission | null {
   return { disposition: value.disposition, claims, missingEvidence: value.missingEvidence.map(path => path.trim()) }
 }
 
-export function parseDiscoverySubmission(text: string | null | undefined): unknown {
+export function parseDiscoverySubmission(text: string | null | undefined, strict = false): unknown {
   if (typeof text !== "string") return undefined
   const trimmed = text.trim()
   const fenced = /^\x60\x60\x60(?:json)?[ \t]*\r?\n([\s\S]*?)\r?\n\x60\x60\x60$/i.exec(trimmed)
   try {
-    return JSON.parse(fenced?.[1] ?? trimmed)
+    return JSON.parse(strict ? trimmed : fenced?.[1] ?? trimmed)
   } catch {
     return undefined
   }
+}
+
+export function focusedDiscoveryAnswer(text: string | null | undefined) {
+  const strict = parseDiscoverySubmission(text, true)
+  if (readSubmission(strict)) return { value: strict, strictFormat: true }
+  const fenced = parseDiscoverySubmission(text)
+  if (readSubmission(fenced)) return { value: fenced, strictFormat: false }
+  if (!text || text.length > 65_536) return { value: undefined, strictFormat: false }
+  const values: unknown[] = []
+  let start = -1, depth = 0, quoted = false, escaped = false
+  for (let index = 0; index < text.length; index++) {
+    const char = text[index]
+    if (!depth) {
+      if (char === "{") { start = index; depth = 1 }
+    } else if (quoted) {
+      if (escaped) escaped = false
+      else if (char === "\\") escaped = true
+      else if (char === '"') quoted = false
+    } else if (char === '"') quoted = true
+    else if (char === "{") depth++
+    else if (char === "}" && --depth === 0) {
+      const value = parseDiscoverySubmission(text.slice(start, index + 1), true)
+      if (readSubmission(value)) values.push(value)
+    }
+  }
+  return { value: values.length === 1 && !depth ? values[0] : undefined, strictFormat: false }
 }
 
 /** Export only the public evidence and the anonymous answer being reviewed. */
@@ -114,6 +144,7 @@ export function gradeDiscovery(incident: DiscoveryCase, value: unknown, options:
   const submission = packet?.submission
   const { targets, missingEvidence } = incident.oracle
   const references = rowReferences(incident.input.sources)
+  const focused = !!incident.focus
 
   const reviews = new Map<string, DiscoveryAdjudication>()
   const adjudicationErrors: string[] = []
@@ -128,7 +159,7 @@ export function gradeDiscovery(incident: DiscoveryCase, value: unknown, options:
       (review.verdict === "supported" && review.evidence.some(ref => !claim.evidence.includes(ref))) ||
       (review.equivalentTo !== undefined && (review.verdict !== "supported" ||
         !targets.some(target => target.finding === review.equivalentTo?.finding && target.scope === review.equivalentTo.scope &&
-          target.requiredRefs.every(ref => claim.evidence.includes(ref)))))) {
+          (focused || target.requiredRefs.every(ref => claim.evidence.includes(ref))))))) {
       adjudicationErrors.push(`Invalid adjudication for ${review?.claimId ?? "unknown claim"}`)
       continue
     }
@@ -143,31 +174,33 @@ export function gradeDiscovery(incident: DiscoveryCase, value: unknown, options:
 
   const claims: ClaimGrade[] = (submission?.claims ?? []).map(claim => {
     const { claimId } = claim
-    const finding = (Object.keys(aliases) as DiscoveryFinding[]).find(key => aliases[key].includes(normalized(claim.finding)))
+    const finding = (Object.keys(aliases) as DiscoveryFinding[]).find(key => aliases[key].includes(normalized(claim.finding)) &&
+      (focused || !["missing custody tally", "unresolved overflow dispatch"].includes(normalized(claim.finding))))
     const target = targets.find(row => row.finding === finding && row.scope === scopeKey(claim.scope))
     const citationsValid = claim.evidence.length > 0 && claim.evidence.every(ref => references.has(ref))
-    if (target) {
+    if (target && !focused) {
       const supported = citationsValid && target.requiredRefs.every(ref => claim.evidence.includes(ref))
       return { claimId, target, status: supported ? "supported" : "unsupported",
         reason: supported ? "Required source rows establish the finding" : "Missing or invalid supporting source rows" }
     }
     // Keep all open-ended statements reviewable, including those containing invented references.
     const review = reviews.get(claimId)
-    if (!review) return { claimId, target: null, status: "pending", reason: "Blinded review required" }
+    if (!review) return { claimId, target: target ?? null, status: "pending", reason: "Blinded review required" }
     if (review.verdict === "supported" && !citationsValid) {
-      return { claimId, target: null, status: "unsupported", reason: "Missing or invalid supporting source rows" }
+      return { claimId, target: target ?? null, status: "unsupported", reason: "Missing or invalid supporting source rows" }
     }
     const equivalent = review.equivalentTo
     const equivalentTarget = equivalent ? targets.find(row => row.finding === equivalent.finding && row.scope === equivalent.scope) : undefined
-    return { claimId, target: equivalentTarget ?? null, status: review.verdict, reason: review.rationale }
+    return { claimId, target: equivalentTarget ?? target ?? null, status: review.verdict, reason: review.rationale }
   })
 
   const supportedTargets = new Set(claims.filter(row => row.status === "supported").map(row => row.target))
-  const missedFindings = targets.filter(target => !supportedTargets.has(target))
+  const contentScored = !focused || !!submission
+  const missedFindings = contentScored ? targets.filter(target => !supportedTargets.has(target)) : []
   const defects = targets.filter(target => target.materialDefect)
   const severeMisses = missedFindings.filter(target => target.materialDefect || target.finding === "coverage")
     .map(({ finding, scope }) => ({ finding, scope }))
-  const materialDefectRecall = defects.length ? defects.filter(target => supportedTargets.has(target)).length / defects.length : null
+  const materialDefectRecall = contentScored && defects.length ? defects.filter(target => supportedTargets.has(target)).length / defects.length : null
   const supportedClaims = new Set(claims.flatMap(({ status, target }, index) => {
     if (status !== "supported") return []
     const claim = submission!.claims[index]!
@@ -179,8 +212,11 @@ export function gradeDiscovery(incident: DiscoveryCase, value: unknown, options:
   const citesUnavailableEvidence = !!submission && submission.missingEvidence.length === missingEvidence.length &&
     missingEvidence.every(path => submission.missingEvidence.includes(path))
   const expectsAbstention = missingEvidence.length > 0
+  const citationIncomplete = targets.filter(target => supportedTargets.has(target) && !claims.some((row, index) =>
+    row.status === "supported" && row.target === target &&
+    target.requiredRefs.every(ref => submission!.claims[index]!.evidence.includes(ref))))
   const supportComplete = !!submission && missedFindings.length === 0 && unsupportedClaims.length === 0 &&
-    !reviewRequired && !adjudicationErrors.length && citesUnavailableEvidence
+    !reviewRequired && !adjudicationErrors.length && citesUnavailableEvidence && (!focused || !citationIncomplete.length)
   const fullIncidentClosure = supportComplete && !expectsAbstention && submission?.disposition === "resolved"
   const correctAbstention = supportComplete && expectsAbstention && submission?.disposition === "indeterminate"
   const verifiedPaths = options.verifiedSourcePaths === undefined ? null : new Set(options.verifiedSourcePaths)
@@ -198,9 +234,12 @@ export function gradeDiscovery(incident: DiscoveryCase, value: unknown, options:
     if (unsupportedClaims.length) unsupportedCertifications.push("Closure relies on unsupported or contradicted claims")
     if (!citesUnavailableEvidence) unsupportedCertifications.push("Reported missing evidence does not match the source inventory")
     if (verifiedEvidence === false) unsupportedCertifications.push("Citations lack verified source reads")
+    if (focused && citationIncomplete.length) unsupportedCertifications.push("Closure lacks the frozen row references")
   }
+  const findingKeys = (rows: readonly DiscoveryTarget[]) => rows.map(({ finding, scope }) => ({ finding, scope }))
+  const reportedTargets = new Set(claims.map(claim => claim.target))
   return {
-    passed: (fullIncidentClosure || correctAbstention) && verifiedEvidence !== false,
+    passed: (fullIncidentClosure || correctAbstention) && verifiedEvidence !== false && (!focused || options.strictAssistantFormat !== false),
     validSubmission: !!submission,
     materialDefectRecall,
     fullIncidentClosure,
@@ -215,5 +254,21 @@ export function gradeDiscovery(incident: DiscoveryCase, value: unknown, options:
     claims,
     adjudicationErrors,
     verifiedEvidence,
+    ...(focused && { diagnostics: {
+      disposition: submission?.disposition ?? null,
+      formatFailure: options.strictAssistantFormat === false || !submission,
+      contentScored,
+      missingEvidenceExact: citesUnavailableEvidence,
+      abstentionOnMissingEvidence: expectsAbstention && submission?.disposition === "indeterminate" && citesUnavailableEvidence,
+      omittedDefects: findingKeys(contentScored ? defects.filter(target => !reportedTargets.has(target)) : []),
+      unsubstantiatedDefects: findingKeys(defects.filter(target => reportedTargets.has(target) && !supportedTargets.has(target))),
+      citationIncompleteFindings: findingKeys(citationIncomplete),
+      citationsWithoutVerifiedReads: verifiedPaths === null ? null : [...new Set(submission?.claims.flatMap(claim =>
+        claim.evidence.filter(ref => {
+          const path = references.get(ref)
+          return path === undefined || !verifiedPaths.has(path)
+        })) ?? [])],
+      unsupportedClosure: submission?.disposition === "resolved" && unsupportedCertifications.length > 0,
+    } }),
   }
 }

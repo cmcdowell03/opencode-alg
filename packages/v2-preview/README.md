@@ -35,12 +35,261 @@ generated `package.json`. This configuration enables diagnostics:
 
 Open a session in that location and call `alg_investigation` with
 `{"action":"diagnostics"}`. Compare its `runtimeSha256` with the build receipt.
-Enabling investigation writes additionally requires `enabled: true`, one
+The default job-backed mode additionally requires `enabled: true`, one
 configured `approvedJob`, a matching qualified loopback MCP `adapter` and a
 restricted checker agent. The [fixture configuration](acceptance/host.ts) and
 [synthetic service](acceptance/service.ts) provide a working local example.
 The connector profile limits authority to the configured operation, budget,
 project and principal.
+
+## Investigate existing records
+
+When the answers are already in logs, inspection tables or other source
+records, configure the preview with a read-only investigation. For example,
+these plugin options select a source reader already registered in OpenCode.
+
+```json
+{
+  "enabled": true,
+  "investigationMode": "read-only",
+  "ownerAgent": "build",
+  "readOnlyEvidenceTools": ["sources_discovery_read"]
+}
+```
+
+Use the registered name of the reader at your site. The host's permissions
+still govern access to it. The reader accepts a relative `path` and returns
+that path, the text `content` and an opaque `receipt`. It may include the
+SHA-256 of the exact UTF-8 content. JSON arrays of records with distinct
+`id` fields support citations of the form `path#id`. ALG binds each citation
+to an observed native tool call in the owner's project and session.
+
+Create the investigation, inspect the records, then use `record_finding` to
+link each interpretation to supporting rows, contradictory rows and the
+observation that would change the conclusion. After a restart or compaction,
+start with `status`. Its receipts describe the version already inspected.
+An observation of changed content invalidates dependent evidence. The
+read-only ledger can run without an external job service.
+
+For independent review, enable `readOnlyCacheSourceBytes` and configure
+`checkerAgent` as a native subagent allowed to use `alg_read_only_review`.
+This opts the project into storing bounded source content locally. Run
+`/alg-review` to give the child one finding, its proposed falsifier and the
+cited historical rows. The child can record support, a challenge, or missing
+evidence. If the review needs one more record, the operator can name an
+allowlisted reader and reference with `/alg-review read <tool> <path#row>`.
+The owner performs the read through its normal OpenCode permissions. Run
+`/alg-review` again to deliver the observed row. The child has no direct
+source-tool grant. Configure `readOnlyReviewResidualTools` to select which
+registered evidence readers may serve these requests.
+
+To record a closure decision, include `report_decision` with `disposition`
+and `missingEvidence` in a receipt-bound `set_next_measurement` after the
+last finding write. A later finding change makes that disposition stale.
+Use `/alg-report` to export the acknowledged decision as a JSON file. The
+native session receipt names the project-relative file and its SHA-256.
+The filename identifies the decision and evidence revisions. The command works without another
+model request. In evaluations, score the assistant's reply independently of
+the export. A matching receipt establishes which source was read. Assessing
+whether that source establishes a causal claim also requires reviewing the
+finding against the evidence.
+
+### Deciding what to read on the next pass
+
+Set `graphLoop: true` in the read-only plugin options above to enable the
+active question. The ordinary `status` response then returns a compact view
+for the orchestrator. Use `status` with `finding_id` to inspect one finding,
+or `detail: true` for the full view.
+
+Suppose tool drift and inspection bias both explain the same yield drop.
+Keep both findings linked to their own supporting and contradictory rows.
+Choose a measurement that could distinguish them, such as a reference lot
+measured on both inspection tools. When its result is already recorded and
+still applies, use the existing receipt. When the source changes, revisit
+each finding that depended on that source. A historical reference explains
+why a finding reopened. A current observation is required to support a new
+decision. If the distinguishing observation is unavailable, record that
+specific gap and stop.
+
+In graph-loop mode a changed source path can acquire a new usable revision
+after two distinct completed reads of the replacement agree on its digest.
+Replaying one tool call cannot confirm it. Confirmation makes the new
+snapshot available for inspection. Each dependent finding still needs to be
+rebound to current evidence. Conflicting receipts remain quarantined.
+
+Evaluate this loop at three separate points. Inspect the actual next model
+request to establish which facts and approved skill survived. Inspect the
+subsequent action to establish whether the orchestrator used that information
+and avoided a redundant read. Finally, check the answer against the incident
+evidence. A small prompt, a successful tool call, or an accurate ledger
+export alone cannot establish that the orchestrator solved the incident.
+
+### Turn-local investigations
+
+The preview.12 read-only graph also accepts `turnRouting: "routed"` and
+`turnRouting: "routed-compact"`. Both let the owner answer a fresh request
+directly. The compact option additionally reduces the investigation tool
+definition on the wire. An owner that needs earlier evidence can request
+`status`, select an ID from `finding_index`, and read the finding and its
+current citations with `finding_id`. Recording a new measurement still
+requires a scoped investigation and the normal evidence checks.
+
+On OpenCode 2.3.2 for Windows and Linux, the owner retained a calibration,
+counted flagged rows in the next prompt with zero tool calls, then recovered
+the calibration after manual compaction and restart. It applied the approved
+procedure to compute 171.00 kPa from cached operands and cited the source row.
+An amended calibration reopened only its dependent finding. Across 24
+matched requests the compact schema used 62,632 bytes versus 113,444 bytes
+with full schemas. Linux observed zero ledger-file opens during the count.
+Windows measured file contents and tool calls; file opens were unmeasured.
+These runs used a scripted provider. [Local platform receipts](evidence/turn-routing-platforms.json)
+
+In the frozen native Luna comparison, routed ALG reached a final answer on
+the Willow Yard regression with eight automatic compactions, down from
+sixteen on preview.11. It still missed the incident grade. On two new
+held-out incidents, stock Build and Build with a focused checker each passed
+both. Routed ALG with the same checker reached final synthesis on both and
+exhausted the 48-call ceiling before returning either answer. Each routed
+run on the held-out incidents made six status calls during final synthesis and
+had ten completed automatic compactions. Each Build control had three.
+The blind citation review upheld both focused Build passes and flagged one
+irrelevant citation in stock Build's Larch answer. In all three routed ALG
+runs the model used the correct calibration after compaction without a fresh
+registry read. Its final conversion request contained the calibration seal
+in graph status. None of the three demonstrated a lookup of the specific
+source-linked finding through the catalog. Turn routing remains opt-in.
+[Measured results](benchmark/turn-routing-native-evidence.md) ·
+[Blind citation review](evidence/turn-routing-luna-review.json) ·
+[Protocol and scoring](benchmark/turn-routing-protocol.md)
+
+### Answering from recorded findings
+
+Preview.13 adds a synthesis selector to `alg_investigation` in both routed
+read-only modes. An owner preparing an answer can request up to 16 finding IDs
+in a single call. For example, the following request checks two findings against
+their current source receipts.
+
+```json
+{"action":"status","synthesis":{"claims":["calibration","independent-check"]}}
+```
+
+The response gives each finding's interpretation, scope, available citations,
+and any recorded counterevidence or gap. `nextMove` applies only to the
+requested claims. The owner still has to compare that set with the user's
+question. `answer-selected` means each selected claim has scoped support and
+its details fit. `scoped-indeterminate` identifies an incomplete set, and
+`recheck` identifies a changed source dependency. An empty list inventories
+recorded findings. When supported claims exceed the 16 KiB readout limit,
+`read-detail` points the owner to the affected `finding_id` selectors.
+An unknown ID returns `assess-unrecorded`. The owner can use the evidence
+already in context or retrieve an inspected row with `status.snapshot_refs`
+when the source cache is enabled. This matters for the previous Luna runs on
+Birch and Larch. Each acknowledged just one calibration finding, and neither
+recorded an incident finding during final synthesis.
+The host verifies citation links and recorded arithmetic. Interpretation
+remains attributed to the agent.
+
+To compare successive readouts, supply a `baseline` object mapping selected
+IDs to their previous `signature` values. The `changes` array follows the
+order of `claims`. A repeat observation of identical content preserves the
+signature. A replacement becomes visible after the approved source tool
+observes it. The owner can retrieve the findings again after compaction or
+restart from the same investigation ledger. A successful synthesis call
+returns control to the owner for the answer. Calling `create` or recording
+new work can reopen the graph on the same turn.
+
+On OpenCode 2.3.2, the Windows and WSL2 Linux installations each passed 345
+tests. A scripted provider answered from a selected finding with its exact
+row citation, named the recorded gap when asked about both findings, and
+reopened only the affected claim after observing a source correction. The
+readout matched across a native process restart. In the 24-request routed
+comparison, the compact schema occupied 80,733 bytes in preview.13 and
+62,632 bytes in preview.12. The earlier Luna incident scores apply to
+preview.12. [Preview.13 platform evidence](evidence/scoped-synthesis-preview13.json)
+
+### Local OpenCode 2.3.2 qualification
+
+On Windows x64 and Linux x64 under WSL2, the same preview.9 bundle passed all
+286 preview tests per platform. In each of four installed scenarios the
+harness compacted the native session, restarted the OpenCode process and
+resumed the same session. There were zero source rereads after restart and
+zero external job calls. The cases covered stable evidence, an absent source,
+a changed source and two coexisting findings. The last case also exercised
+the native checker child against one cached row and exported the explicitly
+recorded disposition without a model request. The case provider was
+scripted. [Platform receipts](evidence/read-only-qualification-2.3.2.json)
+
+Preview.10 corrected the missing-source field in an acknowledged export. The
+new regression reproduced the extra entry on preview.9. Windows and native
+Linux each passed 287 tests on the corrected package, along with the four
+installed scenarios and six scripted comparison arms. [Corrected package receipts](evidence/read-only-qualification-preview10-2.3.2.json)
+
+Preview.11 passed the installed active-question scenario on Windows x64 and
+Linux x64 under WSL2 using the same bundle. Its SHA-256 was
+`788367c2bbd39cfc5413d928a40347277ef885bdb55654252720b1fd65392609`.
+Each host sent 25 requests to the local OpenAI-compatible
+`active-question-fixture/fixture` provider, including one manual compaction.
+The scripted provider used the actual request payloads to choose tool calls
+and return the saved findings. It received 354,118 request bytes on Windows
+and 352,568 on Linux. The run measured installed behavior with simulated
+responses and made zero paid model calls.
+
+The scenario compared a physical restriction with logger bias and stopped
+at an explicit evidence gap. After the logger record changed, compaction and
+a process restart reopened only the pressure finding. The first resumed
+request carried the approved pressure procedure and the confirmation route.
+The provider confirmed the amended record once, used the procedure to select
+the independent gauge, and reused the resolved report at decision revision
+3. Each host made six source reads in total, with zero repeated reads of
+unchanged sources and zero source reads during report reuse.
+
+The final revision `4a108e6` also passed 298 tests with 2,877 assertions,
+four installed read-only regression scenarios, and six scripted comparison
+arms on each platform. The first Windows suite run passed 297 tests and
+timed out in the offline settled-manifest test. The retry passed all gates
+with the same bundle and five-second test timeout.
+[Active-question and regression receipts](evidence/active-question-preview11-2.3.2.json)
+
+```sh
+bun packages/v2-preview/benchmark/active-question-acceptance.ts /path/to/opencode /path/to/alg-v2-preview-bundle
+```
+
+### Native Luna graph-loop comparison
+
+On two new dispatch incidents, every condition received the same six staging
+batches and an 8,192-token host context, with automatic compaction enabled.
+The grader checked the assistant's final answer against the cited source
+rows. Each condition had the same 48-request ceiling per incident.
+
+| Condition | Final answers | Passed frozen incident grade | Completed automatic compactions | Provider calls | Input tokens |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Stock Build | 2/2 | 1/2 | 6 | 43 | 176,529 |
+| Build with focused checker | 2/2 | 1/2 | 6 | 61 | 207,596 |
+| ALG graph loop with focused checker | 0/2 | 0/2 | 26 | 96 | 425,468 |
+
+ALG used both 48-call allocations. At Willow Yard it recorded the calibration
+finding, then spent 15 summary requests in staging batch 2. At Sedge Quay it
+completed all six staging counts correctly and recovered the calibration for
+the later conversion, then exhausted the budget in the final phase. Both ALG
+final dispositions are unobserved. The two Build conditions both passed Sedge
+Quay and missed Willow Yard. The configured window intentionally exercises
+context pressure. Production compaction rates remain unmeasured.
+
+A supplemental audit matched all 38 completed automatic compactions to
+provider summary responses by digest and time. The five arms that reached
+the post-compaction conversion used the correct method, calibration seal
+and result. Only Sedge Quay ALG did so without a fresh registry read.
+An independent reviewer saw the sources and anonymous submissions for the
+two pending Willow Yard coverage claims. The cited rows contradicted both.
+The incident grades remained unchanged.
+[Compaction attribution](evidence/active-question-luna-attribution.json) · [Anonymous claim review](evidence/active-question-luna-claim-review.json)
+
+The next experiment should test whether the owner can finish a self-contained
+user turn while the graph stays idle. Keep the same receipt-bound resumption
+when a later turn actually depends on the investigation. Observe the graph
+brief and tool-schema bytes in each request, the number of consecutive
+summaries without a completed user turn, and final incident accuracy.
+[Frozen protocol](evidence/active-question-luna-freeze.json) · [Measured results](evidence/active-question-luna.json)
 
 ## Run the recovery scenario
 
