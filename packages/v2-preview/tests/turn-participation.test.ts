@@ -82,6 +82,28 @@ test("only successful local owner create or recorded writes acquire active mode"
   expect((await route([prompt, assistant([tool("set_next_measurement", { ...result, outcome: "recorded" })])])).mode).toBe("active")
 })
 
+test("a local synthesis read yields active work across a cut until the owner reopens it", async () => {
+  const { route, participation } = environment()
+  const prompt = user("msg_synthesis")
+  const selected = (receipt: object, executed = false) => tool("status", receipt, {
+    executed, state: { status: "completed", input: { action: "status", synthesis: { claims: ["pressure"] } },
+      content: [{ type: "text", text: JSON.stringify(receipt) }] },
+  })
+  const receipt = { ...result, synthesis: { claims: [] } }
+  for (const invalid of [selected({ ...receipt, ok: false }), selected(result),
+    selected({ ...receipt, runtimeSha256: "foreign" }), selected(receipt, true)]) {
+    expect((await route([prompt, write, assistant([invalid])])).mode).toBe("active")
+  }
+  const rows = [prompt, write, assistant([selected(receipt), tool("procedure")])]
+  const read = await route(rows)
+  expect(read.mode).toBe("lookup")
+  expect(participation.decide(request.sessionID, read, work)).toBe("none")
+  await route([...rows, cut("msg_readout_cut", "running")], true)
+  expect((await route([cut("msg_readout_cut")])).mode).toBe("lookup")
+  expect((await route([cut("msg_readout_cut"), assistant([tool("create")])])).mode).toBe("active")
+  expect((await route([...rows, user("msg_unrelated")])).mode).toBe("passive")
+})
+
 test("ordinary repeat yields on the same revision and action, with progress and new turns allowed", async () => {
   const { route, participation } = environment()
   const first = user("msg_first")

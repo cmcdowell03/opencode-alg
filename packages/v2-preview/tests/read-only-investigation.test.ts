@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test"
+import { expect, spyOn, test } from "bun:test"
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -41,7 +41,8 @@ async function fixture(directory: string, overrides: Record<string, unknown> = {
   let allowed = true
   let allowedNativeUse = true
   const transform = (edit: (editor: unknown) => void) => {
-    edit({ get: () => undefined, add: (value: { execute: Execute; input: typeof input }) => {
+    edit({ get: () => undefined, add: (value: { name: string; execute: Execute; input: typeof input }) => {
+      if (value.name !== TOOL) return
       execute = value.execute
       input = value.input
     } })
@@ -441,6 +442,176 @@ test("status pages every source reference while recovery projects only the index
     host.revokeNativeALG()
     expect(await host.call("status")).toMatchObject({ ok: false, error: "PERMISSION_DENIED" })
     await expect(host.command()).rejects.toThrow("PERMISSION_DENIED")
+  } finally {
+    await host.detach()
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
+test.each(["routed", "routed-compact"])("synthesis reads selected evidence through the %s registered tool", async turnRouting => {
+  const directory = await mkdtemp(join(tmpdir(), "alg-synthesis-"))
+  const host = await fixture(directory, { graphLoop: true, turnRouting })
+  const rejectNetwork = () => {
+    throw new Error("Unexpected network request from synthesis")
+  }
+  const network = spyOn(globalThis, "fetch").mockImplementation(Object.assign(
+    async () => rejectNetwork(), { preconnect: rejectNetwork },
+  ))
+  try {
+    expect(host.input().properties).toHaveProperty("synthesis")
+    expect(await host.call("create")).toMatchObject({ ok: true })
+    host.history([
+      sourceResult("initial-a", "The calibration log certifies scale 12.", "a.md"),
+      sourceResult("initial-b", "The independent log certifies scale 20.", "b.md"),
+    ])
+    for (const [id, scope, interpretation, support, counterevidence, missingEvidence] of [
+      ["affected", "Carrier A", "The certified scale is 12.", ["a.md"], [], undefined],
+      ["independent", "Carrier B", "The certified scale is 20.", ["b.md"], [], undefined],
+      ["disputed", "Both carriers", "The carriers use the same scale.", ["a.md"], ["b.md"], undefined],
+      ["gap", "Carrier C", "The certified scale is unknown.", [], [], "A signed calibration trace."],
+    ] as const) {
+      expect(await host.call("record_finding", { expected_decision_revision: 0, finding: {
+        id, scope, interpretation, support, counterevidence, missingEvidence,
+      } })).toMatchObject({ ok: true })
+    }
+
+    const readout = async (claims: string[]) => {
+      const receipt = await host.call("status", { synthesis: { claims } })
+      expect(receipt).toMatchObject({ ok: true })
+      return receipt.synthesis
+    }
+    expect(await readout([])).toMatchObject({
+      selection: "all-recorded", nextMove: "select-claims",
+      claims: [{ id: "affected" }, { id: "disputed" }, { id: "gap" }, { id: "independent" }],
+    })
+    expect(await readout(["independent", "affected"])).toMatchObject({
+      selection: "explicit", nextMove: "answer-selected", truncated: false,
+      claims: [
+        { id: "independent", state: "supported-scoped", scope: "Carrier B",
+          interpretation: "The certified scale is 20.", support: [{ reference: "b.md" }] },
+        { id: "affected", state: "supported-scoped", scope: "Carrier A",
+          interpretation: "The certified scale is 12.", support: [{ reference: "a.md" }] },
+      ],
+    })
+    expect(await readout(["affected", "gap", "disputed", "unknown"])).toMatchObject({
+      nextMove: "scoped-indeterminate",
+      claims: [
+        { id: "affected", state: "supported-scoped" },
+        { id: "gap", state: "missing", scope: "Carrier C", missingEvidence: "A signed calibration trace." },
+        { id: "disputed", state: "contested", scope: "Both carriers",
+          interpretation: "The carriers use the same scale.",
+          support: [{ reference: "a.md" }], counterevidence: [{ reference: "b.md" }] },
+        { id: "unknown", state: "unknown", signature: null },
+      ],
+    })
+    const selector = { synthesis: { claims: ["affected"] } }
+    const child = await host.call("status", selector, "ses_child")
+    expect(child).toMatchObject({ ok: false, error: "OWNER_REQUIRED" })
+    expect(child.synthesis).toBeUndefined()
+    host.revokeSource()
+    const revoked = await host.call("status", selector)
+    expect(revoked).toMatchObject({ ok: false, error: "PERMISSION_DENIED" })
+    expect(revoked.synthesis).toBeUndefined()
+    expect(network).not.toHaveBeenCalled()
+  } finally {
+    network.mockRestore()
+    await host.detach()
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
+test("synthesis reopens only the changed claim and retains that result after compaction and restart", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "alg-synthesis-restart-"))
+  const options = { graphLoop: true, turnRouting: "routed-compact", readOnlyCacheSourceBytes: true }
+  const first = await fixture(directory, options)
+  let restarted: Awaited<ReturnType<typeof fixture>> | undefined
+  try {
+    expect(await first.call("create")).toMatchObject({ ok: true })
+    const original = sourceResult("original-a", "Scale 12.", "a.md")
+    const independent = sourceResult("original-b", "Scale 20.", "b.md")
+    first.history([original, independent])
+    const claims = ["affected", "independent"]
+    for (const [index, id] of claims.entries()) {
+      expect(await first.call("record_finding", { expected_decision_revision: 0, finding: {
+        id, scope: "Calibration", interpretation: "The certified scale applies.",
+        support: [index === 0 ? "a.md" : "b.md"], counterevidence: [],
+      } })).toMatchObject({ ok: true, finding_status: "supported" })
+    }
+    const initial = await first.call("status", { synthesis: { claims } })
+    expect(initial).toMatchObject({ ok: true, synthesis: { nextMove: "answer-selected" } })
+    const [affected, unaffected] = initial.synthesis.claims
+    const sha256 = /^[a-f0-9]{64}$/
+    expect(affected.signature).toMatch(sha256)
+    expect(unaffected.signature).toMatch(sha256)
+    const selector = { synthesis: { claims, baseline: {
+      affected: affected.signature, independent: unaffected.signature,
+    } } }
+    first.history([sourceResult("same-b", "Scale 20.", "b.md")])
+    expect(await first.call("status", selector)).toMatchObject({
+      ok: true, synthesis: { nextMove: "answer-selected", changes: ["unchanged", "unchanged"] },
+    })
+    first.history([sourceResult("replacement-a", "Scale 13.", "a.md")])
+    const replaced = await first.call("status", selector)
+    expect(replaced).toMatchObject({
+      ok: true, synthesis: {
+        nextMove: "recheck", changes: ["changed", "unchanged"],
+        claims: [
+          { id: "affected", state: "invalidated", invalidated: [{ relation: "support", reference: "a.md" }] },
+          { id: "independent", state: "supported-scoped", signature: unaffected.signature },
+        ],
+      },
+    })
+    expect(replaced.synthesis.claims[0].signature).toMatch(sha256)
+    expect(replaced.synthesis.claims[0].signature).not.toBe(affected.signature)
+    expect(replaced.synthesis.claims[0].support ?? []).toEqual([])
+
+    await first.request("compaction")
+    first.history([])
+    expect((await first.call("status", selector)).synthesis).toEqual(replaced.synthesis)
+    await first.detach()
+    restarted = await fixture(directory, options)
+    expect((await restarted.call("status", selector)).synthesis).toEqual(replaced.synthesis)
+    restarted.revokeNativeALG()
+    const revoked = await restarted.call("status", selector)
+    expect(revoked).toMatchObject({ ok: false, error: "PERMISSION_DENIED" })
+    expect(revoked.synthesis).toBeUndefined()
+  } finally {
+    await first.detach()
+    await restarted?.detach()
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
+test.each([
+  ["read-only", { graphLoop: false }],
+  ["read-only graph", { graphLoop: true }],
+  ["job-backed", {
+    investigationMode: "job-backed", graphLoop: false, readOnlyEvidenceTools: [],
+    adapter: {
+      endpoint: "http://127.0.0.1:1/mcp",
+      serverId: "fixture", serverRevision: "1", principalId: "fixture",
+      mcpServerName: "host-fixture", mcpServerVersion: "1",
+      profileEvidence: "fixture", verifierId: "fixture", evidenceSha256: "b".repeat(64),
+      verifiedAt: new Date(Date.now() - 1000).toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      readOnlyOperations: true, scopeEnforcedByServer: true, idempotentSubmit: true, lookupBySubmissionId: true,
+      operations: ["fixture.read"],
+      executionLimits: { maxDurationMs: 500, maxBytesScanned: 2048, maxResultBytes: 1024, maxCost: 1 },
+      submit: { name: "submit", schemaHash: "a".repeat(64) },
+      lookup: { name: "lookup", schemaHash: "a".repeat(64) },
+      validateResult: { name: "validate", schemaHash: "a".repeat(64) },
+      readResult: { name: "read", schemaHash: "a".repeat(64) },
+    },
+    approvedJob: { operation: "fixture.read", recipe_version: "1", reserved_cost: 1, query: {}, parameters: {} },
+  }],
+] as const)("status rejects synthesis without turnRouting in %s mode", async (_mode, options) => {
+  const directory = await mkdtemp(join(tmpdir(), "alg-synthesis-unrouted-"))
+  const host = await fixture(directory, options)
+  try {
+    expect(host.input().properties).not.toHaveProperty("synthesis")
+    const receipt = await host.call("status", { synthesis: { claims: [] } })
+    expect(receipt).toMatchObject({ ok: false, error: "UNSUPPORTED_OR_INVALID_ACTION" })
+    expect(receipt.synthesis).toBeUndefined()
   } finally {
     await host.detach()
     await rm(directory, { recursive: true, force: true })

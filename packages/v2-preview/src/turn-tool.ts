@@ -16,7 +16,7 @@ type RegisteredInput = NativeSchema & {
 
 const originals = new WeakMap<NativeTool, NativeTool>()
 const compactActions = ["status", "procedure", "diagnostics", "create"]
-const statusSelectors = ["finding_id", "snapshot_refs", "source_path", "source_tool", "reference_offset"]
+const statusSelectors = ["finding_id", "snapshot_refs", "source_path", "source_tool", "reference_offset", "synthesis"]
 
 /** Edit the host-supplied presentation only. A false result delegates to the full presenter. */
 export function presentTurnTool(
@@ -48,7 +48,9 @@ export function presentTurnTool(
       : selectors
     const tool: NativeTool = {
       ...native,
-      description: "Use status to recall saved project facts; create opens the investigation for work on this turn. Answer self-contained turns directly.",
+      description: phase === "lookup" && selectors.synthesis && hasStatus
+        ? "Use status with synthesis to read the claims needed for an answer together. Answer with the current evidence and identify remaining gaps. Use create to reopen work."
+        : "Use status to recall saved project facts; create opens the investigation for work on this turn. Answer self-contained turns directly.",
       input: structuredClone({
         ...registeredInput,
         properties: { action: { ...action, enum: actions }, ...properties },

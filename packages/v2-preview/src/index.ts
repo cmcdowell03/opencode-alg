@@ -34,6 +34,7 @@ import { registerReadOnlyReview, reviewTool } from "./read-only-review.ts"
 import { ActiveQuestionProjection, activeQuestion } from "./active-question.ts"
 import { buildTurnStatus, presentTurnTool, turnRoutingSchema } from "./turn-tool.ts"
 import { TurnParticipation } from "./turn-participation.ts"
+import { buildSynthesisReadout, synthesisRequestSchema } from "./synthesis.ts"
 
 const agentId = z.string().regex(/^[\w-]{1,80}$/)
 const configSchema = z.object({
@@ -80,7 +81,7 @@ function actionFields(action: typeof actions[number]): { required: string[]; opt
     case "render_report": return { required: [], optional: ["expected_decision_revision"] }
     case "result": return { required: ["runId", "citation", "result"], optional: [] }
     case "read": case "revoke": return { required: ["runId"], optional: [] }
-    case "status": return { required: [], optional: ["runId", ...evidenceStatusFields, ...graphStatusFields] }
+    case "status": return { required: [], optional: ["runId", ...evidenceStatusFields, ...graphStatusFields, "synthesis"] }
     case "procedure": return { required: [], optional: ["runId"] }
     default: return { required: [], optional: [] }
   }
@@ -120,7 +121,7 @@ const toolInput = {
 } as const
 type Action = typeof actions[number]
 
-function registeredInput(readOnly: boolean, graphLoop = false) {
+function registeredInput(readOnly: boolean, graphLoop: boolean, routed: boolean) {
   const { refutation, runId, citation, result, finding, evidence_refs, report_decision, source_path, source_tool, reference_offset, finding_id, detail, snapshot_refs, ...common } = toolInput.properties
   return {
     ...toolInput,
@@ -130,6 +131,8 @@ function registeredInput(readOnly: boolean, graphLoop = false) {
       ...(readOnly ? {
         evidence_refs, finding, report_decision, source_path, source_tool, reference_offset, finding_id,
         ...(graphLoop && { detail, snapshot_refs, finding: z.toJSONSchema(findingSchema) }),
+        ...(routed && { synthesis: { ...z.toJSONSchema(synthesisRequestSchema),
+          description: "Read findings, gaps and exact citations together. List the finding IDs needed for this answer, or [] to inventory recorded findings. Optional baseline compares earlier claim signatures." } }),
         expected_decision_revision: { ...common.expected_decision_revision,
           description: "Required for set_next_measurement and record_finding. Optional for render_report." },
       } : { refutation, runId, citation, result }),
@@ -148,10 +151,9 @@ function explicitlyRequests(request: SessionContext, action: "diagnostics" | "pr
   return /\b(?:read|show|display|fetch|retrieve|inspect|verify|review|quote|print|view|what is) (?:me )?(?:the )?(?:(?:current|approved|research) )*procedure\b|^\s*procedure\s*$/i.test(text ?? "")
 }
 
-function presentTool(request: SessionContext, available: Action[], checker = false, refutation = false, readOnly = false, graphLoop = false) {
+function presentTool(request: SessionContext, input: ReturnType<typeof registeredInput>, available: Action[], checker = false, refutation = false, readOnly = false, graphLoop = false) {
   const tool = request.tools?.[TOOL]
   // Host permissions and the registered execution contract still apply to every call.
-  const input = registeredInput(readOnly, graphLoop)
   if (!tool || !isDeepStrictEqual(tool.input, input)) return
   const tools = { ...request.tools }
   if (available.length === 0) {
@@ -170,6 +172,7 @@ function presentTool(request: SessionContext, available: Action[], checker = fal
     if (readOnly && available.includes("status")) {
       for (const field of evidenceStatusFields) fields.add(field)
       if (graphLoop) for (const field of graphStatusFields) fields.add(field)
+      if ("synthesis" in input.properties && !checker) fields.add("synthesis")
     }
     const properties = Object.fromEntries(Object.entries(input.properties).filter(([name]) => fields.has(name)))
     tools[TOOL] = { ...tool, input: structuredClone({
@@ -209,6 +212,7 @@ const inputSchema = z.object({
   reference_offset: z.number().int().nonnegative().max(1024).optional(),
   detail: z.boolean().optional(),
   snapshot_refs: snapshotRefsSchema.optional(),
+  synthesis: synthesisRequestSchema.optional(),
   finding: findingSchema.optional(),
   citation: citationSchema.optional(),
   result: verdictSchema.optional(),
@@ -219,6 +223,7 @@ const inputSchema = z.object({
   if (values.finding_id !== undefined && values.source_path !== undefined) return false
   if (values.snapshot_refs && evidenceStatusFields.some(field => values[field] !== undefined)) return false
   if (values.snapshot_refs && values.detail !== undefined) return false
+  if (values.synthesis && supplied.some(field => field !== "synthesis")) return false
   return required.every(key => supplied.includes(key)) && supplied.every(key => required.includes(key) || optional.includes(key))
 })
 
@@ -293,6 +298,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
   const readOnly = config.investigationMode === "read-only"
   const graphLoop = config.graphLoop
   const turnRouting = config.turnRouting
+  const investigationInput = registeredInput(readOnly, graphLoop, !!turnRouting)
   if (turnRouting && (!graphLoop || !readOnly || !config.enabled)) throw new Error("TURN_ROUTING_REQUIRES_READ_ONLY_GRAPH")
   if (graphLoop && !readOnly) throw new Error("READ_ONLY_CONFIGURATION_UNQUALIFIED")
   if (readOnly && (config.ownerAgent === config.checkerAgent || config.preQueryPolicy ||
@@ -854,7 +860,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
           const base = { investigationMode: "read-only", work: null, revision: view?.revision,
             decision_revision: view?.decision_revision ?? 0 }
           if (!view) {
-            if (input.snapshot_refs || input.finding_id) throw new Error("INVESTIGATION_REQUIRED")
+            if (input.snapshot_refs || input.finding_id || input.synthesis) throw new Error("INVESTIGATION_REQUIRED")
             await assertReadOnlyTool(owner, TOOL)
             if (turnRouting) return { ...base, evidence_revision: 0, finding_index: [], initialized: false }
             const current = await selectedProcedure(null, false).catch(() => undefined)
@@ -862,14 +868,19 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
           }
           const { store: reads, evidence, authorize } = await observeReads(owner)
           if (turnRouting) {
-            const current = await selectedProcedure(view, false).catch(() => undefined)
             const selection = input.snapshot_refs ?
               { snapshot: await reads.snapshotReferences(input.snapshot_refs), cache_enabled: config.readOnlyCacheSourceBytes } :
               input.finding_id ? { finding_id: input.finding_id } : undefined
+            const current = await selectedProcedure(view, !!input.synthesis).catch(() => undefined)
             await authorize()
             if (view.revision !== bridge.primary(scope(owner))?.revision ||
                 evidence.revision !== (await reads.view()).revision) throw new Error("EVIDENCE_REVISION_CHANGED")
-            return buildTurnStatus({ revision: view.revision, evidence, question: graphQuestion(view, evidence, current), selection })
+            const question = graphQuestion(view, evidence, current)
+            if (input.synthesis) {
+              if (question.approval === "unavailable") throw new Error("RESEARCH_PROCEDURE_UNVERIFIED")
+              return { ...base, evidence_revision: evidence.revision, synthesis: buildSynthesisReadout(evidence, input.synthesis) }
+            }
+            return buildTurnStatus({ revision: view.revision, evidence, question, selection })
           }
           if (input.snapshot_refs) {
             const snapshot = await reads.snapshotReferences(input.snapshot_refs)
@@ -961,7 +972,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
     }
     if (request.agent === config.checkerAgent) {
       const presentChecker = (available: Action[]) => {
-        if (!compacting && config.checkerAgent !== config.ownerAgent) presentTool(request, available, true, false, readOnly, graphLoop)
+        if (!compacting && config.checkerAgent !== config.ownerAgent) presentTool(request, investigationInput, available, true, false, readOnly, graphLoop)
       }
       if (readOnly || !bridge || (!config.approvedProcedure && (compacting || !request.tools?.[TOOL]))) return presentChecker([])
       const worker = await boundWorker(request.sessionID)
@@ -1018,14 +1029,14 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
         const available: Action[] = ["status", "create"]
         if (config.approvedProcedure) available.push("procedure")
         if (explicitlyRequests(request, "diagnostics")) available.push("diagnostics")
-        presentTurnTool(request, registeredInput(true, true), "idle", available, turnRouting === "routed-compact")
+        presentTurnTool(request, investigationInput, "idle", available, turnRouting === "routed-compact")
         return
       }
       const view = bridge?.primary(scope(owner))
       if (route && compacting) {
         // Preserve completed source receipts before the native window is discarded.
         // A summary request cannot perform a measurement.
-        presentTurnTool(request, registeredInput(true, true), "idle", [])
+        presentTurnTool(request, investigationInput, "idle", [])
         if (view) await observeReads(owner, historyForTurn)
         return
       }
@@ -1039,9 +1050,9 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
         if (bridge && explicitlyRequests(request, "diagnostics")) available.push("diagnostics")
         if (config.approvedProcedure && (readOnly || explicitlyRequests(request, "procedure"))) available.push("procedure")
         if (route && view) available.push("create") // Idempotently open an existing investigation for this turn.
-        const presented = route && route.mode !== "passive" && presentTurnTool(request, registeredInput(true, true),
+        const presented = route && route.mode !== "passive" && presentTurnTool(request, investigationInput,
           route.mode, available, turnRouting === "routed-compact")
-        if (!presented) presentTool(request, available, false, settled && !!view?.work?.manifest_digest, readOnly, graphLoop)
+        if (!presented) presentTool(request, investigationInput, available, false, settled && !!view?.work?.manifest_digest, readOnly, graphLoop)
       }
       if (!view && !config.approvedProcedure && !graph) return
       if (view && brief && !hasBrief && !graphLoop) return
@@ -1070,7 +1081,12 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
           })).digest("hex")
           const guidance = participation.decide(request.sessionID, route, { revision,
             action: question.reason, pending: question.state === "investigate" || question.state === "revalidate" })
-          if (guidance === "project" || guidance === "restore") graph.project(request, question, runtimeSha256, false)
+          if (guidance === "project" || guidance === "restore") {
+            graph.project(request, question, runtimeSha256, false)
+            if (evidence.findings.length && question.state === "investigate") {
+              graph.instruction(request, "When preparing an answer, use status with synthesis.claims for the required finding IDs. Match its coverage to the user request. Answer from supported claims and name unresolved gaps. Request further evidence only for a specific gap that could change the answer.")
+            }
+          }
         }
       } else if (view && readOnly) {
         const { evidence } = await observeReads(owner)
@@ -1164,7 +1180,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
       }
     } catch {
       if (!compacting && config.checkerAgent !== config.ownerAgent) {
-        presentTool(request, ["status", ...(!readOnly ? ["reconcile" as const] : []), "diagnostics",
+        presentTool(request, investigationInput, ["status", ...(!readOnly ? ["reconcile" as const] : []), "diagnostics",
           ...(config.approvedProcedure ? ["procedure" as const] : [])], false, false, readOnly, graphLoop)
       }
       graph?.clear(request)
@@ -1281,7 +1297,7 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
         description: turnRouting ? "Use status to recall earlier project findings when needed. Use create to begin an investigation. Answer self-contained requests directly."
           : readOnly ? "Record findings and next measurements from inspected sources and render the acknowledged report."
           : "Manage the investigation. Use the projected procedure and the native skill tool for required activation.",
-        input: registeredInput(readOnly, graphLoop),
+        input: structuredClone(investigationInput),
         options: { permission: TOOL, codemode: false },
         async execute(input, call) {
           const known = z.object({ action: actionName }).safeParse(input)
@@ -1289,10 +1305,11 @@ async function setup(ctx: Context): Promise<() => Promise<void>> {
             return { content: JSON.stringify({ ok: false, runtimeSha256, error: "READ_ONLY_ACTION_UNAVAILABLE" }) }
           }
           const parsed = inputSchema.safeParse(input)
-          if (!parsed.success || (!graphLoop && (parsed.data.finding?.numericClaim ||
+          if (!parsed.success || (!turnRouting && parsed.data.synthesis) || (!graphLoop && (parsed.data.finding?.numericClaim ||
               graphStatusFields.some(field => parsed.data[field] !== undefined)))) {
             const contract = known.success ? { action: known.data.action, ...actionFields(known.data.action),
               optional: actionFields(known.data.action).optional.filter(field =>
+                (turnRouting || field !== "synthesis") &&
                 (graphLoop || !(graphStatusFields as readonly string[]).includes(field)) &&
                 (readOnly ? field !== "refutation" && field !== "runId" : !["evidence_refs", "report_decision", ...evidenceStatusFields].includes(field))),
             } : undefined

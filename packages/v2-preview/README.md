@@ -162,6 +162,37 @@ source-linked finding through the catalog. Turn routing remains opt-in.
 [Blind citation review](evidence/turn-routing-luna-review.json) ·
 [Protocol and scoring](benchmark/turn-routing-protocol.md)
 
+### Answering from recorded findings
+
+Preview.13 adds a synthesis selector to `alg_investigation` in both routed
+read-only modes. An owner preparing an answer can request up to 16 finding IDs
+in a single call. For example, the following request checks two findings against
+their current source receipts.
+
+```json
+{"action":"status","synthesis":{"claims":["calibration","independent-check"]}}
+```
+
+The response gives each finding's interpretation, scope, available citations,
+and any recorded counterevidence or gap. `nextMove` applies only to the
+requested claims. The owner still has to compare that set with the user's
+question. `answer-selected` means each selected claim has scoped support and
+its details fit. `scoped-indeterminate` identifies an incomplete set, and
+`recheck` identifies a changed source dependency. An empty list inventories
+recorded findings. When supported claims exceed the 16 KiB readout limit,
+`read-detail` points the owner to the affected `finding_id` selectors.
+The host verifies citation links and recorded arithmetic. Interpretation
+remains attributed to the agent.
+
+To compare successive readouts, supply a `baseline` object mapping selected
+IDs to their previous `signature` values. The `changes` array follows the
+order of `claims`. A repeat observation of identical content preserves the
+signature. A replacement becomes visible after the approved source tool
+observes it. The owner can retrieve the findings again after compaction or
+restart from the same investigation ledger. A successful synthesis call
+returns control to the owner for the answer. Calling `create` or recording
+new work can reopen the graph on the same turn.
+
 ### Local OpenCode 2.3.2 qualification
 
 On Windows x64 and Linux x64 under WSL2, the same preview.9 bundle passed all

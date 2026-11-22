@@ -44,7 +44,7 @@ const passive: TurnRoute = { mode: "passive" }
 const maxSessions = 256
 const maxActionsPerRevision = 64
 
-function successfulAction(part: Assistant["content"][number], runtimeSha256: string): TurnMode {
+function successfulAction(part: Assistant["content"][number], runtimeSha256: string): TurnMode | "synthesis" {
   if (part.type !== "tool" || part.name !== TOOL || part.executed === true ||
       part.state.status !== "completed" || part.time.completed === undefined) return "passive"
   const action = part.state.input.action
@@ -56,6 +56,7 @@ function successfulAction(part: Assistant["content"][number], runtimeSha256: str
   try {
     const receipt = JSON.parse(result.text)
     if (receipt?.ok !== true || receipt.runtimeSha256 !== runtimeSha256) return "passive"
+    if (action === "status" && part.state.input.synthesis && receipt.synthesis) return "synthesis"
     if (action === "status" || action === "procedure" || action === "render_report") return "lookup"
     if (receipt.outcome === "recorded" || (action === "create" && receipt.outcome === undefined)) return "active"
   } catch {
@@ -135,13 +136,18 @@ export class TurnParticipation {
     }
     const turn: Turn = prior?.promptId === promptId ? prior : { promptId }
     let mode = carried && turn === prior ? carried.mode : "passive"
-    for (let index = start; index < window.length && mode !== "active"; index++) {
+    // The newest acknowledged write/create or synthesis determines the mode.
+    // Walk backwards so long active turns do not reparse all prior tool results.
+    actions: for (let index = window.length - 1; index >= start; index--) {
       const row = window[index]!
       if (row.type !== "assistant" || row.agent !== ownerAgent || row.error) continue
-      for (const part of row.content) {
-        const action = successfulAction(part, runtimeSha256)
-        if (action !== "passive") mode = action
-        if (mode === "active") break
+      for (let part = row.content.length - 1; part >= 0; part--) {
+        const action = successfulAction(row.content[part]!, runtimeSha256)
+        if (action === "synthesis" || action === "active") {
+          mode = action === "synthesis" ? "lookup" : "active"
+          break actions
+        }
+        if (action === "lookup" && mode === "passive") mode = "lookup"
       }
     }
 
